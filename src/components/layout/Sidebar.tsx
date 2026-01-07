@@ -96,10 +96,26 @@ export function Sidebar() {
         collapsed ? "w-24" : "w-80"
       )}
     >
-      {/* Logo */}
+      {/* Logo with Animation */}
       <div className="p-6 flex justify-center">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent/10 to-primary/5 border-4 border-accent/20 flex items-center justify-center p-3 shadow-md">
-          <img src={atefLogo} alt="جمعية عطف" className="w-full h-full object-contain" />
+        <div className="relative">
+          {/* Outer rotating ring */}
+          <div className="absolute inset-0 w-32 h-32 rounded-full border-4 border-accent/30 border-t-accent animate-spin" style={{ animationDuration: '8s' }} />
+          
+          {/* Inner glow circle */}
+          <div className="absolute inset-2 w-28 h-28 rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse" style={{ animationDuration: '3s' }} />
+          
+          {/* Logo container */}
+          <div className="relative w-32 h-32 rounded-full bg-white border-4 border-accent/20 flex items-center justify-center p-4 shadow-xl">
+            <img 
+              src={atefLogo} 
+              alt="جمعية عطف" 
+              className="w-full h-full object-contain drop-shadow-md hover:scale-110 transition-transform duration-300" 
+            />
+          </div>
+          
+          {/* Decorative dots */}
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" style={{ animationDuration: '2s' }} />
         </div>
       </div>
 
