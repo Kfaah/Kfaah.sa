@@ -93,7 +93,8 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed right-0 top-0 h-screen bg-white flex flex-col transition-all duration-300 z-50 border-l border-border shadow-lg",
+        "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 border-l border-border shadow-lg",
+        "bg-gradient-to-b from-slate-50 via-white to-slate-50",
         collapsed ? "w-24" : "w-80"
       )}
     >
