@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp } from "lucide-react";
+import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -70,15 +70,23 @@ const Employees = () => {
     email: "",
     phone: "",
     role: "",
+    password: "",
+    avatar: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const filteredEmployees = employees.filter((employee) =>
     employee.name.includes(searchQuery) || employee.role.includes(searchQuery)
   );
 
   const handleAddEmployee = () => {
-    if (!newEmployee.name || !newEmployee.email || !newEmployee.role) {
+    if (!newEmployee.name || !newEmployee.email || !newEmployee.role || !newEmployee.password) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
+      return;
+    }
+
+    if (newEmployee.password.length < 6) {
+      toast.error("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
       return;
     }
 
@@ -98,7 +106,7 @@ const Employees = () => {
     };
 
     setEmployees([...employees, employee]);
-    setNewEmployee({ name: "", email: "", phone: "", role: "" });
+    setNewEmployee({ name: "", email: "", phone: "", role: "", password: "", avatar: "" });
     setIsDialogOpen(false);
     toast.success("تم إضافة الموظف بنجاح");
   };
@@ -129,7 +137,26 @@ const Employees = () => {
             <DialogHeader>
               <DialogTitle className="text-right">إضافة موظف جديد</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
+              {/* صورة الموظف */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30 overflow-hidden">
+                  {newEmployee.avatar ? (
+                    <img src={newEmployee.avatar} alt="صورة الموظف" className="w-full h-full object-cover" />
+                  ) : (
+                    <Camera className="w-8 h-8 text-muted-foreground/50" />
+                  )}
+                </div>
+                <Label className="text-sm text-muted-foreground">صورة (شخصية/رمزية) - اختيارية</Label>
+                <Input
+                  type="url"
+                  placeholder="رابط الصورة (اختياري)"
+                  value={newEmployee.avatar}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, avatar: e.target.value })}
+                  className="text-center"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="name">الاسم الكامل *</Label>
                 <Input
@@ -139,16 +166,38 @@ const Employees = () => {
                   onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني *</Label>
+                <Label htmlFor="email">اسم المستخدم (البريد الإلكتروني أو رقم الجوال) *</Label>
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="example@atef.org"
+                  placeholder="example@atef.org أو 05xxxxxxxx"
                   value={newEmployee.email}
                   onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">كلمة المرور *</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="أدخل كلمة المرور (6 أحرف على الأقل)"
+                    value={newEmployee.password}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
+                    className="pl-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="phone">رقم الهاتف</Label>
                 <Input
@@ -158,6 +207,7 @@ const Employees = () => {
                   onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
                 />
               </div>
+
               <div className="space-y-2">
                 <Label>الدور الوظيفي *</Label>
                 <Select
@@ -176,6 +226,7 @@ const Employees = () => {
                   </SelectContent>
                 </Select>
               </div>
+
               <Button onClick={handleAddEmployee} className="w-full bg-accent hover:bg-accent/90">
                 إضافة الموظف
               </Button>
