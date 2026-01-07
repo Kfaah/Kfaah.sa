@@ -56,10 +56,10 @@ export function Sidebar() {
       <Link
         to={item.href}
         className={cn(
-          "flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-300",
+          "flex items-center gap-4 px-4 py-3 rounded-full",
           isActive
-            ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg shadow-cyan-400/30 ring-4 ring-white ring-offset-0"
-            : "bg-white text-slate-700 hover:shadow-lg"
+            ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg ring-2 ring-white"
+            : "bg-white text-slate-700"
         )}
       >
         <div className={cn(
