@@ -63,7 +63,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#3d9aa8] via-[#4A9BA8] to-[#2d7a85] p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#3d9aa8] via-[#4A9BA8] to-[#2d7a85] p-4">
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20" />
       <div
@@ -73,21 +73,78 @@ export default function Auth() {
         }}
       />
 
+      {/* Floating Orbs */}
+      <div 
+        className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full bg-white/5 blur-2xl"
+        style={{ animation: 'float 6s ease-in-out infinite' }}
+      />
+      <div 
+        className="absolute bottom-1/3 left-1/4 w-24 h-24 rounded-full bg-cyan-300/10 blur-xl"
+        style={{ animation: 'float 8s ease-in-out infinite reverse' }}
+      />
+
+      {/* Logo Section - Same as Dashboard */}
+      <div className="relative z-10 mb-8 flex flex-col items-center">
+        {/* Logo with animations */}
+        <div className="relative mb-5 group">
+          {/* Outer rotating ring */}
+          <div 
+            className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-4 border-white/30 border-t-white animate-spin" 
+            style={{ animationDuration: '8s' }} 
+          />
+          
+          {/* Inner glow circle */}
+          <div 
+            className="absolute inset-2 w-[136px] h-[136px] rounded-full bg-gradient-to-br from-white/20 to-cyan-300/10 animate-pulse" 
+            style={{ animationDuration: '3s' }} 
+          />
+          
+          {/* Logo container with zoom animation and shimmer */}
+          <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden">
+            <img 
+              src={atefLogoIcon} 
+              alt="جمعية عطف" 
+              className="w-28 h-28 object-contain"
+              style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
+            />
+            {/* Shimmer/Glow effect */}
+            <div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full"
+              style={{ animation: 'shimmer 3s ease-in-out infinite' }}
+            />
+          </div>
+          
+          {/* Decorative dot */}
+          <div 
+            className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white shadow-lg animate-bounce" 
+            style={{ animationDuration: '2s' }} 
+          />
+        </div>
+        
+        {/* Text under logo */}
+        <div className="text-center space-y-3">
+          <h1 className="text-2xl font-bold text-white whitespace-nowrap tracking-wide drop-shadow-lg">
+            جمعية عطف للأيتام
+          </h1>
+          <div className="relative">
+            <p className="text-sm font-semibold text-white/90">
+              نظام إدارة التسويق الإلكتروني
+            </p>
+            <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full" />
+          </div>
+        </div>
+      </div>
+
       <Card className="w-full max-w-md relative z-10 shadow-2xl border-0">
-        <CardHeader className="text-center space-y-4 pb-2">
-          <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-[#4A9BA8] to-[#2d7a85] flex items-center justify-center shadow-lg">
-            <img src={atefLogoIcon} alt="عطف" className="w-14 h-14 object-contain" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold text-foreground">
-              {isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"}
-            </CardTitle>
-            <CardDescription className="mt-2">
-              {isLogin
-                ? "أدخل بياناتك للوصول إلى لوحة التحكم"
-                : "أنشئ حسابك للبدء في استخدام النظام"}
-            </CardDescription>
-          </div>
+        <CardHeader className="text-center space-y-2 pb-2">
+          <CardTitle className="text-2xl font-bold text-foreground">
+            {isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"}
+          </CardTitle>
+          <CardDescription>
+            {isLogin
+              ? "أدخل بياناتك للوصول إلى لوحة التحكم"
+              : "أنشئ حسابك للبدء في استخدام النظام"}
+          </CardDescription>
         </CardHeader>
 
         <CardContent className="pt-4">
