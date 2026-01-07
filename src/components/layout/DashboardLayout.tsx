@@ -9,7 +9,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className="mr-72 transition-all duration-300">
+      <div className="mr-80 transition-all duration-300">
         <main className="p-8">{children}</main>
       </div>
     </div>
