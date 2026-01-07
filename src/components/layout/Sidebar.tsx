@@ -97,8 +97,8 @@ export function Sidebar() {
         collapsed ? "w-24" : "w-80"
       )}
     >
-      {/* Blue background - darker blue matching the logo colors */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#3B82A0] via-[#2D6E8A] to-[#1E5A75]" />
+      {/* Teal/Turquoise background matching the brand */}
+      <div className="absolute inset-0 bg-[#4A9BA8]" />
       
       {/* White Header Section with Logo */}
       <div className="relative z-10">
