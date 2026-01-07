@@ -152,9 +152,9 @@ export function Sidebar() {
         
         {/* White curved background for logo */}
         <div className="bg-white rounded-b-[3rem] relative mx-4 shadow-lg">
-          <div className="p-6 pb-10 flex flex-col items-center relative z-10">
+          <div className="p-4 pb-6 flex flex-col items-center relative z-10">
             {/* Logo with zoom animation */}
-            <div className="relative mb-5 group">
+            <div className="relative mb-3 group">
               {/* Outer rotating ring */}
               <div 
                 className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-4 border-accent/30 border-t-accent animate-spin" 
@@ -191,7 +191,7 @@ export function Sidebar() {
             
             {/* Text under logo */}
             {!collapsed && (
-              <div className="text-center space-y-3">
+              <div className="text-center space-y-1">
                 <h1 className="text-xl font-bold text-slate-800 whitespace-nowrap tracking-wide">
                   جمعية عطف للأيتام
                 </h1>
