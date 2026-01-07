@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -59,13 +59,16 @@ export function Sidebar() {
     "معاً نحو النجاح 🚀",
   ];
 
-  const showPositiveMessage = (title: string) => {
-    if (title === "نظرة عامة" || title === "الملف الشخصي") {
-      const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
-      setCurrentMessage(randomMessage);
-      setTimeout(() => setCurrentMessage(""), 3000);
-    }
+  const showPositiveMessage = () => {
+    const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
+    setCurrentMessage(randomMessage);
+    setTimeout(() => setCurrentMessage(""), 5000);
   };
+
+  // Show positive message on page load
+  useEffect(() => {
+    showPositiveMessage();
+  }, []);
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location.pathname === item.href;
@@ -73,7 +76,6 @@ export function Sidebar() {
     return (
       <Link
         to={item.href}
-        onClick={() => showPositiveMessage(item.title)}
         className={cn(
           "flex items-center gap-4 px-4 py-3 rounded-full",
           isActive
@@ -225,7 +227,6 @@ export function Sidebar() {
             {/* Profile Icon Button */}
             <Link 
               to="/profile"
-              onClick={() => showPositiveMessage("الملف الشخصي")}
               className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 group"
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
