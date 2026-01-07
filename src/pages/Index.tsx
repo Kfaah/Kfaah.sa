@@ -53,9 +53,9 @@ const Index = () => {
 
         {/* Welcome Banner */}
         <div className="hero-gradient rounded-3xl p-8 animate-slide-up border border-accent/20">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             {/* Right side - Avatar and Name */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-shrink-0">
               <div className="w-16 h-16 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0">
                 {user.profileImage ? (
                   <img 
@@ -75,10 +75,12 @@ const Index = () => {
               </div>
             </div>
             
-            {/* Left side - Positive Message */}
+            {/* Center - Positive Message */}
             {currentMessage && (
-              <div className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-2xl py-3 px-6 border border-cyan-200 animate-fade-in">
-                <span className="text-base font-medium text-cyan-700">{currentMessage}</span>
+              <div className="flex-1 flex justify-center">
+                <div className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-2xl py-3 px-6 border border-cyan-200 animate-fade-in">
+                  <span className="text-base font-medium text-cyan-700">{currentMessage}</span>
+                </div>
               </div>
             )}
           </div>
