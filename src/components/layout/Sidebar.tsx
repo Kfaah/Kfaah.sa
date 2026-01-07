@@ -166,7 +166,7 @@ export function Sidebar() {
         )}
 
         {/* Navigation Items */}
-        <nav className="flex-1 px-3 space-y-2 overflow-y-auto py-2">
+        <nav className="flex-1 px-4 space-y-2.5 overflow-y-auto py-3 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent hover:scrollbar-thumb-white/50">
           {mainNavItems.map((item, index) => (
             <div 
               key={item.href} 
