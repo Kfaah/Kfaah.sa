@@ -99,33 +99,38 @@ export function Sidebar() {
     >
       {/* Logo with Animation */}
       <div className="p-6 flex flex-col items-center">
-        <div className="relative mb-4">
+        <div className="relative mb-4 group">
           {/* Outer rotating ring */}
-          <div className="absolute inset-0 w-28 h-28 rounded-full border-4 border-accent/30 border-t-accent animate-spin" style={{ animationDuration: '8s' }} />
+          <div className="absolute inset-[-4px] w-[120px] h-[120px] rounded-full border-4 border-transparent border-t-accent border-r-accent/50 animate-spin" style={{ animationDuration: '6s' }} />
           
-          {/* Inner glow circle */}
-          <div className="absolute inset-2 w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse" style={{ animationDuration: '3s' }} />
+          {/* Second rotating ring (opposite direction) */}
+          <div className="absolute inset-[-8px] w-[128px] h-[128px] rounded-full border-2 border-transparent border-b-primary/40 border-l-primary/20 animate-spin" style={{ animationDuration: '10s', animationDirection: 'reverse' }} />
+          
+          {/* Inner glow circle with pulse */}
+          <div className="absolute inset-1 w-[104px] h-[104px] rounded-full bg-gradient-to-br from-accent/20 via-transparent to-primary/10 animate-pulse" style={{ animationDuration: '2.5s' }} />
           
           {/* Logo icon container */}
-          <div className="relative w-28 h-28 rounded-full bg-slate-50 border-4 border-accent/20 flex items-center justify-center overflow-hidden shadow-xl">
+          <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-slate-50 to-white border-4 border-accent/30 flex items-center justify-center overflow-hidden shadow-xl group-hover:shadow-2xl transition-shadow duration-500">
             <img 
               src={atefLogoIcon} 
               alt="جمعية عطف" 
-              className="w-20 h-20 object-contain hover:scale-110 transition-transform duration-300" 
+              className="w-20 h-20 object-contain group-hover:scale-110 transition-transform duration-500" 
             />
           </div>
           
-          {/* Decorative dot */}
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" style={{ animationDuration: '2s' }} />
+          {/* Decorative floating dots */}
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" style={{ animationDuration: '1.5s' }} />
+          <div className="absolute top-1/2 -right-2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary/60 shadow animate-bounce" style={{ animationDuration: '2s', animationDelay: '0.5s' }} />
+          <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent/60 shadow animate-bounce" style={{ animationDuration: '2.2s', animationDelay: '0.3s' }} />
         </div>
         
         {/* Text logo under icon */}
         {!collapsed && (
-          <div className="text-center">
+          <div className="text-center animate-fade-in">
             <img 
               src={atefLogoText} 
               alt="جمعية عطف للأيتام" 
-              className="h-12 object-contain mx-auto"
+              className="h-12 object-contain mx-auto hover:scale-105 transition-transform duration-300"
             />
             <p className="text-xs text-muted-foreground mt-2">نظام إدارة التسويق الإلكتروني</p>
           </div>
