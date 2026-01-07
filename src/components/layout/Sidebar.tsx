@@ -189,16 +189,7 @@ export function Sidebar() {
             {/* Main Profile Card - Matching design */}
             <div className="bg-white rounded-2xl p-3 shadow-lg relative z-20">
               <div className="flex items-center gap-3">
-                {/* Name and Role - Left side, centered vertically */}
-                <div className="flex-1 flex flex-col items-center justify-center gap-2">
-                  <h3 className="font-bold text-slate-800 text-base">{user.firstName} {user.lastName}</h3>
-                  <span className="text-xs text-cyan-600 font-semibold bg-cyan-50 rounded-full px-3 py-1 border border-cyan-200 inline-flex items-center gap-1">
-                    <span>%</span>
-                    <span>{user.role}</span>
-                  </span>
-                </div>
-                
-                {/* Avatar - Right side, larger with cyan border */}
+                {/* Avatar - Left side, larger with cyan border */}
                 <div className="w-16 h-16 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0">
                   {user.profileImage ? (
                     <img 
@@ -211,6 +202,15 @@ export function Sidebar() {
                       {user.firstName.charAt(0)}
                     </div>
                   )}
+                </div>
+                
+                {/* Name and Role - Right side, centered vertically */}
+                <div className="flex-1 flex flex-col items-center justify-center gap-2">
+                  <h3 className="font-bold text-slate-800 text-base">{user.firstName} {user.lastName}</h3>
+                  <span className="text-xs text-cyan-600 font-semibold bg-cyan-50 rounded-full px-3 py-1 border border-cyan-200 inline-flex items-center gap-1">
+                    <span>%</span>
+                    <span>{user.role}</span>
+                  </span>
                 </div>
               </div>
               
