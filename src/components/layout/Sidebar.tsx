@@ -65,7 +65,7 @@ export function Sidebar() {
       <Link
         to={item.href}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-lg",
+          "flex items-center gap-3 px-3 py-2 rounded-xl",
           isActive
             ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg ring-2 ring-white"
             : "bg-white text-slate-700"
