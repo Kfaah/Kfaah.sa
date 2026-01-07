@@ -15,6 +15,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/contexts/UserContext";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 interface NavItem {
@@ -46,6 +47,7 @@ const settingsNavItem: NavItem = {
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { user } = useUser();
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location.pathname === item.href;
@@ -164,22 +166,26 @@ export function Sidebar() {
               <div className="flex items-center gap-4">
                 {/* Avatar on the right */}
                 <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-cyan-400 shadow-lg flex-shrink-0">
-                  <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                  {user.profileImage ? (
                     <img 
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face" 
+                      src={user.profileImage} 
                       alt="صورة المستخدم"
                       className="w-full h-full object-cover"
                     />
-                  </div>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
+                      {user.firstName.charAt(0)}
+                    </div>
+                  )}
                 </div>
                 
                 {/* Name and Role */}
                 <div className="flex-1 text-right">
-                  <h3 className="font-bold text-slate-800 text-lg">جابر الحريصي</h3>
+                  <h3 className="font-bold text-slate-800 text-lg">{user.firstName} {user.lastName}</h3>
                   <div className="mt-2">
                     <span className="text-sm text-cyan-600 font-semibold bg-cyan-50 rounded-full px-4 py-1.5 border border-cyan-200 inline-flex items-center gap-1">
                       <span>%</span>
-                      <span>مدير النظام</span>
+                      <span>{user.role}</span>
                     </span>
                   </div>
                 </div>
