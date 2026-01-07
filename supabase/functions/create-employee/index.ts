@@ -58,10 +58,10 @@ serve(async (req) => {
     }
 
     // Get employee data from request
-    const { fullName, email, password, phone, jobRole, roleColor, avatarUrl } = await req.json();
+    const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl } = await req.json();
 
     // Validate required fields
-    if (!fullName || !email || !password || !jobRole) {
+    if (!fullName || !username || !password || !jobRole) {
       return new Response(
         JSON.stringify({ error: "يرجى ملء جميع الحقول المطلوبة" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -75,28 +75,21 @@ serve(async (req) => {
       );
     }
 
-    // Check if email is a phone number (starts with 0 or +) and convert to email format
-    let userEmail = email;
-    let userPhone = phone || null;
-    
-    const isPhoneNumber = /^[\+]?[0-9]{10,15}$/.test(email.replace(/\s/g, ''));
-    
-    if (isPhoneNumber) {
-      // Convert phone to email format for Supabase Auth
-      const cleanPhone = email.replace(/\s/g, '').replace('+', '');
-      userEmail = `${cleanPhone}@phone.local`;
-      userPhone = email; // Store original as phone
-    }
+    // Convert username to internal email format for Supabase Auth
+    // This allows any username format (phone, email, ID, etc.)
+    const cleanUsername = username.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const internalEmail = `${cleanUsername}@user.local`;
 
     // Create user in Supabase Auth
     const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: userEmail,
+      email: internalEmail,
       password: password,
       email_confirm: true, // Auto-confirm email
       user_metadata: {
         full_name: fullName,
-        phone: userPhone,
-        original_identifier: email, // Store original identifier
+        username: username, // Store original username
+        phone: phone || null,
+        email: email || null,
       },
     });
 
@@ -122,8 +115,9 @@ serve(async (req) => {
       .insert({
         user_id: authData.user.id,
         full_name: fullName,
-        email: email, // Store original identifier (email or phone)
-        phone: userPhone,
+        username: username,
+        email: email || null,
+        phone: phone || null,
         job_role: jobRole,
         role_color: roleColor || "bg-primary",
         avatar_url: avatarUrl || null,

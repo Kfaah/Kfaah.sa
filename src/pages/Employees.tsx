@@ -16,7 +16,8 @@ interface Employee {
   id: string;
   user_id: string | null;
   full_name: string;
-  email: string;
+  username: string;
+  email: string | null;
   phone: string | null;
   job_role: string;
   role_color: string;
@@ -65,6 +66,7 @@ const Employees = () => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     name: "",
+    username: "",
     email: "",
     phone: "",
     role: "",
@@ -157,7 +159,7 @@ const Employees = () => {
   };
 
   const handleAddEmployee = async () => {
-    if (!newEmployee.name || !newEmployee.email || !newEmployee.role || !newEmployee.password) {
+    if (!newEmployee.name || !newEmployee.username || !newEmployee.role || !newEmployee.password) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
     }
@@ -190,8 +192,9 @@ const Employees = () => {
       const response = await supabase.functions.invoke("create-employee", {
         body: {
           fullName: newEmployee.name,
-          email: newEmployee.email,
+          username: newEmployee.username,
           password: newEmployee.password,
+          email: newEmployee.email || null,
           phone: newEmployee.phone || null,
           jobRole: newEmployee.role,
           roleColor: roleData?.color || "bg-primary",
@@ -213,7 +216,7 @@ const Employees = () => {
         setEmployees([response.data.employee, ...employees]);
       }
 
-      setNewEmployee({ name: "", email: "", phone: "", role: "", password: "", avatar: "", avatarFile: null });
+      setNewEmployee({ name: "", username: "", email: "", phone: "", role: "", password: "", avatar: "", avatarFile: null });
       setIsDialogOpen(false);
       toast.success("تم إضافة الموظف بنجاح");
     } catch (error: any) {
@@ -304,13 +307,15 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">اسم المستخدم (البريد الإلكتروني أو رقم الجوال) *</Label>
+                <Label htmlFor="username">اسم المستخدم *</Label>
                 <Input
-                  id="email"
-                  placeholder="example@atef.org أو 05xxxxxxxx"
-                  value={newEmployee.email}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                  id="username"
+                  placeholder="رمز أو رقم أو اسم (مثال: emp001)"
+                  value={newEmployee.username}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, username: e.target.value })}
+                  dir="ltr"
                 />
+                <p className="text-xs text-muted-foreground">يستخدم لتسجيل الدخول</p>
               </div>
 
               <div className="space-y-2">
@@ -335,12 +340,25 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">رقم الهاتف</Label>
+                <Label htmlFor="email">البريد الإلكتروني (اختياري)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="example@atef.org"
+                  value={newEmployee.email}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">رقم الجوال (اختياري)</Label>
                 <Input
                   id="phone"
                   placeholder="+966 5x xxx xxxx"
                   value={newEmployee.phone}
                   onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
+                  dir="ltr"
                 />
               </div>
 
