@@ -102,29 +102,35 @@ export function Sidebar() {
           clipPath: 'ellipse(70% 100% at 50% 100%)' 
         }} />
         
-        <div className="p-6 pb-10 flex flex-col items-center relative z-10">
-          {/* Logo with animated ring */}
-          <div className="relative mb-3">
-            {/* Outer decorative ring */}
-            <div className="absolute inset-[-8px] rounded-full border-4 border-dashed border-cyan-300 animate-spin" style={{ animationDuration: '20s' }} />
-            
-            {/* Main ring */}
+        <div className="p-6 pb-12 flex flex-col items-center relative z-10">
+          {/* Logo with animated ring - larger size */}
+          <div className="relative mb-4 group">
+            {/* Outer rotating ring */}
             <div 
-              className="absolute inset-[-4px] rounded-full border-4 border-cyan-400/60 border-t-cyan-500 animate-spin" 
-              style={{ animationDuration: '6s' }} 
+              className="absolute inset-[-6px] w-[140px] h-[140px] rounded-full border-4 border-accent/30 border-t-accent animate-spin" 
+              style={{ animationDuration: '8s' }} 
+            />
+            
+            {/* Inner glow circle */}
+            <div 
+              className="absolute inset-2 w-[120px] h-[120px] rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse" 
+              style={{ animationDuration: '3s' }} 
             />
             
             {/* Logo container */}
-            <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-slate-50 to-white border-4 border-cyan-200 flex items-center justify-center shadow-xl overflow-hidden">
+            <div className="relative w-32 h-32 rounded-full bg-white border-4 border-accent/20 flex items-center justify-center shadow-xl overflow-hidden group-hover:shadow-2xl transition-shadow duration-500">
               <img 
                 src={atefLogoIcon} 
                 alt="جمعية عطف" 
-                className="w-16 h-16 object-contain hover:scale-110 transition-transform duration-300" 
+                className="w-24 h-24 object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300" 
               />
             </div>
             
-            {/* Decorative dots */}
-            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-amber-400 shadow animate-bounce" style={{ animationDuration: '2s' }} />
+            {/* Decorative dot */}
+            <div 
+              className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" 
+              style={{ animationDuration: '2s' }} 
+            />
           </div>
           
           {/* Text under logo */}
@@ -133,9 +139,9 @@ export function Sidebar() {
               <img 
                 src={atefLogoText} 
                 alt="جمعية عطف للأيتام" 
-                className="h-10 object-contain mx-auto"
+                className="h-12 object-contain mx-auto hover:scale-105 transition-transform duration-300"
               />
-              <p className="text-[10px] text-slate-500 mt-1 font-medium">نظام إدارة التسويق الإلكتروني</p>
+              <p className="text-xs text-slate-500 mt-2 font-medium">نظام إدارة التسويق الإلكتروني</p>
             </div>
           )}
         </div>
