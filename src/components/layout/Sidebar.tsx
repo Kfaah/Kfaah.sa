@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
+import { toast } from "sonner";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 interface NavItem {
@@ -49,12 +50,28 @@ export function Sidebar() {
   const location = useLocation();
   const { user } = useUser();
 
+  const positiveMessages = [
+    "أهلاً بك! يومك سعيد 🌟",
+    "نتمنى لك يوماً مليئاً بالإنجازات ✨",
+    "رائع! استمر في العمل المميز 💪",
+    "بارك الله في جهودك 🙏",
+    "معاً نحو النجاح 🚀",
+  ];
+
+  const showPositiveMessage = (title: string) => {
+    if (title === "نظرة عامة" || title === "الملف الشخصي") {
+      const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
+      toast.success(randomMessage);
+    }
+  };
+
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location.pathname === item.href;
     
     return (
       <Link
         to={item.href}
+        onClick={() => showPositiveMessage(item.title)}
         className={cn(
           "flex items-center gap-4 px-4 py-3 rounded-full",
           isActive
@@ -122,13 +139,18 @@ export function Sidebar() {
                 style={{ animationDuration: '3s' }} 
               />
               
-              {/* Logo container with zoom animation */}
+              {/* Logo container with zoom animation and shimmer */}
               <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden">
                 <img 
                   src={atefLogoIcon} 
                   alt="جمعية عطف" 
                   className="w-28 h-28 object-contain"
                   style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
+                />
+                {/* Shimmer/Glow effect */}
+                <div 
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full"
+                  style={{ animation: 'shimmer 3s ease-in-out infinite' }}
                 />
               </div>
               
@@ -162,11 +184,11 @@ export function Sidebar() {
         {/* User Profile Card - SEPARATED from logo */}
         {!collapsed && (
           <div className="mx-4 mb-4 flex-shrink-0 space-y-2">
-            {/* Main Profile Card */}
+            {/* Main Profile Card - CENTERED */}
             <div className="bg-white rounded-2xl p-4 shadow-lg relative z-20">
-              <div className="flex items-center gap-4">
-                {/* Avatar on the right */}
-                <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-cyan-400 shadow-lg flex-shrink-0">
+              <div className="flex flex-col items-center gap-3 text-center">
+                {/* Avatar */}
+                <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-cyan-400 shadow-lg">
                   {user.profileImage ? (
                     <img 
                       src={user.profileImage} 
@@ -181,7 +203,7 @@ export function Sidebar() {
                 </div>
                 
                 {/* Name and Role */}
-                <div className="flex-1 text-right">
+                <div>
                   <h3 className="font-bold text-slate-800 text-lg">{user.firstName} {user.lastName}</h3>
                   <div className="mt-2">
                     <span className="text-sm text-cyan-600 font-semibold bg-cyan-50 rounded-full px-4 py-1.5 border border-cyan-200 inline-flex items-center gap-1">
@@ -196,7 +218,8 @@ export function Sidebar() {
             {/* Profile Icon Button */}
             <Link 
               to="/profile"
-              className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 transition-all duration-200 group"
+              onClick={() => showPositiveMessage("الملف الشخصي")}
+              className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 group"
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                 <User className="w-5 h-5 text-white" />
