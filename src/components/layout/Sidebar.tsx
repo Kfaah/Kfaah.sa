@@ -47,6 +47,7 @@ const settingsNavItem: NavItem = {
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [currentMessage, setCurrentMessage] = useState("");
   const location = useLocation();
   const { user } = useUser();
 
@@ -61,7 +62,8 @@ export function Sidebar() {
   const showPositiveMessage = (title: string) => {
     if (title === "نظرة عامة" || title === "الملف الشخصي") {
       const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
-      toast.success(randomMessage);
+      setCurrentMessage(randomMessage);
+      setTimeout(() => setCurrentMessage(""), 3000);
     }
   };
 
@@ -184,11 +186,17 @@ export function Sidebar() {
         {/* User Profile Card - SEPARATED from logo */}
         {!collapsed && (
           <div className="mx-4 mb-4 flex-shrink-0 space-y-2">
-            {/* Main Profile Card - CENTERED */}
-            <div className="bg-white rounded-2xl p-4 shadow-lg relative z-20">
-              <div className="flex flex-col items-center gap-3 text-center">
-                {/* Avatar */}
-                <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-cyan-400 shadow-lg">
+            {/* Main Profile Card - Compact with image right, text left */}
+            <div className="bg-white rounded-xl p-3 shadow-lg relative z-20">
+              <div className="flex items-center gap-3">
+                {/* Name and Role - Left */}
+                <div className="flex-1 text-right">
+                  <h3 className="font-bold text-slate-800 text-sm">{user.firstName} {user.lastName}</h3>
+                  <span className="text-xs text-cyan-600 font-medium">{user.role}</span>
+                </div>
+                
+                {/* Avatar - Right */}
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-cyan-400 shadow-md flex-shrink-0">
                   {user.profileImage ? (
                     <img 
                       src={user.profileImage} 
@@ -196,23 +204,19 @@ export function Sidebar() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
+                    <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-sm font-bold text-white">
                       {user.firstName.charAt(0)}
                     </div>
                   )}
                 </div>
-                
-                {/* Name and Role */}
-                <div>
-                  <h3 className="font-bold text-slate-800 text-lg">{user.firstName} {user.lastName}</h3>
-                  <div className="mt-2">
-                    <span className="text-sm text-cyan-600 font-semibold bg-cyan-50 rounded-full px-4 py-1.5 border border-cyan-200 inline-flex items-center gap-1">
-                      <span>%</span>
-                      <span>{user.role}</span>
-                    </span>
-                  </div>
-                </div>
               </div>
+              
+              {/* Positive Message Display */}
+              {currentMessage && (
+                <div className="mt-2 text-center bg-gradient-to-r from-cyan-50 to-teal-50 rounded-lg py-2 px-3 animate-fade-in">
+                  <span className="text-sm font-medium text-cyan-700">{currentMessage}</span>
+                </div>
+              )}
             </div>
             
             {/* Profile Icon Button */}
