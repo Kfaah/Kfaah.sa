@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera, Loader2, Upload, X } from "lucide-react";
+import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera, Loader2, Upload, X, Pencil, LogIn, Building, Briefcase } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -29,15 +29,20 @@ interface Employee {
   performance: number;
 }
 
-const initialEmployees: Employee[] = [];
+interface Department {
+  id: string;
+  name: string;
+  color: string;
+}
 
-const roles = [
-  { value: "مسؤول السلات المتروكة", color: "bg-rose-500" },
-  { value: "مسؤول الحملات وكبار الداعمين", color: "bg-emerald-500" },
-  { value: "مسؤول الاستقطاع الدوري", color: "bg-accent" },
-  { value: "مسؤول تطوير المتجر", color: "bg-violet-500" },
-  { value: "المشرف العام", color: "bg-primary" },
-];
+interface JobRole {
+  id: string;
+  name: string;
+  color: string;
+  department_id: string | null;
+}
+
+const initialEmployees: Employee[] = [];
 
 const statusConfig = {
   active: { label: "نشط", className: "bg-emerald-100 text-emerald-600 border-emerald-200" },
@@ -60,10 +65,16 @@ const getPerformanceBarColor = (performance: number) => {
 const Employees = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     username: "",
@@ -74,29 +85,36 @@ const Employees = () => {
     avatar: "",
     avatarFile: null as File | null,
   });
+  const [newDepartment, setNewDepartment] = useState({ name: "", color: "bg-primary" });
+  const [newRole, setNewRole] = useState({ name: "", color: "bg-primary", department_id: "" });
   const [showPassword, setShowPassword] = useState(false);
 
-  // Fetch employees from database
+  // Fetch employees, departments, and job roles
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
-          .from("employees")
-          .select("*")
-          .order("created_at", { ascending: false });
+        const [employeesRes, deptsRes, rolesRes] = await Promise.all([
+          supabase.from("employees").select("*").order("created_at", { ascending: false }),
+          supabase.from("departments").select("*").order("name"),
+          supabase.from("job_roles").select("*").order("name"),
+        ]);
 
-        if (error) throw error;
+        if (employeesRes.error) throw employeesRes.error;
+        if (deptsRes.error) throw deptsRes.error;
+        if (rolesRes.error) throw rolesRes.error;
         
-        setEmployees(data as Employee[] || []);
+        setEmployees(employeesRes.data as Employee[] || []);
+        setDepartments(deptsRes.data as Department[] || []);
+        setJobRoles(rolesRes.data as JobRole[] || []);
       } catch (error) {
-        console.error("Error fetching employees:", error);
-        toast.error("حدث خطأ أثناء جلب بيانات الموظفين");
+        console.error("Error fetching data:", error);
+        toast.error("حدث خطأ أثناء جلب البيانات");
       } finally {
         setIsFetching(false);
       }
     };
 
-    fetchEmployees();
+    fetchData();
   }, []);
 
   const filteredEmployees = employees.filter((employee) =>
@@ -180,7 +198,7 @@ const Employees = () => {
         return;
       }
 
-      const roleData = roles.find(r => r.value === newEmployee.role);
+      const roleData = jobRoles.find(r => r.name === newEmployee.role);
 
       // Upload image if file exists
       let avatarUrl = null;
@@ -227,6 +245,122 @@ const Employees = () => {
     }
   };
 
+  // Add Department
+  const handleAddDepartment = async () => {
+    if (!newDepartment.name) {
+      toast.error("يرجى إدخال اسم القسم");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("departments")
+        .insert({ name: newDepartment.name, color: newDepartment.color })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      setDepartments([...departments, data as Department]);
+      setNewDepartment({ name: "", color: "bg-primary" });
+      setIsDeptDialogOpen(false);
+      toast.success("تم إضافة القسم بنجاح");
+    } catch (error: any) {
+      toast.error(error.message || "حدث خطأ");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add Job Role
+  const handleAddRole = async () => {
+    if (!newRole.name) {
+      toast.error("يرجى إدخال اسم الدور");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("job_roles")
+        .insert({ 
+          name: newRole.name, 
+          color: newRole.color,
+          department_id: newRole.department_id || null 
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      setJobRoles([...jobRoles, data as JobRole]);
+      setNewRole({ name: "", color: "bg-primary", department_id: "" });
+      setIsRoleDialogOpen(false);
+      toast.success("تم إضافة الدور بنجاح");
+    } catch (error: any) {
+      toast.error(error.message || "حدث خطأ");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Edit Employee
+  const handleEditEmployee = async () => {
+    if (!editingEmployee) return;
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from("employees")
+        .update({
+          full_name: editingEmployee.full_name,
+          username: editingEmployee.username,
+          email: editingEmployee.email,
+          phone: editingEmployee.phone,
+          job_role: editingEmployee.job_role,
+          status: editingEmployee.status,
+        })
+        .eq("id", editingEmployee.id);
+      
+      if (error) throw error;
+      setEmployees(employees.map(e => e.id === editingEmployee.id ? editingEmployee : e));
+      setIsEditDialogOpen(false);
+      setEditingEmployee(null);
+      toast.success("تم تحديث بيانات الموظف");
+    } catch (error: any) {
+      toast.error(error.message || "حدث خطأ");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Impersonate User
+  const handleImpersonate = async (employee: Employee) => {
+    if (!employee.user_id) {
+      toast.error("هذا الموظف ليس له حساب مستخدم");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const response = await supabase.functions.invoke("impersonate-user", {
+        body: { userId: employee.user_id },
+      });
+
+      if (response.error) throw response.error;
+      if (response.data?.error) {
+        toast.error(response.data.error);
+        return;
+      }
+
+      if (response.data?.actionLink) {
+        // Open the magic link in a new tab
+        window.open(response.data.actionLink, "_blank");
+        toast.success(`تم فتح حساب ${employee.full_name} في نافذة جديدة`);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "حدث خطأ");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const stats = [
     { label: "إجمالي الموظفين", value: employees.length, icon: Users, iconBg: "bg-accent/10", iconColor: "text-accent" },
     { label: "نشطين", value: employees.filter(e => e.status === "active").length, icon: UserCheck, iconBg: "bg-emerald-100", iconColor: "text-emerald-500" },
@@ -237,18 +371,96 @@ const Employees = () => {
   return (
     <DashboardLayout>
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-8 animate-fade-in">
+      <div className="flex items-center justify-between mb-8 animate-fade-in flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">الموظفين</h1>
           <p className="text-muted-foreground mt-1">إدارة فريق العمل</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 rounded-2xl bg-accent hover:bg-accent/90 text-accent-foreground shadow-md">
-              <Plus className="w-4 h-4" />
-              إضافة موظف
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2 flex-wrap">
+          {/* Add Department Dialog */}
+          <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 rounded-2xl">
+                <Building className="w-4 h-4" />
+                إضافة قسم
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md" dir="rtl">
+              <DialogHeader>
+                <DialogTitle className="text-right">إضافة قسم جديد</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>اسم القسم *</Label>
+                  <Input
+                    placeholder="أدخل اسم القسم"
+                    value={newDepartment.name}
+                    onChange={(e) => setNewDepartment({ ...newDepartment, name: e.target.value })}
+                  />
+                </div>
+                <Button onClick={handleAddDepartment} className="w-full" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
+                  إضافة القسم
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Role Dialog */}
+          <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 rounded-2xl">
+                <Briefcase className="w-4 h-4" />
+                إضافة دور
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md" dir="rtl">
+              <DialogHeader>
+                <DialogTitle className="text-right">إضافة دور وظيفي جديد</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>اسم الدور *</Label>
+                  <Input
+                    placeholder="أدخل اسم الدور الوظيفي"
+                    value={newRole.name}
+                    onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>القسم (اختياري)</Label>
+                  <Select
+                    value={newRole.department_id}
+                    onValueChange={(value) => setNewRole({ ...newRole, department_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر القسم" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleAddRole} className="w-full" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
+                  إضافة الدور
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Employee Dialog */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 rounded-2xl bg-accent hover:bg-accent/90 text-accent-foreground shadow-md">
+                <Plus className="w-4 h-4" />
+                إضافة موظف
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-md" dir="rtl">
             <DialogHeader>
               <DialogTitle className="text-right">إضافة موظف جديد</DialogTitle>
@@ -372,9 +584,9 @@ const Employees = () => {
                     <SelectValue placeholder="اختر الدور الوظيفي" />
                   </SelectTrigger>
                   <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.value}
+                    {jobRoles.map((role) => (
+                      <SelectItem key={role.id} value={role.name}>
+                        {role.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -398,6 +610,7 @@ const Employees = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
@@ -510,12 +723,127 @@ const Employees = () => {
                   <span className="text-muted-foreground">المهام المنجزة</span>
                   <span className="font-medium">{employee.tasks_completed}/{employee.tasks_total}</span>
                 </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-4 pt-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-1"
+                    onClick={() => {
+                      setEditingEmployee(employee);
+                      setIsEditDialogOpen(true);
+                    }}
+                  >
+                    <Pencil className="w-3 h-3" />
+                    تعديل
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-1"
+                    onClick={() => handleImpersonate(employee)}
+                    disabled={!employee.user_id}
+                  >
+                    <LogIn className="w-3 h-3" />
+                    دخول
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
       )}
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-right">تعديل بيانات الموظف</DialogTitle>
+          </DialogHeader>
+          {editingEmployee && (
+            <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
+              <div className="space-y-2">
+                <Label>الاسم الكامل *</Label>
+                <Input
+                  value={editingEmployee.full_name}
+                  onChange={(e) => setEditingEmployee({ ...editingEmployee, full_name: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>اسم المستخدم</Label>
+                <Input
+                  value={editingEmployee.username || ""}
+                  onChange={(e) => setEditingEmployee({ ...editingEmployee, username: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>البريد الإلكتروني</Label>
+                <Input
+                  type="email"
+                  value={editingEmployee.email || ""}
+                  onChange={(e) => setEditingEmployee({ ...editingEmployee, email: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>رقم الجوال</Label>
+                <Input
+                  value={editingEmployee.phone || ""}
+                  onChange={(e) => setEditingEmployee({ ...editingEmployee, phone: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>الدور الوظيفي</Label>
+                <Select
+                  value={editingEmployee.job_role}
+                  onValueChange={(value) => setEditingEmployee({ ...editingEmployee, job_role: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الدور الوظيفي" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobRoles.map((role) => (
+                      <SelectItem key={role.id} value={role.name}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>الحالة</Label>
+                <Select
+                  value={editingEmployee.status}
+                  onValueChange={(value: "active" | "on_leave" | "inactive") => setEditingEmployee({ ...editingEmployee, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">نشط</SelectItem>
+                    <SelectItem value="on_leave">في إجازة</SelectItem>
+                    <SelectItem value="inactive">غير نشط</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button onClick={handleEditEmployee} className="w-full bg-accent hover:bg-accent/90" disabled={isLoading}>
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
+                حفظ التغييرات
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
