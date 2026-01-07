@@ -878,6 +878,28 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
+                <Label>القسم</Label>
+                <Select
+                  value={jobRoles.find(r => r.name === editingEmployee.job_role)?.department_id || ""}
+                  onValueChange={(value) => {
+                    // عند تغيير القسم، نعيد تعيين الدور الوظيفي
+                    setEditingEmployee({ ...editingEmployee, job_role: "" });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر القسم" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label>الدور الوظيفي</Label>
                 <Select
                   value={editingEmployee.job_role}
