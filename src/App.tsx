@@ -4,10 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Products from "./pages/Products";
-import Orders from "./pages/Orders";
-import Customers from "./pages/Customers";
 import Employees from "./pages/Employees";
+import Roles from "./pages/Roles";
+import Tasks from "./pages/Tasks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,10 +18,9 @@ const App = () => (
       <Sonner />
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/customers" element={<Customers />} />
         <Route path="/employees" element={<Employees />} />
+        <Route path="/roles" element={<Roles />} />
+        <Route path="/tasks" element={<Tasks />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </TooltipProvider>
