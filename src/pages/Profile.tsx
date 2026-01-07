@@ -36,10 +36,13 @@ export default function Profile() {
         toast.error("حجم الصورة يجب أن يكون أقل من 5 ميجابايت");
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        updateProfileImage(reader.result as string);
+        const newImage = reader.result as string;
+        updateProfileImage(newImage);
+        // keep editData in sync so saving won't overwrite the new image
+        setEditData((prev) => ({ ...prev, profileImage: newImage }));
         toast.success("تم تحديث الصورة بنجاح");
       };
       reader.readAsDataURL(file);
@@ -57,7 +60,14 @@ export default function Profile() {
   };
 
   const handleSave = () => {
-    updateUser(editData);
+    updateUser({
+      firstName: editData.firstName,
+      lastName: editData.lastName,
+      email: editData.email,
+      phone: editData.phone,
+      department: editData.department,
+      location: editData.location,
+    });
     setIsEditing(false);
     toast.success("تم حفظ التغييرات بنجاح");
   };
@@ -91,13 +101,6 @@ export default function Profile() {
               >
                 <Camera className="w-8 h-8 text-white" />
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
             </div>
             
             <div className="text-center sm:text-right flex-1">
@@ -345,7 +348,7 @@ export default function Profile() {
         <Button type="button" variant="outline" size="lg" onClick={handleCancel}>
           إلغاء
         </Button>
-        <Button onClick={handleSave} size="lg" className="gap-2 bg-gradient-to-l from-accent to-primary hover:opacity-90">
+        <Button type="button" onClick={handleSave} size="lg" className="gap-2 bg-gradient-to-l from-accent to-primary hover:opacity-90">
           <Save className="w-4 h-4" />
           حفظ التغييرات
         </Button>
@@ -365,6 +368,15 @@ export default function Profile() {
             </p>
           </div>
         </div>
+
+        {/* Single shared file input for both View/Edit mode */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
 
         {isEditing ? <EditMode /> : <ViewMode />}
       </div>
