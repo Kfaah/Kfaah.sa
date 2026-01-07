@@ -208,3 +208,30 @@
     transform: scale(1);
   }
 }
+
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(80px) translateY(-50%);
+  }
+  to {
+    transform: rotate(360deg) translateX(80px) translateY(-50%);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(-50%);
+  }
+  50% {
+    transform: translateY(-8px) translateX(-50%);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  50%, 100% {
+    transform: translateX(100%);
+  }
+}
