@@ -103,78 +103,33 @@ export function Sidebar() {
         }} />
         
         <div className="p-6 pb-12 flex flex-col items-center relative z-10">
-          {/* Logo with beautiful multi-layer animations - LARGER */}
+          {/* Logo with simple elegant animation */}
           <div className="relative mb-5 group">
-            {/* Outer orbiting particles */}
-            <div className="absolute inset-[-24px] w-[192px] h-[192px]">
-              {[0, 60, 120, 180, 240, 300].map((degree) => (
-                <div
-                  key={degree}
-                  className="absolute w-2.5 h-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-teal-400 shadow-lg"
-                  style={{
-                    top: '50%',
-                    left: '50%',
-                    transform: `rotate(${degree}deg) translateX(92px) translateY(-50%)`,
-                    animation: `orbit 12s linear infinite`,
-                    animationDelay: `${degree * 33}ms`,
-                    boxShadow: '0 0 10px rgba(34, 211, 238, 0.6)',
-                  }}
-                />
-              ))}
-            </div>
-            
-            {/* Outer glowing ring - slow rotation */}
+            {/* Outer rotating ring */}
             <div 
-              className="absolute inset-[-14px] w-[172px] h-[172px] rounded-full"
-              style={{ 
-                background: 'conic-gradient(from 0deg, transparent, rgba(34, 211, 238, 0.4), transparent, rgba(20, 184, 166, 0.4), transparent)',
-                animation: 'spin 10s linear infinite',
-              }} 
+              className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-4 border-accent/30 border-t-accent animate-spin" 
+              style={{ animationDuration: '8s' }} 
             />
             
-            {/* Second ring - opposite rotation with dashed border */}
+            {/* Inner glow circle */}
             <div 
-              className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-2 border-dashed border-cyan-300/50"
-              style={{ animation: 'spin 15s linear infinite reverse' }} 
+              className="absolute inset-2 w-[136px] h-[136px] rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse" 
+              style={{ animationDuration: '3s' }} 
             />
             
-            {/* Inner pulsing glow */}
-            <div 
-              className="absolute inset-0 w-[144px] h-[144px] rounded-full bg-gradient-to-br from-cyan-400/20 via-transparent to-teal-400/20"
-              style={{ animation: 'pulse 3s ease-in-out infinite' }} 
-            />
-            
-            {/* Shimmer effect overlay */}
-            <div 
-              className="absolute inset-0 w-[144px] h-[144px] rounded-full overflow-hidden"
-            >
-              <div 
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full"
-                style={{ animation: 'shimmer 3s ease-in-out infinite' }}
-              />
-            </div>
-            
-            {/* Logo container with hover effects - LARGER */}
-            <div className="relative w-36 h-36 rounded-full bg-gradient-to-br from-white to-slate-50 border-4 border-white flex items-center justify-center shadow-2xl overflow-hidden group-hover:shadow-[0_0_40px_rgba(34,211,238,0.4)] transition-all duration-500">
+            {/* Logo container - no white background */}
+            <div className="relative w-36 h-36 rounded-full flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-500">
               <img 
                 src={atefLogoIcon} 
                 alt="جمعية عطف" 
-                className="w-28 h-28 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" 
+                className="w-32 h-32 object-cover rounded-full drop-shadow-lg" 
               />
             </div>
             
-            {/* Floating decorative dots */}
+            {/* Decorative dot */}
             <div 
-              className="absolute -top-4 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 shadow-lg"
-              style={{ animation: 'float 2s ease-in-out infinite' }} 
-            />
-            <div 
-              className="absolute -bottom-2 left-1/4 w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-teal-500 shadow-lg"
-              style={{ animation: 'float 2.5s ease-in-out infinite 0.5s' }} 
-            />
-            <div 
-              className="absolute -bottom-2 right-1/4 w-2 h-2 rounded-full bg-gradient-to-r from-pink-400 to-rose-500 shadow-lg"
-              style={{ animation: 'float 2s ease-in-out infinite 1s' }} 
+              className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" 
+              style={{ animationDuration: '2s' }} 
             />
           </div>
           
