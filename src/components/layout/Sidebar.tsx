@@ -121,8 +121,8 @@ export function Sidebar() {
         {/* Text under logo */}
         {!collapsed && (
           <div className="text-center">
-            <h2 className="font-bold text-lg text-primary">منصة بطل</h2>
-            <p className="text-sm text-muted-foreground">للسلاسل التعليمية</p>
+            <h2 className="font-bold text-lg text-primary">جمعية عطف</h2>
+            <p className="text-sm text-muted-foreground">نظام إدارة التسويق الإلكتروني</p>
           </div>
         )}
       </div>
