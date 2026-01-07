@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Users, CheckCircle, Clock, Trophy, TrendingUp, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useUser } from "@/contexts/UserContext";
 
 const positiveMessages = [
   "أهلاً بك! يومك سعيد 🌟",
@@ -13,6 +14,7 @@ const positiveMessages = [
 
 const Index = () => {
   const [currentMessage, setCurrentMessage] = useState("");
+  const { user } = useUser();
 
   useEffect(() => {
     const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
@@ -51,11 +53,29 @@ const Index = () => {
 
         {/* Welcome Banner */}
         <div className="hero-gradient rounded-3xl p-8 animate-slide-up border border-accent/20">
-          <div className="flex flex-col items-center text-center gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">مرحباً جابر 👋</h2>
-              <p className="text-muted-foreground mt-1">مدير النظام</p>
+          <div className="flex items-center justify-between gap-4">
+            {/* Right side - Avatar and Name */}
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0">
+                {user.profileImage ? (
+                  <img 
+                    src={user.profileImage} 
+                    alt="صورة المستخدم"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
+                    {user.firstName.charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">مرحباً {user.firstName} 👋</h2>
+                <p className="text-muted-foreground mt-1">{user.role}</p>
+              </div>
             </div>
+            
+            {/* Left side - Positive Message */}
             {currentMessage && (
               <div className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-2xl py-3 px-6 border border-cyan-200 animate-fade-in">
                 <span className="text-base font-medium text-cyan-700">{currentMessage}</span>
