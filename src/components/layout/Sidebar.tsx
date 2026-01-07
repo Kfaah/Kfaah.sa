@@ -186,17 +186,20 @@ export function Sidebar() {
         {/* User Profile Card - SEPARATED from logo */}
         {!collapsed && (
           <div className="mx-4 mb-4 flex-shrink-0 space-y-2">
-            {/* Main Profile Card - Compact with image right, text left */}
-            <div className="bg-white rounded-xl p-3 shadow-lg relative z-20">
+            {/* Main Profile Card - Matching design */}
+            <div className="bg-white rounded-2xl p-3 shadow-lg relative z-20">
               <div className="flex items-center gap-3">
-                {/* Name and Role - Left */}
-                <div className="flex-1 text-right">
-                  <h3 className="font-bold text-slate-800 text-sm">{user.firstName} {user.lastName}</h3>
-                  <span className="text-xs text-cyan-600 font-medium">{user.role}</span>
+                {/* Name and Role - Left side */}
+                <div className="flex-1 flex flex-col items-start gap-2">
+                  <h3 className="font-bold text-slate-800 text-base">{user.firstName} {user.lastName}</h3>
+                  <span className="text-xs text-cyan-600 font-semibold bg-cyan-50 rounded-full px-3 py-1 border border-cyan-200 inline-flex items-center gap-1">
+                    <span>%</span>
+                    <span>{user.role}</span>
+                  </span>
                 </div>
                 
-                {/* Avatar - Right */}
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-cyan-400 shadow-md flex-shrink-0">
+                {/* Avatar - Right side with cyan border */}
+                <div className="w-14 h-14 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0">
                   {user.profileImage ? (
                     <img 
                       src={user.profileImage} 
@@ -204,7 +207,7 @@ export function Sidebar() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-sm font-bold text-white">
+                    <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-lg font-bold text-white">
                       {user.firstName.charAt(0)}
                     </div>
                   )}
