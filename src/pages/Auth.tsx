@@ -12,10 +12,12 @@ import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const navigate = useNavigate();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -24,8 +26,12 @@ export default function Auth() {
 
     try {
       if (isLogin) {
+        // Convert username to internal email format
+        const cleanUsername = username.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        const internalEmail = `${cleanUsername}@user.local`;
+        
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: internalEmail,
           password,
         });
         if (error) throw error;
@@ -33,14 +39,21 @@ export default function Auth() {
         navigate("/");
       } else {
         const redirectUrl = `${window.location.origin}/`;
+        // Convert username to internal email format
+        const cleanUsername = username.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        const internalEmail = `${cleanUsername}@user.local`;
+        
         const { error } = await supabase.auth.signUp({
-          email,
+          email: internalEmail,
           password,
           options: {
             emailRedirectTo: redirectUrl,
             data: {
               first_name: firstName,
               last_name: lastName,
+              username: username,
+              email: email || null,
+              phone: phone || null,
             },
           },
         });
@@ -51,7 +64,7 @@ export default function Auth() {
     } catch (error: any) {
       console.error("Auth error:", error);
       if (error.message.includes("User already registered")) {
-        toast.error("البريد الإلكتروني مسجل بالفعل");
+        toast.error("اسم المستخدم مسجل بالفعل");
       } else if (error.message.includes("Invalid login credentials")) {
         toast.error("بيانات الدخول غير صحيحة");
       } else {
@@ -185,17 +198,17 @@ export default function Auth() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                البريد الإلكتروني
+              <Label htmlFor="username" className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                اسم المستخدم
               </Label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
-                placeholder="example@email.com"
+                placeholder="رمز أو رقم أو اسم"
                 className="h-11"
                 dir="ltr"
               />
@@ -218,6 +231,42 @@ export default function Auth() {
                 dir="ltr"
               />
             </div>
+
+            {!isLogin && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    البريد الإلكتروني (اختياري)
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="example@email.com"
+                    className="h-11"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    رقم الجوال (اختياري)
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+966 5x xxx xxxx"
+                    className="h-11"
+                    dir="ltr"
+                  />
+                </div>
+              </>
+            )}
 
             <Button
               type="submit"
