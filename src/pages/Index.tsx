@@ -35,7 +35,7 @@ const Index = () => {
 
         {/* Welcome Banner */}
         <div className="hero-gradient rounded-3xl p-8 animate-slide-up border border-accent/20">
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center gap-2">
             <div>
               <h2 className="text-2xl font-bold text-foreground">مرحباً جابر 👋</h2>
               <p className="text-muted-foreground mt-1">مدير النظام</p>
@@ -46,11 +46,11 @@ const Index = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up" style={{ animationDelay: "100ms" }}>
           <Card className="bg-card border-border rounded-3xl shadow-card hover:shadow-card-hover transition-shadow">
-            <CardContent className="p-6 flex items-center justify-between">
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center">
                 <Users className="w-6 h-6 text-accent" />
               </div>
-              <div className="text-left">
+              <div>
                 <p className="text-3xl font-bold text-foreground">12</p>
                 <p className="text-sm text-muted-foreground">إجمالي الموظفين</p>
               </div>
@@ -58,11 +58,11 @@ const Index = () => {
           </Card>
           
           <Card className="bg-card border-border rounded-3xl shadow-card hover:shadow-card-hover transition-shadow">
-            <CardContent className="p-6 flex items-center justify-between">
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-rose-500" />
               </div>
-              <div className="text-left">
+              <div>
                 <p className="text-3xl font-bold text-foreground">18</p>
                 <p className="text-sm text-muted-foreground">المهام النشطة</p>
               </div>
@@ -70,11 +70,11 @@ const Index = () => {
           </Card>
 
           <Card className="bg-card border-border rounded-3xl shadow-card hover:shadow-card-hover transition-shadow">
-            <CardContent className="p-6 flex items-center justify-between">
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center">
                 <Trophy className="w-6 h-6 text-amber-500" />
               </div>
-              <div className="text-left">
+              <div>
                 <p className="text-3xl font-bold text-foreground">1,250</p>
                 <p className="text-sm text-muted-foreground">نقاط اليوم</p>
               </div>
@@ -85,11 +85,11 @@ const Index = () => {
         {/* Second Row Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up" style={{ animationDelay: "150ms" }}>
           <Card className="bg-card border-border rounded-3xl shadow-card">
-            <CardContent className="p-6 flex items-center justify-between">
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-violet-500" />
               </div>
-              <div className="text-left">
+              <div>
                 <p className="text-3xl font-bold text-foreground">24</p>
                 <p className="text-sm text-muted-foreground">المهام المكتملة</p>
               </div>
@@ -97,11 +97,11 @@ const Index = () => {
           </Card>
 
           <Card className="bg-card border-border rounded-3xl shadow-card">
-            <CardContent className="p-6 flex items-center justify-between">
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-emerald-500" />
               </div>
-              <div className="text-left">
+              <div>
                 <p className="text-3xl font-bold text-foreground">3</p>
                 <p className="text-sm text-muted-foreground">الخطط النشطة</p>
               </div>
@@ -113,30 +113,28 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Top Employees */}
           <Card className="lg:col-span-2 bg-card border-border rounded-3xl shadow-card animate-slide-up" style={{ animationDelay: "200ms" }}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="flex items-center gap-3 text-lg">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-amber-500" />
-                </div>
-                أبطال الأسبوع
-              </CardTitle>
+            <CardHeader className="flex flex-row items-center gap-3 pb-2">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-amber-500" />
+              </div>
+              <CardTitle className="text-lg">أبطال الأسبوع</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {topEmployees.map((employee) => (
                   <div key={employee.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Trophy className="w-5 h-5 text-amber-500" />
-                      <span className="font-bold text-amber-600">{employee.points}</span>
-                    </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-left">
-                        <p className="font-semibold text-foreground">{employee.name}</p>
-                        <p className="text-sm text-muted-foreground">{employee.role}</p>
-                      </div>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankColor(employee.rank)}`}>
                         {employee.rank}
                       </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{employee.name}</p>
+                        <p className="text-sm text-muted-foreground">{employee.role}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-5 h-5 text-amber-500" />
+                      <span className="font-bold text-amber-600">{employee.points}</span>
                     </div>
                   </div>
                 ))}
@@ -146,20 +144,18 @@ const Index = () => {
 
           {/* Recent Activities */}
           <Card className="bg-card border-border rounded-3xl shadow-card animate-slide-up" style={{ animationDelay: "250ms" }}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="flex items-center gap-3 text-lg">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-emerald-500" />
-                </div>
-                آخر النشاطات
-              </CardTitle>
+            <CardHeader className="flex flex-row items-center gap-3 pb-2">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-emerald-500" />
+              </div>
+              <CardTitle className="text-lg">آخر النشاطات</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {recentActivities.map((activity) => (
                   <div key={activity.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-muted/30 transition-colors">
                     <div className="w-2 h-2 rounded-full bg-accent" />
-                    <div className="flex-1 text-right">
+                    <div className="flex-1">
                       <p className="font-semibold text-foreground text-sm">{activity.title}</p>
                       <p className="text-xs text-muted-foreground">{activity.employee}</p>
                     </div>
