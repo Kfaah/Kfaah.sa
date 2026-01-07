@@ -124,7 +124,7 @@ export default function Profile() {
               <h2 className="text-3xl font-bold text-foreground">
                 {user.firstName} {user.lastName}
               </h2>
-              <p className="text-lg text-muted-foreground mt-1">{user.role}</p>
+              <p className="text-lg text-white mt-1 font-medium">{user.role}</p>
               <div className="mt-4 flex flex-wrap gap-3 justify-center sm:justify-start">
                 <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-medium">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
