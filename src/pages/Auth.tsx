@@ -84,27 +84,27 @@ export default function Auth() {
       />
 
       {/* Logo Section - Same as Dashboard */}
-      <div className="relative z-10 mb-8 flex flex-col items-center">
+      <div className="relative z-10 mb-10 flex flex-col items-center">
         {/* Logo with animations */}
-        <div className="relative mb-5 group">
+        <div className="relative mb-6 group">
           {/* Outer rotating ring */}
           <div 
-            className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-4 border-white/30 border-t-white animate-spin" 
+            className="absolute inset-[-12px] w-[224px] h-[224px] rounded-full border-4 border-white/30 border-t-white animate-spin" 
             style={{ animationDuration: '8s' }} 
           />
           
           {/* Inner glow circle */}
           <div 
-            className="absolute inset-2 w-[136px] h-[136px] rounded-full bg-gradient-to-br from-white/20 to-cyan-300/10 animate-pulse" 
+            className="absolute inset-3 w-[194px] h-[194px] rounded-full bg-gradient-to-br from-white/20 to-cyan-300/10 animate-pulse" 
             style={{ animationDuration: '3s' }} 
           />
           
           {/* Logo container with zoom animation and shimmer */}
-          <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden">
+          <div className="relative w-48 h-48 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden">
             <img 
               src={atefLogoIcon} 
               alt="جمعية عطف" 
-              className="w-28 h-28 object-contain"
+              className="w-40 h-40 object-contain"
               style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
             />
             {/* Shimmer/Glow effect */}
@@ -116,21 +116,21 @@ export default function Auth() {
           
           {/* Decorative dot */}
           <div 
-            className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white shadow-lg animate-bounce" 
+            className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white shadow-lg animate-bounce" 
             style={{ animationDuration: '2s' }} 
           />
         </div>
         
         {/* Text under logo */}
-        <div className="text-center space-y-3">
-          <h1 className="text-2xl font-bold text-white whitespace-nowrap tracking-wide drop-shadow-lg">
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-bold text-white whitespace-nowrap tracking-wide drop-shadow-lg">
             جمعية عطف للأيتام
           </h1>
           <div className="relative">
-            <p className="text-sm font-semibold text-white/90">
+            <p className="text-lg font-semibold text-white/90">
               نظام إدارة التسويق الإلكتروني
             </p>
-            <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full" />
+            <div className="mt-3 mx-auto w-32 h-0.5 bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full" />
           </div>
         </div>
       </div>
