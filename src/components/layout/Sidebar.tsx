@@ -278,35 +278,35 @@ export function Sidebar() {
             <div className="pt-3 mt-3 border-t border-white/20">
               <NavLink item={settingsNavItem} />
             </div>
+
+            {/* Logout and Collapse Buttons - داخل التمرير */}
+            <div className="pt-6 mt-6 border-t border-white/20 space-y-2">
+              {/* Logout Button */}
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none bg-red-500/80 text-white hover:bg-red-500 transition-colors text-sm"
+              >
+                <LogOut className="w-4 h-4" />
+                {!collapsed && <span className="font-medium">تسجيل الخروج</span>}
+              </button>
+
+              {/* Collapse Button */}
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none bg-white/20 text-white hover:bg-white/30 transition-colors text-sm backdrop-blur-sm"
+              >
+                {collapsed ? (
+                  <ChevronLeft className="w-4 h-4" />
+                ) : (
+                  <>
+                    <ChevronRight className="w-4 h-4" />
+                    <span className="font-medium">طي القائمة</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </nav>
-
-        {/* Logout and Collapse Buttons */}
-        <div className="p-3 border-t border-white/20 flex-shrink-0 space-y-2">
-          {/* Logout Button */}
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-colors text-sm"
-          >
-            <LogOut className="w-4 h-4" />
-            {!collapsed && <span className="font-medium">تسجيل الخروج</span>}
-          </button>
-
-          {/* Collapse Button */}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors text-sm backdrop-blur-sm"
-          >
-            {collapsed ? (
-              <ChevronLeft className="w-4 h-4" />
-            ) : (
-              <>
-                <ChevronRight className="w-4 h-4" />
-                <span className="font-medium">طي القائمة</span>
-              </>
-            )}
-          </button>
-        </div>
       </div>
     </aside>
   );
