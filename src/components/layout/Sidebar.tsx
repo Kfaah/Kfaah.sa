@@ -103,7 +103,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 overflow-hidden",
-        collapsed ? "w-24" : "w-80"
+        collapsed ? "w-20" : "w-72"
       )}
     >
       {/* Modern 3D Gradient Background with Geometric Pattern */}
