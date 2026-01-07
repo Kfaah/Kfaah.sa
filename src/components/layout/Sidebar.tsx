@@ -142,10 +142,10 @@ export function Sidebar() {
       </div>
 
       {/* Cyan Navigation Section */}
-      <div className="flex-1 bg-gradient-to-b from-cyan-400 via-cyan-500 to-cyan-600 flex flex-col">
+      <div className="flex-1 bg-gradient-to-b from-cyan-400 via-cyan-500 to-cyan-600 flex flex-col min-h-0">
         {/* User Profile Card - overlapping */}
         {!collapsed && (
-          <div className="mx-4 -mt-4 mb-4 bg-white rounded-2xl p-4 shadow-lg border border-white/50 relative z-20">
+          <div className="mx-4 -mt-4 mb-4 bg-white rounded-2xl p-4 shadow-lg border border-white/50 relative z-20 flex-shrink-0">
             <div className="flex items-center gap-4 flex-row-reverse">
               <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-emerald-400 shadow-md">
                 <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
@@ -165,8 +165,14 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* Navigation Items */}
-        <nav className="flex-1 px-4 space-y-2.5 overflow-y-auto py-3 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent hover:scrollbar-thumb-white/50">
+        {/* Navigation Items - Scrollable */}
+        <nav 
+          className="flex-1 px-4 space-y-2.5 py-3 min-h-0 overflow-y-scroll"
+          style={{ 
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255,255,255,0.4) transparent'
+          }}
+        >
           {mainNavItems.map((item, index) => (
             <div 
               key={item.href} 
