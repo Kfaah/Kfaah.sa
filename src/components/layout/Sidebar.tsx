@@ -12,6 +12,7 @@ import {
   CalendarCheck,
   MessageSquare,
   FileText,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
@@ -155,25 +156,47 @@ export function Sidebar() {
 
       {/* Cyan Navigation Section */}
       <div className="flex-1 bg-gradient-to-b from-cyan-400 via-cyan-500 to-cyan-600 flex flex-col min-h-0">
-        {/* User Profile Card - overlapping */}
+        {/* User Profile Card - matching design */}
         {!collapsed && (
-          <div className="mx-4 -mt-4 mb-4 bg-white rounded-2xl p-4 shadow-lg border border-white/50 relative z-20 flex-shrink-0">
-            <div className="flex items-center gap-4 flex-row-reverse">
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-emerald-400 shadow-md">
-                <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
-                  ج
+          <div className="mx-4 -mt-4 mb-3 flex-shrink-0 space-y-2">
+            {/* Main Profile Card */}
+            <div className="bg-white rounded-2xl p-4 shadow-lg relative z-20">
+              <div className="flex items-center gap-4">
+                {/* Avatar on the right */}
+                <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-cyan-400 shadow-lg flex-shrink-0">
+                  <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                    <img 
+                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face" 
+                      alt="صورة المستخدم"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="text-right flex-1">
-                <h3 className="font-bold text-slate-800 text-base">جابر الحريصي</h3>
-                <div className="flex items-center gap-2 justify-end mt-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-sm text-cyan-600 font-semibold bg-white rounded-full px-3 py-1 border border-cyan-200 shadow-sm">
-                    % مدير النظام
-                  </span>
+                
+                {/* Name and Role */}
+                <div className="flex-1 text-right">
+                  <h3 className="font-bold text-slate-800 text-lg">جابر الحريصي</h3>
+                  <div className="mt-2">
+                    <span className="text-sm text-cyan-600 font-semibold bg-cyan-50 rounded-full px-4 py-1.5 border border-cyan-200 inline-flex items-center gap-1">
+                      <span>%</span>
+                      <span>مدير النظام</span>
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
+            
+            {/* Profile Icon Button */}
+            <button className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 transition-all duration-200 group">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 text-right">
+                <span className="text-sm font-semibold text-slate-700">الملف الشخصي</span>
+                <p className="text-xs text-slate-500">إدارة معلوماتك وصورتك</p>
+              </div>
+              <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 transition-colors" />
+            </button>
           </div>
         )}
 
