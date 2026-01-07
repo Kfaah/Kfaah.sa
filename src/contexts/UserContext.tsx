@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface UserData {
   firstName: string;
@@ -13,59 +15,176 @@ interface UserData {
 
 interface UserContextType {
   user: UserData;
-  updateUser: (data: Partial<UserData>) => void;
-  updateProfileImage: (image: string | null) => void;
+  loading: boolean;
+  updateUser: (data: Partial<UserData>) => Promise<void>;
+  updateProfileImage: (image: string | null) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<string | null>;
 }
 
 const defaultUser: UserData = {
-  firstName: "جابر",
-  lastName: "الحريصي",
-  email: "jaber@atef.org",
-  phone: "+966 50 123 4567",
-  department: "الإدارة العليا",
-  location: "الرياض، السعودية",
-  profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-  role: "مدير النظام",
-};
-
-const STORAGE_KEY = "atef_user_data";
-
-const getStoredUser = (): UserData => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return { ...defaultUser, ...JSON.parse(stored) };
-    }
-  } catch (error) {
-    console.error("Error reading user data from localStorage:", error);
-  }
-  return defaultUser;
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  department: "",
+  location: "",
+  profileImage: null,
+  role: "موظف",
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserData>(getStoredUser);
+  const { user: authUser } = useAuth();
+  const [user, setUser] = useState<UserData>(defaultUser);
+  const [loading, setLoading] = useState(true);
 
-  // Save to localStorage whenever user changes
+  // Fetch profile when auth user changes
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    } catch (error) {
-      console.error("Error saving user data to localStorage:", error);
+    if (authUser) {
+      fetchProfile();
+    } else {
+      setUser(defaultUser);
+      setLoading(false);
     }
-  }, [user]);
+  }, [authUser]);
 
-  const updateUser = (data: Partial<UserData>) => {
-    setUser((prev) => ({ ...prev, ...data }));
+  const fetchProfile = async () => {
+    if (!authUser) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error fetching profile:", error);
+      }
+
+      if (data) {
+        setUser({
+          firstName: data.first_name || "",
+          lastName: data.last_name || "",
+          email: data.email || authUser.email || "",
+          phone: data.phone || "",
+          department: data.department || "",
+          location: data.location || "",
+          profileImage: data.avatar_url,
+          role: "مدير النظام", // Default role
+        });
+      } else {
+        // Create profile if it doesn't exist
+        const firstName = authUser.user_metadata?.first_name || "";
+        const lastName = authUser.user_metadata?.last_name || "";
+        
+        const { error: insertError } = await supabase.from("profiles").insert({
+          user_id: authUser.id,
+          first_name: firstName,
+          last_name: lastName,
+          email: authUser.email,
+        });
+
+        if (insertError) {
+          console.error("Error creating profile:", insertError);
+        }
+
+        setUser({
+          ...defaultUser,
+          firstName,
+          lastName,
+          email: authUser.email || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error in fetchProfile:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateProfileImage = (image: string | null) => {
-    setUser((prev) => ({ ...prev, profileImage: image }));
+  const updateUser = async (data: Partial<UserData>) => {
+    if (!authUser) return;
+
+    try {
+      const updateData: Record<string, any> = {};
+      if (data.firstName !== undefined) updateData.first_name = data.firstName;
+      if (data.lastName !== undefined) updateData.last_name = data.lastName;
+      if (data.email !== undefined) updateData.email = data.email;
+      if (data.phone !== undefined) updateData.phone = data.phone;
+      if (data.department !== undefined) updateData.department = data.department;
+      if (data.location !== undefined) updateData.location = data.location;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("user_id", authUser.id);
+
+      if (error) {
+        console.error("Error updating profile:", error);
+        throw error;
+      }
+
+      setUser((prev) => ({ ...prev, ...data }));
+    } catch (error) {
+      console.error("Error in updateUser:", error);
+      throw error;
+    }
+  };
+
+  const uploadAvatar = async (file: File): Promise<string | null> => {
+    if (!authUser) return null;
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${authUser.id}/avatar.${fileExt}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) {
+        console.error("Error uploading avatar:", uploadError);
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
+      const avatarUrl = `${data.publicUrl}?t=${Date.now()}`; // Cache bust
+
+      return avatarUrl;
+    } catch (error) {
+      console.error("Error in uploadAvatar:", error);
+      throw error;
+    }
+  };
+
+  const updateProfileImage = async (image: string | null) => {
+    if (!authUser) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: image })
+        .eq("user_id", authUser.id);
+
+      if (error) {
+        console.error("Error updating avatar:", error);
+        throw error;
+      }
+
+      setUser((prev) => ({ ...prev, profileImage: image }));
+    } catch (error) {
+      console.error("Error in updateProfileImage:", error);
+      throw error;
+    }
   };
 
   return (
-    <UserContext.Provider value={{ user, updateUser, updateProfileImage }}>
+    <UserContext.Provider value={{ user, loading, updateUser, updateProfileImage, uploadAvatar }}>
       {children}
     </UserContext.Provider>
   );

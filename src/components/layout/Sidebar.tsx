@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -13,10 +13,11 @@ import {
   MessageSquare,
   FileText,
   User,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
-import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 interface NavItem {
@@ -48,7 +49,14 @@ const settingsNavItem: NavItem = {
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useUser();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location.pathname === item.href;
@@ -273,8 +281,18 @@ export function Sidebar() {
           </div>
         </nav>
 
-        {/* Collapse Button Only */}
-        <div className="p-3 border-t border-white/20 flex-shrink-0">
+        {/* Logout and Collapse Buttons */}
+        <div className="p-3 border-t border-white/20 flex-shrink-0 space-y-2">
+          {/* Logout Button */}
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-colors text-sm"
+          >
+            <LogOut className="w-4 h-4" />
+            {!collapsed && <span className="font-medium">تسجيل الخروج</span>}
+          </button>
+
+          {/* Collapse Button */}
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors text-sm backdrop-blur-sm"
