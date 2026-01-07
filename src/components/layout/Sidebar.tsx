@@ -14,7 +14,7 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import atefLogoIcon from "@/assets/atef-logo-icon-transparent.png";
+import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 interface NavItem {
   title: string;
