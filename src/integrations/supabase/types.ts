@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      employees: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          job_role: string
+          join_date: string | null
+          performance: number | null
+          phone: string | null
+          role_color: string | null
+          status: string | null
+          tasks_completed: number | null
+          tasks_total: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          job_role: string
+          join_date?: string | null
+          performance?: number | null
+          phone?: string | null
+          role_color?: string | null
+          status?: string | null
+          tasks_completed?: number | null
+          tasks_total?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          job_role?: string
+          join_date?: string | null
+          performance?: number | null
+          phone?: string | null
+          role_color?: string | null
+          status?: string | null
+          tasks_completed?: number | null
+          tasks_total?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -6,34 +6,29 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera } from "lucide-react";
-import { useState } from "react";
+import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Employee {
   id: string;
-  name: string;
+  user_id: string | null;
+  full_name: string;
   email: string;
-  phone: string;
-  role: string;
-  roleColor: string;
+  phone: string | null;
+  job_role: string;
+  role_color: string;
+  avatar_url: string | null;
   status: "active" | "on_leave" | "inactive";
-  joinDate: string;
-  tasksCompleted: number;
-  tasksTotal: number;
+  join_date: string;
+  tasks_completed: number;
+  tasks_total: number;
   performance: number;
 }
 
-const initialEmployees: Employee[] = [
-  { id: "1", name: "أحمد محمد", email: "ahmed@atef.org", phone: "+966 50 111 2222", role: "مسؤول السلات المتروكة", roleColor: "bg-rose-500", status: "active", joinDate: "2022-01-15", tasksCompleted: 45, tasksTotal: 50, performance: 92 },
-  { id: "2", name: "سارة أحمد", email: "sara@atef.org", phone: "+966 55 333 4444", role: "مسؤول الحملات وكبار الداعمين", roleColor: "bg-emerald-500", status: "active", joinDate: "2022-06-01", tasksCompleted: 38, tasksTotal: 42, performance: 88 },
-  { id: "3", name: "محمد سعيد", email: "mohammed@atef.org", phone: "+966 54 555 6666", role: "مسؤول الاستقطاع الدوري", roleColor: "bg-accent", status: "on_leave", joinDate: "2023-02-20", tasksCompleted: 28, tasksTotal: 35, performance: 80 },
-  { id: "4", name: "فاطمة حسن", email: "fatima@atef.org", phone: "+966 56 777 8888", role: "مسؤول السلات المتروكة", roleColor: "bg-rose-500", status: "active", joinDate: "2021-09-10", tasksCompleted: 52, tasksTotal: 55, performance: 95 },
-  { id: "5", name: "خالد علي", email: "khaled@atef.org", phone: "+966 59 999 0000", role: "مسؤول تطوير المتجر", roleColor: "bg-violet-500", status: "active", joinDate: "2023-04-05", tasksCompleted: 22, tasksTotal: 25, performance: 85 },
-  { id: "6", name: "نورة عبدالله", email: "noura@atef.org", phone: "+966 58 888 1111", role: "مسؤول الاستقطاع الدوري", roleColor: "bg-accent", status: "active", joinDate: "2023-06-15", tasksCompleted: 30, tasksTotal: 32, performance: 94 },
-  { id: "7", name: "عبدالرحمن الشهري", email: "abdulrahman@atef.org", phone: "+966 53 222 3333", role: "المشرف العام", roleColor: "bg-primary", status: "active", joinDate: "2021-03-01", tasksCompleted: 60, tasksTotal: 62, performance: 97 },
-];
+const initialEmployees: Employee[] = [];
 
 const roles = [
   { value: "مسؤول السلات المتروكة", color: "bg-rose-500" },
@@ -63,8 +58,10 @@ const getPerformanceBarColor = (performance: number) => {
 
 const Employees = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     email: "",
@@ -75,11 +72,34 @@ const Employees = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
 
+  // Fetch employees from database
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("employees")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        
+        setEmployees(data as Employee[] || []);
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+        toast.error("حدث خطأ أثناء جلب بيانات الموظفين");
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
   const filteredEmployees = employees.filter((employee) =>
-    employee.name.includes(searchQuery) || employee.role.includes(searchQuery)
+    employee.full_name.includes(searchQuery) || employee.job_role.includes(searchQuery)
   );
 
-  const handleAddEmployee = () => {
+  const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.email || !newEmployee.role || !newEmployee.password) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
@@ -90,25 +110,53 @@ const Employees = () => {
       return;
     }
 
-    const roleData = roles.find(r => r.value === newEmployee.role);
-    const employee: Employee = {
-      id: Date.now().toString(),
-      name: newEmployee.name,
-      email: newEmployee.email,
-      phone: newEmployee.phone,
-      role: newEmployee.role,
-      roleColor: roleData?.color || "bg-primary",
-      status: "active",
-      joinDate: new Date().toISOString().split('T')[0],
-      tasksCompleted: 0,
-      tasksTotal: 0,
-      performance: 0,
-    };
+    setIsLoading(true);
 
-    setEmployees([...employees, employee]);
-    setNewEmployee({ name: "", email: "", phone: "", role: "", password: "", avatar: "" });
-    setIsDialogOpen(false);
-    toast.success("تم إضافة الموظف بنجاح");
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session?.access_token) {
+        toast.error("يرجى تسجيل الدخول أولاً");
+        return;
+      }
+
+      const roleData = roles.find(r => r.value === newEmployee.role);
+
+      const response = await supabase.functions.invoke("create-employee", {
+        body: {
+          fullName: newEmployee.name,
+          email: newEmployee.email,
+          password: newEmployee.password,
+          phone: newEmployee.phone || null,
+          jobRole: newEmployee.role,
+          roleColor: roleData?.color || "bg-primary",
+          avatarUrl: newEmployee.avatar || null,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      if (response.data?.error) {
+        toast.error(response.data.error);
+        return;
+      }
+
+      // Add the new employee to the list
+      if (response.data?.employee) {
+        setEmployees([response.data.employee, ...employees]);
+      }
+
+      setNewEmployee({ name: "", email: "", phone: "", role: "", password: "", avatar: "" });
+      setIsDialogOpen(false);
+      toast.success("تم إضافة الموظف بنجاح");
+    } catch (error: any) {
+      console.error("Error adding employee:", error);
+      toast.error(error.message || "حدث خطأ أثناء إضافة الموظف");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const stats = [
@@ -227,8 +275,19 @@ const Employees = () => {
                 </Select>
               </div>
 
-              <Button onClick={handleAddEmployee} className="w-full bg-accent hover:bg-accent/90">
-                إضافة الموظف
+              <Button 
+                onClick={handleAddEmployee} 
+                className="w-full bg-accent hover:bg-accent/90"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    جاري الإضافة...
+                  </>
+                ) : (
+                  "إضافة الموظف"
+                )}
               </Button>
             </div>
           </DialogContent>
@@ -270,6 +329,17 @@ const Employees = () => {
       </div>
 
       {/* Employees Grid */}
+      {isFetching ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      ) : filteredEmployees.length === 0 ? (
+        <div className="text-center py-12">
+          <Users className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+          <p className="text-muted-foreground">لا يوجد موظفين حالياً</p>
+          <p className="text-sm text-muted-foreground mt-1">اضغط على "إضافة موظف" لإضافة موظف جديد</p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEmployees.map((employee, index) => (
           <Card
@@ -280,13 +350,21 @@ const Employees = () => {
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-lg font-bold text-primary-foreground shadow-md">
-                    {employee.name.charAt(0)}
-                  </div>
+                  {employee.avatar_url ? (
+                    <img 
+                      src={employee.avatar_url} 
+                      alt={employee.full_name}
+                      className="w-14 h-14 rounded-full object-cover shadow-md"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-lg font-bold text-primary-foreground shadow-md">
+                      {employee.full_name.charAt(0)}
+                    </div>
+                  )}
                   <div>
-                    <h3 className="font-bold text-foreground">{employee.name}</h3>
-                    <p className={cn("text-xs mt-1", employee.roleColor.replace("bg-", "text-"))}>
-                      {employee.role}
+                    <h3 className="font-bold text-foreground">{employee.full_name}</h3>
+                    <p className={cn("text-xs mt-1", employee.role_color.replace("bg-", "text-"))}>
+                      {employee.job_role}
                     </p>
                   </div>
                 </div>
@@ -300,10 +378,12 @@ const Employees = () => {
                   <Mail className="w-4 h-4" />
                   {employee.email}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="w-4 h-4" />
-                  {employee.phone}
-                </div>
+                {employee.phone && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="w-4 h-4" />
+                    {employee.phone}
+                  </div>
+                )}
               </div>
 
               {/* Performance Section */}
@@ -322,13 +402,14 @@ const Employees = () => {
                 </div>
                 <div className="flex items-center justify-between mt-3 text-sm">
                   <span className="text-muted-foreground">المهام المنجزة</span>
-                  <span className="font-medium">{employee.tasksCompleted}/{employee.tasksTotal}</span>
+                  <span className="font-medium">{employee.tasks_completed}/{employee.tasks_total}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+      )}
     </DashboardLayout>
   );
 };
