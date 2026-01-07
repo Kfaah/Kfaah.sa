@@ -18,10 +18,11 @@ const positiveMessages = [
 ];
 
 export default function Profile() {
-  const { user, updateUser, updateProfileImage } = useUser();
+  const { user, loading, updateUser, updateProfileImage, uploadAvatar } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...user });
   const [currentMessage, setCurrentMessage] = useState("");
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -29,23 +30,32 @@ export default function Profile() {
     setCurrentMessage(randomMessage);
   }, []);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("حجم الصورة يجب أن يكون أقل من 5 ميجابايت");
-        return;
-      }
+  // Sync editData when user data loads
+  useEffect(() => {
+    setEditData({ ...user });
+  }, [user]);
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newImage = reader.result as string;
-        updateProfileImage(newImage);
-        // keep editData in sync so saving won't overwrite the new image
-        setEditData((prev) => ({ ...prev, profileImage: newImage }));
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("حجم الصورة يجب أن يكون أقل من 5 ميجابايت");
+      return;
+    }
+
+    try {
+      toast.loading("جاري رفع الصورة...");
+      const avatarUrl = await uploadAvatar(file);
+      if (avatarUrl) {
+        await updateProfileImage(avatarUrl);
+        setEditData((prev) => ({ ...prev, profileImage: avatarUrl }));
+        toast.dismiss();
         toast.success("تم تحديث الصورة بنجاح");
-      };
-      reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error("حدث خطأ أثناء رفع الصورة");
     }
   };
 
@@ -59,17 +69,24 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const handleSave = () => {
-    updateUser({
-      firstName: editData.firstName,
-      lastName: editData.lastName,
-      email: editData.email,
-      phone: editData.phone,
-      department: editData.department,
-      location: editData.location,
-    });
-    setIsEditing(false);
-    toast.success("تم حفظ التغييرات بنجاح");
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateUser({
+        firstName: editData.firstName,
+        lastName: editData.lastName,
+        email: editData.email,
+        phone: editData.phone,
+        department: editData.department,
+        location: editData.location,
+      });
+      setIsEditing(false);
+      toast.success("تم حفظ التغييرات بنجاح");
+    } catch (error) {
+      toast.error("حدث خطأ أثناء حفظ البيانات");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
