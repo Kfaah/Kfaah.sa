@@ -81,10 +81,12 @@ const Employees = () => {
     email: "",
     phone: "",
     role: "",
+    department: "",
     password: "",
     avatar: "",
     avatarFile: null as File | null,
   });
+  const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
   const [newDepartment, setNewDepartment] = useState({ name: "", color: "bg-primary" });
   const [newRole, setNewRole] = useState({ name: "", color: "bg-primary", department_id: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -234,7 +236,7 @@ const Employees = () => {
         setEmployees([response.data.employee, ...employees]);
       }
 
-      setNewEmployee({ name: "", username: "", email: "", phone: "", role: "", password: "", avatar: "", avatarFile: null });
+      setNewEmployee({ name: "", username: "", email: "", phone: "", role: "", department: "", password: "", avatar: "", avatarFile: null });
       setIsDialogOpen(false);
       toast.success("تم إضافة الموظف بنجاح");
     } catch (error: any) {
@@ -306,6 +308,16 @@ const Employees = () => {
     if (!editingEmployee) return;
     setIsLoading(true);
     try {
+      let avatarUrl = editingEmployee.avatar_url;
+      
+      // Upload new avatar if selected
+      if (editAvatarFile) {
+        const uploadedUrl = await uploadImageToStorage(editAvatarFile, editingEmployee.id);
+        if (uploadedUrl) {
+          avatarUrl = uploadedUrl;
+        }
+      }
+
       const { error } = await supabase
         .from("employees")
         .update({
@@ -315,13 +327,17 @@ const Employees = () => {
           phone: editingEmployee.phone,
           job_role: editingEmployee.job_role,
           status: editingEmployee.status,
+          avatar_url: avatarUrl,
         })
         .eq("id", editingEmployee.id);
       
       if (error) throw error;
-      setEmployees(employees.map(e => e.id === editingEmployee.id ? editingEmployee : e));
+      
+      const updatedEmployee = { ...editingEmployee, avatar_url: avatarUrl };
+      setEmployees(employees.map(e => e.id === editingEmployee.id ? updatedEmployee : e));
       setIsEditDialogOpen(false);
       setEditingEmployee(null);
+      setEditAvatarFile(null);
       toast.success("تم تحديث بيانات الموظف");
     } catch (error: any) {
       toast.error(error.message || "حدث خطأ");
@@ -575,6 +591,25 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
+                <Label>القسم (اختياري)</Label>
+                <Select
+                  value={newEmployee.department || ""}
+                  onValueChange={(value) => setNewEmployee({ ...newEmployee, department: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر القسم" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.name}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label>الدور الوظيفي *</Label>
                 <Select
                   value={newEmployee.role}
@@ -764,6 +799,48 @@ const Employees = () => {
           </DialogHeader>
           {editingEmployee && (
             <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
+              {/* صورة الموظف */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30 overflow-hidden">
+                    {editAvatarFile ? (
+                      <img src={URL.createObjectURL(editAvatarFile)} alt="صورة الموظف" className="w-full h-full object-cover" />
+                    ) : editingEmployee.avatar_url ? (
+                      <img src={editingEmployee.avatar_url} alt="صورة الموظف" className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="w-8 h-8 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  {(editAvatarFile || editingEmployee.avatar_url) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditAvatarFile(null);
+                        setEditingEmployee({ ...editingEmployee, avatar_url: null });
+                      }}
+                      className="absolute -top-1 -right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <label className="cursor-pointer">
+                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-accent/10 hover:bg-accent/20 text-accent rounded-lg transition-colors">
+                    <Upload className="w-4 h-4" />
+                    <span className="text-sm font-medium">تغيير الصورة</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setEditAvatarFile(file);
+                    }}
+                  />
+                </label>
+              </div>
+
               <div className="space-y-2">
                 <Label>الاسم الكامل *</Label>
                 <Input
