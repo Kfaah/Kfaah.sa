@@ -202,7 +202,7 @@ export default function Auth() {
             <div className="space-y-2">
               <Label htmlFor="username" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                اسم المستخدم
+                رقم الهوية (السجل المدني)
               </Label>
               <Input
                 id="username"
@@ -210,7 +210,7 @@ export default function Auth() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                placeholder="رمز أو رقم أو اسم"
+                placeholder="أدخل رقم الهوية الوطنية"
                 className="h-11"
                 dir="ltr"
               />

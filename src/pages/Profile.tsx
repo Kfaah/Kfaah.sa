@@ -146,7 +146,7 @@ export default function Profile() {
                 {user.username && (
                   <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
                     <AtSign className="w-4 h-4" />
-                    {user.username}
+                    هوية: {user.username}
                   </span>
                 )}
               </div>
@@ -376,7 +376,7 @@ export default function Profile() {
             <div className="space-y-2">
               <Label htmlFor="username" className="text-base flex items-center gap-2">
                 <AtSign className="w-4 h-4 text-muted-foreground" />
-                اسم المستخدم
+                رقم الهوية (السجل المدني)
               </Label>
               <Input
                 id="username"
@@ -384,6 +384,7 @@ export default function Profile() {
                 onChange={(e) => handleInputChange("username", e.target.value)}
                 className="text-base h-12"
                 dir="ltr"
+                placeholder="أدخل رقم الهوية الوطنية"
               />
             </div>
             <div className="space-y-2">
