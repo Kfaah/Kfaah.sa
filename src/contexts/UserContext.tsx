@@ -11,6 +11,9 @@ interface UserData {
   location: string;
   profileImage: string | null;
   role: string;
+  jobRole: string;
+  username: string;
+  isEmployee: boolean;
 }
 
 interface UserContextType {
@@ -29,7 +32,10 @@ const defaultUser: UserData = {
   department: "",
   location: "",
   profileImage: null,
-  role: "موظف",
+  role: "مستخدم",
+  jobRole: "",
+  username: "",
+  isEmployee: false,
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -54,49 +60,88 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
+      
+      // First check if user is an employee
+      const { data: employeeData } = await supabase
+        .from("employees")
         .select("*")
         .eq("user_id", authUser.id)
         .maybeSingle();
 
-      if (error && error.code !== "PGRST116") {
-        console.error("Error fetching profile:", error);
-      }
+      // Check user role
+      const { data: userRole } = await supabase.rpc("get_user_role", {
+        _user_id: authUser.id,
+      });
 
-      if (data) {
-        setUser({
-          firstName: data.first_name || "",
-          lastName: data.last_name || "",
-          email: data.email || authUser.email || "",
-          phone: data.phone || "",
-          department: data.department || "",
-          location: data.location || "",
-          profileImage: data.avatar_url,
-          role: "مدير النظام", // Default role
-        });
-      } else {
-        // Create profile if it doesn't exist
-        const firstName = authUser.user_metadata?.first_name || "";
-        const lastName = authUser.user_metadata?.last_name || "";
+      if (employeeData) {
+        // User is an employee - use employee data
+        const nameParts = employeeData.full_name?.split(" ") || ["", ""];
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
         
-        const { error: insertError } = await supabase.from("profiles").insert({
-          user_id: authUser.id,
-          first_name: firstName,
-          last_name: lastName,
-          email: authUser.email,
-        });
-
-        if (insertError) {
-          console.error("Error creating profile:", insertError);
-        }
-
         setUser({
-          ...defaultUser,
           firstName,
           lastName,
-          email: authUser.email || "",
+          email: employeeData.email || "",
+          phone: employeeData.phone || "",
+          department: employeeData.job_role || "",
+          location: "",
+          profileImage: employeeData.avatar_url,
+          role: userRole === "admin" ? "مدير النظام" : "موظف",
+          jobRole: employeeData.job_role || "",
+          username: employeeData.username || "",
+          isEmployee: true,
         });
+      } else {
+        // Not an employee - fetch from profiles
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", authUser.id)
+          .maybeSingle();
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Error fetching profile:", error);
+        }
+
+        if (data) {
+          setUser({
+            firstName: data.first_name || "",
+            lastName: data.last_name || "",
+            email: data.email || authUser.email || "",
+            phone: data.phone || "",
+            department: data.department || "",
+            location: data.location || "",
+            profileImage: data.avatar_url,
+            role: userRole === "admin" ? "مدير النظام" : "مستخدم",
+            jobRole: "",
+            username: authUser.user_metadata?.username || "",
+            isEmployee: false,
+          });
+        } else {
+          // Create profile if it doesn't exist
+          const firstName = authUser.user_metadata?.first_name || "";
+          const lastName = authUser.user_metadata?.last_name || "";
+          
+          const { error: insertError } = await supabase.from("profiles").insert({
+            user_id: authUser.id,
+            first_name: firstName,
+            last_name: lastName,
+            email: authUser.email,
+          });
+
+          if (insertError) {
+            console.error("Error creating profile:", insertError);
+          }
+
+          setUser({
+            ...defaultUser,
+            firstName,
+            lastName,
+            email: authUser.email || "",
+            role: userRole === "admin" ? "مدير النظام" : "مستخدم",
+          });
+        }
       }
     } catch (error) {
       console.error("Error in fetchProfile:", error);
