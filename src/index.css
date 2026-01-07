@@ -1,8 +1,3 @@
-@import '@fontsource/cairo/400.css';
-@import '@fontsource/cairo/500.css';
-@import '@fontsource/cairo/600.css';
-@import '@fontsource/cairo/700.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -118,10 +113,11 @@
 
   html {
     direction: rtl;
+    font-family: 'Tajawal', sans-serif;
   }
 
   body {
-    @apply bg-background text-foreground font-cairo antialiased;
+    @apply bg-background text-foreground font-tajawal antialiased;
   }
 }
 
