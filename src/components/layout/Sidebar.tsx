@@ -8,40 +8,40 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Heart,
   UserCog,
   CalendarCheck,
   MessageSquare,
   FileText,
-  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import atefLogo from "@/assets/atef-logo.png";
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
+  iconColor?: string;
 }
 
 const mainNavItems: NavItem[] = [
-  { title: "لوحة التحكم", href: "/", icon: LayoutDashboard },
-  { title: "الموظفين", href: "/employees", icon: Users },
-  { title: "الأدوار والصلاحيات", href: "/roles", icon: UserCog },
-  { title: "المهام", href: "/tasks", icon: ClipboardList, badge: 18 },
-  { title: "الخطط", href: "/plans", icon: CalendarCheck },
+  { title: "نظرة عامة", href: "/", icon: LayoutDashboard, iconColor: "text-accent" },
+  { title: "الموظفين", href: "/employees", icon: Users, iconColor: "text-rose-500" },
+  { title: "الأدوار والصلاحيات", href: "/roles", icon: UserCog, iconColor: "text-violet-500" },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, badge: 18, iconColor: "text-amber-500" },
+  { title: "الخطط", href: "/plans", icon: CalendarCheck, iconColor: "text-emerald-500" },
 ];
 
 const reportsNavItems: NavItem[] = [
-  { title: "التقارير", href: "/reports", icon: BarChart3 },
-  { title: "تقييم الأداء", href: "/performance", icon: FileText },
+  { title: "التقارير", href: "/reports", icon: BarChart3, iconColor: "text-blue-500" },
+  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconColor: "text-orange-500" },
 ];
 
 const communicationNavItems: NavItem[] = [
-  { title: "المراسلات", href: "/messages", icon: MessageSquare, badge: 5 },
+  { title: "المراسلات", href: "/messages", icon: MessageSquare, badge: 5, iconColor: "text-pink-500" },
 ];
 
-const settingsNavItem: NavItem = { title: "الإعدادات", href: "/settings", icon: Settings };
+const settingsNavItem: NavItem = { title: "الإعدادات", href: "/settings", icon: Settings, iconColor: "text-slate-500" };
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -54,25 +54,30 @@ export function Sidebar() {
       <Link
         to={item.href}
         className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative",
+          "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 group relative",
           isActive
-            ? "bg-sidebar-accent text-sidebar-primary"
-            : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+            ? "bg-accent text-accent-foreground shadow-md"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent"
         )}
       >
-        <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-sidebar-primary")} />
+        <div className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+          isActive ? "bg-white/20" : "bg-sidebar-accent"
+        )}>
+          <item.icon className={cn("w-5 h-5", isActive ? "text-white" : item.iconColor)} />
+        </div>
         {!collapsed && (
           <>
-            <span className="font-medium">{item.title}</span>
+            <span className={cn("font-medium text-sm", isActive && "text-white")}>{item.title}</span>
             {item.badge && (
-              <span className="mr-auto bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className={cn(
+                "mr-auto text-xs font-bold px-2.5 py-1 rounded-full",
+                isActive ? "bg-white/20 text-white" : "bg-amber-100 text-amber-600"
+              )}>
                 {item.badge}
               </span>
             )}
           </>
-        )}
-        {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-sidebar-primary rounded-l-full" />
         )}
       </Link>
     );
@@ -81,59 +86,50 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed right-0 top-0 h-screen bg-sidebar flex flex-col transition-all duration-300 z-50",
-        collapsed ? "w-20" : "w-64"
+        "fixed right-0 top-0 h-screen bg-sidebar flex flex-col transition-all duration-300 z-50 border-l border-sidebar-border",
+        collapsed ? "w-24" : "w-72"
       )}
     >
-      {/* Logo */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-            <Heart className="w-6 h-6 text-sidebar-primary-foreground" />
+      {/* Logo & User Profile */}
+      <div className="p-6">
+        {/* Logo */}
+        <div className="flex items-center justify-center mb-6">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent/20 to-primary/10 border-4 border-accent/30 flex items-center justify-center p-2 shadow-lg">
+            <img src={atefLogo} alt="جمعية عطف" className="w-full h-full object-contain" />
           </div>
-          {!collapsed && (
-            <div>
-              <h1 className="font-bold text-lg text-sidebar-foreground">جمعية عطف</h1>
-              <p className="text-xs text-sidebar-foreground/60">منصة إدارة الموظفين</p>
-            </div>
-          )}
         </div>
+
+        {/* User Profile Card */}
+        {!collapsed && (
+          <div className="bg-sidebar-accent rounded-2xl p-4 text-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/70 mx-auto mb-3 flex items-center justify-center text-xl font-bold text-primary-foreground shadow-md">
+              ج
+            </div>
+            <h3 className="font-bold text-sidebar-foreground">جابر الحريصي</h3>
+            <span className="inline-block mt-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium border border-accent/20">
+              % مدير النظام
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
-        <div className="space-y-1">
-          {!collapsed && (
-            <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider mb-3 px-3">
-              الرئيسية
-            </p>
-          )}
-          {mainNavItems.map((item) => (
-            <NavLink key={item.href} item={item} />
-          ))}
-        </div>
-
-        <div className="space-y-1">
-          {!collapsed && (
-            <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider mb-3 px-3">
-              التقارير والتقييم
-            </p>
-          )}
-          {reportsNavItems.map((item) => (
-            <NavLink key={item.href} item={item} />
-          ))}
-        </div>
-
-        <div className="space-y-1">
-          {!collapsed && (
-            <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider mb-3 px-3">
-              التواصل
-            </p>
-          )}
-          {communicationNavItems.map((item) => (
-            <NavLink key={item.href} item={item} />
-          ))}
-        </div>
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+        {mainNavItems.map((item) => (
+          <NavLink key={item.href} item={item} />
+        ))}
+        
+        <div className="my-4 border-t border-sidebar-border" />
+        
+        {reportsNavItems.map((item) => (
+          <NavLink key={item.href} item={item} />
+        ))}
+        
+        <div className="my-4 border-t border-sidebar-border" />
+        
+        {communicationNavItems.map((item) => (
+          <NavLink key={item.href} item={item} />
+        ))}
       </nav>
 
       {/* Settings & Collapse */}
@@ -141,7 +137,7 @@ export function Sidebar() {
         <NavLink item={settingsNavItem} />
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors"
         >
           {collapsed ? (
             <ChevronLeft className="w-5 h-5" />
