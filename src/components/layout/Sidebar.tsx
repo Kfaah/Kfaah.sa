@@ -72,7 +72,7 @@ export function Sidebar() {
         )}
       >
         <div className={cn(
-          "w-10 h-10 rounded-sm flex items-center justify-center shadow-md",
+          "w-10 h-10 rounded-none flex items-center justify-center shadow-md",
           isActive ? "bg-white/20" : item.iconBg
         )}>
           <item.icon className="w-5 h-5 text-white" />
