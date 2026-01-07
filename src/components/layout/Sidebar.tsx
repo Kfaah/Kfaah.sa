@@ -54,29 +54,29 @@ export function Sidebar() {
       <Link
         to={item.href}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-full transition-all duration-300",
+          "flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-300",
           isActive
             ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg shadow-cyan-400/30"
-            : "bg-white/90 text-slate-700 hover:bg-white hover:shadow-md"
+            : "bg-white text-slate-700 hover:shadow-lg"
         )}
       >
         <div className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center shadow-md",
+          "w-12 h-12 rounded-xl flex items-center justify-center shadow-md",
           isActive ? "bg-white/20" : item.iconBg
         )}>
-          <item.icon className="w-5 h-5 text-white" />
+          <item.icon className="w-6 h-6 text-white" />
         </div>
         {!collapsed && (
           <>
             <span className={cn(
-              "font-semibold text-sm flex-1 text-right",
-              isActive ? "text-white" : "text-slate-600"
+              "font-bold text-base flex-1 text-right",
+              isActive ? "text-white" : "text-slate-700"
             )}>
               {item.title}
             </span>
             {item.badge && (
               <span className={cn(
-                "text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center",
+                "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
                 isActive ? "bg-white/25 text-white" : "bg-amber-400 text-white"
               )}>
                 {item.badge}
@@ -92,7 +92,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 overflow-hidden",
-        collapsed ? "w-20" : "w-72"
+        collapsed ? "w-24" : "w-80"
       )}
     >
       {/* White Header Section with Logo */}
@@ -145,18 +145,18 @@ export function Sidebar() {
       <div className="flex-1 bg-gradient-to-b from-cyan-400 via-cyan-500 to-cyan-600 flex flex-col">
         {/* User Profile Card - overlapping */}
         {!collapsed && (
-          <div className="mx-4 -mt-4 mb-4 bg-white rounded-2xl p-3 shadow-lg border border-white/50 relative z-20">
-            <div className="flex items-center gap-3 flex-row-reverse">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-emerald-400 shadow-md">
-                <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-lg font-bold text-white">
+          <div className="mx-4 -mt-4 mb-4 bg-white rounded-2xl p-4 shadow-lg border border-white/50 relative z-20">
+            <div className="flex items-center gap-4 flex-row-reverse">
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-emerald-400 shadow-md">
+                <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
                   ج
                 </div>
               </div>
               <div className="text-right flex-1">
-                <h3 className="font-bold text-slate-800 text-sm">جابر الحريصي</h3>
-                <div className="flex items-center gap-1.5 justify-end mt-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-[11px] text-cyan-600 font-semibold bg-cyan-50 rounded-full px-2.5 py-0.5 border border-cyan-200">
+                <h3 className="font-bold text-slate-800 text-base">جابر الحريصي</h3>
+                <div className="flex items-center gap-2 justify-end mt-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="text-sm text-cyan-600 font-semibold bg-white rounded-full px-3 py-1 border border-cyan-200 shadow-sm">
                     % مدير النظام
                   </span>
                 </div>
