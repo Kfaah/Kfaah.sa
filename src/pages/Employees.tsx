@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera, Loader2 } from "lucide-react";
+import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera, Loader2, Upload, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -62,6 +62,7 @@ const Employees = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     email: "",
@@ -69,6 +70,7 @@ const Employees = () => {
     role: "",
     password: "",
     avatar: "",
+    avatarFile: null as File | null,
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -99,6 +101,61 @@ const Employees = () => {
     employee.full_name.includes(searchQuery) || employee.job_role.includes(searchQuery)
   );
 
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("يرجى اختيار ملف صورة صالح");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("حجم الصورة يجب أن يكون أقل من 5 ميجابايت");
+      return;
+    }
+
+    setIsUploadingImage(true);
+
+    try {
+      // Create a preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setNewEmployee(prev => ({ ...prev, avatar: previewUrl, avatarFile: file }));
+    } catch (error) {
+      console.error("Error handling image:", error);
+      toast.error("حدث خطأ أثناء معالجة الصورة");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const uploadImageToStorage = async (file: File, userId: string): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `employees/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return null;
+    }
+  };
+
+  const removeImage = () => {
+    if (newEmployee.avatar && newEmployee.avatar.startsWith("blob:")) {
+      URL.revokeObjectURL(newEmployee.avatar);
+    }
+    setNewEmployee(prev => ({ ...prev, avatar: "", avatarFile: null }));
+  };
+
   const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.email || !newEmployee.role || !newEmployee.password) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
@@ -117,10 +174,18 @@ const Employees = () => {
       
       if (!session?.session?.access_token) {
         toast.error("يرجى تسجيل الدخول أولاً");
+        setIsLoading(false);
         return;
       }
 
       const roleData = roles.find(r => r.value === newEmployee.role);
+
+      // Upload image if file exists
+      let avatarUrl = null;
+      if (newEmployee.avatarFile) {
+        const tempId = Date.now().toString();
+        avatarUrl = await uploadImageToStorage(newEmployee.avatarFile, tempId);
+      }
 
       const response = await supabase.functions.invoke("create-employee", {
         body: {
@@ -130,7 +195,7 @@ const Employees = () => {
           phone: newEmployee.phone || null,
           jobRole: newEmployee.role,
           roleColor: roleData?.color || "bg-primary",
-          avatarUrl: newEmployee.avatar || null,
+          avatarUrl: avatarUrl,
         },
       });
 
@@ -148,7 +213,7 @@ const Employees = () => {
         setEmployees([response.data.employee, ...employees]);
       }
 
-      setNewEmployee({ name: "", email: "", phone: "", role: "", password: "", avatar: "" });
+      setNewEmployee({ name: "", email: "", phone: "", role: "", password: "", avatar: "", avatarFile: null });
       setIsDialogOpen(false);
       toast.success("تم إضافة الموظف بنجاح");
     } catch (error: any) {
@@ -188,21 +253,44 @@ const Employees = () => {
             <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
               {/* صورة الموظف */}
               <div className="flex flex-col items-center gap-3">
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30 overflow-hidden">
-                  {newEmployee.avatar ? (
-                    <img src={newEmployee.avatar} alt="صورة الموظف" className="w-full h-full object-cover" />
-                  ) : (
-                    <Camera className="w-8 h-8 text-muted-foreground/50" />
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30 overflow-hidden">
+                    {isUploadingImage ? (
+                      <Loader2 className="w-8 h-8 text-muted-foreground/50 animate-spin" />
+                    ) : newEmployee.avatar ? (
+                      <img src={newEmployee.avatar} alt="صورة الموظف" className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="w-8 h-8 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  {newEmployee.avatar && (
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-1 -right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
                 <Label className="text-sm text-muted-foreground">صورة (شخصية/رمزية) - اختيارية</Label>
-                <Input
-                  type="url"
-                  placeholder="رابط الصورة (اختياري)"
-                  value={newEmployee.avatar}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, avatar: e.target.value })}
-                  className="text-center"
-                />
+                <div className="flex gap-2 w-full">
+                  <label className="flex-1 cursor-pointer">
+                    <div className="flex items-center justify-center gap-2 px-4 py-2 bg-accent/10 hover:bg-accent/20 text-accent rounded-lg transition-colors">
+                      <Upload className="w-4 h-4" />
+                      <span className="text-sm font-medium">رفع صورة</span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(file);
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="space-y-2">
