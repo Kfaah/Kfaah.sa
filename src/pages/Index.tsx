@@ -51,7 +51,7 @@ const Index = () => {
 
         {/* Welcome Banner */}
         <div className="hero-gradient rounded-3xl p-8 animate-slide-up border border-accent/20">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col items-center text-center gap-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground">مرحباً جابر 👋</h2>
               <p className="text-muted-foreground mt-1">مدير النظام</p>
