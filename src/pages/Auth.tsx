@@ -202,7 +202,7 @@ export default function Auth() {
             <div className="space-y-2">
               <Label htmlFor="username" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                رقم الهوية (السجل المدني)
+                اسم المستخدم - رقم الهوية (ID)
               </Label>
               <Input
                 id="username"

@@ -535,7 +535,7 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="username">رقم الهوية (السجل المدني) *</Label>
+                <Label htmlFor="username">اسم المستخدم - رقم الهوية (ID) *</Label>
                 <Input
                   id="username"
                   placeholder="أدخل رقم الهوية الوطنية"
@@ -850,7 +850,7 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>رقم الهوية (السجل المدني)</Label>
+                <Label>اسم المستخدم - رقم الهوية (ID)</Label>
                 <Input
                   value={editingEmployee.username || ""}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, username: e.target.value })}
