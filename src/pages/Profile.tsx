@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,20 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Save, User, Mail, Phone, Building, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { useUser } from "@/contexts/UserContext";
 
 export default function Profile() {
-  const [profileData, setProfileData] = useState({
-    firstName: "جابر",
-    lastName: "الحريصي",
-    email: "jaber@atef.org",
-    phone: "+966 50 123 4567",
-    department: "الإدارة العليا",
-    location: "الرياض، السعودية",
-  });
-  
-  const [profileImage, setProfileImage] = useState<string | null>(
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-  );
+  const { user, updateUser, updateProfileImage } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +23,7 @@ export default function Profile() {
       
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result as string);
+        updateProfileImage(reader.result as string);
         toast.success("تم تحديث الصورة بنجاح");
       };
       reader.readAsDataURL(file);
@@ -46,7 +36,7 @@ export default function Profile() {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
+    updateUser({ [field]: value });
   };
 
   return (
@@ -69,9 +59,9 @@ export default function Profile() {
                 {/* Avatar with upload */}
                 <div className="relative group">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-xl">
-                    <AvatarImage src={profileImage || undefined} alt="صورة الملف الشخصي" />
+                    <AvatarImage src={user.profileImage || undefined} alt="صورة الملف الشخصي" />
                     <AvatarFallback className="text-3xl bg-gradient-to-br from-accent to-primary text-white">
-                      {profileData.firstName.charAt(0)}
+                      {user.firstName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <button
@@ -92,9 +82,9 @@ export default function Profile() {
                 
                 <div className="text-center sm:text-right flex-1">
                   <h2 className="text-2xl font-bold text-foreground">
-                    {profileData.firstName} {profileData.lastName}
+                    {user.firstName} {user.lastName}
                   </h2>
-                  <p className="text-muted-foreground">مدير النظام</p>
+                  <p className="text-muted-foreground">{user.role}</p>
                   <div className="mt-3">
                     <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium">
                       <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -130,7 +120,7 @@ export default function Profile() {
                   <Label htmlFor="firstName" className="text-base">الاسم الأول</Label>
                   <Input
                     id="firstName"
-                    value={profileData.firstName}
+                    value={user.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
                     className="text-base h-12"
                   />
@@ -139,7 +129,7 @@ export default function Profile() {
                   <Label htmlFor="lastName" className="text-base">اسم العائلة</Label>
                   <Input
                     id="lastName"
-                    value={profileData.lastName}
+                    value={user.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
                     className="text-base h-12"
                   />
@@ -155,7 +145,7 @@ export default function Profile() {
                   <Input
                     id="email"
                     type="email"
-                    value={profileData.email}
+                    value={user.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     className="text-base h-12"
                     dir="ltr"
@@ -169,7 +159,7 @@ export default function Profile() {
                   <Input
                     id="phone"
                     type="tel"
-                    value={profileData.phone}
+                    value={user.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
                     className="text-base h-12"
                     dir="ltr"
@@ -185,7 +175,7 @@ export default function Profile() {
                   </Label>
                   <Input
                     id="department"
-                    value={profileData.department}
+                    value={user.department}
                     onChange={(e) => handleInputChange("department", e.target.value)}
                     className="text-base h-12"
                   />
@@ -197,7 +187,7 @@ export default function Profile() {
                   </Label>
                   <Input
                     id="location"
-                    value={profileData.location}
+                    value={user.location}
                     onChange={(e) => handleInputChange("location", e.target.value)}
                     className="text-base h-12"
                   />
