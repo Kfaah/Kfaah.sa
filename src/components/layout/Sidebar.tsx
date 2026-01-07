@@ -103,18 +103,18 @@ export function Sidebar() {
         }} />
         
         <div className="p-6 pb-12 flex flex-col items-center relative z-10">
-          {/* Logo with beautiful multi-layer animations */}
-          <div className="relative mb-4 group">
+          {/* Logo with beautiful multi-layer animations - LARGER */}
+          <div className="relative mb-5 group">
             {/* Outer orbiting particles */}
-            <div className="absolute inset-[-20px] w-[168px] h-[168px]">
+            <div className="absolute inset-[-24px] w-[192px] h-[192px]">
               {[0, 60, 120, 180, 240, 300].map((degree) => (
                 <div
                   key={degree}
-                  className="absolute w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-teal-400 shadow-lg"
+                  className="absolute w-2.5 h-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-teal-400 shadow-lg"
                   style={{
                     top: '50%',
                     left: '50%',
-                    transform: `rotate(${degree}deg) translateX(80px) translateY(-50%)`,
+                    transform: `rotate(${degree}deg) translateX(92px) translateY(-50%)`,
                     animation: `orbit 12s linear infinite`,
                     animationDelay: `${degree * 33}ms`,
                     boxShadow: '0 0 10px rgba(34, 211, 238, 0.6)',
@@ -125,7 +125,7 @@ export function Sidebar() {
             
             {/* Outer glowing ring - slow rotation */}
             <div 
-              className="absolute inset-[-12px] w-[152px] h-[152px] rounded-full"
+              className="absolute inset-[-14px] w-[172px] h-[172px] rounded-full"
               style={{ 
                 background: 'conic-gradient(from 0deg, transparent, rgba(34, 211, 238, 0.4), transparent, rgba(20, 184, 166, 0.4), transparent)',
                 animation: 'spin 10s linear infinite',
@@ -134,19 +134,19 @@ export function Sidebar() {
             
             {/* Second ring - opposite rotation with dashed border */}
             <div 
-              className="absolute inset-[-6px] w-[140px] h-[140px] rounded-full border-2 border-dashed border-cyan-300/50"
+              className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-2 border-dashed border-cyan-300/50"
               style={{ animation: 'spin 15s linear infinite reverse' }} 
             />
             
             {/* Inner pulsing glow */}
             <div 
-              className="absolute inset-0 w-[128px] h-[128px] rounded-full bg-gradient-to-br from-cyan-400/20 via-transparent to-teal-400/20"
+              className="absolute inset-0 w-[144px] h-[144px] rounded-full bg-gradient-to-br from-cyan-400/20 via-transparent to-teal-400/20"
               style={{ animation: 'pulse 3s ease-in-out infinite' }} 
             />
             
             {/* Shimmer effect overlay */}
             <div 
-              className="absolute inset-0 w-[128px] h-[128px] rounded-full overflow-hidden"
+              className="absolute inset-0 w-[144px] h-[144px] rounded-full overflow-hidden"
             >
               <div 
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full"
@@ -154,18 +154,18 @@ export function Sidebar() {
               />
             </div>
             
-            {/* Logo container with hover effects */}
-            <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-white to-slate-50 border-4 border-white flex items-center justify-center shadow-2xl overflow-hidden group-hover:shadow-[0_0_40px_rgba(34,211,238,0.4)] transition-all duration-500">
+            {/* Logo container with hover effects - LARGER */}
+            <div className="relative w-36 h-36 rounded-full bg-gradient-to-br from-white to-slate-50 border-4 border-white flex items-center justify-center shadow-2xl overflow-hidden group-hover:shadow-[0_0_40px_rgba(34,211,238,0.4)] transition-all duration-500">
               <img 
                 src={atefLogoIcon} 
                 alt="جمعية عطف" 
-                className="w-24 h-24 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" 
+                className="w-28 h-28 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" 
               />
             </div>
             
             {/* Floating decorative dots */}
             <div 
-              className="absolute -top-3 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 shadow-lg"
+              className="absolute -top-4 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 shadow-lg"
               style={{ animation: 'float 2s ease-in-out infinite' }} 
             />
             <div 
@@ -178,15 +178,22 @@ export function Sidebar() {
             />
           </div>
           
-          {/* Text under logo */}
+          {/* Text under logo - REDESIGNED */}
           {!collapsed && (
-            <div className="text-center">
-              <img 
-                src={atefLogoText} 
-                alt="جمعية عطف للأيتام" 
-                className="h-12 object-contain mx-auto hover:scale-105 transition-transform duration-300"
-              />
-              <p className="text-xs text-slate-500 mt-2 font-medium">نظام إدارة التسويق الإلكتروني</p>
+            <div className="text-center space-y-3">
+              {/* جمعية عطف للأيتام - on one line */}
+              <h1 className="text-xl font-bold text-slate-800 whitespace-nowrap tracking-wide">
+                جمعية عطف للأيتام
+              </h1>
+              
+              {/* نظام إدارة التسويق الإلكتروني - styled nicely */}
+              <div className="relative">
+                <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600">
+                  نظام إدارة التسويق الإلكتروني
+                </p>
+                {/* Decorative line under */}
+                <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full" />
+              </div>
             </div>
           )}
         </div>
