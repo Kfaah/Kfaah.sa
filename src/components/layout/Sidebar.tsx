@@ -118,11 +118,11 @@ export function Sidebar() {
             />
             
             {/* Logo container */}
-            <div className="relative w-36 h-36 rounded-full bg-white border-4 border-accent/20 flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-500">
+            <div className="relative w-36 h-36 rounded-full bg-white flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-500">
               <img 
                 src={atefLogoIcon} 
                 alt="جمعية عطف" 
-                className="w-24 h-24 object-contain drop-shadow-lg" 
+                className="w-28 h-28 object-contain mix-blend-multiply" 
               />
             </div>
             
