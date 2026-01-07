@@ -59,7 +59,7 @@ export function Sidebar() {
           "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 group",
           isActive
             ? "bg-accent text-white shadow-lg"
-            : "text-foreground hover:bg-muted"
+            : "bg-white text-foreground hover:shadow-md"
         )}
       >
         <div className={cn(
@@ -93,25 +93,27 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 border-l border-border shadow-lg",
-        "bg-gradient-to-b from-slate-50 via-white to-slate-50",
+        "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 border-l border-white/50 shadow-xl overflow-hidden",
         collapsed ? "w-24" : "w-80"
       )}
     >
-      {/* Logo with Animation */}
-      <div className="p-6 flex flex-col items-center">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cyan-400 via-cyan-300 to-cyan-200" />
+      
+      {/* Logo Section with lighter background */}
+      <div className="relative p-6 flex flex-col items-center bg-gradient-to-b from-cyan-300/50 to-transparent">
         <div className="relative mb-4 group">
           {/* Outer rotating ring */}
-          <div className="absolute inset-[-4px] w-[120px] h-[120px] rounded-full border-4 border-transparent border-t-accent border-r-accent/50 animate-spin" style={{ animationDuration: '6s' }} />
+          <div className="absolute inset-[-4px] w-[120px] h-[120px] rounded-full border-4 border-transparent border-t-white border-r-white/50 animate-spin" style={{ animationDuration: '6s' }} />
           
           {/* Second rotating ring (opposite direction) */}
-          <div className="absolute inset-[-8px] w-[128px] h-[128px] rounded-full border-2 border-transparent border-b-primary/40 border-l-primary/20 animate-spin" style={{ animationDuration: '10s', animationDirection: 'reverse' }} />
+          <div className="absolute inset-[-8px] w-[128px] h-[128px] rounded-full border-2 border-transparent border-b-white/40 border-l-white/20 animate-spin" style={{ animationDuration: '10s', animationDirection: 'reverse' }} />
           
           {/* Inner glow circle with pulse */}
-          <div className="absolute inset-1 w-[104px] h-[104px] rounded-full bg-gradient-to-br from-accent/20 via-transparent to-primary/10 animate-pulse" style={{ animationDuration: '2.5s' }} />
+          <div className="absolute inset-1 w-[104px] h-[104px] rounded-full bg-white/30 animate-pulse" style={{ animationDuration: '2.5s' }} />
           
           {/* Logo icon container */}
-          <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-slate-50 to-white border-4 border-accent/30 flex items-center justify-center overflow-hidden shadow-xl group-hover:shadow-2xl transition-shadow duration-500">
+          <div className="relative w-28 h-28 rounded-full bg-white border-4 border-white/80 flex items-center justify-center overflow-hidden shadow-xl group-hover:shadow-2xl transition-shadow duration-500">
             <img 
               src={atefLogoIcon} 
               alt="جمعية عطف" 
@@ -120,9 +122,9 @@ export function Sidebar() {
           </div>
           
           {/* Decorative floating dots */}
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" style={{ animationDuration: '1.5s' }} />
-          <div className="absolute top-1/2 -right-2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary/60 shadow animate-bounce" style={{ animationDuration: '2s', animationDelay: '0.5s' }} />
-          <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent/60 shadow animate-bounce" style={{ animationDuration: '2.2s', animationDelay: '0.3s' }} />
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white shadow-lg animate-bounce" style={{ animationDuration: '1.5s' }} />
+          <div className="absolute top-1/2 -right-2 -translate-y-1/2 w-2 h-2 rounded-full bg-white/80 shadow animate-bounce" style={{ animationDuration: '2s', animationDelay: '0.5s' }} />
+          <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-2 h-2 rounded-full bg-white/80 shadow animate-bounce" style={{ animationDuration: '2.2s', animationDelay: '0.3s' }} />
         </div>
         
         {/* Text logo under icon */}
@@ -131,16 +133,16 @@ export function Sidebar() {
             <img 
               src={atefLogoText} 
               alt="جمعية عطف للأيتام" 
-              className="h-12 object-contain mx-auto hover:scale-105 transition-transform duration-300"
+              className="h-12 object-contain mx-auto hover:scale-105 transition-transform duration-300 drop-shadow-sm"
             />
-            <p className="text-xs text-muted-foreground mt-2">نظام إدارة التسويق الإلكتروني</p>
+            <p className="text-xs text-primary/70 mt-2 font-medium">نظام إدارة التسويق الإلكتروني</p>
           </div>
         )}
       </div>
 
       {/* User Profile Card */}
       {!collapsed && (
-        <div className="mx-4 mb-4 bg-muted/50 rounded-2xl p-4 border border-border">
+        <div className="relative mx-4 mb-4 bg-white rounded-2xl p-4 shadow-md">
           <div className="flex items-center gap-3 flex-row-reverse">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-xl font-bold text-white shadow-lg">
               ج
@@ -156,18 +158,18 @@ export function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+      <nav className="relative flex-1 px-4 space-y-2 overflow-y-auto py-2">
         {mainNavItems.map((item) => (
           <NavLink key={item.href} item={item} />
         ))}
         
-        <div className="my-4 border-t border-border" />
+        <div className="my-4 border-t border-white/30" />
         
         {reportsNavItems.map((item) => (
           <NavLink key={item.href} item={item} />
         ))}
         
-        <div className="my-4 border-t border-border" />
+        <div className="my-4 border-t border-white/30" />
         
         {communicationNavItems.map((item) => (
           <NavLink key={item.href} item={item} />
@@ -175,11 +177,11 @@ export function Sidebar() {
       </nav>
 
       {/* Settings & Collapse */}
-      <div className="p-4 border-t border-border space-y-2">
+      <div className="relative p-4 border-t border-white/30 space-y-2">
         <NavLink item={settingsNavItem} />
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-muted-foreground hover:bg-muted transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-white/80 hover:bg-white/20 transition-colors"
         >
           {collapsed ? (
             <ChevronLeft className="w-5 h-5" />
