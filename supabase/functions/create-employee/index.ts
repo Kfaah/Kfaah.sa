@@ -75,14 +75,28 @@ serve(async (req) => {
       );
     }
 
+    // Check if email is a phone number (starts with 0 or +) and convert to email format
+    let userEmail = email;
+    let userPhone = phone || null;
+    
+    const isPhoneNumber = /^[\+]?[0-9]{10,15}$/.test(email.replace(/\s/g, ''));
+    
+    if (isPhoneNumber) {
+      // Convert phone to email format for Supabase Auth
+      const cleanPhone = email.replace(/\s/g, '').replace('+', '');
+      userEmail = `${cleanPhone}@phone.local`;
+      userPhone = email; // Store original as phone
+    }
+
     // Create user in Supabase Auth
     const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
+      email: userEmail,
       password: password,
       email_confirm: true, // Auto-confirm email
       user_metadata: {
         full_name: fullName,
-        phone: phone,
+        phone: userPhone,
+        original_identifier: email, // Store original identifier
       },
     });
 
@@ -108,8 +122,8 @@ serve(async (req) => {
       .insert({
         user_id: authData.user.id,
         full_name: fullName,
-        email: email,
-        phone: phone || null,
+        email: email, // Store original identifier (email or phone)
+        phone: userPhone,
         job_role: jobRole,
         role_color: roleColor || "bg-primary",
         avatar_url: avatarUrl || null,
