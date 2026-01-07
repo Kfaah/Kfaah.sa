@@ -58,13 +58,13 @@ export function Sidebar() {
         className={cn(
           "flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-300",
           isActive
-            ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg shadow-cyan-400/30"
+            ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg shadow-cyan-400/30 ring-4 ring-white"
             : "bg-white text-slate-700 hover:shadow-lg"
         )}
       >
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center shadow-md",
-          isActive ? "bg-white/20" : item.iconBg
+          "w-12 h-12 rounded-xl flex items-center justify-center shadow-md transition-all duration-300",
+          isActive ? "bg-white/30 ring-2 ring-white" : item.iconBg
         )}>
           <item.icon className="w-6 h-6 text-white" />
         </div>
@@ -97,67 +97,73 @@ export function Sidebar() {
         collapsed ? "w-24" : "w-80"
       )}
     >
+      {/* Blue background that extends behind logo area */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cyan-400 via-cyan-500 to-cyan-600" />
+      
+      {/* Left edge separator */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-300 via-cyan-400 to-cyan-500 shadow-lg" />
+      
       {/* White Header Section with Logo */}
-      <div className="bg-white relative">
-        {/* Curved bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-b from-cyan-400 to-cyan-500" style={{ 
-          clipPath: 'ellipse(70% 100% at 50% 100%)' 
-        }} />
-        
-        <div className="p-6 pb-12 flex flex-col items-center relative z-10">
-          {/* Logo with simple elegant animation */}
-          <div className="relative mb-5 group">
-            {/* Outer rotating ring */}
-            <div 
-              className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-4 border-accent/30 border-t-accent animate-spin" 
-              style={{ animationDuration: '8s' }} 
-            />
-            
-            {/* Inner glow circle */}
-            <div 
-              className="absolute inset-2 w-[136px] h-[136px] rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse" 
-              style={{ animationDuration: '3s' }} 
-            />
-            
-            {/* Logo container - white background */}
-            <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-500">
-              <img 
-                src={atefLogoIcon} 
-                alt="جمعية عطف" 
-                className="w-28 h-28 object-contain" 
+      <div className="relative z-10">
+        {/* White curved background for logo */}
+        <div className="bg-white rounded-bl-[3rem] relative">
+          {/* Curved bottom transition */}
+          <div className="absolute -bottom-6 left-0 right-0 h-12 bg-white" style={{ 
+            clipPath: 'ellipse(60% 100% at 50% 0%)' 
+          }} />
+          
+          <div className="p-6 pb-10 flex flex-col items-center relative z-10">
+            {/* Logo with zoom animation */}
+            <div className="relative mb-5 group">
+              {/* Outer rotating ring */}
+              <div 
+                className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-4 border-accent/30 border-t-accent animate-spin" 
+                style={{ animationDuration: '8s' }} 
+              />
+              
+              {/* Inner glow circle */}
+              <div 
+                className="absolute inset-2 w-[136px] h-[136px] rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse" 
+                style={{ animationDuration: '3s' }} 
+              />
+              
+              {/* Logo container with zoom animation */}
+              <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden">
+                <img 
+                  src={atefLogoIcon} 
+                  alt="جمعية عطف" 
+                  className="w-28 h-28 object-contain"
+                  style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
+                />
+              </div>
+              
+              {/* Decorative dot */}
+              <div 
+                className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" 
+                style={{ animationDuration: '2s' }} 
               />
             </div>
             
-            {/* Decorative dot */}
-            <div 
-              className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" 
-              style={{ animationDuration: '2s' }} 
-            />
-          </div>
-          
-          {/* Text under logo - REDESIGNED */}
-          {!collapsed && (
-            <div className="text-center space-y-3">
-              {/* جمعية عطف للأيتام - on one line */}
-              <h1 className="text-xl font-bold text-slate-800 whitespace-nowrap tracking-wide">
-                جمعية عطف للأيتام
-              </h1>
-              
-              {/* نظام إدارة التسويق الإلكتروني - styled nicely */}
-              <div className="relative">
-                <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600">
-                  نظام إدارة التسويق الإلكتروني
-                </p>
-                {/* Decorative line under */}
-                <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full" />
+            {/* Text under logo */}
+            {!collapsed && (
+              <div className="text-center space-y-3">
+                <h1 className="text-xl font-bold text-slate-800 whitespace-nowrap tracking-wide">
+                  جمعية عطف للأيتام
+                </h1>
+                <div className="relative">
+                  <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600">
+                    نظام إدارة التسويق الإلكتروني
+                  </p>
+                  <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full" />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
       {/* Cyan Navigation Section */}
-      <div className="flex-1 bg-gradient-to-b from-cyan-400 via-cyan-500 to-cyan-600 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 relative z-10 pt-2">
         {/* User Profile Card - matching design */}
         {!collapsed && (
           <div className="mx-4 -mt-4 mb-3 flex-shrink-0 space-y-2">
