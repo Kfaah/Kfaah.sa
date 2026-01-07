@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X } from "lucide-react";
+import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
 
@@ -130,10 +130,24 @@ export default function Profile() {
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   متصل الآن
                 </span>
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium">
-                  <Building className="w-4 h-4" />
-                  {user.department}
-                </span>
+                {user.isEmployee && user.jobRole && (
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-medium">
+                    <Briefcase className="w-4 h-4" />
+                    {user.jobRole}
+                  </span>
+                )}
+                {user.department && !user.isEmployee && (
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium">
+                    <Building className="w-4 h-4" />
+                    {user.department}
+                  </span>
+                )}
+                {user.username && (
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+                    <AtSign className="w-4 h-4" />
+                    {user.username}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -186,24 +200,50 @@ export default function Profile() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
-              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                <Building className="w-5 h-5 text-accent" />
+            {user.isEmployee && user.jobRole && (
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الدور الوظيفي</p>
+                  <p className="font-medium text-foreground">{user.jobRole}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">القسم</p>
-                <p className="font-medium text-foreground">{user.department}</p>
+            )}
+            {user.department && (
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                  <Building className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">القسم</p>
+                  <p className="font-medium text-foreground">{user.department}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
-              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-accent" />
+            )}
+            {user.location && (
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الموقع</p>
+                  <p className="font-medium text-foreground">{user.location}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">الموقع</p>
-                <p className="font-medium text-foreground">{user.location}</p>
+            )}
+            {user.username && (
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <AtSign className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">اسم المستخدم</p>
+                  <p className="font-medium text-foreground" dir="ltr">{user.username}</p>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
