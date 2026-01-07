@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -47,28 +47,8 @@ const settingsNavItem: NavItem = {
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [currentMessage, setCurrentMessage] = useState("");
   const location = useLocation();
   const { user } = useUser();
-
-  const positiveMessages = [
-    "أهلاً بك! يومك سعيد 🌟",
-    "نتمنى لك يوماً مليئاً بالإنجازات ✨",
-    "رائع! استمر في العمل المميز 💪",
-    "بارك الله في جهودك 🙏",
-    "معاً نحو النجاح 🚀",
-  ];
-
-  const showPositiveMessage = () => {
-    const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
-    setCurrentMessage(randomMessage);
-    setTimeout(() => setCurrentMessage(""), 5000);
-  };
-
-  // Show positive message on page load
-  useEffect(() => {
-    showPositiveMessage();
-  }, []);
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location.pathname === item.href;
@@ -215,14 +195,7 @@ export function Sidebar() {
                   </span>
                 </div>
               </div>
-              
-              {/* Positive Message Display */}
-              {currentMessage && (
-                <div className="mt-2 text-center bg-gradient-to-r from-cyan-50 to-teal-50 rounded-lg py-2 px-3 animate-fade-in">
-                  <span className="text-sm font-medium text-cyan-700">{currentMessage}</span>
-                </div>
-              )}
-            </div>
+              </div>
             
             {/* Profile Icon Button */}
             <Link 

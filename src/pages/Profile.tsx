@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,25 @@ import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X } from "lu
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
 
+const positiveMessages = [
+  "أهلاً بك! يومك سعيد 🌟",
+  "نتمنى لك يوماً مليئاً بالإنجازات ✨",
+  "رائع! استمر في العمل المميز 💪",
+  "بارك الله في جهودك 🙏",
+  "معاً نحو النجاح 🚀",
+];
+
 export default function Profile() {
   const { user, updateUser, updateProfileImage } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...user });
+  const [currentMessage, setCurrentMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
+    setCurrentMessage(randomMessage);
+  }, []);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -173,6 +187,13 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Positive Message at Bottom */}
+      {currentMessage && !isEditing && (
+        <div className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-2xl py-4 px-6 border border-cyan-200 animate-fade-in text-center">
+          <span className="text-lg font-medium text-cyan-700">{currentMessage}</span>
+        </div>
+      )}
     </div>
   );
 
