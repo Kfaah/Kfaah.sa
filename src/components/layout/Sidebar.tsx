@@ -56,15 +56,15 @@ export function Sidebar() {
       <Link
         to={item.href}
         className={cn(
-          "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300",
+          "flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-300",
           isActive
-            ? "bg-white text-slate-700 shadow-lg"
-            : "bg-transparent text-white hover:bg-white/10"
+            ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg shadow-cyan-400/30"
+            : "bg-white text-slate-700 hover:shadow-lg"
         )}
       >
         <div className={cn(
           "w-12 h-12 rounded-xl flex items-center justify-center shadow-md",
-          item.iconBg
+          isActive ? "bg-white/20" : item.iconBg
         )}>
           <item.icon className="w-6 h-6 text-white" />
         </div>
@@ -72,14 +72,14 @@ export function Sidebar() {
           <>
             <span className={cn(
               "font-bold text-base flex-1 text-right",
-              isActive ? "text-slate-700" : "text-white"
+              isActive ? "text-white" : "text-slate-700"
             )}>
               {item.title}
             </span>
             {item.badge && (
               <span className={cn(
                 "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
-                isActive ? "bg-amber-400 text-white" : "bg-white/25 text-white"
+                isActive ? "bg-white/25 text-white" : "bg-amber-400 text-white"
               )}>
                 {item.badge}
               </span>
@@ -158,10 +158,10 @@ export function Sidebar() {
       </div>
 
       {/* Cyan Navigation Section */}
-      <div className="flex-1 flex flex-col min-h-0 relative z-10 pt-2">
-        {/* User Profile Card - matching design */}
+      <div className="flex-1 flex flex-col min-h-0 relative z-10 pt-6">
+        {/* User Profile Card - SEPARATED from logo */}
         {!collapsed && (
-          <div className="mx-4 -mt-4 mb-3 flex-shrink-0 space-y-2">
+          <div className="mx-4 mb-4 flex-shrink-0 space-y-2">
             {/* Main Profile Card */}
             <div className="bg-white rounded-2xl p-4 shadow-lg relative z-20">
               <div className="flex items-center gap-4">
