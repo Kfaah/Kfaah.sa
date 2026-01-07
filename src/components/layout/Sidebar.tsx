@@ -187,7 +187,10 @@ export function Sidebar() {
             </div>
             
             {/* Profile Icon Button */}
-            <button className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 transition-all duration-200 group">
+            <Link 
+              to="/profile"
+              className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 transition-all duration-200 group"
+            >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                 <User className="w-5 h-5 text-white" />
               </div>
@@ -196,7 +199,7 @@ export function Sidebar() {
                 <p className="text-xs text-slate-500">إدارة معلوماتك وصورتك</p>
               </div>
               <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 transition-colors" />
-            </button>
+            </Link>
           </div>
         )}
 
