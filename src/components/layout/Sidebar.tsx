@@ -98,8 +98,44 @@ export function Sidebar() {
         collapsed ? "w-24" : "w-80"
       )}
     >
-      {/* Teal/Turquoise background matching the brand */}
-      <div className="absolute inset-0 bg-[#4A9BA8]" />
+      {/* Modern 3D Gradient Background with Geometric Pattern */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#3d9aa8] via-[#4A9BA8] to-[#2d7a85]" />
+      
+      {/* Animated Gradient Overlay */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20"
+        style={{ animation: 'gradientShift 8s ease-in-out infinite alternate' }}
+      />
+      
+      {/* Geometric Pattern Overlay */}
+      <div 
+        className="absolute inset-0 opacity-[0.08]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
+      
+      {/* 3D Light Effect - Top Highlight */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/15 to-transparent" />
+      
+      {/* 3D Depth Effect - Bottom Shadow */}
+      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/20 to-transparent" />
+      
+      {/* Floating Orbs for Modern Effect */}
+      <div 
+        className="absolute top-1/4 right-4 w-32 h-32 rounded-full bg-white/5 blur-2xl"
+        style={{ animation: 'float 6s ease-in-out infinite' }}
+      />
+      <div 
+        className="absolute bottom-1/3 left-4 w-24 h-24 rounded-full bg-cyan-300/10 blur-xl"
+        style={{ animation: 'float 8s ease-in-out infinite reverse' }}
+      />
+      
+      {/* Shimmer Line Effect */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full"
+        style={{ animation: 'shimmer 4s ease-in-out infinite' }}
+      />
       
       {/* White Header Section with Logo */}
       <div className="relative z-10">
