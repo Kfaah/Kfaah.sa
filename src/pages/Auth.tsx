@@ -26,12 +26,14 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        // Convert username to internal email format
-        const cleanUsername = username.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-        const internalEmail = `${cleanUsername}@user.local`;
+        // Check if input looks like an email
+        const isEmail = username.includes('@');
+        const loginEmail = isEmail 
+          ? username 
+          : `${username.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}@user.local`;
         
         const { error } = await supabase.auth.signInWithPassword({
-          email: internalEmail,
+          email: loginEmail,
           password,
         });
         if (error) throw error;
@@ -155,7 +157,7 @@ export default function Auth() {
           </CardTitle>
           <CardDescription>
             {isLogin
-              ? "أدخل بياناتك للوصول إلى لوحة التحكم"
+              ? "أدخل بياناتك للوصول إلى حسابك"
               : "أنشئ حسابك للبدء في استخدام النظام"}
           </CardDescription>
         </CardHeader>
