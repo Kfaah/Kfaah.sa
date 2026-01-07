@@ -65,14 +65,14 @@ export function Sidebar() {
       <Link
         to={item.href}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-full",
+          "flex items-center gap-3 px-3 py-2 rounded-lg",
           isActive
             ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg ring-2 ring-white"
             : "bg-white text-slate-700"
         )}
       >
         <div className={cn(
-          "w-10 h-10 rounded-none flex items-center justify-center shadow-md",
+          "w-10 h-10 rounded-lg flex items-center justify-center shadow-md",
           isActive ? "bg-white/20" : item.iconBg
         )}>
           <item.icon className="w-5 h-5 text-white" />
