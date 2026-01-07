@@ -97,16 +97,16 @@ export function Sidebar() {
       )}
     >
       {/* Logo with Animation */}
-      <div className="p-6 flex justify-center">
-        <div className="relative">
+      <div className="p-6 flex flex-col items-center">
+        <div className="relative mb-4">
           {/* Outer rotating ring */}
-          <div className="absolute inset-0 w-32 h-32 rounded-full border-4 border-accent/30 border-t-accent animate-spin" style={{ animationDuration: '8s' }} />
+          <div className="absolute inset-0 w-28 h-28 rounded-full border-4 border-accent/30 border-t-accent animate-spin" style={{ animationDuration: '8s' }} />
           
           {/* Inner glow circle */}
-          <div className="absolute inset-2 w-28 h-28 rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse" style={{ animationDuration: '3s' }} />
+          <div className="absolute inset-2 w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse" style={{ animationDuration: '3s' }} />
           
           {/* Logo container */}
-          <div className="relative w-32 h-32 rounded-full bg-white border-4 border-accent/20 flex items-center justify-center p-4 shadow-xl">
+          <div className="relative w-28 h-28 rounded-full bg-white border-4 border-accent/20 flex items-center justify-center p-3 shadow-xl">
             <img 
               src={atefLogo} 
               alt="جمعية عطف" 
@@ -114,21 +114,33 @@ export function Sidebar() {
             />
           </div>
           
-          {/* Decorative dots */}
+          {/* Decorative dot */}
           <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" style={{ animationDuration: '2s' }} />
         </div>
+        
+        {/* Text under logo */}
+        {!collapsed && (
+          <div className="text-center">
+            <h2 className="font-bold text-lg text-primary">منصة بطل</h2>
+            <p className="text-sm text-muted-foreground">للسلاسل التعليمية</p>
+          </div>
+        )}
       </div>
 
       {/* User Profile Card */}
       {!collapsed && (
-        <div className="mx-4 mb-6 bg-muted/50 rounded-2xl p-5 text-center border border-border">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/70 mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white shadow-lg">
-            ج
+        <div className="mx-4 mb-4 bg-muted/50 rounded-2xl p-4 border border-border">
+          <div className="flex items-center gap-3 flex-row-reverse">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-xl font-bold text-white shadow-lg">
+              ج
+            </div>
+            <div className="text-right flex-1">
+              <h3 className="font-bold text-foreground">جابر الحريصي</h3>
+              <span className="inline-block mt-1 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
+                % مدير النظام
+              </span>
+            </div>
           </div>
-          <h3 className="font-bold text-lg text-foreground">جابر الحريصي</h3>
-          <span className="inline-block mt-2 px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-semibold border border-accent/20">
-            % مدير النظام
-          </span>
         </div>
       )}
 
