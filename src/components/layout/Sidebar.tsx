@@ -14,7 +14,8 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import atefLogo from "@/assets/atef-logo.png";
+import atefLogoIcon from "@/assets/atef-logo-icon.jpg";
+import atefLogoText from "@/assets/atef-logo-text.jpg";
 
 interface NavItem {
   title: string;
@@ -105,12 +106,12 @@ export function Sidebar() {
           {/* Inner glow circle */}
           <div className="absolute inset-2 w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse" style={{ animationDuration: '3s' }} />
           
-          {/* Logo container */}
-          <div className="relative w-28 h-28 rounded-full bg-white border-4 border-accent/20 flex items-center justify-center p-3 shadow-xl">
+          {/* Logo icon container */}
+          <div className="relative w-28 h-28 rounded-full bg-slate-50 border-4 border-accent/20 flex items-center justify-center overflow-hidden shadow-xl">
             <img 
-              src={atefLogo} 
+              src={atefLogoIcon} 
               alt="جمعية عطف" 
-              className="w-full h-full object-contain drop-shadow-md hover:scale-110 transition-transform duration-300" 
+              className="w-20 h-20 object-contain hover:scale-110 transition-transform duration-300" 
             />
           </div>
           
@@ -118,11 +119,15 @@ export function Sidebar() {
           <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" style={{ animationDuration: '2s' }} />
         </div>
         
-        {/* Text under logo */}
+        {/* Text logo under icon */}
         {!collapsed && (
           <div className="text-center">
-            <h2 className="font-bold text-lg text-primary">جمعية عطف</h2>
-            <p className="text-sm text-muted-foreground">نظام إدارة التسويق الإلكتروني</p>
+            <img 
+              src={atefLogoText} 
+              alt="جمعية عطف للأيتام" 
+              className="h-12 object-contain mx-auto"
+            />
+            <p className="text-xs text-muted-foreground mt-2">نظام إدارة التسويق الإلكتروني</p>
           </div>
         )}
       </div>
