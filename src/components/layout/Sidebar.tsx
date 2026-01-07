@@ -116,12 +116,12 @@ export function Sidebar() {
               style={{ animationDuration: '3s' }} 
             />
             
-            {/* Logo container */}
-            <div className="relative w-36 h-36 rounded-full bg-white flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-500">
+            {/* Logo container - white background */}
+            <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-500">
               <img 
                 src={atefLogoIcon} 
                 alt="جمعية عطف" 
-                className="w-28 h-28 object-contain mix-blend-multiply" 
+                className="w-28 h-28 object-contain" 
               />
             </div>
             
