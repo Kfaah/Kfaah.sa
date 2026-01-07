@@ -105,9 +105,9 @@ export default function Profile() {
           <div className="flex flex-col sm:flex-row items-center gap-6 -mt-20">
             {/* Avatar */}
             <div className="relative group">
-              <Avatar className="w-36 h-36 border-4 border-white shadow-2xl">
+              <Avatar className="w-36 h-36 border-4 border-white shadow-2xl bg-white">
                 <AvatarImage src={user.profileImage || undefined} alt="صورة الملف الشخصي" />
-                <AvatarFallback className="text-4xl bg-gradient-to-br from-accent to-primary text-white">
+                <AvatarFallback className="text-4xl bg-white text-accent">
                   {user.firstName.charAt(0)}
                 </AvatarFallback>
               </Avatar>
