@@ -56,15 +56,15 @@ export function Sidebar() {
       <Link
         to={item.href}
         className={cn(
-          "flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-300",
+          "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300",
           isActive
-            ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg shadow-cyan-400/30 ring-4 ring-white"
-            : "bg-white text-slate-700 hover:shadow-lg"
+            ? "bg-white text-slate-700 shadow-lg"
+            : "bg-transparent text-white hover:bg-white/10"
         )}
       >
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center shadow-md transition-all duration-300",
-          isActive ? "bg-white/30 ring-2 ring-white" : item.iconBg
+          "w-12 h-12 rounded-xl flex items-center justify-center shadow-md",
+          item.iconBg
         )}>
           <item.icon className="w-6 h-6 text-white" />
         </div>
@@ -72,14 +72,14 @@ export function Sidebar() {
           <>
             <span className={cn(
               "font-bold text-base flex-1 text-right",
-              isActive ? "text-white" : "text-slate-700"
+              isActive ? "text-slate-700" : "text-white"
             )}>
               {item.title}
             </span>
             {item.badge && (
               <span className={cn(
                 "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
-                isActive ? "bg-white/25 text-white" : "bg-amber-400 text-white"
+                isActive ? "bg-amber-400 text-white" : "bg-white/25 text-white"
               )}>
                 {item.badge}
               </span>
@@ -97,21 +97,16 @@ export function Sidebar() {
         collapsed ? "w-24" : "w-80"
       )}
     >
-      {/* Blue background that extends behind logo area */}
+      {/* Blue background */}
       <div className="absolute inset-0 bg-gradient-to-b from-cyan-400 via-cyan-500 to-cyan-600" />
-      
-      {/* Left edge separator */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-300 via-cyan-400 to-cyan-500 shadow-lg" />
       
       {/* White Header Section with Logo */}
       <div className="relative z-10">
+        {/* Circular border around logo area */}
+        <div className="absolute inset-4 border-4 border-dashed border-cyan-300/50 rounded-full pointer-events-none" style={{ top: '10px', left: '10%', right: '10%', height: '200px' }} />
+        
         {/* White curved background for logo */}
-        <div className="bg-white rounded-bl-[3rem] relative">
-          {/* Curved bottom transition */}
-          <div className="absolute -bottom-6 left-0 right-0 h-12 bg-white" style={{ 
-            clipPath: 'ellipse(60% 100% at 50% 0%)' 
-          }} />
-          
+        <div className="bg-white rounded-b-[3rem] relative mx-2 shadow-lg">
           <div className="p-6 pb-10 flex flex-col items-center relative z-10">
             {/* Logo with zoom animation */}
             <div className="relative mb-5 group">
