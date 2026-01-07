@@ -1,8 +1,24 @@
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Users, CheckCircle, Clock, Trophy, TrendingUp, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+const positiveMessages = [
+  "أهلاً بك! يومك سعيد 🌟",
+  "نتمنى لك يوماً مليئاً بالإنجازات ✨",
+  "رائع! استمر في العمل المميز 💪",
+  "بارك الله في جهودك 🙏",
+  "معاً نحو النجاح 🚀",
+];
+
 const Index = () => {
+  const [currentMessage, setCurrentMessage] = useState("");
+
+  useEffect(() => {
+    const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
+    setCurrentMessage(randomMessage);
+  }, []);
+
   const topEmployees = [
     { id: 1, name: "أحمد محمد", role: "مسؤول السلات المتروكة", points: 450, rank: 1 },
     { id: 2, name: "سارة علي", role: "مسؤول الحملات", points: 420, rank: 2 },
@@ -35,11 +51,16 @@ const Index = () => {
 
         {/* Welcome Banner */}
         <div className="hero-gradient rounded-3xl p-8 animate-slide-up border border-accent/20">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground">مرحباً جابر 👋</h2>
               <p className="text-muted-foreground mt-1">مدير النظام</p>
             </div>
+            {currentMessage && (
+              <div className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-2xl py-3 px-6 border border-cyan-200 animate-fade-in">
+                <span className="text-base font-medium text-cyan-700">{currentMessage}</span>
+              </div>
+            )}
           </div>
         </div>
 
