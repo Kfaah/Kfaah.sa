@@ -154,22 +154,57 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (!authUser) return;
 
     try {
-      const updateData: Record<string, any> = {};
-      if (data.firstName !== undefined) updateData.first_name = data.firstName;
-      if (data.lastName !== undefined) updateData.last_name = data.lastName;
-      if (data.email !== undefined) updateData.email = data.email;
-      if (data.phone !== undefined) updateData.phone = data.phone;
-      if (data.department !== undefined) updateData.department = data.department;
-      if (data.location !== undefined) updateData.location = data.location;
+      // Check if user is an employee
+      const { data: employeeData } = await supabase
+        .from("employees")
+        .select("id")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
 
-      const { error } = await supabase
-        .from("profiles")
-        .update(updateData)
-        .eq("user_id", authUser.id);
+      if (employeeData) {
+        // Update employee record
+        const employeeUpdateData: Record<string, any> = {};
+        if (data.firstName !== undefined || data.lastName !== undefined) {
+          const fullName = `${data.firstName || user.firstName} ${data.lastName || user.lastName}`.trim();
+          employeeUpdateData.full_name = fullName;
+        }
+        if (data.email !== undefined) employeeUpdateData.email = data.email;
+        if (data.phone !== undefined) employeeUpdateData.phone = data.phone;
+        if (data.username !== undefined) employeeUpdateData.username = data.username;
+        if (data.department !== undefined) employeeUpdateData.job_role = data.department;
 
-      if (error) {
-        console.error("Error updating profile:", error);
-        throw error;
+        if (Object.keys(employeeUpdateData).length > 0) {
+          const { error } = await supabase
+            .from("employees")
+            .update(employeeUpdateData)
+            .eq("user_id", authUser.id);
+
+          if (error) {
+            console.error("Error updating employee:", error);
+            throw error;
+          }
+        }
+      } else {
+        // Update profile record
+        const updateData: Record<string, any> = {};
+        if (data.firstName !== undefined) updateData.first_name = data.firstName;
+        if (data.lastName !== undefined) updateData.last_name = data.lastName;
+        if (data.email !== undefined) updateData.email = data.email;
+        if (data.phone !== undefined) updateData.phone = data.phone;
+        if (data.department !== undefined) updateData.department = data.department;
+        if (data.location !== undefined) updateData.location = data.location;
+
+        if (Object.keys(updateData).length > 0) {
+          const { error } = await supabase
+            .from("profiles")
+            .update(updateData)
+            .eq("user_id", authUser.id);
+
+          if (error) {
+            console.error("Error updating profile:", error);
+            throw error;
+          }
+        }
       }
 
       setUser((prev) => ({ ...prev, ...data }));

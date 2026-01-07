@@ -79,6 +79,7 @@ export default function Profile() {
         phone: editData.phone,
         department: editData.department,
         location: editData.location,
+        username: editData.username,
       });
       setIsEditing(false);
       toast.success("تم حفظ التغييرات بنجاح");
@@ -373,6 +374,19 @@ export default function Profile() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
+              <Label htmlFor="username" className="text-base flex items-center gap-2">
+                <AtSign className="w-4 h-4 text-muted-foreground" />
+                اسم المستخدم
+              </Label>
+              <Input
+                id="username"
+                value={editData.username || ""}
+                onChange={(e) => handleInputChange("username", e.target.value)}
+                className="text-base h-12"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="department" className="text-base flex items-center gap-2">
                 <Building className="w-4 h-4 text-muted-foreground" />
                 القسم
@@ -384,6 +398,9 @@ export default function Profile() {
                 className="text-base h-12"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="location" className="text-base flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-muted-foreground" />
