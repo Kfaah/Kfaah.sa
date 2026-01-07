@@ -85,11 +85,11 @@ const Employees = () => {
             className="bg-card rounded-3xl shadow-card animate-slide-up border-border"
             style={{ animationDelay: `${index * 50}ms` }}
           >
-            <CardContent className="p-5 flex items-center justify-between">
+            <CardContent className="p-5 flex items-center gap-4">
               <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", stat.iconBg)}>
                 <stat.icon className={cn("w-6 h-6", stat.iconColor)} />
               </div>
-              <div className="text-left">
+              <div>
                 <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                 <p className="text-sm text-muted-foreground">{stat.label}</p>
               </div>
@@ -121,40 +121,40 @@ const Employees = () => {
           >
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <Badge className={cn("text-xs rounded-full border", statusConfig[employee.status].className)}>
-                  {statusConfig[employee.status].label}
-                </Badge>
                 <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-lg font-bold text-primary-foreground shadow-md">
+                    {employee.name.charAt(0)}
+                  </div>
                   <div>
-                    <h3 className="font-bold text-foreground text-right">{employee.name}</h3>
+                    <h3 className="font-bold text-foreground">{employee.name}</h3>
                     <p className={cn("text-xs mt-1", employee.roleColor.replace("bg-", "text-"))}>
                       {employee.role}
                     </p>
                   </div>
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-lg font-bold text-primary-foreground shadow-md">
-                    {employee.name.charAt(0)}
-                  </div>
                 </div>
+                <Badge className={cn("text-xs rounded-full border", statusConfig[employee.status].className)}>
+                  {statusConfig[employee.status].label}
+                </Badge>
               </div>
 
               <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground justify-end">
-                  {employee.email}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="w-4 h-4" />
+                  {employee.email}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground justify-end">
-                  {employee.phone}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Phone className="w-4 h-4" />
+                  {employee.phone}
                 </div>
               </div>
 
               {/* Performance Section */}
               <div className="pt-4 border-t border-border">
                 <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">الأداء</span>
                   <span className={cn("font-bold", getPerformanceColor(employee.performance))}>
                     {employee.performance}%
                   </span>
-                  <span className="text-sm text-muted-foreground">الأداء</span>
                 </div>
                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                   <div
@@ -163,8 +163,8 @@ const Employees = () => {
                   />
                 </div>
                 <div className="flex items-center justify-between mt-3 text-sm">
-                  <span className="font-medium">{employee.tasksCompleted}/{employee.tasksTotal}</span>
                   <span className="text-muted-foreground">المهام المنجزة</span>
+                  <span className="font-medium">{employee.tasksCompleted}/{employee.tasksTotal}</span>
                 </div>
               </div>
             </CardContent>
