@@ -65,7 +65,7 @@ export function Sidebar() {
       <Link
         to={item.href}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-xl",
+          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none",
           isActive
             ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg ring-2 ring-white"
             : "bg-white text-slate-700"
@@ -260,11 +260,11 @@ export function Sidebar() {
 
         {/* Navigation Items - Scrollable with Settings inside */}
         <nav 
-          className="flex-1 px-4 space-y-2.5 py-3 min-h-0 overflow-y-scroll"
+          className="flex-1 pr-4 pl-4 space-y-2.5 py-3 min-h-0 overflow-y-auto scrollbar-none"
           dir="ltr"
           style={{ 
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(255,255,255,0.4) transparent'
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
           }}
         >
           <div className="space-y-2.5" dir="rtl">
