@@ -535,15 +535,15 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="username">اسم المستخدم *</Label>
+                <Label htmlFor="username">رقم الهوية (السجل المدني) *</Label>
                 <Input
                   id="username"
-                  placeholder="رمز أو رقم أو اسم (مثال: emp001)"
+                  placeholder="أدخل رقم الهوية الوطنية"
                   value={newEmployee.username}
                   onChange={(e) => setNewEmployee({ ...newEmployee, username: e.target.value })}
                   dir="ltr"
                 />
-                <p className="text-xs text-muted-foreground">يستخدم لتسجيل الدخول</p>
+                <p className="text-xs text-muted-foreground">يستخدم لتسجيل الدخول واسترجاع كلمة المرور</p>
               </div>
 
               <div className="space-y-2">
@@ -850,11 +850,12 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>اسم المستخدم</Label>
+                <Label>رقم الهوية (السجل المدني)</Label>
                 <Input
                   value={editingEmployee.username || ""}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, username: e.target.value })}
                   dir="ltr"
+                  placeholder="أدخل رقم الهوية الوطنية"
                 />
               </div>
 
