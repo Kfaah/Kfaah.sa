@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 interface UserData {
   firstName: string;
@@ -28,10 +28,33 @@ const defaultUser: UserData = {
   role: "مدير النظام",
 };
 
+const STORAGE_KEY = "atef_user_data";
+
+const getStoredUser = (): UserData => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return { ...defaultUser, ...JSON.parse(stored) };
+    }
+  } catch (error) {
+    console.error("Error reading user data from localStorage:", error);
+  }
+  return defaultUser;
+};
+
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserData>(defaultUser);
+  const [user, setUser] = useState<UserData>(getStoredUser);
+
+  // Save to localStorage whenever user changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    } catch (error) {
+      console.error("Error saving user data to localStorage:", error);
+    }
+  }, [user]);
 
   const updateUser = (data: Partial<UserData>) => {
     setUser((prev) => ({ ...prev, ...data }));
