@@ -165,28 +165,35 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* Navigation Items - Scrollable */}
+        {/* Navigation Items - Scrollable with Settings inside */}
         <nav 
           className="flex-1 px-4 space-y-2.5 py-3 min-h-0 overflow-y-scroll"
+          dir="ltr"
           style={{ 
             scrollbarWidth: 'thin',
             scrollbarColor: 'rgba(255,255,255,0.4) transparent'
           }}
         >
-          {mainNavItems.map((item, index) => (
-            <div 
-              key={item.href} 
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <NavLink item={item} />
+          <div className="space-y-2.5" dir="rtl">
+            {mainNavItems.map((item, index) => (
+              <div 
+                key={item.href} 
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <NavLink item={item} />
+              </div>
+            ))}
+            
+            {/* Settings inside scroll */}
+            <div className="pt-3 mt-3 border-t border-white/20">
+              <NavLink item={settingsNavItem} />
             </div>
-          ))}
+          </div>
         </nav>
 
-        {/* Settings & Collapse */}
-        <div className="p-3 space-y-2 border-t border-white/20">
-          <NavLink item={settingsNavItem} />
+        {/* Collapse Button Only */}
+        <div className="p-3 border-t border-white/20 flex-shrink-0">
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors text-sm backdrop-blur-sm"
