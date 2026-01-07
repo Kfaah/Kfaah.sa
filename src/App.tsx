@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Employees from "./pages/Employees";
 import Roles from "./pages/Roles";
 import Tasks from "./pages/Tasks";
+import Plans from "./pages/Plans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
         <Route path="/employees" element={<Employees />} />
         <Route path="/roles" element={<Roles />} />
         <Route path="/tasks" element={<Tasks />} />
+        <Route path="/plans" element={<Plans />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </TooltipProvider>
