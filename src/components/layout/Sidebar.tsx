@@ -2,16 +2,18 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  Package,
-  ShoppingCart,
   Users,
+  ClipboardList,
   BarChart3,
   Settings,
   ChevronLeft,
   ChevronRight,
-  Store,
-  UserCircle,
-  Briefcase,
+  Heart,
+  UserCog,
+  CalendarCheck,
+  MessageSquare,
+  FileText,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,15 +26,19 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { title: "لوحة التحكم", href: "/", icon: LayoutDashboard },
-  { title: "المنتجات", href: "/products", icon: Package, badge: 24 },
-  { title: "الطلبات", href: "/orders", icon: ShoppingCart, badge: 8 },
-  { title: "العملاء", href: "/customers", icon: Users },
-  { title: "التقارير", href: "/reports", icon: BarChart3 },
+  { title: "الموظفين", href: "/employees", icon: Users },
+  { title: "الأدوار والصلاحيات", href: "/roles", icon: UserCog },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, badge: 18 },
+  { title: "الخطط", href: "/plans", icon: CalendarCheck },
 ];
 
-const hrNavItems: NavItem[] = [
-  { title: "الموظفين", href: "/employees", icon: UserCircle },
-  { title: "الأقسام", href: "/departments", icon: Briefcase },
+const reportsNavItems: NavItem[] = [
+  { title: "التقارير", href: "/reports", icon: BarChart3 },
+  { title: "تقييم الأداء", href: "/performance", icon: FileText },
+];
+
+const communicationNavItems: NavItem[] = [
+  { title: "المراسلات", href: "/messages", icon: MessageSquare, badge: 5 },
 ];
 
 const settingsNavItem: NavItem = { title: "الإعدادات", href: "/settings", icon: Settings };
@@ -82,13 +88,13 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
-            <Store className="w-6 h-6 text-sidebar-primary-foreground" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+            <Heart className="w-6 h-6 text-sidebar-primary-foreground" />
           </div>
           {!collapsed && (
             <div>
-              <h1 className="font-bold text-lg text-sidebar-foreground">متجري</h1>
-              <p className="text-xs text-sidebar-foreground/60">لوحة الإدارة</p>
+              <h1 className="font-bold text-lg text-sidebar-foreground">جمعية عطف</h1>
+              <p className="text-xs text-sidebar-foreground/60">منصة إدارة الموظفين</p>
             </div>
           )}
         </div>
@@ -99,7 +105,7 @@ export function Sidebar() {
         <div className="space-y-1">
           {!collapsed && (
             <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider mb-3 px-3">
-              المتجر
+              الرئيسية
             </p>
           )}
           {mainNavItems.map((item) => (
@@ -110,10 +116,21 @@ export function Sidebar() {
         <div className="space-y-1">
           {!collapsed && (
             <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider mb-3 px-3">
-              الموارد البشرية
+              التقارير والتقييم
             </p>
           )}
-          {hrNavItems.map((item) => (
+          {reportsNavItems.map((item) => (
+            <NavLink key={item.href} item={item} />
+          ))}
+        </div>
+
+        <div className="space-y-1">
+          {!collapsed && (
+            <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider mb-3 px-3">
+              التواصل
+            </p>
+          )}
+          {communicationNavItems.map((item) => (
             <NavLink key={item.href} item={item} />
           ))}
         </div>
