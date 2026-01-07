@@ -151,7 +151,7 @@ export function Sidebar() {
         <div className="absolute inset-4 border-4 border-dashed border-cyan-300/50 rounded-full pointer-events-none" style={{ top: '10px', left: '10%', right: '10%', height: '200px' }} />
         
         {/* White curved background for logo */}
-        <div className="bg-white rounded-b-[3rem] relative mx-2 shadow-lg">
+        <div className="bg-white rounded-b-[3rem] relative mr-0 ml-2 shadow-lg">
           <div className="p-6 pb-10 flex flex-col items-center relative z-10">
             {/* Logo with zoom animation */}
             <div className="relative mb-5 group">
@@ -211,7 +211,7 @@ export function Sidebar() {
       <div className="flex-1 flex flex-col min-h-0 relative z-10 pt-6">
         {/* User Profile Card - SEPARATED from logo */}
         {!collapsed && (
-          <div className="mx-4 mb-4 flex-shrink-0 space-y-2">
+          <div className="mr-0 ml-4 mb-4 flex-shrink-0 space-y-2">
             {/* Main Profile Card - Matching design */}
             <div className="bg-white rounded-2xl p-3 shadow-lg relative z-20">
               <div className="flex items-center gap-3">
@@ -260,7 +260,7 @@ export function Sidebar() {
 
         {/* Navigation Items - Scrollable with Settings inside */}
         <nav 
-          className="flex-1 px-4 space-y-2.5 py-3 min-h-0 overflow-y-scroll"
+          className="flex-1 pr-0 pl-4 space-y-2.5 py-3 min-h-0 overflow-y-scroll"
           dir="ltr"
           style={{ 
             scrollbarWidth: 'thin',
