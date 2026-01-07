@@ -376,7 +376,7 @@ export default function Profile() {
             <div className="space-y-2">
               <Label htmlFor="username" className="text-base flex items-center gap-2">
                 <AtSign className="w-4 h-4 text-muted-foreground" />
-                رقم الهوية (السجل المدني)
+                اسم المستخدم - رقم الهوية (ID)
               </Label>
               <Input
                 id="username"
