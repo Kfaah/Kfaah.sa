@@ -284,6 +284,59 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          ai_generated: boolean | null
+          category: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          executive_plan_id: string | null
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          executive_plan_id?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          executive_plan_id?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_executive_plan_id_fkey"
+            columns: ["executive_plan_id"]
+            isOneToOne: false
+            referencedRelation: "executive_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
