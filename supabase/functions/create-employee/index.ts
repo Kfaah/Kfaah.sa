@@ -63,8 +63,35 @@ serve(async (req) => {
       );
     }
 
+    // Get request body
+    const body = await req.json();
+    
+    // Handle password update action
+    if (body.action === "update-password") {
+      const { userId, password } = body;
+      
+      if (!userId || !password) {
+        return json({ success: false, error: "معرف المستخدم وكلمة المرور مطلوبان" }, 400);
+      }
+      
+      if (password.length < 6) {
+        return json({ success: false, error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }, 400);
+      }
+      
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        password: password,
+      });
+      
+      if (updateError) {
+        console.error("Error updating password:", updateError);
+        return json({ success: false, error: "حدث خطأ أثناء تحديث كلمة المرور" }, 500);
+      }
+      
+      return json({ success: true, message: "تم تحديث كلمة المرور بنجاح" }, 200);
+    }
+
     // Get employee data from request
-    const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl } = await req.json();
+    const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl } = body;
 
     // Validate required fields
     const fieldErrors: Record<string, string> = {};

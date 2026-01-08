@@ -101,6 +101,10 @@ const Employees = () => {
   };
 
   const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
+  const [editPassword, setEditPassword] = useState("");
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  type EditEmployeeField = "full_name" | "username" | "email" | "phone" | "job_role" | "password";
+  const [editErrors, setEditErrors] = useState<Partial<Record<EditEmployeeField, string>>>({});
   const [newDepartment, setNewDepartment] = useState({ name: "", color: "bg-primary" });
   const [newRole, setNewRole] = useState({ name: "", color: "bg-primary", department_id: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -334,6 +338,21 @@ const Employees = () => {
   // Edit Employee
   const handleEditEmployee = async () => {
     if (!editingEmployee) return;
+    
+    // Validation
+    const nextErrors: Partial<Record<EditEmployeeField, string>> = {};
+    if (!editingEmployee.full_name.trim()) nextErrors.full_name = "الاسم الكامل مطلوب";
+    if (!editingEmployee.username?.trim()) nextErrors.username = "رقم الهوية مطلوب";
+    if (!editingEmployee.email?.trim()) nextErrors.email = "البريد الإلكتروني مطلوب";
+    if (!editingEmployee.phone?.trim()) nextErrors.phone = "رقم الجوال مطلوب";
+    if (!editingEmployee.job_role?.trim()) nextErrors.job_role = "الدور الوظيفي مطلوب";
+    if (editPassword && editPassword.length < 6) nextErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+    
+    if (Object.keys(nextErrors).length > 0) {
+      setEditErrors(nextErrors);
+      return;
+    }
+    
     setIsLoading(true);
     try {
       let avatarUrl = editingEmployee.avatar_url;
@@ -361,11 +380,30 @@ const Employees = () => {
       
       if (error) throw error;
       
+      // Update password if provided
+      if (editPassword && editingEmployee.user_id) {
+        const { data: session } = await supabase.auth.getSession();
+        if (session?.session?.access_token) {
+          const response = await supabase.functions.invoke("create-employee", {
+            body: {
+              action: "update-password",
+              userId: editingEmployee.user_id,
+              password: editPassword,
+            },
+          });
+          if (response.error) {
+            console.error("Error updating password:", response.error);
+          }
+        }
+      }
+      
       const updatedEmployee = { ...editingEmployee, avatar_url: avatarUrl };
       setEmployees(employees.map(e => e.id === editingEmployee.id ? updatedEmployee : e));
       setIsEditDialogOpen(false);
       setEditingEmployee(null);
       setEditAvatarFile(null);
+      setEditPassword("");
+      setEditErrors({});
       toast.success("تم تحديث بيانات الموظف");
     } catch (error: any) {
       toast.error(getArabicErrorMessage(error, "حدث خطأ"));
@@ -903,40 +941,85 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>الاسم الكامل *</Label>
+                <Label>الاسم الكامل <span className="text-destructive">*</span></Label>
                 <Input
                   value={editingEmployee.full_name}
-                  onChange={(e) => setEditingEmployee({ ...editingEmployee, full_name: e.target.value })}
+                  onChange={(e) => {
+                    setEditingEmployee({ ...editingEmployee, full_name: e.target.value });
+                    if (editErrors.full_name) setEditErrors(prev => ({ ...prev, full_name: undefined }));
+                  }}
+                  className={editErrors.full_name ? "border-destructive" : ""}
                 />
+                {editErrors.full_name && <p className="text-xs text-destructive">{editErrors.full_name}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>اسم المستخدم - رقم الهوية (ID)</Label>
+                <Label>رقم الهوية <span className="text-destructive">*</span></Label>
                 <Input
                   value={editingEmployee.username || ""}
-                  onChange={(e) => setEditingEmployee({ ...editingEmployee, username: e.target.value })}
+                  onChange={(e) => {
+                    setEditingEmployee({ ...editingEmployee, username: e.target.value });
+                    if (editErrors.username) setEditErrors(prev => ({ ...prev, username: undefined }));
+                  }}
                   dir="ltr"
                   placeholder="أدخل رقم الهوية الوطنية"
+                  className={editErrors.username ? "border-destructive" : ""}
                 />
+                {editErrors.username && <p className="text-xs text-destructive">{editErrors.username}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>البريد الإلكتروني</Label>
+                <Label>البريد الإلكتروني <span className="text-destructive">*</span></Label>
                 <Input
                   type="email"
                   value={editingEmployee.email || ""}
-                  onChange={(e) => setEditingEmployee({ ...editingEmployee, email: e.target.value })}
+                  onChange={(e) => {
+                    setEditingEmployee({ ...editingEmployee, email: e.target.value });
+                    if (editErrors.email) setEditErrors(prev => ({ ...prev, email: undefined }));
+                  }}
                   dir="ltr"
+                  className={editErrors.email ? "border-destructive" : ""}
                 />
+                {editErrors.email && <p className="text-xs text-destructive">{editErrors.email}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>رقم الجوال</Label>
+                <Label>رقم الجوال <span className="text-destructive">*</span></Label>
                 <Input
                   value={editingEmployee.phone || ""}
-                  onChange={(e) => setEditingEmployee({ ...editingEmployee, phone: e.target.value })}
+                  onChange={(e) => {
+                    setEditingEmployee({ ...editingEmployee, phone: e.target.value });
+                    if (editErrors.phone) setEditErrors(prev => ({ ...prev, phone: undefined }));
+                  }}
                   dir="ltr"
+                  className={editErrors.phone ? "border-destructive" : ""}
                 />
+                {editErrors.phone && <p className="text-xs text-destructive">{editErrors.phone}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>كلمة المرور الجديدة</Label>
+                <div className="relative">
+                  <Input
+                    type={showEditPassword ? "text" : "password"}
+                    value={editPassword}
+                    onChange={(e) => {
+                      setEditPassword(e.target.value);
+                      if (editErrors.password) setEditErrors(prev => ({ ...prev, password: undefined }));
+                    }}
+                    dir="ltr"
+                    placeholder="اترك فارغاً للإبقاء على كلمة المرور الحالية"
+                    className={editErrors.password ? "border-destructive pl-10" : "pl-10"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {editErrors.password && <p className="text-xs text-destructive">{editErrors.password}</p>}
               </div>
 
               <div className="space-y-2">
@@ -962,12 +1045,15 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>الدور الوظيفي</Label>
+                <Label>الدور الوظيفي <span className="text-destructive">*</span></Label>
                 <Select
                   value={editingEmployee.job_role}
-                  onValueChange={(value) => setEditingEmployee({ ...editingEmployee, job_role: value })}
+                  onValueChange={(value) => {
+                    setEditingEmployee({ ...editingEmployee, job_role: value });
+                    if (editErrors.job_role) setEditErrors(prev => ({ ...prev, job_role: undefined }));
+                  }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={editErrors.job_role ? "border-destructive" : ""}>
                     <SelectValue placeholder="اختر الدور الوظيفي" />
                   </SelectTrigger>
                   <SelectContent>
@@ -978,6 +1064,7 @@ const Employees = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {editErrors.job_role && <p className="text-xs text-destructive">{editErrors.job_role}</p>}
               </div>
 
               <div className="space-y-2">
