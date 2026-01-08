@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
@@ -540,11 +540,8 @@ export default function OperationalPlans() {
                   <div className="w-24 py-3 px-2 border-l border-white/20 text-center">
                     <span className="text-sm font-semibold">المتوسط الشهري</span>
                   </div>
-                  <div className="w-24 py-3 px-2 border-l border-white/20 text-center">
-                    <span className="text-sm font-semibold">الحالة</span>
-                  </div>
-                  <div className="w-14 py-3 px-2 text-center">
-                    <span className="text-sm font-semibold">حذف</span>
+                  <div className="w-24 py-3 px-2 text-center">
+                    <span className="text-sm font-semibold">الإجراء</span>
                   </div>
                 </div>
                 
@@ -598,25 +595,33 @@ export default function OperationalPlans() {
                           </p>
                         </div>
                         
-                        {/* الحالة */}
-                        <div className="w-24 py-4 px-2 border-l border-gray-200 flex items-center justify-center">
-                          {getStatusBadge(plan.status)}
-                        </div>
-                        
-                        {/* زر الحذف */}
-                        <div className="w-14 flex items-center justify-center">
+                        {/* الإجراء */}
+                        <div className="w-24 flex items-center justify-center gap-1">
                           {(isAdmin || plan.user_id === authUser?.id) && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeletePlan(plan.id);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // TODO: فتح نافذة التعديل
+                                }}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeletePlan(plan.id);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
