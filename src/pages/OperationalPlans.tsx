@@ -621,11 +621,20 @@ export default function OperationalPlans() {
                           const isExpanded = expandedPlanId === plan.id;
                           const isFirstRowOfGoal = !goalRowRendered;
                           const isFirstRowOfInit = !initRowRendered;
+                          const isLastInInitiative = planIndex === initGroup.plans.length - 1;
+                          const isLastInitiative = initIndex === group.initiatives.length - 1;
+                          
+                          // تحديد نوع الفاصل السفلي
+                          const bottomBorder = isLastInInitiative && !isLastInitiative 
+                            ? 'border-b-4 border-b-gray-400' // فاصل كبير بين المبادرات
+                            : !isLastInInitiative 
+                              ? 'border-b border-b-gray-200' // فاصل صغير بين الأنشطة
+                              : '';
                           
                           rows.push(
                             <tr 
                               key={plan.id} 
-                              className={`${color.bg} border-r-4 ${color.border} cursor-pointer hover:bg-white/50 transition-all duration-200 ${isExpanded ? 'bg-white/70' : ''}`}
+                              className={`${color.bg} border-r-4 ${color.border} cursor-pointer hover:bg-white/50 transition-all duration-200 ${isExpanded ? 'bg-white/70' : ''} ${bottomBorder}`}
                               onClick={() => handleViewPlan(plan)}
                             >
                               {/* أيقونة السهم */}
