@@ -22,6 +22,9 @@ interface UserContextType {
   updateUser: (data: Partial<UserData>) => Promise<void>;
   updateProfileImage: (image: string | null) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string | null>;
+  // Preview mode - allows admin to see the UI as an employee
+  previewAsEmployee: boolean;
+  setPreviewAsEmployee: (value: boolean) => void;
 }
 
 const defaultUser: UserData = {
@@ -44,6 +47,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<UserData>(defaultUser);
   const [loading, setLoading] = useState(true);
+  const [previewAsEmployee, setPreviewAsEmployee] = useState(false);
 
   // Fetch profile when auth user changes
   useEffect(() => {
@@ -286,7 +290,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, loading, updateUser, updateProfileImage, uploadAvatar }}>
+    <UserContext.Provider value={{ user, loading, updateUser, updateProfileImage, uploadAvatar, previewAsEmployee, setPreviewAsEmployee }}>
       {children}
     </UserContext.Provider>
   );

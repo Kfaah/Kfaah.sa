@@ -67,7 +67,7 @@ const MONTHS_AR = [
 export default function OperationalPlans() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
-  const { user } = useUser();
+  const { user, previewAsEmployee } = useUser();
   const { toast } = useToast();
   const [plans, setPlans] = useState<OperationalPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +82,8 @@ export default function OperationalPlans() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [employees, setEmployees] = useState<Employee[]>([]);
 
-  const isAdmin = !user.isEmployee;
+  // إذا كان في وضع المعاينة، يظهر كموظف
+  const isAdmin = !user.isEmployee && !previewAsEmployee;
 
   useEffect(() => {
     fetchPlans();
