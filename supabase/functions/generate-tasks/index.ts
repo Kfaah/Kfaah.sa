@@ -92,13 +92,19 @@ serve(async (req) => {
 
     const allTasks: any[] = [];
     const monthName = MONTHS_AR[targetMonth - 1];
+    const MAX_TASKS_PER_DAY_PER_USER = 15; // الحد الأقصى للمهام لكل يوم لكل موظف
 
     // توليد مهام لكل نشاط
     for (const [activityName, activityData] of activitiesMap) {
+      // حساب عدد الأيام لتحديد عدد المهام لكل نشاط
+      const daysCount = activityData.days.length;
+      // نحدد عدد المهام لكل نشاط بحيث لا تتجاوز المجموع الكلي الحد الأقصى
+      const maxTasksForActivity = Math.min(6, Math.ceil(MAX_TASKS_PER_DAY_PER_USER / Math.max(activitiesMap.size, 1)));
+      
       const systemPrompt = `أنت مساعد ذكي متخصص في إدارة المشاريع والتخطيط في المؤسسات. مهمتك هي توليد مهام فرعية تفصيلية منبثقة من النشاط الرئيسي.
 
 قواعد مهمة:
-1. أنشئ من 3 إلى 6 مهام فرعية تفصيلية وعملية لكل يوم محدد
+1. أنشئ من 2 إلى ${maxTasksForActivity} مهام فرعية تفصيلية وعملية فقط
 2. كل مهمة يجب أن تكون واضحة، محددة، وقابلة للتنفيذ
 3. المهام يجب أن تكون متنوعة وتغطي جوانب مختلفة من النشاط
 4. اجعل المهام مرتبطة بالسياق المؤسسي والإداري
@@ -225,8 +231,35 @@ ${daysInfo}
       );
     }
 
+    // تطبيق الحد الأقصى: 15 مهمة لكل يوم لكل موظف
+    const tasksPerUserPerDay = new Map<string, any[]>();
+    
+    for (const task of allTasks) {
+      const key = `${task.user_id}_${task.due_date}`;
+      if (!tasksPerUserPerDay.has(key)) {
+        tasksPerUserPerDay.set(key, []);
+      }
+      const dayTasks = tasksPerUserPerDay.get(key)!;
+      if (dayTasks.length < MAX_TASKS_PER_DAY_PER_USER) {
+        dayTasks.push(task);
+      }
+    }
+
+    // تجميع المهام المصفاة
+    const filteredTasks: any[] = [];
+    for (const tasks of tasksPerUserPerDay.values()) {
+      filteredTasks.push(...tasks);
+    }
+
+    if (filteredTasks.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "لم يتم توليد أي مهام" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // جمع جميع user_ids الفريدة
-    const uniqueUserIds = [...new Set(allTasks.map(t => t.user_id))];
+    const uniqueUserIds = [...new Set(filteredTasks.map(t => t.user_id))];
     
     // حذف المهام المولدة سابقاً للشهر نفسه لكل مستخدم
     const startDate = `${year || new Date().getFullYear()}-${String(targetMonth).padStart(2, '0')}-01`;
@@ -245,7 +278,7 @@ ${daysInfo}
     // إدراج المهام الجديدة
     const { data: insertedTasks, error: insertError } = await supabase
       .from("tasks")
-      .insert(allTasks)
+      .insert(filteredTasks)
       .select();
 
     if (insertError) {
