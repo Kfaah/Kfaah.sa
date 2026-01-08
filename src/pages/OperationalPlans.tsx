@@ -540,27 +540,24 @@ export default function OperationalPlans() {
                   {/* رأس الجدول الرسمي */}
                   <thead>
                     <tr className="bg-gradient-to-r from-[#2d7a85] to-[#3d9aa8] text-white">
-                      <th className="w-12 py-3 border-l border-white/20 text-center">
-                        <span className="text-xs font-medium">#</span>
-                      </th>
-                      <th className="py-3 px-4 border-l border-white/20 text-right">
+                      <th className="py-3 px-4 border-l-2 border-white/30 text-right">
                         <span className="text-sm font-semibold">الهدف الاستراتيجي</span>
                       </th>
-                      <th className="py-3 px-4 border-l border-white/20 text-right">
+                      <th className="py-3 px-4 border-l-2 border-white/30 text-right">
                         <span className="text-sm font-semibold">المبادرة</span>
                       </th>
-                      <th className="py-3 px-4 border-l border-white/20 text-right">
+                      <th className="py-3 px-4 border-l-2 border-white/30 text-right">
                         <span className="text-sm font-semibold">النشاط</span>
                       </th>
                       {isAdmin && (
-                        <th className="py-3 px-4 border-l border-white/20 text-right">
+                        <th className="py-3 px-4 border-l-2 border-white/30 text-right">
                           <span className="text-sm font-semibold">الموظف المكلف</span>
                         </th>
                       )}
-                      <th className="w-24 py-3 px-2 border-l border-white/20 text-center">
+                      <th className="w-28 py-3 px-2 border-l-2 border-white/30 text-center">
                         <span className="text-sm font-semibold">المستهدف السنوي</span>
                       </th>
-                      <th className="w-24 py-3 px-2 border-l border-white/20 text-center">
+                      <th className="w-28 py-3 px-2 border-l-2 border-white/30 text-center">
                         <span className="text-sm font-semibold">المتوسط الشهري</span>
                       </th>
                       <th className="w-24 py-3 px-2 text-center">
@@ -634,19 +631,13 @@ export default function OperationalPlans() {
                           rows.push(
                             <tr 
                               key={plan.id} 
-                              className={`${color.bg} border-r-4 ${color.border} cursor-pointer hover:bg-white/50 transition-all duration-200 ${isExpanded ? 'bg-white/70' : ''} ${bottomBorder}`}
-                              onClick={() => handleViewPlan(plan)}
+                              className={`${color.bg} border-r-4 ${color.border} hover:bg-white/50 transition-all duration-200 ${isExpanded ? 'bg-white/70' : ''} ${bottomBorder}`}
                             >
-                              {/* أيقونة السهم */}
-                              <td className={`w-12 text-center border-l border-gray-200 ${isExpanded ? 'bg-[#3d9aa8]' : ''}`}>
-                                <ChevronDown className={`w-5 h-5 mx-auto transition-transform duration-300 ${isExpanded ? 'rotate-180 text-white' : 'text-[#3d9aa8]'}`} />
-                              </td>
-                              
                               {/* الهدف الاستراتيجي - مدمج */}
                               {isFirstRowOfGoal && (
                                 <td 
                                   rowSpan={totalRowsInGoal} 
-                                  className={`py-4 px-4 border-l border-gray-200 align-middle ${color.bg}`}
+                                  className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${color.bg}`}
                                 >
                                   <p className={`font-semibold text-sm ${color.text}`}>{group.strategicGoal}</p>
                                 </td>
@@ -656,31 +647,39 @@ export default function OperationalPlans() {
                               {isFirstRowOfInit && (
                                 <td 
                                   rowSpan={totalRowsInInitiative} 
-                                  className={`py-4 px-4 border-l border-gray-200 align-middle ${initIndex > 0 ? 'border-t-2 border-t-gray-300' : ''}`}
+                                  className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${initIndex > 0 ? 'border-t-2 border-t-gray-400' : ''}`}
                                 >
                                   <p className="text-gray-700 text-sm font-medium">{initGroup.initiative}</p>
                                 </td>
                               )}
                               
-                              {/* النشاط */}
-                              <td className="py-4 px-4 border-l border-gray-200">
-                                <p className="font-semibold text-gray-800 text-sm">{plan.activity_name}</p>
+                              {/* النشاط مع السهم */}
+                              <td className="py-4 px-4 border-l-2 border-gray-300">
+                                <div 
+                                  className="flex items-center gap-2 cursor-pointer"
+                                  onClick={() => handleViewPlan(plan)}
+                                >
+                                  <ChevronDown 
+                                    className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-180 text-[#2d7a85]' : 'text-[#3d9aa8]'}`} 
+                                  />
+                                  <p className="font-semibold text-gray-800 text-sm">{plan.activity_name}</p>
+                                </div>
                               </td>
                               
                               {/* الموظف المكلف - يظهر فقط للمدير */}
                               {isAdmin && (
-                                <td className="py-4 px-4 border-l border-gray-200">
+                                <td className="py-4 px-4 border-l-2 border-gray-300">
                                   <p className="text-gray-700 text-sm">{plan.employee_name || "-"}</p>
                                 </td>
                               )}
                               
                               {/* المستهدف السنوي */}
-                              <td className="w-24 py-4 px-2 border-l border-gray-200 text-center">
+                              <td className="w-28 py-4 px-2 border-l-2 border-gray-300 text-center">
                                 <p className="text-lg font-bold text-[#3d9aa8]">{plan.annual_target}</p>
                               </td>
                               
                               {/* المتوسط الشهري */}
-                              <td className="w-24 py-4 px-2 border-l border-gray-200 text-center bg-white/50">
+                              <td className="w-28 py-4 px-2 border-l-2 border-gray-300 text-center bg-white/50">
                                 <p className="text-lg font-bold text-[#2d7a85]">
                                   {Math.round(plan.annual_target / 12)}
                                 </p>
@@ -724,7 +723,7 @@ export default function OperationalPlans() {
                           if (isExpanded) {
                             rows.push(
                               <tr key={`${plan.id}-expanded`}>
-                                <td colSpan={isAdmin ? 8 : 7} className="p-0">
+                                <td colSpan={isAdmin ? 7 : 6} className="p-0">
                                   <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
                                     <div className="overflow-x-auto rounded-xl border border-[#3d9aa8]/20 shadow-sm">
                                       <Table>
