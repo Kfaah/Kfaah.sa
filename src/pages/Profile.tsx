@@ -91,11 +91,11 @@ export default function Profile() {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setEditData(prev => ({ ...prev, [field]: value }));
+    setEditData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // View Mode Component
-  const ViewMode = () => (
+  // View Mode Render
+  const renderViewMode = () => (
     <div className="space-y-6">
       {/* Profile Header Card */}
       <Card className="overflow-hidden">
@@ -258,8 +258,8 @@ export default function Profile() {
     </div>
   );
 
-  // Edit Mode Component
-  const EditMode = () => (
+  // Edit Mode Render
+  const renderEditMode = () => (
     <div className="space-y-6">
       {/* Header */}
       <Card>
@@ -453,7 +453,7 @@ export default function Profile() {
           className="hidden"
         />
 
-        {isEditing ? <EditMode /> : <ViewMode />}
+        {isEditing ? renderEditMode() : renderViewMode()}
       </div>
     </DashboardLayout>
   );
