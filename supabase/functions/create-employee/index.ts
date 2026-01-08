@@ -6,6 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -61,17 +67,23 @@ serve(async (req) => {
     const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl } = await req.json();
 
     // Validate required fields
-    if (!fullName || !username || !password || !jobRole || !email || !phone) {
-      return new Response(
-        JSON.stringify({ error: "يرجى ملء جميع الحقول المطلوبة" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const fieldErrors: Record<string, string> = {};
+
+    if (!fullName?.trim()) fieldErrors.name = "الاسم الكامل مطلوب";
+    if (!username?.trim()) fieldErrors.username = "رقم الهوية مطلوب";
+    if (!password) fieldErrors.password = "كلمة المرور مطلوبة";
+    if (!email?.trim()) fieldErrors.email = "البريد الإلكتروني مطلوب";
+    if (!phone?.trim()) fieldErrors.phone = "رقم الجوال مطلوب";
+    if (!jobRole?.trim()) fieldErrors.role = "الدور الوظيفي مطلوب";
+
+    if (Object.keys(fieldErrors).length > 0) {
+      return json({ success: false, fieldErrors }, 200);
     }
 
     if (password.length < 6) {
-      return new Response(
-        JSON.stringify({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return json(
+        { success: false, fieldErrors: { password: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" } },
+        200
       );
     }
 
@@ -83,9 +95,9 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingUsername) {
-      return new Response(
-        JSON.stringify({ error: "رقم الهوية مسجل مسبقاً" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return json(
+        { success: false, fieldErrors: { username: "رقم الهوية مسجل مسبقاً" } },
+        200
       );
     }
 
@@ -97,9 +109,9 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingEmail) {
-      return new Response(
-        JSON.stringify({ error: "البريد الإلكتروني مسجل مسبقاً" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return json(
+        { success: false, fieldErrors: { email: "البريد الإلكتروني مسجل مسبقاً" } },
+        200
       );
     }
 
@@ -111,9 +123,9 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingPhone) {
-      return new Response(
-        JSON.stringify({ error: "رقم الجوال مسجل مسبقاً" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return json(
+        { success: false, fieldErrors: { phone: "رقم الجوال مسجل مسبقاً" } },
+        200
       );
     }
 
@@ -137,18 +149,16 @@ serve(async (req) => {
 
     if (createUserError) {
       console.error("Error creating user:", createUserError);
-      
+
+      // internalEmail is derived from username, so this mostly indicates a duplicate ID
       if (createUserError.message.includes("already been registered")) {
-        return new Response(
-          JSON.stringify({ error: "البريد الإلكتروني مسجل مسبقاً" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        return json(
+          { success: false, fieldErrors: { username: "رقم الهوية مسجل مسبقاً" } },
+          200
         );
       }
-      
-      return new Response(
-        JSON.stringify({ error: "حدث خطأ أثناء إنشاء الحساب" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+
+      return json({ success: false, error: "حدث خطأ أثناء إنشاء الحساب" }, 500);
     }
 
     // Create employee record
@@ -191,14 +201,14 @@ serve(async (req) => {
       console.error("Error assigning role:", roleError);
     }
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "تم إضافة الموظف بنجاح",
-        employee: employee 
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+      return json(
+        {
+          success: true,
+          message: "تم إضافة الموظف بنجاح",
+          employee: employee,
+        },
+        200
+      );
 
   } catch (error) {
     console.error("Error:", error);

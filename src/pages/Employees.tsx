@@ -87,6 +87,19 @@ const Employees = () => {
     avatar: "",
     avatarFile: null as File | null,
   });
+
+  type AddEmployeeField = "name" | "username" | "password" | "email" | "phone" | "department" | "role";
+  const [addErrors, setAddErrors] = useState<Partial<Record<AddEmployeeField, string>>>({});
+
+  const clearAddError = (field: AddEmployeeField) => {
+    setAddErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
   const [newDepartment, setNewDepartment] = useState({ name: "", color: "bg-primary" });
   const [newRole, setNewRole] = useState({ name: "", color: "bg-primary", department_id: "" });
@@ -180,13 +193,20 @@ const Employees = () => {
   };
 
   const handleAddEmployee = async () => {
-    if (!newEmployee.name || !newEmployee.username || !newEmployee.role || !newEmployee.password || !newEmployee.email || !newEmployee.phone || !newEmployee.department) {
-      toast.error("يرجى ملء جميع الحقول المطلوبة (الاسم، رقم الهوية، كلمة المرور، البريد الإلكتروني، رقم الجوال، القسم، الدور الوظيفي)");
-      return;
-    }
+    const nextErrors: Partial<Record<AddEmployeeField, string>> = {};
 
-    if (newEmployee.password.length < 6) {
-      toast.error("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+    if (!newEmployee.name.trim()) nextErrors.name = "الاسم الكامل مطلوب";
+    if (!newEmployee.username.trim()) nextErrors.username = "رقم الهوية مطلوب";
+    if (!newEmployee.password) nextErrors.password = "كلمة المرور مطلوبة";
+    if (newEmployee.password && newEmployee.password.length < 6)
+      nextErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+    if (!newEmployee.email.trim()) nextErrors.email = "البريد الإلكتروني مطلوب";
+    if (!newEmployee.phone.trim()) nextErrors.phone = "رقم الجوال مطلوب";
+    if (!newEmployee.department) nextErrors.department = "القسم مطلوب";
+    if (!newEmployee.role) nextErrors.role = "الدور الوظيفي مطلوب";
+
+    if (Object.keys(nextErrors).length > 0) {
+      setAddErrors(nextErrors);
       return;
     }
 
@@ -224,14 +244,16 @@ const Employees = () => {
       });
 
       if (response.error) {
-        console.log("Response error object:", response.error);
-        console.log("Response error message:", response.error.message);
         toast.error(getArabicErrorMessage(response.error, "حدث خطأ أثناء إضافة الموظف"));
         return;
       }
 
+      if (response.data?.fieldErrors) {
+        setAddErrors(response.data.fieldErrors as Partial<Record<AddEmployeeField, string>>);
+        return;
+      }
+
       if (response.data?.error) {
-        console.log("Response data error:", response.data.error);
         toast.error(response.data.error);
         return;
       }
@@ -242,6 +264,7 @@ const Employees = () => {
       }
 
       setNewEmployee({ name: "", username: "", email: "", phone: "", role: "", department: "", password: "", avatar: "", avatarFile: null });
+      setAddErrors({});
       setIsDialogOpen(false);
       toast.success("تم إضافة الموظف بنجاح");
     } catch (error: any) {
@@ -538,8 +561,12 @@ const Employees = () => {
                   id="name"
                   placeholder="أدخل اسم الموظف"
                   value={newEmployee.name}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                  onChange={(e) => {
+                    clearAddError("name");
+                    setNewEmployee({ ...newEmployee, name: e.target.value });
+                  }}
                 />
+                {addErrors.name && <p className="text-sm text-destructive">{addErrors.name}</p>}
               </div>
 
               <div className="space-y-2">
@@ -548,9 +575,13 @@ const Employees = () => {
                   id="username"
                   placeholder="أدخل رقم الهوية الوطنية"
                   value={newEmployee.username}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, username: e.target.value })}
+                  onChange={(e) => {
+                    clearAddError("username");
+                    setNewEmployee({ ...newEmployee, username: e.target.value });
+                  }}
                   dir="ltr"
                 />
+                {addErrors.username && <p className="text-sm text-destructive">{addErrors.username}</p>}
                 <p className="text-xs text-muted-foreground">يستخدم لتسجيل الدخول واسترجاع كلمة المرور</p>
               </div>
 
@@ -562,7 +593,10 @@ const Employees = () => {
                     type={showPassword ? "text" : "password"}
                     placeholder="أدخل كلمة المرور (6 أحرف على الأقل)"
                     value={newEmployee.password}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
+                    onChange={(e) => {
+                      clearAddError("password");
+                      setNewEmployee({ ...newEmployee, password: e.target.value });
+                    }}
                     className="pl-10"
                   />
                   <button
@@ -573,6 +607,7 @@ const Employees = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {addErrors.password && <p className="text-sm text-destructive">{addErrors.password}</p>}
               </div>
 
               <div className="space-y-2">
@@ -582,10 +617,14 @@ const Employees = () => {
                   type="email"
                   placeholder="example@atef.org"
                   value={newEmployee.email}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                  onChange={(e) => {
+                    clearAddError("email");
+                    setNewEmployee({ ...newEmployee, email: e.target.value });
+                  }}
                   dir="ltr"
                   required
                 />
+                {addErrors.email && <p className="text-sm text-destructive">{addErrors.email}</p>}
               </div>
 
               <div className="space-y-2">
@@ -594,18 +633,24 @@ const Employees = () => {
                   id="phone"
                   placeholder="+966 5x xxx xxxx"
                   value={newEmployee.phone}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
+                  onChange={(e) => {
+                    clearAddError("phone");
+                    setNewEmployee({ ...newEmployee, phone: e.target.value });
+                  }}
                   dir="ltr"
                   required
                 />
+                {addErrors.phone && <p className="text-sm text-destructive">{addErrors.phone}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label>القسم *</Label>
                 <Select
                   value={newEmployee.department || ""}
-                  onValueChange={(value) => setNewEmployee({ ...newEmployee, department: value })}
-                  required
+                  onValueChange={(value) => {
+                    clearAddError("department");
+                    setNewEmployee({ ...newEmployee, department: value });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر القسم" />
@@ -618,13 +663,17 @@ const Employees = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {addErrors.department && <p className="text-sm text-destructive">{addErrors.department}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label>الدور الوظيفي *</Label>
                 <Select
                   value={newEmployee.role}
-                  onValueChange={(value) => setNewEmployee({ ...newEmployee, role: value })}
+                  onValueChange={(value) => {
+                    clearAddError("role");
+                    setNewEmployee({ ...newEmployee, role: value });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الدور الوظيفي" />
@@ -637,6 +686,7 @@ const Employees = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {addErrors.role && <p className="text-sm text-destructive">{addErrors.role}</p>}
               </div>
 
               <Button 
