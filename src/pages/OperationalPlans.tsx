@@ -620,13 +620,20 @@ export default function OperationalPlans() {
                           const isFirstRowOfInit = !initRowRendered;
                           const isLastInInitiative = planIndex === initGroup.plans.length - 1;
                           const isLastInitiative = initIndex === group.initiatives.length - 1;
+                          const isLastGoal = groupIndex === groupedPlans.length - 1;
                           
                           // تحديد نوع الفاصل السفلي
-                          const bottomBorder = isLastInInitiative && !isLastInitiative 
-                            ? 'border-b-4 border-b-gray-400' // فاصل كبير بين المبادرات
-                            : !isLastInInitiative 
-                              ? 'border-b border-b-gray-200' // فاصل صغير بين الأنشطة
-                              : '';
+                          let bottomBorder = '';
+                          if (isLastInInitiative && isLastInitiative && !isLastGoal) {
+                            // فاصل كبير بين الأهداف الاستراتيجية
+                            bottomBorder = 'border-b-4 border-b-gray-500';
+                          } else if (isLastInInitiative && !isLastInitiative) {
+                            // فاصل كبير بين المبادرات
+                            bottomBorder = 'border-b-4 border-b-gray-400';
+                          } else if (!isLastInInitiative) {
+                            // فاصل صغير بين الأنشطة
+                            bottomBorder = 'border-b border-b-gray-200';
+                          }
                           
                           rows.push(
                             <tr 
