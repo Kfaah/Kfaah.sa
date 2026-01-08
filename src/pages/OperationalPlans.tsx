@@ -620,31 +620,6 @@ export default function OperationalPlans() {
                               </TableBody>
                             </Table>
                           </div>
-                          
-                          {/* شريط التقدم البصري */}
-                          <div className="mt-4 grid grid-cols-12 gap-2">
-                            {MONTHS_AR.map((month, index) => {
-                              const monthData = plan.months?.find(m => m.month === index + 1);
-                              const target = monthData?.monthly_target || 0;
-                              const percentage = plan.annual_target > 0 ? (target / plan.annual_target) * 100 : 0;
-                              
-                              return (
-                                <div 
-                                  key={index} 
-                                  className="text-center p-2 rounded-lg bg-white border border-[#3d9aa8]/20 shadow-sm"
-                                >
-                                  <p className="text-[10px] text-muted-foreground">{month}</p>
-                                  <p className="text-sm font-bold text-[#3d9aa8]">{target}</p>
-                                  <div className="mt-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-gradient-to-r from-[#3d9aa8] to-[#4A9BA8] rounded-full"
-                                      style={{ width: `${Math.min(percentage * 10, 100)}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
                         </div>
                       )}
                     </div>
