@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getArabicErrorMessage } from "@/lib/errors";
 
 interface Employee {
   id: string;
@@ -223,7 +224,8 @@ const Employees = () => {
       });
 
       if (response.error) {
-        throw new Error(response.error.message);
+        toast.error(getArabicErrorMessage(response.error, "حدث خطأ أثناء إضافة الموظف"));
+        return;
       }
 
       if (response.data?.error) {
@@ -241,7 +243,7 @@ const Employees = () => {
       toast.success("تم إضافة الموظف بنجاح");
     } catch (error: any) {
       console.error("Error adding employee:", error);
-      toast.error(error.message || "حدث خطأ أثناء إضافة الموظف");
+      toast.error(getArabicErrorMessage(error, "حدث خطأ أثناء إضافة الموظف"));
     } finally {
       setIsLoading(false);
     }
@@ -267,7 +269,7 @@ const Employees = () => {
       setIsDeptDialogOpen(false);
       toast.success("تم إضافة القسم بنجاح");
     } catch (error: any) {
-      toast.error(error.message || "حدث خطأ");
+      toast.error(getArabicErrorMessage(error, "حدث خطأ"));
     } finally {
       setIsLoading(false);
     }
@@ -297,7 +299,7 @@ const Employees = () => {
       setIsRoleDialogOpen(false);
       toast.success("تم إضافة الدور بنجاح");
     } catch (error: any) {
-      toast.error(error.message || "حدث خطأ");
+      toast.error(getArabicErrorMessage(error, "حدث خطأ"));
     } finally {
       setIsLoading(false);
     }
@@ -340,7 +342,7 @@ const Employees = () => {
       setEditAvatarFile(null);
       toast.success("تم تحديث بيانات الموظف");
     } catch (error: any) {
-      toast.error(error.message || "حدث خطأ");
+      toast.error(getArabicErrorMessage(error, "حدث خطأ"));
     } finally {
       setIsLoading(false);
     }
@@ -359,7 +361,10 @@ const Employees = () => {
         body: { userId: employee.user_id },
       });
 
-      if (response.error) throw response.error;
+      if (response.error) {
+        toast.error(getArabicErrorMessage(response.error, "حدث خطأ"));
+        return;
+      }
       if (response.data?.error) {
         toast.error(response.data.error);
         return;
@@ -371,7 +376,7 @@ const Employees = () => {
         toast.success(`تم فتح حساب ${employee.full_name} في نافذة جديدة`);
       }
     } catch (error: any) {
-      toast.error(error.message || "حدث خطأ");
+      toast.error(getArabicErrorMessage(error, "حدث خطأ"));
     } finally {
       setIsLoading(false);
     }

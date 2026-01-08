@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { getArabicErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,13 +73,7 @@ export default function Auth() {
       }
     } catch (error: any) {
       console.error("Auth error:", error);
-      if (error.message.includes("User already registered")) {
-        toast.error("اسم المستخدم مسجل بالفعل");
-      } else if (error.message.includes("Invalid login credentials")) {
-        toast.error("بيانات الدخول غير صحيحة");
-      } else {
-        toast.error(error.message || "حدث خطأ أثناء العملية");
-      }
+      toast.error(getArabicErrorMessage(error, "حدث خطأ أثناء العملية"));
     } finally {
       setLoading(false);
     }
