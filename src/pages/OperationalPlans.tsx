@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,14 +65,13 @@ const MONTHS_AR = [
 ];
 
 export default function OperationalPlans() {
+  const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const { user } = useUser();
   const { toast } = useToast();
   const [plans, setPlans] = useState<OperationalPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<OperationalPlan | null>(null);
   
   // Form state
   const [activityName, setActivityName] = useState("");
@@ -276,8 +276,7 @@ export default function OperationalPlans() {
   };
 
   const handleViewPlan = (plan: OperationalPlan) => {
-    setSelectedPlan(plan);
-    setIsViewDialogOpen(true);
+    navigate(`/operational-plans/${plan.id}`);
   };
 
   const handleDeletePlan = async (planId: string) => {
@@ -536,72 +535,6 @@ export default function OperationalPlans() {
             )}
           </CardContent>
         </Card>
-
-        {/* View Plan Dialog */}
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-5xl">
-            <DialogHeader>
-              <DialogTitle>تفاصيل الخطة التشغيلية</DialogTitle>
-            </DialogHeader>
-            
-            {selectedPlan && (
-              <div className="space-y-4">
-                {/* معلومات أساسية */}
-                <div className="grid grid-cols-4 gap-4 bg-muted/30 rounded-lg p-4">
-                  <div>
-                    <Label className="text-muted-foreground text-xs">اسم النشاط</Label>
-                    <p className="font-semibold">{selectedPlan.activity_name}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs">المستهدف السنوي</Label>
-                    <p className="font-semibold">{selectedPlan.annual_target}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs">السنة</Label>
-                    <p className="font-semibold">{selectedPlan.year}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs">الحالة</Label>
-                    <p>{getStatusBadge(selectedPlan.status)}</p>
-                  </div>
-                </div>
-
-                {/* جدول توزيع الأشهر */}
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-primary/10">
-                        <TableHead className="text-right font-bold text-primary min-w-[120px]">النشاط</TableHead>
-                        {MONTHS_AR.map((month, index) => (
-                          <TableHead key={index} className="text-center font-medium min-w-[70px]">
-                            {month}
-                          </TableHead>
-                        ))}
-                        <TableHead className="text-center font-bold bg-primary/20 min-w-[80px]">المجموع</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium bg-muted/30">{selectedPlan.activity_name}</TableCell>
-                        {MONTHS_AR.map((_, index) => {
-                          const monthData = selectedPlan.months?.find(m => m.month === index + 1);
-                          return (
-                            <TableCell key={index} className="text-center">
-                              <span className="font-semibold">{monthData?.monthly_target || 0}</span>
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell className="text-center font-bold bg-primary/10">
-                          {selectedPlan.annual_target}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardLayout>
   );
