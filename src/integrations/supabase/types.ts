@@ -134,6 +134,7 @@ export type Database = {
           department: string | null
           email: string | null
           first_name: string
+          job_role: string | null
           last_name: string
           location: string | null
           phone: string | null
@@ -146,6 +147,7 @@ export type Database = {
           department?: string | null
           email?: string | null
           first_name?: string
+          job_role?: string | null
           last_name?: string
           location?: string | null
           phone?: string | null
@@ -158,6 +160,7 @@ export type Database = {
           department?: string | null
           email?: string | null
           first_name?: string
+          job_role?: string | null
           last_name?: string
           location?: string | null
           phone?: string | null
