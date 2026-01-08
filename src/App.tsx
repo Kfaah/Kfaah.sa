@@ -10,6 +10,7 @@ import Employees from "./pages/Employees";
 import Roles from "./pages/Roles";
 import Tasks from "./pages/Tasks";
 import Plans from "./pages/Plans";
+import ExecutivePlans from "./pages/ExecutivePlans";
 import Profile from "./pages/Profile";
 import OperationalPlans from "./pages/OperationalPlans";
 import OperationalPlanDetails from "./pages/OperationalPlanDetails";
@@ -102,6 +103,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Plans />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/executive-plans"
+        element={
+          <ProtectedRoute>
+            <ExecutivePlans />
           </ProtectedRoute>
         }
       />
