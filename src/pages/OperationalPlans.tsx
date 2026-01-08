@@ -485,66 +485,88 @@ export default function OperationalPlans() {
                 لا توجد خطط تشغيلية حتى الآن
               </div>
             ) : (
-              <div className="divide-y">
-                {plans.map((plan) => {
+              <div className="border border-gray-300 rounded-lg overflow-hidden shadow-sm">
+                {/* رأس الجدول الرسمي */}
+                <div className="flex items-stretch bg-gradient-to-r from-[#2d7a85] to-[#3d9aa8] text-white">
+                  <div className="w-16 flex items-center justify-center py-3 border-l border-white/20">
+                    <span className="text-xs font-medium">#</span>
+                  </div>
+                  <div className="flex-[2] py-3 px-6 border-l border-white/20">
+                    <span className="text-sm font-semibold">المهمة</span>
+                  </div>
+                  <div className="flex-[2] py-3 px-6 border-l border-white/20">
+                    <span className="text-sm font-semibold">الموظف المكلف</span>
+                  </div>
+                  <div className="flex-1 py-3 px-6 border-l border-white/20 text-center">
+                    <span className="text-sm font-semibold">المستهدف السنوي</span>
+                  </div>
+                  <div className="flex-1 py-3 px-6 border-l border-white/20 text-center">
+                    <span className="text-sm font-semibold">المتوسط الشهري</span>
+                  </div>
+                  <div className="w-28 py-3 px-4 border-l border-white/20 text-center">
+                    <span className="text-sm font-semibold">الحالة</span>
+                  </div>
+                  <div className="w-16 py-3 px-2 text-center">
+                    <span className="text-sm font-semibold">حذف</span>
+                  </div>
+                </div>
+                
+                {/* صفوف البيانات */}
+                <div className="divide-y divide-gray-200">
+                {plans.map((plan, index) => {
                   const isExpanded = expandedPlanId === plan.id;
                   return (
-                    <div key={plan.id} className="bg-white border-b border-gray-200">
+                    <div key={plan.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/70'}`}>
                       {/* الصف الرئيسي */}
                       <div 
-                        className={`flex items-stretch cursor-pointer hover:bg-[#3d9aa8]/5 transition-colors ${isExpanded ? 'bg-[#3d9aa8]/10 border-r-4 border-[#3d9aa8]' : ''}`}
+                        className={`flex items-stretch cursor-pointer hover:bg-[#3d9aa8]/10 transition-all duration-200 ${isExpanded ? 'bg-[#3d9aa8]/15 border-r-4 border-[#3d9aa8] shadow-inner' : 'border-r-4 border-transparent'}`}
                         onClick={() => handleViewPlan(plan)}
                       >
                         {/* أيقونة السهم */}
-                        <div className={`w-16 flex items-center justify-center ${isExpanded ? 'bg-[#3d9aa8]' : 'bg-[#3d9aa8]/10'}`}>
-                          <ChevronDown className={`w-6 h-6 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-white' : 'text-[#3d9aa8]'}`} />
+                        <div className={`w-16 flex items-center justify-center border-l border-gray-200 ${isExpanded ? 'bg-[#3d9aa8]' : ''}`}>
+                          <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-white' : 'text-[#3d9aa8]'}`} />
                         </div>
                         
                         {/* المهمة */}
-                        <div className="flex-[2] py-5 px-6">
-                          <p className="text-sm font-bold text-gray-800 mb-1">المهمة</p>
-                          <p className="text-base text-[#3d9aa8]">{plan.activity_name}</p>
+                        <div className="flex-[2] py-4 px-6 border-l border-gray-200 flex items-center">
+                          <p className="font-semibold text-gray-800">{plan.activity_name}</p>
                         </div>
                         
                         {/* الموظف المكلف */}
-                        <div className="flex-[2] py-5 px-6 border-r border-gray-200">
-                          <p className="text-sm font-bold text-gray-800 mb-1">الموظف المكلف</p>
-                          <p className="text-base text-gray-600">{plan.employee_name || "-"}</p>
+                        <div className="flex-[2] py-4 px-6 border-l border-gray-200 flex items-center">
+                          <p className="text-gray-700">{plan.employee_name || "-"}</p>
                         </div>
                         
                         {/* المستهدف السنوي */}
-                        <div className="flex-1 py-5 px-6 border-r border-gray-200 text-center">
-                          <p className="text-sm font-bold text-gray-800 mb-1">المستهدف السنوي</p>
-                          <p className="text-2xl font-bold text-[#3d9aa8]">{plan.annual_target}</p>
+                        <div className="flex-1 py-4 px-6 border-l border-gray-200 flex items-center justify-center">
+                          <p className="text-xl font-bold text-[#3d9aa8]">{plan.annual_target}</p>
                         </div>
                         
                         {/* المتوسط الشهري */}
-                        <div className="flex-1 py-5 px-6 border-r border-gray-200 text-center">
-                          <p className="text-sm font-bold text-gray-800 mb-1">المتوسط الشهري</p>
-                          <p className="text-2xl font-bold text-[#2d7a85]">
+                        <div className="flex-1 py-4 px-6 border-l border-gray-200 flex items-center justify-center bg-[#3d9aa8]/5">
+                          <p className="text-xl font-bold text-[#2d7a85]">
                             {Math.round(plan.annual_target / 12)}
                           </p>
                         </div>
                         
                         {/* الحالة */}
-                        <div className="w-28 py-5 px-4 border-r border-gray-200 flex flex-col items-center justify-center">
-                          <p className="text-sm font-bold text-gray-800 mb-2">الحالة</p>
+                        <div className="w-28 py-4 px-4 border-l border-gray-200 flex items-center justify-center">
                           {getStatusBadge(plan.status)}
                         </div>
                         
                         {/* زر الحذف */}
-                        <div className="w-16 flex items-center justify-center border-r border-gray-200">
+                        <div className="w-16 flex items-center justify-center">
                           {(isAdmin || plan.user_id === authUser?.id) && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                              className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeletePlan(plan.id);
                               }}
                             >
-                              <Trash2 className="w-5 h-5" />
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           )}
                         </div>
@@ -630,6 +652,7 @@ export default function OperationalPlans() {
                     </div>
                   );
                 })}
+                </div>
               </div>
             )}
           </CardContent>
