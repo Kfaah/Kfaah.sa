@@ -138,6 +138,10 @@ export default function Profile() {
   };
 
   const handleEdit = () => {
+    if (!isAdmin) {
+      toast.error("ليس لديك صلاحية تعديل الملف الشخصي");
+      return;
+    }
     setEditData({ ...user });
     setIsEditing(true);
   };
@@ -148,6 +152,12 @@ export default function Profile() {
   };
 
   const handleSave = async () => {
+    if (!isAdmin) {
+      toast.error("ليس لديك صلاحية تعديل الملف الشخصي");
+      setIsEditing(false);
+      return;
+    }
+    
     setSaving(true);
     try {
       await updateUser({
