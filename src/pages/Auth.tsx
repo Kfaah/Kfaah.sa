@@ -21,18 +21,38 @@ export default function Auth() {
   const [phone, setPhone] = useState("");
   const navigate = useNavigate();
 
+  const normalizeIdentifier = (value: string) => {
+    const trimmed = value.trim();
+
+    // Convert Arabic-Indic + Persian digits to Western digits
+    const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
+    const persian = "۰۱۲۳۴۵۶۷۸۹";
+
+    return trimmed
+      .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
+      .replace(/[۰-۹]/g, (d) => String(persian.indexOf(d)));
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       if (isLogin) {
+        const normalized = normalizeIdentifier(username);
+
         // Check if input looks like an email
-        const isEmail = username.includes('@');
-        const loginEmail = isEmail 
-          ? username 
-          : `${username.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}@user.local`;
-        
+        const isEmail = normalized.includes("@");
+        const cleaned = normalized.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+
+        if (!isEmail && !cleaned) {
+          toast.error("يرجى إدخال رقم هوية/اسم مستخدم صحيح");
+          setLoading(false);
+          return;
+        }
+
+        const loginEmail = isEmail ? normalized : `${cleaned}@user.local`;
+
         const { error } = await supabase.auth.signInWithPassword({
           email: loginEmail,
           password,
@@ -47,12 +67,19 @@ export default function Auth() {
           setLoading(false);
           return;
         }
-        
+
         const redirectUrl = `${window.location.origin}/`;
         // Convert username to internal email format
-        const cleanUsername = username.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        const normalized = normalizeIdentifier(username);
+        const cleanUsername = normalized.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+
+        if (!cleanUsername) {
+          toast.error("يرجى إدخال رقم هوية/اسم مستخدم صحيح");
+          setLoading(false);
+          return;
+        }
+
         const internalEmail = `${cleanUsername}@user.local`;
-        
         const { error } = await supabase.auth.signUp({
           email: internalEmail,
           password,
