@@ -179,8 +179,8 @@ const Employees = () => {
   };
 
   const handleAddEmployee = async () => {
-    if (!newEmployee.name || !newEmployee.username || !newEmployee.role || !newEmployee.password || !newEmployee.email || !newEmployee.phone) {
-      toast.error("يرجى ملء جميع الحقول المطلوبة (الاسم، رقم الهوية، كلمة المرور، البريد الإلكتروني، رقم الجوال، الدور الوظيفي)");
+    if (!newEmployee.name || !newEmployee.username || !newEmployee.role || !newEmployee.password || !newEmployee.email || !newEmployee.phone || !newEmployee.department) {
+      toast.error("يرجى ملء جميع الحقول المطلوبة (الاسم، رقم الهوية، كلمة المرور، البريد الإلكتروني، رقم الجوال، القسم، الدور الوظيفي)");
       return;
     }
 
@@ -593,10 +593,11 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>القسم (اختياري)</Label>
+                <Label>القسم *</Label>
                 <Select
                   value={newEmployee.department || ""}
                   onValueChange={(value) => setNewEmployee({ ...newEmployee, department: value })}
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر القسم" />

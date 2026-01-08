@@ -15,6 +15,31 @@ const positiveMessages = [
   "رائع! استمر في العمل المميز 💪",
   "بارك الله في جهودك 🙏",
   "معاً نحو النجاح 🚀",
+  "أنت مميز في عملك! ⭐",
+  "عملك يصنع الفرق 🌈",
+  "استمر في التميز والإبداع 🎯",
+  "نقدر جهودك الرائعة 💎",
+  "أنت جزء مهم من فريقنا 🤝",
+  "يوم جديد فرص جديدة 🌅",
+  "ثقتك بنفسك مفتاح النجاح 🔑",
+  "كل خطوة صغيرة تصنع فرقاً كبيراً 👣",
+  "إيجابيتك تلهم الآخرين ☀️",
+  "عملك له أثر عظيم 🏆",
+  "أنت تصنع المستحيل ممكناً 💫",
+  "جودة عملك تتحدث عنك 📈",
+  "إبداعك لا حدود له 🎨",
+  "أنت مصدر إلهام للجميع 🌻",
+  "نجاحك نجاح لنا جميعاً 🎉",
+  "تفانيك في العمل محل تقدير 🙌",
+  "أنت تجعل بيئة العمل أفضل 🏡",
+  "طاقتك الإيجابية معدية 😊",
+  "عطاؤك لا ينضب 💝",
+  "مستقبل مشرق ينتظرك 🔮",
+  "أنت قائد بالفطرة 👑",
+  "إصرارك يستحق الإعجاب 🦁",
+  "كل يوم أنت أفضل من الأمس 📊",
+  "شغفك واضح في كل ما تفعله 🔥",
+  "نفخر بوجودك معنا 🌟",
 ];
 
 export default function Profile() {
@@ -26,8 +51,13 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
-    setCurrentMessage(randomMessage);
+    // Use day of year to show a different message each day
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - startOfYear.getTime();
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const messageIndex = dayOfYear % positiveMessages.length;
+    setCurrentMessage(positiveMessages[messageIndex]);
   }, []);
 
   // Sync editData when user data loads
