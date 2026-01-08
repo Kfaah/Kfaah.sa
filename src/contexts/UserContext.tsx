@@ -114,7 +114,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             location: data.location || "",
             profileImage: data.avatar_url,
             role: userRole === "admin" ? "مدير النظام" : "مستخدم",
-            jobRole: "",
+            jobRole: (data as any).job_role || "",
             username: authUser.user_metadata?.username || "",
             isEmployee: false,
           });
@@ -193,6 +193,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (data.phone !== undefined) updateData.phone = data.phone;
         if (data.department !== undefined) updateData.department = data.department;
         if (data.location !== undefined) updateData.location = data.location;
+        if (data.jobRole !== undefined) updateData.job_role = data.jobRole;
 
         if (Object.keys(updateData).length > 0) {
           const { error } = await supabase

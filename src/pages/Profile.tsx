@@ -80,6 +80,7 @@ export default function Profile() {
         department: editData.department,
         location: editData.location,
         username: editData.username,
+        jobRole: editData.jobRole,
       });
       setIsEditing(false);
       toast.success("تم حفظ التغييرات بنجاح");
@@ -131,13 +132,13 @@ export default function Profile() {
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   متصل الآن
                 </span>
-                {user.isEmployee && user.jobRole && (
+                {user.jobRole && (
                   <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-medium">
                     <Briefcase className="w-4 h-4" />
                     {user.jobRole}
                   </span>
                 )}
-                {user.department && !user.isEmployee && (
+                {user.department && (
                   <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium">
                     <Building className="w-4 h-4" />
                     {user.department}
@@ -201,7 +202,7 @@ export default function Profile() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {user.isEmployee && user.jobRole && (
+            {user.jobRole && (
               <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
                 <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
                   <Briefcase className="w-5 h-5 text-violet-600" />
@@ -402,6 +403,19 @@ export default function Profile() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="jobRole" className="text-base flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-muted-foreground" />
+                الدور الوظيفي
+              </Label>
+              <Input
+                id="jobRole"
+                value={editData.jobRole || ""}
+                onChange={(e) => handleInputChange("jobRole", e.target.value)}
+                className="text-base h-12"
+                placeholder="مثال: مدير النظام"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="location" className="text-base flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-muted-foreground" />
