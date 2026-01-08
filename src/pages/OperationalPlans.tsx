@@ -489,62 +489,66 @@ export default function OperationalPlans() {
                 {plans.map((plan) => {
                   const isExpanded = expandedPlanId === plan.id;
                   return (
-                    <div key={plan.id} className="bg-white">
+                    <div key={plan.id} className="bg-white border-b border-gray-100">
                       {/* الصف الرئيسي */}
                       <div 
-                        className={`flex items-center justify-between p-4 cursor-pointer hover:bg-[#3d9aa8]/5 transition-colors ${isExpanded ? 'bg-[#3d9aa8]/10 border-r-4 border-[#3d9aa8]' : ''}`}
+                        className={`flex items-center cursor-pointer hover:bg-[#3d9aa8]/5 transition-colors ${isExpanded ? 'bg-[#3d9aa8]/10 border-r-4 border-[#3d9aa8]' : ''}`}
                         onClick={() => handleViewPlan(plan)}
                       >
-                        <div className="flex items-center gap-6 flex-1">
-                          {/* أيقونة السهم */}
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isExpanded ? 'bg-[#3d9aa8] text-white rotate-180' : 'bg-[#3d9aa8]/10 text-[#3d9aa8]'}`}>
-                            <ChevronDown className="w-5 h-5 transition-transform" />
+                        {/* أيقونة السهم */}
+                        <div className={`w-14 h-full flex items-center justify-center py-4 ${isExpanded ? 'bg-[#3d9aa8]' : 'bg-[#3d9aa8]/10'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isExpanded ? 'text-white' : 'text-[#3d9aa8]'}`}>
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                           </div>
-                          
-                          {/* المهمة (اسم النشاط) */}
-                          <div className="flex-1 min-w-[150px]">
-                            <p className="text-xs text-muted-foreground">المهمة</p>
-                            <p className="font-bold text-foreground">{plan.activity_name}</p>
-                          </div>
-                          
-                          {/* الموظف المكلف */}
-                          <div className="min-w-[120px]">
-                            <p className="text-xs text-muted-foreground">الموظف المكلف</p>
-                            <p className="font-semibold">{plan.employee_name || "-"}</p>
-                          </div>
-                          
-                          {/* المستهدف السنوي */}
-                          <div className="text-center min-w-[100px]">
-                            <p className="text-xs text-muted-foreground">المستهدف السنوي</p>
-                            <p className="font-bold text-lg text-[#3d9aa8]">{plan.annual_target}</p>
-                          </div>
-                          
-                          {/* متوسط الاستهداف الشهري */}
-                          <div className="text-center min-w-[100px]">
-                            <p className="text-xs text-muted-foreground">المتوسط الشهري</p>
-                            <p className="font-bold text-lg text-[#2d7a85]">
-                              {Math.round(plan.annual_target / 12)}
-                            </p>
-                          </div>
-                          
-                          {/* الحالة */}
-                          <div>{getStatusBadge(plan.status)}</div>
+                        </div>
+                        
+                        {/* المهمة */}
+                        <div className="flex-1 py-4 px-4 border-l border-gray-100">
+                          <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">المهمة</p>
+                          <p className="font-bold text-base text-gray-800">{plan.activity_name}</p>
+                        </div>
+                        
+                        {/* الموظف المكلف */}
+                        <div className="w-[140px] py-4 px-4 border-l border-gray-100 bg-gray-50/50">
+                          <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">الموظف المكلف</p>
+                          <p className="font-bold text-base text-gray-800">{plan.employee_name || "-"}</p>
+                        </div>
+                        
+                        {/* المستهدف السنوي */}
+                        <div className="w-[110px] py-4 px-4 border-l border-gray-100 text-center">
+                          <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">المستهدف السنوي</p>
+                          <p className="font-bold text-xl text-[#3d9aa8]">{plan.annual_target}</p>
+                        </div>
+                        
+                        {/* المتوسط الشهري */}
+                        <div className="w-[110px] py-4 px-4 border-l border-gray-100 text-center bg-[#3d9aa8]/5">
+                          <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">المتوسط الشهري</p>
+                          <p className="font-bold text-xl text-[#2d7a85]">
+                            {Math.round(plan.annual_target / 12)}
+                          </p>
+                        </div>
+                        
+                        {/* الحالة */}
+                        <div className="w-[90px] py-4 px-3 border-l border-gray-100 text-center">
+                          {getStatusBadge(plan.status)}
                         </div>
                         
                         {/* زر الحذف */}
-                        {(isAdmin || plan.user_id === authUser?.id) && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-500 hover:text-red-700 mr-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeletePlan(plan.id);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <div className="w-[60px] py-4 px-2 text-center">
+                          {(isAdmin || plan.user_id === authUser?.id) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePlan(plan.id);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       
                       {/* المحتوى المنسدل */}
