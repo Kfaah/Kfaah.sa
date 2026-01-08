@@ -375,20 +375,6 @@ export default function Profile() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-base flex items-center gap-2">
-                <AtSign className="w-4 h-4 text-muted-foreground" />
-                اسم المستخدم - رقم الهوية (ID)
-              </Label>
-              <Input
-                id="username"
-                value={editData.username || ""}
-                onChange={(e) => handleInputChange("username", e.target.value)}
-                className="text-base h-12"
-                dir="ltr"
-                placeholder="أدخل رقم الهوية الوطنية"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="department" className="text-base flex items-center gap-2">
                 <Building className="w-4 h-4 text-muted-foreground" />
                 القسم
@@ -398,11 +384,9 @@ export default function Profile() {
                 value={editData.department}
                 onChange={(e) => handleInputChange("department", e.target.value)}
                 className="text-base h-12"
+                placeholder="مثال: تقنية المعلومات"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="jobRole" className="text-base flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-muted-foreground" />
@@ -414,6 +398,23 @@ export default function Profile() {
                 onChange={(e) => handleInputChange("jobRole", e.target.value)}
                 className="text-base h-12"
                 placeholder="مثال: مدير النظام"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-base flex items-center gap-2">
+                <AtSign className="w-4 h-4 text-muted-foreground" />
+                اسم المستخدم - رقم الهوية (ID)
+              </Label>
+              <Input
+                id="username"
+                value={editData.username || ""}
+                onChange={(e) => handleInputChange("username", e.target.value)}
+                className="text-base h-12"
+                dir="ltr"
+                placeholder="أدخل رقم الهوية الوطنية"
               />
             </div>
             <div className="space-y-2">
