@@ -941,7 +941,7 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>الاسم الكامل <span className="text-destructive">*</span></Label>
+                <Label>الاسم <span className="text-destructive">*</span></Label>
                 <Input
                   value={editingEmployee.full_name}
                   onChange={(e) => {
@@ -954,7 +954,7 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>رقم الهوية <span className="text-destructive">*</span></Label>
+                <Label>اسم المستخدم - رقم الهوية (ID) <span className="text-destructive">*</span></Label>
                 <Input
                   value={editingEmployee.username || ""}
                   onChange={(e) => {
@@ -966,6 +966,31 @@ const Employees = () => {
                   className={editErrors.username ? "border-destructive" : ""}
                 />
                 {editErrors.username && <p className="text-xs text-destructive">{editErrors.username}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>كلمة المرور الجديدة</Label>
+                <div className="relative">
+                  <Input
+                    type={showEditPassword ? "text" : "password"}
+                    value={editPassword}
+                    onChange={(e) => {
+                      setEditPassword(e.target.value);
+                      if (editErrors.password) setEditErrors(prev => ({ ...prev, password: undefined }));
+                    }}
+                    dir="ltr"
+                    placeholder="اترك فارغاً للإبقاء على كلمة المرور الحالية"
+                    className={editErrors.password ? "border-destructive pl-10" : "pl-10"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {editErrors.password && <p className="text-xs text-destructive">{editErrors.password}</p>}
               </div>
 
               <div className="space-y-2">
@@ -998,32 +1023,7 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>كلمة المرور الجديدة</Label>
-                <div className="relative">
-                  <Input
-                    type={showEditPassword ? "text" : "password"}
-                    value={editPassword}
-                    onChange={(e) => {
-                      setEditPassword(e.target.value);
-                      if (editErrors.password) setEditErrors(prev => ({ ...prev, password: undefined }));
-                    }}
-                    dir="ltr"
-                    placeholder="اترك فارغاً للإبقاء على كلمة المرور الحالية"
-                    className={editErrors.password ? "border-destructive pl-10" : "pl-10"}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowEditPassword(!showEditPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {editErrors.password && <p className="text-xs text-destructive">{editErrors.password}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label>القسم</Label>
+                <Label>القسم <span className="text-destructive">*</span></Label>
                 <Select
                   value={jobRoles.find(r => r.name === editingEmployee.job_role)?.department_id || ""}
                   onValueChange={(value) => {
@@ -1068,7 +1068,7 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>الحالة</Label>
+                <Label>الحالة <span className="text-destructive">*</span></Label>
                 <Select
                   value={editingEmployee.status}
                   onValueChange={(value: "active" | "on_leave" | "inactive") => setEditingEmployee({ ...editingEmployee, status: value })}
