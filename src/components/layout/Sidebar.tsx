@@ -16,6 +16,8 @@ import {
   LogOut,
   Target,
   TrendingUp,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -65,10 +67,14 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, previewAsEmployee, setPreviewAsEmployee } = useUser();
   const { signOut } = useAuth();
 
+  // Check if user is actually an admin (not in preview mode)
+  const isActuallyAdmin = !user.isEmployee && user.role === "مدير النظام";
+
   const handleSignOut = async () => {
+    setPreviewAsEmployee(false);
     await signOut();
     navigate("/auth");
   };
@@ -283,8 +289,8 @@ export function Sidebar() {
           }}
         >
           <div className="space-y-2.5" dir="rtl">
-            {/* عرض القائمة حسب نوع المستخدم */}
-            {(user.isEmployee ? employeeNavItems : adminNavItems).map((item) => (
+            {/* عرض القائمة حسب نوع المستخدم أو وضع المعاينة */}
+            {(user.isEmployee || previewAsEmployee ? employeeNavItems : adminNavItems).map((item) => (
               <div key={item.href}>
                 <NavLink item={item} />
               </div>
@@ -294,6 +300,36 @@ export function Sidebar() {
             <div className="pt-3 mt-3 border-t border-white/20">
               <NavLink item={settingsNavItem} />
             </div>
+
+            {/* زر معاينة كموظف - يظهر فقط للمدير */}
+            {isActuallyAdmin && (
+              <div className="pt-3 mt-3 border-t border-white/20">
+                <button
+                  onClick={() => setPreviewAsEmployee(!previewAsEmployee)}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none transition-colors text-sm",
+                    previewAsEmployee 
+                      ? "bg-amber-500 text-white hover:bg-amber-600" 
+                      : "bg-white/20 text-white hover:bg-white/30"
+                  )}
+                >
+                  {previewAsEmployee ? (
+                    <>
+                      <EyeOff className="w-4 h-4" />
+                      {!collapsed && <span className="font-medium">إلغاء المعاينة</span>}
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4" />
+                      {!collapsed && <span className="font-medium">معاينة كموظف</span>}
+                    </>
+                  )}
+                </button>
+                {previewAsEmployee && !collapsed && (
+                  <p className="text-xs text-amber-200 text-center mt-1">أنت في وضع المعاينة</p>
+                )}
+              </div>
+            )}
 
             {/* Logout and Collapse Buttons - داخل التمرير */}
             <div className="pt-6 mt-6 border-t border-white/20 space-y-2">
