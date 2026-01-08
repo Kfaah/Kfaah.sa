@@ -246,14 +246,35 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (!authUser) return;
 
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ avatar_url: image })
-        .eq("user_id", authUser.id);
+      // Check if user is an employee
+      const { data: employeeData } = await supabase
+        .from("employees")
+        .select("id")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
 
-      if (error) {
-        console.error("Error updating avatar:", error);
-        throw error;
+      if (employeeData) {
+        // Update employee avatar
+        const { error } = await supabase
+          .from("employees")
+          .update({ avatar_url: image })
+          .eq("user_id", authUser.id);
+
+        if (error) {
+          console.error("Error updating employee avatar:", error);
+          throw error;
+        }
+      } else {
+        // Update profile avatar
+        const { error } = await supabase
+          .from("profiles")
+          .update({ avatar_url: image })
+          .eq("user_id", authUser.id);
+
+        if (error) {
+          console.error("Error updating profile avatar:", error);
+          throw error;
+        }
       }
 
       setUser((prev) => ({ ...prev, profileImage: image }));
