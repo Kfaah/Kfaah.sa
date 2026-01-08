@@ -199,8 +199,12 @@ const Employees = () => {
   const handleAddEmployee = async () => {
     const nextErrors: Partial<Record<AddEmployeeField, string>> = {};
 
-    if (!newEmployee.name.trim()) nextErrors.name = "الاسم الكامل مطلوب";
-    if (!newEmployee.username.trim()) nextErrors.username = "رقم الهوية مطلوب";
+    if (!newEmployee.name.trim()) nextErrors.name = "الاسم مطلوب";
+    if (!newEmployee.username.trim()) {
+      nextErrors.username = "رقم الهوية مطلوب";
+    } else if (!/^\d{10}$/.test(newEmployee.username.trim())) {
+      nextErrors.username = "رقم الهوية يجب أن يتكون من 10 أرقام فقط";
+    }
     if (!newEmployee.password) nextErrors.password = "كلمة المرور مطلوبة";
     if (newEmployee.password && newEmployee.password.length < 6)
       nextErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
@@ -341,8 +345,12 @@ const Employees = () => {
     
     // Validation
     const nextErrors: Partial<Record<EditEmployeeField, string>> = {};
-    if (!editingEmployee.full_name.trim()) nextErrors.full_name = "الاسم الكامل مطلوب";
-    if (!editingEmployee.username?.trim()) nextErrors.username = "رقم الهوية مطلوب";
+    if (!editingEmployee.full_name.trim()) nextErrors.full_name = "الاسم مطلوب";
+    if (!editingEmployee.username?.trim()) {
+      nextErrors.username = "رقم الهوية مطلوب";
+    } else if (!/^\d{10}$/.test(editingEmployee.username.trim())) {
+      nextErrors.username = "رقم الهوية يجب أن يتكون من 10 أرقام فقط";
+    }
     if (!editingEmployee.email?.trim()) nextErrors.email = "البريد الإلكتروني مطلوب";
     if (!editingEmployee.phone?.trim()) nextErrors.phone = "رقم الجوال مطلوب";
     if (!editingEmployee.job_role?.trim()) nextErrors.job_role = "الدور الوظيفي مطلوب";
