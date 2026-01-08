@@ -103,6 +103,7 @@ const Employees = () => {
   const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
   const [editPassword, setEditPassword] = useState("");
   const [showEditPassword, setShowEditPassword] = useState(false);
+  const [editSelectedDepartment, setEditSelectedDepartment] = useState<string>("");
   type EditEmployeeField = "full_name" | "username" | "email" | "phone" | "job_role" | "password" | "department" | "status";
   const [editErrors, setEditErrors] = useState<Partial<Record<EditEmployeeField, string>>>({});
   const [newDepartment, setNewDepartment] = useState({ name: "", color: "bg-primary" });
@@ -354,9 +355,8 @@ const Employees = () => {
     if (!editingEmployee.email?.trim()) nextErrors.email = "البريد الإلكتروني مطلوب";
     if (!editingEmployee.phone?.trim()) nextErrors.phone = "رقم الجوال مطلوب";
     
-    // التحقق من القسم - يجب أن يكون الدور الوظيفي مرتبط بقسم
-    const selectedRole = jobRoles.find(r => r.name === editingEmployee.job_role);
-    if (!selectedRole?.department_id) nextErrors.department = "القسم مطلوب";
+    // التحقق من القسم
+    if (!editSelectedDepartment) nextErrors.department = "القسم مطلوب";
     
     if (!editingEmployee.job_role?.trim()) nextErrors.job_role = "الدور الوظيفي مطلوب";
     if (!editingEmployee.status?.trim()) nextErrors.status = "الحالة مطلوبة";
@@ -880,6 +880,9 @@ const Employees = () => {
                     className="flex-1 gap-1"
                     onClick={() => {
                       setEditingEmployee(employee);
+                      // تعيين القسم المختار بناءً على الدور الوظيفي الحالي
+                      const currentRole = jobRoles.find(r => r.name === employee.job_role);
+                      setEditSelectedDepartment(currentRole?.department_id || "");
                       setIsEditDialogOpen(true);
                     }}
                   >
@@ -1039,8 +1042,9 @@ const Employees = () => {
               <div className="space-y-2">
                 <Label>القسم <span className="text-destructive">*</span></Label>
                 <Select
-                  value={jobRoles.find(r => r.name === editingEmployee.job_role)?.department_id || ""}
+                  value={editSelectedDepartment}
                   onValueChange={(value) => {
+                    setEditSelectedDepartment(value);
                     // عند تغيير القسم، نعيد تعيين الدور الوظيفي
                     setEditingEmployee({ ...editingEmployee, job_role: "" });
                     if (editErrors.department) setEditErrors(prev => ({ ...prev, department: undefined }));
@@ -1074,11 +1078,13 @@ const Employees = () => {
                     <SelectValue placeholder="اختر الدور الوظيفي" />
                   </SelectTrigger>
                   <SelectContent>
-                    {jobRoles.map((role) => (
-                      <SelectItem key={role.id} value={role.name}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
+                    {jobRoles
+                      .filter(role => role.department_id === editSelectedDepartment)
+                      .map((role) => (
+                        <SelectItem key={role.id} value={role.name}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {editErrors.job_role && <p className="text-xs text-destructive">{editErrors.job_role}</p>}
