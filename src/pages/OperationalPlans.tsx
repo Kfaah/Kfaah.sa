@@ -66,6 +66,27 @@ const MONTHS_AR = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
 
+// ألوان مميزة لكل هدف استراتيجي
+const GOAL_COLORS = [
+  { bg: "bg-blue-50", border: "border-l-blue-500", text: "text-blue-700" },
+  { bg: "bg-emerald-50", border: "border-l-emerald-500", text: "text-emerald-700" },
+  { bg: "bg-amber-50", border: "border-l-amber-500", text: "text-amber-700" },
+  { bg: "bg-purple-50", border: "border-l-purple-500", text: "text-purple-700" },
+  { bg: "bg-rose-50", border: "border-l-rose-500", text: "text-rose-700" },
+  { bg: "bg-cyan-50", border: "border-l-cyan-500", text: "text-cyan-700" },
+  { bg: "bg-orange-50", border: "border-l-orange-500", text: "text-orange-700" },
+  { bg: "bg-indigo-50", border: "border-l-indigo-500", text: "text-indigo-700" },
+];
+
+interface GroupedPlans {
+  strategicGoal: string;
+  colorIndex: number;
+  initiatives: {
+    initiative: string;
+    plans: OperationalPlan[];
+  }[];
+}
+
 export default function OperationalPlans() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
@@ -545,136 +566,197 @@ export default function OperationalPlans() {
                   </div>
                 </div>
                 
-                {/* صفوف البيانات */}
-                <div className="divide-y divide-gray-200">
-                {plans.map((plan, index) => {
-                  const isExpanded = expandedPlanId === plan.id;
-                  return (
-                    <div key={plan.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/70'}`}>
-                      {/* الصف الرئيسي */}
-                      <div 
-                        className={`flex items-stretch cursor-pointer hover:bg-[#3d9aa8]/10 transition-all duration-200 ${isExpanded ? 'bg-[#3d9aa8]/15 border-r-4 border-[#3d9aa8] shadow-inner' : 'border-r-4 border-transparent'}`}
-                        onClick={() => handleViewPlan(plan)}
-                      >
-                        {/* أيقونة السهم */}
-                        <div className={`w-12 flex items-center justify-center border-l border-gray-200 ${isExpanded ? 'bg-[#3d9aa8]' : ''}`}>
-                          <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-white' : 'text-[#3d9aa8]'}`} />
-                        </div>
-                        
-                        {/* الهدف الاستراتيجي */}
-                        <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
-                          <p className="text-gray-800 text-sm">{plan.strategic_goal || "-"}</p>
-                        </div>
-                        
-                        {/* المبادرة */}
-                        <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
-                          <p className="text-gray-700 text-sm">{plan.initiative || "-"}</p>
-                        </div>
-                        
-                        {/* النشاط */}
-                        <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
-                          <p className="font-semibold text-gray-800 text-sm">{plan.activity_name}</p>
-                        </div>
-                        
-                        {/* الموظف المكلف - يظهر فقط للمدير */}
-                        {isAdmin && (
-                          <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
-                            <p className="text-gray-700 text-sm">{plan.employee_name || "-"}</p>
+                {/* صفوف البيانات المجمعة */}
+                <div>
+                {(() => {
+                  // تجميع الخطط حسب الهدف الاستراتيجي ثم المبادرة
+                  const groupedPlans: GroupedPlans[] = [];
+                  const goalMap = new Map<string, { initiatives: Map<string, OperationalPlan[]> }>();
+                  
+                  plans.forEach(plan => {
+                    const goal = plan.strategic_goal || "بدون هدف";
+                    const init = plan.initiative || "بدون مبادرة";
+                    
+                    if (!goalMap.has(goal)) {
+                      goalMap.set(goal, { initiatives: new Map() });
+                    }
+                    const goalData = goalMap.get(goal)!;
+                    
+                    if (!goalData.initiatives.has(init)) {
+                      goalData.initiatives.set(init, []);
+                    }
+                    goalData.initiatives.get(init)!.push(plan);
+                  });
+                  
+                  let colorIndex = 0;
+                  goalMap.forEach((goalData, goalName) => {
+                    const initiatives: { initiative: string; plans: OperationalPlan[] }[] = [];
+                    goalData.initiatives.forEach((plans, initName) => {
+                      initiatives.push({ initiative: initName, plans });
+                    });
+                    groupedPlans.push({
+                      strategicGoal: goalName,
+                      colorIndex: colorIndex % GOAL_COLORS.length,
+                      initiatives
+                    });
+                    colorIndex++;
+                  });
+                  
+                  return groupedPlans.map((group, groupIndex) => {
+                    const color = GOAL_COLORS[group.colorIndex];
+                    
+                    return (
+                      <div key={groupIndex} className={`${color.bg} border-r-4 ${color.border}`}>
+                        {group.initiatives.map((initGroup, initIndex) => (
+                          <div 
+                            key={initIndex} 
+                            className={initIndex > 0 ? "border-t-2 border-dashed border-gray-300" : ""}
+                          >
+                            {initGroup.plans.map((plan, planIndex) => {
+                              const isExpanded = expandedPlanId === plan.id;
+                              const isFirstInGoal = initIndex === 0 && planIndex === 0;
+                              const isFirstInInitiative = planIndex === 0;
+                              
+                              return (
+                                <div key={plan.id}>
+                                  {/* الصف الرئيسي */}
+                                  <div 
+                                    className={`flex items-stretch cursor-pointer hover:bg-white/50 transition-all duration-200 ${isExpanded ? 'bg-white/70 shadow-inner' : ''} ${planIndex > 0 ? 'border-t border-gray-200' : ''}`}
+                                    onClick={() => handleViewPlan(plan)}
+                                  >
+                                    {/* أيقونة السهم */}
+                                    <div className={`w-12 flex items-center justify-center border-l border-gray-200 ${isExpanded ? 'bg-[#3d9aa8]' : ''}`}>
+                                      <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-white' : 'text-[#3d9aa8]'}`} />
+                                    </div>
+                                    
+                                    {/* الهدف الاستراتيجي - يظهر فقط في الصف الأول */}
+                                    <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
+                                      {isFirstInGoal ? (
+                                        <p className={`font-semibold text-sm ${color.text}`}>{group.strategicGoal}</p>
+                                      ) : (
+                                        <p className="text-gray-400 text-sm">↳</p>
+                                      )}
+                                    </div>
+                                    
+                                    {/* المبادرة - يظهر فقط في الصف الأول لكل مبادرة */}
+                                    <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
+                                      {isFirstInInitiative ? (
+                                        <p className="text-gray-700 text-sm font-medium">{initGroup.initiative}</p>
+                                      ) : (
+                                        <p className="text-gray-400 text-sm">↳</p>
+                                      )}
+                                    </div>
+                                    
+                                    {/* النشاط */}
+                                    <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
+                                      <p className="font-semibold text-gray-800 text-sm">{plan.activity_name}</p>
+                                    </div>
+                                    
+                                    {/* الموظف المكلف - يظهر فقط للمدير */}
+                                    {isAdmin && (
+                                      <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
+                                        <p className="text-gray-700 text-sm">{plan.employee_name || "-"}</p>
+                                      </div>
+                                    )}
+                                    
+                                    {/* المستهدف السنوي */}
+                                    <div className="w-24 py-4 px-2 border-l border-gray-200 flex items-center justify-center">
+                                      <p className="text-lg font-bold text-[#3d9aa8]">{plan.annual_target}</p>
+                                    </div>
+                                    
+                                    {/* المتوسط الشهري */}
+                                    <div className="w-24 py-4 px-2 border-l border-gray-200 flex items-center justify-center bg-white/50">
+                                      <p className="text-lg font-bold text-[#2d7a85]">
+                                        {Math.round(plan.annual_target / 12)}
+                                      </p>
+                                    </div>
+                                    
+                                    {/* الإجراء */}
+                                    <div className="w-24 flex items-center justify-center gap-1">
+                                      {(isAdmin || plan.user_id === authUser?.id) && (
+                                        <>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-8 w-8"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              // TODO: فتح نافذة التعديل
+                                            }}
+                                          >
+                                            <Pencil className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full h-8 w-8"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDeletePlan(plan.id);
+                                            }}
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* المحتوى المنسدل */}
+                                  {isExpanded && (
+                                    <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
+                                      {/* جدول توزيع الأشهر */}
+                                      <div className="overflow-x-auto rounded-xl border border-[#3d9aa8]/20 shadow-sm">
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow className="bg-gradient-to-r from-[#3d9aa8] to-[#4A9BA8]">
+                                              {MONTHS_AR.map((month, index) => (
+                                                <TableHead 
+                                                  key={index} 
+                                                  className="text-center font-medium text-white min-w-[70px] border-l border-white/20"
+                                                >
+                                                  {month}
+                                                </TableHead>
+                                              ))}
+                                              <TableHead className="text-center font-bold text-white bg-[#2d7a85] min-w-[80px]">
+                                                المجموع
+                                              </TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            <TableRow className="hover:bg-[#3d9aa8]/5">
+                                              {MONTHS_AR.map((_, index) => {
+                                                const monthData = plan.months?.find(m => m.month === index + 1);
+                                                const target = monthData?.monthly_target || 0;
+                                                return (
+                                                  <TableCell 
+                                                    key={index} 
+                                                    className="text-center border-l border-[#3d9aa8]/10"
+                                                  >
+                                                    <span className={`text-lg font-bold ${target > 0 ? 'text-[#3d9aa8]' : 'text-muted-foreground'}`}>
+                                                      {target}
+                                                    </span>
+                                                  </TableCell>
+                                                );
+                                              })}
+                                              <TableCell className="text-center bg-[#3d9aa8]/20">
+                                                <span className="text-xl font-bold text-[#2d7a85]">{plan.annual_target}</span>
+                                              </TableCell>
+                                            </TableRow>
+                                          </TableBody>
+                                        </Table>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
-                        )}
-                        
-                        {/* المستهدف السنوي */}
-                        <div className="w-24 py-4 px-2 border-l border-gray-200 flex items-center justify-center">
-                          <p className="text-lg font-bold text-[#3d9aa8]">{plan.annual_target}</p>
-                        </div>
-                        
-                        {/* المتوسط الشهري */}
-                        <div className="w-24 py-4 px-2 border-l border-gray-200 flex items-center justify-center bg-[#3d9aa8]/5">
-                          <p className="text-lg font-bold text-[#2d7a85]">
-                            {Math.round(plan.annual_target / 12)}
-                          </p>
-                        </div>
-                        
-                        {/* الإجراء */}
-                        <div className="w-24 flex items-center justify-center gap-1">
-                          {(isAdmin || plan.user_id === authUser?.id) && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-8 w-8"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // TODO: فتح نافذة التعديل
-                                }}
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full h-8 w-8"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeletePlan(plan.id);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                        ))}
                       </div>
-                      
-                      {/* المحتوى المنسدل */}
-                      {isExpanded && (
-                        <div className="bg-gradient-to-b from-[#3d9aa8]/5 to-white p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
-                          {/* جدول توزيع الأشهر - بدون تكرار اسم المهمة */}
-                          <div className="overflow-x-auto rounded-xl border border-[#3d9aa8]/20 shadow-sm">
-                            <Table>
-                              <TableHeader>
-                                <TableRow className="bg-gradient-to-r from-[#3d9aa8] to-[#4A9BA8]">
-                                  {MONTHS_AR.map((month, index) => (
-                                    <TableHead 
-                                      key={index} 
-                                      className="text-center font-medium text-white min-w-[70px] border-l border-white/20"
-                                    >
-                                      {month}
-                                    </TableHead>
-                                  ))}
-                                  <TableHead className="text-center font-bold text-white bg-[#2d7a85] min-w-[80px]">
-                                    المجموع
-                                  </TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                <TableRow className="hover:bg-[#3d9aa8]/5">
-                                  {MONTHS_AR.map((_, index) => {
-                                    const monthData = plan.months?.find(m => m.month === index + 1);
-                                    const target = monthData?.monthly_target || 0;
-                                    return (
-                                      <TableCell 
-                                        key={index} 
-                                        className="text-center border-l border-[#3d9aa8]/10"
-                                      >
-                                        <span className={`text-lg font-bold ${target > 0 ? 'text-[#3d9aa8]' : 'text-muted-foreground'}`}>
-                                          {target}
-                                        </span>
-                                      </TableCell>
-                                    );
-                                  })}
-                                  <TableCell className="text-center bg-[#3d9aa8]/20">
-                                    <span className="text-xl font-bold text-[#2d7a85]">{plan.annual_target}</span>
-                                  </TableCell>
-                                </TableRow>
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
                 </div>
               </div>
             )}
