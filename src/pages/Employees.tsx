@@ -179,8 +179,8 @@ const Employees = () => {
   };
 
   const handleAddEmployee = async () => {
-    if (!newEmployee.name || !newEmployee.username || !newEmployee.role || !newEmployee.password) {
-      toast.error("يرجى ملء جميع الحقول المطلوبة");
+    if (!newEmployee.name || !newEmployee.username || !newEmployee.role || !newEmployee.password || !newEmployee.email || !newEmployee.phone) {
+      toast.error("يرجى ملء جميع الحقول المطلوبة (الاسم، رقم الهوية، كلمة المرور، البريد الإلكتروني، رقم الجوال، الدور الوظيفي)");
       return;
     }
 
@@ -568,7 +568,7 @@ const Employees = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني (اختياري)</Label>
+                <Label htmlFor="email">البريد الإلكتروني *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -576,17 +576,19 @@ const Employees = () => {
                   value={newEmployee.email}
                   onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
                   dir="ltr"
+                  required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">رقم الجوال (اختياري)</Label>
+                <Label htmlFor="phone">رقم الجوال *</Label>
                 <Input
                   id="phone"
                   placeholder="+966 5x xxx xxxx"
                   value={newEmployee.phone}
                   onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
                   dir="ltr"
+                  required
                 />
               </div>
 

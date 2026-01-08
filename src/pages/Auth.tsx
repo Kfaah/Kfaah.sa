@@ -40,6 +40,13 @@ export default function Auth() {
         toast.success("تم تسجيل الدخول بنجاح");
         navigate("/");
       } else {
+        // Validate required fields for signup
+        if (!email || !phone) {
+          toast.error("يرجى إدخال البريد الإلكتروني ورقم الجوال");
+          setLoading(false);
+          return;
+        }
+        
         const redirectUrl = `${window.location.origin}/`;
         // Convert username to internal email format
         const cleanUsername = username.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
@@ -239,13 +246,14 @@ export default function Auth() {
                 <div className="space-y-2">
                   <Label htmlFor="email" className="flex items-center gap-2">
                     <Mail className="w-4 h-4" />
-                    البريد الإلكتروني (اختياري)
+                    البريد الإلكتروني *
                   </Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required={!isLogin}
                     placeholder="example@email.com"
                     className="h-11"
                     dir="ltr"
@@ -255,13 +263,14 @@ export default function Auth() {
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="flex items-center gap-2">
                     <User className="w-4 h-4" />
-                    رقم الجوال (اختياري)
+                    رقم الجوال *
                   </Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    required={!isLogin}
                     placeholder="+966 5x xxx xxxx"
                     className="h-11"
                     dir="ltr"
