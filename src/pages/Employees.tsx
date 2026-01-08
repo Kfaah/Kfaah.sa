@@ -224,11 +224,14 @@ const Employees = () => {
       });
 
       if (response.error) {
+        console.log("Response error object:", response.error);
+        console.log("Response error message:", response.error.message);
         toast.error(getArabicErrorMessage(response.error, "حدث خطأ أثناء إضافة الموظف"));
         return;
       }
 
       if (response.data?.error) {
+        console.log("Response data error:", response.data.error);
         toast.error(response.data.error);
         return;
       }
