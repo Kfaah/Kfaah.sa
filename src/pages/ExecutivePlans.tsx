@@ -531,7 +531,7 @@ export default function ExecutivePlans() {
                       <Calendar className="w-5 h-5" />
                       <span>{monthGroup.monthName} {selectedYear}</span>
                       <Badge className="bg-white/20 text-white">
-                        {monthGroup.activities.reduce((sum, a) => sum + a.days.length, 0)} يوم
+                        {monthGroup.activities.length} مهمة - {monthGroup.activities.reduce((sum, a) => sum + a.days.length, 0)} يوم
                       </Badge>
                     </div>
                     <ChevronDown className={cn(
