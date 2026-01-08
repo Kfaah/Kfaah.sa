@@ -132,16 +132,16 @@ export default function Profile() {
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   متصل الآن
                 </span>
-                {user.jobRole && (
-                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-medium">
-                    <Briefcase className="w-4 h-4" />
-                    {user.jobRole}
-                  </span>
-                )}
                 {user.department && (
                   <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium">
                     <Building className="w-4 h-4" />
                     {user.department}
+                  </span>
+                )}
+                {user.jobRole && (
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-medium">
+                    <Briefcase className="w-4 h-4" />
+                    {user.jobRole}
                   </span>
                 )}
                 {user.username && (
@@ -202,17 +202,6 @@ export default function Profile() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {user.jobRole && (
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
-                <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
-                  <Briefcase className="w-5 h-5 text-violet-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">الدور الوظيفي</p>
-                  <p className="font-medium text-foreground">{user.jobRole}</p>
-                </div>
-              </div>
-            )}
             {user.department && (
               <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
                 <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
@@ -221,6 +210,17 @@ export default function Profile() {
                 <div>
                   <p className="text-sm text-muted-foreground">القسم</p>
                   <p className="font-medium text-foreground">{user.department}</p>
+                </div>
+              </div>
+            )}
+            {user.jobRole && (
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الدور الوظيفي</p>
+                  <p className="font-medium text-foreground">{user.jobRole}</p>
                 </div>
               </div>
             )}
