@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -18,20 +18,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  ChevronLeft,
-  ChevronRight,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  ChevronDown,
   Calendar,
   User,
   Target,
-  CheckCircle2,
-  Clock,
   Plus,
   Pencil,
   Trash2,
-  TrendingUp,
-  LayoutGrid,
-  List,
-  Sparkles,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -70,17 +73,10 @@ interface ExecutivePlan {
   notes: string | null;
 }
 
-interface DayData {
-  day: number;
-  plans: {
-    activityName: string;
-    dailyTarget: number;
-    achieved: number;
-    status: string;
-    executivePlanId?: string;
-    operationalPlanMonthId: string;
-    notes?: string;
-  }[];
+interface ExecutivePlanWithDetails extends ExecutivePlan {
+  activityName: string;
+  month: number;
+  monthlyTarget: number;
 }
 
 const MONTHS_AR = [
@@ -90,12 +86,50 @@ const MONTHS_AR = [
 
 const WEEKDAYS_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
-const STATUS_CONFIG = {
-  pending: { label: "قيد الانتظار", color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
-  in_progress: { label: "قيد التنفيذ", color: "bg-blue-100 text-blue-700 border-blue-300" },
-  completed: { label: "مكتمل", color: "bg-green-100 text-green-700 border-green-300" },
-  overdue: { label: "متأخر", color: "bg-red-100 text-red-700 border-red-300" },
-};
+const HIJRI_MONTHS = [
+  "محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة",
+  "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
+];
+
+// تحويل التاريخ الميلادي إلى هجري (تقريبي)
+function toHijri(date: Date): { day: number; month: number; year: number; monthName: string } {
+  const gregorianYear = date.getFullYear();
+  const gregorianMonth = date.getMonth() + 1;
+  const gregorianDay = date.getDate();
+  
+  // صيغة تقريبية للتحويل
+  const jd = Math.floor((1461 * (gregorianYear + 4800 + Math.floor((gregorianMonth - 14) / 12))) / 4) +
+             Math.floor((367 * (gregorianMonth - 2 - 12 * Math.floor((gregorianMonth - 14) / 12))) / 12) -
+             Math.floor((3 * Math.floor((gregorianYear + 4900 + Math.floor((gregorianMonth - 14) / 12)) / 100)) / 4) +
+             gregorianDay - 32075;
+  
+  const l = jd - 1948440 + 10632;
+  const n = Math.floor((l - 1) / 10631);
+  const l2 = l - 10631 * n + 354;
+  const j = Math.floor((10985 - l2) / 5316) * Math.floor((50 * l2) / 17719) +
+            Math.floor(l2 / 5670) * Math.floor((43 * l2) / 15238);
+  const l3 = l2 - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) -
+             Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
+  const hijriMonth = Math.floor((24 * l3) / 709);
+  const hijriDay = l3 - Math.floor((709 * hijriMonth) / 24);
+  const hijriYear = 30 * n + j - 30;
+  
+  return {
+    day: hijriDay,
+    month: hijriMonth,
+    year: hijriYear,
+    monthName: HIJRI_MONTHS[hijriMonth - 1] || ""
+  };
+}
+
+function formatHijriDate(date: Date): string {
+  const hijri = toHijri(date);
+  return `${hijri.day} ${hijri.monthName} ${hijri.year}هـ`;
+}
+
+function formatGregorianDate(date: Date): string {
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}م`;
+}
 
 export default function ExecutivePlans() {
   const { toast } = useToast();
@@ -104,7 +138,6 @@ export default function ExecutivePlans() {
   
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear] = useState<number>(new Date().getFullYear());
   
   const [operationalPlans, setOperationalPlans] = useState<OperationalPlan[]>([]);
@@ -112,10 +145,13 @@ export default function ExecutivePlans() {
   const [executivePlans, setExecutivePlans] = useState<ExecutivePlan[]>([]);
   
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
-  const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+  
+  // حالة نافذة الإضافة
+  const [selectedPlanMonthId, setSelectedPlanMonthId] = useState<string>("");
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [addingMonth, setAddingMonth] = useState<number>(1);
 
   // التحقق من صلاحية المدير
   useEffect(() => {
@@ -133,7 +169,6 @@ export default function ExecutivePlans() {
       if (!authUser) return;
       
       if (!isAdmin) {
-        // الموظف يرى خططه فقط
         setSelectedEmployeeId(authUser.id);
         return;
       }
@@ -157,9 +192,9 @@ export default function ExecutivePlans() {
     fetchEmployees();
   }, [isAdmin, authUser]);
 
-  // جلب الخطط التشغيلية والتنفيذية
+  // جلب جميع الخطط
   useEffect(() => {
-    const fetchPlans = async () => {
+    const fetchAllPlans = async () => {
       if (!selectedEmployeeId) return;
       
       setLoading(true);
@@ -181,13 +216,13 @@ export default function ExecutivePlans() {
           return;
         }
         
-        // جلب أشهر الخطط
+        // جلب جميع أشهر الخطط
         const planIds = plans.map(p => p.id);
         const { data: months, error: monthsError } = await supabase
           .from("operational_plan_months")
           .select("*")
           .in("operational_plan_id", planIds)
-          .eq("month", selectedMonth);
+          .order("month", { ascending: true });
         
         if (monthsError) throw monthsError;
         setPlanMonths(months || []);
@@ -198,7 +233,8 @@ export default function ExecutivePlans() {
           const { data: executive, error: execError } = await supabase
             .from("executive_plans")
             .select("*")
-            .in("operational_plan_month_id", monthIds);
+            .in("operational_plan_month_id", monthIds)
+            .order("day", { ascending: true });
           
           if (execError) throw execError;
           setExecutivePlans(executive || []);
@@ -212,151 +248,185 @@ export default function ExecutivePlans() {
       }
     };
     
-    fetchPlans();
-  }, [selectedEmployeeId, selectedMonth, selectedYear]);
+    fetchAllPlans();
+  }, [selectedEmployeeId, selectedYear]);
 
-  // حساب أيام الشهر
-  const daysInMonth = useMemo(() => {
-    return new Date(selectedYear, selectedMonth, 0).getDate();
-  }, [selectedYear, selectedMonth]);
-
-  const firstDayOfMonth = useMemo(() => {
-    return new Date(selectedYear, selectedMonth - 1, 1).getDay();
-  }, [selectedYear, selectedMonth]);
-
-  // بناء بيانات التقويم
-  const calendarData = useMemo(() => {
-    const data: DayData[] = [];
+  // تجميع الخطط التنفيذية حسب الشهر والمهمة
+  const groupedPlans = useMemo(() => {
+    const groups: {
+      month: number;
+      monthName: string;
+      activities: {
+        activityName: string;
+        planMonthId: string;
+        monthlyTarget: number;
+        days: {
+          id: string;
+          day: number;
+          dailyTarget: number;
+          achieved: number;
+          status: string;
+          gregorianDate: string;
+          hijriDate: string;
+          weekDay: string;
+        }[];
+      }[];
+    }[] = [];
     
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dayPlans: DayData["plans"] = [];
+    // تجميع حسب الشهر
+    for (let month = 1; month <= 12; month++) {
+      const monthActivities: typeof groups[0]["activities"] = [];
       
-      planMonths.forEach(pm => {
+      planMonths.filter(pm => pm.month === month).forEach(pm => {
         const plan = operationalPlans.find(p => p.id === pm.operational_plan_id);
         if (!plan) return;
         
-        const execPlan = executivePlans.find(
-          ep => ep.operational_plan_month_id === pm.id && ep.day === day
-        );
+        const dayPlans = executivePlans
+          .filter(ep => ep.operational_plan_month_id === pm.id)
+          .map(ep => {
+            const date = new Date(selectedYear, month - 1, ep.day);
+            return {
+              id: ep.id,
+              day: ep.day,
+              dailyTarget: ep.daily_target,
+              achieved: ep.achieved,
+              status: ep.status,
+              gregorianDate: formatGregorianDate(date),
+              hijriDate: formatHijriDate(date),
+              weekDay: WEEKDAYS_AR[date.getDay()],
+            };
+          });
         
-        if (execPlan) {
-          dayPlans.push({
+        if (dayPlans.length > 0 || pm.monthly_target > 0) {
+          monthActivities.push({
             activityName: plan.activity_name,
-            dailyTarget: execPlan.daily_target,
-            achieved: execPlan.achieved,
-            status: execPlan.status,
-            executivePlanId: execPlan.id,
-            operationalPlanMonthId: pm.id,
-            notes: execPlan.notes || undefined,
+            planMonthId: pm.id,
+            monthlyTarget: pm.monthly_target,
+            days: dayPlans,
           });
         }
       });
       
-      data.push({ day, plans: dayPlans });
+      if (monthActivities.length > 0) {
+        groups.push({
+          month,
+          monthName: MONTHS_AR[month - 1],
+          activities: monthActivities,
+        });
+      }
     }
     
-    return data;
-  }, [daysInMonth, planMonths, operationalPlans, executivePlans]);
+    return groups;
+  }, [planMonths, operationalPlans, executivePlans, selectedYear]);
 
-  // إحصائيات
-  const stats = useMemo(() => {
-    const totalTarget = executivePlans.reduce((sum, ep) => sum + ep.daily_target, 0);
-    const totalAchieved = executivePlans.reduce((sum, ep) => sum + ep.achieved, 0);
-    const completedDays = executivePlans.filter(ep => ep.status === "completed").length;
-    const pendingDays = executivePlans.filter(ep => ep.status === "pending").length;
-    
-    return { totalTarget, totalAchieved, completedDays, pendingDays };
-  }, [executivePlans]);
+  // أيام الشهر المختار للإضافة
+  const daysInAddingMonth = useMemo(() => {
+    return new Date(selectedYear, addingMonth, 0).getDate();
+  }, [selectedYear, addingMonth]);
 
-  // توليد الخطط التنفيذية تلقائياً
-  const generateExecutivePlans = async () => {
-    if (planMonths.length === 0) {
-      toast({ title: "تنبيه", description: "لا توجد خطط تشغيلية لهذا الشهر", variant: "destructive" });
+  // المهام المتاحة للشهر المختار
+  const availableActivities = useMemo(() => {
+    return planMonths
+      .filter(pm => pm.month === addingMonth)
+      .map(pm => {
+        const plan = operationalPlans.find(p => p.id === pm.operational_plan_id);
+        return {
+          planMonthId: pm.id,
+          activityName: plan?.activity_name || "",
+          monthlyTarget: pm.monthly_target,
+        };
+      })
+      .filter(a => a.activityName);
+  }, [planMonths, operationalPlans, addingMonth]);
+
+  // إضافة خطة تنفيذية
+  const handleAddExecutivePlan = async () => {
+    if (!selectedPlanMonthId || selectedDays.length === 0) {
+      toast({ title: "تنبيه", description: "اختر المهمة والأيام", variant: "destructive" });
       return;
     }
     
-    setIsGenerating(true);
+    const selectedPlanMonth = planMonths.find(pm => pm.id === selectedPlanMonthId);
+    if (!selectedPlanMonth) return;
+    
+    // توزيع المستهدف على الأيام المختارة
+    const dailyTarget = Math.ceil(selectedPlanMonth.monthly_target / selectedDays.length);
+    
+    const plansToInsert = selectedDays.map((day, index) => {
+      // آخر يوم يأخذ الباقي
+      const target = index === selectedDays.length - 1
+        ? selectedPlanMonth.monthly_target - (dailyTarget * (selectedDays.length - 1))
+        : dailyTarget;
+      
+      return {
+        operational_plan_month_id: selectedPlanMonthId,
+        day,
+        daily_target: Math.max(target, 0),
+        achieved: 0,
+        status: "pending",
+      };
+    });
+    
     try {
-      const plansToInsert: any[] = [];
+      // حذف الخطط القديمة لهذا الشهر
+      await supabase
+        .from("executive_plans")
+        .delete()
+        .eq("operational_plan_month_id", selectedPlanMonthId);
       
-      planMonths.forEach(pm => {
-        const monthlyTarget = pm.monthly_target;
-        if (monthlyTarget <= 0) return;
-        
-        // توزيع متساوي على 4 أيام في الشهر (كل أسبوع يوم)
-        const daysToDistribute = [1, 8, 15, 22];
-        const dailyTarget = Math.ceil(monthlyTarget / 4);
-        
-        daysToDistribute.forEach((day, index) => {
-          // تجنب التكرار
-          const exists = executivePlans.find(
-            ep => ep.operational_plan_month_id === pm.id && ep.day === day
-          );
-          
-          if (!exists && day <= daysInMonth) {
-            // آخر يوم يأخذ الباقي
-            const target = index === 3 
-              ? monthlyTarget - (dailyTarget * 3) 
-              : dailyTarget;
-            
-            plansToInsert.push({
-              operational_plan_month_id: pm.id,
-              day,
-              daily_target: Math.max(target, 0),
-              achieved: 0,
-              status: "pending",
-            });
-          }
-        });
-      });
-      
-      if (plansToInsert.length === 0) {
-        toast({ title: "تنبيه", description: "الخطط التنفيذية موجودة بالفعل", variant: "default" });
-        setIsGenerating(false);
-        return;
-      }
-      
+      // إضافة الجديدة
       const { error } = await supabase
         .from("executive_plans")
         .insert(plansToInsert);
       
       if (error) throw error;
       
-      toast({ title: "تم!", description: `تم توليد ${plansToInsert.length} خطة تنفيذية` });
+      toast({ title: "تم!", description: `تم إضافة ${plansToInsert.length} يوم للخطة التنفيذية` });
+      setIsDialogOpen(false);
+      setSelectedPlanMonthId("");
+      setSelectedDays([]);
       
       // إعادة جلب البيانات
       const monthIds = planMonths.map(m => m.id);
       const { data: newExecutive } = await supabase
         .from("executive_plans")
         .select("*")
-        .in("operational_plan_month_id", monthIds);
+        .in("operational_plan_month_id", monthIds)
+        .order("day", { ascending: true });
       
       setExecutivePlans(newExecutive || []);
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
-    } finally {
-      setIsGenerating(false);
     }
   };
 
-  // تحديث حالة أو إنجاز خطة
-  const updateExecutivePlan = async (planId: string, updates: Partial<ExecutivePlan>) => {
+  // حذف خطة تنفيذية
+  const handleDeleteDay = async (executivePlanId: string) => {
     try {
       const { error } = await supabase
         .from("executive_plans")
-        .update(updates)
-        .eq("id", planId);
+        .delete()
+        .eq("id", executivePlanId);
       
       if (error) throw error;
       
-      setExecutivePlans(prev => 
-        prev.map(ep => ep.id === planId ? { ...ep, ...updates } : ep)
-      );
-      
-      toast({ title: "تم التحديث بنجاح" });
+      setExecutivePlans(prev => prev.filter(ep => ep.id !== executivePlanId));
+      toast({ title: "تم الحذف" });
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     }
+  };
+
+  const toggleMonth = (monthKey: string) => {
+    setExpandedMonths(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(monthKey)) {
+        newSet.delete(monthKey);
+      } else {
+        newSet.add(monthKey);
+      }
+      return newSet;
+    });
   };
 
   const getSelectedEmployee = () => {
@@ -376,42 +446,22 @@ export default function ExecutivePlans() {
               الخطط التنفيذية
             </h1>
             <p className="text-muted-foreground mt-2">
-              متابعة وتوزيع المستهدفات الشهرية على الأيام
+              توزيع المستهدفات الشهرية على أيام محددة
             </p>
           </div>
           
-          <div className="flex flex-wrap items-center gap-3">
-            {/* اختيار وضع العرض */}
-            <div className="flex items-center bg-muted rounded-lg p-1">
-              <Button
-                variant={viewMode === "calendar" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("calendar")}
-                className="gap-1"
-              >
-                <LayoutGrid className="w-4 h-4" />
-                تقويم
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="gap-1"
-              >
-                <List className="w-4 h-4" />
-                قائمة
-              </Button>
-            </div>
-            
-            <Button
-              onClick={generateExecutivePlans}
-              disabled={isGenerating || planMonths.length === 0}
-              className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-            >
-              <Sparkles className="w-4 h-4" />
-              {isGenerating ? "جاري التوليد..." : "توليد تلقائي"}
-            </Button>
-          </div>
+          <Button
+            onClick={() => {
+              setIsDialogOpen(true);
+              setSelectedPlanMonthId("");
+              setSelectedDays([]);
+              setAddingMonth(new Date().getMonth() + 1);
+            }}
+            className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+          >
+            <Plus className="w-5 h-5" />
+            إضافة خطة تنفيذية
+          </Button>
         </div>
 
         {/* الفلاتر */}
@@ -437,23 +487,6 @@ export default function ExecutivePlans() {
                 </div>
               )}
               
-              {/* اختيار الشهر */}
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-[#3d9aa8]" />
-                <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                  <SelectTrigger className="w-[150px] bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    {MONTHS_AR.map((month, index) => (
-                      <SelectItem key={index} value={(index + 1).toString()}>
-                        {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
               {/* معلومات الموظف المختار */}
               {getSelectedEmployee() && (
                 <div className="flex items-center gap-2 mr-auto bg-white rounded-lg px-4 py-2 shadow-sm">
@@ -461,358 +494,329 @@ export default function ExecutivePlans() {
                     {getSelectedEmployee()?.full_name.charAt(0)}
                   </div>
                   <span className="font-medium">{getSelectedEmployee()?.full_name}</span>
-                  <span className="text-muted-foreground">- {MONTHS_AR[selectedMonth - 1]} {selectedYear}</span>
+                  <span className="text-muted-foreground">- {selectedYear}</span>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* الإحصائيات */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center shadow-lg">
-                <Target className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-blue-600">المستهدف الشهري</p>
-                <p className="text-2xl font-bold text-blue-700">{stats.totalTarget}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-green-500 flex items-center justify-center shadow-lg">
-                <CheckCircle2 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-green-600">المنجز</p>
-                <p className="text-2xl font-bold text-green-700">{stats.totalAchieved}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-emerald-600">أيام مكتملة</p>
-                <p className="text-2xl font-bold text-emerald-700">{stats.completedDays}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg">
-                <Clock className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-amber-600">أيام معلقة</p>
-                <p className="text-2xl font-bold text-amber-700">{stats.pendingDays}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* المحتوى الرئيسي */}
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin w-10 h-10 border-4 border-[#3d9aa8] border-t-transparent rounded-full" />
           </div>
-        ) : operationalPlans.length === 0 ? (
+        ) : groupedPlans.length === 0 ? (
           <Card className="py-20">
             <CardContent className="text-center">
               <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">لا توجد خطط تشغيلية</h3>
-              <p className="text-muted-foreground">
-                لا توجد خطط تشغيلية لهذا الموظف في هذه السنة
+              <h3 className="text-xl font-semibold mb-2">لا توجد خطط تنفيذية</h3>
+              <p className="text-muted-foreground mb-4">
+                اضغط على "إضافة خطة تنفيذية" لتوزيع المستهدفات على الأيام
               </p>
             </CardContent>
           </Card>
-        ) : viewMode === "calendar" ? (
-          /* عرض التقويم */
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-[#3d9aa8] to-[#4A9BA8] text-white rounded-t-lg">
-              <CardTitle className="flex items-center justify-between">
-                <span>{MONTHS_AR[selectedMonth - 1]} {selectedYear}</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white hover:bg-white/20"
-                    onClick={() => setSelectedMonth(m => m > 1 ? m - 1 : 12)}
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white hover:bg-white/20"
-                    onClick={() => setSelectedMonth(m => m < 12 ? m + 1 : 1)}
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </Button>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {/* أيام الأسبوع */}
-              <div className="grid grid-cols-7 gap-2 mb-2">
-                {WEEKDAYS_AR.map(day => (
-                  <div key={day} className="text-center py-2 font-bold text-sm text-muted-foreground">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              
-              {/* أيام الشهر */}
-              <div className="grid grid-cols-7 gap-2">
-                {/* فراغات بداية الشهر */}
-                {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                  <div key={`empty-${i}`} className="aspect-square" />
-                ))}
-                
-                {/* أيام الشهر */}
-                {calendarData.map(dayData => {
-                  const hasPlans = dayData.plans.length > 0;
-                  const isToday = new Date().getDate() === dayData.day && 
-                                  new Date().getMonth() + 1 === selectedMonth;
-                  const allCompleted = hasPlans && dayData.plans.every(p => p.status === "completed");
-                  const hasPending = dayData.plans.some(p => p.status === "pending");
-                  
-                  return (
-                    <div
-                      key={dayData.day}
-                      onClick={() => {
-                        if (hasPlans) {
-                          setSelectedDay(dayData);
-                          setIsDialogOpen(true);
-                        }
-                      }}
-                      className={cn(
-                        "aspect-square rounded-xl border-2 p-2 transition-all cursor-pointer hover:scale-105 hover:shadow-lg relative overflow-hidden",
-                        isToday && "ring-2 ring-[#3d9aa8] ring-offset-2",
-                        hasPlans 
-                          ? allCompleted 
-                            ? "bg-gradient-to-br from-green-50 to-green-100 border-green-300" 
-                            : hasPending 
-                              ? "bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300"
-                              : "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300"
-                          : "bg-gray-50 border-gray-200 hover:border-gray-300"
-                      )}
-                    >
-                      {/* رقم اليوم */}
-                      <span className={cn(
-                        "absolute top-1 right-2 font-bold text-lg",
-                        isToday ? "text-[#3d9aa8]" : hasPlans ? "text-gray-700" : "text-gray-400"
-                      )}>
-                        {dayData.day}
-                      </span>
-                      
-                      {/* مؤشر المهام */}
-                      {hasPlans && (
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium text-gray-600">
-                              {dayData.plans.length} مهمة
-                            </span>
-                            {allCompleted && (
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            )}
-                          </div>
-                          <div className="mt-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div 
-                              className={cn(
-                                "h-full rounded-full transition-all",
-                                allCompleted ? "bg-green-500" : "bg-[#3d9aa8]"
-                              )}
-                              style={{ 
-                                width: `${(dayData.plans.filter(p => p.status === "completed").length / dayData.plans.length) * 100}%` 
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
         ) : (
-          /* عرض القائمة */
-          <Card>
-            <CardHeader>
-              <CardTitle>قائمة الخطط التنفيذية - {MONTHS_AR[selectedMonth - 1]}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {calendarData.filter(d => d.plans.length > 0).map(dayData => (
-                  <div
-                    key={dayData.day}
-                    className="border rounded-xl p-4 bg-gradient-to-r from-white to-gray-50 hover:shadow-md transition-all"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold text-lg">
-                          {dayData.day}
-                        </div>
-                        <div>
-                          <p className="font-bold">{WEEKDAYS_AR[new Date(selectedYear, selectedMonth - 1, dayData.day).getDay()]}</p>
-                          <p className="text-sm text-muted-foreground">{dayData.day} {MONTHS_AR[selectedMonth - 1]}</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="text-[#3d9aa8] border-[#3d9aa8]">
-                        {dayData.plans.length} مهمة
+          /* جدول الخطط التنفيذية */
+          <div className="space-y-4">
+            {groupedPlans.map(monthGroup => (
+              <Card key={monthGroup.month} className="overflow-hidden">
+                {/* رأس الشهر */}
+                <CardHeader 
+                  className="bg-gradient-to-r from-[#3d9aa8] to-[#4A9BA8] text-white cursor-pointer py-3"
+                  onClick={() => toggleMonth(`month-${monthGroup.month}`)}
+                >
+                  <CardTitle className="flex items-center justify-between text-lg">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5" />
+                      <span>{monthGroup.monthName} {selectedYear}</span>
+                      <Badge className="bg-white/20 text-white">
+                        {monthGroup.activities.reduce((sum, a) => sum + a.days.length, 0)} يوم
                       </Badge>
                     </div>
-                    
-                    <div className="space-y-2">
-                      {dayData.plans.map((plan, idx) => {
-                        const statusConfig = STATUS_CONFIG[plan.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
-                        return (
-                          <div 
-                            key={idx}
-                            className="flex items-center justify-between p-3 bg-white rounded-lg border"
-                          >
-                            <div className="flex items-center gap-3">
-                              <Target className="w-5 h-5 text-[#3d9aa8]" />
-                              <span className="font-medium">{plan.activityName}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm">
-                                <span className="font-bold text-[#3d9aa8]">{plan.achieved}</span>
-                                <span className="text-muted-foreground"> / {plan.dailyTarget}</span>
-                              </span>
-                              <Badge className={statusConfig.color}>
-                                {statusConfig.label}
-                              </Badge>
-                              {plan.executivePlanId && (
+                    <ChevronDown className={cn(
+                      "w-5 h-5 transition-transform",
+                      expandedMonths.has(`month-${monthGroup.month}`) ? "rotate-180" : ""
+                    )} />
+                  </CardTitle>
+                </CardHeader>
+                
+                {/* محتوى الشهر */}
+                {expandedMonths.has(`month-${monthGroup.month}`) && (
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50">
+                          <TableHead className="text-right font-bold w-64 border-l-2">المهمة / النشاط</TableHead>
+                          <TableHead className="text-center font-bold w-20 border-l-2">اليوم</TableHead>
+                          <TableHead className="text-center font-bold w-32 border-l-2">التاريخ الميلادي</TableHead>
+                          <TableHead className="text-center font-bold w-40 border-l-2">التاريخ الهجري</TableHead>
+                          <TableHead className="text-center font-bold w-24 border-l-2">المستهدف</TableHead>
+                          <TableHead className="text-center font-bold w-24 border-l-2">المنجز</TableHead>
+                          <TableHead className="text-center font-bold w-24 border-l-2">الحالة</TableHead>
+                          <TableHead className="text-center font-bold w-20">إجراء</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {monthGroup.activities.map((activity, actIdx) => (
+                          activity.days.map((day, dayIdx) => (
+                            <TableRow 
+                              key={day.id}
+                              className={cn(
+                                "hover:bg-gray-50",
+                                dayIdx === activity.days.length - 1 && actIdx < monthGroup.activities.length - 1 
+                                  ? "border-b-4 border-b-gray-300" 
+                                  : ""
+                              )}
+                            >
+                              {/* المهمة - تظهر مرة واحدة فقط */}
+                              {dayIdx === 0 && (
+                                <TableCell 
+                                  rowSpan={activity.days.length} 
+                                  className="font-semibold bg-gray-50 border-l-2 align-top py-4"
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <Target className="w-5 h-5 text-[#3d9aa8] flex-shrink-0 mt-0.5" />
+                                    <div>
+                                      <p className="font-bold text-gray-800">{activity.activityName}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        المستهدف الشهري: {activity.monthlyTarget}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              )}
+                              
+                              {/* اليوم */}
+                              <TableCell className="text-center border-l-2">
+                                <div className="flex flex-col items-center">
+                                  <span className="text-lg font-bold text-[#3d9aa8]">{day.day}</span>
+                                  <span className="text-xs text-muted-foreground">{day.weekDay}</span>
+                                </div>
+                              </TableCell>
+                              
+                              {/* التاريخ الميلادي */}
+                              <TableCell className="text-center border-l-2 font-medium">
+                                {day.gregorianDate}
+                              </TableCell>
+                              
+                              {/* التاريخ الهجري */}
+                              <TableCell className="text-center border-l-2 font-medium text-emerald-700">
+                                {day.hijriDate}
+                              </TableCell>
+                              
+                              {/* المستهدف اليومي */}
+                              <TableCell className="text-center border-l-2">
+                                <span className="text-lg font-bold text-blue-600">{day.dailyTarget}</span>
+                              </TableCell>
+                              
+                              {/* المنجز */}
+                              <TableCell className="text-center border-l-2">
+                                <span className={cn(
+                                  "text-lg font-bold",
+                                  day.achieved >= day.dailyTarget ? "text-green-600" : "text-gray-600"
+                                )}>
+                                  {day.achieved}
+                                </span>
+                              </TableCell>
+                              
+                              {/* الحالة */}
+                              <TableCell className="text-center border-l-2">
+                                {day.status === "completed" ? (
+                                  <Badge className="bg-green-100 text-green-700 border-green-300">
+                                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                                    مكتمل
+                                  </Badge>
+                                ) : day.status === "in_progress" ? (
+                                  <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                                    قيد التنفيذ
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    معلق
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              
+                              {/* إجراء */}
+                              <TableCell className="text-center">
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => {
-                                    setSelectedDay(dayData);
-                                    setIsDialogOpen(true);
-                                  }}
+                                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleDeleteDay(day.id)}
                                 >
-                                  <Pencil className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4" />
                                 </Button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-                
-                {calendarData.filter(d => d.plans.length > 0).length === 0 && (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>لا توجد خطط تنفيذية بعد</p>
-                    <p className="text-sm">اضغط على "توليد تلقائي" لإنشاء الخطط</p>
-                  </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </Card>
+            ))}
+          </div>
         )}
 
-        {/* Dialog تفاصيل اليوم */}
+        {/* نافذة إضافة خطة تنفيذية */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold">
-                  {selectedDay?.day}
+              <DialogTitle className="flex items-center gap-3 text-xl">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <span>يوم {selectedDay?.day} {MONTHS_AR[selectedMonth - 1]}</span>
-                  <p className="text-sm font-normal text-muted-foreground">
-                    {selectedDay && WEEKDAYS_AR[new Date(selectedYear, selectedMonth - 1, selectedDay.day).getDay()]}
-                  </p>
-                </div>
+                إضافة خطة تنفيذية
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4 mt-4">
-              {selectedDay?.plans.map((plan, idx) => {
-                const statusConfig = STATUS_CONFIG[plan.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
-                return (
-                  <div key={idx} className="border rounded-xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-lg">{plan.activityName}</h4>
-                      <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-gray-50 rounded-lg p-3 text-center">
-                        <p className="text-sm text-muted-foreground">المستهدف</p>
-                        <p className="text-2xl font-bold text-[#3d9aa8]">{plan.dailyTarget}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-3 text-center">
-                        <p className="text-sm text-muted-foreground">المنجز</p>
-                        <Input
-                          type="number"
-                          value={plan.achieved}
-                          onChange={(e) => {
-                            if (plan.executivePlanId) {
-                              const newValue = parseInt(e.target.value) || 0;
-                              updateExecutivePlan(plan.executivePlanId, { 
-                                achieved: newValue,
-                                status: newValue >= plan.dailyTarget ? "completed" : "in_progress"
-                              });
-                            }
-                          }}
-                          className="text-2xl font-bold text-center h-12"
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* شريط التقدم */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span>نسبة الإنجاز</span>
-                        <span className="font-bold">
-                          {plan.dailyTarget > 0 ? Math.round((plan.achieved / plan.dailyTarget) * 100) : 0}%
-                        </span>
-                      </div>
-                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-[#3d9aa8] to-[#2d7a85] rounded-full transition-all"
-                          style={{ 
-                            width: `${Math.min((plan.achieved / plan.dailyTarget) * 100, 100)}%` 
-                          }}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* أزرار الحالة */}
-                    {plan.executivePlanId && (
-                      <div className="flex gap-2">
-                        {["pending", "in_progress", "completed"].map(status => (
-                          <Button
-                            key={status}
-                            variant={plan.status === status ? "default" : "outline"}
-                            size="sm"
-                            className={plan.status === status ? "bg-[#3d9aa8]" : ""}
-                            onClick={() => updateExecutivePlan(plan.executivePlanId!, { status })}
-                          >
-                            {STATUS_CONFIG[status as keyof typeof STATUS_CONFIG].label}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
+            <div className="space-y-6 mt-4">
+              {/* اختيار الشهر */}
+              <div className="space-y-2">
+                <label className="font-semibold text-gray-700">اختر الشهر</label>
+                <Select value={addingMonth.toString()} onValueChange={(v) => {
+                  setAddingMonth(parseInt(v));
+                  setSelectedPlanMonthId("");
+                  setSelectedDays([]);
+                }}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {MONTHS_AR.map((month, index) => (
+                      <SelectItem key={index} value={(index + 1).toString()}>
+                        {month} {selectedYear}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* اختيار المهمة */}
+              <div className="space-y-2">
+                <label className="font-semibold text-gray-700">اختر المهمة / النشاط</label>
+                {availableActivities.length === 0 ? (
+                  <p className="text-muted-foreground text-sm py-4 text-center bg-gray-50 rounded-lg">
+                    لا توجد مهام في الخطة التشغيلية لهذا الشهر
+                  </p>
+                ) : (
+                  <Select value={selectedPlanMonthId} onValueChange={(v) => {
+                    setSelectedPlanMonthId(v);
+                    setSelectedDays([]);
+                  }}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="اختر المهمة" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      {availableActivities.map(activity => (
+                        <SelectItem key={activity.planMonthId} value={activity.planMonthId}>
+                          <div className="flex items-center gap-2">
+                            <Target className="w-4 h-4 text-[#3d9aa8]" />
+                            <span>{activity.activityName}</span>
+                            <Badge variant="outline" className="mr-2">
+                              المستهدف: {activity.monthlyTarget}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              
+              {/* اختيار الأيام */}
+              {selectedPlanMonthId && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-gray-700">اختر الأيام</label>
+                    <Badge variant="outline" className="text-[#3d9aa8]">
+                      {selectedDays.length} يوم مختار
+                    </Badge>
                   </div>
-                );
-              })}
+                  
+                  <div className="grid grid-cols-7 gap-2 p-4 bg-gray-50 rounded-xl border">
+                    {/* أيام الأسبوع */}
+                    {WEEKDAYS_AR.map(day => (
+                      <div key={day} className="text-center text-xs font-bold text-gray-500 pb-2">
+                        {day}
+                      </div>
+                    ))}
+                    
+                    {/* فراغات بداية الشهر */}
+                    {Array.from({ length: new Date(selectedYear, addingMonth - 1, 1).getDay() }).map((_, i) => (
+                      <div key={`empty-${i}`} />
+                    ))}
+                    
+                    {/* أيام الشهر */}
+                    {Array.from({ length: daysInAddingMonth }).map((_, i) => {
+                      const day = i + 1;
+                      const date = new Date(selectedYear, addingMonth - 1, day);
+                      const isSelected = selectedDays.includes(day);
+                      
+                      return (
+                        <div
+                          key={day}
+                          onClick={() => {
+                            setSelectedDays(prev => 
+                              prev.includes(day) 
+                                ? prev.filter(d => d !== day)
+                                : [...prev, day].sort((a, b) => a - b)
+                            );
+                          }}
+                          className={cn(
+                            "p-2 rounded-lg cursor-pointer transition-all text-center border-2",
+                            isSelected 
+                              ? "bg-[#3d9aa8] text-white border-[#2d7a85] shadow-md" 
+                              : "bg-white hover:bg-gray-100 border-transparent hover:border-[#3d9aa8]/30"
+                          )}
+                        >
+                          <div className="text-lg font-bold">{day}</div>
+                          <div className={cn(
+                            "text-[10px]",
+                            isSelected ? "text-white/80" : "text-muted-foreground"
+                          )}>
+                            {formatHijriDate(date).split(" ")[0]} {formatHijriDate(date).split(" ")[1]}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* معاينة الأيام المختارة */}
+                  {selectedDays.length > 0 && (
+                    <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+                      <h4 className="font-semibold text-emerald-800 mb-3">الأيام المختارة:</h4>
+                      <div className="space-y-2">
+                        {selectedDays.map(day => {
+                          const date = new Date(selectedYear, addingMonth - 1, day);
+                          return (
+                            <div key={day} className="flex items-center gap-4 bg-white rounded-lg p-2 text-sm">
+                              <span className="font-bold text-[#3d9aa8] w-8">{day}</span>
+                              <span className="text-gray-600">{WEEKDAYS_AR[date.getDay()]}</span>
+                              <span className="text-gray-800">{formatGregorianDate(date)}</span>
+                              <span className="text-emerald-700">{formatHijriDate(date)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* زر الإضافة */}
+              <Button
+                onClick={handleAddExecutivePlan}
+                disabled={!selectedPlanMonthId || selectedDays.length === 0}
+                className="w-full gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 h-12 text-lg"
+              >
+                <Plus className="w-5 h-5" />
+                إضافة الخطة التنفيذية
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
