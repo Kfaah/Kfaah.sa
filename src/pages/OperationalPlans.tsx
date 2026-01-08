@@ -491,12 +491,14 @@ export default function OperationalPlans() {
                   <div className="w-16 flex items-center justify-center py-3 border-l border-white/20">
                     <span className="text-xs font-medium">#</span>
                   </div>
-                  <div className="flex-[2] py-3 px-6 border-l border-white/20">
+                  <div className={`${isAdmin ? 'flex-[2]' : 'flex-[3]'} py-3 px-6 border-l border-white/20`}>
                     <span className="text-sm font-semibold">المهمة</span>
                   </div>
-                  <div className="flex-[2] py-3 px-6 border-l border-white/20">
-                    <span className="text-sm font-semibold">الموظف المكلف</span>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex-[2] py-3 px-6 border-l border-white/20">
+                      <span className="text-sm font-semibold">الموظف المكلف</span>
+                    </div>
+                  )}
                   <div className="flex-1 py-3 px-6 border-l border-white/20 text-center">
                     <span className="text-sm font-semibold">المستهدف السنوي</span>
                   </div>
@@ -528,14 +530,16 @@ export default function OperationalPlans() {
                         </div>
                         
                         {/* المهمة */}
-                        <div className="flex-[2] py-4 px-6 border-l border-gray-200 flex items-center">
+                        <div className={`${isAdmin ? 'flex-[2]' : 'flex-[3]'} py-4 px-6 border-l border-gray-200 flex items-center`}>
                           <p className="font-semibold text-gray-800">{plan.activity_name}</p>
                         </div>
                         
-                        {/* الموظف المكلف */}
-                        <div className="flex-[2] py-4 px-6 border-l border-gray-200 flex items-center">
-                          <p className="text-gray-700">{plan.employee_name || "-"}</p>
-                        </div>
+                        {/* الموظف المكلف - يظهر فقط للمدير */}
+                        {isAdmin && (
+                          <div className="flex-[2] py-4 px-6 border-l border-gray-200 flex items-center">
+                            <p className="text-gray-700">{plan.employee_name || "-"}</p>
+                          </div>
+                        )}
                         
                         {/* المستهدف السنوي */}
                         <div className="flex-1 py-4 px-6 border-l border-gray-200 flex items-center justify-center">
@@ -575,14 +579,11 @@ export default function OperationalPlans() {
                       {/* المحتوى المنسدل */}
                       {isExpanded && (
                         <div className="bg-gradient-to-b from-[#3d9aa8]/5 to-white p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
-                          {/* جدول توزيع الأشهر */}
+                          {/* جدول توزيع الأشهر - بدون تكرار اسم المهمة */}
                           <div className="overflow-x-auto rounded-xl border border-[#3d9aa8]/20 shadow-sm">
                             <Table>
                               <TableHeader>
                                 <TableRow className="bg-gradient-to-r from-[#3d9aa8] to-[#4A9BA8]">
-                                  <TableHead className="text-right font-bold text-white min-w-[120px] border-l border-white/20">
-                                    النشاط
-                                  </TableHead>
                                   {MONTHS_AR.map((month, index) => (
                                     <TableHead 
                                       key={index} 
@@ -598,9 +599,6 @@ export default function OperationalPlans() {
                               </TableHeader>
                               <TableBody>
                                 <TableRow className="hover:bg-[#3d9aa8]/5">
-                                  <TableCell className="font-semibold bg-[#3d9aa8]/10 border-l border-[#3d9aa8]/20">
-                                    {plan.activity_name}
-                                  </TableCell>
                                   {MONTHS_AR.map((_, index) => {
                                     const monthData = plan.months?.find(m => m.month === index + 1);
                                     const target = monthData?.monthly_target || 0;
