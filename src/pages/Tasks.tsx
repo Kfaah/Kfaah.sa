@@ -303,6 +303,7 @@ const Tasks = () => {
   const filteredTasks = tasks.filter((task) => {
     // فلتر البحث
     const matchesSearch =
+      searchQuery === "" ||
       task.title.includes(searchQuery) ||
       (task.category && task.category.includes(searchQuery));
 
@@ -317,8 +318,17 @@ const Tasks = () => {
     const taskDay = getDayFromDate(task.due_date);
     const matchesDay = filterDay === "all" || taskDay === Number(filterDay);
 
-    // فلتر المنفذ
-    const matchesEmployee = filterEmployee === "all" || task.user_id === filterEmployee;
+    // فلتر المنفذ - التحقق من user_id المهمة مقابل user_id أو id الموظف
+    let matchesEmployee = true;
+    if (filterEmployee !== "all") {
+      // نبحث عن الموظف المختار ونقارن user_id
+      const selectedEmp = employees.find(e => e.user_id === filterEmployee || e.id === filterEmployee);
+      if (selectedEmp) {
+        matchesEmployee = task.user_id === selectedEmp.user_id || task.user_id === filterEmployee;
+      } else {
+        matchesEmployee = task.user_id === filterEmployee;
+      }
+    }
 
     return matchesSearch && matchesStatus && matchesMonth && matchesDay && matchesEmployee;
   });
