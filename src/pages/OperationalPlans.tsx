@@ -605,13 +605,20 @@ export default function OperationalPlans() {
                     
                     groupedPlans.forEach((group, groupIndex) => {
                       const color = GOAL_COLORS[group.colorIndex];
-                      // حساب إجمالي الصفوف لهذا الهدف
-                      const totalRowsInGoal = group.initiatives.reduce((sum, init) => sum + init.plans.length, 0);
+                      // حساب إجمالي الصفوف لهذا الهدف (مع احتساب الصفوف الموسعة)
+                      const totalRowsInGoal = group.initiatives.reduce((sum, init) => {
+                        return sum + init.plans.reduce((planSum, plan) => {
+                          return planSum + 1 + (expandedPlanId === plan.id ? 1 : 0);
+                        }, 0);
+                      }, 0);
                       
                       let goalRowRendered = false;
                       
                       group.initiatives.forEach((initGroup, initIndex) => {
-                        const totalRowsInInitiative = initGroup.plans.length;
+                        // حساب الصفوف للمبادرة (مع احتساب الصفوف الموسعة)
+                        const totalRowsInInitiative = initGroup.plans.reduce((sum, plan) => {
+                          return sum + 1 + (expandedPlanId === plan.id ? 1 : 0);
+                        }, 0);
                         let initRowRendered = false;
                         
                         initGroup.plans.forEach((plan, planIndex) => {
