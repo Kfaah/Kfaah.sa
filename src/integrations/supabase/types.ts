@@ -95,6 +95,50 @@ export type Database = {
         }
         Relationships: []
       }
+      executive_plans: {
+        Row: {
+          achieved: number
+          created_at: string
+          daily_target: number
+          day: number
+          id: string
+          notes: string | null
+          operational_plan_month_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          achieved?: number
+          created_at?: string
+          daily_target?: number
+          day: number
+          id?: string
+          notes?: string | null
+          operational_plan_month_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          achieved?: number
+          created_at?: string
+          daily_target?: number
+          day?: number
+          id?: string
+          notes?: string | null
+          operational_plan_month_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_plans_operational_plan_month_id_fkey"
+            columns: ["operational_plan_month_id"]
+            isOneToOne: false
+            referencedRelation: "operational_plan_months"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_roles: {
         Row: {
           color: string | null
@@ -126,6 +170,71 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      operational_plan_months: {
+        Row: {
+          created_at: string
+          id: string
+          month: number
+          monthly_target: number
+          operational_plan_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: number
+          monthly_target?: number
+          operational_plan_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: number
+          monthly_target?: number
+          operational_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_plan_months_operational_plan_id_fkey"
+            columns: ["operational_plan_id"]
+            isOneToOne: false
+            referencedRelation: "operational_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operational_plans: {
+        Row: {
+          activity_name: string
+          annual_target: number
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          activity_name: string
+          annual_target?: number
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          year?: number
+        }
+        Update: {
+          activity_name?: string
+          annual_target?: number
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
