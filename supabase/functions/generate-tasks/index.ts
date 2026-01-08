@@ -17,14 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    const { month, year, userId, generateAll } = await req.json();
-
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: "userId is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const { month, year } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -35,7 +28,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // جلب الخطط التنفيذية للشهر المحدد
+    // جلب الخطط التنفيذية للشهر المحدد مع user_id من الخطة التشغيلية
     const targetMonth = month || 1;
     const { data: executivePlans, error: fetchError } = await supabase
       .from("executive_plans")
@@ -49,7 +42,8 @@ serve(async (req) => {
           operational_plans!inner (
             activity_name,
             initiative,
-            strategic_goal
+            strategic_goal,
+            user_id
           )
         )
       `)
@@ -67,21 +61,24 @@ serve(async (req) => {
       );
     }
 
-    // تجميع الخطط حسب النشاط
+    // تجميع الخطط حسب النشاط مع حفظ user_id
     const activitiesMap = new Map<string, { 
       activityName: string; 
       initiative: string | null;
+      userId: string;
       days: { id: string; day: number; dailyTarget: number }[];
     }>();
 
     executivePlans.forEach((ep: any) => {
       const activityName = ep.operational_plan_months.operational_plans.activity_name;
       const initiative = ep.operational_plan_months.operational_plans.initiative;
+      const userId = ep.operational_plan_months.operational_plans.user_id;
       
       if (!activitiesMap.has(activityName)) {
         activitiesMap.set(activityName, {
           activityName,
           initiative,
+          userId,
           days: []
         });
       }
@@ -195,14 +192,14 @@ ${daysInfo}
         if (toolCall && toolCall.function.name === "suggest_tasks") {
           const generatedTasks = JSON.parse(toolCall.function.arguments);
           
-          // ربط المهام بالخطة التنفيذية المناسبة
+          // ربط المهام بالخطة التنفيذية المناسبة واستخدام user_id من الخطة التشغيلية
           for (const task of generatedTasks.tasks) {
             const matchingDay = activityData.days.find(d => d.day === task.day) || activityData.days[0];
             
             allTasks.push({
               title: task.title,
               description: task.description,
-              user_id: userId,
+              user_id: activityData.userId, // استخدام user_id من الخطة التشغيلية
               executive_plan_id: matchingDay.id,
               priority: task.priority,
               category: task.category || activityName,
@@ -228,17 +225,22 @@ ${daysInfo}
       );
     }
 
-    // حذف المهام المولدة سابقاً للشهر نفسه (لتجنب التكرار)
+    // جمع جميع user_ids الفريدة
+    const uniqueUserIds = [...new Set(allTasks.map(t => t.user_id))];
+    
+    // حذف المهام المولدة سابقاً للشهر نفسه لكل مستخدم
     const startDate = `${year || new Date().getFullYear()}-${String(targetMonth).padStart(2, '0')}-01`;
     const endDate = `${year || new Date().getFullYear()}-${String(targetMonth).padStart(2, '0')}-31`;
     
-    await supabase
-      .from("tasks")
-      .delete()
-      .eq("user_id", userId)
-      .eq("ai_generated", true)
-      .gte("due_date", startDate)
-      .lte("due_date", endDate);
+    for (const uid of uniqueUserIds) {
+      await supabase
+        .from("tasks")
+        .delete()
+        .eq("user_id", uid)
+        .eq("ai_generated", true)
+        .gte("due_date", startDate)
+        .lte("due_date", endDate);
+    }
 
     // إدراج المهام الجديدة
     const { data: insertedTasks, error: insertError } = await supabase

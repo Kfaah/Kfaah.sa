@@ -168,8 +168,6 @@ const Tasks = () => {
           body: JSON.stringify({
             month: selectedMonth,
             year: new Date().getFullYear(),
-            userId: authUser.id,
-            generateAll: true,
           }),
         }
       );
