@@ -35,8 +35,9 @@ const adminNavItems: NavItem[] = [
   { title: "نظرة عامة", href: "/", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
   { title: "الموظفين", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-blue-400 to-blue-500" },
   { title: "الأدوار والصلاحيات", href: "/roles", icon: UserCog, iconBg: "bg-gradient-to-br from-pink-400 to-pink-500" },
+  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
+  { title: "الخطط التنفيذية", href: "/plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "المهام", href: "/tasks", icon: ClipboardList, badge: 18, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "الخطط", href: "/plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
   { title: "التقارير", href: "/reports", icon: BarChart3, iconBg: "bg-gradient-to-br from-rose-400 to-rose-500" },
   { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
   { title: "المراسلات", href: "/messages", icon: MessageSquare, badge: 5, iconBg: "bg-gradient-to-br from-teal-400 to-emerald-500" },
@@ -45,8 +46,8 @@ const adminNavItems: NavItem[] = [
 // قائمة الموظف العادي
 const employeeNavItems: NavItem[] = [
   { title: "نظرة عامة", href: "/", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "المستهدفات السنوية", href: "/annual-targets", icon: Target, iconBg: "bg-gradient-to-br from-blue-400 to-blue-500" },
-  { title: "الخطط التنفيذية", href: "/plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
+  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
+  { title: "الخطة التنفيذية", href: "/plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "المهام", href: "/tasks", icon: ClipboardList, badge: 18, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
   { title: "التقارير", href: "/reports", icon: BarChart3, iconBg: "bg-gradient-to-br from-rose-400 to-rose-500" },
   { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
