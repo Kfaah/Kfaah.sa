@@ -419,6 +419,7 @@ export default function Profile() {
                 value={editData.firstName}
                 onChange={(e) => handleInputChange("firstName", e.target.value)}
                 className="text-base h-12"
+                disabled={!isAdmin}
               />
             </div>
             <div className="space-y-2">
@@ -428,83 +429,8 @@ export default function Profile() {
                 value={editData.lastName}
                 onChange={(e) => handleInputChange("lastName", e.target.value)}
                 className="text-base h-12"
+                disabled={!isAdmin}
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-base flex items-center gap-2">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                البريد الإلكتروني
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={editData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                className="text-base h-12"
-                dir="ltr"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-base flex items-center gap-2">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                رقم الهاتف
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={editData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                className="text-base h-12"
-                dir="ltr"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="department" className="text-base flex items-center gap-2">
-                <Building className="w-4 h-4 text-muted-foreground" />
-                القسم
-              </Label>
-              <Select
-                value={editData.department || ""}
-                onValueChange={(value) => handleInputChange("department", value)}
-              >
-                <SelectTrigger className="text-base h-12">
-                  <SelectValue placeholder="اختر القسم" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.name}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="jobRole" className="text-base flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-muted-foreground" />
-                الدور الوظيفي
-              </Label>
-              <Select
-                value={editData.jobRole || ""}
-                onValueChange={(value) => handleInputChange("jobRole", value)}
-              >
-                <SelectTrigger className="text-base h-12">
-                  <SelectValue placeholder="اختر الدور الوظيفي" />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobRoles.map((role) => (
-                    <SelectItem key={role.id} value={role.name}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
@@ -521,7 +447,88 @@ export default function Profile() {
                 className="text-base h-12"
                 dir="ltr"
                 placeholder="أدخل رقم الهوية الوطنية"
+                disabled={!isAdmin}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-base flex items-center gap-2">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                البريد الإلكتروني
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={editData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                className="text-base h-12"
+                dir="ltr"
+                disabled={!isAdmin}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-base flex items-center gap-2">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                رقم الهاتف
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={editData.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                className="text-base h-12"
+                dir="ltr"
+                disabled={!isAdmin}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="department" className="text-base flex items-center gap-2">
+                <Building className="w-4 h-4 text-muted-foreground" />
+                القسم
+              </Label>
+              <Select
+                value={editData.department || ""}
+                onValueChange={(value) => handleInputChange("department", value)}
+                disabled={!isAdmin}
+              >
+                <SelectTrigger className="text-base h-12">
+                  <SelectValue placeholder="اختر القسم" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.name}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="jobRole" className="text-base flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-muted-foreground" />
+                الدور الوظيفي
+              </Label>
+              <Select
+                value={editData.jobRole || ""}
+                onValueChange={(value) => handleInputChange("jobRole", value)}
+                disabled={!isAdmin}
+              >
+                <SelectTrigger className="text-base h-12">
+                  <SelectValue placeholder="اختر الدور الوظيفي" />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobRoles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="location" className="text-base flex items-center gap-2">
@@ -533,6 +540,7 @@ export default function Profile() {
                 value={editData.location}
                 onChange={(e) => handleInputChange("location", e.target.value)}
                 className="text-base h-12"
+                disabled={!isAdmin}
               />
             </div>
           </div>
