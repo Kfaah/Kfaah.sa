@@ -44,6 +44,8 @@ interface OperationalPlan {
   id: string;
   user_id: string;
   activity_name: string;
+  strategic_goal: string | null;
+  initiative: string | null;
   annual_target: number;
   year: number;
   status: string;
@@ -75,6 +77,8 @@ export default function OperationalPlans() {
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
   
   // Form state
+  const [strategicGoal, setStrategicGoal] = useState("");
+  const [initiative, setInitiative] = useState("");
   const [activityName, setActivityName] = useState("");
   const [annualTarget, setAnnualTarget] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
@@ -233,6 +237,8 @@ export default function OperationalPlans() {
         .from("operational_plans")
         .insert({
           user_id: targetUserId,
+          strategic_goal: strategicGoal || null,
+          initiative: initiative || null,
           activity_name: activityName,
           annual_target: parseInt(annualTarget),
           year: year,
@@ -261,6 +267,8 @@ export default function OperationalPlans() {
       });
 
       // Reset form
+      setStrategicGoal("");
+      setInitiative("");
       setActivityName("");
       setAnnualTarget("");
       setYear(new Date().getFullYear());
@@ -369,7 +377,27 @@ export default function OperationalPlans() {
                 {/* Basic Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <Label>اسم النشاط</Label>
+                    <Label>الهدف الاستراتيجي</Label>
+                    <Input
+                      value={strategicGoal}
+                      onChange={(e) => setStrategicGoal(e.target.value)}
+                      placeholder="مثال: تحسين جودة الخدمات"
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <Label>المبادرة</Label>
+                    <Input
+                      value={initiative}
+                      onChange={(e) => setInitiative(e.target.value)}
+                      placeholder="مثال: مبادرة التحول الرقمي"
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <Label>النشاط</Label>
                     <Input
                       value={activityName}
                       onChange={(e) => setActivityName(e.target.value)}
@@ -489,27 +517,33 @@ export default function OperationalPlans() {
               <div className="border border-gray-300 rounded-lg overflow-hidden shadow-sm">
                 {/* رأس الجدول الرسمي */}
                 <div className="flex items-stretch bg-gradient-to-r from-[#2d7a85] to-[#3d9aa8] text-white">
-                  <div className="w-16 flex items-center justify-center py-3 border-l border-white/20">
+                  <div className="w-12 flex items-center justify-center py-3 border-l border-white/20">
                     <span className="text-xs font-medium">#</span>
                   </div>
-                  <div className={`${isAdmin ? 'flex-[2]' : 'flex-[3]'} py-3 px-6 border-l border-white/20`}>
-                    <span className="text-sm font-semibold">المهمة</span>
+                  <div className="flex-1 py-3 px-4 border-l border-white/20">
+                    <span className="text-sm font-semibold">الهدف الاستراتيجي</span>
+                  </div>
+                  <div className="flex-1 py-3 px-4 border-l border-white/20">
+                    <span className="text-sm font-semibold">المبادرة</span>
+                  </div>
+                  <div className="flex-1 py-3 px-4 border-l border-white/20">
+                    <span className="text-sm font-semibold">النشاط</span>
                   </div>
                   {isAdmin && (
-                    <div className="flex-[2] py-3 px-6 border-l border-white/20">
+                    <div className="flex-1 py-3 px-4 border-l border-white/20">
                       <span className="text-sm font-semibold">الموظف المكلف</span>
                     </div>
                   )}
-                  <div className="flex-1 py-3 px-6 border-l border-white/20 text-center">
+                  <div className="w-24 py-3 px-2 border-l border-white/20 text-center">
                     <span className="text-sm font-semibold">المستهدف السنوي</span>
                   </div>
-                  <div className="flex-1 py-3 px-6 border-l border-white/20 text-center">
+                  <div className="w-24 py-3 px-2 border-l border-white/20 text-center">
                     <span className="text-sm font-semibold">المتوسط الشهري</span>
                   </div>
-                  <div className="w-28 py-3 px-4 border-l border-white/20 text-center">
+                  <div className="w-24 py-3 px-2 border-l border-white/20 text-center">
                     <span className="text-sm font-semibold">الحالة</span>
                   </div>
-                  <div className="w-16 py-3 px-2 text-center">
+                  <div className="w-14 py-3 px-2 text-center">
                     <span className="text-sm font-semibold">حذف</span>
                   </div>
                 </div>
@@ -526,41 +560,51 @@ export default function OperationalPlans() {
                         onClick={() => handleViewPlan(plan)}
                       >
                         {/* أيقونة السهم */}
-                        <div className={`w-16 flex items-center justify-center border-l border-gray-200 ${isExpanded ? 'bg-[#3d9aa8]' : ''}`}>
+                        <div className={`w-12 flex items-center justify-center border-l border-gray-200 ${isExpanded ? 'bg-[#3d9aa8]' : ''}`}>
                           <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-white' : 'text-[#3d9aa8]'}`} />
                         </div>
                         
-                        {/* المهمة */}
-                        <div className={`${isAdmin ? 'flex-[2]' : 'flex-[3]'} py-4 px-6 border-l border-gray-200 flex items-center`}>
-                          <p className="font-semibold text-gray-800">{plan.activity_name}</p>
+                        {/* الهدف الاستراتيجي */}
+                        <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
+                          <p className="text-gray-800 text-sm">{plan.strategic_goal || "-"}</p>
+                        </div>
+                        
+                        {/* المبادرة */}
+                        <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
+                          <p className="text-gray-700 text-sm">{plan.initiative || "-"}</p>
+                        </div>
+                        
+                        {/* النشاط */}
+                        <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
+                          <p className="font-semibold text-gray-800 text-sm">{plan.activity_name}</p>
                         </div>
                         
                         {/* الموظف المكلف - يظهر فقط للمدير */}
                         {isAdmin && (
-                          <div className="flex-[2] py-4 px-6 border-l border-gray-200 flex items-center">
-                            <p className="text-gray-700">{plan.employee_name || "-"}</p>
+                          <div className="flex-1 py-4 px-4 border-l border-gray-200 flex items-center">
+                            <p className="text-gray-700 text-sm">{plan.employee_name || "-"}</p>
                           </div>
                         )}
                         
                         {/* المستهدف السنوي */}
-                        <div className="flex-1 py-4 px-6 border-l border-gray-200 flex items-center justify-center">
-                          <p className="text-xl font-bold text-[#3d9aa8]">{plan.annual_target}</p>
+                        <div className="w-24 py-4 px-2 border-l border-gray-200 flex items-center justify-center">
+                          <p className="text-lg font-bold text-[#3d9aa8]">{plan.annual_target}</p>
                         </div>
                         
                         {/* المتوسط الشهري */}
-                        <div className="flex-1 py-4 px-6 border-l border-gray-200 flex items-center justify-center bg-[#3d9aa8]/5">
-                          <p className="text-xl font-bold text-[#2d7a85]">
+                        <div className="w-24 py-4 px-2 border-l border-gray-200 flex items-center justify-center bg-[#3d9aa8]/5">
+                          <p className="text-lg font-bold text-[#2d7a85]">
                             {Math.round(plan.annual_target / 12)}
                           </p>
                         </div>
                         
                         {/* الحالة */}
-                        <div className="w-28 py-4 px-4 border-l border-gray-200 flex items-center justify-center">
+                        <div className="w-24 py-4 px-2 border-l border-gray-200 flex items-center justify-center">
                           {getStatusBadge(plan.status)}
                         </div>
                         
                         {/* زر الحذف */}
-                        <div className="w-16 flex items-center justify-center">
+                        <div className="w-14 flex items-center justify-center">
                           {(isAdmin || plan.user_id === authUser?.id) && (
                             <Button
                               variant="ghost"
