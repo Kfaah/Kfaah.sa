@@ -61,7 +61,7 @@ serve(async (req) => {
     const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl } = await req.json();
 
     // Validate required fields
-    if (!fullName || !username || !password || !jobRole) {
+    if (!fullName || !username || !password || !jobRole || !email || !phone) {
       return new Response(
         JSON.stringify({ error: "يرجى ملء جميع الحقول المطلوبة" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -71,6 +71,48 @@ serve(async (req) => {
     if (password.length < 6) {
       return new Response(
         JSON.stringify({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check for duplicate username (ID)
+    const { data: existingUsername } = await supabaseAdmin
+      .from("employees")
+      .select("id")
+      .eq("username", username)
+      .maybeSingle();
+
+    if (existingUsername) {
+      return new Response(
+        JSON.stringify({ error: "رقم الهوية مسجل مسبقاً" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check for duplicate email
+    const { data: existingEmail } = await supabaseAdmin
+      .from("employees")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existingEmail) {
+      return new Response(
+        JSON.stringify({ error: "البريد الإلكتروني مسجل مسبقاً" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check for duplicate phone
+    const { data: existingPhone } = await supabaseAdmin
+      .from("employees")
+      .select("id")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    if (existingPhone) {
+      return new Response(
+        JSON.stringify({ error: "رقم الجوال مسجل مسبقاً" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
