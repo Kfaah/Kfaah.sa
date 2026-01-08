@@ -66,6 +66,9 @@ interface ExecutivePlanActivity {
   day: number;
 }
 
+// الأشهر المتاحة
+const AVAILABLE_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
 const MONTHS_AR = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
@@ -84,8 +87,9 @@ const Tasks = () => {
   // حالة نافذة التوليد
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [activities, setActivities] = useState<ExecutivePlanActivity[]>([]);
-  const [selectedActivity, setSelectedActivity] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState("");
 
   // التحقق من صلاحية المدير
   useEffect(() => {
@@ -166,14 +170,13 @@ const Tasks = () => {
     fetchActivities();
   }, [authUser]);
 
-  // توليد المهام بالذكاء الاصطناعي
-  const handleGenerateTasks = async () => {
-    if (!selectedActivity || !authUser) return;
-    
-    const activity = activities.find(a => a.id === selectedActivity);
-    if (!activity) return;
+  // توليد المهام بالذكاء الاصطناعي لشهر كامل
+  const handleGenerateMonthTasks = async () => {
+    if (!authUser || !selectedMonth) return;
     
     setIsGenerating(true);
+    setGenerationProgress("جاري جلب الخطط التنفيذية...");
+    
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-tasks`,
@@ -184,16 +187,22 @@ const Tasks = () => {
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
-            activityName: activity.activityName,
-            month: MONTHS_AR[activity.month - 1],
+            month: selectedMonth,
             year: new Date().getFullYear(),
             userId: authUser.id,
+            generateAll: true,
           }),
         }
       );
       
       if (!response.ok) {
         const errorData = await response.json();
+        if (response.status === 429) {
+          throw new Error("تم تجاوز الحد المسموح، حاول لاحقاً");
+        }
+        if (response.status === 402) {
+          throw new Error("يرجى إضافة رصيد للذكاء الاصطناعي");
+        }
         throw new Error(errorData.error || "فشل في توليد المهام");
       }
       
@@ -204,10 +213,9 @@ const Tasks = () => {
         description: result.message,
       });
       
-      // إضافة المهام الجديدة للقائمة
-      setTasks(prev => [...result.tasks, ...prev]);
+      // تحديث قائمة المهام
+      setTasks(result.tasks || []);
       setIsGenerateDialogOpen(false);
-      setSelectedActivity("");
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -216,6 +224,7 @@ const Tasks = () => {
       });
     } finally {
       setIsGenerating(false);
+      setGenerationProgress("");
     }
   };
 
@@ -478,7 +487,7 @@ const Tasks = () => {
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                توليد مهام بالذكاء الاصطناعي
+                توليد مهام الشهر تلقائياً
               </DialogTitle>
             </DialogHeader>
             
@@ -486,57 +495,58 @@ const Tasks = () => {
               <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
                 <div className="flex items-center gap-3 mb-2">
                   <Brain className="w-6 h-6 text-purple-500" />
-                  <h4 className="font-semibold text-purple-800">كيف يعمل؟</h4>
+                  <h4 className="font-semibold text-purple-800">التوليد التلقائي</h4>
                 </div>
                 <p className="text-sm text-purple-700">
-                  اختر نشاطاً من الخطة التنفيذية وسيقوم الذكاء الاصطناعي بتوليد مهام فرعية تفصيلية منبثقة منه.
+                  سيقوم الذكاء الاصطناعي بتوليد مهام تفصيلية لجميع الأنشطة في الخطط التنفيذية للشهر المحدد.
                 </p>
               </div>
               
-              {/* اختيار النشاط */}
+              {/* اختيار الشهر */}
               <div className="space-y-2">
-                <label className="font-semibold text-gray-700">اختر النشاط من الخطة التنفيذية</label>
-                {activities.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-4 text-center bg-gray-50 rounded-lg">
-                    لا توجد أنشطة في الخطط التنفيذية
-                  </p>
-                ) : (
-                  <Select value={selectedActivity} onValueChange={setSelectedActivity}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="اختر النشاط" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white z-50">
-                      {activities.map(activity => (
-                        <SelectItem key={activity.id} value={activity.id}>
-                          <div className="flex items-center gap-2">
-                            <Target className="w-4 h-4 text-purple-500" />
-                            <span>{activity.activityName}</span>
-                            <Badge variant="outline" className="mr-2">
-                              {MONTHS_AR[activity.month - 1]}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                <label className="font-semibold text-gray-700">اختر الشهر</label>
+                <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="اختر الشهر" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {MONTHS_AR.map((monthName, index) => (
+                      <SelectItem key={index + 1} value={String(index + 1)}>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-purple-500" />
+                          <span>{monthName}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* عرض التقدم */}
+              {isGenerating && generationProgress && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                    <span className="text-sm text-blue-700">{generationProgress}</span>
+                  </div>
+                </div>
+              )}
               
               {/* زر التوليد */}
               <Button
-                onClick={handleGenerateTasks}
-                disabled={!selectedActivity || isGenerating}
+                onClick={handleGenerateMonthTasks}
+                disabled={isGenerating}
                 className="w-full gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-12 text-lg"
               >
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    جاري التوليد...
+                    جاري توليد المهام...
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    توليد المهام
+                    توليد مهام {MONTHS_AR[selectedMonth - 1]} كاملاً
                   </>
                 )}
               </Button>
