@@ -37,7 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Sometimes the server-side session is already gone (e.g. after magic-link/impersonation)
+    // which can make global logout fail. In that case, force a local sign-out to clear the app state.
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "global" });
+      if (error) {
+        await supabase.auth.signOut({ scope: "local" });
+      }
+    } catch {
+      await supabase.auth.signOut({ scope: "local" });
+    }
   };
 
   return (
