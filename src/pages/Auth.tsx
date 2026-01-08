@@ -21,17 +21,20 @@ export default function Auth() {
   const [phone, setPhone] = useState("");
   const navigate = useNavigate();
 
-  const normalizeIdentifier = (value: string) => {
-    const trimmed = value.trim();
+  const normalizeDigits = (value: string, options?: { trim?: boolean }) => {
+    const shouldTrim = options?.trim ?? false;
+    const input = shouldTrim ? value.trim() : value;
 
     // Convert Arabic-Indic + Persian digits to Western digits
     const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
     const persian = "۰۱۲۳۴۵۶۷۸۹";
 
-    return trimmed
+    return input
       .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
       .replace(/[۰-۹]/g, (d) => String(persian.indexOf(d)));
   };
+
+  const normalizeIdentifier = (value: string) => normalizeDigits(value, { trim: true });
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,10 +55,11 @@ export default function Auth() {
         }
 
         const loginEmail = isEmail ? normalized : `${cleaned}@user.local`;
+        const normalizedPassword = normalizeDigits(password);
 
         const { error } = await supabase.auth.signInWithPassword({
           email: loginEmail,
-          password,
+          password: normalizedPassword,
         });
         if (error) throw error;
         toast.success("تم تسجيل الدخول بنجاح");
@@ -80,9 +84,10 @@ export default function Auth() {
         }
 
         const internalEmail = `${cleanUsername}@user.local`;
+        const normalizedPassword = normalizeDigits(password);
         const { error } = await supabase.auth.signUp({
           email: internalEmail,
-          password,
+          password: normalizedPassword,
           options: {
             emailRedirectTo: redirectUrl,
             data: {
