@@ -19,12 +19,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Target, Calendar, TrendingUp, Eye, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
+
+interface Employee {
+  id: string;
+  user_id: string;
+  full_name: string;
+}
 
 interface OperationalPlan {
   id: string;
@@ -65,12 +78,32 @@ export default function OperationalPlans() {
   const [annualTarget, setAnnualTarget] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
   const [monthlyTargets, setMonthlyTargets] = useState<number[]>(Array(12).fill(0));
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const isAdmin = !user.isEmployee;
 
   useEffect(() => {
     fetchPlans();
-  }, [authUser]);
+    if (isAdmin) {
+      fetchEmployees();
+    }
+  }, [authUser, isAdmin]);
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("id, user_id, full_name")
+        .eq("status", "active")
+        .order("full_name");
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  };
 
   const fetchPlans = async () => {
     if (!authUser) return;
@@ -158,6 +191,16 @@ export default function OperationalPlans() {
       return;
     }
 
+    // التحقق من اختيار الموظف للمدير
+    if (isAdmin && !selectedEmployeeId) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار الموظف",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!annualTarget || parseInt(annualTarget) <= 0) {
       toast({
         title: "خطأ",
@@ -180,11 +223,14 @@ export default function OperationalPlans() {
     }
 
     try {
+      // تحديد user_id بناءً على نوع المستخدم
+      const targetUserId = isAdmin ? selectedEmployeeId : authUser!.id;
+
       // إنشاء الخطة التشغيلية
       const { data: planData, error: planError } = await supabase
         .from("operational_plans")
         .insert({
-          user_id: authUser!.id,
+          user_id: targetUserId,
           activity_name: activityName,
           annual_target: parseInt(annualTarget),
           year: year,
@@ -217,6 +263,7 @@ export default function OperationalPlans() {
       setAnnualTarget("");
       setYear(new Date().getFullYear());
       setMonthlyTargets(Array(12).fill(0));
+      setSelectedEmployeeId("");
       setIsAddDialogOpen(false);
       fetchPlans();
     } catch (error: any) {
@@ -299,6 +346,25 @@ export default function OperationalPlans() {
               </DialogHeader>
               
               <div className="space-y-6 py-4">
+                {/* اختيار الموظف للمدير */}
+                {isAdmin && (
+                  <div>
+                    <Label>الموظف</Label>
+                    <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="اختر الموظف" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.user_id}>
+                            {emp.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 {/* Basic Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
