@@ -548,9 +548,8 @@ export default function ExecutivePlans() {
                       <TableHeader>
                         <TableRow className="bg-gray-50">
                           <TableHead className="text-right font-bold w-64 border-l-2">المهمة / النشاط</TableHead>
-                          <TableHead className="text-center font-bold w-20 border-l-2">اليوم</TableHead>
-                          <TableHead className="text-center font-bold w-32 border-l-2">التاريخ الميلادي</TableHead>
-                          <TableHead className="text-center font-bold w-40 border-l-2">التاريخ الهجري</TableHead>
+                          <TableHead className="text-center font-bold w-28 border-l-2">اليوم</TableHead>
+                          <TableHead className="text-center font-bold w-44 border-l-2">التاريخ الهجري</TableHead>
                           <TableHead className="text-center font-bold w-24 border-l-2">المستهدف</TableHead>
                           <TableHead className="text-center font-bold w-24 border-l-2">المنجز</TableHead>
                           <TableHead className="text-center font-bold w-24 border-l-2">الحالة</TableHead>
@@ -587,17 +586,12 @@ export default function ExecutivePlans() {
                                 </TableCell>
                               )}
                               
-                              {/* اليوم */}
+                              {/* اليوم (اسم اليوم + رقم اليوم = التاريخ الميلادي) */}
                               <TableCell className="text-center border-l-2">
                                 <div className="flex flex-col items-center">
-                                  <span className="text-lg font-bold text-[#3d9aa8]">{day.day}</span>
                                   <span className="text-xs text-muted-foreground">{day.weekDay}</span>
+                                  <span className="text-xl font-bold text-[#3d9aa8]">{day.day}</span>
                                 </div>
-                              </TableCell>
-                              
-                              {/* التاريخ الميلادي */}
-                              <TableCell className="text-center border-l-2 font-medium">
-                                {day.gregorianDate}
                               </TableCell>
                               
                               {/* التاريخ الهجري */}
