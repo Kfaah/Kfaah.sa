@@ -8,6 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const positiveMessages = [
   "أهلاً بك! يومك سعيد 🌟",
@@ -42,13 +45,58 @@ const positiveMessages = [
   "نفخر بوجودك معنا 🌟",
 ];
 
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface JobRole {
+  id: string;
+  name: string;
+}
+
 export default function Profile() {
+  const { user: authUser } = useAuth();
   const { user, loading, updateUser, updateProfileImage, uploadAvatar } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...user });
   const [currentMessage, setCurrentMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!authUser) return;
+      
+      const { data } = await supabase.rpc("has_role", {
+        _user_id: authUser.id,
+        _role: "admin",
+      });
+      
+      setIsAdmin(data === true);
+    };
+    
+    checkAdminRole();
+  }, [authUser]);
+
+  // Fetch departments and job roles
+  useEffect(() => {
+    const fetchData = async () => {
+      const [deptRes, rolesRes] = await Promise.all([
+        supabase.from("departments").select("id, name"),
+        supabase.from("job_roles").select("id, name"),
+      ]);
+      
+      if (deptRes.data) setDepartments(deptRes.data);
+      if (rolesRes.data) setJobRoles(rolesRes.data);
+    };
+    
+    fetchData();
+  }, []);
 
   useEffect(() => {
     // Use day of year to show a different message each day
@@ -183,10 +231,12 @@ export default function Profile() {
               </div>
             </div>
 
-            <Button onClick={handleEdit} size="lg" className="gap-2">
-              <Pencil className="w-4 h-4" />
-              تعديل الملف الشخصي
-            </Button>
+            {isAdmin && (
+              <Button onClick={handleEdit} size="lg" className="gap-2">
+                <Pencil className="w-4 h-4" />
+                تعديل الملف الشخصي
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -409,26 +459,42 @@ export default function Profile() {
                 <Building className="w-4 h-4 text-muted-foreground" />
                 القسم
               </Label>
-              <Input
-                id="department"
-                value={editData.department}
-                onChange={(e) => handleInputChange("department", e.target.value)}
-                className="text-base h-12"
-                placeholder="مثال: تقنية المعلومات"
-              />
+              <Select
+                value={editData.department || ""}
+                onValueChange={(value) => handleInputChange("department", value)}
+              >
+                <SelectTrigger className="text-base h-12">
+                  <SelectValue placeholder="اختر القسم" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.name}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="jobRole" className="text-base flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-muted-foreground" />
                 الدور الوظيفي
               </Label>
-              <Input
-                id="jobRole"
+              <Select
                 value={editData.jobRole || ""}
-                onChange={(e) => handleInputChange("jobRole", e.target.value)}
-                className="text-base h-12"
-                placeholder="مثال: مدير النظام"
-              />
+                onValueChange={(value) => handleInputChange("jobRole", value)}
+              >
+                <SelectTrigger className="text-base h-12">
+                  <SelectValue placeholder="اختر الدور الوظيفي" />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobRoles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
