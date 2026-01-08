@@ -37,16 +37,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    // Sometimes the server-side session is already gone (e.g. after magic-link/impersonation)
-    // which can make global logout fail. In that case, force a local sign-out to clear the app state.
+    // Sometimes the server-side session is already gone (e.g. after magic-link/impersonation),
+    // which can make global logout fail. In that case we still must clear local state.
     try {
       const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) {
         await supabase.auth.signOut({ scope: "local" });
       }
     } catch {
-      await supabase.auth.signOut({ scope: "local" });
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        // ignore
+      }
     }
+
+    // Force-clear any persisted auth tokens so routing stops treating the user as logged-in.
+    try {
+      const storageKey = (supabase.auth as any)?.storageKey as string | undefined;
+      if (storageKey) localStorage.removeItem(storageKey);
+
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.includes("auth-token")) localStorage.removeItem(k);
+      }
+    } catch {
+      // ignore
+    }
+
+    // Force-update app state even if onAuthStateChange doesn't fire.
+    setSession(null);
+    setUser(null);
+    setLoading(false);
   };
 
   return (
