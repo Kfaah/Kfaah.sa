@@ -12,6 +12,7 @@ import Tasks from "./pages/Tasks";
 import Plans from "./pages/Plans";
 import Profile from "./pages/Profile";
 import OperationalPlans from "./pages/OperationalPlans";
+import OperationalPlanDetails from "./pages/OperationalPlanDetails";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -109,6 +110,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <OperationalPlans />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/operational-plans/:id"
+        element={
+          <ProtectedRoute>
+            <OperationalPlanDetails />
           </ProtectedRoute>
         }
       />
