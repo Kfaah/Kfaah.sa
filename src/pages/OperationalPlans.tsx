@@ -501,24 +501,30 @@ export default function OperationalPlans() {
                             <ChevronDown className="w-5 h-5 transition-transform" />
                           </div>
                           
-                          {/* اسم النشاط */}
-                          <div className="flex-1">
+                          {/* المهمة (اسم النشاط) */}
+                          <div className="flex-1 min-w-[150px]">
+                            <p className="text-xs text-muted-foreground">المهمة</p>
                             <p className="font-bold text-foreground">{plan.activity_name}</p>
-                            {isAdmin && plan.employee_name && (
-                              <p className="text-sm text-muted-foreground">{plan.employee_name}</p>
-                            )}
+                          </div>
+                          
+                          {/* الموظف المكلف */}
+                          <div className="min-w-[120px]">
+                            <p className="text-xs text-muted-foreground">الموظف المكلف</p>
+                            <p className="font-semibold">{plan.employee_name || "-"}</p>
                           </div>
                           
                           {/* المستهدف السنوي */}
-                          <div className="text-center px-4">
+                          <div className="text-center min-w-[100px]">
                             <p className="text-xs text-muted-foreground">المستهدف السنوي</p>
                             <p className="font-bold text-lg text-[#3d9aa8]">{plan.annual_target}</p>
                           </div>
                           
-                          {/* السنة */}
-                          <div className="text-center px-4">
-                            <p className="text-xs text-muted-foreground">السنة</p>
-                            <p className="font-semibold">{plan.year}</p>
+                          {/* متوسط الاستهداف الشهري */}
+                          <div className="text-center min-w-[100px]">
+                            <p className="text-xs text-muted-foreground">المتوسط الشهري</p>
+                            <p className="font-bold text-lg text-[#2d7a85]">
+                              {Math.round(plan.annual_target / 12)}
+                            </p>
                           </div>
                           
                           {/* الحالة */}
