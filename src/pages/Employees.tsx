@@ -103,7 +103,7 @@ const Employees = () => {
   const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
   const [editPassword, setEditPassword] = useState("");
   const [showEditPassword, setShowEditPassword] = useState(false);
-  type EditEmployeeField = "full_name" | "username" | "email" | "phone" | "job_role" | "password";
+  type EditEmployeeField = "full_name" | "username" | "email" | "phone" | "job_role" | "password" | "department" | "status";
   const [editErrors, setEditErrors] = useState<Partial<Record<EditEmployeeField, string>>>({});
   const [newDepartment, setNewDepartment] = useState({ name: "", color: "bg-primary" });
   const [newRole, setNewRole] = useState({ name: "", color: "bg-primary", department_id: "" });
@@ -353,7 +353,13 @@ const Employees = () => {
     }
     if (!editingEmployee.email?.trim()) nextErrors.email = "البريد الإلكتروني مطلوب";
     if (!editingEmployee.phone?.trim()) nextErrors.phone = "رقم الجوال مطلوب";
+    
+    // التحقق من القسم - يجب أن يكون الدور الوظيفي مرتبط بقسم
+    const selectedRole = jobRoles.find(r => r.name === editingEmployee.job_role);
+    if (!selectedRole?.department_id) nextErrors.department = "القسم مطلوب";
+    
     if (!editingEmployee.job_role?.trim()) nextErrors.job_role = "الدور الوظيفي مطلوب";
+    if (!editingEmployee.status?.trim()) nextErrors.status = "الحالة مطلوبة";
     if (editPassword && editPassword.length < 6) nextErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
     
     if (Object.keys(nextErrors).length > 0) {
@@ -1037,9 +1043,10 @@ const Employees = () => {
                   onValueChange={(value) => {
                     // عند تغيير القسم، نعيد تعيين الدور الوظيفي
                     setEditingEmployee({ ...editingEmployee, job_role: "" });
+                    if (editErrors.department) setEditErrors(prev => ({ ...prev, department: undefined }));
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={editErrors.department ? "border-destructive" : ""}>
                     <SelectValue placeholder="اختر القسم" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1050,6 +1057,7 @@ const Employees = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {editErrors.department && <p className="text-xs text-destructive">{editErrors.department}</p>}
               </div>
 
               <div className="space-y-2">
@@ -1059,6 +1067,7 @@ const Employees = () => {
                   onValueChange={(value) => {
                     setEditingEmployee({ ...editingEmployee, job_role: value });
                     if (editErrors.job_role) setEditErrors(prev => ({ ...prev, job_role: undefined }));
+                    if (editErrors.department) setEditErrors(prev => ({ ...prev, department: undefined }));
                   }}
                 >
                   <SelectTrigger className={editErrors.job_role ? "border-destructive" : ""}>
@@ -1079,10 +1088,13 @@ const Employees = () => {
                 <Label>الحالة <span className="text-destructive">*</span></Label>
                 <Select
                   value={editingEmployee.status}
-                  onValueChange={(value: "active" | "on_leave" | "inactive") => setEditingEmployee({ ...editingEmployee, status: value })}
+                  onValueChange={(value: "active" | "on_leave" | "inactive") => {
+                    setEditingEmployee({ ...editingEmployee, status: value });
+                    if (editErrors.status) setEditErrors(prev => ({ ...prev, status: undefined }));
+                  }}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className={editErrors.status ? "border-destructive" : ""}>
+                    <SelectValue placeholder="اختر الحالة" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">نشط</SelectItem>
@@ -1090,6 +1102,7 @@ const Employees = () => {
                     <SelectItem value="inactive">غير نشط</SelectItem>
                   </SelectContent>
                 </Select>
+                {editErrors.status && <p className="text-xs text-destructive">{editErrors.status}</p>}
               </div>
 
               <Button onClick={handleEditEmployee} className="w-full bg-accent hover:bg-accent/90" disabled={isLoading}>
