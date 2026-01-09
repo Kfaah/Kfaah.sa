@@ -612,16 +612,18 @@ export default function ExecutivePlans() {
                       onValueChange={(v) => setMonthViewMode(monthGroup.month, v as "tasks" | "dates")}
                       className="w-full"
                     >
-                      <TabsList className="grid w-full max-w-md grid-cols-2 mb-4 mr-auto">
-                        <TabsTrigger value="dates" className="gap-2">
-                          <CalendarDays className="w-4 h-4" />
-                          بحسب التواريخ
-                        </TabsTrigger>
-                        <TabsTrigger value="tasks" className="gap-2">
-                          <ListTodo className="w-4 h-4" />
-                          بحسب المهام
-                        </TabsTrigger>
-                      </TabsList>
+                      <div className="flex justify-end mb-4">
+                        <TabsList className="grid max-w-md grid-cols-2">
+                          <TabsTrigger value="tasks" className="gap-2">
+                            <ListTodo className="w-4 h-4" />
+                            بحسب المهام
+                          </TabsTrigger>
+                          <TabsTrigger value="dates" className="gap-2">
+                            <CalendarDays className="w-4 h-4" />
+                            بحسب التواريخ
+                          </TabsTrigger>
+                        </TabsList>
+                      </div>
                       
                       {/* عرض بحسب المهام */}
                       <TabsContent value="tasks" className="mt-0">
