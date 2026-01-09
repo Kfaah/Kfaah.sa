@@ -67,6 +67,11 @@ interface Employee {
   user_id: string | null;
 }
 
+interface ActivityInfo {
+  executive_plan_id: string;
+  activity_name: string;
+}
+
 const MONTHS_AR = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
@@ -79,6 +84,7 @@ const Tasks = () => {
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [activities, setActivities] = useState<ActivityInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -147,6 +153,39 @@ const Tasks = () => {
     };
     
     fetchEmployees();
+  }, [authUser]);
+
+  // جلب الأنشطة من الخطط التنفيذية
+  useEffect(() => {
+    const fetchActivities = async () => {
+      if (!authUser) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("executive_plans")
+          .select(`
+            id,
+            operational_plan_month:operational_plan_months!inner (
+              operational_plan:operational_plans!inner (
+                activity_name
+              )
+            )
+          `);
+        
+        if (error) throw error;
+        
+        const activitiesMap: ActivityInfo[] = (data || []).map((ep: any) => ({
+          executive_plan_id: ep.id,
+          activity_name: ep.operational_plan_month?.operational_plan?.activity_name || "غير محدد"
+        }));
+        
+        setActivities(activitiesMap);
+      } catch (error: any) {
+        console.error("Error fetching activities:", error);
+      }
+    };
+    
+    fetchActivities();
   }, [authUser]);
 
   // توليد المهام بالذكاء الاصطناعي لشهر كامل
@@ -274,6 +313,30 @@ const Tasks = () => {
   const getExecutorName = (userId: string) => {
     const employee = employees.find(e => e.user_id === userId);
     return employee?.full_name || "غير محدد";
+  };
+
+  // الحصول على اسم النشاط من executive_plan_id
+  const getActivityName = (executivePlanId: string | null) => {
+    if (!executivePlanId) return "غير محدد";
+    const activity = activities.find(a => a.executive_plan_id === executivePlanId);
+    return activity?.activity_name || "غير محدد";
+  };
+
+  // تجميع المهام حسب النشاط
+  const groupTasksByActivity = (tasksToGroup: Task[]) => {
+    const grouped: { [key: string]: { activityName: string; tasks: Task[] } } = {};
+    
+    tasksToGroup.forEach(task => {
+      const activityName = getActivityName(task.executive_plan_id);
+      const key = task.executive_plan_id || "no-activity";
+      
+      if (!grouped[key]) {
+        grouped[key] = { activityName, tasks: [] };
+      }
+      grouped[key].tasks.push(task);
+    });
+    
+    return Object.values(grouped);
   };
 
   // استخراج الشهر واليوم من تاريخ التنفيذ
@@ -526,9 +589,9 @@ const Tasks = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
+                    <TableHead className="text-right font-bold border-l w-48">النشاط</TableHead>
                     <TableHead className="text-right font-bold border-l">المهمة</TableHead>
                     <TableHead className="text-center font-bold w-24 border-l">الأولوية</TableHead>
-                    <TableHead className="text-center font-bold w-32 border-l">التصنيف</TableHead>
                     <TableHead className="text-center font-bold w-32 border-l">المنفذ</TableHead>
                     <TableHead className="text-center font-bold w-32 border-l">الحالة</TableHead>
                     <TableHead className="text-center font-bold w-28 border-l">تاريخ التنفيذ</TableHead>
@@ -536,96 +599,107 @@ const Tasks = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTasks.map((task) => {
-                    const statusConfig = getStatusConfig(task.status);
-                    const priorityConfig = getPriorityConfig(task.priority);
-                    
-                    return (
-                      <TableRow key={task.id} className="hover:bg-muted/30">
-                        {/* المهمة */}
-                        <TableCell className="border-l">
-                          <div className="flex items-start gap-3">
-                            {task.ai_generated && (
-                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center flex-shrink-0">
-                                <Brain className="w-4 h-4 text-white" />
+                  {groupTasksByActivity(filteredTasks).map((group, groupIndex) => (
+                    group.tasks.map((task, taskIndex) => {
+                      const statusConfig = getStatusConfig(task.status);
+                      const priorityConfig = getPriorityConfig(task.priority);
+                      const isFirstInGroup = taskIndex === 0;
+                      
+                      return (
+                        <TableRow key={task.id} className="hover:bg-muted/30">
+                          {/* النشاط - يظهر فقط في أول مهمة من كل مجموعة */}
+                          {isFirstInGroup ? (
+                            <TableCell 
+                              className="border-l bg-primary/5 font-semibold text-primary"
+                              rowSpan={group.tasks.length}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Target className="w-4 h-4" />
+                                <span className="line-clamp-3">{group.activityName}</span>
                               </div>
-                            )}
-                            <div>
-                              <p className="font-semibold text-foreground">{task.title}</p>
-                              {task.description && (
-                                <p className="text-sm text-muted-foreground line-clamp-1">{task.description}</p>
+                            </TableCell>
+                          ) : null}
+                          
+                          {/* المهمة */}
+                          <TableCell className="border-l">
+                            <div className="flex items-start gap-3">
+                              {task.ai_generated && (
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center flex-shrink-0">
+                                  <Brain className="w-4 h-4 text-white" />
+                                </div>
                               )}
+                              <div>
+                                <p className="font-semibold text-foreground">{task.title}</p>
+                                {task.description && (
+                                  <p className="text-sm text-muted-foreground line-clamp-1">{task.description}</p>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        
-                        {/* الأولوية */}
-                        <TableCell className="text-center border-l">
-                          <Badge className={priorityConfig.class}>
-                            {priorityConfig.label}
-                          </Badge>
-                        </TableCell>
-                        
-                        {/* التصنيف */}
-                        <TableCell className="text-center border-l">
-                          <Badge variant="outline" className="bg-muted/50">{task.category || "-"}</Badge>
-                        </TableCell>
+                          </TableCell>
+                          
+                          {/* الأولوية */}
+                          <TableCell className="text-center border-l">
+                            <Badge className={priorityConfig.class}>
+                              {priorityConfig.label}
+                            </Badge>
+                          </TableCell>
 
-                        {/* المنفذ */}
-                        <TableCell className="text-center border-l">
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="w-3 h-3 text-primary" />
+                          {/* المنفذ */}
+                          <TableCell className="text-center border-l">
+                            <div className="flex items-center justify-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                <User className="w-3 h-3 text-primary" />
+                              </div>
+                              <span className="text-sm">{getExecutorName(task.user_id)}</span>
                             </div>
-                            <span className="text-sm">{getExecutorName(task.user_id)}</span>
-                          </div>
-                        </TableCell>
-                        
-                        {/* الحالة */}
-                        <TableCell className="text-center border-l">
-                          <Select
-                            value={task.status}
-                            onValueChange={(value) => updateTaskStatus(task.id, value)}
-                          >
-                            <SelectTrigger className={cn("w-28 h-8", statusConfig.class)}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white z-50">
-                              <SelectItem value="pending">معلق</SelectItem>
-                              <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
-                              <SelectItem value="completed">مكتمل</SelectItem>
-                              <SelectItem value="overdue">متأخر</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        
-                        {/* تاريخ التنفيذ */}
-                        <TableCell className="text-center border-l">
-                          <div className="flex items-center justify-center gap-2 text-sm">
-                            <Calendar className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-foreground">
-                              {task.due_date 
-                                ? new Date(task.due_date).toLocaleDateString("ar-SA")
-                                : "-"
-                              }
-                            </span>
-                          </div>
-                        </TableCell>
-                        
-                        {/* إجراء */}
-                        <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => deleteTask(task.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                          </TableCell>
+                          
+                          {/* الحالة */}
+                          <TableCell className="text-center border-l">
+                            <Select
+                              value={task.status}
+                              onValueChange={(value) => updateTaskStatus(task.id, value)}
+                            >
+                              <SelectTrigger className={cn("w-28 h-8", statusConfig.class)}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white z-50">
+                                <SelectItem value="pending">معلق</SelectItem>
+                                <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                                <SelectItem value="completed">مكتمل</SelectItem>
+                                <SelectItem value="overdue">متأخر</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          
+                          {/* تاريخ التنفيذ */}
+                          <TableCell className="text-center border-l">
+                            <div className="flex items-center justify-center gap-2 text-sm">
+                              <Calendar className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-foreground">
+                                {task.due_date 
+                                  ? new Date(task.due_date).toLocaleDateString("ar-SA")
+                                  : "-"
+                                }
+                              </span>
+                            </div>
+                          </TableCell>
+                          
+                          {/* إجراء */}
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => deleteTask(task.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ))}
                 </TableBody>
               </Table>
             </CardContent>
