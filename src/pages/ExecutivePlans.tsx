@@ -145,6 +145,51 @@ function formatGregorianShort(date: Date): string {
   return `${date.getDate()}/${date.getMonth() + 1}`;
 }
 
+function wrapTextByChars(text: string, maxChars = 30): string {
+  const raw = (text ?? "").toString().trim();
+  if (!raw) return "";
+
+  const words = raw.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+
+  const pushWordOrSplit = (word: string) => {
+    if (word.length <= maxChars) {
+      line = word;
+      return;
+    }
+
+    // كلمة أطول من الحد: نقسمها إلى مقاطع
+    const chunks = word.match(new RegExp(`.{1,${maxChars}}`, "g")) ?? [word];
+    for (let i = 0; i < chunks.length; i++) {
+      if (i === chunks.length - 1) {
+        line = chunks[i];
+      } else {
+        lines.push(chunks[i]);
+      }
+    }
+  };
+
+  for (const word of words) {
+    if (!line) {
+      pushWordOrSplit(word);
+      continue;
+    }
+
+    const candidate = `${line} ${word}`;
+    if (candidate.length <= maxChars) {
+      line = candidate;
+    } else {
+      lines.push(line);
+      line = "";
+      pushWordOrSplit(word);
+    }
+  }
+
+  if (line) lines.push(line);
+  return lines.join("\n");
+}
+
 export default function ExecutivePlans() {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
@@ -649,11 +694,11 @@ export default function ExecutivePlans() {
                                   )}
                                 >
                                   {/* عمود اسم النشاط */}
-                                  <TableCell className="font-semibold bg-gray-50 border-r-2 py-3" style={{ maxWidth: '200px', minWidth: '150px' }}>
+                                  <TableCell className="font-semibold bg-gray-50 border-r-2 py-3">
                                     <div className="flex items-start gap-2">
                                       <Target className="w-4 h-4 text-[#3d9aa8] flex-shrink-0 mt-0.5" />
-                                      <span className="font-bold text-gray-800 text-sm leading-relaxed" style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
-                                        {activity.activityName}
+                                      <span className="font-bold text-gray-800 text-sm leading-relaxed whitespace-pre-line">
+                                        {wrapTextByChars(activity.activityName, 30)}
                                       </span>
                                     </div>
                                   </TableCell>
