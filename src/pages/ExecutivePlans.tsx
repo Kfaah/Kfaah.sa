@@ -694,12 +694,12 @@ export default function ExecutivePlans() {
                                   )}
                                 >
                                   {/* عمود اسم النشاط */}
-                                  <TableCell className="font-semibold bg-gray-50 border-r-2 py-3">
+                                  <TableCell className="font-semibold bg-gray-50 border-r-2 py-3 align-top">
                                     <div className="flex items-start gap-2">
                                       <Target className="w-4 h-4 text-[#3d9aa8] flex-shrink-0 mt-0.5" />
-                                      <span className="font-bold text-gray-800 text-sm leading-relaxed whitespace-pre-line">
+                                      <pre className="font-bold text-gray-800 text-sm leading-relaxed font-sans whitespace-pre-wrap m-0">
                                         {wrapTextByChars(activity.activityName, 30)}
-                                      </span>
+                                      </pre>
                                     </div>
                                   </TableCell>
                                   
