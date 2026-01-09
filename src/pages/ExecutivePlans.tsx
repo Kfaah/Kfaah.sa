@@ -860,51 +860,33 @@ export default function ExecutivePlans() {
                                                   </div>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent 
-                                                  className="bg-white z-50 min-w-[250px] shadow-lg border"
-                                                  align="start"
+                                                  className="bg-white z-50 min-w-[280px] shadow-lg border p-0"
+                                                  align="end"
                                                   sideOffset={5}
                                                 >
                                                   {activityTasks.length === 0 ? (
-                                                    <DropdownMenuItem disabled className="text-muted-foreground text-center">
+                                                    <div className="text-muted-foreground text-center py-4 px-3" dir="rtl">
                                                       لا توجد مهام مرتبطة
-                                                    </DropdownMenuItem>
+                                                    </div>
                                                   ) : (
-                                                    activityTasks.map((task) => (
-                                                      <DropdownMenuItem 
-                                                        key={task.id} 
-                                                        className="flex items-center gap-3 py-3 cursor-default"
-                                                      >
-                                                        <div className={cn(
-                                                          "w-2 h-2 rounded-full flex-shrink-0",
-                                                          task.status === "completed" ? "bg-green-500" :
-                                                          task.status === "in_progress" ? "bg-blue-500" :
-                                                          "bg-gray-400"
-                                                        )} />
-                                                        <div className="flex-1">
-                                                          <div className="text-sm font-medium text-gray-800">{task.title}</div>
-                                                          <div className="text-xs text-muted-foreground flex items-center gap-2">
-                                                            <span className={cn(
-                                                              "px-2 py-0.5 rounded-full text-[10px]",
-                                                              task.priority === "high" ? "bg-red-100 text-red-700" :
-                                                              task.priority === "medium" ? "bg-yellow-100 text-yellow-700" :
-                                                              "bg-gray-100 text-gray-700"
-                                                            )}>
-                                                              {task.priority === "high" ? "عاجل" : 
-                                                               task.priority === "medium" ? "متوسط" : "منخفض"}
-                                                            </span>
-                                                            <span className={cn(
-                                                              "px-2 py-0.5 rounded-full text-[10px]",
-                                                              task.status === "completed" ? "bg-green-100 text-green-700" :
-                                                              task.status === "in_progress" ? "bg-blue-100 text-blue-700" :
-                                                              "bg-gray-100 text-gray-700"
-                                                            )}>
-                                                              {task.status === "completed" ? "مكتمل" : 
-                                                               task.status === "in_progress" ? "قيد التنفيذ" : "معلق"}
-                                                            </span>
+                                                    <div className="divide-y divide-gray-200" dir="rtl">
+                                                      {activityTasks.map((task) => (
+                                                        <div 
+                                                          key={task.id} 
+                                                          className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50"
+                                                        >
+                                                          <div className={cn(
+                                                            "w-3 h-3 rounded-full flex-shrink-0",
+                                                            task.status === "completed" ? "bg-green-500" :
+                                                            task.status === "in_progress" ? "bg-blue-500" :
+                                                            "bg-gray-400"
+                                                          )} />
+                                                          <div className="text-sm font-medium text-gray-800 text-right flex-1">
+                                                            {task.title}
                                                           </div>
                                                         </div>
-                                                      </DropdownMenuItem>
-                                                    ))
+                                                      ))}
+                                                    </div>
                                                   )}
                                                 </DropdownMenuContent>
                                               </DropdownMenu>
