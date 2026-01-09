@@ -661,7 +661,7 @@ export default function ExecutivePlans() {
                                     {activity.days.length === 0 ? (
                                       <span className="text-muted-foreground text-sm">لا توجد أيام تنفيذ</span>
                                     ) : (
-                                      <div className="flex items-center gap-2 justify-end">
+                                      <div className="flex items-center gap-2 w-full justify-start">
                                         {activity.days.map((day, dayIdx) => {
                                           const date = new Date(selectedYear, monthGroup.month - 1, day.day);
                                           const hijri = toHijri(date);
