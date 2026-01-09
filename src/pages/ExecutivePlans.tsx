@@ -554,39 +554,40 @@ export default function ExecutivePlans() {
                 
                 {/* محتوى الشهر */}
                 {expandedMonths.has(`month-${monthGroup.month}`) && (
-                  <CardContent className="p-4">
-                    <div className="space-y-4">
-                      {monthGroup.activities.map((activity, actIdx) => (
-                        <div 
-                          key={activity.planMonthId}
-                          className={cn(
-                            "bg-gray-50 rounded-xl p-4",
-                            actIdx < monthGroup.activities.length - 1 ? "border-b-2 border-gray-200" : ""
-                          )}
-                        >
-                          {/* اسم النشاط */}
-                          <div className="flex items-center gap-2 mb-3">
-                            <Target className="w-5 h-5 text-[#3d9aa8]" />
-                            <h4 className="font-bold text-gray-800">{activity.activityName}</h4>
-                            <Badge variant="outline" className="mr-2">
-                              المستهدف الشهري: {activity.monthlyTarget}
-                            </Badge>
-                          </div>
-                          
-                          {/* أيام التنفيذ فقط */}
-                          <div className="flex flex-wrap gap-2">
+                  <CardContent className="p-0 overflow-x-auto">
+                    <Table>
+                      <TableBody>
+                        {monthGroup.activities.map((activity, actIdx) => (
+                          <TableRow 
+                            key={activity.planMonthId}
+                            className={cn(
+                              "hover:bg-gray-50",
+                              actIdx < monthGroup.activities.length - 1 ? "border-b-2 border-b-gray-200" : ""
+                            )}
+                          >
+                            {/* عمود اسم النشاط */}
+                            <TableCell className="font-semibold bg-gray-50 border-l-2 py-3 min-w-[200px]">
+                              <div className="flex items-center gap-2">
+                                <Target className="w-4 h-4 text-[#3d9aa8] flex-shrink-0" />
+                                <span className="font-bold text-gray-800 text-sm">{activity.activityName}</span>
+                              </div>
+                            </TableCell>
+                            
+                            {/* أعمدة أيام التنفيذ فقط */}
                             {activity.days.length === 0 ? (
-                              <p className="text-muted-foreground text-sm">لا توجد أيام تنفيذ محددة</p>
+                              <TableCell className="text-muted-foreground text-sm text-center">
+                                لا توجد أيام تنفيذ
+                              </TableCell>
                             ) : (
                               activity.days.map(day => {
                                 const date = new Date(selectedYear, monthGroup.month - 1, day.day);
                                 const hijri = toHijri(date);
                                 
                                 return (
-                                  <div
+                                  <TableCell 
                                     key={day.id}
                                     className={cn(
-                                      "rounded-lg p-3 min-w-[90px] text-center transition-all",
+                                      "text-center p-2 min-w-[70px]",
                                       day.status === "completed" 
                                         ? "bg-green-600 text-white"
                                         : day.status === "in_progress"
@@ -594,38 +595,24 @@ export default function ExecutivePlans() {
                                         : "bg-[#3d9aa8] text-white"
                                     )}
                                   >
-                                    {/* التاريخ الميلادي */}
-                                    <div className="text-xs font-medium opacity-90">
-                                      {date.getMonth() + 1}/{date.getDate()}
+                                    <div className="flex flex-col items-center">
+                                      {/* التاريخ الميلادي */}
+                                      <span className="text-xs font-medium">
+                                        {date.getMonth() + 1}/{date.getDate()}
+                                      </span>
+                                      {/* التاريخ الهجري */}
+                                      <span className="text-[10px] opacity-80">
+                                        {hijri.day} {hijri.monthName}
+                                      </span>
                                     </div>
-                                    {/* التاريخ الهجري */}
-                                    <div className="text-[11px] opacity-80 mt-0.5">
-                                      {hijri.day} {hijri.monthName}
-                                    </div>
-                                    {/* المستهدف والمنجز */}
-                                    <div className="mt-2 pt-2 border-t border-white/30">
-                                      <div className="text-xs opacity-75">المستهدف</div>
-                                      <div className="text-lg font-bold">{day.dailyTarget}</div>
-                                      {day.achieved > 0 && (
-                                        <>
-                                          <div className="text-xs opacity-75 mt-1">المنجز</div>
-                                          <div className={cn(
-                                            "text-sm font-bold",
-                                            day.achieved >= day.dailyTarget ? "text-green-200" : "text-yellow-200"
-                                          )}>
-                                            {day.achieved}
-                                          </div>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
+                                  </TableCell>
                                 );
                               })
                             )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </CardContent>
                 )}
               </Card>
