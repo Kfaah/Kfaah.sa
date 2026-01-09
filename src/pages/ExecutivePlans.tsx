@@ -625,11 +625,11 @@ export default function ExecutivePlans() {
                       
                       {/* عرض بحسب المهام */}
                       <TabsContent value="tasks" className="mt-0">
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto" dir="rtl">
                           <Table>
                             <TableHeader>
                               <TableRow className="bg-gray-100">
-                                <TableHead className="text-right font-bold min-w-[200px] border-l-2">
+                                <TableHead className="text-right font-bold min-w-[200px] border-r-2">
                                   النشاط
                                 </TableHead>
                                 <TableHead className="text-center font-bold text-[#3d9aa8]">
@@ -647,7 +647,7 @@ export default function ExecutivePlans() {
                                   )}
                                 >
                                   {/* عمود اسم النشاط */}
-                                  <TableCell className="font-semibold bg-gray-50 border-l-2 py-3 min-w-[200px]">
+                                  <TableCell className="font-semibold bg-gray-50 border-r-2 py-3 min-w-[200px]">
                                     <div className="flex items-center gap-2">
                                       <Target className="w-4 h-4 text-[#3d9aa8] flex-shrink-0" />
                                       <span className="font-bold text-gray-800 text-sm">{activity.activityName}</span>
@@ -659,7 +659,7 @@ export default function ExecutivePlans() {
                                     {activity.days.length === 0 ? (
                                       <span className="text-muted-foreground text-sm">لا توجد أيام تنفيذ</span>
                                     ) : (
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 flex-row-reverse">
                                         {activity.days.map((day, dayIdx) => {
                                           const date = new Date(selectedYear, monthGroup.month - 1, day.day);
                                           const hijri = toHijri(date);
@@ -704,11 +704,11 @@ export default function ExecutivePlans() {
                       
                       {/* عرض بحسب التواريخ */}
                       <TabsContent value="dates" className="mt-0">
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto" dir="rtl">
                           <Table>
                             <TableHeader>
                               <TableRow className="bg-gray-100">
-                                <TableHead className="text-right font-bold min-w-[150px] border-l-2">
+                                <TableHead className="text-right font-bold min-w-[150px] border-r-2">
                                   التاريخ
                                 </TableHead>
                                 <TableHead className="text-center font-bold text-[#3d9aa8]">
@@ -737,7 +737,7 @@ export default function ExecutivePlans() {
                                       )}
                                     >
                                       {/* عمود التاريخ */}
-                                      <TableCell className="bg-gray-50 border-l-2 py-3 min-w-[150px]">
+                                      <TableCell className="bg-gray-50 border-r-2 py-3 min-w-[150px]">
                                         <div className="flex flex-col items-start gap-1">
                                           <div className="flex items-center gap-2">
                                             <CalendarDays className="w-4 h-4 text-[#3d9aa8] flex-shrink-0" />
