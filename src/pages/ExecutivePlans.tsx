@@ -631,10 +631,10 @@ export default function ExecutivePlans() {
                           <Table>
                             <TableHeader>
                               <TableRow className="bg-gray-100">
-                                <TableHead className="text-right font-bold min-w-[200px] border-r-2">
+                                <TableHead className="text-right font-bold w-fit whitespace-nowrap border-r-2">
                                   النشاط
                                 </TableHead>
-                                <TableHead className="text-center font-bold text-[#3d9aa8]">
+                                <TableHead className="text-right font-bold text-[#3d9aa8] w-full">
                                   تواريخ التنفيذ
                                 </TableHead>
                               </TableRow>
@@ -649,7 +649,7 @@ export default function ExecutivePlans() {
                                   )}
                                 >
                                   {/* عمود اسم النشاط */}
-                                  <TableCell className="font-semibold bg-gray-50 border-r-2 py-3 min-w-[200px]">
+                                  <TableCell className="font-semibold bg-gray-50 border-r-2 py-3 w-fit whitespace-nowrap">
                                     <div className="flex items-center gap-2">
                                       <Target className="w-4 h-4 text-[#3d9aa8] flex-shrink-0" />
                                       <span className="font-bold text-gray-800 text-sm">{activity.activityName}</span>
@@ -657,11 +657,11 @@ export default function ExecutivePlans() {
                                   </TableCell>
                                   
                                   {/* عمود أيام التنفيذ */}
-                                  <TableCell className="py-2">
+                                  <TableCell className="py-2 w-full">
                                     {activity.days.length === 0 ? (
                                       <span className="text-muted-foreground text-sm">لا توجد أيام تنفيذ</span>
                                     ) : (
-                                      <div className="flex items-center gap-2 flex-row-reverse">
+                                      <div className="flex items-center gap-2 justify-end">
                                         {activity.days.map((day, dayIdx) => {
                                           const date = new Date(selectedYear, monthGroup.month - 1, day.day);
                                           const hijri = toHijri(date);
