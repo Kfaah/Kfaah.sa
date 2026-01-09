@@ -131,6 +131,17 @@ function formatGregorianDate(date: Date): string {
   return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}م`;
 }
 
+// تنسيق التاريخ الهجري المختصر (يوم وشهر فقط)
+function formatHijriShort(date: Date): string {
+  const hijri = toHijri(date);
+  return `${hijri.day} ${hijri.monthName}`;
+}
+
+// تنسيق التاريخ الميلادي المختصر (يوم وشهر فقط)
+function formatGregorianShort(date: Date): string {
+  return `${date.getDate()}/${date.getMonth() + 1}`;
+}
+
 export default function ExecutivePlans() {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
@@ -543,112 +554,102 @@ export default function ExecutivePlans() {
                 
                 {/* محتوى الشهر */}
                 {expandedMonths.has(`month-${monthGroup.month}`) && (
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-gray-50">
-                          <TableHead className="text-right font-bold w-64 border-l-2">المهمة / النشاط</TableHead>
-                          <TableHead className="text-center font-bold w-28 border-l-2">اليوم</TableHead>
-                          <TableHead className="text-center font-bold w-44 border-l-2">التاريخ الهجري</TableHead>
-                          <TableHead className="text-center font-bold w-24 border-l-2">المستهدف</TableHead>
-                          <TableHead className="text-center font-bold w-24 border-l-2">المنجز</TableHead>
-                          <TableHead className="text-center font-bold w-24 border-l-2">الحالة</TableHead>
-                          <TableHead className="text-center font-bold w-20">إجراء</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {monthGroup.activities.map((activity, actIdx) => (
-                          activity.days.map((day, dayIdx) => (
-                            <TableRow 
-                              key={day.id}
-                              className={cn(
-                                "hover:bg-gray-50",
-                                dayIdx === activity.days.length - 1 && actIdx < monthGroup.activities.length - 1 
-                                  ? "border-b-4 border-b-gray-300" 
-                                  : ""
-                              )}
-                            >
-                              {/* المهمة - تظهر مرة واحدة فقط */}
-                              {dayIdx === 0 && (
-                                <TableCell 
-                                  rowSpan={activity.days.length} 
-                                  className="font-semibold bg-gray-50 border-l-2 align-top py-4"
-                                >
-                                  <div className="flex items-start gap-2">
-                                    <Target className="w-5 h-5 text-[#3d9aa8] flex-shrink-0 mt-0.5" />
-                                    <div>
-                                      <p className="font-bold text-gray-800">{activity.activityName}</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        المستهدف الشهري: {activity.monthlyTarget}
-                                      </p>
+                  <CardContent className="p-0 overflow-x-auto">
+                    {(() => {
+                      // حساب عدد أيام الشهر
+                      const daysInMonth = new Date(selectedYear, monthGroup.month, 0).getDate();
+                      const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+                      
+                      return (
+                        <Table className="min-w-max">
+                          <TableHeader>
+                            <TableRow className="bg-gray-50">
+                              <TableHead className="text-right font-bold min-w-[200px] sticky right-0 bg-gray-50 z-10 border-l-2">
+                                المهمة / النشاط
+                              </TableHead>
+                              {/* أعمدة كل أيام الشهر */}
+                              {allDays.map(day => {
+                                const date = new Date(selectedYear, monthGroup.month - 1, day);
+                                return (
+                                  <TableHead key={day} className="text-center p-1 min-w-[50px] border-l">
+                                    <div className="flex flex-col items-center gap-0.5">
+                                      <span className="text-[10px] text-muted-foreground">{formatGregorianShort(date)}</span>
+                                      <span className="text-xs font-bold text-[#3d9aa8]">{day}</span>
+                                      <span className="text-[9px] text-emerald-600">{formatHijriShort(date)}</span>
                                     </div>
-                                  </div>
-                                </TableCell>
-                              )}
-                              
-                              {/* اليوم (اسم اليوم + رقم اليوم = التاريخ الميلادي) */}
-                              <TableCell className="text-center border-l-2">
-                                <div className="flex flex-col items-center">
-                                  <span className="text-xs text-muted-foreground">{day.weekDay}</span>
-                                  <span className="text-xl font-bold text-[#3d9aa8]">{day.day}</span>
-                                </div>
-                              </TableCell>
-                              
-                              {/* التاريخ الهجري */}
-                              <TableCell className="text-center border-l-2 font-medium text-emerald-700">
-                                {day.hijriDate}
-                              </TableCell>
-                              
-                              {/* المستهدف اليومي */}
-                              <TableCell className="text-center border-l-2">
-                                <span className="text-lg font-bold text-blue-600">{day.dailyTarget}</span>
-                              </TableCell>
-                              
-                              {/* المنجز */}
-                              <TableCell className="text-center border-l-2">
-                                <span className={cn(
-                                  "text-lg font-bold",
-                                  day.achieved >= day.dailyTarget ? "text-green-600" : "text-gray-600"
-                                )}>
-                                  {day.achieved}
-                                </span>
-                              </TableCell>
-                              
-                              {/* الحالة */}
-                              <TableCell className="text-center border-l-2">
-                                {day.status === "completed" ? (
-                                  <Badge className="bg-green-100 text-green-700 border-green-300">
-                                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                                    مكتمل
-                                  </Badge>
-                                ) : day.status === "in_progress" ? (
-                                  <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                                    قيد التنفيذ
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300">
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    معلق
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              
-                              {/* إجراء */}
-                              <TableCell className="text-center">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => handleDeleteDay(day.id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </TableCell>
+                                  </TableHead>
+                                );
+                              })}
                             </TableRow>
-                          ))
-                        ))}
-                      </TableBody>
-                    </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {monthGroup.activities.map((activity, actIdx) => {
+                              // إنشاء خريطة للأيام المحددة لهذا النشاط
+                              const executionDaysMap = new Map(
+                                activity.days.map(d => [d.day, d])
+                              );
+                              
+                              return (
+                                <TableRow 
+                                  key={activity.planMonthId}
+                                  className={cn(
+                                    "hover:bg-gray-50",
+                                    actIdx < monthGroup.activities.length - 1 ? "border-b-2 border-b-gray-200" : ""
+                                  )}
+                                >
+                                  {/* عمود المهمة */}
+                                  <TableCell className="font-semibold bg-gray-50 sticky right-0 z-10 border-l-2 py-3">
+                                    <div className="flex items-start gap-2">
+                                      <Target className="w-4 h-4 text-[#3d9aa8] flex-shrink-0 mt-0.5" />
+                                      <div>
+                                        <p className="font-bold text-gray-800 text-sm leading-tight">{activity.activityName}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          المستهدف: {activity.monthlyTarget}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  
+                                  {/* خلايا كل أيام الشهر */}
+                                  {allDays.map(day => {
+                                    const executionDay = executionDaysMap.get(day);
+                                    const hasExecution = !!executionDay;
+                                    
+                                    return (
+                                      <TableCell 
+                                        key={day} 
+                                        className={cn(
+                                          "text-center p-1 border-l transition-colors",
+                                          hasExecution 
+                                            ? "bg-[#3d9aa8] text-white" 
+                                            : "bg-white"
+                                        )}
+                                      >
+                                        {hasExecution && (
+                                          <div className="flex flex-col items-center gap-0.5">
+                                            <span className="text-[10px] font-bold">{executionDay.dailyTarget}</span>
+                                            {executionDay.achieved > 0 && (
+                                              <span className={cn(
+                                                "text-[9px]",
+                                                executionDay.achieved >= executionDay.dailyTarget 
+                                                  ? "text-green-200" 
+                                                  : "text-yellow-200"
+                                              )}>
+                                                {executionDay.achieved}
+                                              </span>
+                                            )}
+                                          </div>
+                                        )}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      );
+                    })()}
                   </CardContent>
                 )}
               </Card>
