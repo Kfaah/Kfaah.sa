@@ -25,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ChevronDown,
   Calendar,
@@ -35,6 +36,8 @@ import {
   Trash2,
   CheckCircle2,
   Clock,
+  ListTodo,
+  CalendarDays,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -158,6 +161,7 @@ export default function ExecutivePlans() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<Record<number, "tasks" | "dates">>({});
   
   // حالة نافذة الإضافة
   const [selectedPlanMonthId, setSelectedPlanMonthId] = useState<string>("");
@@ -282,11 +286,26 @@ export default function ExecutivePlans() {
           weekDay: string;
         }[];
       }[];
+      // تجميع حسب التاريخ
+      dateGroups: {
+        day: number;
+        gregorianDate: string;
+        hijriDate: string;
+        weekDay: string;
+        activities: {
+          id: string;
+          activityName: string;
+          dailyTarget: number;
+          achieved: number;
+          status: string;
+        }[];
+      }[];
     }[] = [];
     
     // تجميع حسب الشهر
     for (let month = 1; month <= 12; month++) {
       const monthActivities: typeof groups[0]["activities"] = [];
+      const dateMap = new Map<number, typeof groups[0]["dateGroups"][0]>();
       
       planMonths.filter(pm => pm.month === month).forEach(pm => {
         const plan = operationalPlans.find(p => p.id === pm.operational_plan_id);
@@ -308,6 +327,7 @@ export default function ExecutivePlans() {
             };
           });
         
+        // إضافة للمهام
         if (dayPlans.length > 0 || pm.monthly_target > 0) {
           monthActivities.push({
             activityName: plan.activity_name,
@@ -316,19 +336,50 @@ export default function ExecutivePlans() {
             days: dayPlans,
           });
         }
+        
+        // إضافة للتواريخ
+        dayPlans.forEach(dayPlan => {
+          if (!dateMap.has(dayPlan.day)) {
+            dateMap.set(dayPlan.day, {
+              day: dayPlan.day,
+              gregorianDate: dayPlan.gregorianDate,
+              hijriDate: dayPlan.hijriDate,
+              weekDay: dayPlan.weekDay,
+              activities: [],
+            });
+          }
+          dateMap.get(dayPlan.day)!.activities.push({
+            id: dayPlan.id,
+            activityName: plan.activity_name,
+            dailyTarget: dayPlan.dailyTarget,
+            achieved: dayPlan.achieved,
+            status: dayPlan.status,
+          });
+        });
       });
       
-      if (monthActivities.length > 0) {
+      if (monthActivities.length > 0 || dateMap.size > 0) {
         groups.push({
           month,
           monthName: MONTHS_AR[month - 1],
           activities: monthActivities,
+          dateGroups: Array.from(dateMap.values()).sort((a, b) => a.day - b.day),
         });
       }
     }
     
     return groups;
   }, [planMonths, operationalPlans, executivePlans, selectedYear]);
+
+  // الحصول على وضع العرض للشهر
+  const getViewMode = (month: number): "tasks" | "dates" => {
+    return viewMode[month] || "tasks";
+  };
+
+  // تغيير وضع العرض للشهر
+  const setMonthViewMode = (month: number, mode: "tasks" | "dates") => {
+    setViewMode(prev => ({ ...prev, [month]: mode }));
+  };
 
   // أيام الشهر المختار للإضافة
   const daysInAddingMonth = useMemo(() => {
@@ -554,80 +605,182 @@ export default function ExecutivePlans() {
                 
                 {/* محتوى الشهر */}
                 {expandedMonths.has(`month-${monthGroup.month}`) && (
-                  <CardContent className="p-0 overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-gray-100">
-                          <TableHead className="text-right font-bold min-w-[200px] border-l-2">
-                            النشاط
-                          </TableHead>
-                          <TableHead className="text-center font-bold text-[#3d9aa8]">
-                            تواريخ التنفيذ
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {monthGroup.activities.map((activity, actIdx) => (
-                          <TableRow 
-                            key={activity.planMonthId}
-                            className={cn(
-                              "hover:bg-gray-50",
-                              actIdx < monthGroup.activities.length - 1 ? "border-b-2 border-b-gray-200" : ""
-                            )}
-                          >
-                            {/* عمود اسم النشاط */}
-                            <TableCell className="font-semibold bg-gray-50 border-l-2 py-3 min-w-[200px]">
-                              <div className="flex items-center gap-2">
-                                <Target className="w-4 h-4 text-[#3d9aa8] flex-shrink-0" />
-                                <span className="font-bold text-gray-800 text-sm">{activity.activityName}</span>
-                              </div>
-                            </TableCell>
-                            
-                            {/* عمود أيام التنفيذ */}
-                            <TableCell className="py-2">
-                              {activity.days.length === 0 ? (
-                                <span className="text-muted-foreground text-sm">لا توجد أيام تنفيذ</span>
+                  <CardContent className="p-4">
+                    {/* تبويبات التبديل بين العرض بحسب المهام والتواريخ */}
+                    <Tabs 
+                      value={getViewMode(monthGroup.month)} 
+                      onValueChange={(v) => setMonthViewMode(monthGroup.month, v as "tasks" | "dates")}
+                      className="w-full"
+                    >
+                      <TabsList className="grid w-full max-w-md grid-cols-2 mb-4">
+                        <TabsTrigger value="tasks" className="gap-2">
+                          <ListTodo className="w-4 h-4" />
+                          بحسب المهام
+                        </TabsTrigger>
+                        <TabsTrigger value="dates" className="gap-2">
+                          <CalendarDays className="w-4 h-4" />
+                          بحسب التواريخ
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      {/* عرض بحسب المهام */}
+                      <TabsContent value="tasks" className="mt-0">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-gray-100">
+                                <TableHead className="text-right font-bold min-w-[200px] border-l-2">
+                                  النشاط
+                                </TableHead>
+                                <TableHead className="text-center font-bold text-[#3d9aa8]">
+                                  تواريخ التنفيذ
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {monthGroup.activities.map((activity, actIdx) => (
+                                <TableRow 
+                                  key={activity.planMonthId}
+                                  className={cn(
+                                    "hover:bg-gray-50",
+                                    actIdx < monthGroup.activities.length - 1 ? "border-b-2 border-b-gray-200" : ""
+                                  )}
+                                >
+                                  {/* عمود اسم النشاط */}
+                                  <TableCell className="font-semibold bg-gray-50 border-l-2 py-3 min-w-[200px]">
+                                    <div className="flex items-center gap-2">
+                                      <Target className="w-4 h-4 text-[#3d9aa8] flex-shrink-0" />
+                                      <span className="font-bold text-gray-800 text-sm">{activity.activityName}</span>
+                                    </div>
+                                  </TableCell>
+                                  
+                                  {/* عمود أيام التنفيذ */}
+                                  <TableCell className="py-2">
+                                    {activity.days.length === 0 ? (
+                                      <span className="text-muted-foreground text-sm">لا توجد أيام تنفيذ</span>
+                                    ) : (
+                                      <div className="flex items-center gap-2">
+                                        {activity.days.map((day, dayIdx) => {
+                                          const date = new Date(selectedYear, monthGroup.month - 1, day.day);
+                                          const hijri = toHijri(date);
+                                          
+                                          return (
+                                            <div key={day.id} className="flex items-center">
+                                              <div
+                                                className={cn(
+                                                  "text-center px-3 py-2 rounded-lg min-w-[70px]",
+                                                  day.status === "completed" 
+                                                    ? "bg-green-600 text-white"
+                                                    : day.status === "in_progress"
+                                                    ? "bg-blue-600 text-white"
+                                                    : "bg-[#3d9aa8] text-white"
+                                                )}
+                                              >
+                                                {/* التاريخ الميلادي */}
+                                                <div className="text-xs font-medium">
+                                                  {date.getMonth() + 1}/{date.getDate()}
+                                                </div>
+                                                {/* التاريخ الهجري */}
+                                                <div className="text-[10px] opacity-80">
+                                                  {hijri.day} {hijri.monthName}
+                                                </div>
+                                              </div>
+                                              {/* فاصل أبيض بين الأعمدة */}
+                                              {dayIdx < activity.days.length - 1 && (
+                                                <div className="w-2 h-full bg-white" />
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </TabsContent>
+                      
+                      {/* عرض بحسب التواريخ */}
+                      <TabsContent value="dates" className="mt-0">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-gray-100">
+                                <TableHead className="text-right font-bold min-w-[150px] border-l-2">
+                                  التاريخ
+                                </TableHead>
+                                <TableHead className="text-center font-bold text-[#3d9aa8]">
+                                  الأنشطة المخطط تنفيذها
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {monthGroup.dateGroups.length === 0 ? (
+                                <TableRow>
+                                  <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                                    لا توجد تواريخ تنفيذ
+                                  </TableCell>
+                                </TableRow>
                               ) : (
-                                <div className="flex items-center gap-2">
-                                  {activity.days.map((day, dayIdx) => {
-                                    const date = new Date(selectedYear, monthGroup.month - 1, day.day);
-                                    const hijri = toHijri(date);
-                                    
-                                    return (
-                                      <div key={day.id} className="flex items-center">
-                                        <div
-                                          className={cn(
-                                            "text-center px-3 py-2 rounded-lg min-w-[70px]",
-                                            day.status === "completed" 
-                                              ? "bg-green-600 text-white"
-                                              : day.status === "in_progress"
-                                              ? "bg-blue-600 text-white"
-                                              : "bg-[#3d9aa8] text-white"
-                                          )}
-                                        >
-                                          {/* التاريخ الميلادي */}
-                                          <div className="text-xs font-medium">
-                                            {date.getMonth() + 1}/{date.getDate()}
+                                monthGroup.dateGroups.map((dateGroup, dateIdx) => {
+                                  const date = new Date(selectedYear, monthGroup.month - 1, dateGroup.day);
+                                  const hijri = toHijri(date);
+                                  
+                                  return (
+                                    <TableRow 
+                                      key={dateGroup.day}
+                                      className={cn(
+                                        "hover:bg-gray-50",
+                                        dateIdx < monthGroup.dateGroups.length - 1 ? "border-b-2 border-b-gray-200" : ""
+                                      )}
+                                    >
+                                      {/* عمود التاريخ */}
+                                      <TableCell className="bg-gray-50 border-l-2 py-3 min-w-[150px]">
+                                        <div className="flex flex-col items-start gap-1">
+                                          <div className="flex items-center gap-2">
+                                            <CalendarDays className="w-4 h-4 text-[#3d9aa8] flex-shrink-0" />
+                                            <span className="font-bold text-gray-800">{dateGroup.weekDay}</span>
                                           </div>
-                                          {/* التاريخ الهجري */}
-                                          <div className="text-[10px] opacity-80">
-                                            {hijri.day} {hijri.monthName}
+                                          <div className="text-sm text-gray-600">
+                                            {date.getDate()}/{date.getMonth() + 1}/{selectedYear}
+                                          </div>
+                                          <div className="text-xs text-[#3d9aa8]">
+                                            {hijri.day} {hijri.monthName} {hijri.year}هـ
                                           </div>
                                         </div>
-                                        {/* فاصل أبيض بين الأعمدة */}
-                                        {dayIdx < activity.days.length - 1 && (
-                                          <div className="w-2 h-full bg-white" />
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
+                                      </TableCell>
+                                      
+                                      {/* عمود الأنشطة */}
+                                      <TableCell className="py-2">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          {dateGroup.activities.map((activity) => (
+                                            <div
+                                              key={activity.id}
+                                              className={cn(
+                                                "text-center px-4 py-2 rounded-lg",
+                                                activity.status === "completed" 
+                                                  ? "bg-green-600 text-white"
+                                                  : activity.status === "in_progress"
+                                                  ? "bg-blue-600 text-white"
+                                                  : "bg-[#3d9aa8] text-white"
+                                              )}
+                                            >
+                                              <div className="text-sm font-medium">{activity.activityName}</div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })
                               )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </CardContent>
                 )}
               </Card>
