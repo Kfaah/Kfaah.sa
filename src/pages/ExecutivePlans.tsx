@@ -556,6 +556,16 @@ export default function ExecutivePlans() {
                 {expandedMonths.has(`month-${monthGroup.month}`) && (
                   <CardContent className="p-0 overflow-x-auto">
                     <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-100">
+                          <TableHead className="text-right font-bold min-w-[200px] border-l-2">
+                            النشاط
+                          </TableHead>
+                          <TableHead className="text-center font-bold text-[#3d9aa8]">
+                            تواريخ التنفيذ
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
                       <TableBody>
                         {monthGroup.activities.map((activity, actIdx) => (
                           <TableRow 
@@ -573,42 +583,47 @@ export default function ExecutivePlans() {
                               </div>
                             </TableCell>
                             
-                            {/* أعمدة أيام التنفيذ فقط */}
-                            {activity.days.length === 0 ? (
-                              <TableCell className="text-muted-foreground text-sm text-center">
-                                لا توجد أيام تنفيذ
-                              </TableCell>
-                            ) : (
-                              activity.days.map(day => {
-                                const date = new Date(selectedYear, monthGroup.month - 1, day.day);
-                                const hijri = toHijri(date);
-                                
-                                return (
-                                  <TableCell 
-                                    key={day.id}
-                                    className={cn(
-                                      "text-center p-2 min-w-[70px]",
-                                      day.status === "completed" 
-                                        ? "bg-green-600 text-white"
-                                        : day.status === "in_progress"
-                                        ? "bg-blue-600 text-white"
-                                        : "bg-[#3d9aa8] text-white"
-                                    )}
-                                  >
-                                    <div className="flex flex-col items-center">
-                                      {/* التاريخ الميلادي */}
-                                      <span className="text-xs font-medium">
-                                        {date.getMonth() + 1}/{date.getDate()}
-                                      </span>
-                                      {/* التاريخ الهجري */}
-                                      <span className="text-[10px] opacity-80">
-                                        {hijri.day} {hijri.monthName}
-                                      </span>
-                                    </div>
-                                  </TableCell>
-                                );
-                              })
-                            )}
+                            {/* عمود أيام التنفيذ */}
+                            <TableCell className="py-2">
+                              {activity.days.length === 0 ? (
+                                <span className="text-muted-foreground text-sm">لا توجد أيام تنفيذ</span>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  {activity.days.map((day, dayIdx) => {
+                                    const date = new Date(selectedYear, monthGroup.month - 1, day.day);
+                                    const hijri = toHijri(date);
+                                    
+                                    return (
+                                      <div key={day.id} className="flex items-center">
+                                        <div
+                                          className={cn(
+                                            "text-center px-3 py-2 rounded-lg min-w-[70px]",
+                                            day.status === "completed" 
+                                              ? "bg-green-600 text-white"
+                                              : day.status === "in_progress"
+                                              ? "bg-blue-600 text-white"
+                                              : "bg-[#3d9aa8] text-white"
+                                          )}
+                                        >
+                                          {/* التاريخ الميلادي */}
+                                          <div className="text-xs font-medium">
+                                            {date.getMonth() + 1}/{date.getDate()}
+                                          </div>
+                                          {/* التاريخ الهجري */}
+                                          <div className="text-[10px] opacity-80">
+                                            {hijri.day} {hijri.monthName}
+                                          </div>
+                                        </div>
+                                        {/* فاصل أبيض بين الأعمدة */}
+                                        {dayIdx < activity.days.length - 1 && (
+                                          <div className="w-2 h-full bg-white" />
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
