@@ -27,6 +27,12 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ChevronDown,
   Calendar,
   User,
@@ -80,6 +86,14 @@ interface ExecutivePlanWithDetails extends ExecutivePlan {
   activityName: string;
   month: number;
   monthlyTarget: number;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  executive_plan_id: string | null;
 }
 
 const MONTHS_AR = [
@@ -202,7 +216,7 @@ export default function ExecutivePlans() {
   const [operationalPlans, setOperationalPlans] = useState<OperationalPlan[]>([]);
   const [planMonths, setPlanMonths] = useState<OperationalPlanMonth[]>([]);
   const [executivePlans, setExecutivePlans] = useState<ExecutivePlan[]>([]);
-  
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
@@ -298,8 +312,24 @@ export default function ExecutivePlans() {
           
           if (execError) throw execError;
           setExecutivePlans(executive || []);
+          
+          // جلب المهام المرتبطة بالخطط التنفيذية
+          if (executive && executive.length > 0) {
+            const execIds = executive.map(e => e.id);
+            const { data: tasksData, error: tasksError } = await supabase
+              .from("tasks")
+              .select("id, title, status, priority, executive_plan_id")
+              .in("executive_plan_id", execIds);
+            
+            if (!tasksError && tasksData) {
+              setTasks(tasksData);
+            }
+          } else {
+            setTasks([]);
+          }
         } else {
           setExecutivePlans([]);
+          setTasks([]);
         }
       } catch (error: any) {
         toast({ title: "خطأ", description: error.message, variant: "destructive" });
@@ -424,6 +454,11 @@ export default function ExecutivePlans() {
   // تغيير وضع العرض للشهر
   const setMonthViewMode = (month: number, mode: "tasks" | "dates") => {
     setViewMode(prev => ({ ...prev, [month]: mode }));
+  };
+
+  // الحصول على المهام المرتبطة بخطة تنفيذية معينة
+  const getTasksForExecutivePlan = (executivePlanId: string): Task[] => {
+    return tasks.filter(t => t.executive_plan_id === executivePlanId);
   };
 
   // أيام الشهر المختار للإضافة
@@ -804,21 +839,77 @@ export default function ExecutivePlans() {
                                       {/* عمود الأنشطة */}
                                       <TableCell className="py-2">
                                         <div className="flex flex-wrap items-center gap-2">
-                                          {dateGroup.activities.map((activity) => (
-                                            <div
-                                              key={activity.id}
-                                              className={cn(
-                                                "text-center px-4 py-2 rounded-lg",
-                                                activity.status === "completed" 
-                                                  ? "bg-green-600 text-white"
-                                                  : activity.status === "in_progress"
-                                                  ? "bg-blue-600 text-white"
-                                                  : "bg-[#3d9aa8] text-white"
-                                              )}
-                                            >
-                                              <div className="text-sm font-medium">{activity.activityName}</div>
-                                            </div>
-                                          ))}
+                                          {dateGroup.activities.map((activity) => {
+                                            const activityTasks = getTasksForExecutivePlan(activity.id);
+                                            
+                                            return (
+                                              <DropdownMenu key={activity.id}>
+                                                <DropdownMenuTrigger asChild>
+                                                  <div
+                                                    className={cn(
+                                                      "flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg transition-all hover:opacity-90",
+                                                      activity.status === "completed" 
+                                                        ? "bg-green-600 text-white"
+                                                        : activity.status === "in_progress"
+                                                        ? "bg-blue-600 text-white"
+                                                        : "bg-[#3d9aa8] text-white"
+                                                    )}
+                                                  >
+                                                    <span className="text-sm font-medium">{activity.activityName}</span>
+                                                    <ChevronDown className="w-4 h-4" />
+                                                  </div>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent 
+                                                  className="bg-white z-50 min-w-[250px] shadow-lg border"
+                                                  align="start"
+                                                  sideOffset={5}
+                                                >
+                                                  {activityTasks.length === 0 ? (
+                                                    <DropdownMenuItem disabled className="text-muted-foreground text-center">
+                                                      لا توجد مهام مرتبطة
+                                                    </DropdownMenuItem>
+                                                  ) : (
+                                                    activityTasks.map((task) => (
+                                                      <DropdownMenuItem 
+                                                        key={task.id} 
+                                                        className="flex items-center gap-3 py-3 cursor-default"
+                                                      >
+                                                        <div className={cn(
+                                                          "w-2 h-2 rounded-full flex-shrink-0",
+                                                          task.status === "completed" ? "bg-green-500" :
+                                                          task.status === "in_progress" ? "bg-blue-500" :
+                                                          "bg-gray-400"
+                                                        )} />
+                                                        <div className="flex-1">
+                                                          <div className="text-sm font-medium text-gray-800">{task.title}</div>
+                                                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                                            <span className={cn(
+                                                              "px-2 py-0.5 rounded-full text-[10px]",
+                                                              task.priority === "high" ? "bg-red-100 text-red-700" :
+                                                              task.priority === "medium" ? "bg-yellow-100 text-yellow-700" :
+                                                              "bg-gray-100 text-gray-700"
+                                                            )}>
+                                                              {task.priority === "high" ? "عاجل" : 
+                                                               task.priority === "medium" ? "متوسط" : "منخفض"}
+                                                            </span>
+                                                            <span className={cn(
+                                                              "px-2 py-0.5 rounded-full text-[10px]",
+                                                              task.status === "completed" ? "bg-green-100 text-green-700" :
+                                                              task.status === "in_progress" ? "bg-blue-100 text-blue-700" :
+                                                              "bg-gray-100 text-gray-700"
+                                                            )}>
+                                                              {task.status === "completed" ? "مكتمل" : 
+                                                               task.status === "in_progress" ? "قيد التنفيذ" : "معلق"}
+                                                            </span>
+                                                          </div>
+                                                        </div>
+                                                      </DropdownMenuItem>
+                                                    ))
+                                                  )}
+                                                </DropdownMenuContent>
+                                              </DropdownMenu>
+                                            );
+                                          })}
                                         </div>
                                       </TableCell>
                                     </TableRow>
