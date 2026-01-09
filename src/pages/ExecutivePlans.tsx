@@ -649,13 +649,11 @@ export default function ExecutivePlans() {
                                   )}
                                 >
                                   {/* عمود اسم النشاط */}
-                                  <TableCell className="font-semibold bg-gray-50 border-r-2 py-3 max-w-[250px]">
+                                  <TableCell className="font-semibold bg-gray-50 border-r-2 py-3" style={{ maxWidth: '200px', minWidth: '150px' }}>
                                     <div className="flex items-start gap-2">
                                       <Target className="w-4 h-4 text-[#3d9aa8] flex-shrink-0 mt-0.5" />
-                                      <span className="font-bold text-gray-800 text-sm break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-                                        {activity.activityName.length > 30 
-                                          ? activity.activityName.match(/.{1,30}/g)?.join('\n') 
-                                          : activity.activityName}
+                                      <span className="font-bold text-gray-800 text-sm leading-relaxed" style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
+                                        {activity.activityName}
                                       </span>
                                     </div>
                                   </TableCell>
