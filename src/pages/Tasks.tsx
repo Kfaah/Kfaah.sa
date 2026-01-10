@@ -54,11 +54,13 @@ interface Task {
   user_id: string;
   executive_plan_id: string | null;
   priority: "low" | "medium" | "high";
-  status: "pending" | "in_progress" | "completed" | "overdue";
+  status: "upcoming" | "in_progress" | "executed" | "returned" | "delayed" | "completed" | "stalled";
   category: string | null;
   due_date: string | null;
   ai_generated: boolean;
   created_at: string;
+  completion_percentage: number;
+  quality_percentage: number;
 }
 
 interface Employee {
@@ -276,6 +278,27 @@ const Tasks = () => {
     }
   };
 
+  // تحديث التقييم (نسبة الإنجاز أو الجودة)
+  const updateTaskRating = async (taskId: string, field: 'completion_percentage' | 'quality_percentage', value: number) => {
+    // التحقق من أن القيمة بين 0 و 100
+    const clampedValue = Math.max(0, Math.min(100, value));
+    
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ [field]: clampedValue })
+        .eq("id", taskId);
+      
+      if (error) throw error;
+      
+      setTasks(prev =>
+        prev.map(t => (t.id === taskId ? { ...t, [field]: clampedValue } : t))
+      );
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    }
+  };
+
   // إعادة تعيين الفلاتر
   const resetFilters = () => {
     setFilterMonth("all");
@@ -287,14 +310,22 @@ const Tasks = () => {
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case "completed":
-        return { label: "مكتمل", class: "bg-emerald-100 text-emerald-700 border-emerald-300", icon: CheckCircle };
+      case "upcoming":
+        return { label: "قادمة", class: "bg-blue-100 text-blue-700 border-blue-300", icon: Clock };
       case "in_progress":
         return { label: "قيد التنفيذ", class: "bg-sky-100 text-sky-700 border-sky-300", icon: PlayCircle };
-      case "overdue":
-        return { label: "متأخر", class: "bg-rose-100 text-rose-700 border-rose-300", icon: AlertTriangle };
+      case "executed":
+        return { label: "تم التنفيذ", class: "bg-teal-100 text-teal-700 border-teal-300", icon: CheckCircle };
+      case "returned":
+        return { label: "معادة", class: "bg-orange-100 text-orange-700 border-orange-300", icon: AlertTriangle };
+      case "delayed":
+        return { label: "متأخرة", class: "bg-rose-100 text-rose-700 border-rose-300", icon: AlertTriangle };
+      case "completed":
+        return { label: "مكتملة", class: "bg-emerald-100 text-emerald-700 border-emerald-300", icon: CheckCircle };
+      case "stalled":
+        return { label: "متعثرة", class: "bg-red-100 text-red-700 border-red-300", icon: AlertTriangle };
       default:
-        return { label: "معلق", class: "bg-amber-100 text-amber-700 border-amber-300", icon: Clock };
+        return { label: "قادمة", class: "bg-blue-100 text-blue-700 border-blue-300", icon: Clock };
     }
   };
 
@@ -396,10 +427,10 @@ const Tasks = () => {
 
   const taskStats = {
     all: tasks.length,
-    pending: tasks.filter((t) => t.status === "pending").length,
+    upcoming: tasks.filter((t) => t.status === "upcoming").length,
     in_progress: tasks.filter((t) => t.status === "in_progress").length,
     completed: tasks.filter((t) => t.status === "completed").length,
-    overdue: tasks.filter((t) => t.status === "overdue").length,
+    delayed: tasks.filter((t) => t.status === "delayed").length,
   };
 
   const hasActiveFilters = filterMonth !== "all" || filterDay !== "all" || filterEmployee !== "all" || searchQuery;
@@ -437,10 +468,10 @@ const Tasks = () => {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
             { key: "all", label: "الكل", count: taskStats.all, color: "from-slate-500 to-slate-600" },
-            { key: "pending", label: "معلق", count: taskStats.pending, color: "from-amber-500 to-amber-600" },
+            { key: "upcoming", label: "قادمة", count: taskStats.upcoming, color: "from-blue-500 to-blue-600" },
             { key: "in_progress", label: "قيد التنفيذ", count: taskStats.in_progress, color: "from-sky-500 to-sky-600" },
-            { key: "completed", label: "مكتمل", count: taskStats.completed, color: "from-emerald-500 to-emerald-600" },
-            { key: "overdue", label: "متأخر", count: taskStats.overdue, color: "from-rose-500 to-rose-600" },
+            { key: "completed", label: "مكتملة", count: taskStats.completed, color: "from-emerald-500 to-emerald-600" },
+            { key: "delayed", label: "متأخرة", count: taskStats.delayed, color: "from-rose-500 to-rose-600" },
           ].map(stat => (
             <Card 
               key={stat.key}
@@ -593,10 +624,11 @@ const Tasks = () => {
                   <TableRow className="bg-[#3d9aa8]">
                     <TableHead className="text-right font-bold text-white border-l border-white/20 w-48">النشاط</TableHead>
                     <TableHead className="text-right font-bold text-white border-l border-white/20">المهمة</TableHead>
+                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">تاريخ التنفيذ</TableHead>
                     <TableHead className="text-center font-bold text-white w-24 border-l border-white/20">الأولوية</TableHead>
                     <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">المنفذ</TableHead>
                     <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
-                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">تاريخ التنفيذ</TableHead>
+                    <TableHead className="text-center font-bold text-white w-40 border-l border-white/20">التقييم</TableHead>
                     <TableHead className="text-center font-bold text-white w-20">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -643,6 +675,19 @@ const Tasks = () => {
                             </div>
                           </TableCell>
                           
+                          {/* تاريخ التنفيذ */}
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
+                            <div className="flex items-center justify-center gap-2 text-sm">
+                              <Calendar className="w-4 h-4 text-[#3d9aa8]/60" />
+                              <span className="text-foreground">
+                                {task.due_date 
+                                  ? new Date(task.due_date).toLocaleDateString("ar-SA")
+                                  : "-"
+                                }
+                              </span>
+                            </div>
+                          </TableCell>
+
                           {/* الأولوية */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <Badge className={priorityConfig.class}>
@@ -670,24 +715,42 @@ const Tasks = () => {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-white z-50">
-                                <SelectItem value="pending">معلق</SelectItem>
+                                <SelectItem value="upcoming">قادمة</SelectItem>
                                 <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
-                                <SelectItem value="completed">مكتمل</SelectItem>
-                                <SelectItem value="overdue">متأخر</SelectItem>
+                                <SelectItem value="executed">تم التنفيذ</SelectItem>
+                                <SelectItem value="returned">معادة</SelectItem>
+                                <SelectItem value="delayed">متأخرة</SelectItem>
+                                <SelectItem value="completed">مكتملة</SelectItem>
+                                <SelectItem value="stalled">متعثرة</SelectItem>
                               </SelectContent>
                             </Select>
                           </TableCell>
                           
-                          {/* تاريخ التنفيذ */}
+                          {/* التقييم - نسبة الإنجاز ونسبة الجودة */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex items-center justify-center gap-2 text-sm">
-                              <Calendar className="w-4 h-4 text-[#3d9aa8]/60" />
-                              <span className="text-foreground">
-                                {task.due_date 
-                                  ? new Date(task.due_date).toLocaleDateString("ar-SA")
-                                  : "-"
-                                }
-                              </span>
+                            <div className="flex items-center justify-center gap-3">
+                              <div className="text-center">
+                                <div className="text-xs text-muted-foreground mb-1">الإنجاز</div>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={task.completion_percentage || 0}
+                                  onChange={(e) => updateTaskRating(task.id, 'completion_percentage', Number(e.target.value))}
+                                  className="w-14 h-7 text-center text-xs p-1"
+                                />
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xs text-muted-foreground mb-1">الجودة</div>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={task.quality_percentage || 0}
+                                  onChange={(e) => updateTaskRating(task.id, 'quality_percentage', Number(e.target.value))}
+                                  className="w-14 h-7 text-center text-xs p-1"
+                                />
+                              </div>
                             </div>
                           </TableCell>
                           
