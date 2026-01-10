@@ -1,4 +1,5 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { formatNumber } from "@/lib/utils";
 
 const data = [
   { name: "يناير", sales: 45000 },
@@ -51,7 +52,7 @@ export function SalesChart() {
                 borderRadius: "0.5rem",
                 boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
               }}
-              formatter={(value: number) => [`${value.toLocaleString()} ر.س`, "المبيعات"]}
+              formatter={(value: number) => [`${formatNumber(value)} ر.س`, "المبيعات"]}
             />
             <Area
               type="monotone"

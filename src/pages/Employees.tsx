@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera, Loader2, Upload, X, Pencil, LogIn, Building, Briefcase } from "lucide-react";
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber, formatPercent } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getArabicErrorMessage } from "@/lib/errors";
@@ -475,10 +475,10 @@ const Employees = () => {
   };
 
   const stats = [
-    { label: "إجمالي الموظفين", value: employees.length, icon: Users, iconBg: "bg-accent/10", iconColor: "text-accent" },
-    { label: "نشطين", value: employees.filter(e => e.status === "active").length, icon: UserCheck, iconBg: "bg-emerald-100", iconColor: "text-emerald-500" },
-    { label: "في إجازة", value: employees.filter(e => e.status === "on_leave").length, icon: Clock, iconBg: "bg-amber-100", iconColor: "text-amber-500" },
-    { label: "متوسط الأداء", value: employees.length > 0 ? `${Math.round(employees.reduce((acc, e) => acc + e.performance, 0) / employees.length)}%` : "0%", icon: TrendingUp, iconBg: "bg-violet-100", iconColor: "text-violet-500" },
+    { label: "إجمالي الموظفين", value: formatNumber(employees.length), icon: Users, iconBg: "bg-accent/10", iconColor: "text-accent" },
+    { label: "نشطين", value: formatNumber(employees.filter(e => e.status === "active").length), icon: UserCheck, iconBg: "bg-emerald-100", iconColor: "text-emerald-500" },
+    { label: "في إجازة", value: formatNumber(employees.filter(e => e.status === "on_leave").length), icon: Clock, iconBg: "bg-amber-100", iconColor: "text-amber-500" },
+    { label: "متوسط الأداء", value: employees.length > 0 ? formatPercent(Math.round(employees.reduce((acc, e) => acc + e.performance, 0) / employees.length)) : "0%", icon: TrendingUp, iconBg: "bg-violet-100", iconColor: "text-violet-500" },
   ];
 
   return (

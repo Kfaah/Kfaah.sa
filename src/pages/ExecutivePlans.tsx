@@ -48,6 +48,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { formatNumberPlain } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 interface Employee {
@@ -141,22 +142,22 @@ function toHijri(date: Date): { day: number; month: number; year: number; monthN
 
 function formatHijriDate(date: Date): string {
   const hijri = toHijri(date);
-  return `${hijri.day} ${hijri.monthName} ${hijri.year}هـ`;
+  return `${formatNumberPlain(hijri.day)} ${hijri.monthName} ${formatNumberPlain(hijri.year)}هـ`;
 }
 
 function formatGregorianDate(date: Date): string {
-  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}م`;
+  return `${formatNumberPlain(date.getDate())}/${formatNumberPlain(date.getMonth() + 1)}/${formatNumberPlain(date.getFullYear())}م`;
 }
 
 // تنسيق التاريخ الهجري المختصر (يوم وشهر فقط)
 function formatHijriShort(date: Date): string {
   const hijri = toHijri(date);
-  return `${hijri.day} ${hijri.monthName}`;
+  return `${formatNumberPlain(hijri.day)} ${hijri.monthName}`;
 }
 
 // تنسيق التاريخ الميلادي المختصر (يوم وشهر فقط)
 function formatGregorianShort(date: Date): string {
-  return `${date.getDate()}/${date.getMonth() + 1}`;
+  return `${formatNumberPlain(date.getDate())}/${formatNumberPlain(date.getMonth() + 1)}`;
 }
 
 function wrapTextByChars(text: string, maxChars = 30): string {

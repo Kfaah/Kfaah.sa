@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 
 interface Order {
   id: string;
@@ -50,7 +50,7 @@ export function RecentOrders() {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-left">
-                <p className="font-bold">{order.amount.toLocaleString()} ر.س</p>
+                <p className="font-bold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(order.amount)} ر.س</p>
                 <p className="text-xs text-muted-foreground">{order.date}</p>
               </div>
               <Badge
