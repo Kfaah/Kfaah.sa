@@ -478,7 +478,7 @@ const Employees = () => {
     { label: "إجمالي الموظفين", value: formatNumber(employees.length), icon: Users, iconBg: "bg-accent/10", iconColor: "text-accent" },
     { label: "نشطين", value: formatNumber(employees.filter(e => e.status === "active").length), icon: UserCheck, iconBg: "bg-emerald-100", iconColor: "text-emerald-500" },
     { label: "في إجازة", value: formatNumber(employees.filter(e => e.status === "on_leave").length), icon: Clock, iconBg: "bg-amber-100", iconColor: "text-amber-500" },
-    { label: "متوسط الأداء", value: employees.length > 0 ? formatPercent(Math.round(employees.reduce((acc, e) => acc + e.performance, 0) / employees.length)) : "0%", icon: TrendingUp, iconBg: "bg-violet-100", iconColor: "text-violet-500" },
+    { label: "متوسط الأداء", value: employees.length > 0 ? formatPercent(Math.round(employees.reduce((acc, e) => acc + e.performance, 0) / employees.length)) : "%0", icon: TrendingUp, iconBg: "bg-violet-100", iconColor: "text-violet-500" },
   ];
 
   return (
@@ -871,8 +871,8 @@ const Employees = () => {
               <div className="pt-4 border-t border-border">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">الأداء</span>
-                  <span className={cn("font-bold", getPerformanceColor(employee.performance))}>
-                    {employee.performance}%
+                  <span className={cn("font-bold", getPerformanceColor(employee.performance))} style={{ fontFamily: 'Arial, sans-serif' }}>
+                    {formatPercent(employee.performance)}
                   </span>
                 </div>
                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -883,7 +883,7 @@ const Employees = () => {
                 </div>
                 <div className="flex items-center justify-between mt-3 text-sm">
                   <span className="text-muted-foreground">المهام المنجزة</span>
-                  <span className="font-medium">{employee.tasks_completed}/{employee.tasks_total}</span>
+                  <span className="font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(employee.tasks_completed)}/{formatNumber(employee.tasks_total)}</span>
                 </div>
 
                 {/* Action Buttons */}

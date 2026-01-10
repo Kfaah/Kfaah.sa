@@ -22,49 +22,51 @@ export function formatNumberPlain(value: number | string | null | undefined): st
 }
 
 /**
- * Format a percentage to always display in English numerals
+ * Format a percentage to always display in English numerals (RTL: %100)
  */
 export function formatPercent(value: number | string | null | undefined, decimals: number = 0): string {
   const num = Number(value) || 0;
-  return new Intl.NumberFormat('en-US', { 
+  const formatted = new Intl.NumberFormat('en-US', { 
     useGrouping: false,
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals 
-  }).format(num) + '%';
+  }).format(num);
+  // RTL format: % before number
+  return '%' + formatted;
 }
 
 /**
- * Format a date to display with English numerals
+ * Format a date to display with English numerals (RTL: YYYY/MM/DD)
  */
-export function formatDate(date: Date | string | null | undefined, options?: Intl.DateTimeFormatOptions): string {
+export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "-";
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "-";
   
-  const defaultOptions: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  };
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
   
-  return new Intl.DateTimeFormat('en-US', options || defaultOptions).format(d);
+  // RTL format: year/month/day
+  return `${year}/${month}/${day}`;
 }
 
 /**
- * Format a date with time to display with English numerals
+ * Format a date with time to display with English numerals (RTL format)
  */
 export function formatDateTime(date: Date | string | null | undefined): string {
   if (!date) return "-";
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "-";
   
-  return new Intl.DateTimeFormat('en-US', {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  // RTL format: year/month/day hours:minutes
+  return `${year}/${month}/${day} ${hours}:${minutes}`;
 }
 
 /**

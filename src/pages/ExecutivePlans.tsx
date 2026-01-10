@@ -828,11 +828,11 @@ export default function ExecutivePlans() {
                                             <CalendarDays className="w-4 h-4 text-[#3d9aa8] flex-shrink-0" />
                                             <span className="font-bold text-gray-800">{dateGroup.weekDay}</span>
                                           </div>
-                                          <div className="text-sm text-gray-600">
-                                            {date.getDate()}/{date.getMonth() + 1}/{selectedYear}
+                                          <div className="text-sm text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                            {selectedYear}/{date.getMonth() + 1}/{date.getDate()}
                                           </div>
-                                          <div className="text-xs text-[#3d9aa8]">
-                                            {hijri.day} {hijri.monthName} {hijri.year}هـ
+                                          <div className="text-xs text-[#3d9aa8]" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                            {formatNumberPlain(hijri.year)}هـ {hijri.monthName} {formatNumberPlain(hijri.day)}
                                           </div>
                                         </div>
                                       </TableCell>
