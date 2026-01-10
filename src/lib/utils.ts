@@ -6,11 +6,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Wrap mixed-direction text (numbers + symbols) so it renders correctly in RTL UI.
+ * Uses Unicode RTL isolate markers to prevent the browser from reordering segments.
+ */
+export function rtlIsolate(text: string): string {
+  return `\u2067${text}\u2069`;
+}
+
+/**
  * Format a number to always display in English (Western Arabic) numerals
  */
 export function formatNumber(value: number | string | null | undefined): string {
   const num = Number(value) || 0;
-  return new Intl.NumberFormat('en-US', { useGrouping: true }).format(num);
+  return new Intl.NumberFormat("en-US", { useGrouping: true }).format(num);
 }
 
 /**
@@ -18,55 +26,57 @@ export function formatNumber(value: number | string | null | undefined): string 
  */
 export function formatNumberPlain(value: number | string | null | undefined): string {
   const num = Number(value) || 0;
-  return new Intl.NumberFormat('en-US', { useGrouping: false }).format(num);
+  return new Intl.NumberFormat("en-US", { useGrouping: false }).format(num);
 }
 
 /**
- * Format a percentage to always display in English numerals (RTL: %100)
+ * Format a percentage to always display in English numerals (RTL visual: %100)
  */
-export function formatPercent(value: number | string | null | undefined, decimals: number = 0): string {
+export function formatPercent(
+  value: number | string | null | undefined,
+  decimals: number = 0
+): string {
   const num = Number(value) || 0;
-  const formatted = new Intl.NumberFormat('en-US', { 
+  const formatted = new Intl.NumberFormat("en-US", {
     useGrouping: false,
     minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals 
+    maximumFractionDigits: decimals,
   }).format(num);
-  // RTL format: % before number
-  return '%' + formatted;
+
+  return rtlIsolate("%" + formatted);
 }
 
 /**
- * Format a date to display with English numerals (RTL: YYYY/MM/DD)
+ * Format a date to display with English numerals.
+ * Note: we isolate to avoid LTR flipping inside RTL layouts.
  */
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "-";
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "-";
-  
+
   const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  
-  // RTL format: year/month/day
-  return `${year}/${month}/${day}`;
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return rtlIsolate(`${year}/${month}/${day}`);
 }
 
 /**
- * Format a date with time to display with English numerals (RTL format)
+ * Format a date with time to display with English numerals.
  */
 export function formatDateTime(date: Date | string | null | undefined): string {
   if (!date) return "-";
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "-";
-  
+
   const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  
-  // RTL format: year/month/day hours:minutes
-  return `${year}/${month}/${day} ${hours}:${minutes}`;
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+
+  return rtlIsolate(`${year}/${month}/${day} ${hours}:${minutes}`);
 }
 
 /**
@@ -75,7 +85,7 @@ export function formatDateTime(date: Date | string | null | undefined): string {
 export function normalizeNumericInput(value: string): string {
   const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
   const easternArabicIndic = "۰۱۲۳۴۵۶۷۸۹";
-  
+
   return value
     .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
     .replace(/[۰-۹]/g, (d) => String(easternArabicIndic.indexOf(d)))

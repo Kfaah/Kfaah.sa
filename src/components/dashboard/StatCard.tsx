@@ -1,5 +1,5 @@
 import { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatNumberPlain, rtlIsolate } from "@/lib/utils";
 
 interface StatCardProps {
   title: string;
@@ -50,7 +50,9 @@ export function StatCard({ title, value, change, icon: Icon, variant = "default"
                 variant !== "default" && "opacity-90"
               )}
             >
-              {change.type === "increase" ? "+" : "-"}{Math.abs(change.value)}%{" "}
+              {rtlIsolate(
+                `${change.type === "increase" ? "+" : "-"}%${formatNumberPlain(Math.abs(change.value))}`
+              )}{" "}
               <span className="opacity-70">من الشهر الماضي</span>
             </p>
           )}
