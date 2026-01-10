@@ -288,12 +288,14 @@ export type Database = {
         Row: {
           ai_generated: boolean | null
           category: string | null
+          completion_percentage: number | null
           created_at: string
           description: string | null
           due_date: string | null
           executive_plan_id: string | null
           id: string
           priority: string
+          quality_percentage: number | null
           status: string
           title: string
           updated_at: string
@@ -302,12 +304,14 @@ export type Database = {
         Insert: {
           ai_generated?: boolean | null
           category?: string | null
+          completion_percentage?: number | null
           created_at?: string
           description?: string | null
           due_date?: string | null
           executive_plan_id?: string | null
           id?: string
           priority?: string
+          quality_percentage?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -316,12 +320,14 @@ export type Database = {
         Update: {
           ai_generated?: boolean | null
           category?: string | null
+          completion_percentage?: number | null
           created_at?: string
           description?: string | null
           due_date?: string | null
           executive_plan_id?: string | null
           id?: string
           priority?: string
+          quality_percentage?: number | null
           status?: string
           title?: string
           updated_at?: string
