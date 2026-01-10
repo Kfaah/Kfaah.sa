@@ -941,18 +941,31 @@ const Tasks = () => {
                           
                           {/* التقييم - يظهر للجميع لكن التعديل للمدير فقط */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex items-center justify-center gap-3">
+                            <div className="flex items-center justify-center gap-2">
                               <div className="text-center">
                                 <div className="text-xs text-muted-foreground mb-1">الإنجاز</div>
                                 {isAdmin ? (
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={task.completion_percentage || 0}
-                                    onChange={(e) => updateTaskRating(task.id, 'completion_percentage', Number(e.target.value))}
-                                    className="w-14 h-7 text-center text-xs p-1"
-                                  />
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={100}
+                                      defaultValue={task.completion_percentage || 0}
+                                      onBlur={(e) => {
+                                        const value = parseInt(e.target.value) || 0;
+                                        if (value !== (task.completion_percentage || 0)) {
+                                          updateTaskRating(task.id, 'completion_percentage', value);
+                                        }
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.currentTarget.blur();
+                                        }
+                                      }}
+                                      className="w-12 h-7 text-center text-xs border border-input rounded-md bg-background px-1 focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                    <span className="text-xs text-muted-foreground">%</span>
+                                  </div>
                                 ) : (
                                   <div className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded text-sm font-medium">
                                     {task.completion_percentage || 0}%
@@ -962,14 +975,27 @@ const Tasks = () => {
                               <div className="text-center">
                                 <div className="text-xs text-muted-foreground mb-1">الجودة</div>
                                 {isAdmin ? (
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={task.quality_percentage || 0}
-                                    onChange={(e) => updateTaskRating(task.id, 'quality_percentage', Number(e.target.value))}
-                                    className="w-14 h-7 text-center text-xs p-1"
-                                  />
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={100}
+                                      defaultValue={task.quality_percentage || 0}
+                                      onBlur={(e) => {
+                                        const value = parseInt(e.target.value) || 0;
+                                        if (value !== (task.quality_percentage || 0)) {
+                                          updateTaskRating(task.id, 'quality_percentage', value);
+                                        }
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.currentTarget.blur();
+                                        }
+                                      }}
+                                      className="w-12 h-7 text-center text-xs border border-input rounded-md bg-background px-1 focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                    <span className="text-xs text-muted-foreground">%</span>
+                                  </div>
                                 ) : (
                                   <div className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded text-sm font-medium">
                                     {task.quality_percentage || 0}%
