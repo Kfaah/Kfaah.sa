@@ -1049,7 +1049,7 @@ const Tasks = () => {
                                 </div>
                                 {/* كفاءة استثمار الوقت */}
                                 <div className="flex flex-col items-center">
-                                  <div className="text-[10px] font-medium text-muted-foreground mb-1">كفاءة الوقت</div>
+                                  <div className="text-[10px] font-medium text-muted-foreground mb-1">كفاءة استثمار الوقت</div>
                                   {(() => {
                                     const estimated = task.estimated_time_minutes;
                                     const actual = task.actual_time_minutes;
