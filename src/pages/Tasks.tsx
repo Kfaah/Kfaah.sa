@@ -850,7 +850,7 @@ const Tasks = () => {
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <div className="flex items-center justify-center gap-2 text-sm">
                               <Calendar className="w-4 h-4 text-[#3d9aa8]/60" />
-                              <span className="text-foreground" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
+                              <span className="text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
                                 {formatDate(task.due_date)}
                               </span>
                             </div>
@@ -961,14 +961,12 @@ const Tasks = () => {
                                         }}
                                         className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
-                                        dir="ltr"
                                         lang="en"
                                       />
                                     </div>
                                   ) : (
                                     <div
                                       className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold"
-                                      dir="ltr"
                                       lang="en"
                                       style={{ fontFamily: 'Arial, sans-serif' }}
                                     >
@@ -1003,14 +1001,12 @@ const Tasks = () => {
                                         }}
                                         className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
-                                        dir="ltr"
                                         lang="en"
                                       />
                                     </div>
                                   ) : (
                                     <div
                                       className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold"
-                                      dir="ltr"
                                       lang="en"
                                       style={{ fontFamily: 'Arial, sans-serif' }}
                                     >
@@ -1254,7 +1250,6 @@ const Tasks = () => {
                     value={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
                       Number(editForm.completion_percentage || 0)
                     )}
-                    dir="ltr"
                     lang="en"
                     style={{ fontFamily: 'Arial, sans-serif' }}
                     onChange={(e) => {
@@ -1276,7 +1271,6 @@ const Tasks = () => {
                     value={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
                       Number(editForm.quality_percentage || 0)
                     )}
-                    dir="ltr"
                     lang="en"
                     style={{ fontFamily: 'Arial, sans-serif' }}
                     onChange={(e) => {
