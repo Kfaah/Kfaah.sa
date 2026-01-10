@@ -48,7 +48,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatDate, formatNumberPlain, normalizeNumericInput } from "@/lib/utils";
+import { formatDate, formatNumberPlain, formatPercent, normalizeNumericInput } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { TaskCommunicationDialog } from "@/components/tasks/TaskCommunicationDialog";
@@ -67,6 +67,8 @@ interface Task {
   created_at: string;
   completion_percentage: number;
   quality_percentage: number;
+  estimated_time_minutes: number | null;
+  actual_time_minutes: number | null;
 }
 
 interface Employee {
@@ -120,6 +122,8 @@ const Tasks = () => {
     status: "upcoming" as Task["status"],
     completion_percentage: 0,
     quality_percentage: 0,
+    estimated_time_minutes: null as number | null,
+    actual_time_minutes: null as number | null,
   });
 
   // حالة نافذة التواصل
@@ -422,6 +426,8 @@ const Tasks = () => {
       status: task.status,
       completion_percentage: task.completion_percentage || 0,
       quality_percentage: task.quality_percentage || 0,
+      estimated_time_minutes: task.estimated_time_minutes,
+      actual_time_minutes: task.actual_time_minutes,
     });
     setIsEditDialogOpen(true);
   };
@@ -442,6 +448,8 @@ const Tasks = () => {
           status: editForm.status,
           completion_percentage: editForm.completion_percentage,
           quality_percentage: editForm.quality_percentage,
+          estimated_time_minutes: editForm.estimated_time_minutes,
+          actual_time_minutes: editForm.actual_time_minutes,
         })
         .eq("id", editingTask.id);
       
@@ -795,11 +803,14 @@ const Tasks = () => {
                     {isAdmin && (
                       <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">المنفذ</TableHead>
                     )}
+                    {/* الوقت المقدر والفعلي */}
+                    <TableHead className="text-center font-bold text-white w-24 border-l border-white/20">الوقت المقدر</TableHead>
+                    <TableHead className="text-center font-bold text-white w-24 border-l border-white/20">الوقت الفعلي</TableHead>
                     {/* المرفقات والتواصل */}
                     <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">المرفقات والتواصل</TableHead>
                     <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
                     {/* التقييم يظهر للجميع */}
-                    <TableHead className="text-center font-bold text-white w-40 border-l border-white/20">التقييم</TableHead>
+                    <TableHead className="text-center font-bold text-white w-48 border-l border-white/20">التقييم</TableHead>
                     <TableHead className="text-center font-bold text-white w-24">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -875,6 +886,26 @@ const Tasks = () => {
                             </TableCell>
                           )}
 
+                          {/* الوقت المقدر */}
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
+                            <div className="flex items-center justify-center">
+                              <Clock className="w-3 h-3 text-[#3d9aa8]/60 ml-1" />
+                              <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                {task.estimated_time_minutes ? `${formatNumberPlain(task.estimated_time_minutes)} د` : '-'}
+                              </span>
+                            </div>
+                          </TableCell>
+
+                          {/* الوقت الفعلي */}
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
+                            <div className="flex items-center justify-center">
+                              <Clock className="w-3 h-3 text-emerald-500/60 ml-1" />
+                              <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                {task.actual_time_minutes ? `${formatNumberPlain(task.actual_time_minutes)} د` : '-'}
+                              </span>
+                            </div>
+                          </TableCell>
+
                           {/* المرفقات والتواصل */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <Button
@@ -935,9 +966,9 @@ const Tasks = () => {
                           {/* التقييم - يظهر للجميع لكن التعديل للمدير فقط */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <div className="flex flex-col items-center justify-center gap-2">
-                              <div className="flex items-center justify-center gap-4">
+                              <div className="flex items-center justify-center gap-3">
                                 <div className="flex flex-col items-center">
-                                  <div className="text-sm font-medium text-muted-foreground mb-1">الإنجاز</div>
+                                  <div className="text-[10px] font-medium text-muted-foreground mb-1">الإنجاز</div>
                                   {isAdmin ? (
                                     <div className="flex items-center justify-center">
                                       <input
@@ -959,14 +990,14 @@ const Tasks = () => {
                                             e.currentTarget.blur();
                                           }
                                         }}
-                                        className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+                                        className="w-12 h-7 text-center text-sm font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
                                         lang="en"
                                       />
                                     </div>
                                   ) : (
                                     <div
-                                      className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold"
+                                      className="w-12 h-7 flex items-center justify-center bg-muted/50 rounded-lg text-sm font-semibold"
                                       lang="en"
                                       style={{ fontFamily: 'Arial, sans-serif' }}
                                     >
@@ -977,7 +1008,7 @@ const Tasks = () => {
                                   )}
                                 </div>
                                 <div className="flex flex-col items-center">
-                                  <div className="text-sm font-medium text-muted-foreground mb-1">الجودة</div>
+                                  <div className="text-[10px] font-medium text-muted-foreground mb-1">الجودة</div>
                                   {isAdmin ? (
                                     <div className="flex items-center justify-center">
                                       <input
@@ -999,14 +1030,14 @@ const Tasks = () => {
                                             e.currentTarget.blur();
                                           }
                                         }}
-                                        className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+                                        className="w-12 h-7 text-center text-sm font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
                                         lang="en"
                                       />
                                     </div>
                                   ) : (
                                     <div
-                                      className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold"
+                                      className="w-12 h-7 flex items-center justify-center bg-muted/50 rounded-lg text-sm font-semibold"
                                       lang="en"
                                       style={{ fontFamily: 'Arial, sans-serif' }}
                                     >
@@ -1015,6 +1046,40 @@ const Tasks = () => {
                                       )}
                                     </div>
                                   )}
+                                </div>
+                                {/* كفاءة استثمار الوقت */}
+                                <div className="flex flex-col items-center">
+                                  <div className="text-[10px] font-medium text-muted-foreground mb-1">كفاءة الوقت</div>
+                                  {(() => {
+                                    const estimated = task.estimated_time_minutes;
+                                    const actual = task.actual_time_minutes;
+                                    if (!estimated || !actual || actual === 0) {
+                                      return (
+                                        <div
+                                          className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded-lg text-sm font-semibold text-muted-foreground"
+                                          lang="en"
+                                          style={{ fontFamily: 'Arial, sans-serif' }}
+                                        >
+                                          -
+                                        </div>
+                                      );
+                                    }
+                                    const efficiency = Math.round((estimated / actual) * 100);
+                                    const colorClass = efficiency >= 100 
+                                      ? "bg-emerald-100 text-emerald-700 border-emerald-300" 
+                                      : efficiency >= 80 
+                                        ? "bg-amber-100 text-amber-700 border-amber-300"
+                                        : "bg-rose-100 text-rose-700 border-rose-300";
+                                    return (
+                                      <div
+                                        className={cn("w-14 h-7 flex items-center justify-center rounded-lg text-sm font-semibold border", colorClass)}
+                                        lang="en"
+                                        style={{ fontFamily: 'Arial, sans-serif' }}
+                                      >
+                                        {formatPercent(efficiency)}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               </div>
                             </div>
@@ -1239,6 +1304,56 @@ const Tasks = () => {
                 </div>
               </div>
 
+              {/* الوقت المقدر والفعلي */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-semibold">الوقت المقدر (بالدقائق)</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={editForm.estimated_time_minutes !== null 
+                      ? new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(editForm.estimated_time_minutes)
+                      : ''
+                    }
+                    placeholder="مثال: 60"
+                    lang="en"
+                    style={{ fontFamily: 'Arial, sans-serif' }}
+                    onChange={(e) => {
+                      const raw = normalizeNumericInput(e.target.value);
+                      const num = parseInt(raw, 10);
+                      setEditForm((prev) => ({
+                        ...prev,
+                        estimated_time_minutes: raw === '' ? null : (Number.isFinite(num) ? Math.max(0, num) : null),
+                      }));
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-semibold">الوقت الفعلي (بالدقائق)</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={editForm.actual_time_minutes !== null 
+                      ? new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(editForm.actual_time_minutes)
+                      : ''
+                    }
+                    placeholder="مثال: 45"
+                    lang="en"
+                    style={{ fontFamily: 'Arial, sans-serif' }}
+                    onChange={(e) => {
+                      const raw = normalizeNumericInput(e.target.value);
+                      const num = parseInt(raw, 10);
+                      setEditForm((prev) => ({
+                        ...prev,
+                        actual_time_minutes: raw === '' ? null : (Number.isFinite(num) ? Math.max(0, num) : null),
+                      }));
+                    }}
+                  />
+                </div>
+              </div>
+
               {/* التقييم */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -1284,6 +1399,24 @@ const Tasks = () => {
                   />
                 </div>
               </div>
+
+              {/* كفاءة استثمار الوقت - للعرض فقط */}
+              {editForm.estimated_time_minutes && editForm.actual_time_minutes && editForm.actual_time_minutes > 0 && (
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <Label className="font-semibold text-sm text-muted-foreground">كفاءة استثمار الوقت</Label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Clock className="w-4 h-4 text-[#3d9aa8]" />
+                    <span className="text-lg font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>
+                      {formatPercent(Math.round((editForm.estimated_time_minutes / editForm.actual_time_minutes) * 100))}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {Math.round((editForm.estimated_time_minutes / editForm.actual_time_minutes) * 100) >= 100 
+                        ? '(ممتاز - تم في الوقت المحدد أو أقل)' 
+                        : '(يحتاج تحسين)'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* أزرار الحفظ والإلغاء */}
               <div className="flex justify-end gap-3 pt-4 border-t">
