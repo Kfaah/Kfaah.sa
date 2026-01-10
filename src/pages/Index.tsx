@@ -95,7 +95,7 @@ const Index = () => {
                 <Users className="w-6 h-6 text-accent" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-foreground" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>12</p>
+                <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>12</p>
                 <p className="text-sm text-muted-foreground">إجمالي الموظفين</p>
               </div>
             </CardContent>
@@ -107,7 +107,7 @@ const Index = () => {
                 <CheckCircle className="w-6 h-6 text-rose-500" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-foreground" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>18</p>
+                <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>18</p>
                 <p className="text-sm text-muted-foreground">المهام النشطة</p>
               </div>
             </CardContent>
@@ -119,7 +119,7 @@ const Index = () => {
                 <Trophy className="w-6 h-6 text-amber-500" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-foreground" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(1250)}</p>
+                <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(1250)}</p>
                 <p className="text-sm text-muted-foreground">نقاط اليوم</p>
               </div>
             </CardContent>
@@ -134,7 +134,7 @@ const Index = () => {
                 <TrendingUp className="w-6 h-6 text-violet-500" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-foreground" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>24</p>
+                <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>24</p>
                 <p className="text-sm text-muted-foreground">المهام المكتملة</p>
               </div>
             </CardContent>
@@ -146,7 +146,7 @@ const Index = () => {
                 <Clock className="w-6 h-6 text-emerald-500" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-foreground" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>3</p>
+                <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>3</p>
                 <p className="text-sm text-muted-foreground">الخطط النشطة</p>
               </div>
             </CardContent>
@@ -168,7 +168,7 @@ const Index = () => {
                 {topEmployees.map((employee) => (
                   <div key={employee.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankColor(employee.rank)}`} dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankColor(employee.rank)}`} style={{ fontFamily: 'Arial, sans-serif' }}>
                         {employee.rank}
                       </div>
                       <div>
@@ -178,7 +178,7 @@ const Index = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Trophy className="w-5 h-5 text-amber-500" />
-                      <span className="font-bold text-amber-600" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(employee.points)}</span>
+                      <span className="font-bold text-amber-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(employee.points)}</span>
                     </div>
                   </div>
                 ))}

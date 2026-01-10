@@ -47,8 +47,8 @@ export function TopProducts() {
               />
             </div>
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(product.sales)} مبيعة</span>
-              <span dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(product.revenue)} ر.س</span>
+              <span style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(product.sales)} مبيعة</span>
+              <span style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(product.revenue)} ر.س</span>
             </div>
           </div>
         ))}

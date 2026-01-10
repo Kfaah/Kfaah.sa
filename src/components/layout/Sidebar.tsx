@@ -151,7 +151,7 @@ export function Sidebar() {
               <span className={cn(
                 "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
                 isActive ? "bg-white/25 text-white" : "bg-amber-400 text-white"
-              )} dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
+              )} style={{ fontFamily: 'Arial, sans-serif' }}>
                 {formatNumberPlain(item.badge)}
               </span>
             )}
@@ -319,7 +319,7 @@ export function Sidebar() {
               <div className="relative">
                 <Bell className="w-5 h-5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse" style={{ fontFamily: 'Arial, sans-serif' }}>
                     {unreadCount > 9 ? '9+' : formatNumberPlain(unreadCount)}
                   </span>
                 )}

@@ -407,7 +407,7 @@ export function TaskCommunicationDialog({
                           isOwn ? "text-white/70" : "text-muted-foreground"
                         )}
                       >
-                        <span dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatDateTime(msg.created_at)}</span>
+                        <span style={{ fontFamily: 'Arial, sans-serif' }}>{formatDateTime(msg.created_at)}</span>
                       </p>
                     </div>
                   </div>

@@ -50,7 +50,7 @@ export function RecentOrders() {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-left">
-                <p className="font-bold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(order.amount)} ر.س</p>
+                <p className="font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(order.amount)} ر.س</p>
                 <p className="text-xs text-muted-foreground">{order.date}</p>
               </div>
               <Badge

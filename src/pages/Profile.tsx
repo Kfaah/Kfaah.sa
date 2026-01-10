@@ -504,7 +504,7 @@ export default function Profile() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                    <p className="text-xs text-muted-foreground mt-2" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    <p className="text-xs text-muted-foreground mt-2" style={{ fontFamily: 'Arial, sans-serif' }}>
                       {formatDateTime(notification.created_at)}
                     </p>
                   </div>
