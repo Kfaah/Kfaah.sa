@@ -9,6 +9,7 @@ import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDateTime } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -503,14 +504,8 @@ export default function Profile() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(notification.created_at).toLocaleDateString("ar-SA", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    <p className="text-xs text-muted-foreground mt-2" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
+                      {formatDateTime(notification.created_at)}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">

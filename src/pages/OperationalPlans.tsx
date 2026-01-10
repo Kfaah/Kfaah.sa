@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
+import { formatNumber } from "@/lib/utils";
 
 interface Employee {
   id: string;
@@ -453,8 +454,8 @@ export default function OperationalPlans() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <Label className="text-base font-semibold">توزيع المستهدف على الأشهر</Label>
-                    <span className={`text-sm ${getTotalMonthlyTargets() === parseInt(annualTarget || "0") ? "text-green-600" : "text-red-600"}`}>
-                      المجموع: {getTotalMonthlyTargets()} / {annualTarget || 0}
+                    <span className={`text-sm ${getTotalMonthlyTargets() === parseInt(annualTarget || "0") ? "text-green-600" : "text-red-600"}`} dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
+                      المجموع: {formatNumber(getTotalMonthlyTargets())} / {formatNumber(annualTarget || 0)}
                     </span>
                   </div>
                   
@@ -490,7 +491,7 @@ export default function OperationalPlans() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">إجمالي الخطط</p>
-                <p className="text-2xl font-bold">{plans.length}</p>
+                <p className="text-2xl font-bold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(plans.length)}</p>
               </div>
             </CardContent>
           </Card>

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 
 interface TaskMessage {
   id: string;
@@ -407,7 +407,7 @@ export function TaskCommunicationDialog({
                           isOwn ? "text-white/70" : "text-muted-foreground"
                         )}
                       >
-                        {new Date(msg.created_at).toLocaleString("ar-SA")}
+                        <span dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatDateTime(msg.created_at)}</span>
                       </p>
                     </div>
                   </div>

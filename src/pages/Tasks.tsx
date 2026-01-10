@@ -48,6 +48,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate, formatNumberPlain, normalizeNumericInput } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { TaskCommunicationDialog } from "@/components/tasks/TaskCommunicationDialog";
@@ -408,16 +409,6 @@ const Tasks = () => {
     }
   };
 
-  const normalizeNumericInput = (value: string) => {
-    // Convert Arabic-Indic (٠-٩) and Eastern Arabic-Indic (۰-۹) digits to Latin digits (0-9)
-    const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
-    const easternArabicIndic = "۰۱۲۳۴۵۶۷۸۹";
-
-    return value
-      .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
-      .replace(/[۰-۹]/g, (d) => String(easternArabicIndic.indexOf(d)))
-      .replace(/[^0-9]/g, "");
-  };
 
   // فتح نافذة التعديل
   const openEditDialog = (task: Task) => {
@@ -859,11 +850,8 @@ const Tasks = () => {
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <div className="flex items-center justify-center gap-2 text-sm">
                               <Calendar className="w-4 h-4 text-[#3d9aa8]/60" />
-                              <span className="text-foreground">
-                                {task.due_date 
-                                  ? new Date(task.due_date).toLocaleDateString("ar-SA")
-                                  : "-"
-                                }
+                              <span className="text-foreground" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                {formatDate(task.due_date)}
                               </span>
                             </div>
                           </TableCell>

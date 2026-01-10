@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Target, Calendar, User, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatNumber, formatPercent } from "@/lib/utils";
 
 interface OperationalPlan {
   id: string;
@@ -282,14 +283,14 @@ export default function OperationalPlanDetails() {
                     className="text-center p-3 rounded-lg bg-gradient-to-b from-muted/50 to-muted/30 border"
                   >
                     <p className="text-xs text-muted-foreground mb-1">{month}</p>
-                    <p className="text-lg font-bold">{target}</p>
+                    <p className="text-lg font-bold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(target)}</p>
                     <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all"
                         style={{ width: `${Math.min(percentage * 10, 100)}%` }}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">{percentage.toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground mt-1" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatPercent(percentage, 1)}</p>
                   </div>
                 );
               })}

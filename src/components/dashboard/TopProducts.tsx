@@ -1,4 +1,5 @@
 import { TrendingUp } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 
 interface Product {
   name: string;
@@ -46,8 +47,8 @@ export function TopProducts() {
               />
             </div>
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>{product.sales} مبيعة</span>
-              <span>{product.revenue.toLocaleString()} ر.س</span>
+              <span dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(product.sales)} مبيعة</span>
+              <span dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(product.revenue)} ر.س</span>
             </div>
           </div>
         ))}
