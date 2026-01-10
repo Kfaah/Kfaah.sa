@@ -43,6 +43,7 @@ import {
   X,
   Edit,
   Save,
+  MessageSquare,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -50,6 +51,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { TaskCommunicationDialog } from "@/components/tasks/TaskCommunicationDialog";
 
 interface Task {
   id: string;
@@ -123,6 +125,10 @@ const Tasks = () => {
   // حالة حفظ المهمة مع إشعار
   const [pendingChanges, setPendingChanges] = useState<{[taskId: string]: Partial<Task>}>({});
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
+
+  // حالة نافذة التواصل
+  const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
+  const [selectedTaskForCommunication, setSelectedTaskForCommunication] = useState<Task | null>(null);
 
   // التحقق إذا كان المستخدم هو صاحب المهمة
   const isTaskOwner = (task: Task) => {
@@ -812,6 +818,8 @@ const Tasks = () => {
                     <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
                     {/* التقييم يظهر للجميع */}
                     <TableHead className="text-center font-bold text-white w-40 border-l border-white/20">التقييم</TableHead>
+                    {/* التواصل والمرفقات */}
+                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">التواصل</TableHead>
                     <TableHead className="text-center font-bold text-white w-24">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -971,6 +979,22 @@ const Tasks = () => {
                             </div>
                           </TableCell>
                           
+                          {/* التواصل والمرفقات */}
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1 text-[#3d9aa8] hover:text-[#3d9aa8] hover:bg-[#3d9aa8]/10"
+                              onClick={() => {
+                                setSelectedTaskForCommunication(task);
+                                setIsCommunicationDialogOpen(true);
+                              }}
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                              فتح
+                            </Button>
+                          </TableCell>
+
                           {/* إجراء */}
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -1242,6 +1266,19 @@ const Tasks = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* نافذة التواصل والمرفقات */}
+        {selectedTaskForCommunication && authUser && (
+          <TaskCommunicationDialog
+            open={isCommunicationDialogOpen}
+            onOpenChange={setIsCommunicationDialogOpen}
+            taskId={selectedTaskForCommunication.id}
+            taskTitle={selectedTaskForCommunication.title}
+            currentUserId={authUser.id}
+            isAdmin={isAdmin}
+            taskOwnerId={selectedTaskForCommunication.user_id}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
