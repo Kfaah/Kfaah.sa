@@ -963,7 +963,7 @@ const Tasks = () => {
                                             e.currentTarget.blur();
                                           }
                                         }}
-                                        className="w-12 h-7 text-center text-xs border border-input rounded-md bg-background px-1 focus:outline-none focus:ring-2 focus:ring-ring"
+                                        className="w-14 h-7 text-center text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                       />
                                       <span className="text-xs text-muted-foreground">%</span>
                                     </div>
@@ -993,7 +993,7 @@ const Tasks = () => {
                                             e.currentTarget.blur();
                                           }
                                         }}
-                                        className="w-12 h-7 text-center text-xs border border-input rounded-md bg-background px-1 focus:outline-none focus:ring-2 focus:ring-ring"
+                                        className="w-14 h-7 text-center text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                       />
                                       <span className="text-xs text-muted-foreground">%</span>
                                     </div>
