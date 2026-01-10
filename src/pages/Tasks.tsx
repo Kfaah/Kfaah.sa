@@ -69,6 +69,7 @@ interface Task {
   quality_percentage: number;
   estimated_time_minutes: number | null;
   actual_time_minutes: number | null;
+  started_at: string | null;
 }
 
 interface Employee {
@@ -289,21 +290,40 @@ const Tasks = () => {
     }
   };
 
-  // تحديث حالة المهمة (للموظف: قادمة أو تم التنفيذ فقط) - مع حفظ تلقائي
+  // تحديث حالة المهمة (للموظف: قادمة أو تم التنفيذ فقط) - مع حفظ تلقائي ومؤقت الوقت
   const updateTaskStatusLocal = async (taskId: string, newStatus: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
+    const now = new Date().toISOString();
+    let updateData: Record<string, any> = { status: newStatus };
+    let localUpdate: Partial<Task> = { status: newStatus as Task["status"] };
+
+    // عند بدء التنفيذ، نسجل وقت البدء
+    if (newStatus === "in_progress" && !task.started_at) {
+      updateData.started_at = now;
+      localUpdate.started_at = now;
+    }
+
+    // عند إتمام المهمة، نحسب الوقت الفعلي
+    if ((newStatus === "executed" || newStatus === "completed") && task.started_at) {
+      const startTime = new Date(task.started_at).getTime();
+      const endTime = new Date().getTime();
+      const actualMinutes = Math.round((endTime - startTime) / (1000 * 60));
+      updateData.actual_time_minutes = actualMinutes;
+      localUpdate.actual_time_minutes = actualMinutes;
+    }
+
     // تحديث محلي للعرض فوراً
     setTasks(prev =>
-      prev.map(t => (t.id === taskId ? { ...t, status: newStatus as Task["status"] } : t))
+      prev.map(t => (t.id === taskId ? { ...t, ...localUpdate } : t))
     );
 
     try {
       // حفظ تلقائي في قاعدة البيانات
       const { error } = await supabase
         .from("tasks")
-        .update({ status: newStatus })
+        .update(updateData)
         .eq("id", taskId);
       
       if (error) throw error;
@@ -328,26 +348,53 @@ const Tasks = () => {
           }
         }
       }
+
+      // إظهار رسالة عند حساب الوقت الفعلي
+      if (localUpdate.actual_time_minutes !== undefined) {
+        toast({ 
+          title: "تم حساب الوقت الفعلي", 
+          description: `استغرقت المهمة ${localUpdate.actual_time_minutes} دقيقة` 
+        });
+      }
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     }
   };
 
-  // تحديث حالة المهمة (للمدير فقط) مع إرسال إشعار
+  // تحديث حالة المهمة (للمدير فقط) مع إرسال إشعار ومؤقت الوقت
   const updateTaskStatus = async (taskId: string, newStatus: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
+    const now = new Date().toISOString();
+    let updateData: Record<string, any> = { status: newStatus };
+    let localUpdate: Partial<Task> = { status: newStatus as Task["status"] };
+
+    // عند بدء التنفيذ، نسجل وقت البدء
+    if (newStatus === "in_progress" && !task.started_at) {
+      updateData.started_at = now;
+      localUpdate.started_at = now;
+    }
+
+    // عند إتمام المهمة، نحسب الوقت الفعلي
+    if ((newStatus === "executed" || newStatus === "completed") && task.started_at) {
+      const startTime = new Date(task.started_at).getTime();
+      const endTime = new Date().getTime();
+      const actualMinutes = Math.round((endTime - startTime) / (1000 * 60));
+      updateData.actual_time_minutes = actualMinutes;
+      localUpdate.actual_time_minutes = actualMinutes;
+    }
+
     try {
       const { error } = await supabase
         .from("tasks")
-        .update({ status: newStatus })
+        .update(updateData)
         .eq("id", taskId);
       
       if (error) throw error;
       
       setTasks(prev =>
-        prev.map(t => (t.id === taskId ? { ...t, status: newStatus as Task["status"] } : t))
+        prev.map(t => (t.id === taskId ? { ...t, ...localUpdate } : t))
       );
 
       // إرسال إشعار للموظف صاحب المهمة
@@ -360,7 +407,15 @@ const Tasks = () => {
         related_task_id: taskId,
       });
 
-      toast({ title: "تم تحديث الحالة وإرسال الإشعار" });
+      // إظهار رسالة عند حساب الوقت الفعلي
+      if (localUpdate.actual_time_minutes !== undefined) {
+        toast({ 
+          title: "تم تحديث الحالة وحساب الوقت الفعلي", 
+          description: `استغرقت المهمة ${localUpdate.actual_time_minutes} دقيقة` 
+        });
+      } else {
+        toast({ title: "تم تحديث الحالة وإرسال الإشعار" });
+      }
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     }

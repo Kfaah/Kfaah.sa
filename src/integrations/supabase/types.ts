@@ -380,6 +380,7 @@ export type Database = {
           id: string
           priority: string
           quality_percentage: number | null
+          started_at: string | null
           status: string
           title: string
           updated_at: string
@@ -398,6 +399,7 @@ export type Database = {
           id?: string
           priority?: string
           quality_percentage?: number | null
+          started_at?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -416,6 +418,7 @@ export type Database = {
           id?: string
           priority?: string
           quality_percentage?: number | null
+          started_at?: string | null
           status?: string
           title?: string
           updated_at?: string
