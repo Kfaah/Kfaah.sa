@@ -5,12 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign } from "lucide-react";
+import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 const positiveMessages = [
   "أهلاً بك! يومك سعيد 🌟",
@@ -55,6 +56,16 @@ interface JobRole {
   name: string;
 }
 
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  is_read: boolean;
+  created_at: string;
+  related_task_id: string | null;
+}
+
 export default function Profile() {
   const { user: authUser } = useAuth();
   const { user, loading, updateUser, updateProfileImage, uploadAvatar } = useUser();
@@ -66,6 +77,8 @@ export default function Profile() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   // Check if user is admin
   useEffect(() => {
@@ -97,6 +110,103 @@ export default function Profile() {
     
     fetchData();
   }, []);
+
+  // جلب الإشعارات
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!authUser) return;
+      
+      setLoadingNotifications(true);
+      try {
+        const { data, error } = await supabase
+          .from("notifications")
+          .select("*")
+          .order("created_at", { ascending: false });
+        
+        if (error) throw error;
+        setNotifications(data || []);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    };
+    
+    fetchNotifications();
+
+    // الاستماع للإشعارات الجديدة في الوقت الحقيقي
+    const channel = supabase
+      .channel('notifications-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+        },
+        (payload) => {
+          setNotifications(prev => [payload.new as Notification, ...prev]);
+          toast.info("لديك إشعار جديد!");
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [authUser]);
+
+  // تحديد الإشعار كمقروء
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", notificationId);
+      
+      if (error) throw error;
+      
+      setNotifications(prev =>
+        prev.map(n => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  // حذف الإشعار
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", notificationId);
+      
+      if (error) throw error;
+      
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      toast.success("تم حذف الإشعار");
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
+  };
+
+  // تحديد جميع الإشعارات كمقروءة
+  const markAllAsRead = async () => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("is_read", false);
+      
+      if (error) throw error;
+      
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      toast.success("تم تحديد جميع الإشعارات كمقروءة");
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+    }
+  };
 
   useEffect(() => {
     // Use day of year to show a different message each day
@@ -339,6 +449,96 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* قسم الإشعارات */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Bell className="w-5 h-5 text-accent" />
+            الإشعارات
+            {notifications.filter(n => !n.is_read).length > 0 && (
+              <Badge className="bg-red-500 text-white">
+                {notifications.filter(n => !n.is_read).length}
+              </Badge>
+            )}
+          </CardTitle>
+          {notifications.some(n => !n.is_read) && (
+            <Button variant="outline" size="sm" onClick={markAllAsRead}>
+              <CheckCircle className="w-4 h-4 ml-1" />
+              تحديد الكل كمقروء
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {loadingNotifications ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p>لا توجد إشعارات</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`flex items-start gap-3 p-4 rounded-xl transition-colors ${
+                    notification.is_read ? "bg-muted/30" : "bg-accent/10 border border-accent/20"
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    notification.is_read ? "bg-muted" : "bg-accent/20"
+                  }`}>
+                    <ClipboardList className={`w-5 h-5 ${notification.is_read ? "text-muted-foreground" : "text-accent"}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className={`font-semibold ${notification.is_read ? "text-muted-foreground" : "text-foreground"}`}>
+                        {notification.title}
+                      </h4>
+                      {!notification.is_read && (
+                        <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {new Date(notification.created_at).toLocaleDateString("ar-SA", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {!notification.is_read && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-accent hover:bg-accent/10"
+                        onClick={() => markAsRead(notification.id)}
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => deleteNotification(notification.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Positive Message at Bottom */}
       {currentMessage && !isEditing && (

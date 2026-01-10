@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -18,10 +18,12 @@ import {
   TrendingUp,
   Eye,
   EyeOff,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 interface NavItem {
@@ -65,13 +67,52 @@ const settingsNavItem: NavItem = {
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, previewAsEmployee, setPreviewAsEmployee } = useUser();
-  const { signOut } = useAuth();
+  const { signOut, user: authUser } = useAuth();
 
   // Check if user is actually an admin (not in preview mode)
   const isActuallyAdmin = !user.isEmployee && user.role === "مدير النظام";
+
+  // جلب عدد الإشعارات غير المقروءة
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!authUser) return;
+      
+      const { count, error } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("is_read", false);
+      
+      if (!error && count !== null) {
+        setUnreadCount(count);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // الاستماع للإشعارات الجديدة
+    const channel = supabase
+      .channel('sidebar-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [authUser]);
 
   const handleSignOut = async () => {
     setPreviewAsEmployee(false);
@@ -265,14 +306,23 @@ export function Sidebar() {
             {/* Profile Icon Button */}
             <Link 
               to="/profile"
-              className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 group"
+              className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 group relative"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform relative">
                 <User className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 text-right">
                 <span className="text-sm font-semibold text-slate-700">الملف الشخصي</span>
                 <p className="text-xs text-slate-500">إدارة معلوماتك وصورتك</p>
+              </div>
+              {/* أيقونة الإشعارات مع العداد */}
+              <div className="relative">
+                <Bell className="w-5 h-5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </div>
               <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 transition-colors" />
             </Link>
