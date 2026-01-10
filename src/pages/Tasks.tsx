@@ -1418,68 +1418,84 @@ const Tasks = () => {
               </div>
 
               {/* التقييم */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="font-semibold">نسبة الإنجاز (%)</Label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
-                      Number(editForm.completion_percentage || 0)
-                    )}
-                    lang="en"
-                    style={{ fontFamily: 'Arial, sans-serif' }}
-                    onChange={(e) => {
-                      const raw = normalizeNumericInput(e.target.value);
-                      const num = parseInt(raw, 10);
-                      setEditForm((prev) => ({
-                        ...prev,
-                        completion_percentage: Number.isFinite(num) ? Math.max(0, Math.min(100, num)) : 0,
-                      }));
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-semibold">نسبة الجودة (%)</Label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
-                      Number(editForm.quality_percentage || 0)
-                    )}
-                    lang="en"
-                    style={{ fontFamily: 'Arial, sans-serif' }}
-                    onChange={(e) => {
-                      const raw = normalizeNumericInput(e.target.value);
-                      const num = parseInt(raw, 10);
-                      setEditForm((prev) => ({
-                        ...prev,
-                        quality_percentage: Number.isFinite(num) ? Math.max(0, Math.min(100, num)) : 0,
-                      }));
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* كفاءة استثمار الوقت - للعرض فقط */}
-              {editForm.estimated_time_minutes && editForm.actual_time_minutes && editForm.actual_time_minutes > 0 && (
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <Label className="font-semibold text-sm text-muted-foreground">كفاءة استثمار الوقت</Label>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Clock className="w-4 h-4 text-[#3d9aa8]" />
-                    <span className="text-lg font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>
-                      {formatPercent(Math.round((editForm.estimated_time_minutes / editForm.actual_time_minutes) * 100))}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {Math.round((editForm.estimated_time_minutes / editForm.actual_time_minutes) * 100) >= 100 
-                        ? '(ممتاز - تم في الوقت المحدد أو أقل)' 
-                        : '(يحتاج تحسين)'}
-                    </span>
+              <div className="p-4 bg-muted/30 rounded-xl border space-y-4">
+                <Label className="font-semibold text-base">التقييم</Label>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">نسبة الإنجاز (%)</Label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                        Number(editForm.completion_percentage || 0)
+                      )}
+                      lang="en"
+                      style={{ fontFamily: 'Arial, sans-serif' }}
+                      onChange={(e) => {
+                        const raw = normalizeNumericInput(e.target.value);
+                        const num = parseInt(raw, 10);
+                        setEditForm((prev) => ({
+                          ...prev,
+                          completion_percentage: Number.isFinite(num) ? Math.max(0, Math.min(100, num)) : 0,
+                        }));
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">نسبة الجودة (%)</Label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                        Number(editForm.quality_percentage || 0)
+                      )}
+                      lang="en"
+                      style={{ fontFamily: 'Arial, sans-serif' }}
+                      onChange={(e) => {
+                        const raw = normalizeNumericInput(e.target.value);
+                        const num = parseInt(raw, 10);
+                        setEditForm((prev) => ({
+                          ...prev,
+                          quality_percentage: Number.isFinite(num) ? Math.max(0, Math.min(100, num)) : 0,
+                        }));
+                      }}
+                    />
                   </div>
                 </div>
-              )}
+
+                {/* كفاءة استثمار الوقت */}
+                <div className="pt-3 border-t border-border/50">
+                  <Label className="text-sm text-muted-foreground">كفاءة استثمار الوقت</Label>
+                  {editForm.estimated_time_minutes && editForm.actual_time_minutes && editForm.actual_time_minutes > 0 ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Clock className="w-4 h-4 text-accent" />
+                      <span 
+                        className={cn(
+                          "text-xl font-bold",
+                          Math.round((editForm.estimated_time_minutes / editForm.actual_time_minutes) * 100) >= 100 
+                            ? "text-emerald-600" 
+                            : "text-amber-600"
+                        )}
+                        style={{ fontFamily: 'Arial, sans-serif' }}
+                      >
+                        {formatPercent(Math.round((editForm.estimated_time_minutes / editForm.actual_time_minutes) * 100))}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {Math.round((editForm.estimated_time_minutes / editForm.actual_time_minutes) * 100) >= 100 
+                          ? '✓ ممتاز' 
+                          : '⚠ يحتاج تحسين'}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      يتم حسابها تلقائياً عند إدخال الوقت المقدر والفعلي
+                    </p>
+                  )}
+                </div>
+              </div>
 
               {/* أزرار الحفظ والإلغاء */}
               <div className="flex justify-end gap-3 pt-4 border-t">
