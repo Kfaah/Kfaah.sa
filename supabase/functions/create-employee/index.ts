@@ -72,28 +72,60 @@ serve(async (req) => {
     // Handle password update action
     if (body.action === "update-password") {
       const { userId, password } = body;
-      
+
       if (!userId || !password) {
         return json({ success: false, error: "معرف المستخدم وكلمة المرور مطلوبان" }, 400);
       }
-      
+
       if (password.length < 6) {
         return json({ success: false, error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }, 400);
       }
-      
+
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         password: password,
       });
-      
+
       if (updateError) {
         console.error("Error updating password:", updateError);
         return json({ success: false, error: "حدث خطأ أثناء تحديث كلمة المرور" }, 500);
       }
-      
+
       return json({ success: true, message: "تم تحديث كلمة المرور بنجاح" }, 200);
     }
 
-    // Get employee data from request
+    // Keep Auth login (internal email) synced with the employee username
+    if (body.action === "sync-login") {
+      const { userId, username } = body;
+
+      if (!userId || !username?.trim()) {
+        return json({ success: false, error: "معرف المستخدم ورقم الهوية مطلوبان" }, 400);
+      }
+
+      const cleanUsername = String(username).replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+      if (!cleanUsername) {
+        return json({ success: false, error: "رقم الهوية غير صالح" }, 400);
+      }
+
+      const internalEmail = `${cleanUsername}@user.local`;
+
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        email: internalEmail,
+        email_confirm: true,
+        user_metadata: {
+          username: username,
+        },
+      });
+
+      if (updateError) {
+        console.error("Error syncing login email:", updateError);
+        const msg = updateError.message?.includes("already been registered")
+          ? "رقم الهوية مرتبط بحساب آخر"
+          : "حدث خطأ أثناء ربط بيانات الدخول";
+        return json({ success: false, error: msg }, 500);
+      }
+
+      return json({ success: true, message: "تم ربط بيانات الدخول بنجاح", loginEmail: internalEmail }, 200);
+    }
     const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl } = body;
 
     // Validate required fields

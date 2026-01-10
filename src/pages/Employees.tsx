@@ -394,23 +394,37 @@ const Employees = () => {
       
       if (error) throw error;
       
-      // Update password if provided
-      if (editPassword && editingEmployee.user_id) {
-        const { data: session } = await supabase.auth.getSession();
-        if (session?.session?.access_token) {
-          const response = await supabase.functions.invoke("create-employee", {
-            body: {
-              action: "update-password",
-              userId: editingEmployee.user_id,
-              password: editPassword,
-            },
-          });
-          if (response.error) {
-            console.error("Error updating password:", response.error);
-          }
+      // ربط بيانات الدخول (رقم الهوية) مع حساب الدخول
+      if (editingEmployee.user_id) {
+        const response = await supabase.functions.invoke("create-employee", {
+          body: {
+            action: "sync-login",
+            userId: editingEmployee.user_id,
+            username: editingEmployee.username,
+          },
+        });
+
+        if (response.error || response.data?.success === false) {
+          console.error("Error syncing login:", response.error || response.data);
+          throw new Error(response.data?.error || "تعذر ربط بيانات الدخول");
         }
       }
-      
+
+      // Update password if provided
+      if (editPassword && editingEmployee.user_id) {
+        const response = await supabase.functions.invoke("create-employee", {
+          body: {
+            action: "update-password",
+            userId: editingEmployee.user_id,
+            password: editPassword,
+          },
+        });
+
+        if (response.error || response.data?.success === false) {
+          console.error("Error updating password:", response.error || response.data);
+          throw new Error(response.data?.error || "تعذر تحديث كلمة المرور");
+        }
+      }
       const updatedEmployee = { ...editingEmployee, avatar_url: avatarUrl };
       setEmployees(employees.map(e => e.id === editingEmployee.id ? updatedEmployee : e));
       setIsEditDialogOpen(false);

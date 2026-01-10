@@ -26,27 +26,30 @@ serve(async (req) => {
 
     // Get the authorization header to verify the requesting user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ error: "غير مصرح" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Verify the requesting user is an admin
+    // Verify the requesting user using getClaims (signing-keys compatible)
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: requestingUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (authError || !requestingUser) {
+    const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
+      console.error("Claims error:", claimsError);
       return new Response(
         JSON.stringify({ error: "غير مصرح" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const requestingUserId = claimsData.claims.sub as string;
 
     // Check if requesting user is admin
     const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
-      _user_id: requestingUser.id,
+      _user_id: requestingUserId,
       _role: "admin",
     });
 
@@ -67,13 +70,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Admin ${requestingUser.id} is impersonating user ${userId}`);
-
-    // Generate a magic link for the target user
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email: "", // Will be filled from user
-    });
+    console.log(`Admin ${requestingUserId} is impersonating user ${userId}`);
 
     // Get the target user's email
     const { data: targetUser, error: targetUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
