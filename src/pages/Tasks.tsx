@@ -603,9 +603,8 @@ const Tasks = () => {
                 <TableBody>
                   {groupTasksByActivity(filteredTasks).map((group, groupIndex) => {
                     const isEven = groupIndex % 2 === 0;
-                    const colorClass = isEven 
-                      ? "bg-white text-[#3d9aa8]" 
-                      : "bg-[#3d9aa8]/10 text-[#3d9aa8]";
+                    const rowBgClass = isEven ? "bg-white" : "bg-[#3d9aa8]/10";
+                    const activityColorClass = "text-[#3d9aa8]";
                     
                     return group.tasks.map((task, taskIndex) => {
                       const statusConfig = getStatusConfig(task.status);
@@ -613,11 +612,11 @@ const Tasks = () => {
                       const isFirstInGroup = taskIndex === 0;
                       
                       return (
-                        <TableRow key={task.id} className="hover:bg-muted/30">
+                        <TableRow key={task.id} className={cn(rowBgClass, "hover:bg-[#3d9aa8]/20")}>
                           {/* النشاط - يظهر فقط في أول مهمة من كل مجموعة */}
                           {isFirstInGroup ? (
                             <TableCell 
-                              className={cn("border-l font-semibold", colorClass)}
+                              className={cn("border-l border-[#3d9aa8]/20 font-semibold", activityColorClass)}
                               rowSpan={group.tasks.length}
                             >
                               <div className="flex items-center gap-2">
@@ -628,7 +627,7 @@ const Tasks = () => {
                           ) : null}
                           
                           {/* المهمة */}
-                          <TableCell className="border-l">
+                          <TableCell className="border-l border-[#3d9aa8]/20">
                             <div className="flex items-start gap-3">
                               {task.ai_generated && (
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center flex-shrink-0">
@@ -645,24 +644,24 @@ const Tasks = () => {
                           </TableCell>
                           
                           {/* الأولوية */}
-                          <TableCell className="text-center border-l">
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <Badge className={priorityConfig.class}>
                               {priorityConfig.label}
                             </Badge>
                           </TableCell>
 
                           {/* المنفذ */}
-                          <TableCell className="text-center border-l">
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <div className="flex items-center justify-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                <User className="w-3 h-3 text-primary" />
+                              <div className="w-6 h-6 rounded-full bg-[#3d9aa8]/10 flex items-center justify-center">
+                                <User className="w-3 h-3 text-[#3d9aa8]" />
                               </div>
                               <span className="text-sm">{getExecutorName(task.user_id)}</span>
                             </div>
                           </TableCell>
                           
                           {/* الحالة */}
-                          <TableCell className="text-center border-l">
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <Select
                               value={task.status}
                               onValueChange={(value) => updateTaskStatus(task.id, value)}
@@ -680,9 +679,9 @@ const Tasks = () => {
                           </TableCell>
                           
                           {/* تاريخ التنفيذ */}
-                          <TableCell className="text-center border-l">
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <div className="flex items-center justify-center gap-2 text-sm">
-                              <Calendar className="w-4 h-4 text-muted-foreground" />
+                              <Calendar className="w-4 h-4 text-[#3d9aa8]/60" />
                               <span className="text-foreground">
                                 {task.due_date 
                                   ? new Date(task.due_date).toLocaleDateString("ar-SA")
