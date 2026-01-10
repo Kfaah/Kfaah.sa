@@ -1029,6 +1029,7 @@ const Tasks = () => {
                           {/* التقييم - يظهر للجميع لكن التعديل للمدير فقط */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <div className="flex flex-col items-center justify-center gap-2">
+                              {/* الإنجاز والجودة */}
                               <div className="flex items-center justify-center gap-3">
                                 <div className="flex flex-col items-center">
                                   <div className="text-[10px] font-medium text-muted-foreground mb-1">الإنجاز</div>
@@ -1110,40 +1111,41 @@ const Tasks = () => {
                                     </div>
                                   )}
                                 </div>
-                                {/* كفاءة استثمار الوقت */}
-                                <div className="flex flex-col items-center">
-                                  <div className="text-[10px] font-medium text-muted-foreground mb-1">كفاءة استثمار الوقت</div>
-                                  {(() => {
-                                    const estimated = task.estimated_time_minutes;
-                                    const actual = task.actual_time_minutes;
-                                    if (!estimated || !actual || actual === 0) {
-                                      return (
-                                        <div
-                                          className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded-lg text-sm font-semibold text-muted-foreground"
-                                          lang="en"
-                                          style={{ fontFamily: 'Arial, sans-serif' }}
-                                        >
-                                          -
-                                        </div>
-                                      );
-                                    }
-                                    const efficiency = Math.round((estimated / actual) * 100);
-                                    const colorClass = efficiency >= 100 
-                                      ? "bg-emerald-100 text-emerald-700 border-emerald-300" 
-                                      : efficiency >= 80 
-                                        ? "bg-amber-100 text-amber-700 border-amber-300"
-                                        : "bg-rose-100 text-rose-700 border-rose-300";
+                              </div>
+                              
+                              {/* كفاءة استثمار الوقت - تحت الإنجاز والجودة */}
+                              <div className="flex flex-col items-center pt-1 border-t border-border/30 w-full">
+                                <div className="text-[10px] font-medium text-muted-foreground mb-1">كفاءة استثمار الوقت</div>
+                                {(() => {
+                                  const estimated = task.estimated_time_minutes;
+                                  const actual = task.actual_time_minutes;
+                                  if (!estimated || !actual || actual === 0) {
                                     return (
                                       <div
-                                        className={cn("w-14 h-7 flex items-center justify-center rounded-lg text-sm font-semibold border", colorClass)}
+                                        className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded-lg text-sm font-semibold text-muted-foreground"
                                         lang="en"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
                                       >
-                                        {formatPercent(efficiency)}
+                                        -
                                       </div>
                                     );
-                                  })()}
-                                </div>
+                                  }
+                                  const efficiency = Math.round((estimated / actual) * 100);
+                                  const colorClass = efficiency >= 100 
+                                    ? "bg-emerald-100 text-emerald-700 border-emerald-300" 
+                                    : efficiency >= 80 
+                                      ? "bg-amber-100 text-amber-700 border-amber-300"
+                                      : "bg-rose-100 text-rose-700 border-rose-300";
+                                  return (
+                                    <div
+                                      className={cn("w-14 h-7 flex items-center justify-center rounded-lg text-sm font-semibold border", colorClass)}
+                                      lang="en"
+                                      style={{ fontFamily: 'Arial, sans-serif' }}
+                                    >
+                                      {formatPercent(efficiency)}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
                           </TableCell>
