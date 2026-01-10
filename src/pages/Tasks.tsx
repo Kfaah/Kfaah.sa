@@ -53,6 +53,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { TaskCommunicationDialog } from "@/components/tasks/TaskCommunicationDialog";
 import { LiveTimer } from "@/components/tasks/LiveTimer";
+import { DailyTasksSelector } from "@/components/tasks/DailyTasksSelector";
+import { ActiveTaskBanner } from "@/components/tasks/ActiveTaskBanner";
 
 interface Task {
   id: string;
@@ -93,6 +95,7 @@ const Tasks = () => {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canEditTime, setCanEditTime] = useState(false);
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -132,6 +135,10 @@ const Tasks = () => {
   const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
   const [selectedTaskForCommunication, setSelectedTaskForCommunication] = useState<Task | null>(null);
 
+  // حالة اختيار مهام اليوم
+  const [showDailyTasksSelector, setShowDailyTasksSelector] = useState(false);
+  const [attendanceChecked, setAttendanceChecked] = useState(false);
+
   // التحقق إذا كان المستخدم هو صاحب المهمة
   const isTaskOwner = (task: Task) => {
     return authUser?.id === task.user_id;
@@ -147,15 +154,73 @@ const Tasks = () => {
     return dueDate <= today;
   };
 
-  // التحقق من صلاحية المدير
+  // التحقق من صلاحية المدير وتعديل الوقت
   useEffect(() => {
-    const checkAdmin = async () => {
+    const checkPermissions = async () => {
       if (!authUser) return;
-      const { data } = await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" });
-      setIsAdmin(data === true);
+      
+      // التحقق من صلاحية المدير
+      const { data: adminData } = await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" });
+      setIsAdmin(adminData === true);
+      
+      // التحقق من صلاحية تعديل الوقت
+      const { data: timeEditorData } = await supabase.rpc("can_edit_time", { _user_id: authUser.id });
+      setCanEditTime(timeEditorData === true);
     };
-    checkAdmin();
+    checkPermissions();
   }, [authUser]);
+
+  // تسجيل الحضور والتحقق من المهمة النشطة
+  useEffect(() => {
+    const checkAttendanceAndActiveTask = async () => {
+      if (!authUser || isAdmin || attendanceChecked) return;
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      try {
+        // التحقق من تسجيل الحضور
+        const { data: attendance, error: attError } = await supabase
+          .from("attendance")
+          .select("id")
+          .eq("user_id", authUser.id)
+          .eq("date", today)
+          .maybeSingle();
+        
+        if (attError) throw attError;
+        
+        // إذا لم يسجل الحضور، نسجله الآن
+        if (!attendance) {
+          await supabase.from("attendance").insert({
+            user_id: authUser.id,
+            date: today,
+            check_in_at: new Date().toISOString()
+          });
+          toast({ title: "تم تسجيل الحضور ✓", description: `وقت الحضور: ${new Date().toLocaleTimeString('ar-SA')}` });
+        }
+        
+        // التحقق من وجود مهمة نشطة
+        const { data: activeTask, error: activeError } = await supabase
+          .from("active_task")
+          .select("id")
+          .eq("user_id", authUser.id)
+          .maybeSingle();
+        
+        if (activeError) throw activeError;
+        
+        // إذا لم توجد مهمة نشطة، نعرض شاشة اختيار المهام
+        if (!activeTask) {
+          setShowDailyTasksSelector(true);
+        }
+        
+        setAttendanceChecked(true);
+      } catch (error: any) {
+        console.error("Attendance check error:", error);
+        setAttendanceChecked(true);
+      }
+    };
+    
+    checkAttendanceAndActiveTask();
+  }, [authUser, isAdmin, attendanceChecked]);
 
   // جلب المهام
   useEffect(() => {
@@ -664,9 +729,52 @@ const Tasks = () => {
 
   const hasActiveFilters = filterMonth !== "all" || filterDay !== "all" || filterEmployee !== "all" || searchQuery;
 
+  // معالجة اختيار المهمة من شاشة مهام اليوم
+  const handleDailyTaskSelected = (taskId: string) => {
+    setShowDailyTasksSelector(false);
+    if (taskId) {
+      // تحديث قائمة المهام لعرض المهمة المحدثة
+      setTasks(prev => prev.map(t => 
+        t.id === taskId ? { ...t, status: "in_progress" as Task["status"], started_at: new Date().toISOString() } : t
+      ));
+    }
+  };
+
+  // تحديث المهام عند إكمال المهمة
+  const handleTaskCompleted = () => {
+    // إعادة جلب المهام
+    const fetchTasks = async () => {
+      if (!authUser) return;
+      const { data } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("due_date", { ascending: true });
+      if (data) setTasks(data as Task[]);
+    };
+    fetchTasks();
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* شاشة اختيار مهام اليوم للموظفين */}
+        {!isAdmin && authUser && (
+          <DailyTasksSelector
+            open={showDailyTasksSelector}
+            userId={authUser.id}
+            onTaskSelected={handleDailyTaskSelected}
+          />
+        )}
+
+        {/* شريط المهمة النشطة */}
+        {!isAdmin && authUser && (
+          <ActiveTaskBanner
+            userId={authUser.id}
+            onTaskCompleted={handleTaskCompleted}
+            onSelectNextTask={() => setShowDailyTasksSelector(true)}
+          />
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -1395,27 +1503,44 @@ const Tasks = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-semibold">الوقت الفعلي (بالدقائق)</Label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={editForm.actual_time_minutes !== null 
-                      ? new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(editForm.actual_time_minutes)
-                      : ''
-                    }
-                    placeholder="مثال: 45"
-                    lang="en"
-                    style={{ fontFamily: 'Arial, sans-serif' }}
-                    onChange={(e) => {
-                      const raw = normalizeNumericInput(e.target.value);
-                      const num = parseInt(raw, 10);
-                      setEditForm((prev) => ({
-                        ...prev,
-                        actual_time_minutes: raw === '' ? null : (Number.isFinite(num) ? Math.max(0, num) : null),
-                      }));
-                    }}
-                  />
+                  <Label className="font-semibold flex items-center gap-2">
+                    الوقت الفعلي (بالدقائق)
+                    {!canEditTime && (
+                      <Badge variant="outline" className="text-xs">للعرض فقط</Badge>
+                    )}
+                  </Label>
+                  {canEditTime ? (
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={editForm.actual_time_minutes !== null 
+                        ? new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(editForm.actual_time_minutes)
+                        : ''
+                      }
+                      placeholder="مثال: 45"
+                      lang="en"
+                      style={{ fontFamily: 'Arial, sans-serif' }}
+                      onChange={(e) => {
+                        const raw = normalizeNumericInput(e.target.value);
+                        const num = parseInt(raw, 10);
+                        setEditForm((prev) => ({
+                          ...prev,
+                          actual_time_minutes: raw === '' ? null : (Number.isFinite(num) ? Math.max(0, num) : null),
+                        }));
+                      }}
+                    />
+                  ) : (
+                    <div 
+                      className="h-10 px-3 py-2 rounded-md border bg-muted/50 flex items-center text-muted-foreground"
+                      style={{ fontFamily: 'Arial, sans-serif' }}
+                    >
+                      {editForm.actual_time_minutes !== null 
+                        ? `${new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(editForm.actual_time_minutes)} دقيقة`
+                        : 'يُحسب تلقائياً'
+                      }
+                    </div>
+                  )}
                 </div>
               </div>
 
