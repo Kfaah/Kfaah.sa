@@ -41,7 +41,10 @@ import {
   User,
   Filter,
   X,
+  Edit,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -101,6 +104,20 @@ const Tasks = () => {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState("");
+
+  // حالة نافذة التعديل
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    due_date: "",
+    priority: "medium" as "low" | "medium" | "high",
+    user_id: "",
+    status: "upcoming" as Task["status"],
+    completion_percentage: 0,
+    quality_percentage: 0,
+  });
 
   // التحقق من صلاحية المدير
   useEffect(() => {
@@ -294,6 +311,60 @@ const Tasks = () => {
       setTasks(prev =>
         prev.map(t => (t.id === taskId ? { ...t, [field]: clampedValue } : t))
       );
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    }
+  };
+
+  // فتح نافذة التعديل
+  const openEditDialog = (task: Task) => {
+    setEditingTask(task);
+    setEditForm({
+      title: task.title,
+      description: task.description || "",
+      due_date: task.due_date || "",
+      priority: task.priority,
+      user_id: task.user_id,
+      status: task.status,
+      completion_percentage: task.completion_percentage || 0,
+      quality_percentage: task.quality_percentage || 0,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  // حفظ تعديلات المهمة
+  const saveTaskEdit = async () => {
+    if (!editingTask) return;
+    
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          title: editForm.title,
+          description: editForm.description || null,
+          due_date: editForm.due_date || null,
+          priority: editForm.priority,
+          user_id: editForm.user_id,
+          status: editForm.status,
+          completion_percentage: editForm.completion_percentage,
+          quality_percentage: editForm.quality_percentage,
+        })
+        .eq("id", editingTask.id);
+      
+      if (error) throw error;
+      
+      setTasks(prev =>
+        prev.map(t => (t.id === editingTask.id ? { 
+          ...t, 
+          ...editForm,
+          description: editForm.description || null,
+          due_date: editForm.due_date || null,
+        } : t))
+      );
+      
+      toast({ title: "تم حفظ التعديلات بنجاح" });
+      setIsEditDialogOpen(false);
+      setEditingTask(null);
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     }
@@ -756,14 +827,24 @@ const Tasks = () => {
                           
                           {/* إجراء */}
                           <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => deleteTask(task.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-[#3d9aa8] hover:text-[#3d9aa8] hover:bg-[#3d9aa8]/10"
+                                onClick={() => openEditDialog(task)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => deleteTask(task.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -846,6 +927,150 @@ const Tasks = () => {
                   </>
                 )}
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* نافذة تعديل المهمة */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-xl">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#3d9aa8] to-[#3d9aa8]/80 flex items-center justify-center">
+                  <Edit className="w-5 h-5 text-white" />
+                </div>
+                تعديل المهمة
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-5 mt-4">
+              {/* العنوان */}
+              <div className="space-y-2">
+                <Label className="font-semibold">عنوان المهمة</Label>
+                <Input
+                  value={editForm.title}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="أدخل عنوان المهمة"
+                />
+              </div>
+
+              {/* الوصف */}
+              <div className="space-y-2">
+                <Label className="font-semibold">الوصف</Label>
+                <Textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="أدخل وصف المهمة"
+                  rows={3}
+                />
+              </div>
+
+              {/* تاريخ التنفيذ والأولوية */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-semibold">تاريخ التنفيذ</Label>
+                  <Input
+                    type="date"
+                    value={editForm.due_date}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, due_date: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-semibold">الأولوية</Label>
+                  <Select 
+                    value={editForm.priority} 
+                    onValueChange={(v: "low" | "medium" | "high") => setEditForm(prev => ({ ...prev, priority: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      <SelectItem value="low">عادي</SelectItem>
+                      <SelectItem value="medium">متوسط</SelectItem>
+                      <SelectItem value="high">عاجل</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* المنفذ والحالة */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-semibold">المنفذ</Label>
+                  <Select 
+                    value={editForm.user_id} 
+                    onValueChange={(v) => setEditForm(prev => ({ ...prev, user_id: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر المنفذ" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      {employees.map(emp => (
+                        <SelectItem key={emp.id} value={emp.user_id || emp.id}>
+                          {emp.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-semibold">الحالة</Label>
+                  <Select 
+                    value={editForm.status} 
+                    onValueChange={(v: Task["status"]) => setEditForm(prev => ({ ...prev, status: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      <SelectItem value="upcoming">قادمة</SelectItem>
+                      <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                      <SelectItem value="executed">تم التنفيذ</SelectItem>
+                      <SelectItem value="returned">معادة</SelectItem>
+                      <SelectItem value="delayed">متأخرة</SelectItem>
+                      <SelectItem value="completed">مكتملة</SelectItem>
+                      <SelectItem value="stalled">متعثرة</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* التقييم */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-semibold">نسبة الإنجاز (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editForm.completion_percentage}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, completion_percentage: Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-semibold">نسبة الجودة (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editForm.quality_percentage}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, quality_percentage: Number(e.target.value) }))}
+                  />
+                </div>
+              </div>
+
+              {/* أزرار الحفظ والإلغاء */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  إلغاء
+                </Button>
+                <Button 
+                  onClick={saveTaskEdit}
+                  className="bg-[#3d9aa8] hover:bg-[#3d9aa8]/90"
+                >
+                  حفظ التعديلات
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
