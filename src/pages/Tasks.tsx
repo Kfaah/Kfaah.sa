@@ -965,7 +965,7 @@ const Tasks = () => {
                                     </div>
                                   ) : (
                                     <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                      {task.completion_percentage || 0}%
+                                      {(task.completion_percentage || 0).toLocaleString('en-US')}%
                                     </div>
                                   )}
                                 </div>
@@ -997,7 +997,7 @@ const Tasks = () => {
                                     </div>
                                   ) : (
                                     <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                      {task.quality_percentage || 0}%
+                                      {(task.quality_percentage || 0).toLocaleString('en-US')}%
                                     </div>
                                   )}
                                 </div>
