@@ -19,6 +19,7 @@ import {
   ShoppingCart,
   CreditCard,
   UserCog,
+  Clock,
 } from "lucide-react";
 
 interface Permission {
@@ -41,6 +42,7 @@ const allPermissions: Permission[] = [
   { id: "view_dashboard", name: "عرض لوحة التحكم", description: "الوصول للوحة التحكم الرئيسية", icon: Eye },
   { id: "manage_employees", name: "إدارة الموظفين", description: "إضافة وتعديل وحذف الموظفين", icon: Users },
   { id: "manage_tasks", name: "إدارة المهام", description: "إنشاء وتوزيع المهام", icon: ClipboardList },
+  { id: "edit_time", name: "تعديل الوقت الفعلي", description: "صلاحية تعديل الوقت الفعلي للمهام", icon: Clock },
   { id: "view_reports", name: "عرض التقارير", description: "الوصول لتقارير الأداء", icon: BarChart3 },
   { id: "manage_campaigns", name: "إدارة الحملات", description: "إدارة حملات التبرع", icon: Heart },
   { id: "manage_carts", name: "السلات المتروكة", description: "متابعة السلات المتروكة", icon: ShoppingCart },
