@@ -45,18 +45,23 @@ export default function Auth() {
       if (isLogin) {
         const normalized = normalizeIdentifier(username);
 
-        // Check if input looks like an email
-        const isEmail = normalized.includes("@");
-        const cleaned = normalized.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-
-        if (!isEmail && !cleaned) {
-          toast.error("يرجى إدخال رقم هوية/اسم مستخدم صحيح");
+        // هذا النظام يعتمد على رقم الهوية/اسم المستخدم (وليس البريد الإلكتروني الخارجي)
+        if (normalized.includes("@") && !normalized.endsWith("@user.local")) {
+          toast.error("تسجيل الدخول يتم برقم الهوية وليس بالبريد الإلكتروني");
           setLoading(false);
           return;
         }
 
-        const loginEmail = isEmail ? normalized : `${cleaned}@user.local`;
-        const normalizedPassword = normalizeDigits(password);
+        const cleaned = normalized.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+
+        if (!cleaned) {
+          toast.error("يرجى إدخال رقم هوية صحيح");
+          setLoading(false);
+          return;
+        }
+
+        const loginEmail = normalized.endsWith("@user.local") ? normalized : `${cleaned}@user.local`;
+        const normalizedPassword = normalizeDigits(password, { trim: true });
 
         const { error } = await supabase.auth.signInWithPassword({
           email: loginEmail,
