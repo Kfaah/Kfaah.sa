@@ -25,6 +25,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
+import { AttendanceWidget } from "@/components/attendance/AttendanceWidget";
 
 interface NavItem {
   title: string;
@@ -326,6 +327,11 @@ export function Sidebar() {
               </div>
               <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 transition-colors" />
             </Link>
+
+            {/* أيقونة تسجيل الحضور/الانصراف */}
+            {authUser && (
+              <AttendanceWidget userId={authUser.id} collapsed={collapsed} />
+            )}
           </div>
         )}
 
