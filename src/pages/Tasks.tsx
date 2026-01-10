@@ -818,8 +818,8 @@ const Tasks = () => {
                     <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
                     {/* التقييم يظهر للجميع */}
                     <TableHead className="text-center font-bold text-white w-40 border-l border-white/20">التقييم</TableHead>
-                    {/* التواصل والمرفقات */}
-                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">التواصل</TableHead>
+                    {/* المرفقات والتواصل */}
+                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">المرفقات والتواصل</TableHead>
                     <TableHead className="text-center font-bold text-white w-24">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
