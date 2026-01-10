@@ -48,7 +48,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { formatNumberPlain } from "@/lib/utils";
+import { formatNumberPlain, rtlIsolate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 interface Employee {

@@ -478,7 +478,7 @@ const Employees = () => {
     { label: "إجمالي الموظفين", value: formatNumber(employees.length), icon: Users, iconBg: "bg-accent/10", iconColor: "text-accent" },
     { label: "نشطين", value: formatNumber(employees.filter(e => e.status === "active").length), icon: UserCheck, iconBg: "bg-emerald-100", iconColor: "text-emerald-500" },
     { label: "في إجازة", value: formatNumber(employees.filter(e => e.status === "on_leave").length), icon: Clock, iconBg: "bg-amber-100", iconColor: "text-amber-500" },
-    { label: "متوسط الأداء", value: employees.length > 0 ? formatPercent(Math.round(employees.reduce((acc, e) => acc + e.performance, 0) / employees.length)) : "%0", icon: TrendingUp, iconBg: "bg-violet-100", iconColor: "text-violet-500" },
+    { label: "متوسط الأداء", value: employees.length > 0 ? formatPercent(Math.round(employees.reduce((acc, e) => acc + e.performance, 0) / employees.length)) : formatPercent(0), icon: TrendingUp, iconBg: "bg-violet-100", iconColor: "text-violet-500" },
   ];
 
   return (
