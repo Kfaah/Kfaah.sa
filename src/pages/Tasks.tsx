@@ -408,6 +408,17 @@ const Tasks = () => {
     }
   };
 
+  const normalizeNumericInput = (value: string) => {
+    // Convert Arabic-Indic (٠-٩) and Eastern Arabic-Indic (۰-۹) digits to Latin digits (0-9)
+    const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
+    const easternArabicIndic = "۰۱۲۳۴۵۶۷۸۹";
+
+    return value
+      .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
+      .replace(/[۰-۹]/g, (d) => String(easternArabicIndic.indexOf(d)))
+      .replace(/[^0-9]/g, "");
+  };
+
   // فتح نافذة التعديل
   const openEditDialog = (task: Task) => {
     setEditingTask(task);
@@ -942,12 +953,15 @@ const Tasks = () => {
                                   {isAdmin ? (
                                     <div className="flex items-center justify-center">
                                       <input
-                                        type="number"
-                                        min={0}
-                                        max={100}
-                                        defaultValue={task.completion_percentage || 0}
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        defaultValue={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                                          Number(task.completion_percentage || 0)
+                                        )}
                                         onBlur={(e) => {
-                                          const value = parseInt(e.target.value) || 0;
+                                          const raw = normalizeNumericInput(e.currentTarget.value);
+                                          const value = parseInt(raw, 10) || 0;
                                           if (value !== (task.completion_percentage || 0)) {
                                             updateTaskRating(task.id, 'completion_percentage', value);
                                           }
@@ -957,11 +971,10 @@ const Tasks = () => {
                                             e.currentTarget.blur();
                                           }
                                         }}
-                                        className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
                                         dir="ltr"
                                         lang="en"
-                                        inputMode="numeric"
                                       />
                                     </div>
                                   ) : (
@@ -982,12 +995,15 @@ const Tasks = () => {
                                   {isAdmin ? (
                                     <div className="flex items-center justify-center">
                                       <input
-                                        type="number"
-                                        min={0}
-                                        max={100}
-                                        defaultValue={task.quality_percentage || 0}
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        defaultValue={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                                          Number(task.quality_percentage || 0)
+                                        )}
                                         onBlur={(e) => {
-                                          const value = parseInt(e.target.value) || 0;
+                                          const raw = normalizeNumericInput(e.currentTarget.value);
+                                          const value = parseInt(raw, 10) || 0;
                                           if (value !== (task.quality_percentage || 0)) {
                                             updateTaskRating(task.id, 'quality_percentage', value);
                                           }
@@ -997,11 +1013,10 @@ const Tasks = () => {
                                             e.currentTarget.blur();
                                           }
                                         }}
-                                        className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
                                         dir="ltr"
                                         lang="en"
-                                        inputMode="numeric"
                                       />
                                     </div>
                                   ) : (
@@ -1245,39 +1260,45 @@ const Tasks = () => {
                 <div className="space-y-2">
                   <Label className="font-semibold">نسبة الإنجاز (%)</Label>
                   <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editForm.completion_percentage}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                      Number(editForm.completion_percentage || 0)
+                    )}
                     dir="ltr"
                     lang="en"
-                    inputMode="numeric"
                     style={{ fontFamily: 'Arial, sans-serif' }}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const raw = normalizeNumericInput(e.target.value);
+                      const num = parseInt(raw, 10);
                       setEditForm((prev) => ({
                         ...prev,
-                        completion_percentage: Number(e.target.value),
-                      }))
-                    }
+                        completion_percentage: Number.isFinite(num) ? Math.max(0, Math.min(100, num)) : 0,
+                      }));
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-semibold">نسبة الجودة (%)</Label>
                   <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editForm.quality_percentage}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                      Number(editForm.quality_percentage || 0)
+                    )}
                     dir="ltr"
                     lang="en"
-                    inputMode="numeric"
                     style={{ fontFamily: 'Arial, sans-serif' }}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const raw = normalizeNumericInput(e.target.value);
+                      const num = parseInt(raw, 10);
                       setEditForm((prev) => ({
                         ...prev,
-                        quality_percentage: Number(e.target.value),
-                      }))
-                    }
+                        quality_percentage: Number.isFinite(num) ? Math.max(0, Math.min(100, num)) : 0,
+                      }));
+                    }}
                   />
                 </div>
               </div>
