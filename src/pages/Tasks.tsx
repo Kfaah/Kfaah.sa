@@ -344,8 +344,11 @@ const Tasks = () => {
     }
   };
 
-  // تحديث حالة المهمة (للمدير فقط)
+  // تحديث حالة المهمة (للمدير فقط) مع إرسال إشعار
   const updateTaskStatus = async (taskId: string, newStatus: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
     try {
       const { error } = await supabase
         .from("tasks")
@@ -357,7 +360,18 @@ const Tasks = () => {
       setTasks(prev =>
         prev.map(t => (t.id === taskId ? { ...t, status: newStatus as Task["status"] } : t))
       );
-      toast({ title: "تم تحديث الحالة" });
+
+      // إرسال إشعار للموظف صاحب المهمة
+      const statusLabel = getStatusConfig(newStatus).label;
+      await supabase.from("notifications").insert({
+        user_id: task.user_id,
+        title: "تحديث حالة المهمة",
+        message: `تم تغيير حالة مهمة "${task.title}" إلى: ${statusLabel}`,
+        type: "status_update",
+        related_task_id: taskId,
+      });
+
+      toast({ title: "تم تحديث الحالة وإرسال الإشعار" });
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     }
@@ -376,8 +390,11 @@ const Tasks = () => {
     }
   };
 
-  // تحديث التقييم (نسبة الإنجاز أو الجودة)
+  // تحديث التقييم (نسبة الإنجاز أو الجودة) مع إرسال إشعار
   const updateTaskRating = async (taskId: string, field: 'completion_percentage' | 'quality_percentage', value: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
     // التحقق من أن القيمة بين 0 و 100
     const clampedValue = Math.max(0, Math.min(100, value));
     
@@ -392,6 +409,16 @@ const Tasks = () => {
       setTasks(prev =>
         prev.map(t => (t.id === taskId ? { ...t, [field]: clampedValue } : t))
       );
+
+      // إرسال إشعار للموظف صاحب المهمة
+      const fieldLabel = field === 'completion_percentage' ? 'نسبة الإنجاز' : 'نسبة الجودة';
+      await supabase.from("notifications").insert({
+        user_id: task.user_id,
+        title: "تحديث التقييم",
+        message: `تم تحديث ${fieldLabel} لمهمة "${task.title}" إلى: ${clampedValue}%`,
+        type: "rating_update",
+        related_task_id: taskId,
+      });
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     }
