@@ -305,6 +305,7 @@ export function TaskCommunicationDialog({
             <div className="space-y-4">
               {messages.map((msg) => {
                 const isOwn = msg.user_id === currentUserId;
+                const isFromAdmin = msg.user_id !== taskOwnerId;
                 return (
                   <div
                     key={msg.id}
@@ -315,17 +316,19 @@ export function TaskCommunicationDialog({
                   >
                     <div
                       className={cn(
-                        "max-w-[80%] rounded-lg p-3 relative group",
+                        "max-w-[80%] rounded-2xl p-3 relative group shadow-sm",
                         isOwn
-                          ? "bg-[#3d9aa8] text-white"
-                          : "bg-muted"
+                          ? "bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] text-white rounded-br-sm"
+                          : isFromAdmin
+                            ? "bg-gradient-to-br from-amber-100 to-amber-50 border border-amber-200 text-amber-900 rounded-bl-sm"
+                            : "bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200 text-slate-800 rounded-bl-sm"
                       )}
                     >
-                      {/* زر الحذف */}
-                      {isOwn && (
+                      {/* زر الحذف - فقط للمدير أو صاحب الرسالة */}
+                      {(isAdmin || isOwn) && (
                         <button
                           onClick={() => deleteMessage(msg.id)}
-                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
