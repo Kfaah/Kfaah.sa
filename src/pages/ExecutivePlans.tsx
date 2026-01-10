@@ -142,23 +142,24 @@ function toHijri(date: Date): { day: number; month: number; year: number; monthN
 
 function formatHijriDate(date: Date): string {
   const hijri = toHijri(date);
-  // ترتيب من اليمين لليسار: يوم شهر سنة هـ
-  return `${formatNumberPlain(hijri.year)}هـ ${hijri.monthName} ${formatNumberPlain(hijri.day)}`;
+  // نستخدم RTL isolate لضمان العرض الصحيح: 14 رجب 1447هـ
+  return rtlIsolate(`${formatNumberPlain(hijri.day)} ${hijri.monthName} ${formatNumberPlain(hijri.year)}هـ`);
 }
 
 function formatGregorianDate(date: Date): string {
-  return `${formatNumberPlain(date.getDate())}/${formatNumberPlain(date.getMonth() + 1)}/${formatNumberPlain(date.getFullYear())}م`;
+  // نستخدم RTL isolate لضمان العرض الصحيح: 1/1/2026م
+  return rtlIsolate(`${formatNumberPlain(date.getDate())}/${formatNumberPlain(date.getMonth() + 1)}/${formatNumberPlain(date.getFullYear())}م`);
 }
 
 // تنسيق التاريخ الهجري المختصر (يوم وشهر فقط)
 function formatHijriShort(date: Date): string {
   const hijri = toHijri(date);
-  return `${formatNumberPlain(hijri.day)} ${hijri.monthName}`;
+  return rtlIsolate(`${formatNumberPlain(hijri.day)} ${hijri.monthName}`);
 }
 
 // تنسيق التاريخ الميلادي المختصر (يوم وشهر فقط)
 function formatGregorianShort(date: Date): string {
-  return `${formatNumberPlain(date.getDate())}/${formatNumberPlain(date.getMonth() + 1)}`;
+  return rtlIsolate(`${formatNumberPlain(date.getDate())}/${formatNumberPlain(date.getMonth() + 1)}`);
 }
 
 function wrapTextByChars(text: string, maxChars = 30): string {
@@ -764,11 +765,11 @@ export default function ExecutivePlans() {
                                               >
                                                 {/* التاريخ الميلادي */}
                                                 <div className="text-xs font-medium">
-                                                  {date.getMonth() + 1}/{date.getDate()}
+                                                  {formatGregorianShort(date)}
                                                 </div>
                                                 {/* التاريخ الهجري */}
                                                 <div className="text-[10px] opacity-80">
-                                                  {hijri.day} {hijri.monthName}
+                                                  {formatHijriShort(date)}
                                                 </div>
                                               </div>
                                               {/* فاصل أبيض بين الأعمدة */}
@@ -830,10 +831,10 @@ export default function ExecutivePlans() {
                                             <span className="font-bold text-gray-800">{dateGroup.weekDay}</span>
                                           </div>
                                           <div className="text-sm text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                            {selectedYear}/{date.getMonth() + 1}/{date.getDate()}
+                                            {formatGregorianDate(date)}
                                           </div>
                                           <div className="text-xs text-[#3d9aa8]" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                            {formatNumberPlain(hijri.year)}هـ {hijri.monthName} {formatNumberPlain(hijri.day)}
+                                            {formatHijriDate(date)}
                                           </div>
                                         </div>
                                       </TableCell>
@@ -1029,7 +1030,7 @@ export default function ExecutivePlans() {
                             "text-[10px]",
                             isSelected ? "text-white/80" : "text-muted-foreground"
                           )}>
-                            {formatHijriDate(date).split(" ")[0]} {formatHijriDate(date).split(" ")[1]}
+                            {formatHijriShort(date)}
                           </div>
                         </div>
                       );
