@@ -940,7 +940,7 @@ const Tasks = () => {
                                 <div className="flex flex-col items-center">
                                   <div className="text-sm font-medium text-muted-foreground mb-1">الإنجاز</div>
                                   {isAdmin ? (
-                                    <div className="flex items-center justify-center gap-1">
+                                    <div className="flex items-center justify-center">
                                       <input
                                         type="number"
                                         min={0}
@@ -960,19 +960,27 @@ const Tasks = () => {
                                         className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
                                         dir="ltr"
+                                        lang="en"
+                                        inputMode="numeric"
                                       />
-                                      <span className="text-sm font-medium text-muted-foreground">%</span>
                                     </div>
                                   ) : (
-                                    <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                      {(task.completion_percentage || 0).toLocaleString('en-US')}%
+                                    <div
+                                      className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold"
+                                      dir="ltr"
+                                      lang="en"
+                                      style={{ fontFamily: 'Arial, sans-serif' }}
+                                    >
+                                      {new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                                        Number(task.completion_percentage || 0)
+                                      )}
                                     </div>
                                   )}
                                 </div>
                                 <div className="flex flex-col items-center">
                                   <div className="text-sm font-medium text-muted-foreground mb-1">الجودة</div>
                                   {isAdmin ? (
-                                    <div className="flex items-center justify-center gap-1">
+                                    <div className="flex items-center justify-center">
                                       <input
                                         type="number"
                                         min={0}
@@ -992,12 +1000,20 @@ const Tasks = () => {
                                         className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
                                         dir="ltr"
+                                        lang="en"
+                                        inputMode="numeric"
                                       />
-                                      <span className="text-sm font-medium text-muted-foreground">%</span>
                                     </div>
                                   ) : (
-                                    <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                      {(task.quality_percentage || 0).toLocaleString('en-US')}%
+                                    <div
+                                      className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold"
+                                      dir="ltr"
+                                      lang="en"
+                                      style={{ fontFamily: 'Arial, sans-serif' }}
+                                    >
+                                      {new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                                        Number(task.quality_percentage || 0)
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -1233,7 +1249,16 @@ const Tasks = () => {
                     min="0"
                     max="100"
                     value={editForm.completion_percentage}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, completion_percentage: Number(e.target.value) }))}
+                    dir="ltr"
+                    lang="en"
+                    inputMode="numeric"
+                    style={{ fontFamily: 'Arial, sans-serif' }}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        completion_percentage: Number(e.target.value),
+                      }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -1243,7 +1268,16 @@ const Tasks = () => {
                     min="0"
                     max="100"
                     value={editForm.quality_percentage}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, quality_percentage: Number(e.target.value) }))}
+                    dir="ltr"
+                    lang="en"
+                    inputMode="numeric"
+                    style={{ fontFamily: 'Arial, sans-serif' }}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        quality_percentage: Number(e.target.value),
+                      }))
+                    }
                   />
                 </div>
               </div>
