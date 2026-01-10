@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
+  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -276,7 +278,11 @@ export function TaskCommunicationDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-[80vh] flex flex-col p-0">
-        <DialogHeader className="p-4 border-b bg-gradient-to-l from-[#3d9aa8]/10 to-transparent">
+        <DialogHeader className="p-4 border-b bg-gradient-to-l from-[#3d9aa8]/10 to-transparent relative">
+          <DialogClose className="absolute left-4 top-1/2 -translate-y-1/2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-5 w-5" />
+            <span className="sr-only">إغلاق</span>
+          </DialogClose>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-[#3d9aa8] flex items-center justify-center">
               <Paperclip className="w-4 h-4 text-white" />
