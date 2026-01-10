@@ -810,10 +810,8 @@ const Tasks = () => {
                       <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">المنفذ</TableHead>
                     )}
                     <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
-                    {/* التقييم يظهر للمدير فقط */}
-                    {isAdmin && (
-                      <TableHead className="text-center font-bold text-white w-40 border-l border-white/20">التقييم</TableHead>
-                    )}
+                    {/* التقييم يظهر للجميع */}
+                    <TableHead className="text-center font-bold text-white w-40 border-l border-white/20">التقييم</TableHead>
                     <TableHead className="text-center font-bold text-white w-24">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -933,12 +931,12 @@ const Tasks = () => {
                             )}
                           </TableCell>
                           
-                          {/* التقييم - يظهر للمدير فقط */}
-                          {isAdmin && (
-                            <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                              <div className="flex items-center justify-center gap-3">
-                                <div className="text-center">
-                                  <div className="text-xs text-muted-foreground mb-1">الإنجاز</div>
+                          {/* التقييم - يظهر للجميع لكن التعديل للمدير فقط */}
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
+                            <div className="flex items-center justify-center gap-3">
+                              <div className="text-center">
+                                <div className="text-xs text-muted-foreground mb-1">الإنجاز</div>
+                                {isAdmin ? (
                                   <Input
                                     type="number"
                                     min="0"
@@ -947,9 +945,15 @@ const Tasks = () => {
                                     onChange={(e) => updateTaskRating(task.id, 'completion_percentage', Number(e.target.value))}
                                     className="w-14 h-7 text-center text-xs p-1"
                                   />
-                                </div>
-                                <div className="text-center">
-                                  <div className="text-xs text-muted-foreground mb-1">الجودة</div>
+                                ) : (
+                                  <div className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded text-sm font-medium">
+                                    {task.completion_percentage || 0}%
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xs text-muted-foreground mb-1">الجودة</div>
+                                {isAdmin ? (
                                   <Input
                                     type="number"
                                     min="0"
@@ -958,10 +962,14 @@ const Tasks = () => {
                                     onChange={(e) => updateTaskRating(task.id, 'quality_percentage', Number(e.target.value))}
                                     className="w-14 h-7 text-center text-xs p-1"
                                   />
-                                </div>
+                                ) : (
+                                  <div className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded text-sm font-medium">
+                                    {task.quality_percentage || 0}%
+                                  </div>
+                                )}
                               </div>
-                            </TableCell>
-                          )}
+                            </div>
+                          </TableCell>
                           
                           {/* إجراء */}
                           <TableCell className="text-center">
