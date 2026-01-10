@@ -42,7 +42,6 @@ import {
   Filter,
   X,
   Edit,
-  Save,
   MessageSquare,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -121,10 +120,6 @@ const Tasks = () => {
     completion_percentage: 0,
     quality_percentage: 0,
   });
-
-  // حالة حفظ المهمة مع إشعار
-  const [pendingChanges, setPendingChanges] = useState<{[taskId: string]: Partial<Task>}>({});
-  const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
 
   // حالة نافذة التواصل
   const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
@@ -289,64 +284,47 @@ const Tasks = () => {
     }
   };
 
-  // تحديث حالة المهمة (للموظف: قادمة أو تم التنفيذ فقط)
-  const updateTaskStatusLocal = (taskId: string, newStatus: string) => {
-    setPendingChanges(prev => ({
-      ...prev,
-      [taskId]: { ...prev[taskId], status: newStatus as Task["status"] }
-    }));
-    // تحديث محلي للعرض
+  // تحديث حالة المهمة (للموظف: قادمة أو تم التنفيذ فقط) - مع حفظ تلقائي
+  const updateTaskStatusLocal = async (taskId: string, newStatus: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // تحديث محلي للعرض فوراً
     setTasks(prev =>
       prev.map(t => (t.id === taskId ? { ...t, status: newStatus as Task["status"] } : t))
     );
-  };
 
-  // حفظ التغييرات وإرسال إشعار
-  const saveTaskWithNotification = async (task: Task) => {
-    setSavingTaskId(task.id);
-    
     try {
-      const changes = pendingChanges[task.id];
-      if (!changes) {
-        toast({ title: "لا توجد تغييرات للحفظ" });
-        setSavingTaskId(null);
-        return;
-      }
-
-      // حفظ التغييرات في المهمة
-      const { error: taskError } = await supabase
+      // حفظ تلقائي في قاعدة البيانات
+      const { error } = await supabase
         .from("tasks")
-        .update(changes)
-        .eq("id", task.id);
+        .update({ status: newStatus })
+        .eq("id", taskId);
       
-      if (taskError) throw taskError;
+      if (error) throw error;
 
-      // إرسال إشعار للموظف صاحب المهمة
-      const statusLabel = getStatusConfig(changes.status || task.status).label;
-      const { error: notifError } = await supabase
-        .from("notifications")
-        .insert({
-          user_id: task.user_id,
-          title: "تحديث على مهمتك",
-          message: `تم تحديث حالة مهمة "${task.title}" إلى: ${statusLabel}`,
-          type: "task_update",
-          related_task_id: task.id,
-        });
+      // إرسال إشعار للمدراء
+      const statusLabel = getStatusConfig(newStatus).label;
+      const { data: admins } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
       
-      if (notifError) console.error("Error sending notification:", notifError);
-
-      // إزالة التغييرات المعلقة
-      setPendingChanges(prev => {
-        const newChanges = { ...prev };
-        delete newChanges[task.id];
-        return newChanges;
-      });
-
-      toast({ title: "تم حفظ التغييرات وإرسال الإشعار" });
+      if (admins) {
+        for (const admin of admins) {
+          if (admin.user_id !== authUser?.id) {
+            await supabase.from("notifications").insert({
+              user_id: admin.user_id,
+              title: "تحديث من موظف",
+              message: `قام الموظف بتحديث حالة مهمة "${task.title}" إلى: ${statusLabel}`,
+              type: "employee_update",
+              related_task_id: taskId,
+            });
+          }
+        }
+      }
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
-    } finally {
-      setSavingTaskId(null);
     }
   };
 
@@ -957,10 +935,10 @@ const Tasks = () => {
                           
                           {/* التقييم - يظهر للجميع لكن التعديل للمدير فقط */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex flex-col items-center justify-center gap-1">
-                              <div className="flex items-center justify-center gap-3">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <div className="flex items-center justify-center gap-4">
                                 <div className="flex flex-col items-center">
-                                  <div className="text-xs text-muted-foreground mb-1">الإنجاز</div>
+                                  <div className="text-sm font-medium text-muted-foreground mb-1">الإنجاز</div>
                                   {isAdmin ? (
                                     <div className="flex items-center justify-center gap-1">
                                       <input
@@ -979,18 +957,18 @@ const Tasks = () => {
                                             e.currentTarget.blur();
                                           }
                                         }}
-                                        className="w-14 h-7 text-center text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                       />
-                                      <span className="text-xs text-muted-foreground">%</span>
+                                      <span className="text-sm font-medium text-muted-foreground">%</span>
                                     </div>
                                   ) : (
-                                    <div className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded text-sm font-medium">
+                                    <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold">
                                       {task.completion_percentage || 0}%
                                     </div>
                                   )}
                                 </div>
                                 <div className="flex flex-col items-center">
-                                  <div className="text-xs text-muted-foreground mb-1">الجودة</div>
+                                  <div className="text-sm font-medium text-muted-foreground mb-1">الجودة</div>
                                   {isAdmin ? (
                                     <div className="flex items-center justify-center gap-1">
                                       <input
@@ -1009,12 +987,12 @@ const Tasks = () => {
                                             e.currentTarget.blur();
                                           }
                                         }}
-                                        className="w-14 h-7 text-center text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                       />
-                                      <span className="text-xs text-muted-foreground">%</span>
+                                      <span className="text-sm font-medium text-muted-foreground">%</span>
                                     </div>
                                   ) : (
-                                    <div className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded text-sm font-medium">
+                                    <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold">
                                       {task.quality_percentage || 0}%
                                     </div>
                                   )}
@@ -1026,37 +1004,6 @@ const Tasks = () => {
                           {/* إجراء */}
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-1">
-                              {/* زر الحفظ - يظهر دائماً للمدير ويظهر للموظف عند وجود تغييرات */}
-                              {isAdmin ? (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-100"
-                                  onClick={() => {
-                                    toast({ title: "تم الحفظ", description: "تم حفظ التغييرات تلقائياً" });
-                                  }}
-                                  title="حفظ"
-                                >
-                                  <Save className="w-4 h-4" />
-                                </Button>
-                              ) : (
-                                pendingChanges[task.id] && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-100"
-                                    onClick={() => saveTaskWithNotification(task)}
-                                    disabled={savingTaskId === task.id}
-                                    title="حفظ"
-                                  >
-                                    {savingTaskId === task.id ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Save className="w-4 h-4" />
-                                    )}
-                                  </Button>
-                                )
-                              )}
                               {/* زر التعديل للمدير فقط */}
                               {isAdmin && (
                                 <Button
