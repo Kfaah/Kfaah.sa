@@ -368,12 +368,14 @@ export type Database = {
       }
       tasks: {
         Row: {
+          actual_time_minutes: number | null
           ai_generated: boolean | null
           category: string | null
           completion_percentage: number | null
           created_at: string
           description: string | null
           due_date: string | null
+          estimated_time_minutes: number | null
           executive_plan_id: string | null
           id: string
           priority: string
@@ -384,12 +386,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          actual_time_minutes?: number | null
           ai_generated?: boolean | null
           category?: string | null
           completion_percentage?: number | null
           created_at?: string
           description?: string | null
           due_date?: string | null
+          estimated_time_minutes?: number | null
           executive_plan_id?: string | null
           id?: string
           priority?: string
@@ -400,12 +404,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          actual_time_minutes?: number | null
           ai_generated?: boolean | null
           category?: string | null
           completion_percentage?: number | null
           created_at?: string
           description?: string | null
           due_date?: string | null
+          estimated_time_minutes?: number | null
           executive_plan_id?: string | null
           id?: string
           priority?: string
