@@ -839,20 +839,29 @@ export default function ExecutivePlans() {
                                       {/* عمود الأنشطة */}
                                       <TableCell className="py-2">
                                         <div className="flex flex-wrap items-center gap-2">
-                                          {dateGroup.activities.map((activity) => {
+                                          {dateGroup.activities.map((activity, activityIndex) => {
                                             const activityTasks = getTasksForExecutivePlan(activity.id);
+                                            const activityColors = [
+                                              "bg-[#3d9aa8]",
+                                              "bg-[#6366f1]",
+                                              "bg-[#8b5cf6]",
+                                              "bg-[#ec4899]",
+                                              "bg-[#f97316]",
+                                              "bg-[#14b8a6]",
+                                              "bg-[#84cc16]",
+                                              "bg-[#06b6d4]",
+                                              "bg-[#a855f7]",
+                                              "bg-[#f43f5e]",
+                                            ];
+                                            const colorClass = activityColors[activityIndex % activityColors.length];
                                             
                                             return (
                                               <DropdownMenu key={activity.id}>
                                                 <DropdownMenuTrigger asChild>
                                                   <div
                                                     className={cn(
-                                                      "flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg transition-all hover:opacity-90",
-                                                      activity.status === "completed" 
-                                                        ? "bg-green-600 text-white"
-                                                        : activity.status === "in_progress"
-                                                        ? "bg-blue-600 text-white"
-                                                        : "bg-[#3d9aa8] text-white"
+                                                      "flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg transition-all hover:opacity-90 text-white",
+                                                      colorClass
                                                     )}
                                                   >
                                                     <span className="text-sm font-medium">{activity.activityName}</span>
