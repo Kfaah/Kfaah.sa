@@ -797,8 +797,7 @@ const Tasks = () => {
                     <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">المرفقات والتواصل</TableHead>
                     <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
                     {/* التقييم يظهر للجميع */}
-                    <TableHead className="text-center font-bold text-white w-40 border-l border-white/20">التقييم</TableHead>
-                    <TableHead className="text-center font-bold text-white w-24">إجراء</TableHead>
+                    <TableHead className="text-center font-bold text-white w-40">التقييم</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1001,35 +1000,6 @@ const Tasks = () => {
                             </div>
                           </TableCell>
 
-                          {/* إجراء */}
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {/* زر التعديل للمدير فقط */}
-                              {isAdmin && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-[#3d9aa8] hover:text-[#3d9aa8] hover:bg-[#3d9aa8]/10"
-                                  onClick={() => openEditDialog(task)}
-                                  title="تعديل"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                              )}
-                              {/* زر الحذف للمدير فقط */}
-                              {isAdmin && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => deleteTask(task.id)}
-                                  title="حذف"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
                         </TableRow>
                       );
                     });
