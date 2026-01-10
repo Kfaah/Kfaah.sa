@@ -958,11 +958,13 @@ const Tasks = () => {
                                           }
                                         }}
                                         className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        style={{ fontFamily: 'Arial, sans-serif' }}
+                                        dir="ltr"
                                       />
                                       <span className="text-sm font-medium text-muted-foreground">%</span>
                                     </div>
                                   ) : (
-                                    <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                    <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
                                       {task.completion_percentage || 0}%
                                     </div>
                                   )}
@@ -988,11 +990,13 @@ const Tasks = () => {
                                           }
                                         }}
                                         className="w-16 h-9 text-center text-base font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        style={{ fontFamily: 'Arial, sans-serif' }}
+                                        dir="ltr"
                                       />
                                       <span className="text-sm font-medium text-muted-foreground">%</span>
                                     </div>
                                   ) : (
-                                    <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                    <div className="w-16 h-9 flex items-center justify-center bg-muted/50 rounded-lg text-base font-semibold" dir="ltr" style={{ fontFamily: 'Arial, sans-serif' }}>
                                       {task.quality_percentage || 0}%
                                     </div>
                                   )}
