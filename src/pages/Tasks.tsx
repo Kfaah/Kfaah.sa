@@ -464,35 +464,37 @@ const Tasks = () => {
         </div>
 
         {/* الفلاتر */}
-        <Card className="border-2 border-muted">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Filter className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-foreground">الفلاتر</span>
+        <Card className="border border-[#3d9aa8]/20 shadow-sm bg-gradient-to-l from-[#3d9aa8]/5 to-transparent">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-[#3d9aa8] flex items-center justify-center">
+                <Filter className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-bold text-[#3d9aa8] text-lg">الفلاتر</span>
               {hasActiveFilters && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={resetFilters}
-                  className="mr-auto text-muted-foreground hover:text-foreground"
+                  className="mr-auto border-[#3d9aa8]/30 text-[#3d9aa8] hover:bg-[#3d9aa8]/10"
                 >
                   <X className="w-4 h-4 ml-1" />
                   إعادة تعيين
                 </Button>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
               {/* فلتر الشهر */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">الشهر</label>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#3d9aa8]">الشهر</label>
                 <Select value={filterMonth} onValueChange={(v) => {
                   setFilterMonth(v);
                   setFilterDay("all"); // إعادة تعيين اليوم عند تغيير الشهر
                 }}>
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
                     <SelectValue placeholder="كل الشهور" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
+                  <SelectContent className="bg-white z-50 border-[#3d9aa8]/20">
                     <SelectItem value="all">كل الشهور</SelectItem>
                     {MONTHS_AR.map((month, index) => (
                       <SelectItem key={index + 1} value={String(index + 1)}>
@@ -504,17 +506,17 @@ const Tasks = () => {
               </div>
 
               {/* فلتر اليوم */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">اليوم</label>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#3d9aa8]">اليوم</label>
                 <Select 
                   value={filterDay} 
                   onValueChange={setFilterDay}
                   disabled={filterMonth === "all"}
                 >
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
                     <SelectValue placeholder="كل الأيام" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
+                  <SelectContent className="bg-white z-50 border-[#3d9aa8]/20">
                     <SelectItem value="all">كل الأيام</SelectItem>
                     {availableDays.map(day => (
                       <SelectItem key={day} value={String(day)}>
@@ -526,13 +528,13 @@ const Tasks = () => {
               </div>
 
               {/* فلتر المنفذ */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">المنفذ</label>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#3d9aa8]">المنفذ</label>
                 <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
                     <SelectValue placeholder="كل الموظفين" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
+                  <SelectContent className="bg-white z-50 border-[#3d9aa8]/20">
                     <SelectItem value="all">كل الموظفين</SelectItem>
                     {employees.map(emp => (
                       <SelectItem key={emp.id} value={emp.user_id || emp.id}>
@@ -544,15 +546,15 @@ const Tasks = () => {
               </div>
 
               {/* البحث */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">البحث</label>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#3d9aa8]">البحث</label>
                 <div className="relative">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3d9aa8]/60" />
                   <Input
                     placeholder="البحث في المهام..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pr-10 bg-background"
+                    className="pr-10 bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20"
                   />
                 </div>
               </div>
@@ -584,18 +586,18 @@ const Tasks = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden border border-[#3d9aa8]/20 shadow-md">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="text-right font-bold border-l w-48">النشاط</TableHead>
-                    <TableHead className="text-right font-bold border-l">المهمة</TableHead>
-                    <TableHead className="text-center font-bold w-24 border-l">الأولوية</TableHead>
-                    <TableHead className="text-center font-bold w-32 border-l">المنفذ</TableHead>
-                    <TableHead className="text-center font-bold w-32 border-l">الحالة</TableHead>
-                    <TableHead className="text-center font-bold w-28 border-l">تاريخ التنفيذ</TableHead>
-                    <TableHead className="text-center font-bold w-20">إجراء</TableHead>
+                  <TableRow className="bg-[#3d9aa8]">
+                    <TableHead className="text-right font-bold text-white border-l border-white/20 w-48">النشاط</TableHead>
+                    <TableHead className="text-right font-bold text-white border-l border-white/20">المهمة</TableHead>
+                    <TableHead className="text-center font-bold text-white w-24 border-l border-white/20">الأولوية</TableHead>
+                    <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">المنفذ</TableHead>
+                    <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
+                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">تاريخ التنفيذ</TableHead>
+                    <TableHead className="text-center font-bold text-white w-20">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
