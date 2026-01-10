@@ -42,6 +42,7 @@ import {
   Filter,
   X,
   Edit,
+  Save,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -118,6 +119,25 @@ const Tasks = () => {
     completion_percentage: 0,
     quality_percentage: 0,
   });
+
+  // حالة حفظ المهمة مع إشعار
+  const [pendingChanges, setPendingChanges] = useState<{[taskId: string]: Partial<Task>}>({});
+  const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
+
+  // التحقق إذا كان المستخدم هو صاحب المهمة
+  const isTaskOwner = (task: Task) => {
+    return authUser?.id === task.user_id;
+  };
+
+  // التحقق إذا حان وقت المهمة
+  const isTaskDue = (task: Task) => {
+    if (!task.due_date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(task.due_date);
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate <= today;
+  };
 
   // التحقق من صلاحية المدير
   useEffect(() => {
@@ -263,7 +283,68 @@ const Tasks = () => {
     }
   };
 
-  // تحديث حالة المهمة
+  // تحديث حالة المهمة (للموظف: قادمة أو تم التنفيذ فقط)
+  const updateTaskStatusLocal = (taskId: string, newStatus: string) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      [taskId]: { ...prev[taskId], status: newStatus as Task["status"] }
+    }));
+    // تحديث محلي للعرض
+    setTasks(prev =>
+      prev.map(t => (t.id === taskId ? { ...t, status: newStatus as Task["status"] } : t))
+    );
+  };
+
+  // حفظ التغييرات وإرسال إشعار
+  const saveTaskWithNotification = async (task: Task) => {
+    setSavingTaskId(task.id);
+    
+    try {
+      const changes = pendingChanges[task.id];
+      if (!changes) {
+        toast({ title: "لا توجد تغييرات للحفظ" });
+        setSavingTaskId(null);
+        return;
+      }
+
+      // حفظ التغييرات في المهمة
+      const { error: taskError } = await supabase
+        .from("tasks")
+        .update(changes)
+        .eq("id", task.id);
+      
+      if (taskError) throw taskError;
+
+      // إرسال إشعار للموظف صاحب المهمة
+      const statusLabel = getStatusConfig(changes.status || task.status).label;
+      const { error: notifError } = await supabase
+        .from("notifications")
+        .insert({
+          user_id: task.user_id,
+          title: "تحديث على مهمتك",
+          message: `تم تحديث حالة مهمة "${task.title}" إلى: ${statusLabel}`,
+          type: "task_update",
+          related_task_id: task.id,
+        });
+      
+      if (notifError) console.error("Error sending notification:", notifError);
+
+      // إزالة التغييرات المعلقة
+      setPendingChanges(prev => {
+        const newChanges = { ...prev };
+        delete newChanges[task.id];
+        return newChanges;
+      });
+
+      toast({ title: "تم حفظ التغييرات وإرسال الإشعار" });
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingTaskId(null);
+    }
+  };
+
+  // تحديث حالة المهمة (للمدير فقط)
   const updateTaskStatus = async (taskId: string, newStatus: string) => {
     try {
       const { error } = await supabase
@@ -697,10 +778,16 @@ const Tasks = () => {
                     <TableHead className="text-right font-bold text-white border-l border-white/20">المهمة</TableHead>
                     <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">تاريخ التنفيذ</TableHead>
                     <TableHead className="text-center font-bold text-white w-24 border-l border-white/20">الأولوية</TableHead>
-                    <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">المنفذ</TableHead>
+                    {/* المنفذ يظهر للمدير فقط */}
+                    {isAdmin && (
+                      <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">المنفذ</TableHead>
+                    )}
                     <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
-                    <TableHead className="text-center font-bold text-white w-40 border-l border-white/20">التقييم</TableHead>
-                    <TableHead className="text-center font-bold text-white w-20">إجراء</TableHead>
+                    {/* التقييم يظهر للمدير فقط */}
+                    {isAdmin && (
+                      <TableHead className="text-center font-bold text-white w-40 border-l border-white/20">التقييم</TableHead>
+                    )}
+                    <TableHead className="text-center font-bold text-white w-24">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -766,84 +853,130 @@ const Tasks = () => {
                             </Badge>
                           </TableCell>
 
-                          {/* المنفذ */}
-                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex items-center justify-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-[#3d9aa8]/10 flex items-center justify-center">
-                                <User className="w-3 h-3 text-[#3d9aa8]" />
+                          {/* المنفذ - يظهر للمدير فقط */}
+                          {isAdmin && (
+                            <TableCell className="text-center border-l border-[#3d9aa8]/20">
+                              <div className="flex items-center justify-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-[#3d9aa8]/10 flex items-center justify-center">
+                                  <User className="w-3 h-3 text-[#3d9aa8]" />
+                                </div>
+                                <span className="text-sm">{getExecutorName(task.user_id)}</span>
                               </div>
-                              <span className="text-sm">{getExecutorName(task.user_id)}</span>
-                            </div>
-                          </TableCell>
+                            </TableCell>
+                          )}
                           
                           {/* الحالة */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <Select
-                              value={task.status}
-                              onValueChange={(value) => updateTaskStatus(task.id, value)}
-                            >
-                              <SelectTrigger className={cn("w-28 h-8", statusConfig.class)}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-white z-50">
-                                <SelectItem value="upcoming">قادمة</SelectItem>
-                                <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
-                                <SelectItem value="executed">تم التنفيذ</SelectItem>
-                                <SelectItem value="returned">معادة</SelectItem>
-                                <SelectItem value="delayed">متأخرة</SelectItem>
-                                <SelectItem value="completed">مكتملة</SelectItem>
-                                <SelectItem value="stalled">متعثرة</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            {isAdmin ? (
+                              // المدير: يستطيع اختيار جميع الحالات
+                              <Select
+                                value={task.status}
+                                onValueChange={(value) => updateTaskStatus(task.id, value)}
+                              >
+                                <SelectTrigger className={cn("w-28 h-8", statusConfig.class)}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white z-50">
+                                  <SelectItem value="upcoming">قادمة</SelectItem>
+                                  <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                                  <SelectItem value="executed">تم التنفيذ</SelectItem>
+                                  <SelectItem value="returned">معادة</SelectItem>
+                                  <SelectItem value="delayed">متأخرة</SelectItem>
+                                  <SelectItem value="completed">مكتملة</SelectItem>
+                                  <SelectItem value="stalled">متعثرة</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              // الموظف: يرى قادمة أو يختار تم التنفيذ فقط إذا حان الوقت
+                              <Select
+                                value={task.status}
+                                onValueChange={(value) => updateTaskStatusLocal(task.id, value)}
+                                disabled={!isTaskDue(task) && task.status === "upcoming"}
+                              >
+                                <SelectTrigger className={cn("w-28 h-8", statusConfig.class)}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white z-50">
+                                  <SelectItem value="upcoming">قادمة</SelectItem>
+                                  {isTaskDue(task) && (
+                                    <SelectItem value="executed">تم التنفيذ</SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            )}
                           </TableCell>
                           
-                          {/* التقييم - نسبة الإنجاز ونسبة الجودة */}
-                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex items-center justify-center gap-3">
-                              <div className="text-center">
-                                <div className="text-xs text-muted-foreground mb-1">الإنجاز</div>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={task.completion_percentage || 0}
-                                  onChange={(e) => updateTaskRating(task.id, 'completion_percentage', Number(e.target.value))}
-                                  className="w-14 h-7 text-center text-xs p-1"
-                                />
+                          {/* التقييم - يظهر للمدير فقط */}
+                          {isAdmin && (
+                            <TableCell className="text-center border-l border-[#3d9aa8]/20">
+                              <div className="flex items-center justify-center gap-3">
+                                <div className="text-center">
+                                  <div className="text-xs text-muted-foreground mb-1">الإنجاز</div>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={task.completion_percentage || 0}
+                                    onChange={(e) => updateTaskRating(task.id, 'completion_percentage', Number(e.target.value))}
+                                    className="w-14 h-7 text-center text-xs p-1"
+                                  />
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-xs text-muted-foreground mb-1">الجودة</div>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={task.quality_percentage || 0}
+                                    onChange={(e) => updateTaskRating(task.id, 'quality_percentage', Number(e.target.value))}
+                                    className="w-14 h-7 text-center text-xs p-1"
+                                  />
+                                </div>
                               </div>
-                              <div className="text-center">
-                                <div className="text-xs text-muted-foreground mb-1">الجودة</div>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={task.quality_percentage || 0}
-                                  onChange={(e) => updateTaskRating(task.id, 'quality_percentage', Number(e.target.value))}
-                                  className="w-14 h-7 text-center text-xs p-1"
-                                />
-                              </div>
-                            </div>
-                          </TableCell>
+                            </TableCell>
+                          )}
                           
                           {/* إجراء */}
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-[#3d9aa8] hover:text-[#3d9aa8] hover:bg-[#3d9aa8]/10"
-                                onClick={() => openEditDialog(task)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => deleteTask(task.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              {/* زر الحفظ للموظف */}
+                              {!isAdmin && pendingChanges[task.id] && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-100"
+                                  onClick={() => saveTaskWithNotification(task)}
+                                  disabled={savingTaskId === task.id}
+                                >
+                                  {savingTaskId === task.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Save className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              )}
+                              {/* زر التعديل للمدير فقط */}
+                              {isAdmin && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-[#3d9aa8] hover:text-[#3d9aa8] hover:bg-[#3d9aa8]/10"
+                                  onClick={() => openEditDialog(task)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {/* زر الحذف للمدير فقط */}
+                              {isAdmin && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => deleteTask(task.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
