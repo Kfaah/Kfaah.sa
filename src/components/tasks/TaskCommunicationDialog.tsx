@@ -37,6 +37,7 @@ interface TaskMessage {
   attachment_name: string | null;
   attachment_type: string | null;
   created_at: string;
+  sender_name?: string;
 }
 
 interface TaskCommunicationDialogProps {
@@ -74,14 +75,32 @@ export function TaskCommunicationDialog({
     const fetchMessages = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        // جلب الرسائل
+        const { data: messagesData, error } = await supabase
           .from("task_messages")
           .select("*")
           .eq("task_id", taskId)
           .order("created_at", { ascending: true });
 
         if (error) throw error;
-        setMessages(data || []);
+
+        // جلب أسماء المرسلين من جدول الموظفين
+        const userIds = [...new Set((messagesData || []).map(m => m.user_id))];
+        const { data: employeesData } = await supabase
+          .from("employees")
+          .select("user_id, full_name")
+          .in("user_id", userIds);
+
+        // دمج أسماء المرسلين مع الرسائل
+        const messagesWithNames = (messagesData || []).map(msg => {
+          const employee = employeesData?.find(e => e.user_id === msg.user_id);
+          return {
+            ...msg,
+            sender_name: employee?.full_name || "مدير النظام"
+          };
+        });
+
+        setMessages(messagesWithNames);
       } catch (error: any) {
         toast({ title: "خطأ", description: error.message, variant: "destructive" });
       } finally {
@@ -310,10 +329,17 @@ export function TaskCommunicationDialog({
                   <div
                     key={msg.id}
                     className={cn(
-                      "flex gap-2",
-                      isOwn ? "justify-end" : "justify-start"
+                      "flex flex-col gap-1",
+                      isOwn ? "items-end" : "items-start"
                     )}
                   >
+                    {/* اسم المرسل */}
+                    <span className={cn(
+                      "text-xs font-medium px-2",
+                      isOwn ? "text-[#3d9aa8]" : isFromAdmin ? "text-amber-700" : "text-slate-600"
+                    )}>
+                      {msg.sender_name || "غير معروف"}
+                    </span>
                     <div
                       className={cn(
                         "max-w-[80%] rounded-2xl p-3 relative group shadow-sm",
