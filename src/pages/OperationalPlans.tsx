@@ -515,7 +515,7 @@ export default function OperationalPlans() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">السنة الحالية</p>
-                <p className="text-2xl font-bold">{new Date().getFullYear()}</p>
+                <p className="text-2xl font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>{new Date().getFullYear()}</p>
               </div>
             </CardContent>
           </Card>
