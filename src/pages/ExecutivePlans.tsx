@@ -142,7 +142,8 @@ function toHijri(date: Date): { day: number; month: number; year: number; monthN
 
 function formatHijriDate(date: Date): string {
   const hijri = toHijri(date);
-  return `${formatNumberPlain(hijri.day)} ${hijri.monthName} ${formatNumberPlain(hijri.year)}هـ`;
+  // ترتيب من اليمين لليسار: يوم شهر سنة هـ
+  return `${formatNumberPlain(hijri.year)}هـ ${hijri.monthName} ${formatNumberPlain(hijri.day)}`;
 }
 
 function formatGregorianDate(date: Date): string {
