@@ -52,6 +52,7 @@ import { formatDate, formatNumberPlain, formatPercent, normalizeNumericInput } f
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { TaskCommunicationDialog } from "@/components/tasks/TaskCommunicationDialog";
+import { LiveTimer } from "@/components/tasks/LiveTimer";
 
 interface Task {
   id: string;
@@ -951,14 +952,21 @@ const Tasks = () => {
                             </div>
                           </TableCell>
 
-                          {/* الوقت الفعلي */}
+                          {/* الوقت الفعلي / المؤقت النشط */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex items-center justify-center">
-                              <Clock className="w-3 h-3 text-emerald-500/60 ml-1" />
-                              <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                {task.actual_time_minutes ? `${formatNumberPlain(task.actual_time_minutes)} د` : '-'}
-                              </span>
-                            </div>
+                            {task.status === "in_progress" && task.started_at ? (
+                              <LiveTimer 
+                                startedAt={task.started_at} 
+                                estimatedMinutes={task.estimated_time_minutes}
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center">
+                                <Clock className="w-3 h-3 text-emerald-500/60 ml-1" />
+                                <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                  {task.actual_time_minutes ? `${formatNumberPlain(task.actual_time_minutes)} د` : '-'}
+                                </span>
+                              </div>
+                            )}
                           </TableCell>
 
                           {/* المرفقات والتواصل */}
