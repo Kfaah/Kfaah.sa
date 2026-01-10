@@ -599,8 +599,22 @@ const Tasks = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {groupTasksByActivity(filteredTasks).map((group, groupIndex) => (
-                    group.tasks.map((task, taskIndex) => {
+                  {groupTasksByActivity(filteredTasks).map((group, groupIndex) => {
+                    const activityColors = [
+                      "bg-[#3d9aa8]/10 text-[#3d9aa8]",
+                      "bg-[#6366f1]/10 text-[#6366f1]",
+                      "bg-[#8b5cf6]/10 text-[#8b5cf6]",
+                      "bg-[#ec4899]/10 text-[#ec4899]",
+                      "bg-[#f97316]/10 text-[#f97316]",
+                      "bg-[#14b8a6]/10 text-[#14b8a6]",
+                      "bg-[#84cc16]/10 text-[#84cc16]",
+                      "bg-[#06b6d4]/10 text-[#06b6d4]",
+                      "bg-[#a855f7]/10 text-[#a855f7]",
+                      "bg-[#f43f5e]/10 text-[#f43f5e]",
+                    ];
+                    const colorClass = activityColors[groupIndex % activityColors.length];
+                    
+                    return group.tasks.map((task, taskIndex) => {
                       const statusConfig = getStatusConfig(task.status);
                       const priorityConfig = getPriorityConfig(task.priority);
                       const isFirstInGroup = taskIndex === 0;
@@ -610,7 +624,7 @@ const Tasks = () => {
                           {/* النشاط - يظهر فقط في أول مهمة من كل مجموعة */}
                           {isFirstInGroup ? (
                             <TableCell 
-                              className="border-l bg-primary/5 font-semibold text-primary"
+                              className={cn("border-l font-semibold", colorClass)}
                               rowSpan={group.tasks.length}
                             >
                               <div className="flex items-center gap-2">
@@ -698,8 +712,8 @@ const Tasks = () => {
                           </TableCell>
                         </TableRow>
                       );
-                    })
-                  ))}
+                    });
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
