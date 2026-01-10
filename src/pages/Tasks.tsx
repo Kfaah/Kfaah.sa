@@ -600,19 +600,10 @@ const Tasks = () => {
                 </TableHeader>
                 <TableBody>
                   {groupTasksByActivity(filteredTasks).map((group, groupIndex) => {
-                    const activityColors = [
-                      "bg-[#3d9aa8]/10 text-[#3d9aa8]",
-                      "bg-[#6366f1]/10 text-[#6366f1]",
-                      "bg-[#8b5cf6]/10 text-[#8b5cf6]",
-                      "bg-[#ec4899]/10 text-[#ec4899]",
-                      "bg-[#f97316]/10 text-[#f97316]",
-                      "bg-[#14b8a6]/10 text-[#14b8a6]",
-                      "bg-[#84cc16]/10 text-[#84cc16]",
-                      "bg-[#06b6d4]/10 text-[#06b6d4]",
-                      "bg-[#a855f7]/10 text-[#a855f7]",
-                      "bg-[#f43f5e]/10 text-[#f43f5e]",
-                    ];
-                    const colorClass = activityColors[groupIndex % activityColors.length];
+                    const isEven = groupIndex % 2 === 0;
+                    const colorClass = isEven 
+                      ? "bg-white text-[#3d9aa8]" 
+                      : "bg-[#3d9aa8]/10 text-[#3d9aa8]";
                     
                     return group.tasks.map((task, taskIndex) => {
                       const statusConfig = getStatusConfig(task.status);
