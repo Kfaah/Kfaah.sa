@@ -343,44 +343,8 @@ export default function AttendanceManagement() {
         {/* Filters */}
         <Card className="border-border/50 bg-white shadow-sm">
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-3 items-center justify-end">
-              {/* Employee Filter */}
-              <div className="w-72">
-                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                  <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <SelectValue placeholder="جميع الموظفين" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    <SelectItem value="all">جميع الموظفين</SelectItem>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.full_name} - {emp.job_role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Date Filter */}
-              <Button
-                variant="outline"
-                onClick={() => setDateFilter(getLocalDateString())}
-                className="gap-2"
-              >
-                <Calendar className="w-4 h-4" />
-                اليوم
-              </Button>
-              
-              <Input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-40 border rounded-md"
-                style={{ fontFamily: 'Arial, sans-serif' }}
-              />
-              
-              {/* Work Schedule Settings */}
+            <div className="flex flex-wrap gap-3 items-center flex-row-reverse">
+              {/* Work Schedule Settings - Far Right */}
               <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2">
@@ -459,6 +423,42 @@ export default function AttendanceManagement() {
                   </div>
                 </DialogContent>
               </Dialog>
+              
+              {/* Employee Filter */}
+              <div className="w-72">
+                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                  <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <SelectValue placeholder="جميع الموظفين" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">جميع الموظفين</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.full_name} - {emp.job_role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Date Filter */}
+              <Button
+                variant="outline"
+                onClick={() => setDateFilter(getLocalDateString())}
+                className="gap-2"
+              >
+                <Calendar className="w-4 h-4" />
+                اليوم
+              </Button>
+              
+              <Input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-40 border rounded-md"
+                style={{ fontFamily: 'Arial, sans-serif' }}
+              />
             </div>
           </CardContent>
         </Card>
