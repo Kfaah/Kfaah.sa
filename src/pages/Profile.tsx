@@ -303,7 +303,7 @@ export default function Profile() {
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOC0xOHoiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L2c+PC9zdmc+')] opacity-30" />
         </div>
         <CardContent className="relative pt-0 pb-8">
-          <div className="flex flex-col sm:flex-row items-center gap-6 -mt-20">
+          <div className="flex flex-col items-center -mt-20">
             {/* Avatar */}
             <div className="relative group">
               <Avatar className="w-36 h-36 border-4 border-white shadow-2xl bg-white">
@@ -321,39 +321,47 @@ export default function Profile() {
               </button>
             </div>
             
-            <div className="text-center sm:text-right flex-1">
-              <h2 className="text-3xl font-bold text-foreground">
-                {user.firstName} {user.lastName}
-              </h2>
-              <p className="text-lg text-white mt-1 font-medium">{user.role}</p>
-              <div className="mt-4 flex flex-wrap gap-3 justify-center sm:justify-start">
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  متصل الآن
+            {/* Name centered at top */}
+            <h2 className="text-3xl font-bold text-foreground mt-4 text-center">
+              {user.firstName} {user.lastName}
+            </h2>
+            
+            {/* Role below name */}
+            <p className="text-lg text-accent mt-1 font-medium text-center">{user.role}</p>
+            
+            {/* Positive message below role */}
+            <div className="mt-3 px-6 py-2 rounded-full bg-gradient-to-l from-accent/10 to-primary/10 border border-accent/20">
+              <p className="text-sm font-medium text-accent text-center">{currentMessage}</p>
+            </div>
+            
+            {/* Badges */}
+            <div className="mt-4 flex flex-wrap gap-3 justify-center">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-medium">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                متصل الآن
+              </span>
+              {user.department && (
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium">
+                  <Building className="w-4 h-4" />
+                  {user.department}
                 </span>
-                {user.department && (
-                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium">
-                    <Building className="w-4 h-4" />
-                    {user.department}
-                  </span>
-                )}
-                {user.jobRole && (
-                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-medium">
-                    <Briefcase className="w-4 h-4" />
-                    {user.jobRole}
-                  </span>
-                )}
-                {user.username && (
-                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
-                    <AtSign className="w-4 h-4" />
-                    هوية: {user.username}
-                  </span>
-                )}
-              </div>
+              )}
+              {user.jobRole && (
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-medium">
+                  <Briefcase className="w-4 h-4" />
+                  {user.jobRole}
+                </span>
+              )}
+              {user.username && (
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+                  <AtSign className="w-4 h-4" />
+                  هوية: {user.username}
+                </span>
+              )}
             </div>
 
             {isAdmin && (
-              <Button onClick={handleEdit} size="lg" className="gap-2">
+              <Button onClick={handleEdit} size="lg" className="gap-2 mt-4">
                 <Pencil className="w-4 h-4" />
                 تعديل الملف الشخصي
               </Button>
@@ -759,17 +767,12 @@ export default function Profile() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-6" dir="rtl">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-bold text-foreground">الملف الشخصي</h1>
-            <span className="text-muted-foreground">|</span>
-            <p className="text-muted-foreground">
-              {isEditing ? "تعديل معلوماتك الشخصية" : "عرض وإدارة معلوماتك الشخصية"}
-            </p>
-          </div>
-          <div className="px-4 py-2 rounded-full bg-gradient-to-l from-accent/10 to-primary/10 border border-accent/20">
-            <p className="text-sm font-medium text-accent">{currentMessage}</p>
-          </div>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold text-foreground">الملف الشخصي</h1>
+          <span className="text-muted-foreground">|</span>
+          <p className="text-muted-foreground">
+            {isEditing ? "تعديل معلوماتك الشخصية" : "عرض وإدارة معلوماتك الشخصية"}
+          </p>
         </div>
 
         {/* Single shared file input for both View/Edit mode */}
