@@ -354,35 +354,41 @@ export function TaskCommunicationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[80vh] flex flex-col p-0 [&>button]:hidden">
-        <DialogHeader className="p-4 ps-12 border-b bg-gradient-to-l from-[#3d9aa8]/10 to-transparent relative">
-          <DialogClose className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full w-8 h-8 flex items-center justify-center bg-muted hover:bg-destructive hover:text-white transition-colors">
-            <X className="h-4 w-4" />
+      <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0 [&>button]:hidden overflow-hidden bg-gradient-to-b from-slate-50 to-white">
+        {/* Header مودرن */}
+        <DialogHeader className="p-5 border-b bg-gradient-to-l from-[#3d9aa8] via-[#3d9aa8]/90 to-[#2d7a85] relative">
+          <DialogClose className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full w-9 h-9 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white transition-all backdrop-blur-sm">
+            <X className="h-5 w-5" />
             <span className="sr-only">إغلاق</span>
           </DialogClose>
-          <DialogTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#3d9aa8] flex items-center justify-center">
-              <Paperclip className="w-4 h-4 text-white" />
+          <DialogTitle className="flex items-center gap-3 text-white">
+            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+              <Paperclip className="w-5 h-5 text-white" />
             </div>
-            التواصل والمرفقات - {taskTitle}
+            <div className="flex flex-col">
+              <span className="text-lg font-bold">التواصل والمرفقات</span>
+              <span className="text-xs text-white/80 font-normal truncate max-w-[300px]">{taskTitle}</span>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
         {/* اختيار المستلم للموظف */}
         {!isAdmin && admins.length > 0 && (
-          <div className="px-4 py-3 border-b bg-[#3d9aa8]/10">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-[#2d7a85]">
-                <UserCircle className="w-5 h-5" />
-                <span className="font-medium">إرسال إلى:</span>
+          <div className="px-5 py-4 border-b bg-gradient-to-l from-[#3d9aa8]/5 to-transparent">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-[#2d7a85] font-medium">
+                <div className="w-8 h-8 rounded-full bg-[#3d9aa8]/10 flex items-center justify-center">
+                  <UserCircle className="w-5 h-5 text-[#3d9aa8]" />
+                </div>
+                <span>إرسال إلى:</span>
               </div>
               <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
-                <SelectTrigger className="w-[200px] bg-white border-[#3d9aa8]/30">
+                <SelectTrigger className="w-[200px] bg-white border-[#3d9aa8]/20 shadow-sm hover:border-[#3d9aa8]/40 transition-colors">
                   <SelectValue placeholder="اختر المستلم" />
                 </SelectTrigger>
-                <SelectContent className="bg-white z-50">
+                <SelectContent className="bg-white z-50 shadow-xl border-[#3d9aa8]/20">
                   {admins.map((admin) => (
-                    <SelectItem key={admin.user_id} value={admin.user_id}>
+                    <SelectItem key={admin.user_id} value={admin.user_id} className="hover:bg-[#3d9aa8]/10">
                       {admin.full_name}
                     </SelectItem>
                   ))}
@@ -393,104 +399,161 @@ export function TaskCommunicationDialog({
         )}
 
         {/* منطقة الرسائل */}
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+        <ScrollArea className="flex-1 px-5 py-4" ref={scrollRef}>
           {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-6 h-6 animate-spin text-[#3d9aa8]" />
+            <div className="flex flex-col items-center justify-center h-40 gap-3">
+              <div className="w-12 h-12 rounded-full bg-[#3d9aa8]/10 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-[#3d9aa8]" />
+              </div>
+              <span className="text-sm text-muted-foreground">جاري تحميل الرسائل...</span>
             </div>
           ) : messages.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              {isAdmin ? "لا توجد رسائل بعد." : "لا توجد رسائل بعد. اختر المستلم وابدأ المحادثة!"}
+            <div className="flex flex-col items-center justify-center h-40 gap-4 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3d9aa8]/20 to-[#3d9aa8]/5 flex items-center justify-center">
+                <Send className="w-7 h-7 text-[#3d9aa8]" />
+              </div>
+              <div>
+                <p className="text-muted-foreground font-medium">لا توجد رسائل بعد</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  {isAdmin ? "ابدأ المحادثة مع الموظف" : "اختر المستلم وابدأ المحادثة"}
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {messages.map((msg) => {
+            <div className="space-y-5">
+              {messages.map((msg, index) => {
                 const isOwn = msg.user_id === currentUserId;
                 const isFromAdmin = msg.user_id !== taskOwnerId;
+                const showAvatar = index === 0 || messages[index - 1].user_id !== msg.user_id;
+                
                 return (
                   <div
                     key={msg.id}
                     className={cn(
-                      "flex flex-col gap-1",
-                      isOwn ? "items-end" : "items-start"
+                      "flex gap-3 animate-fade-in",
+                      isOwn ? "flex-row-reverse" : "flex-row"
                     )}
                   >
-                    {/* اسم المرسل */}
-                    <span className={cn(
-                      "text-xs font-medium px-2",
-                      isOwn ? "text-[#3d9aa8]" : isFromAdmin ? "text-[#2d7a85]" : "text-slate-600"
-                    )}>
-                      {msg.sender_name || "غير معروف"}
-                    </span>
-                    <div
-                      className={cn(
-                        "max-w-[80%] rounded-2xl p-3 relative group shadow-sm",
-                        isOwn
-                          ? "bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] text-white rounded-br-sm"
-                          : isFromAdmin
-                            ? "bg-gradient-to-br from-[#3d9aa8]/15 to-[#3d9aa8]/5 border border-[#3d9aa8]/30 text-[#1a5a63] rounded-bl-sm"
-                            : "bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200 text-slate-800 rounded-bl-sm"
-                      )}
-                    >
-                      {/* زر الحذف - فقط للمدير أو صاحب الرسالة */}
-                      {(isAdmin || isOwn) && (
-                        <button
-                          onClick={() => deleteMessage(msg.id)}
-                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
+                    {/* الصورة الرمزية */}
+                    <div className={cn("flex-shrink-0", !showAvatar && "invisible")}>
+                      <div className={cn(
+                        "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shadow-md",
+                        isOwn 
+                          ? "bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] text-white"
+                          : isFromAdmin 
+                            ? "bg-gradient-to-br from-[#2d7a85] to-[#1a5a63] text-white"
+                            : "bg-gradient-to-br from-slate-400 to-slate-500 text-white"
+                      )}>
+                        {(msg.sender_name || "؟")[0]}
+                      </div>
+                    </div>
 
-                      {/* المرفق */}
-                      {msg.attachment_url && (
-                        <div className="mb-2">
-                          {msg.attachment_type === "image" ? (
-                            <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
-                              <img
-                                src={msg.attachment_url}
-                                alt={msg.attachment_name || "مرفق"}
-                                className="max-w-full max-h-48 rounded-lg cursor-pointer hover:opacity-90"
-                              />
-                            </a>
-                          ) : msg.attachment_type === "video" ? (
-                            <video
-                              src={msg.attachment_url}
-                              controls
-                              className="max-w-full max-h-48 rounded-lg"
-                            />
-                          ) : (
-                            <a
-                              href={msg.attachment_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={cn(
-                                "flex items-center gap-2 p-2 rounded-lg",
-                                isOwn ? "bg-white/20" : "bg-background"
-                              )}
-                            >
-                              {getAttachmentIcon(msg.attachment_type)}
-                              <span className="text-sm truncate">{msg.attachment_name}</span>
-                              <Download className="w-4 h-4 flex-shrink-0" />
-                            </a>
+                    {/* محتوى الرسالة */}
+                    <div className={cn("flex flex-col gap-1 max-w-[75%]", isOwn ? "items-end" : "items-start")}>
+                      {/* اسم المرسل */}
+                      {showAvatar && (
+                        <div className={cn(
+                          "flex items-center gap-2 px-1",
+                          isOwn ? "flex-row-reverse" : "flex-row"
+                        )}>
+                          <span className={cn(
+                            "text-xs font-semibold",
+                            isOwn ? "text-[#3d9aa8]" : isFromAdmin ? "text-[#2d7a85]" : "text-slate-600"
+                          )}>
+                            {msg.sender_name || "غير معروف"}
+                          </span>
+                          {isFromAdmin && !isOwn && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-[#3d9aa8]/10 text-[#2d7a85] border-0">
+                              مدير
+                            </Badge>
                           )}
                         </div>
                       )}
 
-                      {/* نص الرسالة */}
-                      {msg.message && (
-                        <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                      )}
-
-                      {/* الوقت */}
-                      <p
+                      {/* فقاعة الرسالة */}
+                      <div
                         className={cn(
-                          "text-xs mt-1",
-                          isOwn ? "text-white/70" : "text-muted-foreground"
+                          "relative group rounded-2xl p-4 shadow-sm transition-all hover:shadow-md",
+                          isOwn
+                            ? "bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] text-white rounded-tr-md"
+                            : isFromAdmin
+                              ? "bg-white border border-[#3d9aa8]/20 text-slate-800 rounded-tl-md shadow-[0_2px_8px_rgba(61,154,168,0.08)]"
+                              : "bg-white border border-slate-200 text-slate-800 rounded-tl-md"
                         )}
                       >
-                        <span style={{ fontFamily: 'Arial, sans-serif' }}>{formatDateTime(msg.created_at)}</span>
-                      </p>
+                        {/* زر الحذف */}
+                        {(isAdmin || isOwn) && (
+                          <button
+                            onClick={() => deleteMessage(msg.id)}
+                            className={cn(
+                              "absolute -top-2 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:bg-red-600 hover:scale-110",
+                              isOwn ? "-left-2" : "-right-2"
+                            )}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {/* المرفق */}
+                        {msg.attachment_url && (
+                          <div className="mb-3">
+                            {msg.attachment_type === "image" ? (
+                              <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block">
+                                <img
+                                  src={msg.attachment_url}
+                                  alt={msg.attachment_name || "مرفق"}
+                                  className="max-w-full max-h-52 rounded-xl cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
+                                />
+                              </a>
+                            ) : msg.attachment_type === "video" ? (
+                              <video
+                                src={msg.attachment_url}
+                                controls
+                                className="max-w-full max-h-52 rounded-xl shadow-sm"
+                              />
+                            ) : (
+                              <a
+                                href={msg.attachment_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={cn(
+                                  "flex items-center gap-3 p-3 rounded-xl transition-colors",
+                                  isOwn 
+                                    ? "bg-white/15 hover:bg-white/25" 
+                                    : "bg-slate-50 hover:bg-slate-100 border border-slate-200"
+                                )}
+                              >
+                                <div className={cn(
+                                  "w-10 h-10 rounded-lg flex items-center justify-center",
+                                  isOwn ? "bg-white/20" : "bg-[#3d9aa8]/10"
+                                )}>
+                                  {getAttachmentIcon(msg.attachment_type)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-sm font-medium truncate block">{msg.attachment_name}</span>
+                                  <span className={cn("text-xs", isOwn ? "text-white/60" : "text-muted-foreground")}>
+                                    انقر للتحميل
+                                  </span>
+                                </div>
+                                <Download className="w-5 h-5 flex-shrink-0 opacity-60" />
+                              </a>
+                            )}
+                          </div>
+                        )}
+
+                        {/* نص الرسالة */}
+                        {msg.message && (
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                        )}
+
+                        {/* الوقت */}
+                        <p className={cn(
+                          "text-[11px] mt-2 flex items-center gap-1",
+                          isOwn ? "text-white/60" : "text-muted-foreground"
+                        )}>
+                          <span style={{ fontFamily: 'Arial, sans-serif' }}>{formatDateTime(msg.created_at)}</span>
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
@@ -501,11 +564,11 @@ export function TaskCommunicationDialog({
 
         {/* أزرار الرد السريع للمدير */}
         {isAdmin && (
-          <div className="px-4 py-2 border-t flex gap-2">
+          <div className="px-5 py-3 border-t bg-gradient-to-l from-slate-50 to-white flex gap-3">
             <Button
               size="sm"
               variant="outline"
-              className="gap-1 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+              className="gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 shadow-sm"
               onClick={() => sendQuickReply(true)}
             >
               <CheckCircle className="w-4 h-4" />
@@ -514,7 +577,7 @@ export function TaskCommunicationDialog({
             <Button
               size="sm"
               variant="outline"
-              className="gap-1 text-red-600 border-red-300 hover:bg-red-50"
+              className="gap-2 text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300 shadow-sm"
               onClick={() => sendQuickReply(false)}
             >
               <XCircle className="w-4 h-4" />
@@ -524,8 +587,8 @@ export function TaskCommunicationDialog({
         )}
 
         {/* إدخال الرسالة */}
-        <div className="p-4 border-t bg-muted/30">
-          <div className="flex gap-2">
+        <div className="p-4 border-t bg-white">
+          <div className="flex gap-3 items-end">
             <input
               type="file"
               ref={fileInputRef}
@@ -538,34 +601,37 @@ export function TaskCommunicationDialog({
               size="icon"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
+              className="flex-shrink-0 h-11 w-11 rounded-xl border-slate-200 hover:border-[#3d9aa8] hover:bg-[#3d9aa8]/5 transition-colors"
             >
               {uploading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin text-[#3d9aa8]" />
               ) : (
-                <Paperclip className="w-4 h-4" />
+                <Paperclip className="w-5 h-5 text-slate-500" />
               )}
             </Button>
-            <Input
-              placeholder="اكتب رسالتك..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              className="flex-1"
-            />
+            <div className="flex-1 relative">
+              <Input
+                placeholder="اكتب رسالتك هنا..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                className="h-11 rounded-xl border-slate-200 focus:border-[#3d9aa8] focus:ring-[#3d9aa8]/20 pr-4 pl-4 text-sm"
+              />
+            </div>
             <Button
               onClick={() => sendMessage()}
               disabled={sending || (!newMessage.trim())}
-              className="bg-[#3d9aa8] hover:bg-[#3d9aa8]/90"
+              className="flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] hover:from-[#2d7a85] hover:to-[#1a5a63] shadow-lg shadow-[#3d9aa8]/25 transition-all disabled:opacity-50 disabled:shadow-none"
             >
               {sending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               )}
             </Button>
           </div>
