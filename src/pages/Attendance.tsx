@@ -472,6 +472,13 @@ export default function Attendance() {
                           const diff = checkOutTime.getTime() - checkInTime.getTime();
                           const hours = Math.floor(diff / (1000 * 60 * 60));
                           const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                          
+                          if (hours === 0 && minutes === 0) {
+                            return `${seconds} ثانية`;
+                          } else if (hours === 0) {
+                            return `${minutes} دقيقة`;
+                          }
                           return `${hours} ساعة ${minutes} دقيقة`;
                         })()}
                       </p>
