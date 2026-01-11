@@ -67,6 +67,7 @@ interface Message {
 interface Employee {
   user_id: string;
   full_name: string;
+  role?: string;
 }
 
 interface MessagingSectionProps {
@@ -276,7 +277,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
     }
   };
 
-  // جلب الموظفين للمحادثة الجديدة
+  // جلب الموظفين للمحادثة الجديدة مع أدوارهم
   const fetchEmployees = async () => {
     try {
       const { data, error } = await supabase
@@ -286,7 +287,24 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
         .order("full_name");
 
       if (error) throw error;
-      setEmployees(data || []);
+
+      // جلب أدوار المستخدمين
+      const userIds = (data || []).map((e) => e.user_id).filter(Boolean);
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+
+      const rolesMap = new Map(
+        (rolesData || []).map((r) => [r.user_id, r.role])
+      );
+
+      const employeesWithRoles = (data || []).map((emp) => ({
+        ...emp,
+        role: rolesMap.get(emp.user_id) || "user",
+      }));
+
+      setEmployees(employeesWithRoles);
     } catch (error) {
       console.error("Error fetching employees:", error);
     }
@@ -721,41 +739,100 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
 
       {/* نافذة محادثة جديدة */}
       <Dialog open={isNewConversationOpen} onOpenChange={setIsNewConversationOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="w-5 h-5 text-[#3d9aa8]" />
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          {/* Header مع زر الإغلاق */}
+          <div className="flex items-center justify-between p-4 border-b bg-gradient-to-l from-[#3d9aa8]/10 to-transparent">
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center">
+                <Users className="w-4 h-4 text-white" />
+              </div>
               محادثة جديدة
             </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">اختر الشخص</label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر من القائمة" />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  {employees.map((emp) => (
-                    <SelectItem key={emp.user_id} value={emp.user_id}>
-                      {emp.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setIsNewConversationOpen(false)}>
-                إلغاء
-              </Button>
-              <Button
-                onClick={createConversation}
-                disabled={!selectedEmployee}
-                className="bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85]"
-              >
-                بدء المحادثة
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsNewConversationOpen(false)}
+              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* محتوى الحوار */}
+          <div className="p-4 space-y-4">
+            <label className="text-sm font-medium text-muted-foreground">اختر الشخص للمحادثة</label>
+            
+            {/* قائمة الموظفين */}
+            <ScrollArea className="h-[300px] border rounded-xl">
+              <div className="p-2 space-y-1">
+                {employees.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p>لا يوجد موظفين متاحين</p>
+                  </div>
+                ) : (
+                  employees.map((emp) => {
+                    const isSelected = selectedEmployee === emp.user_id;
+                    const roleLabel = emp.role === "admin" ? "مدير النظام" : 
+                                     emp.role === "moderator" ? "مشرف" : 
+                                     emp.role === "time_editor" ? "محرر الوقت" : "موظف";
+                    const roleColor = emp.role === "admin" ? "bg-red-100 text-red-700" :
+                                     emp.role === "moderator" ? "bg-blue-100 text-blue-700" :
+                                     emp.role === "time_editor" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600";
+
+                    return (
+                      <button
+                        key={emp.user_id}
+                        onClick={() => setSelectedEmployee(emp.user_id)}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-right",
+                          isSelected
+                            ? "bg-gradient-to-l from-[#3d9aa8]/20 to-[#3d9aa8]/5 border-2 border-[#3d9aa8]"
+                            : "hover:bg-slate-50 border-2 border-transparent"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold",
+                          isSelected 
+                            ? "bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] text-white"
+                            : "bg-slate-200 text-slate-600"
+                        )}>
+                          {emp.full_name.charAt(0)}
+                        </div>
+                        <div className="flex-1">
+                          <p className={cn(
+                            "font-medium",
+                            isSelected ? "text-[#3d9aa8]" : "text-foreground"
+                          )}>
+                            {emp.full_name}
+                          </p>
+                          <Badge className={cn("text-xs mt-1", roleColor)}>
+                            {roleLabel}
+                          </Badge>
+                        </div>
+                        {isSelected && (
+                          <div className="w-6 h-6 rounded-full bg-[#3d9aa8] flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* زر بدء المحادثة */}
+            <Button
+              onClick={createConversation}
+              disabled={!selectedEmployee}
+              className="w-full h-12 text-base bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] hover:from-[#2d7a85] hover:to-[#1a5a63] rounded-xl shadow-lg"
+            >
+              <MessageSquare className="w-5 h-5 ml-2" />
+              بدء المحادثة
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
