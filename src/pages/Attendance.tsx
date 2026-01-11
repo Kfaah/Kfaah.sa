@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@/contexts/UserContext";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import { DailyTasksSelector } from "@/components/tasks/DailyTasksSelector";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -29,6 +30,11 @@ interface ActiveTask {
 export default function Attendance() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { previewingEmployee } = useUser();
+  
+  // Use previewing employee's user_id if in preview mode, otherwise use auth user's id
+  const effectiveUserId = previewingEmployee?.user_id || user?.id;
+  
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
@@ -40,12 +46,12 @@ export default function Attendance() {
   const [taskElapsed, setTaskElapsed] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    if (user) {
+    if (effectiveUserId) {
       checkTodayAttendance();
       fetchTodayTasks();
       fetchActiveTask();
     }
-  }, [user]);
+  }, [effectiveUserId]);
 
   // تحديث عداد الحضور كل ثانية
   useEffect(() => {
@@ -85,14 +91,14 @@ export default function Attendance() {
   }, [activeTask]);
 
   const checkTodayAttendance = async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     try {
       const today = new Date().toISOString().split('T')[0];
       
       const { data, error } = await supabase
         .from("attendance")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveUserId)
         .eq("date", today)
         .maybeSingle();
       
@@ -115,14 +121,14 @@ export default function Attendance() {
   };
 
   const fetchTodayTasks = async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     try {
       const today = new Date().toISOString().split('T')[0];
       
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveUserId)
         .eq("due_date", today)
         .order("priority", { ascending: false });
       
@@ -134,7 +140,7 @@ export default function Attendance() {
   };
 
   const fetchActiveTask = async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     try {
       const { data, error } = await supabase
         .from("active_task")
@@ -143,7 +149,7 @@ export default function Attendance() {
           started_at,
           task:tasks(id, title, status, priority, due_date)
         `)
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveUserId)
         .maybeSingle();
       
       if (error) throw error;
@@ -182,7 +188,7 @@ export default function Attendance() {
   };
 
   const recordCheckIn = async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     try {
       const now = new Date();
       const today = now.toISOString().split('T')[0];
@@ -191,7 +197,7 @@ export default function Attendance() {
       const { data: existingRecord } = await supabase
         .from("attendance")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveUserId)
         .eq("date", today)
         .maybeSingle();
       
@@ -214,7 +220,7 @@ export default function Attendance() {
       const { error } = await supabase
         .from("attendance")
         .insert({
-          user_id: user.id,
+          user_id: effectiveUserId,
           date: today,
           check_in_at: now.toISOString()
         });
@@ -229,7 +235,7 @@ export default function Attendance() {
   };
 
   const handleCheckOut = async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     setProcessingCheckOut(true);
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -237,7 +243,7 @@ export default function Attendance() {
       const { error: attendanceError } = await supabase
         .from("attendance")
         .update({ check_out_at: new Date().toISOString() })
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveUserId)
         .eq("date", today);
       
       if (attendanceError) throw attendanceError;
@@ -245,7 +251,7 @@ export default function Attendance() {
       const { data: activeTaskData } = await supabase
         .from("active_task")
         .select("task_id")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveUserId)
         .maybeSingle();
       
       if (activeTaskData) {
@@ -257,7 +263,7 @@ export default function Attendance() {
         await supabase
           .from("active_task")
           .delete()
-          .eq("user_id", user.id);
+          .eq("user_id", effectiveUserId);
       }
       
       setIsCheckedIn(false);
@@ -478,10 +484,10 @@ export default function Attendance() {
       </div>
 
       {/* Task Selector Dialog */}
-      {user && (
+      {effectiveUserId && (
         <DailyTasksSelector
           open={showTaskSelector}
-          userId={user.id}
+          userId={effectiveUserId}
           onTaskSelected={handleTaskSelected}
         />
       )}
