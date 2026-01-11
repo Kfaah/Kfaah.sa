@@ -952,7 +952,7 @@ const Tasks = () => {
                           
                           {/* تاريخ التنفيذ */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex items-center justify-center gap-2 text-sm">
+                            <div className="flex items-center justify-center gap-2 text-base font-medium">
                               <Calendar className="w-4 h-4 text-[#3d9aa8]/60" />
                               <span className="text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
                                 {formatDate(task.due_date)}
@@ -983,7 +983,7 @@ const Tasks = () => {
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <div className="flex items-center justify-center">
                               <Clock className="w-3 h-3 text-[#3d9aa8]/60 ml-1" />
-                              <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                              <span className="text-base font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
                                 {task.estimated_time_minutes ? `${formatNumberPlain(task.estimated_time_minutes)} د` : '-'}
                               </span>
                             </div>
@@ -999,7 +999,7 @@ const Tasks = () => {
                             ) : (
                               <div className="flex items-center justify-center">
                                 <Clock className="w-3 h-3 text-emerald-500/60 ml-1" />
-                                <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                <span className="text-base font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
                                   {task.actual_time_minutes ? `${formatNumberPlain(task.actual_time_minutes)} د` : '-'}
                                 </span>
                               </div>
