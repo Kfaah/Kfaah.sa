@@ -96,17 +96,34 @@ export function TaskCommunicationDialog({
           .eq("role", "admin");
 
         if (adminRoles && adminRoles.length > 0) {
-          const adminIds = adminRoles.map(r => r.user_id);
+          const adminIds = adminRoles.map((r) => r.user_id);
+
+          // محاولة جلب أسماء المدراء من سجل الموظفين (قد لا يوجد سجل للمدير)
           const { data: adminEmployees } = await supabase
             .from("employees")
             .select("user_id, full_name")
             .in("user_id", adminIds);
 
-          setAdmins(adminEmployees || []);
+          const nameById = new Map(
+            (adminEmployees || []).map((e) => [e.user_id, e.full_name] as const)
+          );
+
+          const recipients: AdminUser[] = adminIds.map((id, idx) => ({
+            user_id: id,
+            full_name:
+              nameById.get(id) ||
+              (adminIds.length > 1 ? `مدير النظام (${idx + 1})` : "مدير النظام"),
+          }));
+
+          setAdmins(recipients);
+
           // اختيار أول مدير افتراضياً
-          if (adminEmployees && adminEmployees.length > 0) {
-            setSelectedRecipient(adminEmployees[0].user_id);
+          if (recipients.length > 0) {
+            setSelectedRecipient((prev) => prev || recipients[0].user_id);
           }
+        } else {
+          setAdmins([]);
+          setSelectedRecipient("");
         }
       } catch (error) {
         console.error("Error fetching admins:", error);
