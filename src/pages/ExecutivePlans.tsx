@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -746,9 +746,34 @@ export default function ExecutivePlans() {
                           );
                         }
                         
+                        // إذا كانت مفتوحة ولكن لا توجد تواريخ، نعرض صف فارغ
+                        if (totalDays === 0) {
+                          return (
+                            <TableRow 
+                              key={`empty-${monthGroup.month}`}
+                              className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[#3d9aa8]/30"
+                              onClick={() => toggleMonth(`month-${monthGroup.month}`)}
+                            >
+                              <TableCell colSpan={3} className="py-3">
+                                <div className="flex items-center gap-3">
+                                  <ChevronDown className="w-5 h-5 text-[#3d9aa8] rotate-180 transition-transform" />
+                                  <Calendar className="w-5 h-5 text-[#3d9aa8]" />
+                                  <span className="font-bold text-lg text-gray-800">
+                                    {monthGroup.monthName} {selectedYear}
+                                  </span>
+                                  <Badge variant="outline" className="text-[#3d9aa8] border-[#3d9aa8]">
+                                    {monthGroup.activities.length} نشاط
+                                  </Badge>
+                                  <span className="text-muted-foreground text-sm">- لا توجد تواريخ تنفيذ</span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        }
+                        
                         // إذا كانت مفتوحة، نعرض الصفوف مع دمج عمود الشهر
                         return (
-                          <>
+                          <React.Fragment key={`expanded-${monthGroup.month}`}>
                             {monthGroup.dateGroups.map((dateGroup, dateIdx) => {
                               const date = new Date(selectedYear, monthGroup.month - 1, dateGroup.day);
                               const isFirstRow = dateIdx === 0;
@@ -863,7 +888,7 @@ export default function ExecutivePlans() {
                                 </TableRow>
                               );
                             })}
-                          </>
+                          </React.Fragment>
                         );
                       })}
                     </TableBody>
