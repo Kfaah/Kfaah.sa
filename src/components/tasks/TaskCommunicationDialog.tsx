@@ -347,8 +347,8 @@ export function TaskCommunicationDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* اختيار المستلم للموظف عند بدء محادثة جديدة */}
-        {isFirstEmployeeMessage && admins.length > 0 && (
+        {/* اختيار المستلم للموظف */}
+        {!isAdmin && admins.length > 0 && (
           <div className="px-4 py-3 border-b bg-amber-50">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-sm text-amber-800">
