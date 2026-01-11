@@ -1069,7 +1069,7 @@ const Tasks = () => {
                               {/* الإنجاز والجودة */}
                               <div className="flex items-center justify-center gap-3">
                                 <div className="flex flex-col items-center">
-                                  <div className="text-[10px] font-medium text-muted-foreground mb-1">الإنجاز</div>
+                                  <div className="text-xs font-semibold text-muted-foreground mb-1">الإنجاز</div>
                                   {isAdmin ? (
                                     <div className="flex items-center justify-center">
                                       <input
@@ -1109,7 +1109,7 @@ const Tasks = () => {
                                   )}
                                 </div>
                                 <div className="flex flex-col items-center">
-                                  <div className="text-[10px] font-medium text-muted-foreground mb-1">الجودة</div>
+                                  <div className="text-xs font-semibold text-muted-foreground mb-1">الجودة</div>
                                   {isAdmin ? (
                                     <div className="flex items-center justify-center">
                                       <input
@@ -1152,7 +1152,7 @@ const Tasks = () => {
                               
                               {/* كفاءة استثمار الوقت - تحت الإنجاز والجودة */}
                               <div className="flex flex-col items-center pt-1 border-t border-border/30 w-full">
-                                <div className="text-[10px] font-medium text-muted-foreground mb-1">كفاءة استثمار الوقت</div>
+                                <div className="text-xs font-semibold text-muted-foreground mb-1">كفاءة استثمار الوقت</div>
                                 {(() => {
                                   const estimated = task.estimated_time_minutes;
                                   const actual = task.actual_time_minutes;
