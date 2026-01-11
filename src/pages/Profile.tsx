@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList } from "lucide-react";
+import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList, MessageSquare } from "lucide-react";
+import { MessagingSection } from "@/components/messaging/MessagingSection";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -542,6 +543,11 @@ export default function Profile() {
           )}
         </CardContent>
       </Card>
+
+      {/* نظام الرسائل */}
+      {authUser && (
+        <MessagingSection currentUserId={authUser.id} isAdmin={isAdmin} />
+      )}
 
       {/* Positive Message at Bottom */}
       {currentMessage && !isEditing && (

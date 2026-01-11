@@ -1,0 +1,764 @@
+import { useState, useEffect, useRef } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  MessageSquare,
+  Send,
+  Paperclip,
+  Loader2,
+  Plus,
+  Search,
+  Download,
+  Image,
+  Video,
+  FileText,
+  File,
+  Trash2,
+  X,
+  Users,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { cn, formatDateTime } from "@/lib/utils";
+
+interface Conversation {
+  id: string;
+  updated_at: string;
+  participants: {
+    user_id: string;
+    full_name: string;
+  }[];
+  lastMessage?: {
+    message: string | null;
+    created_at: string;
+    sender_name: string;
+  };
+  unreadCount: number;
+}
+
+interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  message: string | null;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_type: string | null;
+  created_at: string;
+  sender_name?: string;
+}
+
+interface Employee {
+  user_id: string;
+  full_name: string;
+}
+
+interface MessagingSectionProps {
+  currentUserId: string;
+  isAdmin: boolean;
+}
+
+export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionProps) {
+  const { toast } = useToast();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [newMessage, setNewMessage] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // جلب المحادثات
+  useEffect(() => {
+    fetchConversations();
+
+    // الاستماع للتغييرات
+    const channel = supabase
+      .channel("conversations-channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        () => {
+          fetchConversations();
+          if (selectedConversation) {
+            fetchMessages(selectedConversation.id);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId]);
+
+  const fetchConversations = async () => {
+    try {
+      // جلب المحادثات التي المستخدم مشارك فيها
+      const { data: participations, error: partError } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id")
+        .eq("user_id", currentUserId);
+
+      if (partError) throw partError;
+
+      if (!participations || participations.length === 0) {
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
+
+      const conversationIds = participations.map((p) => p.conversation_id);
+
+      // جلب تفاصيل المحادثات
+      const { data: convData, error: convError } = await supabase
+        .from("conversations")
+        .select("id, updated_at")
+        .in("id", conversationIds)
+        .order("updated_at", { ascending: false });
+
+      if (convError) throw convError;
+
+      // جلب المشاركين لكل محادثة
+      const { data: allParticipants, error: allPartError } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id, user_id")
+        .in("conversation_id", conversationIds);
+
+      if (allPartError) throw allPartError;
+
+      // جلب أسماء المشاركين
+      const userIds = [...new Set(allParticipants?.map((p) => p.user_id) || [])];
+      const { data: employeesData } = await supabase
+        .from("employees")
+        .select("user_id, full_name")
+        .in("user_id", userIds);
+
+      const nameMap = new Map(
+        (employeesData || []).map((e) => [e.user_id, e.full_name])
+      );
+
+      // جلب آخر رسالة لكل محادثة
+      const { data: lastMessages } = await supabase
+        .from("messages")
+        .select("conversation_id, message, created_at, sender_id")
+        .in("conversation_id", conversationIds)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false });
+
+      const lastMessageMap = new Map<string, any>();
+      (lastMessages || []).forEach((msg) => {
+        if (!lastMessageMap.has(msg.conversation_id)) {
+          lastMessageMap.set(msg.conversation_id, {
+            message: msg.message,
+            created_at: msg.created_at,
+            sender_name: nameMap.get(msg.sender_id) || "غير معروف",
+          });
+        }
+      });
+
+      // جلب عدد الرسائل غير المقروءة
+      const { data: myParticipations } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id, last_read_at")
+        .eq("user_id", currentUserId)
+        .in("conversation_id", conversationIds);
+
+      const lastReadMap = new Map(
+        (myParticipations || []).map((p) => [p.conversation_id, p.last_read_at])
+      );
+
+      // تجميع البيانات
+      const conversationsWithDetails: Conversation[] = (convData || []).map((conv) => {
+        const convParticipants = (allParticipants || [])
+          .filter((p) => p.conversation_id === conv.id && p.user_id !== currentUserId)
+          .map((p) => ({
+            user_id: p.user_id,
+            full_name: nameMap.get(p.user_id) || "مستخدم",
+          }));
+
+        const lastRead = lastReadMap.get(conv.id);
+        const lastMsg = lastMessageMap.get(conv.id);
+        let unreadCount = 0;
+
+        if (lastMsg && (!lastRead || new Date(lastMsg.created_at) > new Date(lastRead))) {
+          // حساب عدد الرسائل غير المقروءة
+          const unreadMessages = (lastMessages || []).filter(
+            (m) =>
+              m.conversation_id === conv.id &&
+              m.sender_id !== currentUserId &&
+              (!lastRead || new Date(m.created_at) > new Date(lastRead))
+          );
+          unreadCount = unreadMessages.length;
+        }
+
+        return {
+          id: conv.id,
+          updated_at: conv.updated_at,
+          participants: convParticipants,
+          lastMessage: lastMsg,
+          unreadCount,
+        };
+      });
+
+      setConversations(conversationsWithDetails);
+    } catch (error: any) {
+      console.error("Error fetching conversations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // جلب الرسائل
+  const fetchMessages = async (conversationId: string) => {
+    setMessagesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      // جلب أسماء المرسلين
+      const senderIds = [...new Set((data || []).map((m) => m.sender_id))];
+      const { data: sendersData } = await supabase
+        .from("employees")
+        .select("user_id, full_name")
+        .in("user_id", senderIds);
+
+      const nameMap = new Map(
+        (sendersData || []).map((e) => [e.user_id, e.full_name])
+      );
+
+      const messagesWithNames = (data || []).map((msg) => ({
+        ...msg,
+        sender_name: nameMap.get(msg.sender_id) || "مستخدم",
+      }));
+
+      setMessages(messagesWithNames);
+
+      // تحديث last_read_at
+      await supabase
+        .from("conversation_participants")
+        .update({ last_read_at: new Date().toISOString() })
+        .eq("conversation_id", conversationId)
+        .eq("user_id", currentUserId);
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  // جلب الموظفين للمحادثة الجديدة
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("user_id, full_name")
+        .neq("user_id", currentUserId)
+        .order("full_name");
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  };
+
+  // التمرير للأسفل
+  useEffect(() => {
+    if (scrollRef.current) {
+      const viewport = scrollRef.current.querySelector("[data-radix-scroll-area-viewport]");
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
+    }
+  }, [messages]);
+
+  // فتح محادثة
+  const openConversation = async (conv: Conversation) => {
+    setSelectedConversation(conv);
+    await fetchMessages(conv.id);
+    // تحديث العداد محلياً
+    setConversations((prev) =>
+      prev.map((c) => (c.id === conv.id ? { ...c, unreadCount: 0 } : c))
+    );
+  };
+
+  // إنشاء محادثة جديدة
+  const createConversation = async () => {
+    if (!selectedEmployee) return;
+
+    try {
+      // التحقق من وجود محادثة سابقة
+      const existingConv = conversations.find((c) =>
+        c.participants.some((p) => p.user_id === selectedEmployee)
+      );
+
+      if (existingConv) {
+        setIsNewConversationOpen(false);
+        openConversation(existingConv);
+        return;
+      }
+
+      // إنشاء محادثة جديدة
+      const { data: newConv, error: convError } = await supabase
+        .from("conversations")
+        .insert({})
+        .select()
+        .single();
+
+      if (convError) throw convError;
+
+      // إضافة المشاركين
+      const { error: partError } = await supabase
+        .from("conversation_participants")
+        .insert([
+          { conversation_id: newConv.id, user_id: currentUserId },
+          { conversation_id: newConv.id, user_id: selectedEmployee },
+        ]);
+
+      if (partError) throw partError;
+
+      setIsNewConversationOpen(false);
+      setSelectedEmployee("");
+      await fetchConversations();
+
+      // فتح المحادثة الجديدة
+      const employee = employees.find((e) => e.user_id === selectedEmployee);
+      setSelectedConversation({
+        id: newConv.id,
+        updated_at: newConv.updated_at,
+        participants: [{ user_id: selectedEmployee, full_name: employee?.full_name || "مستخدم" }],
+        unreadCount: 0,
+      });
+      setMessages([]);
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    }
+  };
+
+  // إرسال رسالة
+  const sendMessage = async (attachmentData?: { url: string; name: string; type: string }) => {
+    if (!selectedConversation || (!newMessage.trim() && !attachmentData)) return;
+
+    setSending(true);
+    try {
+      const { error } = await supabase.from("messages").insert({
+        conversation_id: selectedConversation.id,
+        sender_id: currentUserId,
+        message: newMessage.trim() || null,
+        attachment_url: attachmentData?.url || null,
+        attachment_name: attachmentData?.name || null,
+        attachment_type: attachmentData?.type || null,
+      });
+
+      if (error) throw error;
+
+      // تحديث updated_at للمحادثة
+      await supabase
+        .from("conversations")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", selectedConversation.id);
+
+      setNewMessage("");
+      await fetchMessages(selectedConversation.id);
+      fetchConversations();
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // رفع ملف
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: "خطأ", description: "حجم الملف يتجاوز 20 ميجابايت", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${currentUserId}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("task-attachments")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("task-attachments")
+        .getPublicUrl(fileName);
+
+      let attachmentType = "document";
+      if (file.type.startsWith("image/")) attachmentType = "image";
+      else if (file.type.startsWith("video/")) attachmentType = "video";
+      else if (file.type === "application/pdf") attachmentType = "pdf";
+
+      await sendMessage({ url: publicUrl, name: file.name, type: attachmentType });
+    } catch (error: any) {
+      toast({ title: "خطأ في رفع الملف", description: error.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  // أيقونة نوع الملف
+  const getAttachmentIcon = (type: string | null) => {
+    switch (type) {
+      case "image": return <Image className="w-4 h-4" />;
+      case "video": return <Video className="w-4 h-4" />;
+      case "pdf": return <FileText className="w-4 h-4" />;
+      default: return <File className="w-4 h-4" />;
+    }
+  };
+
+  // فلترة المحادثات
+  const filteredConversations = conversations.filter((c) =>
+    c.participants.some((p) =>
+      p.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-gradient-to-l from-[#3d9aa8]/10 to-transparent border-b">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center shadow-lg">
+              <MessageSquare className="w-5 h-5 text-white" />
+            </div>
+            الرسائل
+            {conversations.reduce((sum, c) => sum + c.unreadCount, 0) > 0 && (
+              <Badge className="bg-red-500 text-white">
+                {conversations.reduce((sum, c) => sum + c.unreadCount, 0)}
+              </Badge>
+            )}
+          </CardTitle>
+          <Button
+            size="sm"
+            onClick={() => {
+              fetchEmployees();
+              setIsNewConversationOpen(true);
+            }}
+            className="gap-2 bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] hover:from-[#2d7a85] hover:to-[#1a5a63] shadow-lg"
+          >
+            <Plus className="w-4 h-4" />
+            محادثة جديدة
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="flex h-[500px]">
+          {/* قائمة المحادثات */}
+          <div className="w-1/3 border-l bg-slate-50/50">
+            <div className="p-3 border-b">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="بحث..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-10 bg-white"
+                />
+              </div>
+            </div>
+            <ScrollArea className="h-[calc(500px-60px)]">
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#3d9aa8]" />
+                </div>
+              ) : filteredConversations.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                  <Users className="w-8 h-8 mb-2 opacity-50" />
+                  <p className="text-sm">لا توجد محادثات</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filteredConversations.map((conv) => (
+                    <button
+                      key={conv.id}
+                      onClick={() => openConversation(conv)}
+                      className={cn(
+                        "w-full p-3 text-right hover:bg-[#3d9aa8]/5 transition-colors flex items-start gap-3",
+                        selectedConversation?.id === conv.id && "bg-[#3d9aa8]/10"
+                      )}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        {conv.participants[0]?.full_name?.[0] || "؟"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-sm truncate">
+                            {conv.participants.map((p) => p.full_name).join(", ") || "محادثة"}
+                          </span>
+                          {conv.unreadCount > 0 && (
+                            <Badge className="bg-red-500 text-white text-xs px-1.5 min-w-[20px]">
+                              {conv.unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                        {conv.lastMessage && (
+                          <p className="text-xs text-muted-foreground truncate mt-1">
+                            {conv.lastMessage.message || "مرفق"}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+
+          {/* منطقة الرسائل */}
+          <div className="flex-1 flex flex-col">
+            {selectedConversation ? (
+              <>
+                {/* Header المحادثة */}
+                <div className="p-4 border-b bg-white flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold">
+                    {selectedConversation.participants[0]?.full_name?.[0] || "؟"}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">
+                      {selectedConversation.participants.map((p) => p.full_name).join(", ")}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* الرسائل */}
+                <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+                  {messagesLoading ? (
+                    <div className="flex items-center justify-center h-32">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#3d9aa8]" />
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                      <Send className="w-8 h-8 mb-2 opacity-50" />
+                      <p className="text-sm">ابدأ المحادثة</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages.map((msg, index) => {
+                        const isOwn = msg.sender_id === currentUserId;
+                        const showAvatar = index === 0 || messages[index - 1].sender_id !== msg.sender_id;
+
+                        return (
+                          <div
+                            key={msg.id}
+                            className={cn(
+                              "flex gap-3",
+                              isOwn ? "flex-row-reverse" : "flex-row"
+                            )}
+                          >
+                            <div className={cn("flex-shrink-0", !showAvatar && "invisible")}>
+                              <div className={cn(
+                                "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
+                                isOwn
+                                  ? "bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] text-white"
+                                  : "bg-slate-200 text-slate-600"
+                              )}>
+                                {(msg.sender_name || "؟")[0]}
+                              </div>
+                            </div>
+                            <div className={cn("flex flex-col gap-1 max-w-[70%]", isOwn ? "items-end" : "items-start")}>
+                              {showAvatar && (
+                                <span className="text-xs text-muted-foreground px-1">
+                                  {msg.sender_name}
+                                </span>
+                              )}
+                              <div
+                                className={cn(
+                                  "rounded-2xl p-3 shadow-sm",
+                                  isOwn
+                                    ? "bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] text-white rounded-tr-md"
+                                    : "bg-white border border-slate-200 text-slate-800 rounded-tl-md"
+                                )}
+                              >
+                                {msg.attachment_url && (
+                                  <div className="mb-2">
+                                    {msg.attachment_type === "image" ? (
+                                      <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
+                                        <img
+                                          src={msg.attachment_url}
+                                          alt={msg.attachment_name || "مرفق"}
+                                          className="max-w-full max-h-48 rounded-lg"
+                                        />
+                                      </a>
+                                    ) : (
+                                      <a
+                                        href={msg.attachment_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={cn(
+                                          "flex items-center gap-2 p-2 rounded-lg",
+                                          isOwn ? "bg-white/15" : "bg-slate-50"
+                                        )}
+                                      >
+                                        {getAttachmentIcon(msg.attachment_type)}
+                                        <span className="text-sm truncate">{msg.attachment_name}</span>
+                                        <Download className="w-4 h-4" />
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+                                {msg.message && (
+                                  <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                                )}
+                                <p className={cn(
+                                  "text-[10px] mt-1",
+                                  isOwn ? "text-white/60" : "text-muted-foreground"
+                                )}>
+                                  <span style={{ fontFamily: "Arial, sans-serif" }}>
+                                    {formatDateTime(msg.created_at)}
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
+
+                {/* إدخال الرسالة */}
+                <div className="p-3 border-t bg-white">
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="flex-shrink-0 h-10 w-10 rounded-xl"
+                    >
+                      {uploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Paperclip className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <Input
+                      placeholder="اكتب رسالتك..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      className="flex-1 h-10 rounded-xl"
+                    />
+                    <Button
+                      onClick={() => sendMessage()}
+                      disabled={sending || !newMessage.trim()}
+                      className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85]"
+                    >
+                      {sending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#3d9aa8]/20 to-[#3d9aa8]/5 flex items-center justify-center mb-4">
+                  <MessageSquare className="w-10 h-10 text-[#3d9aa8]" />
+                </div>
+                <p className="font-medium">اختر محادثة للبدء</p>
+                <p className="text-sm mt-1">أو أنشئ محادثة جديدة</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+
+      {/* نافذة محادثة جديدة */}
+      <Dialog open={isNewConversationOpen} onOpenChange={setIsNewConversationOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-[#3d9aa8]" />
+              محادثة جديدة
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">اختر الشخص</label>
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر من القائمة" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.user_id} value={emp.user_id}>
+                      {emp.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setIsNewConversationOpen(false)}>
+                إلغاء
+              </Button>
+              <Button
+                onClick={createConversation}
+                disabled={!selectedEmployee}
+                className="bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85]"
+              >
+                بدء المحادثة
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
