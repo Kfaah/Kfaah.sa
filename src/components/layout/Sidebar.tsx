@@ -19,13 +19,13 @@ import {
   Eye,
   EyeOff,
   Bell,
+  Clock,
 } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
-import { AttendanceWidget } from "@/components/attendance/AttendanceWidget";
 
 interface NavItem {
   title: string;
@@ -328,10 +328,20 @@ export function Sidebar() {
               <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 transition-colors" />
             </Link>
 
-            {/* أيقونة تسجيل الحضور/الانصراف */}
-            {authUser && (
-              <AttendanceWidget userId={authUser.id} collapsed={collapsed} />
-            )}
+            {/* زر تسجيل الحضور والانصراف - ينتقل لصفحة مخصصة */}
+            <Link 
+              to="/attendance"
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl p-3 shadow-md flex items-center gap-3 group transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Clock className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 text-right">
+                <span className="text-sm font-semibold text-white">تسجيل الحضور والانصراف</span>
+                <p className="text-xs text-white/80">إدارة أوقات الحضور</p>
+              </div>
+              <ChevronLeft className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
+            </Link>
           </div>
         )}
 

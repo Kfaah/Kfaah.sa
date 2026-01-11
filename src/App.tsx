@@ -14,6 +14,7 @@ import ExecutivePlans from "./pages/ExecutivePlans";
 import Profile from "./pages/Profile";
 import OperationalPlans from "./pages/OperationalPlans";
 import OperationalPlanDetails from "./pages/OperationalPlanDetails";
+import Attendance from "./pages/Attendance";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -135,6 +136,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute>
+            <Attendance />
           </ProtectedRoute>
         }
       />
