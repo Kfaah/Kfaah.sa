@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
-import { cn, formatNumberPlain } from "@/lib/utils";
+import { cn, formatNumberPlain, formatDate } from "@/lib/utils";
 import { DailyTasksSelector } from "@/components/tasks/DailyTasksSelector";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { format } from "date-fns";
@@ -632,7 +632,7 @@ export default function Attendance() {
                             {format(new Date(record.date), "EEEE", { locale: ar })}
                           </TableCell>
                           <TableCell className="text-center" style={{ fontFamily: 'Arial, sans-serif' }}>
-                            {format(new Date(record.date), "yyyy/MM/dd")}
+                            {formatDate(record.date)}
                           </TableCell>
                           <TableCell className="text-center text-emerald-600 font-semibold" style={{ fontFamily: 'Arial, sans-serif' }}>
                             {format(checkIn, "hh:mm a", { locale: ar })}
