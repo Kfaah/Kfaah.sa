@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Clock, Users, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, Filter, Settings, Save } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Clock, Users, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, Filter, Settings, Save, GripVertical, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,15 @@ export default function AttendanceManagement() {
   const [workStartTime, setWorkStartTime] = useState("08:00");
   const [workEndTime, setWorkEndTime] = useState("16:00");
   const [savingSchedule, setSavingSchedule] = useState(false);
+  
+  // Drag and Drop for filters
+  const [filterOrder, setFilterOrder] = useState<string[]>(() => {
+    const saved = localStorage.getItem('attendanceFilterOrder');
+    return saved ? JSON.parse(saved) : ['settings', 'employee', 'today', 'date'];
+  });
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+  const [hasUnsavedOrder, setHasUnsavedOrder] = useState(false);
 
   // Get local date in YYYY-MM-DD format
   function getLocalDateString() {
@@ -343,129 +352,237 @@ export default function AttendanceManagement() {
         {/* Filters */}
         <Card className="border-border/50 bg-white shadow-sm">
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-3 items-center justify-start flex-row-reverse">
-              {/* Work Schedule Settings - Far Right */}
-              <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Settings className="w-4 h-4" />
-                    إعدادات الدوام
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                {isEditingOrder && (
+                  <span className="text-xs text-muted-foreground">اسحب العناصر لترتيبها</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {hasUnsavedOrder && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      localStorage.setItem('attendanceFilterOrder', JSON.stringify(filterOrder));
+                      setHasUnsavedOrder(false);
+                      setIsEditingOrder(false);
+                      toast({
+                        title: "تم الحفظ",
+                        description: "تم حفظ ترتيب الفلاتر بنجاح",
+                      });
+                    }}
+                    className="gap-1"
+                  >
+                    <Check className="w-4 h-4" />
+                    حفظ الترتيب
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>إعدادات جدول الدوام</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label>اختر الموظف</Label>
-                      <Select
-                        value={selectedEmployee?.id || ""}
-                        onValueChange={(value) => {
-                          const emp = employees.find((e) => e.id === value);
-                          if (emp) openScheduleDialog(emp);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر موظف..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white z-50">
-                          {employees.map((emp) => (
-                            <SelectItem key={emp.id} value={emp.id}>
-                              {emp.full_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                )}
+                <Button
+                  size="sm"
+                  variant={isEditingOrder ? "secondary" : "outline"}
+                  onClick={() => setIsEditingOrder(!isEditingOrder)}
+                  className="gap-1"
+                >
+                  <GripVertical className="w-4 h-4" />
+                  {isEditingOrder ? "إلغاء التعديل" : "تعديل الترتيب"}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-3 items-center justify-start flex-row-reverse">
+              {filterOrder.map((itemId) => {
+                const handleDragStart = (e: React.DragEvent) => {
+                  if (!isEditingOrder) return;
+                  setDraggedItem(itemId);
+                  e.dataTransfer.effectAllowed = 'move';
+                };
 
-                    {selectedEmployee && (
-                      <>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>وقت بداية الدوام</Label>
-                            <Input
-                              type="time"
-                              value={workStartTime}
-                              onChange={(e) => setWorkStartTime(e.target.value)}
-                              className="text-center"
-                              style={{ fontFamily: 'Arial, sans-serif' }}
-                            />
+                const handleDragOver = (e: React.DragEvent) => {
+                  if (!isEditingOrder || !draggedItem) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                };
+
+                const handleDrop = (e: React.DragEvent) => {
+                  if (!isEditingOrder || !draggedItem) return;
+                  e.preventDefault();
+                  
+                  const newOrder = [...filterOrder];
+                  const draggedIndex = newOrder.indexOf(draggedItem);
+                  const targetIndex = newOrder.indexOf(itemId);
+                  
+                  newOrder.splice(draggedIndex, 1);
+                  newOrder.splice(targetIndex, 0, draggedItem);
+                  
+                  setFilterOrder(newOrder);
+                  setHasUnsavedOrder(true);
+                  setDraggedItem(null);
+                };
+
+                const handleDragEnd = () => {
+                  setDraggedItem(null);
+                };
+
+                const commonDragProps = isEditingOrder ? {
+                  draggable: true,
+                  onDragStart: handleDragStart,
+                  onDragOver: handleDragOver,
+                  onDrop: handleDrop,
+                  onDragEnd: handleDragEnd,
+                } : {};
+
+                const dragStyle = isEditingOrder ? 
+                  `cursor-move ${draggedItem === itemId ? 'opacity-50 scale-95' : ''} transition-all` : '';
+
+                if (itemId === 'settings') {
+                  return (
+                    <div key={itemId} {...commonDragProps} className={`flex items-center gap-1 ${dragStyle}`}>
+                      {isEditingOrder && <GripVertical className="w-4 h-4 text-muted-foreground" />}
+                      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="gap-2">
+                            <Settings className="w-4 h-4" />
+                            إعدادات الدوام
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>إعدادات جدول الدوام</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label>اختر الموظف</Label>
+                              <Select
+                                value={selectedEmployee?.id || ""}
+                                onValueChange={(value) => {
+                                  const emp = employees.find((e) => e.id === value);
+                                  if (emp) openScheduleDialog(emp);
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="اختر موظف..." />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white z-50">
+                                  {employees.map((emp) => (
+                                    <SelectItem key={emp.id} value={emp.id}>
+                                      {emp.full_name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {selectedEmployee && (
+                              <>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>وقت بداية الدوام</Label>
+                                    <Input
+                                      type="time"
+                                      value={workStartTime}
+                                      onChange={(e) => setWorkStartTime(e.target.value)}
+                                      className="text-center"
+                                      style={{ fontFamily: 'Arial, sans-serif' }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>وقت نهاية الدوام</Label>
+                                    <Input
+                                      type="time"
+                                      value={workEndTime}
+                                      onChange={(e) => setWorkEndTime(e.target.value)}
+                                      className="text-center"
+                                      style={{ fontFamily: 'Arial, sans-serif' }}
+                                    />
+                                  </div>
+                                </div>
+
+                                <Button onClick={saveSchedule} disabled={savingSchedule} className="w-full gap-2">
+                                  {savingSchedule ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  ) : (
+                                    <>
+                                      <Save className="w-4 h-4" />
+                                      حفظ الجدول
+                                    </>
+                                  )}
+                                </Button>
+                              </>
+                            )}
                           </div>
-                          <div className="space-y-2">
-                            <Label>وقت نهاية الدوام</Label>
-                            <Input
-                              type="time"
-                              value={workEndTime}
-                              onChange={(e) => setWorkEndTime(e.target.value)}
-                              className="text-center"
-                              style={{ fontFamily: 'Arial, sans-serif' }}
-                            />
-                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  );
+                }
+
+                if (itemId === 'employee') {
+                  return (
+                    <div key={itemId} {...commonDragProps} className={`flex items-center gap-1 ${dragStyle}`}>
+                      {isEditingOrder && <GripVertical className="w-4 h-4 text-muted-foreground" />}
+                      <div className="w-64">
+                        <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                          <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
+                            <Users className="w-4 h-4 text-muted-foreground" />
+                            <SelectValue placeholder="جميع الموظفين" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white z-50">
+                            <SelectItem value="all">جميع الموظفين</SelectItem>
+                            {employees.map((emp) => (
+                              <SelectItem key={emp.id} value={emp.id}>
+                                {emp.full_name} - {emp.job_role}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (itemId === 'today') {
+                  return (
+                    <div key={itemId} {...commonDragProps} className={`flex items-center gap-1 ${dragStyle}`}>
+                      {isEditingOrder && <GripVertical className="w-4 h-4 text-muted-foreground" />}
+                      <Button variant="outline" onClick={() => setDateFilter(getLocalDateString())} className="gap-2">
+                        <Calendar className="w-4 h-4" />
+                        اليوم
+                      </Button>
+                    </div>
+                  );
+                }
+
+                if (itemId === 'date') {
+                  return (
+                    <div key={itemId} {...commonDragProps} className={`flex items-center gap-1 ${dragStyle}`}>
+                      {isEditingOrder && <GripVertical className="w-4 h-4 text-muted-foreground" />}
+                      <div className="relative w-44">
+                        <div className="flex flex-row-reverse items-center gap-2 border rounded-md px-3 py-2 bg-white">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {dateFilter
+                              ? (() => {
+                                  const [year, month, day] = dateFilter.split('-');
+                                  return `${day} / ${month} / ${year}`;
+                                })()
+                              : '-- / -- / ----'}
+                          </span>
                         </div>
 
-                        <Button onClick={saveSchedule} disabled={savingSchedule} className="w-full gap-2">
-                          {savingSchedule ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          ) : (
-                            <>
-                              <Save className="w-4 h-4" />
-                              حفظ الجدول
-                            </>
-                          )}
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
+                        <input
+                          type="date"
+                          value={dateFilter}
+                          onChange={(e) => setDateFilter(e.target.value)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          aria-label="اختيار التاريخ"
+                        />
+                      </div>
+                    </div>
+                  );
+                }
 
-              {/* Employee Filter */}
-              <div className="w-64">
-                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                  <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <SelectValue placeholder="جميع الموظفين" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    <SelectItem value="all">جميع الموظفين</SelectItem>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.full_name} - {emp.job_role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Today Button */}
-              <Button variant="outline" onClick={() => setDateFilter(getLocalDateString())} className="gap-2">
-                <Calendar className="w-4 h-4" />
-                اليوم
-              </Button>
-
-              {/* Date Filter - Far Left */}
-              <div className="relative w-44">
-                <div className="flex flex-row-reverse items-center gap-2 border rounded-md px-3 py-2 bg-white">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    {dateFilter
-                      ? (() => {
-                          const [year, month, day] = dateFilter.split('-');
-                          return `${day} / ${month} / ${year}`;
-                        })()
-                      : '-- / -- / ----'}
-                  </span>
-                </div>
-
-                <input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  aria-label="اختيار التاريخ"
-                />
-              </div>
+                return null;
+              })}
             </div>
           </CardContent>
         </Card>
