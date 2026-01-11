@@ -887,7 +887,7 @@ const Tasks = () => {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-[#3d9aa8]">
+                  <TableRow className="bg-[#3d9aa8] hover:bg-[#3d9aa8]">
                     <TableHead className="text-right font-bold text-white border-l border-white/20 w-48">النشاط</TableHead>
                     <TableHead className="text-right font-bold text-white border-l border-white/20">المهمة</TableHead>
                     <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">تاريخ التنفيذ</TableHead>
