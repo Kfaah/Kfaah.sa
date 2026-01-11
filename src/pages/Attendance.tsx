@@ -37,6 +37,8 @@ export default function Attendance() {
   
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
+  const [checkOutTime, setCheckOutTime] = useState<Date | null>(null);
+  const [hasCompletedToday, setHasCompletedToday] = useState(false);
   const [elapsedTime, setElapsedTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const [loading, setLoading] = useState(true);
   const [showTaskSelector, setShowTaskSelector] = useState(false);
@@ -105,13 +107,23 @@ export default function Attendance() {
       if (error) throw error;
       
       if (data) {
-        setIsCheckedIn(!data.check_out_at);
-        if (!data.check_out_at) {
-          setCheckInTime(new Date(data.check_in_at));
+        setCheckInTime(new Date(data.check_in_at));
+        if (data.check_out_at) {
+          // Already completed today
+          setIsCheckedIn(false);
+          setCheckOutTime(new Date(data.check_out_at));
+          setHasCompletedToday(true);
+        } else {
+          // Currently checked in
+          setIsCheckedIn(true);
+          setCheckOutTime(null);
+          setHasCompletedToday(false);
         }
       } else {
         setIsCheckedIn(false);
         setCheckInTime(null);
+        setCheckOutTime(null);
+        setHasCompletedToday(false);
       }
     } catch (error: any) {
       console.error("Error checking attendance:", error);
@@ -320,8 +332,8 @@ export default function Attendance() {
               {format(new Date(), "EEEE، d MMMM yyyy", { locale: ar })}
             </p>
           </div>
-          <Badge className={isCheckedIn ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}>
-            {isCheckedIn ? "حاضر" : "غير مسجل"}
+          <Badge className={isCheckedIn ? "bg-emerald-100 text-emerald-700" : hasCompletedToday ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-600"}>
+            {isCheckedIn ? "حاضر" : hasCompletedToday ? "مكتمل" : "غير مسجل"}
           </Badge>
         </div>
 
@@ -373,6 +385,62 @@ export default function Attendance() {
                     </>
                   )}
                 </Button>
+              </div>
+            ) : hasCompletedToday ? (
+              // Completed attendance view
+              <div className="space-y-6">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center">
+                    <Check className="w-8 h-8 text-sky-600" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <h2 className="text-xl font-bold text-sky-700">تم تسجيل الحضور والانصراف لهذا اليوم</h2>
+                  <p className="text-slate-600 mt-2">شكراً لك على عملك اليوم!</p>
+                </div>
+
+                {/* Today's Attendance Summary */}
+                <div className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-2xl border-2 border-sky-200 p-6">
+                  <h3 className="text-lg font-bold text-sky-800 mb-4 text-center">ملخص حضور اليوم</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white rounded-xl p-4 text-center shadow-sm">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <LogIn className="w-5 h-5 text-emerald-600" />
+                        <span className="text-sm font-medium text-slate-600">وقت الحضور</span>
+                      </div>
+                      <p className="text-2xl font-bold text-emerald-700" style={{ fontFamily: 'Arial, sans-serif' }}>
+                        {checkInTime ? format(checkInTime, "hh:mm a", { locale: ar }) : "-"}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 text-center shadow-sm">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <LogOut className="w-5 h-5 text-rose-600" />
+                        <span className="text-sm font-medium text-slate-600">وقت الانصراف</span>
+                      </div>
+                      <p className="text-2xl font-bold text-rose-700" style={{ fontFamily: 'Arial, sans-serif' }}>
+                        {checkOutTime ? format(checkOutTime, "hh:mm a", { locale: ar }) : "-"}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Total Work Hours */}
+                  {checkInTime && checkOutTime && (
+                    <div className="mt-4 bg-white rounded-xl p-4 text-center shadow-sm">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <Clock className="w-5 h-5 text-accent" />
+                        <span className="text-sm font-medium text-slate-600">إجمالي ساعات العمل</span>
+                      </div>
+                      <p className="text-2xl font-bold text-accent" style={{ fontFamily: 'Arial, sans-serif' }}>
+                        {(() => {
+                          const diff = checkOutTime.getTime() - checkInTime.getTime();
+                          const hours = Math.floor(diff / (1000 * 60 * 60));
+                          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                          return `${hours} ساعة ${minutes} دقيقة`;
+                        })()}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="space-y-6 text-center">
