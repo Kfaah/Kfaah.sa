@@ -12,6 +12,7 @@ import { cn, formatNumber, formatPercent } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getArabicErrorMessage } from "@/lib/errors";
+import { useUser } from "@/contexts/UserContext";
 
 interface Employee {
   id: string;
@@ -64,6 +65,7 @@ const getPerformanceBarColor = (performance: number) => {
 };
 
 const Employees = () => {
+  const { setPreviewingEmployee } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -440,38 +442,25 @@ const Employees = () => {
     }
   };
 
-  // Impersonate User
-  const handleImpersonate = async (employee: Employee) => {
+  // Impersonate User - Preview in same window
+  const handleImpersonate = (employee: Employee) => {
     if (!employee.user_id) {
       toast.error("هذا الموظف ليس له حساب مستخدم");
       return;
     }
     
-    setIsLoading(true);
-    try {
-      const response = await supabase.functions.invoke("impersonate-user", {
-        body: { userId: employee.user_id },
-      });
-
-      if (response.error) {
-        toast.error(getArabicErrorMessage(response.error, "حدث خطأ"));
-        return;
-      }
-      if (response.data?.error) {
-        toast.error(response.data.error);
-        return;
-      }
-
-      if (response.data?.actionLink) {
-        // Open the magic link in a new tab
-        window.open(response.data.actionLink, "_blank");
-        toast.success(`تم فتح حساب ${employee.full_name} في نافذة جديدة`);
-      }
-    } catch (error: any) {
-      toast.error(getArabicErrorMessage(error, "حدث خطأ"));
-    } finally {
-      setIsLoading(false);
-    }
+    // Set the previewing employee in context
+    setPreviewingEmployee({
+      id: employee.id,
+      user_id: employee.user_id,
+      full_name: employee.full_name,
+      email: employee.email,
+      phone: employee.phone,
+      job_role: employee.job_role,
+      avatar_url: employee.avatar_url,
+    });
+    
+    toast.success(`جاري معاينة حساب ${employee.full_name}`);
   };
 
   const stats = [
