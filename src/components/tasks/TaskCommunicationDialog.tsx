@@ -11,6 +11,13 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Send,
   Paperclip,
   Image,
@@ -23,6 +30,7 @@ import {
   CheckCircle,
   XCircle,
   X,
+  UserCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +46,11 @@ interface TaskMessage {
   attachment_type: string | null;
   created_at: string;
   sender_name?: string;
+}
+
+interface AdminUser {
+  user_id: string;
+  full_name: string;
 }
 
 interface TaskCommunicationDialogProps {
@@ -65,8 +78,43 @@ export function TaskCommunicationDialog({
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // جلب قائمة المدراء للموظفين
+  useEffect(() => {
+    if (!open || isAdmin) return;
+
+    const fetchAdmins = async () => {
+      try {
+        // جلب المستخدمين الذين لديهم صلاحية admin
+        const { data: adminRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+
+        if (adminRoles && adminRoles.length > 0) {
+          const adminIds = adminRoles.map(r => r.user_id);
+          const { data: adminEmployees } = await supabase
+            .from("employees")
+            .select("user_id, full_name")
+            .in("user_id", adminIds);
+
+          setAdmins(adminEmployees || []);
+          // اختيار أول مدير افتراضياً
+          if (adminEmployees && adminEmployees.length > 0) {
+            setSelectedRecipient(adminEmployees[0].user_id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+      }
+    };
+
+    fetchAdmins();
+  }, [open, isAdmin]);
 
   // جلب الرسائل
   useEffect(() => {
@@ -144,6 +192,9 @@ export function TaskCommunicationDialog({
     };
   }, [open, taskId]);
 
+  // هل هذه أول رسالة من الموظف؟
+  const isFirstEmployeeMessage = !isAdmin && messages.length === 0;
+
   // التمرير للأسفل عند وصول رسائل جديدة
   useEffect(() => {
     if (scrollRef.current) {
@@ -168,39 +219,25 @@ export function TaskCommunicationDialog({
 
       if (error) throw error;
 
-      // إرسال إشعار
-      const recipientId = isAdmin ? taskOwnerId : null;
-      if (recipientId && recipientId !== currentUserId) {
+      // إرسال إشعار للمستلم المحدد
+      if (!isAdmin && selectedRecipient && selectedRecipient !== currentUserId) {
+        // الموظف يرسل للمدير المختار
         await supabase.from("notifications").insert({
-          user_id: recipientId,
+          user_id: selectedRecipient,
+          title: "رسالة جديدة من موظف",
+          message: `لديك رسالة جديدة في مهمة "${taskTitle}"`,
+          type: "message",
+          related_task_id: taskId,
+        });
+      } else if (isAdmin && taskOwnerId !== currentUserId) {
+        // المدير يرسل لصاحب المهمة
+        await supabase.from("notifications").insert({
+          user_id: taskOwnerId,
           title: "رسالة جديدة",
           message: `لديك رسالة جديدة في مهمة "${taskTitle}"`,
           type: "message",
           related_task_id: taskId,
         });
-      }
-
-      // إشعار للمدير إذا كان المرسل موظف
-      if (!isAdmin) {
-        // نحتاج جلب المدراء وإرسال إشعار لهم
-        const { data: admins } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "admin");
-        
-        if (admins) {
-          for (const admin of admins) {
-            if (admin.user_id !== currentUserId) {
-              await supabase.from("notifications").insert({
-                user_id: admin.user_id,
-                title: "رسالة جديدة من موظف",
-                message: `لديك رسالة جديدة في مهمة "${taskTitle}"`,
-                type: "message",
-                related_task_id: taskId,
-              });
-            }
-          }
-        }
       }
 
       setNewMessage("");
@@ -310,6 +347,30 @@ export function TaskCommunicationDialog({
           </DialogTitle>
         </DialogHeader>
 
+        {/* اختيار المستلم للموظف عند بدء محادثة جديدة */}
+        {isFirstEmployeeMessage && admins.length > 0 && (
+          <div className="px-4 py-3 border-b bg-amber-50">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm text-amber-800">
+                <UserCircle className="w-5 h-5" />
+                <span className="font-medium">إرسال إلى:</span>
+              </div>
+              <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
+                <SelectTrigger className="w-[200px] bg-white">
+                  <SelectValue placeholder="اختر المستلم" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  {admins.map((admin) => (
+                    <SelectItem key={admin.user_id} value={admin.user_id}>
+                      {admin.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
         {/* منطقة الرسائل */}
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           {loading ? (
@@ -318,7 +379,7 @@ export function TaskCommunicationDialog({
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
-              لا توجد رسائل بعد. ابدأ المحادثة!
+              {isAdmin ? "لا توجد رسائل بعد." : "لا توجد رسائل بعد. اختر المستلم وابدأ المحادثة!"}
             </div>
           ) : (
             <div className="space-y-4">
