@@ -759,12 +759,16 @@ export default function Profile() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-6" dir="rtl">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <h1 className="text-3xl font-bold text-foreground">الملف الشخصي</h1>
-            <p className="text-muted-foreground mt-1">
+            <span className="text-muted-foreground">|</span>
+            <p className="text-muted-foreground">
               {isEditing ? "تعديل معلوماتك الشخصية" : "عرض وإدارة معلوماتك الشخصية"}
             </p>
+          </div>
+          <div className="px-4 py-2 rounded-full bg-gradient-to-l from-accent/10 to-primary/10 border border-accent/20">
+            <p className="text-sm font-medium text-accent">{currentMessage}</p>
           </div>
         </div>
 
