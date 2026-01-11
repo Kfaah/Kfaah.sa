@@ -53,7 +53,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { TaskCommunicationDialog } from "@/components/tasks/TaskCommunicationDialog";
 import { LiveTimer } from "@/components/tasks/LiveTimer";
-import { DailyTasksSelector } from "@/components/tasks/DailyTasksSelector";
+
 import { ActiveTaskBanner } from "@/components/tasks/ActiveTaskBanner";
 
 interface Task {
@@ -135,9 +135,6 @@ const Tasks = () => {
   const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
   const [selectedTaskForCommunication, setSelectedTaskForCommunication] = useState<Task | null>(null);
 
-  // حالة اختيار مهام اليوم
-  const [showDailyTasksSelector, setShowDailyTasksSelector] = useState(false);
-  const [attendanceChecked, setAttendanceChecked] = useState(false);
 
   // التحقق إذا كان المستخدم هو صاحب المهمة
   const isTaskOwner = (task: Task) => {
@@ -170,57 +167,7 @@ const Tasks = () => {
     checkPermissions();
   }, [authUser]);
 
-  // تسجيل الحضور والتحقق من المهمة النشطة
-  useEffect(() => {
-    const checkAttendanceAndActiveTask = async () => {
-      if (!authUser || isAdmin || attendanceChecked) return;
-      
-      const today = new Date().toISOString().split('T')[0];
-      
-      try {
-        // التحقق من تسجيل الحضور
-        const { data: attendance, error: attError } = await supabase
-          .from("attendance")
-          .select("id")
-          .eq("user_id", authUser.id)
-          .eq("date", today)
-          .maybeSingle();
-        
-        if (attError) throw attError;
-        
-        // إذا لم يسجل الحضور، نسجله الآن
-        if (!attendance) {
-          await supabase.from("attendance").insert({
-            user_id: authUser.id,
-            date: today,
-            check_in_at: new Date().toISOString()
-          });
-          toast({ title: "تم تسجيل الحضور ✓", description: `وقت الحضور: ${new Date().toLocaleTimeString('ar-SA')}` });
-        }
-        
-        // التحقق من وجود مهمة نشطة
-        const { data: activeTask, error: activeError } = await supabase
-          .from("active_task")
-          .select("id")
-          .eq("user_id", authUser.id)
-          .maybeSingle();
-        
-        if (activeError) throw activeError;
-        
-        // إذا لم توجد مهمة نشطة، نعرض شاشة اختيار المهام
-        if (!activeTask) {
-          setShowDailyTasksSelector(true);
-        }
-        
-        setAttendanceChecked(true);
-      } catch (error: any) {
-        console.error("Attendance check error:", error);
-        setAttendanceChecked(true);
-      }
-    };
-    
-    checkAttendanceAndActiveTask();
-  }, [authUser, isAdmin, attendanceChecked]);
+  // تم إزالة التحقق من المهمة النشطة - يتم الآن من خلال أيقونة تسجيل الحضور في الشريط الجانبي
 
   // جلب المهام
   useEffect(() => {
@@ -729,16 +676,6 @@ const Tasks = () => {
 
   const hasActiveFilters = filterMonth !== "all" || filterDay !== "all" || filterEmployee !== "all" || searchQuery;
 
-  // معالجة اختيار المهمة من شاشة مهام اليوم
-  const handleDailyTaskSelected = (taskId: string) => {
-    setShowDailyTasksSelector(false);
-    if (taskId) {
-      // تحديث قائمة المهام لعرض المهمة المحدثة
-      setTasks(prev => prev.map(t => 
-        t.id === taskId ? { ...t, status: "in_progress" as Task["status"], started_at: new Date().toISOString() } : t
-      ));
-    }
-  };
 
   // تحديث المهام عند إكمال المهمة
   const handleTaskCompleted = () => {
@@ -757,21 +694,13 @@ const Tasks = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* شاشة اختيار مهام اليوم للموظفين */}
-        {!isAdmin && authUser && (
-          <DailyTasksSelector
-            open={showDailyTasksSelector}
-            userId={authUser.id}
-            onTaskSelected={handleDailyTaskSelected}
-          />
-        )}
 
         {/* شريط المهمة النشطة */}
         {!isAdmin && authUser && (
           <ActiveTaskBanner
             userId={authUser.id}
             onTaskCompleted={handleTaskCompleted}
-            onSelectNextTask={() => setShowDailyTasksSelector(true)}
+            onSelectNextTask={() => {}}
           />
         )}
 
