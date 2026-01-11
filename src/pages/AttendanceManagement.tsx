@@ -343,10 +343,10 @@ export default function AttendanceManagement() {
         {/* Filters */}
         <Card className="border-border/50 bg-white shadow-sm">
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-3 items-center justify-start">
+            <div className="flex flex-wrap gap-3 items-center justify-end">
               {/* Date Filter - Far Left */}
               <div className="relative w-44">
-                <div className="flex flex-row-reverse items-center gap-1 border rounded-md px-3 py-2 bg-white">
+                <div className="flex items-center gap-1 border rounded-md px-3 py-2 bg-white">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   {(() => {
                     const parts = dateFilter
@@ -357,7 +357,7 @@ export default function AttendanceManagement() {
                       : { day: '--', month: '--', year: '----' };
 
                     return (
-                      <span className="flex flex-row-reverse items-center gap-1 text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                      <span className="flex items-center gap-1 text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
                         <span>{parts.day}</span>
                         <span className="text-muted-foreground">/</span>
                         <span>{parts.month}</span>
