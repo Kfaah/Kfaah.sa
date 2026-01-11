@@ -48,6 +48,7 @@ export default function Attendance() {
   const [activeTask, setActiveTask] = useState<ActiveTask | null>(null);
   const [taskElapsed, setTaskElapsed] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
+  const [showAllHistory, setShowAllHistory] = useState(false);
 
   useEffect(() => {
     if (effectiveUserId) {
@@ -183,11 +184,15 @@ export default function Attendance() {
   const fetchAttendanceHistory = async () => {
     if (!effectiveUserId) return;
     try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Fetch only previous days (not today)
       const { data, error } = await supabase
         .from("attendance")
         .select("*")
         .eq("user_id", effectiveUserId)
         .not("check_out_at", "is", null)
+        .lt("date", today)
         .order("date", { ascending: false })
         .limit(30);
       
@@ -427,7 +432,7 @@ export default function Attendance() {
                 </div>
                 <div className="text-center">
                   <h2 className="text-xl font-bold text-sky-700">تم تسجيل الحضور والانصراف لهذا اليوم</h2>
-                  <p className="text-slate-600 mt-2">يمكنك تسجيل الحضور مرة أخرى إذا أردت</p>
+                  <p className="text-slate-600 mt-2">شكراً لك على عملك اليوم!</p>
                 </div>
 
                 {/* Today's Attendance Summary */}
@@ -473,15 +478,6 @@ export default function Attendance() {
                   )}
                 </div>
 
-                {/* Re-check-in Button */}
-                <Button
-                  onClick={handleCheckInClick}
-                  size="lg"
-                  className="w-full gap-3 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-lg py-6"
-                >
-                  <LogIn className="w-6 h-6" />
-                  <span>تسجيل الحضور مجدداً</span>
-                </Button>
               </div>
             ) : (
               <div className="space-y-6 text-center">
@@ -592,13 +588,14 @@ export default function Attendance() {
         </Card>
 
         {/* Attendance History Table */}
+        {/* Attendance History Table */}
         {attendanceHistory.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <History className="w-5 h-5 text-accent" />
                 سجل الحضور والانصراف
-                <Badge variant="secondary">{attendanceHistory.length}</Badge>
+                <Badge variant="secondary">{attendanceHistory.length} يوم</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -614,7 +611,7 @@ export default function Attendance() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {attendanceHistory.map((record, index) => {
+                    {(showAllHistory ? attendanceHistory : attendanceHistory.slice(0, 7)).map((record, index) => {
                       const checkIn = new Date(record.check_in_at);
                       const checkOut = new Date(record.check_out_at);
                       const diff = checkOut.getTime() - checkIn.getTime();
@@ -644,6 +641,19 @@ export default function Attendance() {
                   </TableBody>
                 </Table>
               </div>
+              
+              {/* Show More Button */}
+              {attendanceHistory.length > 7 && (
+                <div className="mt-4 text-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAllHistory(!showAllHistory)}
+                    className="gap-2"
+                  >
+                    {showAllHistory ? "عرض أقل" : `عرض المزيد (${attendanceHistory.length - 7} يوم آخر)`}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
