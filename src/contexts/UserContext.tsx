@@ -16,6 +16,16 @@ interface UserData {
   isEmployee: boolean;
 }
 
+interface PreviewEmployee {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  job_role: string;
+  avatar_url: string | null;
+}
+
 interface UserContextType {
   user: UserData;
   loading: boolean;
@@ -25,6 +35,9 @@ interface UserContextType {
   // Preview mode - allows admin to see the UI as an employee
   previewAsEmployee: boolean;
   setPreviewAsEmployee: (value: boolean) => void;
+  // Preview specific employee
+  previewingEmployee: PreviewEmployee | null;
+  setPreviewingEmployee: (employee: PreviewEmployee | null) => void;
 }
 
 const defaultUser: UserData = {
@@ -48,6 +61,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserData>(defaultUser);
   const [loading, setLoading] = useState(true);
   const [previewAsEmployee, setPreviewAsEmployee] = useState(false);
+  const [previewingEmployee, setPreviewingEmployee] = useState<PreviewEmployee | null>(null);
+
+  // When previewing a specific employee, update user data
+  useEffect(() => {
+    if (previewingEmployee) {
+      setPreviewAsEmployee(true);
+    }
+  }, [previewingEmployee]);
 
   // Fetch profile when auth user changes
   useEffect(() => {
@@ -289,8 +310,35 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Get displayed user data (actual user or previewed employee)
+  const displayedUser = previewingEmployee ? {
+    ...user,
+    firstName: previewingEmployee.full_name.split(" ")[0] || "",
+    lastName: previewingEmployee.full_name.split(" ").slice(1).join(" ") || "",
+    email: previewingEmployee.email || "",
+    phone: previewingEmployee.phone || "",
+    profileImage: previewingEmployee.avatar_url,
+    jobRole: previewingEmployee.job_role,
+    department: previewingEmployee.job_role,
+    role: "موظف",
+    isEmployee: true,
+  } : user;
+
   return (
-    <UserContext.Provider value={{ user, loading, updateUser, updateProfileImage, uploadAvatar, previewAsEmployee, setPreviewAsEmployee }}>
+    <UserContext.Provider value={{ 
+      user: displayedUser, 
+      loading, 
+      updateUser, 
+      updateProfileImage, 
+      uploadAvatar, 
+      previewAsEmployee, 
+      setPreviewAsEmployee: (value) => {
+        setPreviewAsEmployee(value);
+        if (!value) setPreviewingEmployee(null);
+      },
+      previewingEmployee,
+      setPreviewingEmployee
+    }}>
       {children}
     </UserContext.Provider>
   );

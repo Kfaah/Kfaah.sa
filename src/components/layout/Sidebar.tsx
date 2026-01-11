@@ -72,11 +72,11 @@ export function Sidebar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, previewAsEmployee, setPreviewAsEmployee } = useUser();
+  const { user, previewAsEmployee, setPreviewAsEmployee, previewingEmployee } = useUser();
   const { signOut, user: authUser } = useAuth();
 
   // Check if user is actually an admin (not in preview mode)
-  const isActuallyAdmin = !user.isEmployee && user.role === "مدير النظام";
+  const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
 
   // جلب عدد الإشعارات غير المقروءة
   useEffect(() => {
@@ -370,32 +370,35 @@ export function Sidebar() {
               <NavLink item={settingsNavItem} />
             </div>
 
-            {/* زر معاينة كموظف - يظهر فقط للمدير */}
-            {isActuallyAdmin && (
+            {/* زر معاينة كموظف - يظهر فقط للمدير أو عند المعاينة */}
+            {(isActuallyAdmin || previewAsEmployee) && (
               <div className="pt-3 mt-3 border-t border-white/20">
-                <button
-                  onClick={() => setPreviewAsEmployee(!previewAsEmployee)}
-                  className={cn(
-                    "w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none transition-colors text-sm",
-                    previewAsEmployee 
-                      ? "bg-amber-500 text-white hover:bg-amber-600" 
-                      : "bg-white/20 text-white hover:bg-white/30"
-                  )}
-                >
-                  {previewAsEmployee ? (
-                    <>
+                {previewAsEmployee ? (
+                  <>
+                    <button
+                      onClick={() => setPreviewAsEmployee(false)}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none transition-colors text-sm bg-amber-500 text-white hover:bg-amber-600"
+                    >
                       <EyeOff className="w-4 h-4" />
                       {!collapsed && <span className="font-medium">إلغاء المعاينة</span>}
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-4 h-4" />
-                      {!collapsed && <span className="font-medium">معاينة كموظف</span>}
-                    </>
-                  )}
-                </button>
-                {previewAsEmployee && !collapsed && (
-                  <p className="text-xs text-amber-200 text-center mt-1">أنت في وضع المعاينة</p>
+                    </button>
+                    {!collapsed && (
+                      <p className="text-xs text-amber-200 text-center mt-1">
+                        {previewingEmployee 
+                          ? `معاينة: ${previewingEmployee.full_name}`
+                          : "أنت في وضع المعاينة"
+                        }
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setPreviewAsEmployee(true)}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none transition-colors text-sm bg-white/20 text-white hover:bg-white/30"
+                  >
+                    <Eye className="w-4 h-4" />
+                    {!collapsed && <span className="font-medium">معاينة كموظف</span>}
+                  </button>
                 )}
               </div>
             )}
