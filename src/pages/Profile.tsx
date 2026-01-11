@@ -776,7 +776,7 @@ export default function Profile() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6" dir="rtl">
+      <div className="w-full max-w-screen-2xl mx-auto space-y-6" dir="rtl">
         {/* Header */}
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-foreground">الملف الشخصي</h1>
