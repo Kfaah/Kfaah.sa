@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect } from "react";
 import { Clock, Users, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, Filter, Settings, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInMinutes, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { ar } from "date-fns/locale";
-import { DraggableFilters } from "@/components/attendance/DraggableFilters";
 
-interface FilterItem {
-  id: string;
-  content: ReactNode;
-}
 interface Employee {
   id: string;
   user_id: string | null;
@@ -69,7 +64,6 @@ export default function AttendanceManagement() {
   const [workStartTime, setWorkStartTime] = useState("08:00");
   const [workEndTime, setWorkEndTime] = useState("16:00");
   const [savingSchedule, setSavingSchedule] = useState(false);
-  const [filterOrder, setFilterOrder] = useState<string[]>(["settings", "employee", "today", "date"]);
 
   // Get local date in YYYY-MM-DD format
   function getLocalDateString() {
@@ -349,147 +343,140 @@ export default function AttendanceManagement() {
         {/* Filters */}
         <Card className="border-border/50 bg-white shadow-sm">
           <CardContent className="p-4">
-            <DraggableFilters
-              items={filterOrder.map((id) => {
-                const filterComponents: Record<string, ReactNode> = {
-                  settings: (
-                    <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="gap-2">
-                          <Settings className="w-4 h-4" />
-                          إعدادات الدوام
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>إعدادات جدول الدوام</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="space-y-2">
-                            <Label>اختر الموظف</Label>
-                            <Select
-                              value={selectedEmployee?.id || ""}
-                              onValueChange={(value) => {
-                                const emp = employees.find((e) => e.id === value);
-                                if (emp) openScheduleDialog(emp);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="اختر موظف..." />
-                              </SelectTrigger>
-                              <SelectContent className="bg-white z-50">
-                                {employees.map((emp) => (
-                                  <SelectItem key={emp.id} value={emp.id}>
-                                    {emp.full_name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+            <div className="flex flex-wrap gap-3 items-center justify-start">
+              {/* Date Filter - Far Left */}
+              <div className="relative w-44">
+                <div className="flex flex-row-reverse items-center gap-1 border rounded-md px-3 py-2 bg-white">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  {(() => {
+                    const parts = dateFilter
+                      ? (() => {
+                          const [year, month, day] = dateFilter.split('-');
+                          return { day, month, year };
+                        })()
+                      : { day: '--', month: '--', year: '----' };
 
-                          {selectedEmployee && (
-                            <>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label>وقت بداية الدوام</Label>
-                                  <Input
-                                    type="time"
-                                    value={workStartTime}
-                                    onChange={(e) => setWorkStartTime(e.target.value)}
-                                    className="text-center"
-                                    style={{ fontFamily: 'Arial, sans-serif' }}
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>وقت نهاية الدوام</Label>
-                                  <Input
-                                    type="time"
-                                    value={workEndTime}
-                                    onChange={(e) => setWorkEndTime(e.target.value)}
-                                    className="text-center"
-                                    style={{ fontFamily: 'Arial, sans-serif' }}
-                                  />
-                                </div>
-                              </div>
+                    return (
+                      <span className="flex flex-row-reverse items-center gap-1 text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                        <span>{parts.day}</span>
+                        <span className="text-muted-foreground">/</span>
+                        <span>{parts.month}</span>
+                        <span className="text-muted-foreground">/</span>
+                        <span>{parts.year}</span>
+                      </span>
+                    );
+                  })()}
+                </div>
 
-                              <Button onClick={saveSchedule} disabled={savingSchedule} className="w-full gap-2">
-                                {savingSchedule ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                ) : (
-                                  <>
-                                    <Save className="w-4 h-4" />
-                                    حفظ الجدول
-                                  </>
-                                )}
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  ),
-                  employee: (
-                    <div className="w-64">
-                      <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                        <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
-                          <Users className="w-4 h-4 text-muted-foreground" />
-                          <SelectValue placeholder="جميع الموظفين" />
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  aria-label="اختيار التاريخ"
+                />
+              </div>
+
+              {/* Today Button */}
+              <Button variant="outline" onClick={() => setDateFilter(getLocalDateString())} className="gap-2">
+                <Calendar className="w-4 h-4" />
+                اليوم
+              </Button>
+
+              {/* Employee Filter */}
+              <div className="w-64">
+                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                  <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <SelectValue placeholder="جميع الموظفين" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">جميع الموظفين</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.full_name} - {emp.job_role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Work Schedule Settings - Far Right */}
+              <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Settings className="w-4 h-4" />
+                    إعدادات الدوام
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>إعدادات جدول الدوام</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>اختر الموظف</Label>
+                      <Select
+                        value={selectedEmployee?.id || ""}
+                        onValueChange={(value) => {
+                          const emp = employees.find((e) => e.id === value);
+                          if (emp) openScheduleDialog(emp);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر موظف..." />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
-                          <SelectItem value="all">جميع الموظفين</SelectItem>
                           {employees.map((emp) => (
                             <SelectItem key={emp.id} value={emp.id}>
-                              {emp.full_name} - {emp.job_role}
+                              {emp.full_name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  ),
-                  today: (
-                    <Button variant="outline" onClick={() => setDateFilter(getLocalDateString())} className="gap-2">
-                      <Calendar className="w-4 h-4" />
-                      اليوم
-                    </Button>
-                  ),
-                  date: (
-                    <div className="relative w-44">
-                      <div className="flex items-center gap-1 border rounded-md px-3 py-2 bg-white">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        {(() => {
-                          const parts = dateFilter
-                            ? (() => {
-                                const [year, month, day] = dateFilter.split('-');
-                                return { day, month, year };
-                              })()
-                            : { day: '--', month: '--', year: '----' };
 
-                          return (
-                            <span className="flex items-center gap-1 text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
-                              <span>{parts.day}</span>
-                              <span className="text-muted-foreground">/</span>
-                              <span>{parts.month}</span>
-                              <span className="text-muted-foreground">/</span>
-                              <span>{parts.year}</span>
-                            </span>
-                          );
-                        })()}
-                      </div>
+                    {selectedEmployee && (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>وقت بداية الدوام</Label>
+                            <Input
+                              type="time"
+                              value={workStartTime}
+                              onChange={(e) => setWorkStartTime(e.target.value)}
+                              className="text-center"
+                              style={{ fontFamily: 'Arial, sans-serif' }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>وقت نهاية الدوام</Label>
+                            <Input
+                              type="time"
+                              value={workEndTime}
+                              onChange={(e) => setWorkEndTime(e.target.value)}
+                              className="text-center"
+                              style={{ fontFamily: 'Arial, sans-serif' }}
+                            />
+                          </div>
+                        </div>
 
-                      <input
-                        type="date"
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        aria-label="اختيار التاريخ"
-                      />
-                    </div>
-                  ),
-                };
-                return { id, content: filterComponents[id] };
-              })}
-              onReorder={(newItems) => setFilterOrder(newItems.map((item) => item.id))}
-            />
+                        <Button onClick={saveSchedule} disabled={savingSchedule} className="w-full gap-2">
+                          {savingSchedule ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4" />
+                              حفظ الجدول
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardContent>
         </Card>
 
