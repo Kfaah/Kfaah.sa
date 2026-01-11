@@ -343,7 +343,7 @@ export default function AttendanceManagement() {
         {/* Filters */}
         <Card className="border-border/50 bg-white shadow-sm">
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-3 items-center justify-end">
+            <div className="flex flex-wrap gap-3 items-center justify-start flex-row-reverse">
               {/* Work Schedule Settings - Far Right */}
               <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
                 <DialogTrigger asChild>
