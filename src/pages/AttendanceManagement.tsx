@@ -1,15 +1,28 @@
 import { useState, useEffect } from "react";
-import { Clock, Users, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, Filter } from "lucide-react";
+import { Clock, Users, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, Filter, Settings, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { format, differenceInMinutes, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { ar } from "date-fns/locale";
+
+interface Employee {
+  id: string;
+  user_id: string | null;
+  full_name: string;
+  job_role: string;
+  avatar_url: string | null;
+  work_start_time: string | null;
+  work_end_time: string | null;
+}
 
 interface AttendanceRecord {
   id: string;
@@ -33,10 +46,12 @@ interface AttendanceStats {
 }
 
 export default function AttendanceManagement() {
+  const { toast } = useToast();
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dateFilter, setDateFilter] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>(getLocalDateString());
   const [stats, setStats] = useState<AttendanceStats>({
     totalEmployees: 0,
     presentToday: 0,
@@ -44,30 +59,72 @@ export default function AttendanceManagement() {
     averageHoursThisMonth: 0,
     lateArrivalsThisMonth: 0
   });
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [workStartTime, setWorkStartTime] = useState("08:00");
+  const [workEndTime, setWorkEndTime] = useState("16:00");
+  const [savingSchedule, setSavingSchedule] = useState(false);
+
+  // Get local date in YYYY-MM-DD format
+  function getLocalDateString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
   useEffect(() => {
     fetchAttendanceRecords();
     fetchStats();
-  }, [dateFilter]);
+  }, [dateFilter, selectedEmployeeId]);
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("id, user_id, full_name, job_role, avatar_url, work_start_time, work_end_time")
+        .eq("status", "active")
+        .order("full_name");
+      
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  };
 
   const fetchAttendanceRecords = async () => {
     setLoading(true);
     try {
-      // Fetch attendance records
-      const { data: attendanceData, error: attendanceError } = await supabase
+      let query = supabase
         .from("attendance")
         .select("*")
         .eq("date", dateFilter)
         .order("check_in_at", { ascending: false });
       
+      // Filter by selected employee
+      if (selectedEmployeeId !== "all") {
+        const selectedEmp = employees.find(e => e.id === selectedEmployeeId);
+        if (selectedEmp?.user_id) {
+          query = query.eq("user_id", selectedEmp.user_id);
+        }
+      }
+      
+      const { data: attendanceData, error: attendanceError } = await query;
+      
       if (attendanceError) throw attendanceError;
 
       // Fetch employees separately
-      const { data: employees } = await supabase
+      const { data: employeesData } = await supabase
         .from("employees")
         .select("user_id, full_name, job_role, avatar_url");
 
-      const employeeMap = new Map(employees?.map(e => [e.user_id, e]) || []);
+      const employeeMap = new Map(employeesData?.map(e => [e.user_id, e]) || []);
       
       const recordsWithEmployees: AttendanceRecord[] = (attendanceData || []).map(record => ({
         ...record,
@@ -84,7 +141,7 @@ export default function AttendanceManagement() {
 
   const fetchStats = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       const monthStart = startOfMonth(new Date()).toISOString().split('T')[0];
       const monthEnd = endOfMonth(new Date()).toISOString().split('T')[0];
 
@@ -142,6 +199,38 @@ export default function AttendanceManagement() {
     }
   };
 
+  const openScheduleDialog = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setWorkStartTime(employee.work_start_time?.substring(0, 5) || "08:00");
+    setWorkEndTime(employee.work_end_time?.substring(0, 5) || "16:00");
+    setScheduleDialogOpen(true);
+  };
+
+  const saveSchedule = async () => {
+    if (!selectedEmployee) return;
+    
+    setSavingSchedule(true);
+    try {
+      const { error } = await supabase
+        .from("employees")
+        .update({
+          work_start_time: workStartTime,
+          work_end_time: workEndTime
+        })
+        .eq("id", selectedEmployee.id);
+      
+      if (error) throw error;
+      
+      toast({ title: "تم حفظ جدول الدوام ✓" });
+      setScheduleDialogOpen(false);
+      fetchEmployees();
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
+
   const calculateWorkDuration = (checkIn: string, checkOut: string | null): string => {
     if (!checkOut) return "جاري العمل";
     
@@ -149,14 +238,14 @@ export default function AttendanceManagement() {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     
+    if (hours === 0 && mins === 0) {
+      const seconds = Math.floor((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 1000);
+      return `${seconds} ثانية`;
+    } else if (hours === 0) {
+      return `${mins} دقيقة`;
+    }
     return `${hours} ساعة ${mins} دقيقة`;
   };
-
-  const filteredRecords = records.filter(record => {
-    if (!searchQuery) return true;
-    const employeeName = record.employee?.full_name || "";
-    return employeeName.toLowerCase().includes(searchQuery.toLowerCase());
-  });
 
   const formatTime = (dateStr: string): string => {
     return format(new Date(dateStr), "hh:mm a", { locale: ar });
@@ -254,30 +343,120 @@ export default function AttendanceManagement() {
         {/* Filters */}
         <Card className="border-border/50">
           <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="البحث عن موظف..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-10"
-                />
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Employee Filter */}
+              <div className="flex-1">
+                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                  <SelectTrigger className="w-full text-right">
+                    <SelectValue placeholder="جميع الموظفين" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">جميع الموظفين</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.full_name} - {emp.job_role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+              
+              {/* Date Filter */}
               <div className="flex gap-2">
                 <Input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-48"
+                  className="w-48 text-right"
+                  style={{ fontFamily: 'Arial, sans-serif' }}
                 />
                 <Button
                   variant="outline"
-                  onClick={() => setDateFilter(new Date().toISOString().split('T')[0])}
+                  onClick={() => setDateFilter(getLocalDateString())}
                 >
                   اليوم
                 </Button>
               </div>
+              
+              {/* Work Schedule Settings */}
+              <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Settings className="w-4 h-4" />
+                    إعدادات الدوام
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>إعدادات جدول الدوام</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>اختر الموظف</Label>
+                      <Select 
+                        value={selectedEmployee?.id || ""} 
+                        onValueChange={(value) => {
+                          const emp = employees.find(e => e.id === value);
+                          if (emp) openScheduleDialog(emp);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر موظف..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white z-50">
+                          {employees.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id}>
+                              {emp.full_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {selectedEmployee && (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>وقت بداية الدوام</Label>
+                            <Input
+                              type="time"
+                              value={workStartTime}
+                              onChange={(e) => setWorkStartTime(e.target.value)}
+                              className="text-center"
+                              style={{ fontFamily: 'Arial, sans-serif' }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>وقت نهاية الدوام</Label>
+                            <Input
+                              type="time"
+                              value={workEndTime}
+                              onChange={(e) => setWorkEndTime(e.target.value)}
+                              className="text-center"
+                              style={{ fontFamily: 'Arial, sans-serif' }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <Button 
+                          onClick={saveSchedule} 
+                          disabled={savingSchedule}
+                          className="w-full gap-2"
+                        >
+                          {savingSchedule ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4" />
+                              حفظ الجدول
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardContent>
         </Card>
@@ -288,7 +467,7 @@ export default function AttendanceManagement() {
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-accent" />
               سجلات الحضور
-              <Badge variant="secondary" className="mr-2">{filteredRecords.length}</Badge>
+              <Badge variant="secondary" className="mr-2">{records.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -296,7 +475,7 @@ export default function AttendanceManagement() {
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
               </div>
-            ) : filteredRecords.length === 0 ? (
+            ) : records.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>لا توجد سجلات حضور لهذا التاريخ</p>
@@ -305,73 +484,82 @@ export default function AttendanceManagement() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">الموظف</TableHead>
-                      <TableHead className="text-right">الوظيفة</TableHead>
-                      <TableHead className="text-right">وقت الحضور</TableHead>
-                      <TableHead className="text-right">وقت الانصراف</TableHead>
-                      <TableHead className="text-right">مدة العمل</TableHead>
-                      <TableHead className="text-right">الحالة</TableHead>
+                    <TableRow className="bg-[#3d9aa8] hover:bg-[#3d9aa8]">
+                      <TableHead className="text-right text-white font-bold">الموظف</TableHead>
+                      <TableHead className="text-right text-white font-bold">الوظيفة</TableHead>
+                      <TableHead className="text-center text-white font-bold">جدول الدوام</TableHead>
+                      <TableHead className="text-center text-white font-bold">وقت الحضور</TableHead>
+                      <TableHead className="text-center text-white font-bold">وقت الانصراف</TableHead>
+                      <TableHead className="text-center text-white font-bold">مدة العمل</TableHead>
+                      <TableHead className="text-center text-white font-bold">الحالة</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-accent/10 flex items-center justify-center">
-                              {record.employee?.avatar_url ? (
-                                <img 
-                                  src={record.employee.avatar_url} 
-                                  alt="" 
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-accent font-bold">
-                                  {record.employee?.full_name?.charAt(0) || "؟"}
-                                </span>
-                              )}
+                    {records.map((record, index) => {
+                      const emp = employees.find(e => e.user_id === record.user_id);
+                      return (
+                        <TableRow key={record.id} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full overflow-hidden bg-accent/10 flex items-center justify-center">
+                                {record.employee?.avatar_url ? (
+                                  <img 
+                                    src={record.employee.avatar_url} 
+                                    alt="" 
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-accent font-bold">
+                                    {record.employee?.full_name?.charAt(0) || "؟"}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="font-medium text-foreground">
+                                {record.employee?.full_name || "غير معروف"}
+                              </span>
                             </div>
-                            <span className="font-medium text-foreground">
-                              {record.employee?.full_name || "غير معروف"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {record.employee?.job_role || "-"}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="text-sm text-muted-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
+                              {emp?.work_start_time?.substring(0, 5) || "08:00"} - {emp?.work_end_time?.substring(0, 5) || "16:00"}
                             </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {record.employee?.job_role || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-mono">
-                            {formatTime(record.check_in_at)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {record.check_out_at ? (
+                          </TableCell>
+                          <TableCell className="text-center">
                             <Badge variant="outline" className="font-mono">
-                              {formatTime(record.check_out_at)}
+                              {formatTime(record.check_in_at)}
                             </Badge>
-                          ) : (
-                            <Badge className="bg-amber-100 text-amber-700 border-amber-300">
-                              لم يسجل بعد
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium text-foreground">
-                          {calculateWorkDuration(record.check_in_at, record.check_out_at)}
-                        </TableCell>
-                        <TableCell>
-                          {record.check_out_at ? (
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
-                              مكتمل
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-sky-100 text-sky-700 border-sky-300">
-                              جاري العمل
-                            </Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {record.check_out_at ? (
+                              <Badge variant="outline" className="font-mono">
+                                {formatTime(record.check_out_at)}
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-amber-100 text-amber-700 border-amber-300">
+                                لم يسجل بعد
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center font-medium text-foreground">
+                            {calculateWorkDuration(record.check_in_at, record.check_out_at)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {record.check_out_at ? (
+                              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
+                                مكتمل
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-sky-100 text-sky-700 border-sky-300">
+                                جاري العمل
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

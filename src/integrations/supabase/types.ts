@@ -115,6 +115,8 @@ export type Database = {
           updated_at: string
           user_id: string | null
           username: string | null
+          work_end_time: string | null
+          work_start_time: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -133,6 +135,8 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           username?: string | null
+          work_end_time?: string | null
+          work_start_time?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -151,6 +155,8 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           username?: string | null
+          work_end_time?: string | null
+          work_start_time?: string | null
         }
         Relationships: []
       }
