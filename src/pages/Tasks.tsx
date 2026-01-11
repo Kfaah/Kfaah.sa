@@ -108,6 +108,7 @@ const Tasks = () => {
   const [filterMonth, setFilterMonth] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<string>("all");
   const [filterEmployee, setFilterEmployee] = useState<string>("all");
+  const [filterActivity, setFilterActivity] = useState<string>("all");
   
   // حالة نافذة التوليد
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
@@ -545,6 +546,7 @@ const Tasks = () => {
     setFilterMonth("all");
     setFilterDay("all");
     setFilterEmployee("all");
+    setFilterActivity("all");
     setSearchQuery("");
     setActiveTab("all");
   };
@@ -651,9 +653,9 @@ const Tasks = () => {
     const taskDay = getDayFromDate(task.due_date);
     const matchesDay = filterDay === "all" || taskDay === Number(filterDay);
 
-    // فلتر المنفذ - التحقق من user_id المهمة مقابل user_id أو id الموظف
+    // فلتر المنفذ - للمدير فقط
     let matchesEmployee = true;
-    if (filterEmployee !== "all") {
+    if (isAdmin && filterEmployee !== "all") {
       // نبحث عن الموظف المختار ونقارن user_id
       const selectedEmp = employees.find(e => e.user_id === filterEmployee || e.id === filterEmployee);
       if (selectedEmp) {
@@ -662,19 +664,35 @@ const Tasks = () => {
         matchesEmployee = task.user_id === filterEmployee;
       }
     }
+    
+    // للموظف العادي: يرى مهامه فقط
+    if (!isAdmin) {
+      matchesEmployee = task.user_id === authUser?.id;
+    }
 
-    return matchesSearch && matchesStatus && matchesMonth && matchesDay && matchesEmployee;
+    // فلتر النشاط
+    let matchesActivity = true;
+    if (filterActivity !== "all") {
+      matchesActivity = task.executive_plan_id === filterActivity;
+    }
+
+    return matchesSearch && matchesStatus && matchesMonth && matchesDay && matchesEmployee && matchesActivity;
   });
 
   const taskStats = {
-    all: tasks.length,
-    upcoming: tasks.filter((t) => t.status === "upcoming").length,
-    in_progress: tasks.filter((t) => t.status === "in_progress").length,
-    completed: tasks.filter((t) => t.status === "completed").length,
-    delayed: tasks.filter((t) => t.status === "delayed").length,
+    all: tasks.filter(t => !isAdmin ? t.user_id === authUser?.id : true).length,
+    upcoming: tasks.filter((t) => t.status === "upcoming" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
+    in_progress: tasks.filter((t) => t.status === "in_progress" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
+    completed: tasks.filter((t) => t.status === "completed" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
+    delayed: tasks.filter((t) => t.status === "delayed" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
   };
 
-  const hasActiveFilters = filterMonth !== "all" || filterDay !== "all" || filterEmployee !== "all" || searchQuery;
+  const hasActiveFilters = filterMonth !== "all" || filterDay !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
+
+  // قائمة الأنشطة الفريدة للفلتر
+  const uniqueActivities = Array.from(new Set(
+    activities.map(a => JSON.stringify({ id: a.executive_plan_id, name: a.activity_name }))
+  )).map(s => JSON.parse(s) as { id: string; name: string });
 
 
   // تحديث المهام عند إكمال المهمة
@@ -780,7 +798,7 @@ const Tasks = () => {
                 </Button>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <div className={cn("grid gap-5", isAdmin ? "grid-cols-1 md:grid-cols-5" : "grid-cols-1 md:grid-cols-4")}>
               {/* فلتر الشهر */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-[#3d9aa8]">الشهر</label>
@@ -824,23 +842,43 @@ const Tasks = () => {
                 </Select>
               </div>
 
-              {/* فلتر المنفذ */}
+              {/* فلتر النشاط - للجميع */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-[#3d9aa8]">المنفذ</label>
-                <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                <label className="text-sm font-semibold text-[#3d9aa8]">النشاط</label>
+                <Select value={filterActivity} onValueChange={setFilterActivity}>
                   <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
-                    <SelectValue placeholder="كل الموظفين" />
+                    <SelectValue placeholder="كل الأنشطة" />
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50 border-[#3d9aa8]/20">
-                    <SelectItem value="all">كل الموظفين</SelectItem>
-                    {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.user_id || emp.id}>
-                        {emp.full_name}
+                    <SelectItem value="all">كل الأنشطة</SelectItem>
+                    {uniqueActivities.map(activity => (
+                      <SelectItem key={activity.id} value={activity.id}>
+                        {activity.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* فلتر المنفذ - للمدير فقط */}
+              {isAdmin && (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-[#3d9aa8]">المنفذ</label>
+                  <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                    <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
+                      <SelectValue placeholder="كل الموظفين" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50 border-[#3d9aa8]/20">
+                      <SelectItem value="all">كل الموظفين</SelectItem>
+                      {employees.map(emp => (
+                        <SelectItem key={emp.id} value={emp.user_id || emp.id}>
+                          {emp.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* البحث */}
               <div className="space-y-2">
