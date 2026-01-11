@@ -341,49 +341,17 @@ export default function AttendanceManagement() {
         </div>
 
         {/* Filters */}
-        <Card className="border-primary/20 bg-gradient-to-l from-primary/5 to-transparent shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex flex-col lg:flex-row-reverse gap-4 items-center">
-              {/* Date Filter */}
-              <div className="flex gap-3 items-center">
-                <Button
-                  variant="secondary"
-                  onClick={() => setDateFilter(getLocalDateString())}
-                  className="bg-primary/10 hover:bg-primary/20 text-primary border-0"
-                >
-                  <Calendar className="w-4 h-4 ml-2" />
-                  اليوم
-                </Button>
-                <div className="relative">
-                  <Input
-                    type="date"
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    className="w-52 text-center bg-white border-primary/30 focus:border-primary focus:ring-primary/20"
-                    style={{ 
-                      fontFamily: 'Arial, sans-serif',
-                      direction: 'rtl'
-                    }}
-                  />
-                </div>
-                <span className="text-sm font-medium text-foreground whitespace-nowrap">
-                  {dateFilter ? (() => {
-                    const [year, month, day] = dateFilter.split('-');
-                    return `${day}/${month}/${year}`;
-                  })() : ''}
-                </span>
-              </div>
-              
+        <Card className="border-border/50 bg-white shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-3 items-center justify-end">
               {/* Employee Filter */}
-              <div className="flex-1 min-w-[250px]">
+              <div className="w-72">
                 <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                  <SelectTrigger className="w-full text-right bg-white border-primary/30 focus:border-primary focus:ring-primary/20">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-muted-foreground" />
-                      <SelectValue placeholder="جميع الموظفين" />
-                    </div>
+                  <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <SelectValue placeholder="جميع الموظفين" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50 border-primary/20">
+                  <SelectContent className="bg-white z-50">
                     <SelectItem value="all">جميع الموظفين</SelectItem>
                     {employees.map((emp) => (
                       <SelectItem key={emp.id} value={emp.id}>
@@ -392,6 +360,33 @@ export default function AttendanceManagement() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              
+              {/* Date Filter */}
+              <Button
+                variant="outline"
+                onClick={() => setDateFilter(getLocalDateString())}
+                className="gap-2"
+              >
+                <Calendar className="w-4 h-4" />
+                اليوم
+              </Button>
+              
+              <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-white">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  {dateFilter ? (() => {
+                    const [year, month, day] = dateFilter.split('-');
+                    return `${day}/${month}/${year}`;
+                  })() : ''}
+                </span>
+                <Input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-[130px] border-0 p-0 h-auto bg-transparent focus-visible:ring-0"
+                  style={{ fontFamily: 'Arial, sans-serif' }}
+                />
               </div>
               
               {/* Work Schedule Settings */}
@@ -504,6 +499,7 @@ export default function AttendanceManagement() {
                       <TableHead className="text-right text-white font-bold">الموظف</TableHead>
                       <TableHead className="text-right text-white font-bold">الوظيفة</TableHead>
                       <TableHead className="text-center text-white font-bold">جدول الدوام</TableHead>
+                      <TableHead className="text-center text-white font-bold">تاريخ الحضور</TableHead>
                       <TableHead className="text-center text-white font-bold">وقت الحضور</TableHead>
                       <TableHead className="text-center text-white font-bold">وقت الانصراف</TableHead>
                       <TableHead className="text-center text-white font-bold">مدة العمل</TableHead>
@@ -541,6 +537,14 @@ export default function AttendanceManagement() {
                           <TableCell className="text-center">
                             <span className="text-sm text-muted-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
                               {emp?.work_start_time?.substring(0, 5) || "08:00"} - {emp?.work_end_time?.substring(0, 5) || "16:00"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="text-sm font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
+                              {(() => {
+                                const [year, month, day] = record.date.split('-');
+                                return `${day}/${month}/${year}`;
+                              })()}
                             </span>
                           </TableCell>
                           <TableCell className="text-center">
