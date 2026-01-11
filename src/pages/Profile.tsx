@@ -297,9 +297,18 @@ export default function Profile() {
 
   // View Mode Render
   const renderViewMode = () => (
-    <div className="space-y-6">
-      {/* Profile Header Card */}
-      <Card className="overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* قسم الرسائل - اليسار */}
+      <div className="lg:col-span-1 order-2 lg:order-1">
+        {authUser && (
+          <MessagingSection currentUserId={authUser.id} isAdmin={isAdmin} />
+        )}
+      </div>
+
+      {/* قسم الملف الشخصي - اليمين */}
+      <div className="lg:col-span-2 order-1 lg:order-2 space-y-6">
+        {/* Profile Header Card */}
+        <Card className="overflow-hidden">
         <div className="h-40 bg-gradient-to-l from-accent via-primary to-accent/80 relative">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOC0xOHoiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L2c+PC9zdmc+')] opacity-30" />
         </div>
@@ -544,17 +553,13 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* نظام الرسائل */}
-      {authUser && (
-        <MessagingSection currentUserId={authUser.id} isAdmin={isAdmin} />
-      )}
-
-      {/* Positive Message at Bottom */}
-      {currentMessage && !isEditing && (
-        <div className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-2xl py-4 px-6 border border-cyan-200 animate-fade-in text-center">
-          <span className="text-lg font-medium text-cyan-700">{currentMessage}</span>
-        </div>
-      )}
+        {/* Positive Message at Bottom */}
+        {currentMessage && !isEditing && (
+          <div className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-2xl py-4 px-6 border border-cyan-200 animate-fade-in text-center">
+            <span className="text-lg font-medium text-cyan-700">{currentMessage}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 
