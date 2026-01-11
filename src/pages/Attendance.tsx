@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Clock, LogIn, LogOut, Check, ListTodo, Bell, Calendar } from "lucide-react";
+import { Clock, LogIn, LogOut, Check, ListTodo, Bell, Calendar, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,12 +47,14 @@ export default function Attendance() {
   const [todayTasks, setTodayTasks] = useState<Task[]>([]);
   const [activeTask, setActiveTask] = useState<ActiveTask | null>(null);
   const [taskElapsed, setTaskElapsed] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
 
   useEffect(() => {
     if (effectiveUserId) {
       checkTodayAttendance();
       fetchTodayTasks();
       fetchActiveTask();
+      fetchAttendanceHistory();
     }
   }, [effectiveUserId]);
 
@@ -174,6 +177,24 @@ export default function Attendance() {
       }
     } catch (error: any) {
       console.error("Error fetching active task:", error);
+    }
+  };
+
+  const fetchAttendanceHistory = async () => {
+    if (!effectiveUserId) return;
+    try {
+      const { data, error } = await supabase
+        .from("attendance")
+        .select("*")
+        .eq("user_id", effectiveUserId)
+        .not("check_out_at", "is", null)
+        .order("date", { ascending: false })
+        .limit(30);
+      
+      if (error) throw error;
+      setAttendanceHistory(data || []);
+    } catch (error: any) {
+      console.error("Error fetching attendance history:", error);
     }
   };
 
@@ -569,6 +590,63 @@ export default function Attendance() {
             )}
           </CardContent>
         </Card>
+
+        {/* Attendance History Table */}
+        {attendanceHistory.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="w-5 h-5 text-accent" />
+                سجل الحضور والانصراف
+                <Badge variant="secondary">{attendanceHistory.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-[#3d9aa8] hover:bg-[#3d9aa8]">
+                      <TableHead className="text-center font-bold text-white">اليوم</TableHead>
+                      <TableHead className="text-center font-bold text-white">التاريخ</TableHead>
+                      <TableHead className="text-center font-bold text-white">وقت الحضور</TableHead>
+                      <TableHead className="text-center font-bold text-white">وقت الانصراف</TableHead>
+                      <TableHead className="text-center font-bold text-white">إجمالي الوقت</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {attendanceHistory.map((record, index) => {
+                      const checkIn = new Date(record.check_in_at);
+                      const checkOut = new Date(record.check_out_at);
+                      const diff = checkOut.getTime() - checkIn.getTime();
+                      const hours = Math.floor(diff / (1000 * 60 * 60));
+                      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                      
+                      return (
+                        <TableRow key={record.id} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                          <TableCell className="text-center font-medium">
+                            {format(new Date(record.date), "EEEE", { locale: ar })}
+                          </TableCell>
+                          <TableCell className="text-center" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {format(new Date(record.date), "yyyy/MM/dd")}
+                          </TableCell>
+                          <TableCell className="text-center text-emerald-600 font-semibold" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {format(checkIn, "hh:mm a", { locale: ar })}
+                          </TableCell>
+                          <TableCell className="text-center text-rose-600 font-semibold" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {format(checkOut, "hh:mm a", { locale: ar })}
+                          </TableCell>
+                          <TableCell className="text-center font-bold text-accent" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {hours} س {minutes} د
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Task Selector Dialog */}
