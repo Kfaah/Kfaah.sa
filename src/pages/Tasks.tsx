@@ -575,11 +575,11 @@ const Tasks = () => {
   const getPriorityConfig = (priority: string) => {
     switch (priority) {
       case "high":
-        return { label: "عاجل", class: "bg-rose-500 text-white" };
+        return { label: "عاجلة", class: "bg-rose-500 text-white" };
       case "medium":
-        return { label: "متوسط", class: "bg-amber-500 text-white" };
+        return { label: "متوسطة", class: "bg-amber-500 text-white" };
       default:
-        return { label: "عادي", class: "bg-slate-400 text-white" };
+        return { label: "عادية", class: "bg-slate-400 text-white" };
     }
   };
 
@@ -1394,9 +1394,9 @@ const Tasks = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white z-50">
-                      <SelectItem value="low">عادي</SelectItem>
-                      <SelectItem value="medium">متوسط</SelectItem>
-                      <SelectItem value="high">عاجل</SelectItem>
+                      <SelectItem value="low">عادية</SelectItem>
+                      <SelectItem value="medium">متوسطة</SelectItem>
+                      <SelectItem value="high">عاجلة</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

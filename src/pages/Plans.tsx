@@ -219,11 +219,11 @@ const Plans = () => {
   const getPriorityConfig = (priority: string) => {
     switch (priority) {
       case "high":
-        return { label: "عاجل", class: "bg-destructive text-destructive-foreground" };
+        return { label: "عاجلة", class: "bg-destructive text-destructive-foreground" };
       case "medium":
-        return { label: "متوسط", class: "bg-yellow-500/20 text-yellow-400" };
+        return { label: "متوسطة", class: "bg-yellow-500/20 text-yellow-400" };
       default:
-        return { label: "عادي", class: "bg-secondary text-secondary-foreground" };
+        return { label: "عادية", class: "bg-secondary text-secondary-foreground" };
     }
   };
 

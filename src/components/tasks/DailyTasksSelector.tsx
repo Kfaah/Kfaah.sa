@@ -39,9 +39,9 @@ interface DailyTasksSelectorProps {
 }
 
 const PRIORITY_CONFIG = {
-  high: { label: "عاجل", class: "bg-rose-100 text-rose-700 border-rose-300" },
-  medium: { label: "متوسط", class: "bg-amber-100 text-amber-700 border-amber-300" },
-  low: { label: "عادي", class: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+  high: { label: "عاجلة", class: "bg-rose-100 text-rose-700 border-rose-300" },
+  medium: { label: "متوسطة", class: "bg-amber-100 text-amber-700 border-amber-300" },
+  low: { label: "عادية", class: "bg-emerald-100 text-emerald-700 border-emerald-300" },
 };
 
 export const DailyTasksSelector = ({ open, userId, onTaskSelected }: DailyTasksSelectorProps) => {
