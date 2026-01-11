@@ -255,21 +255,13 @@ export default function Attendance() {
           setCheckInTime(new Date(existingRecord.check_in_at));
           return;
         }
-        // If already checked out today, update the existing record to re-check-in
-        const { error } = await supabase
-          .from("attendance")
-          .update({ 
-            check_in_at: now.toISOString(),
-            check_out_at: null 
-          })
-          .eq("id", existingRecord.id);
-        
-        if (error) throw error;
-        
-        setIsCheckedIn(true);
-        setCheckInTime(now);
-        setCheckOutTime(null);
-        setHasCompletedToday(false);
+        // If already checked out today, don't allow another check-in
+        toast({ 
+          title: "تنبيه", 
+          description: "لقد سجلت الحضور والانصراف لهذا اليوم بالفعل",
+          variant: "destructive" 
+        });
+        setHasCompletedToday(true);
         return;
       }
       
