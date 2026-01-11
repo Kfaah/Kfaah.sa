@@ -59,7 +59,7 @@ export function formatDate(date: Date | string | null | undefined): string {
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
 
-  return rtlIsolate(`${year}/${month}/${day}`);
+  return rtlIsolate(`${day} / ${month} / ${year}`);
 }
 
 /**
@@ -76,7 +76,7 @@ export function formatDateTime(date: Date | string | null | undefined): string {
   const hours = String(d.getHours()).padStart(2, "0");
   const minutes = String(d.getMinutes()).padStart(2, "0");
 
-  return rtlIsolate(`${year}/${month}/${day} ${hours}:${minutes}`);
+  return rtlIsolate(`${day} / ${month} / ${year} ${hours}:${minutes}`);
 }
 
 /**

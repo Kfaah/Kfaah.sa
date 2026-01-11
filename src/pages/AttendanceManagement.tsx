@@ -445,27 +445,17 @@ export default function AttendanceManagement() {
               </Button>
 
               {/* Date Filter - Far Left */}
-              <div className="relative w-40">
+              <div className="relative w-44">
                 <div className="flex flex-row-reverse items-center gap-2 border rounded-md px-3 py-2 bg-white">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
-                  {(() => {
-                    const parts = dateFilter
+                  <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    {dateFilter
                       ? (() => {
                           const [year, month, day] = dateFilter.split('-');
-                          return { day, month, year };
+                          return `${day} / ${month} / ${year}`;
                         })()
-                      : { day: '--', month: '--', year: '----' };
-
-                    return (
-                      <span className="flex flex-row-reverse items-center gap-1 text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
-                        <span>{parts.day}</span>
-                        <span className="text-muted-foreground">/</span>
-                        <span>{parts.month}</span>
-                        <span className="text-muted-foreground">/</span>
-                        <span>{parts.year}</span>
-                      </span>
-                    );
-                  })()}
+                      : '-- / -- / ----'}
+                  </span>
                 </div>
 
                 <input
@@ -551,7 +541,7 @@ export default function AttendanceManagement() {
                             <span className="text-sm font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
                               {(() => {
                                 const [year, month, day] = record.date.split('-');
-                                return `${day}/${month}/${year}`;
+                                return `${day} / ${month} / ${year}`;
                               })()}
                             </span>
                           </TableCell>
