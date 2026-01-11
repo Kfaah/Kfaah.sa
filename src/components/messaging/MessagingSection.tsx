@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -118,49 +119,33 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
 
   const fetchConversations = async () => {
     try {
-      // جلب المحادثات التي المستخدم مشارك فيها
-      const { data: participations, error: partError } = await supabase
-        .from("conversation_participants")
-        .select("conversation_id")
-        .eq("user_id", currentUserId);
+      // جلب المحادثات (مباشرة) مع الطرف الآخر عبر دالة آمنة في قاعدة البيانات
+      const { data: convRows, error: convError } = await supabase.rpc(
+        "get_conversations_for_user",
+        { _user_id: currentUserId }
+      );
 
-      if (partError) throw partError;
+      if (convError) throw convError;
 
-      if (!participations || participations.length === 0) {
+      if (!convRows || convRows.length === 0) {
         setConversations([]);
         setLoading(false);
         return;
       }
 
-      const conversationIds = participations.map((p) => p.conversation_id);
+      const baseConversations: Conversation[] = (convRows as any[]).map((row) => ({
+        id: row.conversation_id,
+        updated_at: row.updated_at,
+        participants: [
+          {
+            user_id: row.other_user_id,
+            full_name: row.other_full_name || "مستخدم",
+          },
+        ],
+        unreadCount: 0,
+      }));
 
-      // جلب تفاصيل المحادثات
-      const { data: convData, error: convError } = await supabase
-        .from("conversations")
-        .select("id, updated_at")
-        .in("id", conversationIds)
-        .order("updated_at", { ascending: false });
-
-      if (convError) throw convError;
-
-      // جلب المشاركين لكل محادثة
-      const { data: allParticipants, error: allPartError } = await supabase
-        .from("conversation_participants")
-        .select("conversation_id, user_id")
-        .in("conversation_id", conversationIds);
-
-      if (allPartError) throw allPartError;
-
-      // جلب أسماء المشاركين
-      const userIds = [...new Set(allParticipants?.map((p) => p.user_id) || [])];
-      const { data: employeesData } = await supabase
-        .from("employees")
-        .select("user_id, full_name")
-        .in("user_id", userIds);
-
-      const nameMap = new Map(
-        (employeesData || []).map((e) => [e.user_id, e.full_name])
-      );
+      const conversationIds = baseConversations.map((c) => c.id);
 
       // جلب آخر رسالة لكل محادثة
       const { data: lastMessages } = await supabase
@@ -170,18 +155,29 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
         .eq("is_deleted", false)
         .order("created_at", { ascending: false });
 
+      // أسماء المرسلين (آخر رسالة)
+      const senderIds = [...new Set((lastMessages || []).map((m) => m.sender_id))];
+      const { data: sendersData } = await supabase
+        .from("employees")
+        .select("user_id, full_name")
+        .in("user_id", senderIds);
+
+      const senderNameMap = new Map(
+        (sendersData || []).map((e) => [e.user_id, e.full_name])
+      );
+
       const lastMessageMap = new Map<string, any>();
       (lastMessages || []).forEach((msg) => {
         if (!lastMessageMap.has(msg.conversation_id)) {
           lastMessageMap.set(msg.conversation_id, {
             message: msg.message,
             created_at: msg.created_at,
-            sender_name: nameMap.get(msg.sender_id) || "غير معروف",
+            sender_name: senderNameMap.get(msg.sender_id) || "غير معروف",
           });
         }
       });
 
-      // جلب عدد الرسائل غير المقروءة
+      // جلب آخر وقت قراءة للمستخدم الحالي
       const { data: myParticipations } = await supabase
         .from("conversation_participants")
         .select("conversation_id, last_read_at")
@@ -193,20 +189,12 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
       );
 
       // تجميع البيانات
-      const conversationsWithDetails: Conversation[] = (convData || []).map((conv) => {
-        const convParticipants = (allParticipants || [])
-          .filter((p) => p.conversation_id === conv.id && p.user_id !== currentUserId)
-          .map((p) => ({
-            user_id: p.user_id,
-            full_name: nameMap.get(p.user_id) || "مستخدم",
-          }));
-
+      const conversationsWithDetails: Conversation[] = baseConversations.map((conv) => {
         const lastRead = lastReadMap.get(conv.id);
         const lastMsg = lastMessageMap.get(conv.id);
         let unreadCount = 0;
 
         if (lastMsg && (!lastRead || new Date(lastMsg.created_at) > new Date(lastRead))) {
-          // حساب عدد الرسائل غير المقروءة
           const unreadMessages = (lastMessages || []).filter(
             (m) =>
               m.conversation_id === conv.id &&
@@ -217,9 +205,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
         }
 
         return {
-          id: conv.id,
-          updated_at: conv.updated_at,
-          participants: convParticipants,
+          ...conv,
           lastMessage: lastMsg,
           unreadCount,
         };
@@ -335,7 +321,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
     if (!selectedEmployee) return;
 
     try {
-      // التحقق من وجود محادثة سابقة
+      // التحقق من وجود محادثة سابقة محلياً
       const existingConv = conversations.find((c) =>
         c.participants.some((p) => p.user_id === selectedEmployee)
       );
@@ -346,38 +332,36 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
         return;
       }
 
-      // إنشاء محادثة جديدة
-      const { data: newConv, error: convError } = await supabase
-        .from("conversations")
-        .insert({})
-        .select()
-        .single();
+      // إنشاء/إعادة استخدام محادثة مباشرة عبر دالة آمنة (تضيف المشاركين بدون مشاكل RLS)
+      const { data: convId, error } = await supabase.rpc(
+        "create_direct_conversation",
+        { _other_user_id: selectedEmployee }
+      );
 
-      if (convError) throw convError;
+      if (error) throw error;
+      if (!convId) throw new Error("تعذر إنشاء المحادثة");
 
-      // إضافة المشاركين
-      const { error: partError } = await supabase
-        .from("conversation_participants")
-        .insert([
-          { conversation_id: newConv.id, user_id: currentUserId },
-          { conversation_id: newConv.id, user_id: selectedEmployee },
-        ]);
-
-      if (partError) throw partError;
+      const employee = employees.find((e) => e.user_id === selectedEmployee);
 
       setIsNewConversationOpen(false);
       setSelectedEmployee("");
       await fetchConversations();
 
-      // فتح المحادثة الجديدة
-      const employee = employees.find((e) => e.user_id === selectedEmployee);
-      setSelectedConversation({
-        id: newConv.id,
-        updated_at: newConv.updated_at,
-        participants: [{ user_id: selectedEmployee, full_name: employee?.full_name || "مستخدم" }],
+      const conv: Conversation = {
+        id: convId as any,
+        updated_at: new Date().toISOString(),
+        participants: [
+          {
+            user_id: selectedEmployee,
+            full_name: employee?.full_name || "مستخدم",
+          },
+        ],
         unreadCount: 0,
-      });
+      };
+
+      setSelectedConversation(conv);
       setMessages([]);
+      await fetchMessages(conv.id);
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     }
@@ -748,6 +732,9 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
               </div>
               محادثة جديدة
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              اختر الشخص الذي تريد مراسلته ثم اضغط زر بدء المحادثة.
+            </DialogDescription>
             <Button
               variant="ghost"
               size="icon"

@@ -620,6 +620,19 @@ export type Database = {
     }
     Functions: {
       can_edit_time: { Args: { _user_id: string }; Returns: boolean }
+      create_direct_conversation: {
+        Args: { _other_user_id: string }
+        Returns: string
+      }
+      get_conversations_for_user: {
+        Args: { _user_id: string }
+        Returns: {
+          conversation_id: string
+          other_full_name: string
+          other_user_id: string
+          updated_at: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
