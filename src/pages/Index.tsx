@@ -34,7 +34,7 @@ interface AdminStats {
 
 const Index = () => {
   const [currentMessage, setCurrentMessage] = useState("");
-  const { user } = useUser();
+  const { user, previewAsEmployee, previewingEmployee } = useUser();
   const { user: authUser } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -64,20 +64,29 @@ const Index = () => {
     const checkRoleAndFetchData = async () => {
       if (!authUser?.id) return;
 
+      setLoading(true);
+
       try {
-        // Check if user is admin
+        // IMPORTANT: When admin is in preview mode, always show employee dashboard.
+        if (previewAsEmployee) {
+          setIsAdmin(false);
+          const targetUserId = previewingEmployee?.user_id ?? authUser.id;
+          await fetchEmployeeStats(targetUserId);
+          return;
+        }
+
+        // Otherwise, decide by the actual authenticated user's role.
         const { data: hasAdminRole } = await supabase.rpc("has_role", {
           _user_id: authUser.id,
           _role: "admin",
         });
 
-        setIsAdmin(!!hasAdminRole);
+        const admin = !!hasAdminRole;
+        setIsAdmin(admin);
 
-        if (hasAdminRole) {
-          // Fetch admin stats
+        if (admin) {
           await fetchAdminStats();
         } else {
-          // Fetch employee stats
           await fetchEmployeeStats(authUser.id);
         }
       } catch (error) {
@@ -88,7 +97,7 @@ const Index = () => {
     };
 
     checkRoleAndFetchData();
-  }, [authUser?.id]);
+  }, [authUser?.id, previewAsEmployee, previewingEmployee?.user_id]);
 
   const fetchAdminStats = async () => {
     try {
