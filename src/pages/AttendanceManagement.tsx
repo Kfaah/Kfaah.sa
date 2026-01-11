@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clock, Users, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, Filter, Settings, Save } from "lucide-react";
+import { Clock, Users, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, Filter, Settings, Save, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -345,27 +345,10 @@ export default function AttendanceManagement() {
           <CardContent className="p-4">
             <div className="flex flex-wrap gap-3 items-center justify-start">
               {/* Date Filter - Far Left */}
-              <div className="relative w-44">
-                <div className="flex flex-row-reverse items-center gap-1 border rounded-md px-3 py-2 bg-white">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  {(() => {
-                    const parts = dateFilter
-                      ? (() => {
-                          const [year, month, day] = dateFilter.split('-');
-                          return { day, month, year };
-                        })()
-                      : { day: '--', month: '--', year: '----' };
-
-                    return (
-                      <span className="flex flex-row-reverse items-center gap-1 text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
-                        <span>{parts.day}</span>
-                        <span className="text-muted-foreground">/</span>
-                        <span>{parts.month}</span>
-                        <span className="text-muted-foreground">/</span>
-                        <span>{parts.year}</span>
-                      </span>
-                    );
-                  })()}
+              <div className="relative">
+                <div className="flex flex-row-reverse items-center gap-2 border rounded-md px-3 py-2 bg-white cursor-pointer hover:bg-muted/50 transition-colors">
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">التاريخ</span>
                 </div>
 
                 <input
@@ -376,12 +359,6 @@ export default function AttendanceManagement() {
                   aria-label="اختيار التاريخ"
                 />
               </div>
-
-              {/* Today Button */}
-              <Button variant="outline" onClick={() => setDateFilter(getLocalDateString())} className="gap-2">
-                <Calendar className="w-4 h-4" />
-                اليوم
-              </Button>
 
               {/* Employee Filter */}
               <div className="w-64">
