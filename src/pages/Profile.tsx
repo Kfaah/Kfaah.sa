@@ -297,9 +297,9 @@ export default function Profile() {
 
   // View Mode Render
   const renderViewMode = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 w-full">
       {/* قسم الملف الشخصي - اليسار */}
-      <div className="lg:col-span-2 order-1 lg:order-1 space-y-6">
+      <div className="lg:col-span-3 order-1 lg:order-1 space-y-6">
         {/* Profile Header Card */}
         <Card className="overflow-hidden">
         <div className="h-40 bg-gradient-to-l from-accent via-primary to-accent/80 relative">
@@ -555,7 +555,7 @@ export default function Profile() {
       </div>
 
       {/* قسم الرسائل - اليمين */}
-      <div className="lg:col-span-1 order-2 lg:order-2">
+      <div className="lg:col-span-2 order-2 lg:order-2">
         {authUser && (
           <MessagingSection currentUserId={authUser.id} isAdmin={isAdmin} />
         )}
