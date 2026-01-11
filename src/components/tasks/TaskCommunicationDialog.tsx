@@ -370,14 +370,14 @@ export function TaskCommunicationDialog({
 
         {/* اختيار المستلم للموظف */}
         {!isAdmin && admins.length > 0 && (
-          <div className="px-4 py-3 border-b bg-amber-50">
+          <div className="px-4 py-3 border-b bg-[#3d9aa8]/10">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-amber-800">
+              <div className="flex items-center gap-2 text-sm text-[#2d7a85]">
                 <UserCircle className="w-5 h-5" />
                 <span className="font-medium">إرسال إلى:</span>
               </div>
               <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
-                <SelectTrigger className="w-[200px] bg-white">
+                <SelectTrigger className="w-[200px] bg-white border-[#3d9aa8]/30">
                   <SelectValue placeholder="اختر المستلم" />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50">
@@ -418,7 +418,7 @@ export function TaskCommunicationDialog({
                     {/* اسم المرسل */}
                     <span className={cn(
                       "text-xs font-medium px-2",
-                      isOwn ? "text-[#3d9aa8]" : isFromAdmin ? "text-amber-700" : "text-slate-600"
+                      isOwn ? "text-[#3d9aa8]" : isFromAdmin ? "text-[#2d7a85]" : "text-slate-600"
                     )}>
                       {msg.sender_name || "غير معروف"}
                     </span>
@@ -428,7 +428,7 @@ export function TaskCommunicationDialog({
                         isOwn
                           ? "bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] text-white rounded-br-sm"
                           : isFromAdmin
-                            ? "bg-gradient-to-br from-amber-100 to-amber-50 border border-amber-200 text-amber-900 rounded-bl-sm"
+                            ? "bg-gradient-to-br from-[#3d9aa8]/15 to-[#3d9aa8]/5 border border-[#3d9aa8]/30 text-[#1a5a63] rounded-bl-sm"
                             : "bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200 text-slate-800 rounded-bl-sm"
                       )}
                     >
