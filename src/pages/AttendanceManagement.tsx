@@ -343,7 +343,7 @@ export default function AttendanceManagement() {
         {/* Filters */}
         <Card className="border-border/50 bg-white shadow-sm">
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-3 items-center justify-end">
+            <div className="flex flex-wrap gap-3 items-center justify-start">
               {/* Date Filter - Far Left */}
               <div className="relative w-44">
                 <div className="flex flex-row-reverse items-center gap-1 border rounded-md px-3 py-2 bg-white">
