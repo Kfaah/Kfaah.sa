@@ -21,6 +21,15 @@ export const AttendanceWidget = ({ userId, collapsed }: AttendanceWidgetProps) =
   const [showTaskSelector, setShowTaskSelector] = useState(false);
   const [processingCheckOut, setProcessingCheckOut] = useState(false);
 
+  // Get local date in YYYY-MM-DD format (not UTC)
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     checkTodayAttendance();
 
@@ -66,7 +75,7 @@ export const AttendanceWidget = ({ userId, collapsed }: AttendanceWidgetProps) =
 
   const checkTodayAttendance = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       
       const { data, error } = await supabase
         .from("attendance")
@@ -120,7 +129,7 @@ export const AttendanceWidget = ({ userId, collapsed }: AttendanceWidgetProps) =
   const recordCheckIn = async () => {
     try {
       const now = new Date();
-      const today = now.toISOString().split('T')[0];
+      const today = getLocalDateString();
       
       const { error } = await supabase
         .from("attendance")
@@ -142,7 +151,7 @@ export const AttendanceWidget = ({ userId, collapsed }: AttendanceWidgetProps) =
   const handleCheckOut = async () => {
     setProcessingCheckOut(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       
       // تسجيل الانصراف
       const { error: attendanceError } = await supabase
