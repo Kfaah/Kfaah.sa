@@ -149,9 +149,9 @@ function formatHijriDate(date: Date): string {
 function formatGregorianDate(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  // نستخدم RTL isolate لضمان العرض الصحيح: 01 / 01 / 2026م
-  return rtlIsolate(`${formatNumberPlain(day)} / ${formatNumberPlain(month)} / ${formatNumberPlain(year)}م`);
+  const year = String(date.getFullYear());
+  // DD / MM / YYYY
+  return rtlIsolate(`${day} / ${month} / ${year}`);
 }
 
 // تنسيق التاريخ الهجري المختصر (يوم وشهر فقط)
@@ -164,7 +164,7 @@ function formatHijriShort(date: Date): string {
 function formatGregorianShort(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
-  return rtlIsolate(`${formatNumberPlain(day)} / ${formatNumberPlain(month)}`);
+  return rtlIsolate(`${day} / ${month}`);
 }
 
 function wrapTextByChars(text: string, maxChars = 30): string {
