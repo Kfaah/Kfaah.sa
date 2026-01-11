@@ -516,27 +516,31 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                       key={conv.id}
                       onClick={() => openConversation(conv)}
                       className={cn(
-                        "w-full p-3 text-right hover:bg-[#3d9aa8]/5 transition-colors flex flex-row-reverse items-start gap-3",
+                        "w-full py-3 px-4 text-right hover:bg-[#3d9aa8]/5 transition-colors flex items-start gap-3",
                         selectedConversation?.id === conv.id && "bg-[#3d9aa8]/10"
                       )}
+                      dir="rtl"
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      <div className="w-10 h-10 -mr-1 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-background shadow-card">
                         {conv.participants[0]?.full_name?.[0] || "؟"}
                       </div>
+
                       <div className="flex-1 min-w-0 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="min-w-0 flex-1 font-medium text-sm truncate">
+                            {conv.participants.map((p) => p.full_name).join(", ") || "محادثة"}
+                          </span>
+
                           {conv.unreadCount > 0 && (
-                            <Badge className="bg-red-500 text-white text-xs px-1.5 min-w-[20px]">
+                            <Badge className="bg-red-500 text-white text-xs px-1.5 min-w-[20px] flex-shrink-0">
                               {conv.unreadCount}
                             </Badge>
                           )}
-                          <span className="font-medium text-sm truncate max-w-[120px]">
-                            {conv.participants.map((p) => p.full_name).join(", ") || "محادثة"}
-                          </span>
                         </div>
+
                         {conv.lastMessage && (
-                          <p className="text-xs text-muted-foreground mt-1 truncate max-w-[140px] text-right" dir="rtl">
-                            {conv.lastMessage.message?.slice(0, 25) || "مرفق"}{conv.lastMessage.message && conv.lastMessage.message.length > 25 ? "..." : ""}
+                          <p className="text-xs text-muted-foreground mt-1 truncate" dir="rtl">
+                            {conv.lastMessage.message || "مرفق"}
                           </p>
                         )}
                       </div>
