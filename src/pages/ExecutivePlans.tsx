@@ -719,54 +719,72 @@ export default function ExecutivePlans() {
                         const isExpanded = expandedMonths.has(`month-${monthGroup.month}`);
                         const totalDays = monthGroup.dateGroups.length;
                         
-                        return (
-                          <>
-                            {/* صف رأس الشهر */}
+                        // إذا لم تكن مفتوحة، نعرض صف واحد مع معلومات الشهر
+                        if (!isExpanded) {
+                          return (
                             <TableRow 
-                              key={`header-${monthGroup.month}`}
+                              key={`collapsed-${monthGroup.month}`}
                               className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[#3d9aa8]/30"
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
                               <TableCell colSpan={3} className="py-3">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <ChevronDown className={cn(
-                                      "w-5 h-5 text-[#3d9aa8] transition-transform",
-                                      isExpanded ? "rotate-180" : ""
-                                    )} />
-                                    <Calendar className="w-5 h-5 text-[#3d9aa8]" />
-                                    <span className="font-bold text-lg text-gray-800">
-                                      {monthGroup.monthName} {selectedYear}
-                                    </span>
-                                    <Badge className="bg-[#3d9aa8] text-white">
-                                      {totalDays} يوم
-                                    </Badge>
-                                    <Badge variant="outline" className="text-[#3d9aa8] border-[#3d9aa8]">
-                                      {monthGroup.activities.length} نشاط
-                                    </Badge>
-                                  </div>
+                                <div className="flex items-center gap-3">
+                                  <ChevronDown className="w-5 h-5 text-[#3d9aa8] transition-transform" />
+                                  <Calendar className="w-5 h-5 text-[#3d9aa8]" />
+                                  <span className="font-bold text-lg text-gray-800">
+                                    {monthGroup.monthName} {selectedYear}
+                                  </span>
+                                  <Badge className="bg-[#3d9aa8] text-white">
+                                    {totalDays} يوم
+                                  </Badge>
+                                  <Badge variant="outline" className="text-[#3d9aa8] border-[#3d9aa8]">
+                                    {monthGroup.activities.length} نشاط
+                                  </Badge>
                                 </div>
                               </TableCell>
                             </TableRow>
-                            
-                            {/* صفوف التواريخ */}
-                            {isExpanded && monthGroup.dateGroups.map((dateGroup, dateIdx) => {
+                          );
+                        }
+                        
+                        // إذا كانت مفتوحة، نعرض الصفوف مع دمج عمود الشهر
+                        return (
+                          <>
+                            {monthGroup.dateGroups.map((dateGroup, dateIdx) => {
                               const date = new Date(selectedYear, monthGroup.month - 1, dateGroup.day);
+                              const isFirstRow = dateIdx === 0;
                               
                               return (
                                 <TableRow 
                                   key={`${monthGroup.month}-${dateGroup.day}`}
                                   className={cn(
                                     "hover:bg-gray-50",
+                                    isFirstRow ? "border-t-2 border-[#3d9aa8]/30" : "",
                                     dateIdx < monthGroup.dateGroups.length - 1 ? "border-b border-gray-200" : ""
                                   )}
                                 >
-                                  {/* عمود الشهر - فارغ للصفوف الفرعية */}
-                                  <TableCell className="bg-gray-50/50 border-l border-gray-200">
-                                    {dateIdx === 0 && (
-                                      <span className="text-sm text-muted-foreground">{monthGroup.monthName}</span>
-                                    )}
-                                  </TableCell>
+                                  {/* عمود الشهر - مدمج لجميع الصفوف */}
+                                  {isFirstRow && (
+                                    <TableCell 
+                                      rowSpan={totalDays} 
+                                      className="bg-gray-100 border-l border-gray-200 align-top cursor-pointer hover:bg-gray-200 transition-colors"
+                                      onClick={() => toggleMonth(`month-${monthGroup.month}`)}
+                                    >
+                                      <div className="flex flex-col items-center gap-2 py-2">
+                                        <ChevronDown className="w-5 h-5 text-[#3d9aa8] rotate-180 transition-transform" />
+                                        <Calendar className="w-6 h-6 text-[#3d9aa8]" />
+                                        <span className="font-bold text-lg text-gray-800 text-center">
+                                          {monthGroup.monthName}
+                                        </span>
+                                        <span className="text-sm text-muted-foreground">{selectedYear}</span>
+                                        <Badge className="bg-[#3d9aa8] text-white text-xs">
+                                          {totalDays} يوم
+                                        </Badge>
+                                        <Badge variant="outline" className="text-[#3d9aa8] border-[#3d9aa8] text-xs">
+                                          {monthGroup.activities.length} نشاط
+                                        </Badge>
+                                      </div>
+                                    </TableCell>
+                                  )}
                                   
                                   {/* عمود التاريخ */}
                                   <TableCell className="border-l border-gray-200 py-3">
