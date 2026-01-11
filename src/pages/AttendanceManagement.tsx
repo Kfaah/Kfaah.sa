@@ -341,16 +341,49 @@ export default function AttendanceManagement() {
         </div>
 
         {/* Filters */}
-        <Card className="border-border/50">
-          <CardContent className="p-4">
-            <div className="flex flex-col lg:flex-row gap-4">
+        <Card className="border-primary/20 bg-gradient-to-l from-primary/5 to-transparent shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col lg:flex-row-reverse gap-4 items-center">
+              {/* Date Filter */}
+              <div className="flex gap-3 items-center">
+                <Button
+                  variant="secondary"
+                  onClick={() => setDateFilter(getLocalDateString())}
+                  className="bg-primary/10 hover:bg-primary/20 text-primary border-0"
+                >
+                  <Calendar className="w-4 h-4 ml-2" />
+                  اليوم
+                </Button>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    className="w-52 text-center bg-white border-primary/30 focus:border-primary focus:ring-primary/20"
+                    style={{ 
+                      fontFamily: 'Arial, sans-serif',
+                      direction: 'rtl'
+                    }}
+                  />
+                </div>
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                  {dateFilter ? (() => {
+                    const [year, month, day] = dateFilter.split('-');
+                    return `${day}/${month}/${year}`;
+                  })() : ''}
+                </span>
+              </div>
+              
               {/* Employee Filter */}
-              <div className="flex-1">
+              <div className="flex-1 min-w-[250px]">
                 <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                  <SelectTrigger className="w-full text-right">
-                    <SelectValue placeholder="جميع الموظفين" />
+                  <SelectTrigger className="w-full text-right bg-white border-primary/30 focus:border-primary focus:ring-primary/20">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <SelectValue placeholder="جميع الموظفين" />
+                    </div>
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
+                  <SelectContent className="bg-white z-50 border-primary/20">
                     <SelectItem value="all">جميع الموظفين</SelectItem>
                     {employees.map((emp) => (
                       <SelectItem key={emp.id} value={emp.id}>
@@ -359,23 +392,6 @@ export default function AttendanceManagement() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              
-              {/* Date Filter */}
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-48 text-right"
-                  style={{ fontFamily: 'Arial, sans-serif' }}
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => setDateFilter(getLocalDateString())}
-                >
-                  اليوم
-                </Button>
               </div>
               
               {/* Work Schedule Settings */}
