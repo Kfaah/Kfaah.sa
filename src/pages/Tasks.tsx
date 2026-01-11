@@ -952,8 +952,8 @@ const Tasks = () => {
                           
                           {/* تاريخ التنفيذ */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex items-center justify-center gap-2 text-base font-medium">
-                              <Calendar className="w-4 h-4 text-[#3d9aa8]/60" />
+                            <div className="flex items-center justify-center gap-2 text-base font-bold">
+                              <Calendar className="w-5 h-5 text-[#3d9aa8]" />
                               <span className="text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
                                 {formatDate(task.due_date)}
                               </span>
@@ -974,7 +974,7 @@ const Tasks = () => {
                                 <div className="w-6 h-6 rounded-full bg-[#3d9aa8]/10 flex items-center justify-center">
                                   <User className="w-3 h-3 text-[#3d9aa8]" />
                                 </div>
-                                <span className="text-sm">{getExecutorName(task.user_id)}</span>
+                                <span className="text-base font-bold">{getExecutorName(task.user_id)}</span>
                               </div>
                             </TableCell>
                           )}
@@ -982,8 +982,8 @@ const Tasks = () => {
                           {/* الوقت المقدر */}
                           <TableCell className="text-center border-l border-[#3d9aa8]/20">
                             <div className="flex items-center justify-center">
-                              <Clock className="w-3 h-3 text-[#3d9aa8]/60 ml-1" />
-                              <span className="text-base font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
+                              <Clock className="w-4 h-4 text-[#3d9aa8] ml-1" />
+                              <span className="text-base font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>
                                 {task.estimated_time_minutes ? `${formatNumberPlain(task.estimated_time_minutes)} د` : '-'}
                               </span>
                             </div>
@@ -998,8 +998,8 @@ const Tasks = () => {
                               />
                             ) : (
                               <div className="flex items-center justify-center">
-                                <Clock className="w-3 h-3 text-emerald-500/60 ml-1" />
-                                <span className="text-base font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                <Clock className="w-4 h-4 text-emerald-500 ml-1" />
+                                <span className="text-base font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>
                                   {task.actual_time_minutes ? `${formatNumberPlain(task.actual_time_minutes)} د` : '-'}
                                 </span>
                               </div>
@@ -1011,13 +1011,13 @@ const Tasks = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="gap-1 text-[#3d9aa8] hover:text-[#3d9aa8] hover:bg-[#3d9aa8]/10"
+                              className="gap-1 text-[#3d9aa8] hover:text-[#3d9aa8] hover:bg-[#3d9aa8]/10 font-bold text-base"
                               onClick={() => {
                                 setSelectedTaskForCommunication(task);
                                 setIsCommunicationDialogOpen(true);
                               }}
                             >
-                              <MessageSquare className="w-4 h-4" />
+                              <MessageSquare className="w-5 h-5" />
                               فتح
                             </Button>
                           </TableCell>
