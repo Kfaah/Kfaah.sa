@@ -343,8 +343,59 @@ export default function AttendanceManagement() {
         {/* Filters */}
         <Card className="border-border/50 bg-white shadow-sm">
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-3 items-center flex-row-reverse">
-              {/* Work Schedule Settings - Far Right */}
+            <div className="flex flex-wrap gap-3 items-center justify-end">
+              {/* Date Filter - Far Right */}
+              <div className="flex items-center gap-1 border rounded-md px-3 py-2 bg-white">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif', direction: 'ltr' }}>
+                  {dateFilter ? (() => {
+                    const [year, month, day] = dateFilter.split('-');
+                    return `${day}/${month}/${year}`;
+                  })() : ''}
+                </span>
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="absolute opacity-0 w-0 h-0"
+                  id="date-filter-input"
+                />
+                <label htmlFor="date-filter-input" className="cursor-pointer absolute inset-0" onClick={(e) => {
+                  e.preventDefault();
+                  const input = document.getElementById('date-filter-input') as HTMLInputElement;
+                  input?.showPicker?.();
+                }}></label>
+              </div>
+              
+              {/* Today Button */}
+              <Button
+                variant="outline"
+                onClick={() => setDateFilter(getLocalDateString())}
+                className="gap-2"
+              >
+                <Calendar className="w-4 h-4" />
+                اليوم
+              </Button>
+              
+              {/* Employee Filter */}
+              <div className="w-64">
+                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                  <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <SelectValue placeholder="جميع الموظفين" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">جميع الموظفين</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.full_name} - {emp.job_role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Work Schedule Settings - Far Left */}
               <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2">
@@ -423,42 +474,6 @@ export default function AttendanceManagement() {
                   </div>
                 </DialogContent>
               </Dialog>
-              
-              {/* Employee Filter */}
-              <div className="w-72">
-                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                  <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <SelectValue placeholder="جميع الموظفين" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    <SelectItem value="all">جميع الموظفين</SelectItem>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.full_name} - {emp.job_role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Date Filter */}
-              <Button
-                variant="outline"
-                onClick={() => setDateFilter(getLocalDateString())}
-                className="gap-2"
-              >
-                <Calendar className="w-4 h-4" />
-                اليوم
-              </Button>
-              
-              <Input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-40 border rounded-md"
-                style={{ fontFamily: 'Arial, sans-serif' }}
-              />
             </div>
           </CardContent>
         </Card>
