@@ -187,6 +187,30 @@ export default function Attendance() {
       const now = new Date();
       const today = now.toISOString().split('T')[0];
       
+      // Check if there's already an attendance record for today
+      const { data: existingRecord } = await supabase
+        .from("attendance")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", today)
+        .maybeSingle();
+      
+      if (existingRecord) {
+        // If already checked in and not checked out, just update state
+        if (!existingRecord.check_out_at) {
+          setIsCheckedIn(true);
+          setCheckInTime(new Date(existingRecord.check_in_at));
+          return;
+        }
+        // If already checked out today, don't allow another check-in
+        toast({ 
+          title: "تنبيه", 
+          description: "لقد سجلت الحضور والانصراف لهذا اليوم بالفعل",
+          variant: "destructive" 
+        });
+        return;
+      }
+      
       const { error } = await supabase
         .from("attendance")
         .insert({
