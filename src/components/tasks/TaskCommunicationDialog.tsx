@@ -236,25 +236,29 @@ export function TaskCommunicationDialog({
 
       if (error) throw error;
 
-      // إرسال إشعار للمستلم المحدد
-      if (!isAdmin && selectedRecipient && selectedRecipient !== currentUserId) {
-        // الموظف يرسل للمدير المختار
-        await supabase.from("notifications").insert({
-          user_id: selectedRecipient,
-          title: "رسالة جديدة من موظف",
-          message: `لديك رسالة جديدة في مهمة "${taskTitle}"`,
-          type: "message",
-          related_task_id: taskId,
-        });
-      } else if (isAdmin && taskOwnerId !== currentUserId) {
-        // المدير يرسل لصاحب المهمة
-        await supabase.from("notifications").insert({
-          user_id: taskOwnerId,
-          title: "رسالة جديدة",
-          message: `لديك رسالة جديدة في مهمة "${taskTitle}"`,
-          type: "message",
-          related_task_id: taskId,
-        });
+      // إرسال إشعار (عن طريق وظيفة خلفية لأن الموظف لا يملك صلاحية إنشاء إشعارات مباشرة)
+      const recipientId = isAdmin ? taskOwnerId : selectedRecipient;
+      if (recipientId && recipientId !== currentUserId) {
+        const { data, error: notifyError } = await supabase.functions.invoke(
+          "notify-task-message",
+          {
+            body: {
+              taskId,
+              recipientId,
+              taskTitle,
+            },
+          }
+        );
+
+        if (notifyError || data?.success === false) {
+          console.error("Notify error:", notifyError || data);
+          // لا نمنع إرسال الرسالة، فقط تنبيه خفيف
+          toast({
+            title: "تنبيه",
+            description: "تم إرسال الرسالة لكن لم يتم إرسال الإشعار",
+            variant: "destructive",
+          });
+        }
       }
 
       setNewMessage("");
