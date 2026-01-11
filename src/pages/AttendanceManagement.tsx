@@ -372,22 +372,13 @@ export default function AttendanceManagement() {
                 اليوم
               </Button>
               
-              <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-white">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
-                  {dateFilter ? (() => {
-                    const [year, month, day] = dateFilter.split('-');
-                    return `${day}/${month}/${year}`;
-                  })() : ''}
-                </span>
-                <Input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-[130px] border-0 p-0 h-auto bg-transparent focus-visible:ring-0"
-                  style={{ fontFamily: 'Arial, sans-serif' }}
-                />
-              </div>
+              <Input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-40 border rounded-md"
+                style={{ fontFamily: 'Arial, sans-serif' }}
+              />
               
               {/* Work Schedule Settings */}
               <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
