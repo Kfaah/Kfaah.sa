@@ -35,6 +35,15 @@ export default function Attendance() {
   
   // Use previewing employee's user_id if in preview mode, otherwise use auth user's id
   const effectiveUserId = previewingEmployee?.user_id || user?.id;
+
+  // Get local date in YYYY-MM-DD format (not UTC)
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
@@ -99,7 +108,7 @@ export default function Attendance() {
   const checkTodayAttendance = async () => {
     if (!effectiveUserId) return;
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       
       const { data, error } = await supabase
         .from("attendance")
@@ -139,7 +148,7 @@ export default function Attendance() {
   const fetchTodayTasks = async () => {
     if (!effectiveUserId) return;
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       
       const { data, error } = await supabase
         .from("tasks")
@@ -184,7 +193,7 @@ export default function Attendance() {
   const fetchAttendanceHistory = async () => {
     if (!effectiveUserId) return;
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       
       // Fetch only previous days (not today)
       const { data, error } = await supabase
@@ -229,7 +238,7 @@ export default function Attendance() {
     if (!effectiveUserId) return;
     try {
       const now = new Date();
-      const today = now.toISOString().split('T')[0];
+      const today = getLocalDateString();
       
       // Check if there's already an attendance record for today
       const { data: existingRecord } = await supabase
@@ -286,7 +295,7 @@ export default function Attendance() {
     if (!effectiveUserId) return;
     setProcessingCheckOut(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       
       const { error: attendanceError } = await supabase
         .from("attendance")
