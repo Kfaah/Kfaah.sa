@@ -343,59 +343,8 @@ export default function AttendanceManagement() {
         {/* Filters */}
         <Card className="border-border/50 bg-white shadow-sm">
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-3 items-center justify-end">
-              {/* Date Filter - Far Right */}
-              <div className="flex items-center gap-1 border rounded-md px-3 py-2 bg-white">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm" style={{ fontFamily: 'Arial, sans-serif', direction: 'ltr' }}>
-                  {dateFilter ? (() => {
-                    const [year, month, day] = dateFilter.split('-');
-                    return `${day}/${month}/${year}`;
-                  })() : ''}
-                </span>
-                <input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="absolute opacity-0 w-0 h-0"
-                  id="date-filter-input"
-                />
-                <label htmlFor="date-filter-input" className="cursor-pointer absolute inset-0" onClick={(e) => {
-                  e.preventDefault();
-                  const input = document.getElementById('date-filter-input') as HTMLInputElement;
-                  input?.showPicker?.();
-                }}></label>
-              </div>
-              
-              {/* Today Button */}
-              <Button
-                variant="outline"
-                onClick={() => setDateFilter(getLocalDateString())}
-                className="gap-2"
-              >
-                <Calendar className="w-4 h-4" />
-                اليوم
-              </Button>
-              
-              {/* Employee Filter */}
-              <div className="w-64">
-                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                  <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <SelectValue placeholder="جميع الموظفين" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    <SelectItem value="all">جميع الموظفين</SelectItem>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.full_name} - {emp.job_role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Work Schedule Settings - Far Left */}
+            <div className="flex flex-wrap gap-3 items-center justify-start flex-row-reverse">
+              {/* Work Schedule Settings - Far Right */}
               <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2">
@@ -410,10 +359,10 @@ export default function AttendanceManagement() {
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label>اختر الموظف</Label>
-                      <Select 
-                        value={selectedEmployee?.id || ""} 
+                      <Select
+                        value={selectedEmployee?.id || ""}
                         onValueChange={(value) => {
-                          const emp = employees.find(e => e.id === value);
+                          const emp = employees.find((e) => e.id === value);
                           if (emp) openScheduleDialog(emp);
                         }}
                       >
@@ -429,7 +378,7 @@ export default function AttendanceManagement() {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     {selectedEmployee && (
                       <>
                         <div className="grid grid-cols-2 gap-4">
@@ -454,12 +403,8 @@ export default function AttendanceManagement() {
                             />
                           </div>
                         </div>
-                        
-                        <Button 
-                          onClick={saveSchedule} 
-                          disabled={savingSchedule}
-                          className="w-full gap-2"
-                        >
+
+                        <Button onClick={saveSchedule} disabled={savingSchedule} className="w-full gap-2">
                           {savingSchedule ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                           ) : (
@@ -474,6 +419,63 @@ export default function AttendanceManagement() {
                   </div>
                 </DialogContent>
               </Dialog>
+
+              {/* Employee Filter */}
+              <div className="w-64">
+                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                  <SelectTrigger className="w-full bg-white border-border flex flex-row-reverse justify-between">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <SelectValue placeholder="جميع الموظفين" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="all">جميع الموظفين</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.full_name} - {emp.job_role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Today Button */}
+              <Button variant="outline" onClick={() => setDateFilter(getLocalDateString())} className="gap-2">
+                <Calendar className="w-4 h-4" />
+                اليوم
+              </Button>
+
+              {/* Date Filter - Far Left */}
+              <div className="relative w-40">
+                <div className="flex flex-row-reverse items-center gap-2 border rounded-md px-3 py-2 bg-white">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  {(() => {
+                    const parts = dateFilter
+                      ? (() => {
+                          const [year, month, day] = dateFilter.split('-');
+                          return { day, month, year };
+                        })()
+                      : { day: '--', month: '--', year: '----' };
+
+                    return (
+                      <span className="flex flex-row-reverse items-center gap-1 text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                        <span>{parts.day}</span>
+                        <span className="text-muted-foreground">/</span>
+                        <span>{parts.month}</span>
+                        <span className="text-muted-foreground">/</span>
+                        <span>{parts.year}</span>
+                      </span>
+                    );
+                  })()}
+                </div>
+
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  aria-label="اختيار التاريخ"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
