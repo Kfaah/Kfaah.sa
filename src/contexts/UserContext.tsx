@@ -104,15 +104,18 @@ export function UserProvider({ children }: { children: ReactNode }) {
         const firstName = nameParts[0] || "";
         const lastName = nameParts.slice(1).join(" ") || "";
         
+        // استخدام job_role كدور إذا كان متاحاً، وإلا استخدام الدور الافتراضي
+        const displayRole = employeeData.job_role || (userRole === "admin" ? "مدير النظام" : "موظف");
+        
         setUser({
           firstName,
           lastName,
           email: employeeData.email || "",
           phone: employeeData.phone || "",
-          department: employeeData.job_role || "",
+          department: "", // سيتم تحديثه لاحقاً من جدول الأقسام
           location: "",
           profileImage: employeeData.avatar_url,
-          role: userRole === "admin" ? "مدير النظام" : "موظف",
+          role: displayRole,
           jobRole: employeeData.job_role || "",
           username: employeeData.username || "",
           isEmployee: true,
@@ -319,8 +322,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     phone: previewingEmployee.phone || "",
     profileImage: previewingEmployee.avatar_url,
     jobRole: previewingEmployee.job_role,
-    department: previewingEmployee.job_role,
-    role: "موظف",
+    department: "",
+    role: previewingEmployee.job_role || "موظف",
     isEmployee: true,
   } : user;
 
