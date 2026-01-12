@@ -83,6 +83,7 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [notificationFilter, setNotificationFilter] = useState<"all" | "tasks" | "messages" | "general">("all");
 
   // Check if user is admin
   useEffect(() => {
@@ -492,22 +493,56 @@ export default function Profile() {
 
       {/* قسم الإشعارات */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Bell className="w-5 h-5 text-accent" />
-            الإشعارات
-            {notifications.filter(n => !n.is_read).length > 0 && (
-              <Badge className="bg-red-500 text-white">
-                {notifications.filter(n => !n.is_read).length}
-              </Badge>
+        <CardHeader className="flex flex-col gap-4">
+          <div className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Bell className="w-5 h-5 text-accent" />
+              الإشعارات
+              {notifications.filter(n => !n.is_read).length > 0 && (
+                <Badge className="bg-red-500 text-white">
+                  {notifications.filter(n => !n.is_read).length}
+                </Badge>
+              )}
+            </CardTitle>
+            {notifications.some(n => !n.is_read) && (
+              <Button variant="outline" size="sm" onClick={markAllAsRead}>
+                <CheckCircle className="w-4 h-4 ml-1" />
+                تحديد الكل كمقروء
+              </Button>
             )}
-          </CardTitle>
-          {notifications.some(n => !n.is_read) && (
-            <Button variant="outline" size="sm" onClick={markAllAsRead}>
-              <CheckCircle className="w-4 h-4 ml-1" />
-              تحديد الكل كمقروء
-            </Button>
-          )}
+          </div>
+          
+          {/* فلاتر التصنيف */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "all", label: "الكل", icon: Bell, color: "bg-slate-100 text-slate-700 hover:bg-slate-200", activeColor: "bg-accent text-white" },
+              { key: "tasks", label: "المهام", icon: ClipboardList, color: "bg-blue-50 text-blue-700 hover:bg-blue-100", activeColor: "bg-blue-500 text-white" },
+              { key: "messages", label: "الرسائل", icon: MessageSquare, color: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100", activeColor: "bg-emerald-500 text-white" },
+              { key: "general", label: "عامة", icon: Bell, color: "bg-amber-50 text-amber-700 hover:bg-amber-100", activeColor: "bg-amber-500 text-white" },
+            ].map((filter) => {
+              const Icon = filter.icon;
+              const count = notifications.filter(n => {
+                if (filter.key === "all") return true;
+                if (filter.key === "tasks") return n.type === "status_update" || n.type === "rating_update" || n.type === "employee_update" || n.related_task_id;
+                if (filter.key === "messages") return n.type === "message" || n.type === "task_message";
+                return n.type === "info" || n.type === "general" || (!n.related_task_id && n.type !== "message" && n.type !== "task_message" && n.type !== "status_update" && n.type !== "rating_update" && n.type !== "employee_update");
+              }).length;
+              
+              return (
+                <Button
+                  key={filter.key}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setNotificationFilter(filter.key as typeof notificationFilter)}
+                  className={`gap-2 transition-all ${notificationFilter === filter.key ? filter.activeColor : filter.color}`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {filter.label}
+                  <span className="text-xs opacity-80">({count})</span>
+                </Button>
+              );
+            })}
+          </div>
         </CardHeader>
         <CardContent>
           {loadingNotifications ? (
@@ -521,63 +556,117 @@ export default function Profile() {
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  onClick={() => handleNotificationClick(notification)}
-                  className={`flex items-start gap-3 p-4 rounded-xl transition-colors cursor-pointer ${
-                    notification.is_read ? "bg-muted/30 hover:bg-muted/50" : "bg-accent/10 border border-accent/20 hover:bg-accent/15"
-                  }`}
-                >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    notification.is_read ? "bg-muted" : "bg-accent/20"
-                  }`}>
-                    <ClipboardList className={`w-5 h-5 ${notification.is_read ? "text-muted-foreground" : "text-accent"}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className={`font-semibold ${notification.is_read ? "text-muted-foreground" : "text-foreground"}`}>
-                        {notification.title}
-                      </h4>
-                      {!notification.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                      )}
-                      {notification.related_task_id && (
-                        <ExternalLink className="w-3 h-3 text-accent" />
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <p className="text-xs text-muted-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
-                        {formatDateTime(notification.created_at)}
-                      </p>
-                      {notification.related_task_id && (
-                        <span className="text-xs text-accent font-medium">انقر للانتقال للمهمة</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    {!notification.is_read && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-accent hover:bg-accent/10"
-                        onClick={() => markAsRead(notification.id)}
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => deleteNotification(notification.id)}
+              {notifications
+                .filter((notification) => {
+                  if (notificationFilter === "all") return true;
+                  if (notificationFilter === "tasks") return notification.type === "status_update" || notification.type === "rating_update" || notification.type === "employee_update" || notification.related_task_id;
+                  if (notificationFilter === "messages") return notification.type === "message" || notification.type === "task_message";
+                  return notification.type === "info" || notification.type === "general" || (!notification.related_task_id && notification.type !== "message" && notification.type !== "task_message" && notification.type !== "status_update" && notification.type !== "rating_update" && notification.type !== "employee_update");
+                })
+                .map((notification) => {
+                  // تحديد الأيقونة واللون حسب نوع الإشعار
+                  const getNotificationStyle = () => {
+                    if (notification.type === "status_update" || notification.type === "rating_update" || notification.type === "employee_update" || notification.related_task_id) {
+                      return {
+                        icon: ClipboardList,
+                        bgColor: notification.is_read ? "bg-blue-50" : "bg-blue-100",
+                        iconColor: notification.is_read ? "text-blue-400" : "text-blue-600",
+                        badgeColor: "bg-blue-500",
+                        badgeLabel: "مهمة"
+                      };
+                    }
+                    if (notification.type === "message" || notification.type === "task_message") {
+                      return {
+                        icon: MessageSquare,
+                        bgColor: notification.is_read ? "bg-emerald-50" : "bg-emerald-100",
+                        iconColor: notification.is_read ? "text-emerald-400" : "text-emerald-600",
+                        badgeColor: "bg-emerald-500",
+                        badgeLabel: "رسالة"
+                      };
+                    }
+                    return {
+                      icon: Bell,
+                      bgColor: notification.is_read ? "bg-amber-50" : "bg-amber-100",
+                      iconColor: notification.is_read ? "text-amber-400" : "text-amber-600",
+                      badgeColor: "bg-amber-500",
+                      badgeLabel: "عامة"
+                    };
+                  };
+                  
+                  const style = getNotificationStyle();
+                  const NotificationIcon = style.icon;
+                  
+                  return (
+                    <div
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={`flex items-start gap-3 p-4 rounded-xl transition-colors cursor-pointer border ${
+                        notification.is_read 
+                          ? "bg-muted/30 hover:bg-muted/50 border-transparent" 
+                          : `${style.bgColor} border-${style.iconColor.replace('text-', '')}/20 hover:opacity-90`
+                      }`}
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${style.bgColor}`}>
+                        <NotificationIcon className={`w-5 h-5 ${style.iconColor}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className={`${style.badgeColor} text-white text-[10px] px-2 py-0`}>
+                            {style.badgeLabel}
+                          </Badge>
+                          <h4 className={`font-semibold ${notification.is_read ? "text-muted-foreground" : "text-foreground"}`}>
+                            {notification.title}
+                          </h4>
+                          {!notification.is_read && (
+                            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                          )}
+                          {notification.related_task_id && (
+                            <ExternalLink className="w-3 h-3 text-accent" />
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <p className="text-xs text-muted-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {formatDateTime(notification.created_at)}
+                          </p>
+                          {notification.related_task_id && (
+                            <span className="text-xs text-accent font-medium">انقر للانتقال للمهمة</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        {!notification.is_read && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-accent hover:bg-accent/10"
+                            onClick={() => markAsRead(notification.id)}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => deleteNotification(notification.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              {notifications.filter((notification) => {
+                if (notificationFilter === "all") return true;
+                if (notificationFilter === "tasks") return notification.type === "status_update" || notification.type === "rating_update" || notification.type === "employee_update" || notification.related_task_id;
+                if (notificationFilter === "messages") return notification.type === "message" || notification.type === "task_message";
+                return notification.type === "info" || notification.type === "general" || (!notification.related_task_id && notification.type !== "message" && notification.type !== "task_message" && notification.type !== "status_update" && notification.type !== "rating_update" && notification.type !== "employee_update");
+              }).length === 0 && (
+                <div className="text-center py-6 text-muted-foreground">
+                  <p className="text-sm">لا توجد إشعارات في هذا التصنيف</p>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </CardContent>
