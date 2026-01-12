@@ -1,7 +1,15 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   BarChart, 
   Bar, 
@@ -29,9 +37,10 @@ import {
   Loader2,
   Download,
   FileSpreadsheet,
-  FileDown
+  FileDown,
+  Filter
 } from "lucide-react";
-import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { format, subMonths, subWeeks, subQuarters, subYears, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfQuarter, endOfQuarter, startOfYear, endOfYear, isWithinInterval } from "date-fns";
 import { ar } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
@@ -46,9 +55,21 @@ const statusLabels: Record<string, string> = {
   rejected: "مرفوض",
 };
 
+type DateFilterType = "all" | "week" | "month" | "quarter" | "year";
+
+const dateFilterOptions: { value: DateFilterType; label: string }[] = [
+  { value: "all", label: "جميع الفترات" },
+  { value: "week", label: "هذا الأسبوع" },
+  { value: "month", label: "هذا الشهر" },
+  { value: "quarter", label: "هذا الربع" },
+  { value: "year", label: "هذا العام" },
+];
+
 export function HRStatisticsPanel() {
+  const [dateFilter, setDateFilter] = useState<DateFilterType>("all");
+
   // جلب جميع الطلبات للإحصائيات
-  const { data: allRequests = [], isLoading } = useQuery({
+  const { data: allRequestsRaw = [], isLoading } = useQuery({
     queryKey: ["hr-statistics-requests"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -76,6 +97,41 @@ export function HRStatisticsPanel() {
       return data;
     },
   });
+
+  // تصفية الطلبات حسب الفترة الزمنية
+  const allRequests = useMemo(() => {
+    if (dateFilter === "all") return allRequestsRaw;
+
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (dateFilter) {
+      case "week":
+        startDate = startOfWeek(now, { weekStartsOn: 0 });
+        endDate = endOfWeek(now, { weekStartsOn: 0 });
+        break;
+      case "month":
+        startDate = startOfMonth(now);
+        endDate = endOfMonth(now);
+        break;
+      case "quarter":
+        startDate = startOfQuarter(now);
+        endDate = endOfQuarter(now);
+        break;
+      case "year":
+        startDate = startOfYear(now);
+        endDate = endOfYear(now);
+        break;
+      default:
+        return allRequestsRaw;
+    }
+
+    return allRequestsRaw.filter((r: any) => {
+      const requestDate = new Date(r.created_at);
+      return isWithinInterval(requestDate, { start: startDate, end: endDate });
+    });
+  }, [allRequestsRaw, dateFilter]);
 
   if (isLoading) {
     return (
@@ -290,24 +346,45 @@ export function HRStatisticsPanel() {
 
   return (
     <div className="space-y-6">
-      {/* أزرار التصدير */}
-      <div className="flex items-center justify-end gap-3">
-        <Button
-          variant="outline"
-          onClick={exportToExcel}
-          className="gap-2"
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          تصدير Excel
-        </Button>
-        <Button
-          variant="outline"
-          onClick={exportToPDF}
-          className="gap-2"
-        >
-          <FileDown className="w-4 h-4" />
-          تصدير PDF
-        </Button>
+      {/* شريط الأدوات - فلتر التاريخ وأزرار التصدير */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-4 rounded-xl border shadow-sm">
+        {/* فلتر التاريخ */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Filter className="w-4 h-4" />
+            <span className="text-sm font-medium">الفترة الزمنية:</span>
+          </div>
+          <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilterType)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {dateFilterOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* أزرار التصدير */}
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={exportToExcel}
+            className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            تصدير Excel
+          </Button>
+          <Button
+            onClick={exportToPDF}
+            className="gap-2 bg-red-600 hover:bg-red-700 text-white"
+          >
+            <FileDown className="w-4 h-4" />
+            تصدير PDF
+          </Button>
+        </div>
       </div>
 
       {/* البطاقات الإحصائية الرئيسية */}
