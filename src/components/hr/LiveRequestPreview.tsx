@@ -18,6 +18,9 @@ interface LiveRequestPreviewProps {
   directManager?: string;
   directManagerSignatureUrl?: string | null;
   managerApproved?: boolean;
+  approverName?: string;
+  approverSignatureUrl?: string | null;
+  isApproved?: boolean;
   headerOffset?: number; // موضع المحتوى كنسبة مئوية (0-100)
 }
 
@@ -38,6 +41,9 @@ export function LiveRequestPreview({
   directManager = "",
   directManagerSignatureUrl,
   managerApproved = false,
+  approverName,
+  approverSignatureUrl,
+  isApproved = false,
   headerOffset = 35, // 35% كقيمة افتراضية
 }: LiveRequestPreviewProps) {
   const offsetPercent = headerOffset; // النسبة المئوية المحفوظة من القالب
@@ -223,13 +229,32 @@ export function LiveRequestPreview({
                       <div className="h-6 border-b-2 border-dashed border-blue-300 mx-2 mt-1" />
                     )}
                   </td>
-                  <td className="py-2 px-2 border border-border/40 text-center align-top bg-accent/5">
-                    <div className="font-bold text-[7px] mb-1 text-accent">اعتماد الإدارة</div>
-                    <div className="flex items-center justify-center gap-1 mt-1 mb-0.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      <span className="text-[6px] text-muted-foreground">في الانتظار</span>
+                  <td className={`py-2 px-2 border border-border/40 text-center align-top ${isApproved ? 'bg-green-50/50' : 'bg-accent/5'}`}>
+                    <div className={`font-bold text-[7px] mb-1 ${isApproved ? 'text-green-700' : 'text-accent'}`}>
+                      {isApproved ? 'تمت الموافقة' : 'اعتماد الإدارة'}
                     </div>
-                    <div className="h-6 border-b-2 border-dashed border-accent/30 mx-2 mt-1" />
+                    {isApproved && approverName ? (
+                      <>
+                        <div className="text-[7px] mb-1 font-medium">{approverName}</div>
+                        {approverSignatureUrl ? (
+                          <img 
+                            src={approverSignatureUrl} 
+                            alt="توقيع المعتمد" 
+                            className="h-6 mx-auto object-contain"
+                          />
+                        ) : (
+                          <div className="h-6 border-b-2 border-dashed border-green-300 mx-2 mt-1" />
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-center gap-1 mt-1 mb-0.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          <span className="text-[6px] text-muted-foreground">في الانتظار</span>
+                        </div>
+                        <div className="h-6 border-b-2 border-dashed border-accent/30 mx-2 mt-1" />
+                      </>
+                    )}
                   </td>
                 </tr>
               </tbody>
