@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList, MessageSquare } from "lucide-react";
+import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList, MessageSquare, ExternalLink } from "lucide-react";
 import { MessagingSection } from "@/components/messaging/MessagingSection";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
@@ -69,6 +70,7 @@ interface Notification {
 }
 
 export default function Profile() {
+  const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const { user, loading, updateUser, updateProfileImage, uploadAvatar } = useUser();
   const [isEditing, setIsEditing] = useState(false);
@@ -158,7 +160,33 @@ export default function Profile() {
     };
   }, [authUser]);
 
-  // تحديد الإشعار كمقروء
+  // تحديد الإشعار كمقروء والانتقال للمهمة إذا وجدت
+  const handleNotificationClick = async (notification: Notification) => {
+    // تحديد كمقروء أولاً
+    if (!notification.is_read) {
+      try {
+        const { error } = await supabase
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("id", notification.id);
+        
+        if (error) throw error;
+        
+        setNotifications(prev =>
+          prev.map(n => (n.id === notification.id ? { ...n, is_read: true } : n))
+        );
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+      }
+    }
+    
+    // الانتقال للمهمة إذا كان الإشعار مرتبط بمهمة
+    if (notification.related_task_id) {
+      navigate(`/tasks?task=${notification.related_task_id}`);
+    }
+  };
+
+  // تحديد الإشعار كمقروء فقط
   const markAsRead = async (notificationId: string) => {
     try {
       const { error } = await supabase
@@ -496,8 +524,9 @@ export default function Profile() {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`flex items-start gap-3 p-4 rounded-xl transition-colors ${
-                    notification.is_read ? "bg-muted/30" : "bg-accent/10 border border-accent/20"
+                  onClick={() => handleNotificationClick(notification)}
+                  className={`flex items-start gap-3 p-4 rounded-xl transition-colors cursor-pointer ${
+                    notification.is_read ? "bg-muted/30 hover:bg-muted/50" : "bg-accent/10 border border-accent/20 hover:bg-accent/15"
                   }`}
                 >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -513,13 +542,21 @@ export default function Profile() {
                       {!notification.is_read && (
                         <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                       )}
+                      {notification.related_task_id && (
+                        <ExternalLink className="w-3 h-3 text-accent" />
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                    <p className="text-xs text-muted-foreground mt-2" style={{ fontFamily: 'Arial, sans-serif' }}>
-                      {formatDateTime(notification.created_at)}
-                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-xs text-muted-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
+                        {formatDateTime(notification.created_at)}
+                      </p>
+                      {notification.related_task_id && (
+                        <span className="text-xs text-accent font-medium">انقر للانتقال للمهمة</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {!notification.is_read && (
                       <Button
                         variant="ghost"
