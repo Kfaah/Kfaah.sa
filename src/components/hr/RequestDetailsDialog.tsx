@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -21,12 +21,14 @@ import {
   AlertCircle,
   Loader2,
   Download,
-  User
+  User,
+  Printer
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useState } from "react";
+import { OfficialRequestPDF } from "./OfficialRequestPDF";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   pending: { label: "قيد المراجعة", color: "bg-amber-100 text-amber-700 border-amber-200", icon: AlertCircle },
@@ -51,6 +53,39 @@ export function RequestDetailsDialog({
   const queryClient = useQueryClient();
   const [rejectionReason, setRejectionReason] = useState("");
   const [showRejectionForm, setShowRejectionForm] = useState(false);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
+
+  // جلب بيانات الموظف صاحب الطلب
+  const { data: employeeData } = useQuery({
+    queryKey: ["employee-for-request", request?.user_id],
+    queryFn: async () => {
+      if (!request?.user_id) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", request.user_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!request?.user_id,
+  });
+
+  // جلب بيانات الموافق
+  const { data: approverData } = useQuery({
+    queryKey: ["approver-for-request", request?.approved_by],
+    queryFn: async () => {
+      if (!request?.approved_by) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", request.approved_by)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!request?.approved_by,
+  });
 
   const updateRequestMutation = useMutation({
     mutationFn: async ({ status, reason }: { status: string; reason?: string }) => {
@@ -259,6 +294,20 @@ export function RequestDetailsDialog({
             <span>{format(new Date(request.created_at), "d MMM yyyy - HH:mm", { locale: ar })}</span>
           </div>
 
+          {/* زر تصدير PDF للطلبات الموافق عليها */}
+          {request.status === "approved" && employeeData && (
+            <>
+              <Separator />
+              <Button
+                onClick={() => setShowPDFPreview(true)}
+                className="w-full bg-gradient-to-r from-accent to-teal-500"
+              >
+                <Printer className="w-4 h-4 ml-2" />
+                طباعة الطلب الرسمي
+              </Button>
+            </>
+          )}
+
           {/* أزرار الإجراءات للمدير */}
           {isAdmin && request.status === "pending" && (
             <>
@@ -325,6 +374,17 @@ export function RequestDetailsDialog({
           )}
         </div>
       </DialogContent>
+
+      {/* نافذة معاينة PDF */}
+      {employeeData && (
+        <OfficialRequestPDF
+          open={showPDFPreview}
+          onOpenChange={setShowPDFPreview}
+          request={request}
+          employee={employeeData}
+          approver={approverData}
+        />
+      )}
     </Dialog>
   );
 }
