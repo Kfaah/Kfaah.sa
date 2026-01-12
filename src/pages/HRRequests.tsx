@@ -10,6 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
   Plus, 
   Calendar, 
   Clock, 
@@ -61,6 +70,9 @@ export default function HRRequests() {
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [adminActiveTab, setAdminActiveTab] = useState("requests");
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectingRequest, setRejectingRequest] = useState<{ id: string; type: 'substitute' | 'manager' } | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const isAdmin = user.role === "مدير النظام";
 
@@ -237,6 +249,51 @@ export default function HRRequests() {
       toast.error(error.message);
     },
   });
+
+  // رفض الطلب (كموظف بديل أو مدير مباشر)
+  const rejectRequestMutation = useMutation({
+    mutationFn: async ({ requestId, reason, type }: { requestId: string; reason: string; type: 'substitute' | 'manager' }) => {
+      const { error } = await supabase
+        .from("hr_requests")
+        .update({
+          status: "rejected",
+          rejection_reason: reason,
+        })
+        .eq("id", requestId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-substitute-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-manager-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      toast.success("تم رفض الطلب");
+      setRejectDialogOpen(false);
+      setRejectingRequest(null);
+      setRejectionReason("");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleOpenRejectDialog = (requestId: string, type: 'substitute' | 'manager') => {
+    setRejectingRequest({ id: requestId, type });
+    setRejectionReason("");
+    setRejectDialogOpen(true);
+  };
+
+  const handleConfirmReject = () => {
+    if (!rejectingRequest || !rejectionReason.trim()) {
+      toast.error("يرجى إدخال سبب الرفض");
+      return;
+    }
+    rejectRequestMutation.mutate({
+      requestId: rejectingRequest.id,
+      reason: rejectionReason,
+      type: rejectingRequest.type,
+    });
+  };
 
   const pendingApprovalsCount = (substituteRequests?.length || 0) + (managerRequests?.length || 0);
 
@@ -538,21 +595,32 @@ export default function HRRequests() {
                               </div>
                             )}
                           </div>
-                          <Button
-                            size="sm"
-                            onClick={() => substituteApproveMutation.mutate(request.id)}
-                            disabled={substituteApproveMutation.isPending}
-                            className="bg-amber-600 hover:bg-amber-700"
-                          >
-                            {substituteApproveMutation.isPending ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                <CheckCircle2 className="w-4 h-4 ml-1" />
-                                موافقة
-                              </>
-                            )}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => substituteApproveMutation.mutate(request.id)}
+                              disabled={substituteApproveMutation.isPending}
+                              className="bg-amber-600 hover:bg-amber-700"
+                            >
+                              {substituteApproveMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 ml-1" />
+                                  موافقة
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenRejectDialog(request.id, 'substitute')}
+                              className="border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              <XCircle className="w-4 h-4 ml-1" />
+                              رفض
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}
@@ -610,21 +678,32 @@ export default function HRRequests() {
                               </div>
                             )}
                           </div>
-                          <Button
-                            size="sm"
-                            onClick={() => managerApproveMutation.mutate(request.id)}
-                            disabled={managerApproveMutation.isPending}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            {managerApproveMutation.isPending ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                <CheckCircle2 className="w-4 h-4 ml-1" />
-                                موافقة
-                              </>
-                            )}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => managerApproveMutation.mutate(request.id)}
+                              disabled={managerApproveMutation.isPending}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              {managerApproveMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 ml-1" />
+                                  موافقة
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenRejectDialog(request.id, 'manager')}
+                              className="border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              <XCircle className="w-4 h-4 ml-1" />
+                              رفض
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}
@@ -652,6 +731,50 @@ export default function HRRequests() {
           onOpenChange={(open) => !open && setSelectedRequest(null)}
           isAdmin={false}
         />
+
+        {/* Dialog رفض الطلب */}
+        <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+          <DialogContent className="sm:max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <XCircle className="w-5 h-5" />
+                رفض الطلب
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="rejection-reason">سبب الرفض *</Label>
+                <Textarea
+                  id="rejection-reason"
+                  placeholder="أدخل سبب رفض الطلب..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setRejectDialogOpen(false)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmReject}
+                disabled={rejectRequestMutation.isPending || !rejectionReason.trim()}
+              >
+                {rejectRequestMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                ) : (
+                  <XCircle className="w-4 h-4 ml-2" />
+                )}
+                تأكيد الرفض
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
