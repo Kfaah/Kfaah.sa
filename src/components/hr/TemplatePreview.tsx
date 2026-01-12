@@ -48,11 +48,21 @@ interface TemplatePreviewProps {
 
 export function TemplatePreview({ open, onOpenChange, templateData }: TemplatePreviewProps) {
   const letterheadUrl = templateData.letterhead_url || "/letterhead-template.jpg";
+
   const headerOffsetRaw = templateData.header_offset;
-  const headerOffset = Math.min(
-    50,
-    Math.max(5, Number(headerOffsetRaw ?? 25) || 25)
-  );
+  const headerOffset = Math.min(50, Math.max(5, Number(headerOffsetRaw ?? 25) || 25));
+
+  // ملاحظة: نستخدم ?? بدل || حتى لو المستخدم ترك الحقل فارغاً ("") ما نرجّعه للنص الافتراضي
+  const headerText =
+    templateData.header_text ?? "صاحب السعادة المدير العام    حفظه الله";
+  const greetingText =
+    templateData.greeting_text ?? "السلام عليكم ورحمة الله وبركاته، وبعد:";
+  const bodyText =
+    templateData.body_template ??
+    `أتقدم لسعادتكم بطلب الحصول على ${templateData.name_ar || "___"}`;
+  const closingText =
+    templateData.closing_text ??
+    "آمل من سعادتكم التكرم بالموافقة على طلبي.\nوتقبلوا فائق الاحترام والتقدير،،،";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,28 +88,32 @@ export function TemplatePreview({ open, onOpenChange, templateData }: TemplatePr
                 className="absolute inset-0 w-full h-full object-cover"
               />
               
-              <div className="absolute inset-0 p-4" dir="rtl">
-                <div className="absolute top-[20px] right-[60px] text-[8px]" style={{ fontFamily: 'Arial, sans-serif' }}>
-                  <p className="text-muted-foreground">HR-2026XX-XXXX</p>
-                </div>
-                <div className="absolute top-[28px] right-[60px] text-[8px]" style={{ fontFamily: 'Arial, sans-serif' }}>
-                  <p className="text-muted-foreground">12/01/2026</p>
+              <div
+                className="absolute inset-0 px-4 pb-4 flex flex-col"
+                style={{
+                  paddingTop: `calc(${headerOffset}% + 10px)`,
+                  fontFamily: "'Cairo', 'Segoe UI', Tahoma, sans-serif",
+                }}
+                dir="rtl"
+              >
+                <div className="flex justify-between items-center mx-2 text-[7px]">
+                  <div className="text-right">
+                    <span className="text-muted-foreground/70">رقم الطلب: </span>
+                    <span className="font-bold text-foreground">HR-2026XX-XXXX</span>
+                  </div>
+                  <div className="text-left">
+                    <span className="text-muted-foreground/70">التاريخ: </span>
+                    <span className="font-bold text-foreground">12/01/2026</span>
+                  </div>
                 </div>
 
-                <div
-                  className="mr-4 ml-8 space-y-1.5 text-[9px] leading-relaxed"
-                  style={{ paddingTop: `${headerOffset}%` }}
-                >
+                <div className="mr-4 ml-8 space-y-1.5 text-[9px] leading-relaxed">
                   <h2 className="text-sm font-bold text-center mb-3">
                     طلب {templateData.name_ar || "___________"}
                   </h2>
 
-                  <p className="font-semibold text-[8px]">
-                    {templateData.header_text || "صاحب السعادة المدير العام    حفظه الله"}
-                  </p>
-                  <p className="text-[8px]">
-                    {templateData.greeting_text || "السلام عليكم ورحمة الله وبركاته، وبعد:"}
-                  </p>
+                  <p className="font-semibold text-[8px]">{headerText}</p>
+                  <p className="text-[8px]">{greetingText}</p>
                   
                   <div className="mt-2 space-y-0.5">
                     <p className="text-[8px]">
@@ -112,9 +126,7 @@ export function TemplatePreview({ open, onOpenChange, templateData }: TemplatePr
                     </p>
                   </div>
 
-                  <p className="mt-2 text-[8px]">
-                    {templateData.body_template || `أتقدم لسعادتكم بطلب الحصول على ${templateData.name_ar || "___"}`}
-                  </p>
+                  <p className="mt-2 text-[8px]">{bodyText}</p>
 
                   {templateData.show_dates && (
                     <div className="space-y-0.5">
@@ -146,9 +158,7 @@ export function TemplatePreview({ open, onOpenChange, templateData }: TemplatePr
                     </p>
                   ))}
 
-                  <p className="mt-2 text-[8px] whitespace-pre-line">
-                    {templateData.closing_text || "آمل من سعادتكم التكرم بالموافقة على طلبي.\nوتقبلوا فائق الاحترام والتقدير،،،"}
-                  </p>
+                  <p className="mt-2 text-[8px] whitespace-pre-line">{closingText}</p>
 
                   <div className="flex justify-between mt-4 pt-2">
                     <div className="text-center min-w-[80px]">
