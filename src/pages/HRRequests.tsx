@@ -24,7 +24,9 @@ import {
   Award,
   BarChart3,
   ClipboardList,
-  Settings2
+  Settings2,
+  UserCheck,
+  Users
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -120,13 +122,123 @@ export default function HRRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("employees")
-        .select("id, user_id, full_name, job_role, avatar_url")
+        .select("id, user_id, full_name, job_role, avatar_url, signature_url")
         .eq("status", "active")
         .order("full_name");
       if (error) throw error;
       return data;
     },
   });
+
+  // جلب الطلبات التي تحتاج موافقة كموظف بديل
+  const { data: substituteRequests = [], isLoading: loadingSubstitute } = useQuery({
+    queryKey: ["pending-substitute-approvals", authUser?.id],
+    queryFn: async () => {
+      if (!authUser?.id || isAdmin) return [];
+      const { data, error } = await supabase
+        .from("hr_requests")
+        .select(`
+          *,
+          hr_request_types (name, name_ar, icon, color)
+        `)
+        .eq("substitute_employee_id", authUser.id)
+        .eq("substitute_approved", false)
+        .neq("status", "rejected");
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!authUser?.id && !isAdmin,
+  });
+
+  // جلب الطلبات التي تحتاج موافقة كمدير مباشر
+  const { data: managerRequests = [], isLoading: loadingManager } = useQuery({
+    queryKey: ["pending-manager-approvals", authUser?.id],
+    queryFn: async () => {
+      if (!authUser?.id || isAdmin) return [];
+      const { data, error } = await supabase
+        .from("hr_requests")
+        .select(`
+          *,
+          hr_request_types (name, name_ar, icon, color)
+        `)
+        .eq("direct_manager_id", authUser.id)
+        .eq("manager_approved", false)
+        .neq("status", "rejected");
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!authUser?.id && !isAdmin,
+  });
+
+  // موافقة كموظف بديل
+  const substituteApproveMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("signature_url")
+        .eq("user_id", authUser?.id)
+        .single();
+
+      if (!employee?.signature_url) {
+        throw new Error("يجب إضافة توقيعك في الملف الشخصي أولاً");
+      }
+
+      const { error } = await supabase
+        .from("hr_requests")
+        .update({
+          substitute_approved: true,
+          substitute_approved_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-substitute-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      toast.success("تمت موافقتك كموظف بديل");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // موافقة كمدير مباشر
+  const managerApproveMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("signature_url")
+        .eq("user_id", authUser?.id)
+        .single();
+
+      if (!employee?.signature_url) {
+        throw new Error("يجب إضافة توقيعك في الملف الشخصي أولاً");
+      }
+
+      const { error } = await supabase
+        .from("hr_requests")
+        .update({
+          manager_approved: true,
+          manager_approved_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-manager-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      toast.success("تمت موافقتك كمدير مباشر");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const pendingApprovalsCount = (substituteRequests?.length || 0) + (managerRequests?.length || 0);
 
   const getStatusBadge = (status: string) => {
     const config = statusConfig[status] || statusConfig.pending;
@@ -232,13 +344,20 @@ export default function HRRequests() {
   }
 
   // واجهة الموظف
+  const [employeeActiveTab, setEmployeeActiveTab] = useState("my-requests");
+
+  // جلب بيانات مقدم الطلب لصفحة الموافقات المعلقة
+  const getRequesterData = (request: any) => {
+    return employees.find((emp: any) => emp.user_id === request.user_id);
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">طلباتي</h1>
+            <h1 className="text-2xl font-bold text-foreground">الموارد البشرية</h1>
             <p className="text-muted-foreground">إدارة الإجازات والاستئذانات والطلبات الإدارية</p>
           </div>
           <Button 
@@ -271,82 +390,250 @@ export default function HRRequests() {
             })}
         </div>
 
-        {/* قائمة طلباتي */}
-        <Card>
-          <CardHeader>
-            <CardTitle>سجل الطلبات</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoadingRequests ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-accent" />
-              </div>
-            ) : myRequests.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <FileText className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">لا توجد طلبات</h3>
-                <p className="text-muted-foreground mb-4">لم تقم بتقديم أي طلبات بعد</p>
-                <Button 
-                  onClick={() => setIsNewRequestOpen(true)}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  تقديم طلب جديد
-                </Button>
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {myRequests.map((request: any) => {
-                  const Icon = getRequestIcon(request.hr_request_types?.icon);
-                  return (
-                    <div 
-                      key={request.id} 
-                      className="flex items-center gap-4 p-4 rounded-xl border hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => setSelectedRequest(request)}
+        {/* التبويبات */}
+        <Tabs value={employeeActiveTab} onValueChange={setEmployeeActiveTab} dir="rtl">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="my-requests" className="gap-2">
+              <ClipboardList className="w-4 h-4" />
+              طلباتي
+            </TabsTrigger>
+            <TabsTrigger value="pending-approvals" className="gap-2">
+              <UserCheck className="w-4 h-4" />
+              موافقات معلقة
+              {pendingApprovalsCount > 0 && (
+                <Badge variant="destructive" className="mr-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {pendingApprovalsCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* طلباتي */}
+          <TabsContent value="my-requests" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>سجل الطلبات</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingRequests ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-accent" />
+                  </div>
+                ) : myRequests.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <FileText className="w-12 h-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">لا توجد طلبات</h3>
+                    <p className="text-muted-foreground mb-4">لم تقم بتقديم أي طلبات بعد</p>
+                    <Button 
+                      onClick={() => setIsNewRequestOpen(true)}
+                      variant="outline"
+                      className="gap-2"
                     >
-                      <div className={`w-12 h-12 rounded-xl ${request.hr_request_types?.color || 'bg-primary'} flex items-center justify-center`}>
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-foreground">
-                            {request.hr_request_types?.name_ar}
-                          </h3>
-                          {getStatusBadge(request.status)}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
-                            {request.request_number}
-                          </span>
-                          {request.start_date && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {format(new Date(request.start_date), "d MMM yyyy", { locale: ar })}
-                              {request.end_date && request.end_date !== request.start_date && (
-                                <> - {format(new Date(request.end_date), "d MMM yyyy", { locale: ar })}</>
+                      <Plus className="w-4 h-4" />
+                      تقديم طلب جديد
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {myRequests.map((request: any) => {
+                      const Icon = getRequestIcon(request.hr_request_types?.icon);
+                      return (
+                        <div 
+                          key={request.id} 
+                          className="flex items-center gap-4 p-4 rounded-xl border hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => setSelectedRequest(request)}
+                        >
+                          <div className={`w-12 h-12 rounded-xl ${request.hr_request_types?.color || 'bg-primary'} flex items-center justify-center`}>
+                            <Icon className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-foreground">
+                                {request.hr_request_types?.name_ar}
+                              </h3>
+                              {getStatusBadge(request.status)}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
+                                {request.request_number}
+                              </span>
+                              {request.start_date && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {format(new Date(request.start_date), "d MMM yyyy", { locale: ar })}
+                                  {request.end_date && request.end_date !== request.start_date && (
+                                    <> - {format(new Date(request.end_date), "d MMM yyyy", { locale: ar })}</>
+                                  )}
+                                </span>
                               )}
-                            </span>
-                          )}
-                          {request.days_count && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {request.days_count} يوم
-                            </span>
-                          )}
+                              {request.days_count && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {request.days_count} يوم
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* الموافقات المعلقة */}
+          <TabsContent value="pending-approvals" className="mt-4 space-y-6">
+            {/* كموظف بديل */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-amber-600" />
+                  موافقتك كموظف بديل
+                  {substituteRequests.length > 0 && (
+                    <Badge variant="secondary">{substituteRequests.length}</Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingSubstitute ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-accent" />
+                  </div>
+                ) : substituteRequests.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <UserCheck className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                    <p className="text-muted-foreground">لا توجد طلبات تحتاج موافقتك كموظف بديل</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {substituteRequests.map((request: any) => {
+                      const requester = getRequesterData(request);
+                      return (
+                        <div key={request.id} className="flex items-center gap-4 p-4 rounded-xl border bg-amber-50/50 border-amber-200">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-amber-300">
+                            {requester?.avatar_url ? (
+                              <img src={requester.avatar_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-amber-400 flex items-center justify-center text-white font-bold">
+                                {requester?.full_name?.charAt(0) || "؟"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-foreground">{requester?.full_name || "موظف"}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {request.hr_request_types?.name_ar} • {request.request_number}
+                            </div>
+                            {request.start_date && (
+                              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                <Calendar className="w-3 h-3" />
+                                {format(new Date(request.start_date), "d MMM yyyy", { locale: ar })}
+                                {request.days_count && ` (${request.days_count} يوم)`}
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => substituteApproveMutation.mutate(request.id)}
+                            disabled={substituteApproveMutation.isPending}
+                            className="bg-amber-600 hover:bg-amber-700"
+                          >
+                            {substituteApproveMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 ml-1" />
+                                موافقة
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* كمدير مباشر */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-blue-600" />
+                  موافقتك كمدير مباشر
+                  {managerRequests.length > 0 && (
+                    <Badge variant="secondary">{managerRequests.length}</Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingManager ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-accent" />
+                  </div>
+                ) : managerRequests.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <Users className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                    <p className="text-muted-foreground">لا توجد طلبات تحتاج موافقتك كمدير مباشر</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {managerRequests.map((request: any) => {
+                      const requester = getRequesterData(request);
+                      return (
+                        <div key={request.id} className="flex items-center gap-4 p-4 rounded-xl border bg-blue-50/50 border-blue-200">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-300">
+                            {requester?.avatar_url ? (
+                              <img src={requester.avatar_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-blue-400 flex items-center justify-center text-white font-bold">
+                                {requester?.full_name?.charAt(0) || "؟"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-foreground">{requester?.full_name || "موظف"}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {request.hr_request_types?.name_ar} • {request.request_number}
+                            </div>
+                            {request.start_date && (
+                              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                <Calendar className="w-3 h-3" />
+                                {format(new Date(request.start_date), "d MMM yyyy", { locale: ar })}
+                                {request.days_count && ` (${request.days_count} يوم)`}
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => managerApproveMutation.mutate(request.id)}
+                            disabled={managerApproveMutation.isPending}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            {managerApproveMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 ml-1" />
+                                موافقة
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Dialog تقديم طلب جديد */}
         <NewRequestDialog
