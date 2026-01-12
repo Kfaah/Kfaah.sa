@@ -18,6 +18,7 @@ import Attendance from "./pages/Attendance";
 import AttendanceManagement from "./pages/AttendanceManagement";
 import HRRequests from "./pages/HRRequests";
 import HRTemplates from "./pages/HRTemplates";
+import PendingApprovals from "./pages/PendingApprovals";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -171,6 +172,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <HRTemplates />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pending-approvals"
+        element={
+          <ProtectedRoute>
+            <PendingApprovals />
           </ProtectedRoute>
         }
       />
