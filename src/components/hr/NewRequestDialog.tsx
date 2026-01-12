@@ -87,6 +87,8 @@ export function NewRequestDialog({
   const [notes, setNotes] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [showPreview, setShowPreview] = useState(true);
+  const [substituteEmployee, setSubstituteEmployee] = useState("");
+  const [directManager, setDirectManager] = useState("");
 
   // جلب بيانات الموظف الحالي
   const { data: currentEmployee } = useQuery({
@@ -234,6 +236,8 @@ export function NewRequestDialog({
     setReason("");
     setNotes("");
     setAttachment(null);
+    setSubstituteEmployee("");
+    setDirectManager("");
   };
 
   // إعادة تعيين النموذج عند الفتح
@@ -522,6 +526,31 @@ export function NewRequestDialog({
                         className="bg-background"
                       />
                     </div>
+
+                    {/* الموظف البديل والمدير المباشر */}
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-3">بيانات الموافقات</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-right font-semibold">الموظف البديل</Label>
+                          <Input
+                            value={substituteEmployee}
+                            onChange={(e) => setSubstituteEmployee(e.target.value)}
+                            placeholder="اسم الموظف البديل..."
+                            className="bg-background"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-right font-semibold">المدير المباشر</Label>
+                          <Input
+                            value={directManager}
+                            onChange={(e) => setDirectManager(e.target.value)}
+                            placeholder="اسم المدير المباشر..."
+                            className="bg-background"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -627,6 +656,8 @@ export function NewRequestDialog({
                   reason={reason}
                   notes={notes}
                   requestNumber={previewRequestNumber}
+                  substituteEmployee={substituteEmployee}
+                  directManager={directManager}
                 />
               </div>
             </div>
