@@ -73,8 +73,18 @@ export function WelcomeContentManager() {
           .order("display_order", { ascending: true }),
       ]);
 
-      if (bgResult.data) setBackgrounds(bgResult.data);
-      if (quoteResult.data) setQuotes(quoteResult.data);
+      // جلب جميع السجلات للمدير (مفعلة وغير مفعلة)
+      if (bgResult.error) {
+        console.error("Error fetching backgrounds:", bgResult.error);
+      } else {
+        setBackgrounds(bgResult.data || []);
+      }
+      
+      if (quoteResult.error) {
+        console.error("Error fetching quotes:", quoteResult.error);
+      } else {
+        setQuotes(quoteResult.data || []);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
