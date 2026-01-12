@@ -70,6 +70,7 @@ const settingsNavItem: NavItem = {
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, previewAsEmployee, setPreviewAsEmployee, previewingEmployee } = useUser();
@@ -113,6 +114,85 @@ export function Sidebar() {
 
     return () => {
       supabase.removeChannel(channel);
+    };
+  }, [authUser]);
+
+  // جلب عدد الرسائل غير المقروءة
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      if (!authUser) return;
+      
+      try {
+        // جلب المحادثات الخاصة بالمستخدم
+        const { data: convRows } = await supabase.rpc(
+          "get_conversations_for_user",
+          { _user_id: authUser.id }
+        );
+
+        if (!convRows || convRows.length === 0) {
+          setUnreadMessagesCount(0);
+          return;
+        }
+
+        const conversationIds = (convRows as any[]).map((row) => row.conversation_id);
+
+        // جلب آخر وقت قراءة للمستخدم
+        const { data: myParticipations } = await supabase
+          .from("conversation_participants")
+          .select("conversation_id, last_read_at")
+          .eq("user_id", authUser.id)
+          .in("conversation_id", conversationIds);
+
+        const lastReadMap = new Map(
+          (myParticipations || []).map((p) => [p.conversation_id, p.last_read_at])
+        );
+
+        // جلب الرسائل غير المقروءة
+        let totalUnread = 0;
+        for (const convId of conversationIds) {
+          const lastRead = lastReadMap.get(convId);
+          
+          let query = supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("conversation_id", convId)
+            .eq("is_deleted", false)
+            .neq("sender_id", authUser.id);
+          
+          if (lastRead) {
+            query = query.gt("created_at", lastRead);
+          }
+          
+          const { count } = await query;
+          if (count) totalUnread += count;
+        }
+
+        setUnreadMessagesCount(totalUnread);
+      } catch (error) {
+        console.error("Error fetching unread messages:", error);
+      }
+    };
+
+    fetchUnreadMessages();
+
+    // الاستماع للرسائل الجديدة
+    const messagesChannel = supabase
+      .channel('sidebar-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+        },
+        () => {
+          fetchUnreadMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messagesChannel);
     };
   }, [authUser]);
 
@@ -317,12 +397,12 @@ export function Sidebar() {
                 <span className="text-sm font-semibold text-slate-700">الملف الشخصي</span>
                 <p className="text-xs text-slate-500">إدارة معلوماتك وصورتك</p>
               </div>
-              {/* أيقونة الإشعارات مع العداد */}
+              {/* أيقونة الإشعارات مع العداد (إشعارات + رسائل) */}
               <div className="relative">
                 <Bell className="w-5 h-5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
-                {unreadCount > 0 && (
+                {(unreadCount + unreadMessagesCount) > 0 && (
                   <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    {unreadCount > 9 ? '9+' : formatNumberPlain(unreadCount)}
+                    {(unreadCount + unreadMessagesCount) > 9 ? '9+' : formatNumberPlain(unreadCount + unreadMessagesCount)}
                   </span>
                 )}
               </div>
