@@ -103,7 +103,7 @@ export function NewRequestDialog({
       if (error) throw error;
       return data;
     },
-    enabled: !isAdmin && !!user?.id,
+    enabled: !!user?.id,
   });
 
   // جلب بيانات الموظف المختار (للمدير)
@@ -154,7 +154,7 @@ export function NewRequestDialog({
 
   const createRequestMutation = useMutation({
     mutationFn: async () => {
-      const targetUserId = isAdmin ? selectedEmployee : user?.id;
+      const targetUserId = isAdmin ? (selectedEmployee || user?.id) : user?.id;
       if (!targetUserId || !selectedType) throw new Error("بيانات ناقصة");
 
       let attachmentUrl = null;
@@ -250,7 +250,7 @@ export function NewRequestDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isAdmin && !selectedEmployee) {
+    if (isAdmin && !selectedEmployee && !user?.id) {
       toast.error("يرجى اختيار الموظف");
       return;
     }
@@ -289,8 +289,8 @@ export function NewRequestDialog({
   };
 
   // بيانات المعاينة
-  const previewEmployeeData = isAdmin ? selectedEmployeeData : currentEmployee;
-  console.log("Preview Employee Data:", { isAdmin, selectedEmployee, previewEmployeeData, signatureUrl: previewEmployeeData?.signature_url });
+  const previewEmployeeData = isAdmin ? (selectedEmployee ? selectedEmployeeData : currentEmployee) : currentEmployee;
+  // debug log removed
   const previewRequestNumber = `HR-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-XXXX`;
 
   return (
