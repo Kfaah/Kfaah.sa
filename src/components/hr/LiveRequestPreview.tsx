@@ -14,7 +14,7 @@ interface LiveRequestPreviewProps {
   requestNumber: string;
   substituteEmployee?: string;
   directManager?: string;
-  headerOffset?: number; // موضع المحتوى المحفوظ من القالب
+  headerOffset?: number; // موضع المحتوى كنسبة مئوية (0-100)
 }
 
 export function LiveRequestPreview({
@@ -30,9 +30,9 @@ export function LiveRequestPreview({
   requestNumber,
   substituteEmployee = "",
   directManager = "",
-  headerOffset = 200,
+  headerOffset = 35, // 35% كقيمة افتراضية
 }: LiveRequestPreviewProps) {
-  const contentOffset = headerOffset; // استخدام القيمة المحفوظة من القالب
+  const offsetPercent = headerOffset; // النسبة المئوية المحفوظة من القالب
 
   const formatArabicDate = (date: Date | undefined) => {
     if (!date) return "---";
@@ -66,7 +66,7 @@ export function LiveRequestPreview({
         <div
           className="absolute inset-0 px-3 pb-3 flex flex-col"
           style={{ 
-            paddingTop: `${contentOffset}px`,
+            paddingTop: `${offsetPercent}%`,
             fontFamily: "'Cairo', 'Segoe UI', Tahoma, sans-serif" 
           }}
           dir="rtl"
