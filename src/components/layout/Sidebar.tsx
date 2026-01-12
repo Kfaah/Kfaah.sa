@@ -8,6 +8,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   UserCog,
   CalendarCheck,
   MessageSquare,
@@ -21,6 +23,8 @@ import {
   Bell,
   Clock,
   Briefcase,
+  FolderOpen,
+  PieChart,
 } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -34,15 +38,25 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
   iconBg: string;
+  children?: NavItem[];
 }
 
 // قائمة المدير (Admin)
 const adminNavItems: NavItem[] = [
   { title: "نظرة عامة", href: "/", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الموظفين", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-blue-400 to-blue-500" },
-  { title: "الأدوار والصلاحيات", href: "/roles", icon: UserCog, iconBg: "bg-gradient-to-br from-pink-400 to-pink-500" },
-  { title: "سجلات الحضور", href: "/attendance-management", icon: Clock, iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500" },
-  { title: "الموارد البشرية", href: "/hr-requests", icon: Briefcase, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
+  { 
+    title: "الموارد البشرية", 
+    href: "/hr", 
+    icon: Briefcase, 
+    iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500",
+    children: [
+      { title: "الموظفين", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-blue-400 to-blue-500" },
+      { title: "الأدوار والصلاحيات", href: "/roles", icon: UserCog, iconBg: "bg-gradient-to-br from-pink-400 to-pink-500" },
+      { title: "سجلات الحضور", href: "/attendance-management", icon: Clock, iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500" },
+      { title: "الطلبات", href: "/hr-requests", icon: FolderOpen, iconBg: "bg-gradient-to-br from-amber-400 to-amber-500" },
+      { title: "التقارير والإحصائيات", href: "/hr-reports", icon: PieChart, iconBg: "bg-gradient-to-br from-rose-400 to-rose-500" },
+    ]
+  },
   { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
   { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "المهام", href: "/tasks", icon: ClipboardList, badge: 18, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
@@ -67,13 +81,14 @@ const settingsNavItem: NavItem = {
   title: "الإعدادات", 
   href: "/settings", 
   icon: Settings, 
-  iconBg: "bg-gradient-to-br from-slate-400 to-slate-500" 
+  iconBg: "bg-gradient-to-br from-slate-400 to-slate-500"
 };
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, previewAsEmployee, setPreviewAsEmployee, previewingEmployee } = useUser();
@@ -81,6 +96,29 @@ export function Sidebar() {
 
   // Check if user is actually an admin (not in preview mode)
   const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
+
+  // فتح القائمة الفرعية تلقائياً إذا كان المسار الحالي ضمنها
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const navItems = isActuallyAdmin ? adminNavItems : employeeNavItems;
+    
+    navItems.forEach(item => {
+      if (item.children) {
+        const isChildActive = item.children.some(child => currentPath === child.href);
+        if (isChildActive && !expandedMenus.includes(item.href)) {
+          setExpandedMenus(prev => [...prev, item.href]);
+        }
+      }
+    });
+  }, [location.pathname, isActuallyAdmin]);
+
+  const toggleMenu = (href: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(href) 
+        ? prev.filter(h => h !== href) 
+        : [...prev, href]
+    );
+  };
 
   // جلب عدد الإشعارات غير المقروءة
   useEffect(() => {
@@ -224,7 +262,85 @@ export function Sidebar() {
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location.pathname === item.href;
+    const hasChildren = item.children && item.children.length > 0;
+    const isExpanded = expandedMenus.includes(item.href);
+    const isChildActive = hasChildren && item.children?.some(child => location.pathname === child.href);
     const badgeCount = item.badge;
+
+    if (hasChildren) {
+      return (
+        <div>
+          <button
+            onClick={() => toggleMenu(item.href)}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none transition-all",
+              isChildActive
+                ? "bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg ring-2 ring-white"
+                : "bg-white text-slate-700 hover:bg-slate-50"
+            )}
+          >
+            <div className={cn(
+              "w-10 h-10 rounded-lg flex items-center justify-center shadow-md",
+              isChildActive ? "bg-white/20" : item.iconBg
+            )}>
+              <item.icon className="w-5 h-5 text-white" />
+            </div>
+            {!collapsed && (
+              <>
+                <span className={cn(
+                  "font-bold text-base flex-1 text-right",
+                  isChildActive ? "text-white" : "text-slate-700"
+                )}>
+                  {item.title}
+                </span>
+                {isExpanded ? (
+                  <ChevronUp className={cn("w-4 h-4", isChildActive ? "text-white" : "text-slate-400")} />
+                ) : (
+                  <ChevronDown className={cn("w-4 h-4", isChildActive ? "text-white" : "text-slate-400")} />
+                )}
+              </>
+            )}
+          </button>
+          
+          {/* القائمة الفرعية */}
+          {isExpanded && !collapsed && (
+            <div className="mt-1 mr-4 space-y-1 border-r-2 border-white/30 pr-2">
+              {item.children?.map((child) => {
+                const isChildItemActive = location.pathname === child.href;
+                return (
+                  <Link
+                    key={child.href}
+                    to={child.href}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg transition-all",
+                      isChildItemActive
+                        ? "bg-white text-indigo-600 shadow-md"
+                        : "bg-white/80 text-slate-600 hover:bg-white hover:text-slate-800"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-8 h-8 rounded-md flex items-center justify-center",
+                      isChildItemActive ? child.iconBg : "bg-slate-100"
+                    )}>
+                      <child.icon className={cn(
+                        "w-4 h-4",
+                        isChildItemActive ? "text-white" : "text-slate-500"
+                      )} />
+                    </div>
+                    <span className={cn(
+                      "text-sm font-semibold",
+                      isChildItemActive ? "text-indigo-600" : "text-slate-600"
+                    )}>
+                      {child.title}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
     
     return (
       <Link
