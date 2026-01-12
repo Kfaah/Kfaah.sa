@@ -1,16 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { GripVertical, RotateCcw, Eye, EyeOff, Save, Check } from "lucide-react";
+import { GripVertical, RotateCcw, Eye, EyeOff, Save, Check, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 
 interface LetterheadAdjusterProps {
   letterheadUrl?: string | null;
-  initialOffset: number; // القيمة المخزنة كنسبة مئوية (0-100)
+  initialOffset: number; // القيمة المخزنة كنسبة مئوية (0-50)
   onSave: (offset: number) => void;
   isSaving?: boolean;
 }
-
-// ارتفاع مرجعي للورقة A4 بالنسب (297mm)
-const REFERENCE_HEIGHT = 297;
 
 export function LetterheadAdjuster({
   letterheadUrl,
@@ -18,7 +16,7 @@ export function LetterheadAdjuster({
   onSave,
   isSaving = false,
 }: LetterheadAdjusterProps) {
-  const [offsetPercent, setOffsetPercent] = useState(initialOffset); // نسبة مئوية
+  const [offsetPercent, setOffsetPercent] = useState(Math.min(initialOffset, 50)); // نسبة مئوية محدودة بـ 50%
   const [isDragging, setIsDragging] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -27,7 +25,7 @@ export function LetterheadAdjuster({
   const startOffsetRef = useRef(0);
 
   useEffect(() => {
-    setOffsetPercent(initialOffset);
+    setOffsetPercent(Math.min(initialOffset, 50));
   }, [initialOffset]);
 
   const getContainerHeight = () => {
@@ -58,7 +56,7 @@ export function LetterheadAdjuster({
     if (!isDragging) return;
     const deltaY = e.clientY - startYRef.current;
     const containerHeight = getContainerHeight();
-    const newPixelOffset = Math.max(30, Math.min(containerHeight * 0.6, startOffsetRef.current + deltaY));
+    const newPixelOffset = Math.max(20, Math.min(containerHeight * 0.5, startOffsetRef.current + deltaY));
     setOffsetPercent(pixelToPercent(newPixelOffset));
   }, [isDragging]);
 
@@ -77,7 +75,7 @@ export function LetterheadAdjuster({
     if (!isDragging) return;
     const deltaY = e.touches[0].clientY - startYRef.current;
     const containerHeight = getContainerHeight();
-    const newPixelOffset = Math.max(30, Math.min(containerHeight * 0.6, startOffsetRef.current + deltaY));
+    const newPixelOffset = Math.max(20, Math.min(containerHeight * 0.5, startOffsetRef.current + deltaY));
     setOffsetPercent(pixelToPercent(newPixelOffset));
   }, [isDragging]);
 
@@ -86,7 +84,7 @@ export function LetterheadAdjuster({
   }, []);
 
   const resetPosition = () => {
-    setOffsetPercent(35); // 35% كقيمة افتراضية
+    setOffsetPercent(25); // 25% كقيمة افتراضية
     setSaved(false);
   };
 
@@ -95,11 +93,14 @@ export function LetterheadAdjuster({
     setSaved(true);
   };
 
-  const currentPixelOffset = percentToPixel(offsetPercent);
+  const adjustOffset = (delta: number) => {
+    setOffsetPercent(prev => Math.max(5, Math.min(50, prev + delta)));
+    setSaved(false);
+  };
 
   return (
     <div className="space-y-4" dir="rtl">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-sm font-semibold text-foreground">ضبط موضع المحتوى (الكليشيه)</h3>
         <div className="flex gap-2">
           <Button
@@ -133,8 +134,47 @@ export function LetterheadAdjuster({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        اسحب الخط الأحمر لتحديد منطقة الكليشيه (الترويسة). هذا الإعداد يُحفظ مرة واحدة ويُطبق على جميع الطلبات من هذا النوع.
+        اسحب الخط الأحمر أو استخدم شريط التمرير لتحديد منطقة الكليشيه (الترويسة).
       </p>
+
+      {/* شريط التحكم بالموضع */}
+      <div className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg border">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => adjustOffset(-2)}
+        >
+          <Minus className="w-4 h-4" />
+        </Button>
+        
+        <div className="flex-1">
+          <Slider
+            value={[offsetPercent]}
+            onValueChange={([value]) => {
+              setOffsetPercent(value);
+              setSaved(false);
+            }}
+            min={5}
+            max={50}
+            step={1}
+            className="w-full"
+          />
+        </div>
+        
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => adjustOffset(2)}
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
+        
+        <div className="bg-primary text-white text-xs px-3 py-1.5 rounded-full font-bold min-w-[60px] text-center">
+          {offsetPercent.toFixed(0)}%
+        </div>
+      </div>
 
       <div className="relative group">
         {/* الظل الخارجي */}
@@ -188,7 +228,7 @@ export function LetterheadAdjuster({
                 isDragging ? 'ring-4 ring-primary/30' : ''
               }`}>
                 <GripVertical className="w-4 h-4" />
-                <span className="text-[9px] font-bold">اسحب لتحريك الخط</span>
+                <span className="text-[9px] font-bold">اسحب</span>
               </div>
             </div>
           )}
@@ -211,11 +251,6 @@ export function LetterheadAdjuster({
               <div className="h-3 bg-muted/50 rounded w-1/2 mx-auto" />
               <div className="h-3 bg-muted/50 rounded w-2/3 mx-auto" />
             </div>
-          </div>
-
-          {/* مؤشر الموضع */}
-          <div className="absolute bottom-3 left-3 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-mono z-20">
-            الموضع: {offsetPercent.toFixed(1)}%
           </div>
         </div>
       </div>
