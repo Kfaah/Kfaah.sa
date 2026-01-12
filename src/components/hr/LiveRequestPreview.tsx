@@ -54,13 +54,13 @@ export function LiveRequestPreview({
           className="absolute inset-0 w-full h-full object-cover"
         />
         
-        {/* خط إرشادي شفاف لمنطقة الكليشة */}
+        {/* خط إرشادي واضح لمنطقة الكليشة */}
         <div 
-          className="absolute top-0 left-0 right-0 h-[200px] border-b-2 border-dashed border-red-400/50 bg-red-50/10 pointer-events-none z-10"
+          className="absolute top-0 left-0 right-0 h-[200px] border-b-4 border-dashed border-red-600 bg-red-500/20 pointer-events-none z-10"
           title="منطقة الكليشة - لا تضع محتوى هنا"
         >
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-red-400/80 text-white text-[6px] px-2 py-0.5 rounded-full font-medium">
-            منطقة الكليشة
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] px-4 py-1.5 rounded-full font-bold shadow-lg">
+            ⚠️ منطقة الكليشة - لا تضع محتوى هنا
           </div>
         </div>
         
