@@ -132,45 +132,49 @@ export function WelcomeScreen() {
           className="mb-8 relative"
           style={{ width: 200, height: 200 }}
         >
-          {/* الدائرة الدوارة الأولى - نقاط كبيرة */}
+          {/* شريط النقاط البيضاء الدوارة */}
           <motion.div
             className="absolute inset-0"
             animate={{ rotate: 360 }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
             style={{ width: 200, height: 200 }}
           >
-            {[...Array(8)].map((_, i) => (
+            {[...Array(20)].map((_, i) => (
               <motion.div
-                key={`dot1-${i}`}
-                className="absolute w-4 h-4 rounded-full shadow-lg"
+                key={`white-dot-${i}`}
+                className="absolute rounded-full bg-white"
                 style={{
-                  background: `hsl(${i * 45}, 80%, 55%)`,
-                  boxShadow: `0 0 15px hsl(${i * 45}, 80%, 55%)`,
+                  width: i < 5 ? 6 : i < 10 ? 5 : i < 15 ? 4 : 3,
+                  height: i < 5 ? 6 : i < 10 ? 5 : i < 15 ? 4 : 3,
+                  boxShadow: "0 0 8px rgba(255,255,255,0.9), 0 0 15px rgba(255,255,255,0.5)",
                   top: "50%",
                   left: "50%",
-                  transform: `rotate(${i * 45}deg) translateY(-95px) translateX(-50%)`,
+                  opacity: 1 - (i * 0.04),
+                  transform: `rotate(${i * 12}deg) translateY(-92px) translateX(-50%)`,
                 }}
               />
             ))}
           </motion.div>
 
-          {/* الدائرة الدوارة الثانية - نقاط صغيرة عكس الاتجاه */}
+          {/* شريط نقاط بيضاء ثاني - عكس الاتجاه */}
           <motion.div
             className="absolute inset-0"
             animate={{ rotate: -360 }}
-            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
             style={{ width: 200, height: 200 }}
           >
-            {[...Array(12)].map((_, i) => (
+            {[...Array(16)].map((_, i) => (
               <motion.div
-                key={`dot2-${i}`}
-                className="absolute w-2.5 h-2.5 rounded-full"
+                key={`white-dot2-${i}`}
+                className="absolute rounded-full bg-white"
                 style={{
-                  background: `hsl(${i * 30 + 15}, 90%, 60%)`,
-                  boxShadow: `0 0 10px hsl(${i * 30 + 15}, 90%, 60%)`,
+                  width: i < 4 ? 5 : i < 8 ? 4 : 3,
+                  height: i < 4 ? 5 : i < 8 ? 4 : 3,
+                  boxShadow: "0 0 6px rgba(255,255,255,0.8)",
                   top: "50%",
                   left: "50%",
-                  transform: `rotate(${i * 30}deg) translateY(-80px) translateX(-50%)`,
+                  opacity: 1 - (i * 0.05),
+                  transform: `rotate(${i * 15}deg) translateY(-78px) translateX(-50%)`,
                 }}
               />
             ))}
