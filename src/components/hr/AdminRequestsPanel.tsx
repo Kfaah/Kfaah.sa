@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,11 +26,13 @@ import {
   Heart,
   AlertTriangle,
   DollarSign,
-  Award
+  Award,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { RequestDetailsDialog } from "./RequestDetailsDialog";
+import { toast } from "sonner";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar,
@@ -53,10 +55,12 @@ interface AdminRequestsPanelProps {
 }
 
 export function AdminRequestsPanel({ requestTypes }: AdminRequestsPanelProps) {
+  const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // جلب الموظفين
   const { data: employees = [] } = useQuery({
@@ -83,6 +87,35 @@ export function AdminRequestsPanel({ requestTypes }: AdminRequestsPanelProps) {
       return data;
     },
   });
+
+  // حذف الطلب
+  const deleteRequestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { error } = await supabase
+        .from("hr_requests")
+        .delete()
+        .eq("id", requestId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم حذف الطلب بنجاح");
+      queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
+      setDeletingId(null);
+    },
+    onError: (error) => {
+      console.error("Error deleting request:", error);
+      toast.error("حدث خطأ أثناء حذف الطلب");
+      setDeletingId(null);
+    },
+  });
+
+  const handleDeleteRequest = (e: React.MouseEvent, requestId: string) => {
+    e.stopPropagation();
+    if (window.confirm("هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.")) {
+      setDeletingId(requestId);
+      deleteRequestMutation.mutate(requestId);
+    }
+  };
 
   // دمج بيانات الموظفين مع الطلبات
   const allRequests = useMemo(() => {
@@ -282,9 +315,24 @@ export function AdminRequestsPanel({ requestTypes }: AdminRequestsPanelProps) {
                       </div>
                     </div>
 
-                    {/* تاريخ التقديم */}
-                    <div className="text-xs text-muted-foreground text-left">
-                      {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
+                    {/* تاريخ التقديم وزر الحذف */}
+                    <div className="flex items-center gap-3">
+                      <div className="text-xs text-muted-foreground text-left">
+                        {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={(e) => handleDeleteRequest(e, request.id)}
+                        disabled={deletingId === request.id}
+                      >
+                        {deletingId === request.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
