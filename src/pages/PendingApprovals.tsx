@@ -17,18 +17,21 @@ import {
   Users, 
   Eye,
   Sparkles,
-  CalendarDays
+  CalendarDays,
+  Crown
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 import { RequestPreviewDialog } from "@/components/hr/RequestPreviewDialog";
+
+type ApprovalType = "substitute" | "manager" | "executive";
 
 export default function PendingApprovals() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [currentApprovalType, setCurrentApprovalType] = useState<"substitute" | "manager">("substitute");
+  const [currentApprovalType, setCurrentApprovalType] = useState<ApprovalType>("substitute");
 
   // جلب الطلبات التي تحتاج موافقة كموظف بديل
   const { data: substituteRequests, isLoading: loadingSubstitute } = useQuery({
@@ -75,6 +78,39 @@ export default function PendingApprovals() {
         `)
         .eq("direct_manager_id", user?.id)
         .eq("manager_approved", false)
+        .neq("status", "rejected");
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(r => r.user_id))];
+        const { data: employees } = await supabase
+          .from("employees")
+          .select("user_id, full_name, job_role, avatar_url")
+          .in("user_id", userIds);
+        
+        return data.map(request => ({
+          ...request,
+          requester: employees?.find(e => e.user_id === request.user_id) || null
+        }));
+      }
+      return data?.map(r => ({ ...r, requester: null })) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // جلب الطلبات التي تحتاج موافقة كمدير تنفيذي
+  const { data: executiveRequests, isLoading: loadingExecutive } = useQuery({
+    queryKey: ["pending-executive-approvals", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hr_requests")
+        .select(`
+          *,
+          hr_request_types (name, name_ar, icon, color)
+        `)
+        .eq("executive_manager_id", user?.id)
+        .eq("executive_manager_approved", false)
         .neq("status", "rejected");
       
       if (error) throw error;
@@ -176,6 +212,48 @@ export default function PendingApprovals() {
     },
   });
 
+  // موافقة كمدير تنفيذي
+  const executiveApproveMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("signature_url")
+        .eq("user_id", user?.id)
+        .single();
+
+      if (!employee?.signature_url) {
+        throw new Error("يجب إضافة توقيعك في الملف الشخصي أولاً");
+      }
+
+      const { error } = await supabase
+        .from("hr_requests")
+        .update({
+          executive_manager_approved: true,
+          executive_manager_approved_at: new Date().toISOString(),
+          status: "approved",
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
+      setPreviewOpen(false);
+      toast({
+        title: "✅ تمت الموافقة النهائية",
+        description: "تم اعتماد الطلب بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // رفض الطلب
   const rejectMutation = useMutation({
     mutationFn: async ({ requestId, reason }: { requestId: string; reason: string }) => {
@@ -192,6 +270,7 @@ export default function PendingApprovals() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-substitute-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["pending-manager-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
       setPreviewOpen(false);
       toast({
         title: "تم الرفض",
@@ -207,7 +286,7 @@ export default function PendingApprovals() {
     },
   });
 
-  const handleViewRequest = (request: any, type: "substitute" | "manager") => {
+  const handleViewRequest = (request: any, type: ApprovalType) => {
     setSelectedRequest(request);
     setCurrentApprovalType(type);
     setPreviewOpen(true);
@@ -217,8 +296,10 @@ export default function PendingApprovals() {
     if (!selectedRequest) return;
     if (currentApprovalType === "substitute") {
       substituteApproveMutation.mutate(selectedRequest.id);
-    } else {
+    } else if (currentApprovalType === "manager") {
       managerApproveMutation.mutate(selectedRequest.id);
+    } else {
+      executiveApproveMutation.mutate(selectedRequest.id);
     }
   };
 
@@ -229,11 +310,38 @@ export default function PendingApprovals() {
 
   const allRequests = [
     ...(substituteRequests?.map(r => ({ ...r, approvalType: "substitute" as const })) || []),
-    ...(managerRequests?.map(r => ({ ...r, approvalType: "manager" as const })) || [])
+    ...(managerRequests?.map(r => ({ ...r, approvalType: "manager" as const })) || []),
+    ...(executiveRequests?.map(r => ({ ...r, approvalType: "executive" as const })) || [])
   ];
 
   const totalPending = allRequests.length;
-  const isLoading = loadingSubstitute || loadingManager;
+  const isLoading = loadingSubstitute || loadingManager || loadingExecutive;
+
+  const getApprovalStyle = (type: ApprovalType) => {
+    switch (type) {
+      case "substitute":
+        return {
+          gradient: "bg-gradient-to-b from-blue-500 to-cyan-500",
+          badge: "bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0",
+          icon: <UserCheck className="w-3 h-3 ml-1" />,
+          label: "موافقتك كموظف بديل"
+        };
+      case "manager":
+        return {
+          gradient: "bg-gradient-to-b from-purple-500 to-pink-500",
+          badge: "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0",
+          icon: <Users className="w-3 h-3 ml-1" />,
+          label: "موافقتك كمدير"
+        };
+      case "executive":
+        return {
+          gradient: "bg-gradient-to-b from-green-600 to-emerald-600",
+          badge: "bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0",
+          icon: <Crown className="w-3 h-3 ml-1" />,
+          label: "موافقتك كمدير تنفيذي"
+        };
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -258,7 +366,7 @@ export default function PendingApprovals() {
             </div>
 
             {/* إحصائيات سريعة */}
-            <div className="grid grid-cols-3 gap-4 mt-6">
+            <div className="grid grid-cols-4 gap-4 mt-6">
               <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
                 <div className="text-3xl font-bold text-white">{totalPending}</div>
                 <div className="text-white/80 text-sm">إجمالي المعلقة</div>
@@ -270,6 +378,10 @@ export default function PendingApprovals() {
               <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
                 <div className="text-3xl font-bold text-white">{managerRequests?.length || 0}</div>
                 <div className="text-white/80 text-sm">كمدير مباشر</div>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
+                <div className="text-3xl font-bold text-white">{executiveRequests?.length || 0}</div>
+                <div className="text-white/80 text-sm">كمدير تنفيذي</div>
               </div>
             </div>
           </div>
@@ -283,100 +395,88 @@ export default function PendingApprovals() {
           </div>
         ) : allRequests.length > 0 ? (
           <div className="grid gap-4">
-            {allRequests.map((request, index) => (
-              <Card 
-                key={request.id} 
-                className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
-                onClick={() => handleViewRequest(request, request.approvalType)}
-              >
-                <CardContent className="p-0">
-                  <div className="flex">
-                    {/* شريط جانبي ملون */}
-                    <div className={`w-2 ${request.approvalType === "substitute" ? "bg-gradient-to-b from-blue-500 to-cyan-500" : "bg-gradient-to-b from-purple-500 to-pink-500"}`} />
-                    
-                    <div className="flex-1 p-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="w-12 h-12 ring-2 ring-background shadow-md">
-                            <AvatarImage src={request.requester?.avatar_url} />
-                            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white font-bold">
-                              {request.requester?.full_name?.charAt(0) || "؟"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h3 className="font-bold text-foreground">
-                              {request.requester?.full_name || "غير معروف"}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {request.requester?.job_role}
-                            </p>
+            {allRequests.map((request) => {
+              const style = getApprovalStyle(request.approvalType);
+              return (
+                <Card 
+                  key={`${request.id}-${request.approvalType}`} 
+                  className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+                  onClick={() => handleViewRequest(request, request.approvalType)}
+                >
+                  <CardContent className="p-0">
+                    <div className="flex">
+                      {/* شريط جانبي ملون */}
+                      <div className={`w-2 ${style.gradient}`} />
+                      
+                      <div className="flex-1 p-5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="w-12 h-12 ring-2 ring-background shadow-md">
+                              <AvatarImage src={request.requester?.avatar_url} />
+                              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white font-bold">
+                                {request.requester?.full_name?.charAt(0) || "؟"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h3 className="font-bold text-foreground">
+                                {request.requester?.full_name || "غير معروف"}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {request.requester?.job_role}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            {/* نوع الموافقة */}
+                            <Badge className={`px-3 py-1 text-xs font-medium ${style.badge}`}>
+                              {style.icon}
+                              {style.label}
+                            </Badge>
+
+                            <Button 
+                              size="sm" 
+                              className="bg-primary hover:bg-primary/90"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewRequest(request, request.approvalType);
+                              }}
+                            >
+                              <Eye className="w-4 h-4 ml-2" />
+                              استعراض
+                            </Button>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                          {/* نوع الموافقة */}
-                          <Badge 
-                            className={`px-3 py-1 text-xs font-medium ${
-                              request.approvalType === "substitute" 
-                                ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0" 
-                                : "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
-                            }`}
-                          >
-                            {request.approvalType === "substitute" ? (
-                              <>
-                                <UserCheck className="w-3 h-3 ml-1" />
-                                موظف بديل
-                              </>
-                            ) : (
-                              <>
-                                <Users className="w-3 h-3 ml-1" />
-                                مدير مباشر
-                              </>
-                            )}
-                          </Badge>
-
-                          <Button 
-                            size="sm" 
-                            className="bg-primary hover:bg-primary/90"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewRequest(request, request.approvalType);
-                            }}
-                          >
-                            <Eye className="w-4 h-4 ml-2" />
-                            استعراض
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* تفاصيل مختصرة */}
-                      <div className="flex items-center gap-6 mt-4 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <FileText className="w-4 h-4" />
-                          <span className="font-medium">{request.hr_request_types?.name_ar}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Sparkles className="w-4 h-4" />
-                          <span className="font-mono text-xs">{request.request_number}</span>
-                        </div>
-                        {request.days_count && (
+                        {/* تفاصيل مختصرة */}
+                        <div className="flex items-center gap-6 mt-4 text-sm">
                           <div className="flex items-center gap-2 text-muted-foreground">
-                            <CalendarDays className="w-4 h-4" />
-                            <span>{request.days_count} يوم</span>
+                            <FileText className="w-4 h-4" />
+                            <span className="font-medium">{request.hr_request_types?.name_ar}</span>
                           </div>
-                        )}
-                        {request.start_date && (
                           <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="w-4 h-4" />
-                            <span>{format(new Date(request.start_date), "d MMM", { locale: ar })}</span>
+                            <Sparkles className="w-4 h-4" />
+                            <span className="font-mono text-xs">{request.request_number}</span>
                           </div>
-                        )}
+                          {request.days_count && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <CalendarDays className="w-4 h-4" />
+                              <span>{request.days_count} يوم</span>
+                            </div>
+                          )}
+                          {request.start_date && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Calendar className="w-4 h-4" />
+                              <span>{format(new Date(request.start_date), "d MMM", { locale: ar })}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <Card className="border-0 shadow-lg">
@@ -401,7 +501,7 @@ export default function PendingApprovals() {
           approvalType={currentApprovalType}
           onApprove={handleApprove}
           onReject={handleReject}
-          isApproving={substituteApproveMutation.isPending || managerApproveMutation.isPending}
+          isApproving={substituteApproveMutation.isPending || managerApproveMutation.isPending || executiveApproveMutation.isPending}
         />
       </div>
     </DashboardLayout>
