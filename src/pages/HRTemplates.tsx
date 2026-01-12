@@ -299,15 +299,92 @@ export default function HRTemplates() {
     });
   };
 
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+
+  const createTypeMutation = useMutation({
+    mutationFn: async (data: Partial<RequestType>) => {
+      const { error } = await supabase
+        .from("hr_request_types")
+        .insert({
+          name: data.name_ar || "new_type",
+          name_ar: data.name_ar,
+          description: data.description,
+          icon: data.icon || "FileText",
+          color: data.color || "bg-blue-500",
+          requires_attachment: data.requires_attachment || false,
+          deducts_from_balance: data.deducts_from_balance || false,
+          max_days: data.max_days,
+          is_active: true,
+          letterhead_url: data.letterhead_url,
+          header_text: data.header_text,
+          greeting_text: data.greeting_text,
+          body_template: data.body_template,
+          closing_text: data.closing_text,
+          custom_fields: data.custom_fields as any || [],
+          workflow_stages: data.workflow_stages as any || [],
+          show_dates: data.show_dates ?? true,
+          show_reason: data.show_reason ?? true,
+          show_notes: data.show_notes ?? true,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم إنشاء النموذج بنجاح");
+      queryClient.invalidateQueries({ queryKey: ["hr-request-types-full"] });
+      queryClient.invalidateQueries({ queryKey: ["hr-request-types"] });
+      setIsCreatingNew(false);
+      setIsEditing(false);
+      setSelectedType(null);
+    },
+    onError: (error) => {
+      console.error("Error creating type:", error);
+      toast.error("حدث خطأ أثناء الإنشاء");
+    },
+  });
+
+  const handleCreateNew = () => {
+    setSelectedType(null);
+    setEditData({
+      name_ar: "",
+      description: "",
+      icon: "FileText",
+      color: "bg-blue-500",
+      show_dates: true,
+      show_reason: true,
+      show_notes: true,
+      requires_attachment: false,
+      deducts_from_balance: false,
+      custom_fields: [],
+      workflow_stages: [],
+    });
+    setIsEditing(true);
+    setIsCreatingNew(true);
+  };
+
+  const handleSaveNew = () => {
+    if (!editData.name_ar) {
+      toast.error("يرجى إدخال اسم النموذج");
+      return;
+    }
+    createTypeMutation.mutate(editData);
+  };
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6" dir="rtl">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">إدارة النماذج</h1>
             <p className="text-muted-foreground">تخصيص قوالب ومسارات طلبات الموارد البشرية</p>
           </div>
+          <Button
+            onClick={handleCreateNew}
+            className="bg-gradient-to-r from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90 text-white gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            إضافة نموذج جديد
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -326,7 +403,10 @@ export default function HRTemplates() {
                 requestTypes.map((type) => (
                   <button
                     key={type.id}
-                    onClick={() => handleSelectType(type)}
+                    onClick={() => {
+                      handleSelectType(type);
+                      setIsCreatingNew(false);
+                    }}
                     className={`w-full p-3 rounded-lg border text-right transition-all ${
                       selectedType?.id === type.id
                         ? "border-accent bg-accent/10"
@@ -361,30 +441,43 @@ export default function HRTemplates() {
 
           {/* محرر النموذج */}
           <Card className="lg:col-span-3">
-            {selectedType && isEditing ? (
+            {isEditing ? (
               <>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Settings className="w-5 h-5" />
-                    تحرير: {editData.name_ar}
+                    {isCreatingNew ? "إنشاء نموذج جديد" : `تحرير: ${editData.name_ar}`}
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowPreview(true)}
+                      onClick={() => {
+                        setIsEditing(false);
+                        setIsCreatingNew(false);
+                        setSelectedType(null);
+                      }}
                     >
-                      <Eye className="w-4 h-4 ml-2" />
-                      معاينة
+                      إلغاء
                     </Button>
+                    {!isCreatingNew && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPreview(true)}
+                      >
+                        <Eye className="w-4 h-4 ml-2" />
+                        معاينة
+                      </Button>
+                    )}
                     <Button
                       size="sm"
-                      onClick={handleSave}
-                      disabled={updateTypeMutation.isPending}
+                      onClick={isCreatingNew ? handleSaveNew : handleSave}
+                      disabled={updateTypeMutation.isPending || createTypeMutation.isPending}
                       className="bg-gradient-to-r from-accent to-teal-500"
                     >
                       <Save className="w-4 h-4 ml-2" />
-                      حفظ التعديلات
+                      {isCreatingNew ? "إنشاء النموذج" : "حفظ التعديلات"}
                     </Button>
                   </div>
                 </CardHeader>
@@ -411,21 +504,13 @@ export default function HRTemplates() {
 
                     {/* تبويب المحتوى */}
                     <TabsContent value="content" className="space-y-4 mt-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>الاسم بالعربي</Label>
-                          <Input
-                            value={editData.name_ar || ""}
-                            onChange={(e) => setEditData(prev => ({ ...prev, name_ar: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>الاسم بالإنجليزي</Label>
-                          <Input
-                            value={editData.name || ""}
-                            onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label>اسم النموذج</Label>
+                        <Input
+                          value={editData.name_ar || ""}
+                          onChange={(e) => setEditData(prev => ({ ...prev, name_ar: e.target.value }))}
+                          placeholder="مثال: إجازة اعتيادية"
+                        />
                       </div>
 
                       <div className="space-y-2">
