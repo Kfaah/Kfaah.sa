@@ -135,11 +135,8 @@ export function WelcomeScreen() {
             className="absolute -inset-4 border-4 border-dashed border-white/30 rounded-full"
           />
           
-          {/* توهج خلفي */}
-          <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl scale-150" />
-          
-          {/* الشعار */}
-          <div className="relative w-40 h-40 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-4 border-white/40 shadow-2xl">
+          {/* الشعار - دائرة بيضاء */}
+          <div className="relative w-40 h-40 bg-white rounded-full flex items-center justify-center shadow-2xl">
             <img
               src={atefLogo}
               alt="جمعية عطف"
