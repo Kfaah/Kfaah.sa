@@ -321,7 +321,7 @@ export function NewRequestDialog({
           <form onSubmit={handleSubmit} className="space-y-6" dir="rtl">
             
             {/* القسم الأول: بيانات مقدم الطلب */}
-            <div className="bg-muted/30 rounded-xl p-5 border">
+            <div className="bg-white rounded-xl p-5 border shadow-sm">
               <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2 border-b pb-3">
                 <User className="w-5 h-5 text-primary" />
                 بيانات مقدم الطلب
@@ -332,11 +332,11 @@ export function NewRequestDialog({
                 {isAdmin ? (
                   <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                     <Label className="text-right font-semibold">الموظف <span className="text-destructive">*</span></Label>
-                    <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                      <SelectTrigger className="bg-background">
+                    <Select value={selectedEmployee} onValueChange={setSelectedEmployee} dir="rtl">
+                      <SelectTrigger className="bg-background text-right">
                         <SelectValue placeholder="اختر الموظف..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="text-right" dir="rtl">
                         {employees.map((emp) => (
                           <SelectItem key={emp.user_id} value={emp.user_id}>
                             <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ export function NewRequestDialog({
             </div>
 
             {/* القسم الثاني: نوع الطلب */}
-            <div className="bg-muted/30 rounded-xl p-5 border">
+            <div className="bg-white rounded-xl p-5 border shadow-sm">
               <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2 border-b pb-3">
                 <FileText className="w-5 h-5 text-primary" />
                 نوع الطلب
@@ -389,11 +389,12 @@ export function NewRequestDialog({
                     const type = requestTypes.find(t => t.id === val);
                     setSelectedType(type);
                   }}
+                  dir="rtl"
                 >
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className="bg-background text-right">
                     <SelectValue placeholder="اختر نوع الطلب..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="text-right" dir="rtl">
                     {requestTypes.map((type) => {
                       const Icon = getIcon(type.icon);
                       const balance = currentBalances.find((b: any) => b.request_type_id === type.id);
@@ -421,7 +422,7 @@ export function NewRequestDialog({
             {selectedType && (
               <>
                 {/* القسم الثالث: تفاصيل الطلب */}
-                <div className="bg-muted/30 rounded-xl p-5 border">
+                <div className="bg-white rounded-xl p-5 border shadow-sm">
                   <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2 border-b pb-3">
                     <CalendarIcon className="w-5 h-5 text-primary" />
                     تفاصيل الطلب
@@ -525,7 +526,7 @@ export function NewRequestDialog({
                 </div>
 
                 {/* القسم الرابع: المرفقات */}
-                <div className="bg-muted/30 rounded-xl p-5 border">
+                <div className="bg-white rounded-xl p-5 border shadow-sm">
                   <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2 border-b pb-3">
                     <Upload className="w-5 h-5 text-primary" />
                     المرفقات
