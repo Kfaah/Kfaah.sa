@@ -573,7 +573,13 @@ export function NewRequestDialog({
                               <SelectValue placeholder="اختر الموظف البديل..." />
                             </SelectTrigger>
                             <SelectContent className="text-right" dir="rtl">
-                              {employees.map((emp) => (
+                              {employees
+                                .filter((emp) => {
+                                  // استبعاد صاحب الطلب من القائمة
+                                  const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
+                                  return emp.user_id !== requestOwnerUserId;
+                                })
+                                .map((emp) => (
                                 <SelectItem key={emp.id} value={emp.user_id}>
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden">
@@ -598,7 +604,13 @@ export function NewRequestDialog({
                               <SelectValue placeholder="اختر المدير المباشر..." />
                             </SelectTrigger>
                             <SelectContent className="text-right" dir="rtl">
-                              {employees.map((emp) => (
+                              {employees
+                                .filter((emp) => {
+                                  // استبعاد صاحب الطلب من القائمة
+                                  const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
+                                  return emp.user_id !== requestOwnerUserId;
+                                })
+                                .map((emp) => (
                                 <SelectItem key={emp.id} value={emp.user_id}>
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
