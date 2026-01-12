@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
   BarChart, 
   Bar, 
@@ -25,12 +26,25 @@ import {
   Users,
   Calendar,
   Clock,
-  Loader2
+  Loader2,
+  Download,
+  FileSpreadsheet,
+  FileDown
 } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ar } from "date-fns/locale";
+import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
 
 const COLORS = ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+const statusLabels: Record<string, string> = {
+  pending: "قيد المراجعة",
+  approved: "موافق عليه",
+  rejected: "مرفوض",
+};
 
 export function HRStatisticsPanel() {
   // جلب جميع الطلبات للإحصائيات
@@ -137,8 +151,165 @@ export function HRStatisticsPanel() {
     { name: "مرفوضة", value: rejectedRequests, color: "#ef4444" },
   ].filter(d => d.value > 0);
 
+  // تصدير إلى Excel
+  const exportToExcel = () => {
+    try {
+      // تحضير بيانات الطلبات
+      const requestsData = allRequests.map((r: any) => ({
+        "رقم الطلب": r.request_number,
+        "الموظف": r.employees?.full_name || "غير معروف",
+        "نوع الطلب": r.hr_request_types?.name_ar || "",
+        "الحالة": statusLabels[r.status] || r.status,
+        "تاريخ البداية": r.start_date ? format(new Date(r.start_date), "yyyy-MM-dd") : "",
+        "تاريخ النهاية": r.end_date ? format(new Date(r.end_date), "yyyy-MM-dd") : "",
+        "عدد الأيام": r.days_count || "",
+        "السبب": r.reason || "",
+        "تاريخ التقديم": format(new Date(r.created_at), "yyyy-MM-dd HH:mm"),
+      }));
+
+      // تحضير بيانات الإحصائيات
+      const statsData = [
+        { "البيان": "إجمالي الطلبات", "القيمة": totalRequests },
+        { "البيان": "قيد المراجعة", "القيمة": pendingRequests },
+        { "البيان": "موافق عليها", "القيمة": approvedRequests },
+        { "البيان": "مرفوضة", "القيمة": rejectedRequests },
+        { "البيان": "إجمالي أيام الإجازات", "القيمة": totalDaysUsed },
+      ];
+
+      // إنشاء workbook
+      const wb = XLSX.utils.book_new();
+      
+      // ورقة الطلبات
+      const wsRequests = XLSX.utils.json_to_sheet(requestsData);
+      XLSX.utils.book_append_sheet(wb, wsRequests, "الطلبات");
+      
+      // ورقة الإحصائيات
+      const wsStats = XLSX.utils.json_to_sheet(statsData);
+      XLSX.utils.book_append_sheet(wb, wsStats, "الإحصائيات");
+      
+      // ورقة الطلبات حسب النوع
+      const typeData = requestsByType.map(t => ({
+        "نوع الطلب": t.name,
+        "الإجمالي": t.total,
+        "موافق عليها": t.approved,
+        "قيد المراجعة": t.pending,
+        "مرفوضة": t.rejected,
+      }));
+      const wsTypes = XLSX.utils.json_to_sheet(typeData);
+      XLSX.utils.book_append_sheet(wb, wsTypes, "حسب النوع");
+
+      // تنزيل الملف
+      XLSX.writeFile(wb, `تقرير_الموارد_البشرية_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+      toast.success("تم تصدير التقرير إلى Excel بنجاح");
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("حدث خطأ أثناء تصدير التقرير");
+    }
+  };
+
+  // تصدير إلى PDF
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      // إضافة خط يدعم العربية (بسيط بدون خطوط مخصصة)
+      doc.setFont("helvetica");
+      
+      // العنوان
+      doc.setFontSize(18);
+      doc.text("HR Requests Report - تقرير طلبات الموارد البشرية", 148, 15, { align: "center" });
+      doc.setFontSize(10);
+      doc.text(`Date: ${format(new Date(), "yyyy-MM-dd HH:mm")}`, 148, 22, { align: "center" });
+
+      // إحصائيات عامة
+      doc.setFontSize(12);
+      doc.text("Summary Statistics - الإحصائيات العامة", 14, 35);
+      
+      autoTable(doc, {
+        startY: 40,
+        head: [["Description", "Value"]],
+        body: [
+          ["Total Requests - إجمالي الطلبات", totalRequests.toString()],
+          ["Pending - قيد المراجعة", pendingRequests.toString()],
+          ["Approved - موافق عليها", approvedRequests.toString()],
+          ["Rejected - مرفوضة", rejectedRequests.toString()],
+          ["Total Leave Days - أيام الإجازات", totalDaysUsed.toString()],
+        ],
+        theme: "grid",
+        headStyles: { fillColor: [59, 130, 246] },
+        margin: { left: 14, right: 14 },
+        tableWidth: 80,
+      });
+
+      // جدول الطلبات حسب النوع
+      const typeTableY = (doc as any).lastAutoTable.finalY + 15;
+      doc.text("Requests by Type - الطلبات حسب النوع", 14, typeTableY);
+      
+      autoTable(doc, {
+        startY: typeTableY + 5,
+        head: [["Type", "Total", "Approved", "Pending", "Rejected"]],
+        body: requestsByType.map(t => [t.name, t.total, t.approved, t.pending, t.rejected]),
+        theme: "grid",
+        headStyles: { fillColor: [34, 197, 94] },
+        margin: { left: 14, right: 14 },
+      });
+
+      // جدول الطلبات
+      const requestsTableY = (doc as any).lastAutoTable.finalY + 15;
+      doc.text("All Requests - جميع الطلبات", 14, requestsTableY);
+      
+      autoTable(doc, {
+        startY: requestsTableY + 5,
+        head: [["Request #", "Employee", "Type", "Status", "Start Date", "Days"]],
+        body: allRequests.slice(0, 50).map((r: any) => [
+          r.request_number,
+          r.employees?.full_name || "-",
+          r.hr_request_types?.name_ar || "-",
+          statusLabels[r.status] || r.status,
+          r.start_date ? format(new Date(r.start_date), "yyyy-MM-dd") : "-",
+          r.days_count || "-",
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [139, 92, 246] },
+        margin: { left: 14, right: 14 },
+        styles: { fontSize: 8 },
+      });
+
+      // حفظ الملف
+      doc.save(`HR_Report_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+      toast.success("تم تصدير التقرير إلى PDF بنجاح");
+    } catch (error) {
+      console.error("Error exporting to PDF:", error);
+      toast.error("حدث خطأ أثناء تصدير التقرير");
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* أزرار التصدير */}
+      <div className="flex items-center justify-end gap-3">
+        <Button
+          variant="outline"
+          onClick={exportToExcel}
+          className="gap-2"
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          تصدير Excel
+        </Button>
+        <Button
+          variant="outline"
+          onClick={exportToPDF}
+          className="gap-2"
+        >
+          <FileDown className="w-4 h-4" />
+          تصدير PDF
+        </Button>
+      </div>
+
       {/* البطاقات الإحصائية الرئيسية */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
