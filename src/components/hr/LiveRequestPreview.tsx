@@ -15,6 +15,8 @@ interface LiveRequestPreviewProps {
   reason: string;
   notes: string;
   requestNumber: string;
+  substituteEmployee?: string;
+  directManager?: string;
 }
 
 export function LiveRequestPreview({
@@ -28,6 +30,8 @@ export function LiveRequestPreview({
   reason,
   notes,
   requestNumber,
+  substituteEmployee = "",
+  directManager = "",
 }: LiveRequestPreviewProps) {
   const [contentOffset, setContentOffset] = useState(200); // الموضع الافتراضي
   const [isDragging, setIsDragging] = useState(false);
@@ -284,12 +288,16 @@ export function LiveRequestPreview({
                   </td>
                   <td className="py-2 px-2 border border-border/40 text-center align-top bg-amber-50/50">
                     <div className="font-bold text-[7px] mb-1 text-amber-700">الموظف البديل</div>
-                    <div className="text-[7px] mb-1 text-muted-foreground">..................</div>
+                    <div className={`text-[7px] mb-1 ${substituteEmployee ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {substituteEmployee || ".................."}
+                    </div>
                     <div className="h-6 border-b-2 border-dashed border-amber-300 mx-2 mt-1" />
                   </td>
                   <td className="py-2 px-2 border border-border/40 text-center align-top bg-blue-50/50">
                     <div className="font-bold text-[7px] mb-1 text-blue-700">المدير المباشر</div>
-                    <div className="text-[7px] mb-1 text-muted-foreground">..................</div>
+                    <div className={`text-[7px] mb-1 ${directManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {directManager || ".................."}
+                    </div>
                     <div className="h-6 border-b-2 border-dashed border-blue-300 mx-2 mt-1" />
                   </td>
                   <td className="py-2 px-2 border border-border/40 text-center align-top bg-accent/5">
