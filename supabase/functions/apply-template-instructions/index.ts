@@ -13,6 +13,11 @@ serve(async (req) => {
 
   try {
     const { instruction, currentTemplate } = await req.json();
+    
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
 
     const systemPrompt = `أنت مساعد ذكي متخصص في إنشاء وتعديل نماذج طلبات الموارد البشرية.
     
@@ -32,14 +37,15 @@ ${JSON.stringify(currentTemplate, null, 2)}
 
 أرجع فقط الحقول التي تم تعديلها أو إضافتها كـ JSON.`;
 
-    // Use Lovable AI endpoint
-    const response = await fetch("https://api.lovable.dev/api/v1/chat/completions", {
+    // Use Lovable AI Gateway with correct URL
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `التعليمات: ${instruction}` },
@@ -50,7 +56,21 @@ ${JSON.stringify(currentTemplate, null, 2)}
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI API Error:", errorText);
+      console.error("AI API Error:", response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً" }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "يرجى إضافة رصيد لاستخدام الذكاء الاصطناعي" }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
       throw new Error(`AI API error: ${response.status}`);
     }
 
