@@ -181,9 +181,15 @@ export default function Profile() {
       }
     }
     
-    // الانتقال للمهمة إذا كان الإشعار مرتبط بمهمة
+    // الانتقال حسب نوع الإشعار
     if (notification.related_task_id) {
-      navigate(`/tasks?task=${notification.related_task_id}`);
+      // إذا كان إشعار رسالة - فتح نافذة التواصل
+      if (notification.type === "message" || notification.type === "task_message") {
+        navigate(`/tasks?task=${notification.related_task_id}&openChat=true`);
+      } else {
+        // إذا كان إشعار مهمة (تحديث حالة/تقييم) - فتح صفحة المهام فقط
+        navigate(`/tasks?task=${notification.related_task_id}`);
+      }
     }
   };
 
