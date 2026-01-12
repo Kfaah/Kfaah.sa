@@ -15,23 +15,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Target, 
   Lightbulb, 
   Activity, 
-  Calendar,
-  Check,
   Plus,
-  ChevronRight,
-  ChevronLeft,
+  Trash2,
   Sparkles,
-  Users
+  Users,
+  ChevronDown,
+  ChevronLeft,
+  Save
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface Employee {
   id: string;
@@ -52,6 +51,31 @@ interface Initiative {
   name: string;
 }
 
+// هيكل النشاط المحلي
+interface LocalActivity {
+  id: string;
+  name: string;
+  annualTarget: number;
+}
+
+// هيكل المبادرة المحلية
+interface LocalInitiative {
+  id: string;
+  name: string;
+  isNew: boolean;
+  existingId?: string;
+  activities: LocalActivity[];
+}
+
+// هيكل الهدف المحلي
+interface LocalGoal {
+  id: string;
+  name: string;
+  isNew: boolean;
+  existingId?: string;
+  initiatives: LocalInitiative[];
+}
+
 interface AddOperationalPlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -61,30 +85,10 @@ interface AddOperationalPlanDialogProps {
   initiatives: Initiative[];
   onSubmit: (data: {
     selectedEmployeeId: string;
-    selectedGoalId: string;
-    selectedInitiativeId: string;
-    isAddingNewGoal: boolean;
-    isAddingNewInitiative: boolean;
-    newGoalName: string;
-    newInitiativeName: string;
-    activityName: string;
-    annualTarget: string;
+    goals: LocalGoal[];
     year: number;
-    monthlyTargets: number[];
   }) => void;
 }
-
-const MONTHS_AR = [
-  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
-];
-
-const steps = [
-  { id: 1, title: "الهدف الاستراتيجي", icon: Target, description: "اختر أو أضف هدفاً" },
-  { id: 2, title: "المبادرة", icon: Lightbulb, description: "حدد المبادرة" },
-  { id: 3, title: "النشاط", icon: Activity, description: "تفاصيل النشاط" },
-  { id: 4, title: "المستهدفات", icon: Calendar, description: "التوزيع الشهري" },
-];
 
 export function AddOperationalPlanDialog({
   open,
@@ -95,598 +99,557 @@ export function AddOperationalPlanDialog({
   initiatives,
   onSubmit,
 }: AddOperationalPlanDialogProps) {
-  const [currentStep, setCurrentStep] = useState(1);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
-  const [selectedGoalId, setSelectedGoalId] = useState("");
-  const [selectedInitiativeId, setSelectedInitiativeId] = useState("");
-  const [isAddingNewGoal, setIsAddingNewGoal] = useState(false);
-  const [isAddingNewInitiative, setIsAddingNewInitiative] = useState(false);
-  const [newGoalName, setNewGoalName] = useState("");
-  const [newInitiativeName, setNewInitiativeName] = useState("");
-  const [activityName, setActivityName] = useState("");
-  const [annualTarget, setAnnualTarget] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
-  const [monthlyTargets, setMonthlyTargets] = useState<number[]>(Array(12).fill(0));
-
-  const filteredInitiatives = initiatives.filter(
-    (init) => init.strategic_goal_id === selectedGoalId
-  );
+  const [goals, setGoals] = useState<LocalGoal[]>([]);
+  const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
+  const [expandedInitiatives, setExpandedInitiatives] = useState<Set<string>>(new Set());
 
   // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
-      setCurrentStep(1);
       setSelectedEmployeeId("");
-      setSelectedGoalId("");
-      setSelectedInitiativeId("");
-      setIsAddingNewGoal(false);
-      setIsAddingNewInitiative(false);
-      setNewGoalName("");
-      setNewInitiativeName("");
-      setActivityName("");
-      setAnnualTarget("");
       setYear(new Date().getFullYear());
-      setMonthlyTargets(Array(12).fill(0));
+      setGoals([]);
+      setExpandedGoals(new Set());
+      setExpandedInitiatives(new Set());
     }
   }, [open]);
 
-  const handleAnnualTargetChange = (value: string) => {
-    setAnnualTarget(value);
-    const target = parseInt(value) || 0;
-    const perMonth = Math.floor(target / 12);
-    const remainder = target % 12;
-    const newTargets = Array(12).fill(perMonth);
-    for (let i = 11; i >= 12 - remainder; i--) {
-      newTargets[i]++;
+  const generateId = () => Math.random().toString(36).substr(2, 9);
+
+  // إضافة هدف جديد
+  const addNewGoal = () => {
+    const newGoal: LocalGoal = {
+      id: generateId(),
+      name: "",
+      isNew: true,
+      initiatives: [],
+    };
+    setGoals([...goals, newGoal]);
+    setExpandedGoals(new Set([...expandedGoals, newGoal.id]));
+  };
+
+  // إضافة هدف موجود
+  const addExistingGoal = (goalId: string) => {
+    const existingGoal = strategicGoals.find(g => g.id === goalId);
+    if (!existingGoal) return;
+    
+    // تحقق من عدم الإضافة المكررة
+    if (goals.some(g => g.existingId === goalId)) return;
+
+    const newGoal: LocalGoal = {
+      id: generateId(),
+      name: existingGoal.name,
+      isNew: false,
+      existingId: goalId,
+      initiatives: [],
+    };
+    setGoals([...goals, newGoal]);
+    setExpandedGoals(new Set([...expandedGoals, newGoal.id]));
+  };
+
+  // حذف هدف
+  const removeGoal = (goalId: string) => {
+    setGoals(goals.filter(g => g.id !== goalId));
+  };
+
+  // تحديث اسم الهدف
+  const updateGoalName = (goalId: string, name: string) => {
+    setGoals(goals.map(g => g.id === goalId ? { ...g, name } : g));
+  };
+
+  // إضافة مبادرة جديدة
+  const addNewInitiative = (goalId: string) => {
+    const newInitiative: LocalInitiative = {
+      id: generateId(),
+      name: "",
+      isNew: true,
+      activities: [],
+    };
+    setGoals(goals.map(g => 
+      g.id === goalId 
+        ? { ...g, initiatives: [...g.initiatives, newInitiative] }
+        : g
+    ));
+    setExpandedInitiatives(new Set([...expandedInitiatives, newInitiative.id]));
+  };
+
+  // إضافة مبادرة موجودة
+  const addExistingInitiative = (goalId: string, initiativeId: string) => {
+    const goal = goals.find(g => g.id === goalId);
+    if (!goal) return;
+
+    const existingInitiative = initiatives.find(i => i.id === initiativeId);
+    if (!existingInitiative) return;
+
+    // تحقق من عدم الإضافة المكررة
+    if (goal.initiatives.some(i => i.existingId === initiativeId)) return;
+
+    const newInitiative: LocalInitiative = {
+      id: generateId(),
+      name: existingInitiative.name,
+      isNew: false,
+      existingId: initiativeId,
+      activities: [],
+    };
+    setGoals(goals.map(g => 
+      g.id === goalId 
+        ? { ...g, initiatives: [...g.initiatives, newInitiative] }
+        : g
+    ));
+    setExpandedInitiatives(new Set([...expandedInitiatives, newInitiative.id]));
+  };
+
+  // حذف مبادرة
+  const removeInitiative = (goalId: string, initiativeId: string) => {
+    setGoals(goals.map(g => 
+      g.id === goalId 
+        ? { ...g, initiatives: g.initiatives.filter(i => i.id !== initiativeId) }
+        : g
+    ));
+  };
+
+  // تحديث اسم المبادرة
+  const updateInitiativeName = (goalId: string, initiativeId: string, name: string) => {
+    setGoals(goals.map(g => 
+      g.id === goalId 
+        ? { ...g, initiatives: g.initiatives.map(i => i.id === initiativeId ? { ...i, name } : i) }
+        : g
+    ));
+  };
+
+  // إضافة نشاط
+  const addActivity = (goalId: string, initiativeId: string) => {
+    const newActivity: LocalActivity = {
+      id: generateId(),
+      name: "",
+      annualTarget: 0,
+    };
+    setGoals(goals.map(g => 
+      g.id === goalId 
+        ? { 
+            ...g, 
+            initiatives: g.initiatives.map(i => 
+              i.id === initiativeId 
+                ? { ...i, activities: [...i.activities, newActivity] }
+                : i
+            ) 
+          }
+        : g
+    ));
+  };
+
+  // حذف نشاط
+  const removeActivity = (goalId: string, initiativeId: string, activityId: string) => {
+    setGoals(goals.map(g => 
+      g.id === goalId 
+        ? { 
+            ...g, 
+            initiatives: g.initiatives.map(i => 
+              i.id === initiativeId 
+                ? { ...i, activities: i.activities.filter(a => a.id !== activityId) }
+                : i
+            ) 
+          }
+        : g
+    ));
+  };
+
+  // تحديث النشاط
+  const updateActivity = (goalId: string, initiativeId: string, activityId: string, updates: Partial<LocalActivity>) => {
+    setGoals(goals.map(g => 
+      g.id === goalId 
+        ? { 
+            ...g, 
+            initiatives: g.initiatives.map(i => 
+              i.id === initiativeId 
+                ? { ...i, activities: i.activities.map(a => a.id === activityId ? { ...a, ...updates } : a) }
+                : i
+            ) 
+          }
+        : g
+    ));
+  };
+
+  // Toggle expand/collapse
+  const toggleGoal = (goalId: string) => {
+    const newExpanded = new Set(expandedGoals);
+    if (newExpanded.has(goalId)) {
+      newExpanded.delete(goalId);
+    } else {
+      newExpanded.add(goalId);
     }
-    setMonthlyTargets(newTargets);
+    setExpandedGoals(newExpanded);
   };
 
-  const handleMonthlyTargetChange = (monthIndex: number, value: string) => {
-    const newTargets = [...monthlyTargets];
-    newTargets[monthIndex] = parseInt(value) || 0;
-    setMonthlyTargets(newTargets);
-  };
-
-  const getTotalMonthlyTargets = () => {
-    return monthlyTargets.reduce((sum, t) => sum + t, 0);
-  };
-
-  const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        if (isAdmin && !selectedEmployeeId) return false;
-        return isAddingNewGoal ? newGoalName.trim().length > 0 : selectedGoalId.length > 0;
-      case 2:
-        return isAddingNewInitiative ? newInitiativeName.trim().length > 0 : selectedInitiativeId.length > 0;
-      case 3:
-        return activityName.trim().length > 0 && parseInt(annualTarget) > 0;
-      case 4:
-        return getTotalMonthlyTargets() === parseInt(annualTarget || "0");
-      default:
-        return false;
+  const toggleInitiative = (initiativeId: string) => {
+    const newExpanded = new Set(expandedInitiatives);
+    if (newExpanded.has(initiativeId)) {
+      newExpanded.delete(initiativeId);
+    } else {
+      newExpanded.add(initiativeId);
     }
+    setExpandedInitiatives(newExpanded);
   };
 
-  const handleNext = () => {
-    if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
-    }
+  // حساب إجمالي الأنشطة
+  const getTotalActivities = () => {
+    return goals.reduce((sum, g) => 
+      sum + g.initiatives.reduce((iSum, i) => iSum + i.activities.length, 0), 0
+    );
   };
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+  // التحقق من صحة البيانات
+  const canSubmit = () => {
+    if (isAdmin && !selectedEmployeeId) return false;
+    if (goals.length === 0) return false;
+    
+    // تحقق من وجود نشاط واحد على الأقل مع اسم ومستهدف
+    const hasValidActivity = goals.some(g => 
+      g.name.trim() && g.initiatives.some(i => 
+        i.name.trim() && i.activities.some(a => 
+          a.name.trim() && a.annualTarget > 0
+        )
+      )
+    );
+    
+    return hasValidActivity;
   };
 
   const handleSubmit = () => {
     onSubmit({
       selectedEmployeeId,
-      selectedGoalId,
-      selectedInitiativeId,
-      isAddingNewGoal,
-      isAddingNewInitiative,
-      newGoalName,
-      newInitiativeName,
-      activityName,
-      annualTarget,
+      goals,
       year,
-      monthlyTargets,
     });
   };
 
-  const getSelectedGoalName = () => {
-    if (isAddingNewGoal) return newGoalName;
-    return strategicGoals.find(g => g.id === selectedGoalId)?.name || "";
+  // المبادرات المتاحة للهدف المحدد
+  const getAvailableInitiatives = (goalExistingId?: string) => {
+    if (!goalExistingId) return [];
+    return initiatives.filter(i => i.strategic_goal_id === goalExistingId);
   };
 
-  const getSelectedInitiativeName = () => {
-    if (isAddingNewInitiative) return newInitiativeName;
-    return filteredInitiatives.find(i => i.id === selectedInitiativeId)?.name || "";
+  // الأهداف غير المضافة
+  const getAvailableGoals = () => {
+    const addedGoalIds = goals.filter(g => !g.isNew).map(g => g.existingId);
+    return strategicGoals.filter(g => !addedGoalIds.includes(g.id));
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0">
         <div className="flex flex-col h-full">
-          {/* Header with gradient */}
+          {/* Header */}
           <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-6 border-b">
             <DialogHeader>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Sparkles className="w-6 h-6 text-primary" />
                 </div>
-                <div>
-                  <DialogTitle className="text-xl">إضافة خطة تشغيلية جديدة</DialogTitle>
+                <div className="flex-1">
+                  <DialogTitle className="text-xl">إضافة خطط تشغيلية</DialogTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    قم بإنشاء خطة تشغيلية متكاملة خطوة بخطوة
+                    أضف الأهداف والمبادرات والأنشطة بشكل هرمي
                   </p>
+                </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Label>السنة:</Label>
+                    <Input
+                      type="number"
+                      value={year}
+                      onChange={(e) => setYear(parseInt(e.target.value))}
+                      className="w-24 h-8"
+                    />
+                  </div>
                 </div>
               </div>
             </DialogHeader>
           </div>
 
-          {/* Stepper */}
-          <div className="px-6 py-4 border-b bg-muted/30">
-            <div className="flex items-center justify-between">
-              {steps.map((step, index) => (
-                <div key={step.id} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center flex-1">
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300",
-                        currentStep > step.id
-                          ? "bg-primary text-primary-foreground"
-                          : currentStep === step.id
-                          ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
-                          : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {currentStep > step.id ? (
-                        <Check className="w-5 h-5" />
-                      ) : (
-                        <step.icon className="w-5 h-5" />
-                      )}
-                    </div>
-                    <span
-                      className={cn(
-                        "text-xs mt-2 font-medium text-center",
-                        currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
-                      )}
-                    >
-                      {step.title}
-                    </span>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={cn(
-                        "h-1 flex-1 mx-2 rounded-full transition-all duration-300",
-                        currentStep > step.id ? "bg-primary" : "bg-muted"
-                      )}
-                    />
-                  )}
-                </div>
-              ))}
+          {/* Employee Selection for Admin */}
+          {isAdmin && (
+            <div className="px-6 py-3 border-b bg-muted/30">
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-muted-foreground" />
+                <Label className="font-medium">الموظف:</Label>
+                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="اختر الموظف المسؤول" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.user_id}>
+                        {emp.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+          )}
+
+          {/* Table Header */}
+          <div className="grid grid-cols-12 gap-2 px-6 py-3 bg-muted/50 border-b text-sm font-medium">
+            <div className="col-span-4 flex items-center gap-2">
+              <Target className="w-4 h-4 text-primary" />
+              الهدف الاستراتيجي
+            </div>
+            <div className="col-span-3 flex items-center gap-2">
+              <Lightbulb className="w-4 h-4 text-amber-500" />
+              المبادرة
+            </div>
+            <div className="col-span-3 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-500" />
+              النشاط
+            </div>
+            <div className="col-span-1 text-center">السنوي</div>
+            <div className="col-span-1 text-center">الشهري</div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                {/* Step 1: Strategic Goal */}
-                {currentStep === 1 && (
-                  <div className="space-y-6">
-                    {/* Employee Selection for Admin */}
-                    {isAdmin && (
-                      <Card className="p-4 border-dashed">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <Users className="w-4 h-4 text-blue-500" />
-                          </div>
-                          <Label className="text-base font-semibold">اختر الموظف</Label>
-                        </div>
-                        <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر الموظف المسؤول عن الخطة" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {employees.map((emp) => (
-                              <SelectItem key={emp.id} value={emp.user_id}>
-                                {emp.full_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Card>
-                    )}
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <Target className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">الهدف الاستراتيجي</h3>
-                          <p className="text-sm text-muted-foreground">اختر من القائمة أو أضف هدفاً جديداً</p>
-                        </div>
-                      </div>
+          <ScrollArea className="flex-1 px-6">
+            <div className="py-4 space-y-3">
+              {goals.map((goal) => (
+                <Card key={goal.id} className="overflow-hidden border-r-4 border-r-primary">
+                  {/* Goal Row */}
+                  <div className="grid grid-cols-12 gap-2 p-3 bg-primary/5 items-center">
+                    <div className="col-span-4 flex items-center gap-2">
                       <Button
-                        variant={isAddingNewGoal ? "default" : "outline"}
+                        variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          setIsAddingNewGoal(!isAddingNewGoal);
-                          if (!isAddingNewGoal) {
-                            setSelectedGoalId("");
-                          } else {
-                            setNewGoalName("");
-                          }
-                        }}
-                        className="gap-2"
+                        className="h-6 w-6 p-0"
+                        onClick={() => toggleGoal(goal.id)}
                       >
-                        <Plus className="w-4 h-4" />
-                        {isAddingNewGoal ? "اختيار من القائمة" : "هدف جديد"}
+                        <ChevronDown className={cn(
+                          "w-4 h-4 transition-transform",
+                          !expandedGoals.has(goal.id) && "-rotate-90"
+                        )} />
+                      </Button>
+                      {goal.isNew ? (
+                        <Input
+                          value={goal.name}
+                          onChange={(e) => updateGoalName(goal.id, e.target.value)}
+                          placeholder="اسم الهدف الاستراتيجي..."
+                          className="h-8 bg-background"
+                        />
+                      ) : (
+                        <span className="font-medium text-primary">{goal.name}</span>
+                      )}
+                    </div>
+                    <div className="col-span-7" />
+                    <div className="col-span-1 flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        onClick={() => removeGoal(goal.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
+                  </div>
 
-                    {isAddingNewGoal ? (
-                      <div className="space-y-2">
-                        <Label>اسم الهدف الجديد</Label>
-                        <Input
-                          value={newGoalName}
-                          onChange={(e) => setNewGoalName(e.target.value)}
-                          placeholder="مثال: تحسين تجربة العملاء"
-                          className="text-lg h-12"
-                        />
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 gap-3">
-                        {strategicGoals.length === 0 ? (
-                          <Card className="p-8 text-center border-dashed">
-                            <Target className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                            <p className="text-muted-foreground">لا توجد أهداف استراتيجية</p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-3"
-                              onClick={() => setIsAddingNewGoal(true)}
-                            >
-                              <Plus className="w-4 h-4 ml-2" />
-                              أضف هدفاً جديداً
-                            </Button>
-                          </Card>
-                        ) : (
-                          strategicGoals.map((goal) => (
-                            <Card
-                              key={goal.id}
-                              className={cn(
-                                "p-4 cursor-pointer transition-all duration-200 hover:shadow-md",
-                                selectedGoalId === goal.id
-                                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                                  : "hover:border-primary/50"
-                              )}
-                              onClick={() => {
-                                setSelectedGoalId(goal.id);
-                                setSelectedInitiativeId("");
-                              }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className="w-3 h-10 rounded-full"
-                                  style={{ backgroundColor: goal.color || "hsl(var(--primary))" }}
+                  {/* Initiatives */}
+                  {expandedGoals.has(goal.id) && (
+                    <div className="border-t">
+                      {goal.initiatives.map((initiative) => (
+                        <div key={initiative.id} className="border-b last:border-b-0">
+                          {/* Initiative Row */}
+                          <div className="grid grid-cols-12 gap-2 p-3 pr-10 bg-amber-500/5 items-center">
+                            <div className="col-span-4" />
+                            <div className="col-span-3 flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => toggleInitiative(initiative.id)}
+                              >
+                                <ChevronDown className={cn(
+                                  "w-4 h-4 transition-transform",
+                                  !expandedInitiatives.has(initiative.id) && "-rotate-90"
+                                )} />
+                              </Button>
+                              {initiative.isNew ? (
+                                <Input
+                                  value={initiative.name}
+                                  onChange={(e) => updateInitiativeName(goal.id, initiative.id, e.target.value)}
+                                  placeholder="اسم المبادرة..."
+                                  className="h-8 bg-background"
                                 />
-                                <div className="flex-1">
-                                  <h4 className="font-medium">{goal.name}</h4>
-                                  <p className="text-sm text-muted-foreground">سنة {goal.year}</p>
-                                </div>
-                                {selectedGoalId === goal.id && (
-                                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                                    <Check className="w-4 h-4 text-primary-foreground" />
-                                  </div>
-                                )}
-                              </div>
-                            </Card>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Step 2: Initiative */}
-                {currentStep === 2 && (
-                  <div className="space-y-6">
-                    {/* Selected Goal Summary */}
-                    <Card className="p-4 bg-primary/5 border-primary/20">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Target className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">الهدف الاستراتيجي</p>
-                          <p className="font-medium">{getSelectedGoalName()}</p>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                          <Lightbulb className="w-5 h-5 text-amber-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">المبادرة</h3>
-                          <p className="text-sm text-muted-foreground">حدد المبادرة التي يندرج تحتها النشاط</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant={isAddingNewInitiative ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => {
-                          setIsAddingNewInitiative(!isAddingNewInitiative);
-                          if (!isAddingNewInitiative) {
-                            setSelectedInitiativeId("");
-                          } else {
-                            setNewInitiativeName("");
-                          }
-                        }}
-                        className="gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        {isAddingNewInitiative ? "اختيار من القائمة" : "مبادرة جديدة"}
-                      </Button>
-                    </div>
-
-                    {isAddingNewInitiative ? (
-                      <div className="space-y-2">
-                        <Label>اسم المبادرة الجديدة</Label>
-                        <Input
-                          value={newInitiativeName}
-                          onChange={(e) => setNewInitiativeName(e.target.value)}
-                          placeholder="مثال: برنامج ولاء العملاء"
-                          className="text-lg h-12"
-                        />
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 gap-3">
-                        {filteredInitiatives.length === 0 ? (
-                          <Card className="p-8 text-center border-dashed">
-                            <Lightbulb className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                            <p className="text-muted-foreground">لا توجد مبادرات لهذا الهدف</p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-3"
-                              onClick={() => setIsAddingNewInitiative(true)}
-                            >
-                              <Plus className="w-4 h-4 ml-2" />
-                              أضف مبادرة جديدة
-                            </Button>
-                          </Card>
-                        ) : (
-                          filteredInitiatives.map((initiative) => (
-                            <Card
-                              key={initiative.id}
-                              className={cn(
-                                "p-4 cursor-pointer transition-all duration-200 hover:shadow-md",
-                                selectedInitiativeId === initiative.id
-                                  ? "border-amber-500 bg-amber-500/5 ring-2 ring-amber-500/20"
-                                  : "hover:border-amber-500/50"
+                              ) : (
+                                <span className="font-medium text-amber-700">{initiative.name}</span>
                               )}
-                              onClick={() => setSelectedInitiativeId(initiative.id)}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-8 rounded-full bg-amber-500" />
-                                <div className="flex-1">
-                                  <h4 className="font-medium">{initiative.name}</h4>
-                                </div>
-                                {selectedInitiativeId === initiative.id && (
-                                  <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
-                                    <Check className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="col-span-4" />
+                            <div className="col-span-1 flex justify-end">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                onClick={() => removeInitiative(goal.id, initiative.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Activities */}
+                          {expandedInitiatives.has(initiative.id) && (
+                            <div className="bg-background">
+                              {initiative.activities.map((activity) => (
+                                <div 
+                                  key={activity.id} 
+                                  className="grid grid-cols-12 gap-2 p-3 pr-16 border-t items-center hover:bg-muted/30"
+                                >
+                                  <div className="col-span-4" />
+                                  <div className="col-span-3" />
+                                  <div className="col-span-3">
+                                    <Input
+                                      value={activity.name}
+                                      onChange={(e) => updateActivity(goal.id, initiative.id, activity.id, { name: e.target.value })}
+                                      placeholder="اسم النشاط..."
+                                      className="h-8"
+                                    />
                                   </div>
-                                )}
+                                  <div className="col-span-1">
+                                    <Input
+                                      type="number"
+                                      value={activity.annualTarget || ""}
+                                      onChange={(e) => updateActivity(goal.id, initiative.id, activity.id, { annualTarget: parseInt(e.target.value) || 0 })}
+                                      placeholder="0"
+                                      className="h-8 text-center"
+                                    />
+                                  </div>
+                                  <div className="col-span-1 flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground font-mono">
+                                      {activity.annualTarget ? Math.round(activity.annualTarget / 12) : 0}
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                      onClick={() => removeActivity(goal.id, initiative.id, activity.id)}
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                              
+                              {/* Add Activity Button */}
+                              <div className="p-2 pr-16 border-t">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 mr-auto"
+                                  onClick={() => addActivity(goal.id, initiative.id)}
+                                >
+                                  <Plus className="w-3 h-3 ml-1" />
+                                  إضافة نشاط
+                                </Button>
                               </div>
-                            </Card>
-                          ))
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* Add Initiative Buttons */}
+                      <div className="p-2 pr-10 flex gap-2 border-t bg-muted/20">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                          onClick={() => addNewInitiative(goal.id)}
+                        >
+                          <Plus className="w-3 h-3 ml-1" />
+                          مبادرة جديدة
+                        </Button>
+                        {!goal.isNew && getAvailableInitiatives(goal.existingId).length > 0 && (
+                          <Select onValueChange={(id) => addExistingInitiative(goal.id, id)}>
+                            <SelectTrigger className="h-7 w-48 text-xs">
+                              <SelectValue placeholder="اختر مبادرة موجودة" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getAvailableInitiatives(goal.existingId).map((init) => (
+                                <SelectItem key={init.id} value={init.id}>
+                                  {init.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         )}
                       </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Step 3: Activity */}
-                {currentStep === 3 && (
-                  <div className="space-y-6">
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <Card className="p-3 bg-primary/5 border-primary/20">
-                        <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-primary" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">الهدف</p>
-                            <p className="text-sm font-medium truncate">{getSelectedGoalName()}</p>
-                          </div>
-                        </div>
-                      </Card>
-                      <Card className="p-3 bg-amber-500/5 border-amber-500/20">
-                        <div className="flex items-center gap-2">
-                          <Lightbulb className="w-4 h-4 text-amber-500" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">المبادرة</p>
-                            <p className="text-sm font-medium truncate">{getSelectedInitiativeName()}</p>
-                          </div>
-                        </div>
-                      </Card>
                     </div>
+                  )}
+                </Card>
+              ))}
 
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                        <Activity className="w-5 h-5 text-emerald-500" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">تفاصيل النشاط</h3>
-                        <p className="text-sm text-muted-foreground">أدخل معلومات النشاط والمستهدف السنوي</p>
-                      </div>
-                    </div>
+              {/* Add Goal Buttons */}
+              <Card className="p-4 border-dashed border-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={addNewGoal}
+                  >
+                    <Plus className="w-4 h-4" />
+                    هدف استراتيجي جديد
+                  </Button>
+                  
+                  {getAvailableGoals().length > 0 && (
+                    <>
+                      <span className="text-muted-foreground text-sm">أو</span>
+                      <Select onValueChange={addExistingGoal}>
+                        <SelectTrigger className="w-64">
+                          <SelectValue placeholder="اختر هدفاً موجوداً" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getAvailableGoals().map((goal) => (
+                            <SelectItem key={goal.id} value={goal.id}>
+                              {goal.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                </div>
+              </Card>
 
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>اسم النشاط <span className="text-destructive">*</span></Label>
-                        <Input
-                          value={activityName}
-                          onChange={(e) => setActivityName(e.target.value)}
-                          placeholder="مثال: حملة التسويق الرقمي"
-                          className="text-lg h-12"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>المستهدف السنوي <span className="text-destructive">*</span></Label>
-                          <Input
-                            type="number"
-                            value={annualTarget}
-                            onChange={(e) => handleAnnualTargetChange(e.target.value)}
-                            placeholder="0"
-                            className="text-lg h-12"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>السنة</Label>
-                          <Input
-                            type="number"
-                            value={year}
-                            onChange={(e) => setYear(parseInt(e.target.value))}
-                            className="text-lg h-12"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 4: Monthly Targets */}
-                {currentStep === 4 && (
-                  <div className="space-y-6">
-                    {/* Summary */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <Card className="p-3 bg-primary/5 border-primary/20">
-                        <p className="text-xs text-muted-foreground">الهدف</p>
-                        <p className="text-sm font-medium truncate">{getSelectedGoalName()}</p>
-                      </Card>
-                      <Card className="p-3 bg-amber-500/5 border-amber-500/20">
-                        <p className="text-xs text-muted-foreground">المبادرة</p>
-                        <p className="text-sm font-medium truncate">{getSelectedInitiativeName()}</p>
-                      </Card>
-                      <Card className="p-3 bg-emerald-500/5 border-emerald-500/20">
-                        <p className="text-xs text-muted-foreground">النشاط</p>
-                        <p className="text-sm font-medium truncate">{activityName}</p>
-                      </Card>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                          <Calendar className="w-5 h-5 text-blue-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">توزيع المستهدفات الشهرية</h3>
-                          <p className="text-sm text-muted-foreground">وزّع المستهدف السنوي على الأشهر</p>
-                        </div>
-                      </div>
-                      <Badge
-                        variant={getTotalMonthlyTargets() === parseInt(annualTarget || "0") ? "default" : "destructive"}
-                        className="text-sm px-3 py-1"
-                      >
-                        <span style={{ fontFamily: 'Arial, sans-serif' }}>
-                          {formatNumber(getTotalMonthlyTargets())} / {formatNumber(annualTarget || 0)}
-                        </span>
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-3">
-                      {MONTHS_AR.map((month, index) => (
-                        <Card
-                          key={index}
-                          className={cn(
-                            "p-3 transition-all",
-                            monthlyTargets[index] > 0 ? "border-primary/30 bg-primary/5" : ""
-                          )}
-                        >
-                          <Label className="text-xs text-muted-foreground">{month}</Label>
-                          <Input
-                            type="number"
-                            value={monthlyTargets[index]}
-                            onChange={(e) => handleMonthlyTargetChange(index, e.target.value)}
-                            className="mt-1 text-center h-10"
-                          />
-                        </Card>
-                      ))}
-                    </div>
-
-                    {getTotalMonthlyTargets() !== parseInt(annualTarget || "0") && (
-                      <Card className="p-3 bg-destructive/10 border-destructive/30">
-                        <p className="text-sm text-destructive text-center">
-                          ⚠️ مجموع الأشهر لا يساوي المستهدف السنوي
-                        </p>
-                      </Card>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+              {goals.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Target className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                  <p>ابدأ بإضافة هدف استراتيجي</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
 
           {/* Footer */}
           <div className="border-t p-4 bg-muted/30 flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={currentStep === 1}
-              className="gap-2"
-            >
-              <ChevronRight className="w-4 h-4" />
-              السابق
-            </Button>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>الأهداف: <strong className="text-foreground">{goals.length}</strong></span>
+              <span>المبادرات: <strong className="text-foreground">{goals.reduce((s, g) => s + g.initiatives.length, 0)}</strong></span>
+              <span>الأنشطة: <strong className="text-foreground">{getTotalActivities()}</strong></span>
+            </div>
             
             <div className="flex items-center gap-2">
-              {steps.map((step) => (
-                <div
-                  key={step.id}
-                  className={cn(
-                    "w-2 h-2 rounded-full transition-all",
-                    currentStep >= step.id ? "bg-primary" : "bg-muted-foreground/30"
-                  )}
-                />
-              ))}
-            </div>
-
-            {currentStep < 4 ? (
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className="gap-2"
-              >
-                التالي
-                <ChevronLeft className="w-4 h-4" />
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                إلغاء
               </Button>
-            ) : (
               <Button
                 onClick={handleSubmit}
-                disabled={!canProceed()}
+                disabled={!canSubmit()}
                 className="gap-2 bg-gradient-to-r from-primary to-primary/80"
               >
-                <Sparkles className="w-4 h-4" />
-                إنشاء الخطة
+                <Save className="w-4 h-4" />
+                حفظ الخطط ({getTotalActivities()})
               </Button>
-            )}
+            </div>
           </div>
         </div>
       </DialogContent>
