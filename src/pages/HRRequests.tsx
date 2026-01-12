@@ -35,7 +35,8 @@ import {
   ClipboardList,
   Settings2,
   UserCheck,
-  Users
+  Users,
+  Eye
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -70,6 +71,8 @@ export default function HRRequests() {
   const navigate = useNavigate();
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [previewRequest, setPreviewRequest] = useState<any>(null);
+  const [previewApprovalType, setPreviewApprovalType] = useState<"substitute" | "manager">("substitute");
   const [adminActiveTab, setAdminActiveTab] = useState("requests");
   const [employeeActiveTab, setEmployeeActiveTab] = useState("my-requests");
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -633,6 +636,18 @@ export default function HRRequests() {
                           <div className="flex gap-2">
                             <Button
                               size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPreviewRequest(request);
+                                setPreviewApprovalType("substitute");
+                              }}
+                              className="border-primary text-primary hover:bg-primary/10"
+                            >
+                              <Eye className="w-4 h-4 ml-1" />
+                              استعراض
+                            </Button>
+                            <Button
+                              size="sm"
                               onClick={() => substituteApproveMutation.mutate(request.id)}
                               disabled={substituteApproveMutation.isPending}
                               className="bg-amber-600 hover:bg-amber-700"
@@ -716,6 +731,18 @@ export default function HRRequests() {
                           <div className="flex gap-2">
                             <Button
                               size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPreviewRequest(request);
+                                setPreviewApprovalType("manager");
+                              }}
+                              className="border-primary text-primary hover:bg-primary/10"
+                            >
+                              <Eye className="w-4 h-4 ml-1" />
+                              استعراض
+                            </Button>
+                            <Button
+                              size="sm"
                               onClick={() => managerApproveMutation.mutate(request.id)}
                               disabled={managerApproveMutation.isPending}
                               className="bg-blue-600 hover:bg-blue-700"
@@ -765,6 +792,32 @@ export default function HRRequests() {
           open={!!selectedRequest}
           onOpenChange={(open) => !open && setSelectedRequest(null)}
           viewMode="owner"
+        />
+
+        {/* Dialog استعراض الطلب للموافقة - للمدير أو الموظف البديل */}
+        <RequestPreviewDialog
+          request={previewRequest}
+          open={!!previewRequest}
+          onOpenChange={(open) => !open && setPreviewRequest(null)}
+          viewMode="approver"
+          approvalType={previewApprovalType}
+          onApprove={() => {
+            if (previewApprovalType === "substitute") {
+              substituteApproveMutation.mutate(previewRequest.id);
+            } else {
+              managerApproveMutation.mutate(previewRequest.id);
+            }
+            setPreviewRequest(null);
+          }}
+          onReject={(reason) => {
+            rejectRequestMutation.mutate({
+              requestId: previewRequest.id,
+              reason,
+              type: previewApprovalType,
+            });
+            setPreviewRequest(null);
+          }}
+          isApproving={substituteApproveMutation.isPending || managerApproveMutation.isPending}
         />
 
         {/* Dialog رفض الطلب */}
