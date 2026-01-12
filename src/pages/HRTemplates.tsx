@@ -42,6 +42,9 @@ import {
   AlignLeft,
   ToggleLeft,
   Hash,
+  Sparkles,
+  Loader2,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TemplatePreview } from "@/components/hr/TemplatePreview";
@@ -115,6 +118,8 @@ export default function HRTemplates() {
   const [isEditing, setIsEditing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState("content");
+  const [aiInstruction, setAiInstruction] = useState("");
+  const [isApplyingAI, setIsApplyingAI] = useState(false);
   
   // Form state
   const [editData, setEditData] = useState<Partial<RequestType>>({});
@@ -127,6 +132,40 @@ export default function HRTemplates() {
     isRequired: true,
     canReject: true,
   });
+
+  // Apply AI instructions to template
+  const handleApplyAIInstruction = async () => {
+    if (!aiInstruction.trim()) {
+      toast.error("يرجى إدخال التعليمات");
+      return;
+    }
+    
+    setIsApplyingAI(true);
+    try {
+      const response = await supabase.functions.invoke("apply-template-instructions", {
+        body: {
+          instruction: aiInstruction,
+          currentTemplate: editData,
+        },
+      });
+
+      if (response.error) throw response.error;
+      
+      const updatedTemplate = response.data;
+      setEditData(prev => ({
+        ...prev,
+        ...updatedTemplate,
+      }));
+      
+      toast.success("تم تطبيق التعليمات بنجاح");
+      setAiInstruction("");
+    } catch (error) {
+      console.error("Error applying AI instruction:", error);
+      toast.error("حدث خطأ أثناء تطبيق التعليمات");
+    } finally {
+      setIsApplyingAI(false);
+    }
+  };
 
   const { data: requestTypes = [], isLoading } = useQuery({
     queryKey: ["hr-request-types-full"],
@@ -481,7 +520,46 @@ export default function HRTemplates() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                  {/* مربع التعليمات الذكية */}
+                  <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                          <Wand2 className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <Label className="text-sm font-semibold">التعليمات الذكية</Label>
+                          <Textarea
+                            value={aiInstruction}
+                            onChange={(e) => setAiInstruction(e.target.value)}
+                            placeholder="اكتب تعليماتك هنا... مثال: أضف حقل لرقم الجوال، اجعل نص الختام رسمي، أضف مرحلة موافقة من المدير المباشر..."
+                            className="min-h-[80px] text-right"
+                            dir="rtl"
+                          />
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">
+                              اكتب ما تريد تطبيقه وسيتم تنفيذه تلقائياً
+                            </p>
+                            <Button
+                              size="sm"
+                              onClick={handleApplyAIInstruction}
+                              disabled={isApplyingAI || !aiInstruction.trim()}
+                              className="bg-gradient-to-r from-primary to-accent gap-2"
+                            >
+                              {isApplyingAI ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-4 h-4" />
+                              )}
+                              تطبيق التعليمات
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="grid w-full grid-cols-4">
                       <TabsTrigger value="content" className="gap-2">
