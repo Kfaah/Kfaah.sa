@@ -461,7 +461,8 @@ export function Sidebar() {
         >
           <div className="space-y-2.5" dir="rtl">
             {/* عرض القائمة حسب نوع المستخدم أو وضع المعاينة */}
-            {(user.isEmployee || previewAsEmployee ? employeeNavItems : adminNavItems).map((item) => (
+            {/* المدير يرى قائمة المدير حتى لو كان موظفاً، إلا في وضع المعاينة */}
+            {(previewAsEmployee ? employeeNavItems : (isActuallyAdmin ? adminNavItems : employeeNavItems)).map((item) => (
               <div key={item.href}>
                 <NavLink item={item} />
               </div>
