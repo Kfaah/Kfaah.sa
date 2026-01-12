@@ -162,10 +162,25 @@ export function NewRequestDialog({
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      // إرسال إشعار للموظف إذا كان المدير هو من أنشأ الطلب
+      if (isAdmin && selectedEmployee) {
+        try {
+          await supabase.from("notifications").insert({
+            user_id: selectedEmployee,
+            title: "طلب إجازة جديد",
+            message: `تم إنشاء طلب ${selectedType?.name_ar || 'إجازة'} لك من قبل الإدارة. رقم الطلب: ${data.request_number}`,
+            type: "hr_request",
+          });
+        } catch (error) {
+          console.error("Error sending notification:", error);
+        }
+      }
+      
       toast.success(isAdmin ? "تم إنشاء الطلب للموظف بنجاح" : "تم تقديم الطلب بنجاح");
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
       queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
       resetForm();
       onOpenChange(false);
     },
