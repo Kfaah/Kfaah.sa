@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList, MessageSquare, ExternalLink } from "lucide-react";
+import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList, MessageSquare, ExternalLink, PenTool } from "lucide-react";
 import { MessagingSection } from "@/components/messaging/MessagingSection";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
@@ -15,6 +15,8 @@ import { formatDateTime } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { SignatureUpload } from "@/components/hr/SignatureUpload";
+import { useQuery } from "@tanstack/react-query";
 
 const positiveMessages = [
   "أهلاً بك! يومك سعيد 🌟",
@@ -84,8 +86,31 @@ export default function Profile() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
   const [notificationFilter, setNotificationFilter] = useState<"all" | "tasks" | "messages" | "general">("all");
+  const [currentSignature, setCurrentSignature] = useState<string | null>(null);
 
-  // Check if user is admin
+  // جلب بيانات الموظف بما فيها التوقيع
+  const { data: employeeData, refetch: refetchEmployee } = useQuery({
+    queryKey: ["employee-signature", authUser?.id],
+    queryFn: async () => {
+      if (!authUser?.id) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("id, signature_url")
+        .eq("user_id", authUser.id)
+        .single();
+      if (error && error.code !== "PGRST116") throw error;
+      return data;
+    },
+    enabled: !!authUser?.id,
+  });
+
+  // تحديث التوقيع المحلي عند تحميل البيانات
+  useState(() => {
+    if (employeeData?.signature_url) {
+      setCurrentSignature(employeeData.signature_url);
+    }
+  });
+
   useEffect(() => {
     const checkAdminRole = async () => {
       if (!authUser) return;
@@ -521,6 +546,18 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
+
+        {/* قسم التوقيع */}
+        {authUser && employeeData && (
+          <SignatureUpload
+            currentSignature={employeeData.signature_url}
+            userId={authUser.id}
+            onSignatureUpdate={(url) => {
+              refetchEmployee();
+            }}
+            isEmployee={true}
+          />
+        )}
       </div>
 
       {/* قسم الإشعارات */}
