@@ -139,7 +139,7 @@ export default function Profile() {
     
     fetchNotifications();
 
-    // الاستماع للإشعارات الجديدة في الوقت الحقيقي
+    // الاستماع للإشعارات الجديدة والتحديثات في الوقت الحقيقي
     const channel = supabase
       .channel('notifications-channel')
       .on(
@@ -152,6 +152,32 @@ export default function Profile() {
         (payload) => {
           setNotifications(prev => [payload.new as Notification, ...prev]);
           toast.info("لديك إشعار جديد!");
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+        },
+        (payload) => {
+          // تحديث الإشعار في القائمة
+          setNotifications(prev => 
+            prev.map(n => n.id === payload.new.id ? payload.new as Notification : n)
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+        },
+        (payload) => {
+          // حذف الإشعار من القائمة
+          setNotifications(prev => prev.filter(n => n.id !== payload.old.id));
         }
       )
       .subscribe();
