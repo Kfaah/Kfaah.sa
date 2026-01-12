@@ -677,13 +677,13 @@ export default function HRTemplates() {
                     <TabsContent value="template" className="space-y-4 mt-4">
                       <div className="space-y-2">
                         <Label>صورة الخلفية / الورق الرسمي</Label>
-                        <div className="border-2 border-dashed rounded-lg p-4">
+                        <div className="border-2 border-dashed rounded-lg p-6">
                           {editData.letterhead_url ? (
                             <div className="relative">
                               <img
                                 src={editData.letterhead_url}
                                 alt="الخلفية"
-                                className="max-h-40 mx-auto rounded"
+                                className="max-h-60 mx-auto rounded shadow-lg"
                               />
                               <Button
                                 variant="destructive"
@@ -695,9 +695,10 @@ export default function HRTemplates() {
                               </Button>
                             </div>
                           ) : (
-                            <label className="cursor-pointer flex flex-col items-center gap-2">
-                              <Upload className="w-8 h-8 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">اضغط لرفع صورة الخلفية</span>
+                            <label className="cursor-pointer flex flex-col items-center gap-3 py-8">
+                              <Upload className="w-12 h-12 text-muted-foreground" />
+                              <span className="text-base font-medium text-muted-foreground">اضغط لرفع صورة الخلفية</span>
+                              <span className="text-sm text-muted-foreground">PNG, JPG, JPEG</span>
                               <input
                                 type="file"
                                 className="hidden"
@@ -713,47 +714,6 @@ export default function HRTemplates() {
                         <p className="text-xs text-muted-foreground">
                           إذا لم يتم تحديد خلفية، سيتم استخدام الخلفية الافتراضية
                         </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>عنوان المخاطب</Label>
-                        <Input
-                          value={editData.header_text || ""}
-                          onChange={(e) => setEditData(prev => ({ ...prev, header_text: e.target.value }))}
-                          placeholder="صاحب السعادة المدير العام    حفظه الله"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>نص التحية</Label>
-                        <Input
-                          value={editData.greeting_text || ""}
-                          onChange={(e) => setEditData(prev => ({ ...prev, greeting_text: e.target.value }))}
-                          placeholder="السلام عليكم ورحمة الله وبركاته، وبعد:"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>نص الطلب (القالب)</Label>
-                        <Textarea
-                          value={editData.body_template || ""}
-                          onChange={(e) => setEditData(prev => ({ ...prev, body_template: e.target.value }))}
-                          placeholder="أتقدم لسعادتكم بطلب الحصول على {نوع_الطلب}..."
-                          rows={4}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          استخدم المتغيرات: {"{اسم_الموظف}"} {"{المسمى_الوظيفي}"} {"{نوع_الطلب}"} {"{تاريخ_البداية}"} {"{تاريخ_النهاية}"} {"{عدد_الأيام}"}
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>نص الختام</Label>
-                        <Textarea
-                          value={editData.closing_text || ""}
-                          onChange={(e) => setEditData(prev => ({ ...prev, closing_text: e.target.value }))}
-                          placeholder="آمل من سعادتكم التكرم بالموافقة على طلبي..."
-                          rows={2}
-                        />
                       </div>
                     </TabsContent>
 
