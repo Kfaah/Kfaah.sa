@@ -14,8 +14,10 @@ interface LiveRequestPreviewProps {
   requestNumber: string;
   substituteEmployee?: string;
   substituteSignatureUrl?: string | null;
+  substituteApproved?: boolean;
   directManager?: string;
   directManagerSignatureUrl?: string | null;
+  managerApproved?: boolean;
   headerOffset?: number; // موضع المحتوى كنسبة مئوية (0-100)
 }
 
@@ -32,8 +34,10 @@ export function LiveRequestPreview({
   requestNumber,
   substituteEmployee = "",
   substituteSignatureUrl,
+  substituteApproved = false,
   directManager = "",
   directManagerSignatureUrl,
+  managerApproved = false,
   headerOffset = 35, // 35% كقيمة افتراضية
 }: LiveRequestPreviewProps) {
   const offsetPercent = headerOffset; // النسبة المئوية المحفوظة من القالب
@@ -186,12 +190,16 @@ export function LiveRequestPreview({
                     <div className={`text-[7px] mb-1 ${substituteEmployee ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                       {substituteEmployee || ".................."}
                     </div>
-                    {substituteSignatureUrl ? (
+                    {substituteApproved && substituteSignatureUrl ? (
                       <img 
                         src={substituteSignatureUrl} 
                         alt="توقيع الموظف البديل" 
                         className="h-6 mx-auto object-contain"
                       />
+                    ) : substituteEmployee ? (
+                      <div className="h-6 flex items-center justify-center">
+                        <span className="text-[6px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">في انتظار الموافقة</span>
+                      </div>
                     ) : (
                       <div className="h-6 border-b-2 border-dashed border-amber-300 mx-2 mt-1" />
                     )}
@@ -201,12 +209,16 @@ export function LiveRequestPreview({
                     <div className={`text-[7px] mb-1 ${directManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                       {directManager || ".................."}
                     </div>
-                    {directManagerSignatureUrl ? (
+                    {managerApproved && directManagerSignatureUrl ? (
                       <img 
                         src={directManagerSignatureUrl} 
                         alt="توقيع المدير المباشر" 
                         className="h-6 mx-auto object-contain"
                       />
+                    ) : directManager ? (
+                      <div className="h-6 flex items-center justify-center">
+                        <span className="text-[6px] text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">في انتظار الموافقة</span>
+                      </div>
                     ) : (
                       <div className="h-6 border-b-2 border-dashed border-blue-300 mx-2 mt-1" />
                     )}
