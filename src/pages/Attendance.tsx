@@ -922,7 +922,7 @@ export default function Attendance() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-accent" />
+              <ListTodo className="w-5 h-5 text-accent" />
               مهام اليوم
               <Badge variant="secondary">{todayTasks.length}</Badge>
             </CardTitle>
