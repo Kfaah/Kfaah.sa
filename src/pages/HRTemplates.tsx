@@ -958,8 +958,8 @@ export default function HRTemplates() {
 
           {/* قائمة أنواع الطلبات - تظهر على اليمين */}
           <Card className="lg:col-span-1 lg:order-1">
-            <CardHeader className="text-right">
-              <CardTitle className="text-lg flex items-center justify-end gap-2">
+            <CardHeader className="text-right px-3">
+              <CardTitle className="text-lg flex items-center justify-end gap-2 pr-1">
                 <List className="w-5 h-5" />
                 أنواع الطلبات
               </CardTitle>
