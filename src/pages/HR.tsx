@@ -69,8 +69,8 @@ const hrModules: HRModuleCard[] = [
     description: "تقارير شاملة وإحصائيات الموارد البشرية",
     icon: PieChart,
     href: "/hr-reports",
-    gradient: "from-rose-500 to-rose-600",
-    iconBg: "bg-rose-500/20",
+    gradient: "from-cyan-500 to-cyan-600",
+    iconBg: "bg-cyan-500/20",
     stats: { label: "تقارير الشهر", value: "12" }
   },
   {
