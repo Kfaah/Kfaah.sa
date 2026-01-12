@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
-import { Sparkles } from "lucide-react";
 import atefLogo from "@/assets/atef-logo-icon.jpg";
 
 // استيراد الخلفيات
@@ -46,14 +45,13 @@ const positiveQuotes = [
   { quote: "معاً نصنع المستحيل ممكناً", emoji: "🏅" },
 ];
 
-// الخلفيات الطبيعية
+// الخلفيات الهادئة
 const backgrounds = [bg1, bg2, bg3, bg4, bg5, bg6];
 
 export function WelcomeScreen() {
   const { user } = useUser();
   const [currentQuote, setCurrentQuote] = useState(positiveQuotes[0]);
   const [currentBg, setCurrentBg] = useState(backgrounds[0]);
-  const [animationType, setAnimationType] = useState(0);
 
   useEffect(() => {
     // اختيار عبارة وخلفية بناءً على اليوم
@@ -65,11 +63,9 @@ export function WelcomeScreen() {
     
     const quoteIndex = (dayOfMonth - 1) % positiveQuotes.length;
     const bgIndex = dayOfYear % backgrounds.length;
-    const animIndex = dayOfYear % 6; // 6 أنواع حركة مختلفة
     
     setCurrentQuote(positiveQuotes[quoteIndex]);
     setCurrentBg(backgrounds[bgIndex]);
-    setAnimationType(animIndex);
   }, []);
 
   const getGreeting = () => {
@@ -79,142 +75,77 @@ export function WelcomeScreen() {
     return "مساء النور";
   };
 
-  // أنماط حركة مختلفة للخلفية
-  const bgAnimations = [
-    { scale: [1, 1.05, 1], transition: { duration: 20, repeat: Infinity } },
-    { x: [0, -20, 0], transition: { duration: 25, repeat: Infinity } },
-    { y: [0, -15, 0], transition: { duration: 22, repeat: Infinity } },
-    { scale: [1.05, 1, 1.05], x: [-10, 10, -10], transition: { duration: 30, repeat: Infinity } },
-    { rotate: [0, 1, 0, -1, 0], transition: { duration: 15, repeat: Infinity } },
-    { scale: [1, 1.08, 1], y: [0, -10, 0], transition: { duration: 18, repeat: Infinity } },
-  ];
-
   return (
     <div className="relative w-full min-h-[calc(100vh-4rem)] flex items-center justify-center overflow-hidden rounded-3xl">
-      {/* خلفية طبيعية متحركة */}
+      {/* خلفية هادئة */}
       <motion.div 
         className="absolute inset-0 rounded-3xl"
-        animate={bgAnimations[animationType]}
+        initial={{ scale: 1.02 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
       >
         <img 
           src={currentBg} 
-          alt="خلفية طبيعية" 
+          alt="خلفية" 
           className="w-full h-full object-cover rounded-3xl"
         />
-        {/* طبقة تعتيم خفيفة لوضوح النص */}
-        <div className="absolute inset-0 bg-black/20 rounded-3xl" />
       </motion.div>
-      
-      {/* تأثيرات زخرفية */}
-      <div className="absolute inset-0 overflow-hidden rounded-3xl">
-        {/* نجوم/شرارات صغيرة متحركة */}
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ 
-              opacity: [0, 1, 0], 
-              scale: [0, 1, 0],
-              y: [0, -30, -60]
-            }}
-            transition={{ 
-              duration: 4, 
-              repeat: Infinity, 
-              delay: i * 0.4,
-              repeatDelay: 3
-            }}
-            className="absolute w-2 h-2 bg-white/70 rounded-full shadow-lg"
-            style={{
-              left: `${5 + (i * 6.5)}%`,
-              top: `${70 + (i % 4) * 7}%`,
-            }}
-          />
-        ))}
-
-        {/* فقاعات ضوئية */}
-        <motion.div
-          animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 6, repeat: Infinity }}
-          className="absolute top-20 left-20 w-40 h-40 bg-white/10 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ scale: [1.2, 1, 1.2], opacity: [0.15, 0.3, 0.15] }}
-          transition={{ duration: 8, repeat: Infinity }}
-          className="absolute bottom-32 right-20 w-56 h-56 bg-white/10 rounded-full blur-3xl"
-        />
-      </div>
 
       {/* المحتوى الرئيسي */}
       <motion.div
-        initial={{ scale: 0.8, opacity: 0, y: 50 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2, type: "spring" }}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
         className="relative z-10 flex flex-col items-center text-center px-6 max-w-2xl"
       >
         {/* الشعار */}
         <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 1, delay: 0.3, type: "spring" }}
-          className="relative mb-8"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mb-8"
         >
-          {/* حلقة خارجية متحركة */}
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute -inset-4 border-4 border-dashed border-white/50 rounded-full"
-          />
-          
           {/* الشعار - دائرة بيضاء */}
-          <div className="relative w-40 h-40 bg-white rounded-full flex items-center justify-center shadow-2xl">
+          <div className="w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-xl">
             <img
               src={atefLogo}
               alt="جمعية عطف"
-              className="w-32 h-32 object-contain rounded-full"
+              className="w-28 h-28 object-contain rounded-full"
             />
           </div>
-          
-          {/* نجمة صغيرة */}
-          <motion.div
-            animate={{ scale: [1, 1.3, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg"
-          >
-            <Sparkles className="w-5 h-5 text-yellow-800" />
-          </motion.div>
         </motion.div>
 
         {/* اسم الجمعية */}
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="text-2xl font-bold text-white drop-shadow-lg mb-6"
+          transition={{ delay: 0.4 }}
+          className="text-2xl font-bold text-slate-700 mb-6"
         >
           جمعية عطف للأيتام
         </motion.h2>
 
         {/* الترحيب */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="space-y-3 mb-8"
+          transition={{ delay: 0.5 }}
+          className="space-y-2 mb-8"
         >
-          <p className="text-xl text-white/90 drop-shadow-md">{getGreeting()}</p>
-          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">
+          <p className="text-lg text-slate-600">{getGreeting()}</p>
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-800">
             أهلاً بك، {user.firstName}! 👋
           </h1>
         </motion.div>
 
         {/* العبارة الإيجابية */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8 }}
-          className="bg-white/25 backdrop-blur-md rounded-2xl px-8 py-6 border border-white/40 shadow-xl"
+          transition={{ delay: 0.6 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl px-8 py-6 shadow-lg border border-white/50"
         >
-          <p className="text-2xl md:text-3xl font-medium text-white leading-relaxed drop-shadow-md">
+          <p className="text-xl md:text-2xl font-medium text-slate-700 leading-relaxed">
             {currentQuote.emoji} {currentQuote.quote}
           </p>
         </motion.div>
@@ -223,8 +154,8 @@ export function WelcomeScreen() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="mt-8 text-white/80 text-sm drop-shadow-md"
+          transition={{ delay: 0.8 }}
+          className="mt-8 text-slate-500 text-sm"
         >
           اختر من القائمة للبدء في العمل
         </motion.p>
