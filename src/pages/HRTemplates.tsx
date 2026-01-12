@@ -225,12 +225,17 @@ export default function HRTemplates() {
         })
         .eq("id", data.id);
       if (error) throw error;
+      return data; // إرجاع البيانات المحفوظة
     },
-    onSuccess: () => {
+    onSuccess: (savedData) => {
       toast.success("تم حفظ التعديلات بنجاح");
       queryClient.invalidateQueries({ queryKey: ["hr-request-types-full"] });
       queryClient.invalidateQueries({ queryKey: ["hr-request-types"] });
-      setIsEditing(false);
+      // تحديث selectedType و editData بالبيانات الجديدة
+      if (savedData) {
+        setSelectedType(savedData as RequestType);
+        setEditData(savedData);
+      }
     },
     onError: (error) => {
       console.error("Error updating type:", error);
