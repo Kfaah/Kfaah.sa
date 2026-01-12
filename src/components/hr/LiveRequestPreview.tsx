@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useState, useRef, useCallback } from "react";
-import { GripVertical, RotateCcw } from "lucide-react";
+import { GripVertical, RotateCcw, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LiveRequestPreviewProps {
@@ -31,6 +31,7 @@ export function LiveRequestPreview({
 }: LiveRequestPreviewProps) {
   const [contentOffset, setContentOffset] = useState(200); // الموضع الافتراضي
   const [isDragging, setIsDragging] = useState(false);
+  const [showGuide, setShowGuide] = useState(true); // إظهار/إخفاء الخط الإرشادي
   const containerRef = useRef<HTMLDivElement>(null);
   const startYRef = useRef(0);
   const startOffsetRef = useRef(0);
@@ -109,43 +110,60 @@ export function LiveRequestPreview({
         />
         
         {/* خط إرشادي واضح لمنطقة الكليشة */}
-        <div 
-          className="absolute top-0 left-0 right-0 border-b-4 border-dashed border-red-600 bg-red-500/20 pointer-events-none z-10 transition-all duration-200"
-          style={{ height: `${contentOffset}px` }}
-          title="منطقة الكليشة - لا تضع محتوى هنا"
-        >
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] px-4 py-1.5 rounded-full font-bold shadow-lg">
-            ⚠️ منطقة الكليشة - لا تضع محتوى هنا
+        {showGuide && (
+          <div 
+            className="absolute top-0 left-0 right-0 border-b-4 border-dashed border-red-600 bg-red-500/20 pointer-events-none z-10 transition-all duration-200"
+            style={{ height: `${contentOffset}px` }}
+            title="منطقة الكليشة - لا تضع محتوى هنا"
+          >
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] px-4 py-1.5 rounded-full font-bold shadow-lg">
+              ⚠️ منطقة الكليشة - لا تضع محتوى هنا
+            </div>
           </div>
-        </div>
+        )}
 
         {/* مقبض السحب */}
-        <div
-          className={`absolute left-1/2 -translate-x-1/2 z-20 cursor-ns-resize select-none transition-all duration-200 ${
-            isDragging ? 'scale-110' : 'hover:scale-105'
-          }`}
-          style={{ top: `${contentOffset - 12}px` }}
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-        >
-          <div className={`flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-full shadow-lg ${
-            isDragging ? 'ring-4 ring-primary/30' : ''
-          }`}>
-            <GripVertical className="w-4 h-4" />
-            <span className="text-[9px] font-bold">اسحب لتحريك المحتوى</span>
+        {showGuide && (
+          <div
+            className={`absolute left-1/2 -translate-x-1/2 z-20 cursor-ns-resize select-none transition-all duration-200 ${
+              isDragging ? 'scale-110' : 'hover:scale-105'
+            }`}
+            style={{ top: `${contentOffset - 12}px` }}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+          >
+            <div className={`flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-full shadow-lg ${
+              isDragging ? 'ring-4 ring-primary/30' : ''
+            }`}>
+              <GripVertical className="w-4 h-4" />
+              <span className="text-[9px] font-bold">اسحب لتحريك المحتوى</span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* زر إعادة التعيين */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={resetPosition}
-          className="absolute top-3 right-3 z-20 h-7 text-[8px] gap-1 bg-white/90 hover:bg-white shadow-md"
-        >
-          <RotateCcw className="w-3 h-3" />
-          إعادة تعيين
-        </Button>
+        {/* أزرار التحكم */}
+        <div className="absolute top-3 right-3 z-20 flex gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowGuide(!showGuide)}
+            className="h-7 text-[8px] gap-1 bg-white/90 hover:bg-white shadow-md"
+          >
+            {showGuide ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+            {showGuide ? 'إخفاء' : 'إظهار'}
+          </Button>
+          {showGuide && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetPosition}
+              className="h-7 text-[8px] gap-1 bg-white/90 hover:bg-white shadow-md"
+            >
+              <RotateCcw className="w-3 h-3" />
+              إعادة تعيين
+            </Button>
+          )}
+        </div>
         
         {/* محتوى النموذج */}
         <div
@@ -285,9 +303,11 @@ export function LiveRequestPreview({
         </div>
 
         {/* مؤشر الموضع الحالي */}
-        <div className="absolute bottom-3 left-3 bg-black/70 text-white text-[8px] px-2 py-1 rounded font-mono z-20">
-          الموضع: {contentOffset}px
-        </div>
+        {showGuide && (
+          <div className="absolute bottom-3 left-3 bg-black/70 text-white text-[8px] px-2 py-1 rounded font-mono z-20">
+            الموضع: {contentOffset}px
+          </div>
+        )}
       </div>
     </div>
   );
