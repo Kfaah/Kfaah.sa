@@ -162,27 +162,40 @@ export default function HRRequests() {
             </Button>
           </div>
 
-          {/* Tabs للمدير */}
-          <Tabs value={adminActiveTab} onValueChange={setAdminActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-              <TabsTrigger value="requests" className="gap-2">
-                <ClipboardList className="w-4 h-4" />
+          {/* التبويبات المركزية */}
+          <div className="flex justify-center">
+            <div className="inline-flex items-center gap-4 p-2 bg-white rounded-2xl shadow-lg border">
+              <button
+                onClick={() => setAdminActiveTab("requests")}
+                className={`flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-base transition-all ${
+                  adminActiveTab === "requests"
+                    ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-md"
+                    : "bg-transparent text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <ClipboardList className="w-5 h-5" />
                 الطلبات
-              </TabsTrigger>
-              <TabsTrigger value="statistics" className="gap-2">
-                <BarChart3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setAdminActiveTab("statistics")}
+                className={`flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-base transition-all ${
+                  adminActiveTab === "statistics"
+                    ? "bg-gradient-to-r from-accent to-teal-500 text-white shadow-md"
+                    : "bg-transparent text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <BarChart3 className="w-5 h-5" />
                 التقارير والإحصائيات
-              </TabsTrigger>
-            </TabsList>
+              </button>
+            </div>
+          </div>
 
-            <TabsContent value="requests">
-              <AdminRequestsPanel requestTypes={requestTypes} />
-            </TabsContent>
-
-            <TabsContent value="statistics">
-              <HRStatisticsPanel />
-            </TabsContent>
-          </Tabs>
+          {/* المحتوى */}
+          {adminActiveTab === "requests" ? (
+            <AdminRequestsPanel requestTypes={requestTypes} />
+          ) : (
+            <HRStatisticsPanel />
+          )}
 
           {/* Dialog إنشاء طلب لموظف */}
           <NewRequestDialog
