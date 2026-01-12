@@ -5,8 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { UserProvider, useUser } from "@/contexts/UserContext";
-import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
+import { UserProvider } from "@/contexts/UserContext";
 import Index from "./pages/Index";
 import Employees from "./pages/Employees";
 import Roles from "./pages/Roles";
@@ -29,32 +28,8 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { user: userData, loading: userLoading } = useUser();
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [welcomeShown, setWelcomeShown] = useState(false);
 
-  useEffect(() => {
-    if (user && !loading && !userLoading && !welcomeShown) {
-      // تحقق إذا تم عرض شاشة الترحيب اليوم
-      const today = new Date().toDateString();
-      const lastWelcome = localStorage.getItem(`welcome_shown_${user.id}`);
-      
-      if (lastWelcome !== today) {
-        setShowWelcome(true);
-      }
-    }
-  }, [user, loading, userLoading, welcomeShown]);
-
-  const handleWelcomeContinue = () => {
-    if (user) {
-      const today = new Date().toDateString();
-      localStorage.setItem(`welcome_shown_${user.id}`, today);
-    }
-    setShowWelcome(false);
-    setWelcomeShown(true);
-  };
-
-  if (loading || userLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
@@ -66,12 +41,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  return (
-    <>
-      {showWelcome && <WelcomeScreen onContinue={handleWelcomeContinue} />}
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {

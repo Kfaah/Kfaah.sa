@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
 import { Users, CheckCircle, Clock, Trophy, TrendingUp, Calendar, ListTodo, Timer, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@/contexts/UserContext";
@@ -33,6 +35,8 @@ interface AdminStats {
 }
 
 const Index = () => {
+  const location = useLocation();
+  const [showWelcome, setShowWelcome] = useState(true);
   const [currentMessage, setCurrentMessage] = useState("");
   const { user, previewAsEmployee, previewingEmployee } = useUser();
   const { user: authUser } = useAuth();
@@ -54,6 +58,14 @@ const Index = () => {
     activePlans: 0,
   });
   const [recentTasks, setRecentTasks] = useState<any[]>([]);
+
+  // تتبع تغيير الصفحة لإخفاء شاشة الترحيب
+  useEffect(() => {
+    // عند تحميل الصفحة، تحقق إذا كان المستخدم قادم من صفحة أخرى
+    if (location.state?.fromNavigation) {
+      setShowWelcome(false);
+    }
+  }, [location]);
 
   useEffect(() => {
     const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
@@ -232,6 +244,15 @@ const Index = () => {
   const completionRate = employeeStats.totalTasks > 0 
     ? Math.round((employeeStats.completedTasks / employeeStats.totalTasks) * 100) 
     : 0;
+
+  // عرض شاشة الترحيب إذا كانت مفعلة
+  if (showWelcome) {
+    return (
+      <DashboardLayout>
+        <WelcomeScreen />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
