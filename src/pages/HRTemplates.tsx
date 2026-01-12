@@ -199,7 +199,7 @@ export default function HRTemplates() {
 
   const updateTypeMutation = useMutation({
     mutationFn: async (data: Partial<RequestType> & { id: string }) => {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("hr_request_types")
         .update({
           name: data.name,
@@ -223,19 +223,34 @@ export default function HRTemplates() {
           show_notes: data.show_notes,
           header_offset: data.header_offset,
         })
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("*")
+        .single();
+
       if (error) throw error;
-      return data; // إرجاع البيانات المحفوظة
+
+      return {
+        ...(updated as any),
+        custom_fields: (updated as any).custom_fields || [],
+        workflow_stages: (updated as any).workflow_stages || [],
+      } as RequestType;
     },
     onSuccess: (savedData) => {
       toast.success("تم حفظ التعديلات بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["hr-request-types-full"] });
-      queryClient.invalidateQueries({ queryKey: ["hr-request-types"] });
-      // تحديث selectedType و editData بالبيانات الجديدة
-      if (savedData) {
-        setSelectedType(savedData as RequestType);
-        setEditData(savedData);
-      }
+
+      // تحديث الكاش مباشرة لضمان أن اختيار النوع/المعاينة يقرأ أحدث نسخة
+      queryClient.setQueryData(["hr-request-types-full"], (prev: any) => {
+        if (!Array.isArray(prev)) return prev;
+        return prev.map((t: any) => (t.id === savedData.id ? savedData : t));
+      });
+      queryClient.setQueryData(["hr-request-types"], (prev: any) => {
+        if (!Array.isArray(prev)) return prev;
+        return prev.map((t: any) => (t.id === savedData.id ? savedData : t));
+      });
+
+      // وتحديث حالة الصفحة الحالية
+      setSelectedType(savedData);
+      setEditData(savedData);
     },
     onError: (error) => {
       console.error("Error updating type:", error);
