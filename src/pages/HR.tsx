@@ -1,0 +1,219 @@
+import { Link } from "react-router-dom";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { 
+  Users, 
+  UserCog, 
+  Clock, 
+  FolderOpen, 
+  PieChart,
+  ArrowLeft,
+  Briefcase,
+  TrendingUp,
+  CalendarDays,
+  FileCheck
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface HRModuleCard {
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  gradient: string;
+  iconBg: string;
+  stats?: {
+    label: string;
+    value: string | number;
+  };
+}
+
+const hrModules: HRModuleCard[] = [
+  {
+    title: "الموظفين",
+    description: "إدارة بيانات الموظفين والملفات الشخصية",
+    icon: Users,
+    href: "/employees",
+    gradient: "from-blue-500 to-blue-600",
+    iconBg: "bg-blue-400/20",
+    stats: { label: "إجمالي الموظفين", value: "24" }
+  },
+  {
+    title: "الأدوار والصلاحيات",
+    description: "إدارة صلاحيات المستخدمين والأدوار الوظيفية",
+    icon: UserCog,
+    href: "/roles",
+    gradient: "from-pink-500 to-rose-600",
+    iconBg: "bg-pink-400/20",
+    stats: { label: "الأدوار النشطة", value: "5" }
+  },
+  {
+    title: "سجلات الحضور",
+    description: "متابعة حضور وانصراف الموظفين",
+    icon: Clock,
+    href: "/attendance-management",
+    gradient: "from-emerald-500 to-teal-600",
+    iconBg: "bg-emerald-400/20",
+    stats: { label: "الحضور اليوم", value: "18" }
+  },
+  {
+    title: "الطلبات",
+    description: "إدارة طلبات الإجازات والاستئذان",
+    icon: FolderOpen,
+    href: "/hr-requests",
+    gradient: "from-amber-500 to-orange-600",
+    iconBg: "bg-amber-400/20",
+    stats: { label: "طلبات معلقة", value: "7" }
+  },
+  {
+    title: "التقارير والإحصائيات",
+    description: "تقارير شاملة وإحصائيات الموارد البشرية",
+    icon: PieChart,
+    href: "/hr-reports",
+    gradient: "from-violet-500 to-purple-600",
+    iconBg: "bg-violet-400/20",
+    stats: { label: "تقارير الشهر", value: "12" }
+  },
+  {
+    title: "قوالب الطلبات",
+    description: "إعداد وتخصيص نماذج الطلبات الرسمية",
+    icon: FileCheck,
+    href: "/hr-templates",
+    gradient: "from-cyan-500 to-sky-600",
+    iconBg: "bg-cyan-400/20",
+    stats: { label: "القوالب", value: "8" }
+  },
+];
+
+export default function HR() {
+  return (
+    <DashboardLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 p-6">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-xl shadow-indigo-200">
+              <Briefcase className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800">الموارد البشرية</h1>
+              <p className="text-slate-500 mt-1">إدارة شؤون الموظفين والطلبات</p>
+            </div>
+          </div>
+
+          {/* Quick Stats Bar */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">24</p>
+                  <p className="text-xs text-slate-500">موظف</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">92%</p>
+                  <p className="text-xs text-slate-500">نسبة الحضور</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <FolderOpen className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">7</p>
+                  <p className="text-xs text-slate-500">طلب معلق</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+                  <CalendarDays className="w-5 h-5 text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">15</p>
+                  <p className="text-xs text-slate-500">إجازة هذا الشهر</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modules Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {hrModules.map((module) => (
+            <Link
+              key={module.href}
+              to={module.href}
+              className="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+            >
+              {/* Gradient Top Border */}
+              <div className={cn(
+                "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r",
+                module.gradient
+              )} />
+
+              {/* Card Content */}
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  {/* Icon */}
+                  <div className={cn(
+                    "w-14 h-14 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110",
+                    "bg-gradient-to-br",
+                    module.gradient
+                  )}>
+                    <module.icon className="w-7 h-7 text-white" />
+                  </div>
+
+                  {/* Arrow */}
+                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                    <ArrowLeft className="w-4 h-4 text-slate-600" />
+                  </div>
+                </div>
+
+                {/* Title & Description */}
+                <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">
+                  {module.title}
+                </h3>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  {module.description}
+                </p>
+
+                {/* Stats */}
+                {module.stats && (
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-400">{module.stats.label}</span>
+                      <span className={cn(
+                        "text-lg font-bold bg-gradient-to-r bg-clip-text text-transparent",
+                        module.gradient
+                      )}>
+                        {module.stats.value}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Hover Overlay */}
+              <div className={cn(
+                "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity",
+                module.gradient
+              )} />
+            </Link>
+          ))}
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
