@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Plus, 
   Calendar, 
@@ -22,7 +24,8 @@ import {
   DollarSign,
   Award,
   BarChart3,
-  ClipboardList
+  ClipboardList,
+  Settings2
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -53,6 +56,7 @@ export default function HRRequests() {
   const { user: authUser } = useAuth();
   const { user } = useUser();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [adminActiveTab, setAdminActiveTab] = useState("requests");
@@ -149,9 +153,28 @@ export default function HRRequests() {
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">إدارة طلبات الموارد البشرية</h1>
-              <p className="text-muted-foreground">مراجعة واعتماد طلبات الموظفين والإحصائيات</p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">إدارة طلبات الموارد البشرية</h1>
+                <p className="text-muted-foreground">مراجعة واعتماد طلبات الموظفين والإحصائيات</p>
+              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => navigate("/hr-templates")}
+                      className="h-10 w-10 rounded-xl border-2 hover:bg-primary/10 hover:border-primary"
+                    >
+                      <Settings2 className="w-5 h-5 text-primary" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>إدارة النماذج والقوالب</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <Button 
               onClick={() => setIsNewRequestOpen(true)}
