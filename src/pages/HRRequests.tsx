@@ -42,7 +42,6 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { NewRequestDialog } from "@/components/hr/NewRequestDialog";
-import { RequestDetailsDialog } from "@/components/hr/RequestDetailsDialog";
 import { RequestPreviewDialog } from "@/components/hr/RequestPreviewDialog";
 import { AdminRequestsPanel } from "@/components/hr/AdminRequestsPanel";
 import { LeaveBalanceCard } from "@/components/hr/LeaveBalanceCard";
@@ -427,13 +426,6 @@ export default function HRRequests() {
             employees={employees}
           />
 
-          {/* Dialog تفاصيل الطلب */}
-          <RequestDetailsDialog
-            request={selectedRequest}
-            open={!!selectedRequest}
-            onOpenChange={(open) => !open && setSelectedRequest(null)}
-            isAdmin={true}
-          />
         </div>
       </DashboardLayout>
     );
