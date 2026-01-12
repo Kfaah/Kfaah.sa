@@ -338,48 +338,135 @@ export type Database = {
       }
       hr_request_types: {
         Row: {
+          body_template: string | null
+          closing_text: string | null
           color: string | null
           created_at: string
+          custom_fields: Json | null
           deducts_from_balance: boolean | null
           description: string | null
+          greeting_text: string | null
+          header_text: string | null
           icon: string | null
           id: string
           is_active: boolean | null
+          letterhead_url: string | null
           max_days: number | null
           name: string
           name_ar: string
           requires_attachment: boolean | null
+          show_dates: boolean | null
+          show_notes: boolean | null
+          show_reason: boolean | null
           updated_at: string
+          workflow_stages: Json | null
         }
         Insert: {
+          body_template?: string | null
+          closing_text?: string | null
           color?: string | null
           created_at?: string
+          custom_fields?: Json | null
           deducts_from_balance?: boolean | null
           description?: string | null
+          greeting_text?: string | null
+          header_text?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          letterhead_url?: string | null
           max_days?: number | null
           name: string
           name_ar: string
           requires_attachment?: boolean | null
+          show_dates?: boolean | null
+          show_notes?: boolean | null
+          show_reason?: boolean | null
           updated_at?: string
+          workflow_stages?: Json | null
         }
         Update: {
+          body_template?: string | null
+          closing_text?: string | null
           color?: string | null
           created_at?: string
+          custom_fields?: Json | null
           deducts_from_balance?: boolean | null
           description?: string | null
+          greeting_text?: string | null
+          header_text?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          letterhead_url?: string | null
           max_days?: number | null
           name?: string
           name_ar?: string
           requires_attachment?: boolean | null
+          show_dates?: boolean | null
+          show_notes?: boolean | null
+          show_reason?: boolean | null
           updated_at?: string
+          workflow_stages?: Json | null
         }
         Relationships: []
+      }
+      hr_request_workflow: {
+        Row: {
+          action_at: string | null
+          action_by: string | null
+          assigned_to: string | null
+          comments: string | null
+          created_at: string
+          id: string
+          request_id: string
+          stage_id: string | null
+          stage_name: string
+          stage_order: number
+          status: string
+        }
+        Insert: {
+          action_at?: string | null
+          action_by?: string | null
+          assigned_to?: string | null
+          comments?: string | null
+          created_at?: string
+          id?: string
+          request_id: string
+          stage_id?: string | null
+          stage_name: string
+          stage_order: number
+          status?: string
+        }
+        Update: {
+          action_at?: string | null
+          action_by?: string | null
+          assigned_to?: string | null
+          comments?: string | null
+          created_at?: string
+          id?: string
+          request_id?: string
+          stage_id?: string | null
+          stage_name?: string
+          stage_order?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_request_workflow_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hr_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_request_workflow_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "hr_workflow_stages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hr_requests: {
         Row: {
@@ -389,6 +476,8 @@ export type Database = {
           attachment_name: string | null
           attachment_url: string | null
           created_at: string
+          current_stage: number | null
+          custom_field_values: Json | null
           days_count: number | null
           end_date: string | null
           final_pdf_url: string | null
@@ -410,6 +499,8 @@ export type Database = {
           attachment_name?: string | null
           attachment_url?: string | null
           created_at?: string
+          current_stage?: number | null
+          custom_field_values?: Json | null
           days_count?: number | null
           end_date?: string | null
           final_pdf_url?: string | null
@@ -431,6 +522,8 @@ export type Database = {
           attachment_name?: string | null
           attachment_url?: string | null
           created_at?: string
+          current_stage?: number | null
+          custom_field_values?: Json | null
           days_count?: number | null
           end_date?: string | null
           final_pdf_url?: string | null
@@ -448,6 +541,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "hr_requests_request_type_id_fkey"
+            columns: ["request_type_id"]
+            isOneToOne: false
+            referencedRelation: "hr_request_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_workflow_stages: {
+        Row: {
+          approver_role: string | null
+          approver_user_id: string | null
+          auto_approve_after_days: number | null
+          can_reject: boolean | null
+          created_at: string
+          id: string
+          is_required: boolean | null
+          request_type_id: string
+          stage_name: string
+          stage_order: number
+          updated_at: string
+        }
+        Insert: {
+          approver_role?: string | null
+          approver_user_id?: string | null
+          auto_approve_after_days?: number | null
+          can_reject?: boolean | null
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          request_type_id: string
+          stage_name: string
+          stage_order?: number
+          updated_at?: string
+        }
+        Update: {
+          approver_role?: string | null
+          approver_user_id?: string | null
+          auto_approve_after_days?: number | null
+          can_reject?: boolean | null
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          request_type_id?: string
+          stage_name?: string
+          stage_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_workflow_stages_request_type_id_fkey"
             columns: ["request_type_id"]
             isOneToOne: false
             referencedRelation: "hr_request_types"
