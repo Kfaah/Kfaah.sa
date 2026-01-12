@@ -38,10 +38,10 @@ export function LiveRequestPreview({
 
   const formatArabicDate = (date: Date | undefined) => {
     if (!date) return "---";
-    return format(date, "dd/MM/yyyy", { locale: ar });
+    return format(date, "yyyy/MM/dd", { locale: ar });
   };
 
-  const currentDate = format(new Date(), "dd/MM/yyyy", { locale: ar });
+  const currentDate = format(new Date(), "yyyy/MM/dd", { locale: ar });
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
