@@ -215,13 +215,20 @@ export default function HRRequests() {
     mutationFn: async (requestId: string) => {
       const { data: employee } = await supabase
         .from("employees")
-        .select("signature_url")
+        .select("signature_url, full_name")
         .eq("user_id", authUser?.id)
         .single();
 
       if (!employee?.signature_url) {
         throw new Error("يجب إضافة توقيعك في الملف الشخصي أولاً");
       }
+
+      // جلب بيانات الطلب
+      const { data: requestData } = await supabase
+        .from("hr_requests")
+        .select("user_id, request_number, hr_request_types(name_ar)")
+        .eq("id", requestId)
+        .single();
 
       const { error } = await supabase
         .from("hr_requests")
@@ -232,11 +239,40 @@ export default function HRRequests() {
         .eq("id", requestId);
       
       if (error) throw error;
+
+      // إرسال إشعار للموظف صاحب الطلب
+      if (requestData) {
+        const requestTypeName = (requestData.hr_request_types as any)?.name_ar || 'طلب';
+        await supabase.from("notifications").insert({
+          user_id: requestData.user_id,
+          title: `تمت موافقة الموظف البديل على ${requestTypeName}`,
+          message: `وافق ${employee.full_name} على طلبك رقم ${requestData.request_number} كموظف بديل. ينتظر الطلب الآن موافقة المدير المباشر.`,
+          type: "hr_request_approved",
+        });
+
+        // إرسال نسخة لمدير الموارد البشرية (المديرين)
+        const { data: admins } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+        
+        if (admins) {
+          for (const admin of admins) {
+            await supabase.from("notifications").insert({
+              user_id: admin.user_id,
+              title: `موافقة موظف بديل - ${requestTypeName}`,
+              message: `وافق ${employee.full_name} كموظف بديل على الطلب رقم ${requestData.request_number}`,
+              type: "hr_request_update",
+            });
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-substitute-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
-      toast.success("تمت موافقتك كموظف بديل");
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("تمت موافقتك كموظف بديل وتم إشعار الموظف");
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -248,13 +284,20 @@ export default function HRRequests() {
     mutationFn: async (requestId: string) => {
       const { data: employee } = await supabase
         .from("employees")
-        .select("signature_url")
+        .select("signature_url, full_name")
         .eq("user_id", authUser?.id)
         .single();
 
       if (!employee?.signature_url) {
         throw new Error("يجب إضافة توقيعك في الملف الشخصي أولاً");
       }
+
+      // جلب بيانات الطلب
+      const { data: requestData } = await supabase
+        .from("hr_requests")
+        .select("user_id, request_number, hr_request_types(name_ar)")
+        .eq("id", requestId)
+        .single();
 
       const { error } = await supabase
         .from("hr_requests")
@@ -265,23 +308,52 @@ export default function HRRequests() {
         .eq("id", requestId);
       
       if (error) throw error;
+
+      // إرسال إشعار للموظف صاحب الطلب
+      if (requestData) {
+        const requestTypeName = (requestData.hr_request_types as any)?.name_ar || 'طلب';
+        await supabase.from("notifications").insert({
+          user_id: requestData.user_id,
+          title: `تمت موافقة المدير المباشر على ${requestTypeName}`,
+          message: `وافق ${employee.full_name} على طلبك رقم ${requestData.request_number} كمدير مباشر. ينتظر الطلب الآن موافقة المدير التنفيذي.`,
+          type: "hr_request_approved",
+        });
+
+        // إرسال نسخة لمدير الموارد البشرية (المديرين)
+        const { data: admins } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+        
+        if (admins) {
+          for (const admin of admins) {
+            await supabase.from("notifications").insert({
+              user_id: admin.user_id,
+              title: `موافقة مدير مباشر - ${requestTypeName}`,
+              message: `وافق ${employee.full_name} كمدير مباشر على الطلب رقم ${requestData.request_number}`,
+              type: "hr_request_update",
+            });
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-manager-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
-      toast.success("تمت موافقتك كمدير مباشر");
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("تمت موافقتك كمدير مباشر وتم إشعار الموظف");
     },
     onError: (error: Error) => {
       toast.error(error.message);
     },
   });
 
-  // موافقة كمدير تنفيذي
+  // موافقة كمدير تنفيذي (الموافقة النهائية)
   const executiveApproveMutation = useMutation({
     mutationFn: async (requestId: string) => {
       const { data: employee } = await supabase
         .from("employees")
-        .select("signature_url")
+        .select("signature_url, full_name")
         .eq("user_id", authUser?.id)
         .single();
 
@@ -289,20 +361,82 @@ export default function HRRequests() {
         throw new Error("يجب إضافة توقيعك في الملف الشخصي أولاً");
       }
 
+      // جلب بيانات الطلب
+      const { data: requestData } = await supabase
+        .from("hr_requests")
+        .select("user_id, request_number, hr_request_types(name_ar, deducts_from_balance), days_count, request_type_id")
+        .eq("id", requestId)
+        .single();
+
+      // تحديث الطلب كمعتمد نهائياً
       const { error } = await supabase
         .from("hr_requests")
         .update({
           executive_manager_approved: true,
           executive_manager_approved_at: new Date().toISOString(),
+          status: "approved",
+          approved_by: authUser?.id,
+          approved_at: new Date().toISOString(),
         })
         .eq("id", requestId);
       
       if (error) throw error;
+
+      // خصم من الرصيد إذا كان الطلب يخصم من الرصيد
+      if (requestData && (requestData.hr_request_types as any)?.deducts_from_balance && requestData.days_count) {
+        const { data: balance } = await supabase
+          .from("hr_leave_balances")
+          .select("*")
+          .eq("user_id", requestData.user_id)
+          .eq("request_type_id", requestData.request_type_id)
+          .eq("year", new Date().getFullYear())
+          .single();
+
+        if (balance) {
+          await supabase
+            .from("hr_leave_balances")
+            .update({
+              used_days: (balance.used_days || 0) + requestData.days_count,
+            })
+            .eq("id", balance.id);
+        }
+      }
+
+      // إرسال إشعار للموظف صاحب الطلب - الموافقة النهائية
+      if (requestData) {
+        const requestTypeName = (requestData.hr_request_types as any)?.name_ar || 'طلب';
+        await supabase.from("notifications").insert({
+          user_id: requestData.user_id,
+          title: `تمت الموافقة النهائية على ${requestTypeName}`,
+          message: `تهانينا! تمت الموافقة على طلبك رقم ${requestData.request_number} من قبل المدير التنفيذي ${employee.full_name}.`,
+          type: "hr_request_final_approved",
+        });
+
+        // إرسال نسخة لمدير الموارد البشرية (المديرين)
+        const { data: admins } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+        
+        if (admins) {
+          for (const admin of admins) {
+            await supabase.from("notifications").insert({
+              user_id: admin.user_id,
+              title: `موافقة نهائية - ${requestTypeName}`,
+              message: `تمت الموافقة النهائية على الطلب رقم ${requestData.request_number} من قبل المدير التنفيذي ${employee.full_name}`,
+              type: "hr_request_final_approved",
+            });
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
-      toast.success("تمت موافقتك كمدير تنفيذي");
+      queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["my-leave-balances"] });
+      toast.success("تمت الموافقة النهائية وتم إشعار الموظف ومدير الموارد البشرية");
     },
     onError: (error: Error) => {
       toast.error(error.message);
