@@ -457,7 +457,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
   );
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-visible">
       <CardHeader className="bg-gradient-to-l from-[#3d9aa8]/10 to-transparent border-b">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -521,7 +521,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                       )}
                       dir="rtl"
                     >
-                      <div className="w-10 h-10 -mr-1 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-background shadow-card">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white text-sm font-bold leading-none flex-shrink-0 ring-2 ring-background shadow-card">
                         {conv.participants[0]?.full_name?.[0] || "؟"}
                       </div>
 
