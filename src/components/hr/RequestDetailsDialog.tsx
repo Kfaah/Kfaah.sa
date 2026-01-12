@@ -24,13 +24,15 @@ import {
   User,
   Printer,
   UserCheck,
-  Users
+  Users,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useState } from "react";
 import { OfficialRequestPDF } from "./OfficialRequestPDF";
+import { LiveRequestPreview } from "./LiveRequestPreview";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   pending: { label: "قيد المراجعة", color: "bg-amber-100 text-amber-700 border-amber-200", icon: AlertCircle },
@@ -252,6 +254,28 @@ export function RequestDetailsDialog({
     },
   });
 
+  // حذف الطلب
+  const deleteRequestMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("hr_requests")
+        .delete()
+        .eq("id", request.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم حذف الطلب بنجاح");
+      queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error("Error deleting request:", error);
+      toast.error("حدث خطأ أثناء حذف الطلب");
+    },
+  });
+
   const handleApprove = () => {
     updateRequestMutation.mutate({ status: "approved" });
   };
@@ -264,6 +288,12 @@ export function RequestDetailsDialog({
     updateRequestMutation.mutate({ status: "rejected", reason: rejectionReason });
   };
 
+  const handleDelete = () => {
+    if (window.confirm("هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.")) {
+      deleteRequestMutation.mutate();
+    }
+  };
+
   if (!request) return null;
 
   const statusInfo = statusConfig[request.status] || statusConfig.pending;
@@ -271,7 +301,7 @@ export function RequestDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
@@ -550,10 +580,63 @@ export function RequestDetailsDialog({
               )}
             </>
           )}
+
+          {/* زر حذف الطلب للمخولين */}
+          {isAdmin && (
+            <>
+              <Separator />
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteRequestMutation.isPending}
+                className="w-full"
+              >
+                {deleteRequestMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 ml-2" />
+                    حذف الطلب
+                  </>
+                )}
+              </Button>
+            </>
+          )}
         </div>
+
+        {/* معاينة النموذج الرسمي - يتم عرضها بجانب التفاصيل */}
+        {employeeData && (
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              معاينة النموذج الرسمي
+            </h3>
+            <LiveRequestPreview
+              employeeName={employeeData.full_name}
+              jobRole={employeeData.job_role}
+              signatureUrl={employeeData.signature_url}
+              requestTypeName={request.hr_request_types?.name_ar || "طلب"}
+              startDate={request.start_date ? new Date(request.start_date) : undefined}
+              endDate={request.end_date ? new Date(request.end_date) : undefined}
+              daysCount={request.days_count || 0}
+              reason={request.reason || ""}
+              notes={request.notes || ""}
+              requestNumber={request.request_number}
+              substituteEmployee={substituteData?.full_name}
+              substituteSignatureUrl={substituteData?.signature_url}
+              substituteApproved={request.substitute_approved}
+              directManager={managerData?.full_name}
+              directManagerSignatureUrl={managerData?.signature_url}
+              managerApproved={request.manager_approved}
+              approverName={approverData?.full_name}
+              approverSignatureUrl={approverData?.signature_url}
+              isApproved={request.status === "approved"}
+            />
+          </div>
+        )}
       </DialogContent>
 
-      {/* نافذة معاينة PDF */}
+      {/* نافذة معاينة PDF للطباعة */}
       {employeeData && (
         <OfficialRequestPDF
           open={showPDFPreview}
