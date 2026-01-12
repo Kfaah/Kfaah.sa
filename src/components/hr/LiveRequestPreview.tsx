@@ -18,6 +18,9 @@ interface LiveRequestPreviewProps {
   directManager?: string;
   directManagerSignatureUrl?: string | null;
   managerApproved?: boolean;
+  executiveManager?: string;
+  executiveManagerSignatureUrl?: string | null;
+  executiveManagerApproved?: boolean;
   approverName?: string;
   approverSignatureUrl?: string | null;
   isApproved?: boolean;
@@ -42,6 +45,9 @@ export function LiveRequestPreview({
   directManager = "",
   directManagerSignatureUrl,
   managerApproved = false,
+  executiveManager = "",
+  executiveManagerSignatureUrl,
+  executiveManagerApproved = false,
   approverName,
   approverSignatureUrl,
   isApproved = false,
@@ -181,81 +187,100 @@ export function LiveRequestPreview({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-2 border border-border/40 text-center align-top">
-                    <div className="font-bold text-[10px] mb-1.5 text-foreground">مقدم الطلب</div>
-                    <div className="text-[10px] mb-1.5 font-medium">{employeeName || "---"}</div>
+                  <td className="py-2 px-1 border border-border/40 text-center align-top">
+                    <div className="font-bold text-[9px] mb-1 text-foreground">مقدم الطلب</div>
+                    <div className="text-[9px] mb-1 font-medium">{employeeName || "---"}</div>
                     {signatureUrl ? (
                       <img 
                         src={signatureUrl} 
                         alt="توقيع الموظف" 
-                        className="h-8 mx-auto object-contain"
+                        className="h-6 mx-auto object-contain"
                       />
                     ) : (
-                      <div className="h-8 border-b-2 border-dashed border-muted-foreground/30 mx-2 mt-1" />
+                      <div className="h-6 border-b-2 border-dashed border-muted-foreground/30 mx-1 mt-1" />
                     )}
                   </td>
-                  <td className="py-3 px-2 border border-border/40 text-center align-top bg-amber-50/50">
-                    <div className="font-bold text-[10px] mb-1.5 text-amber-700">الموظف البديل</div>
-                    <div className={`text-[10px] mb-1.5 ${substituteEmployee ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                      {substituteEmployee || ".................."}
+                  <td className="py-2 px-1 border border-border/40 text-center align-top bg-amber-50/50">
+                    <div className="font-bold text-[9px] mb-1 text-amber-700">الموظف البديل</div>
+                    <div className={`text-[9px] mb-1 ${substituteEmployee ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {substituteEmployee || "..........."}
                     </div>
                     {substituteApproved && substituteSignatureUrl ? (
                       <img 
                         src={substituteSignatureUrl} 
                         alt="توقيع الموظف البديل" 
-                        className="h-8 mx-auto object-contain"
+                        className="h-6 mx-auto object-contain"
                       />
                     ) : substituteEmployee ? (
-                      <div className="h-8 flex items-center justify-center">
-                        <span className="text-[9px] text-amber-600 bg-amber-100 px-2 py-1 rounded">في انتظار الموافقة</span>
+                      <div className="h-6 flex items-center justify-center">
+                        <span className="text-[8px] text-amber-600 bg-amber-100 px-1 py-0.5 rounded">انتظار</span>
                       </div>
                     ) : (
-                      <div className="h-8 border-b-2 border-dashed border-amber-300 mx-2 mt-1" />
+                      <div className="h-6 border-b-2 border-dashed border-amber-300 mx-1 mt-1" />
                     )}
                   </td>
-                  <td className="py-3 px-2 border border-border/40 text-center align-top bg-blue-50/50">
-                    <div className="font-bold text-[10px] mb-1.5 text-blue-700">المدير المباشر</div>
-                    <div className={`text-[10px] mb-1.5 ${directManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                      {directManager || ".................."}
+                  <td className="py-2 px-1 border border-border/40 text-center align-top bg-blue-50/50">
+                    <div className="font-bold text-[9px] mb-1 text-blue-700">المدير المباشر</div>
+                    <div className={`text-[9px] mb-1 ${directManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {directManager || "..........."}
                     </div>
                     {managerApproved && directManagerSignatureUrl ? (
                       <img 
                         src={directManagerSignatureUrl} 
                         alt="توقيع المدير المباشر" 
-                        className="h-8 mx-auto object-contain"
+                        className="h-6 mx-auto object-contain"
                       />
                     ) : directManager ? (
-                      <div className="h-8 flex items-center justify-center">
-                        <span className="text-[9px] text-blue-600 bg-blue-100 px-2 py-1 rounded">في انتظار الموافقة</span>
+                      <div className="h-6 flex items-center justify-center">
+                        <span className="text-[8px] text-blue-600 bg-blue-100 px-1 py-0.5 rounded">انتظار</span>
                       </div>
                     ) : (
-                      <div className="h-8 border-b-2 border-dashed border-blue-300 mx-2 mt-1" />
+                      <div className="h-6 border-b-2 border-dashed border-blue-300 mx-1 mt-1" />
                     )}
                   </td>
-                  <td className={`py-3 px-2 border border-border/40 text-center align-top ${isApproved ? 'bg-green-50/50' : 'bg-accent/5'}`}>
-                    <div className={`font-bold text-[10px] mb-1.5 ${isApproved ? 'text-green-700' : 'text-accent'}`}>
+                  <td className="py-2 px-1 border border-border/40 text-center align-top bg-purple-50/50">
+                    <div className="font-bold text-[9px] mb-1 text-purple-700">المدير التنفيذي</div>
+                    <div className={`text-[9px] mb-1 ${executiveManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {executiveManager || "..........."}
+                    </div>
+                    {executiveManagerApproved && executiveManagerSignatureUrl ? (
+                      <img 
+                        src={executiveManagerSignatureUrl} 
+                        alt="توقيع المدير التنفيذي" 
+                        className="h-6 mx-auto object-contain"
+                      />
+                    ) : executiveManager ? (
+                      <div className="h-6 flex items-center justify-center">
+                        <span className="text-[8px] text-purple-600 bg-purple-100 px-1 py-0.5 rounded">انتظار</span>
+                      </div>
+                    ) : (
+                      <div className="h-6 border-b-2 border-dashed border-purple-300 mx-1 mt-1" />
+                    )}
+                  </td>
+                  <td className={`py-2 px-1 border border-border/40 text-center align-top ${isApproved ? 'bg-green-50/50' : 'bg-accent/5'}`}>
+                    <div className={`font-bold text-[9px] mb-1 ${isApproved ? 'text-green-700' : 'text-accent'}`}>
                       {isApproved ? 'تمت الموافقة' : 'اعتماد الإدارة'}
                     </div>
                     {isApproved && approverName ? (
                       <>
-                        <div className="text-[10px] mb-1.5 font-medium">{approverName}</div>
+                        <div className="text-[9px] mb-1 font-medium">{approverName}</div>
                         {approverSignatureUrl ? (
                           <img 
                             src={approverSignatureUrl} 
                             alt="توقيع المعتمد" 
-                            className="h-8 mx-auto object-contain"
+                            className="h-6 mx-auto object-contain"
                           />
                         ) : (
-                          <div className="h-8 border-b-2 border-dashed border-green-300 mx-2 mt-1" />
+                          <div className="h-6 border-b-2 border-dashed border-green-300 mx-1 mt-1" />
                         )}
                       </>
                     ) : (
                       <>
-                        <div className="flex items-center justify-center gap-1 mt-1.5 mb-1">
-                          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                          <span className="text-[9px] text-muted-foreground">في الانتظار</span>
+                        <div className="flex items-center justify-center gap-1 mt-1 mb-0.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          <span className="text-[8px] text-muted-foreground">انتظار</span>
                         </div>
-                        <div className="h-8 border-b-2 border-dashed border-accent/30 mx-2 mt-1" />
+                        <div className="h-6 border-b-2 border-dashed border-accent/30 mx-1 mt-1" />
                       </>
                     )}
                   </td>
