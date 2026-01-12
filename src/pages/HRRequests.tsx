@@ -150,7 +150,7 @@ export default function HRRequests() {
   const { data: substituteRequests = [], isLoading: loadingSubstitute } = useQuery({
     queryKey: ["pending-substitute-approvals", authUser?.id],
     queryFn: async () => {
-      if (!authUser?.id || isAdmin) return [];
+      if (!authUser?.id) return [];
       const { data, error } = await supabase
         .from("hr_requests")
         .select(`
@@ -164,14 +164,14 @@ export default function HRRequests() {
       if (error) throw error;
       return data;
     },
-    enabled: !!authUser?.id && !isAdmin,
+    enabled: !!authUser?.id,
   });
 
   // جلب الطلبات التي تحتاج موافقة كمدير مباشر
   const { data: managerRequests = [], isLoading: loadingManager } = useQuery({
     queryKey: ["pending-manager-approvals", authUser?.id],
     queryFn: async () => {
-      if (!authUser?.id || isAdmin) return [];
+      if (!authUser?.id) return [];
       const { data, error } = await supabase
         .from("hr_requests")
         .select(`
@@ -185,7 +185,7 @@ export default function HRRequests() {
       if (error) throw error;
       return data;
     },
-    enabled: !!authUser?.id && !isAdmin,
+    enabled: !!authUser?.id,
   });
 
   // موافقة كموظف بديل
