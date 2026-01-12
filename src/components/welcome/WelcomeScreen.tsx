@@ -130,27 +130,27 @@ export function WelcomeScreen() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mb-8 relative"
-          style={{ width: 200, height: 200 }}
+          style={{ width: 280, height: 280 }}
         >
           {/* شريط النقاط البيضاء الدوارة */}
           <motion.div
             className="absolute inset-0"
             animate={{ rotate: 360 }}
             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            style={{ width: 200, height: 200 }}
+            style={{ width: 280, height: 280 }}
           >
-            {[...Array(20)].map((_, i) => (
+            {[...Array(24)].map((_, i) => (
               <motion.div
                 key={`white-dot-${i}`}
                 className="absolute rounded-full bg-white"
                 style={{
-                  width: i < 5 ? 6 : i < 10 ? 5 : i < 15 ? 4 : 3,
-                  height: i < 5 ? 6 : i < 10 ? 5 : i < 15 ? 4 : 3,
-                  boxShadow: "0 0 8px rgba(255,255,255,0.9), 0 0 15px rgba(255,255,255,0.5)",
+                  width: i < 6 ? 8 : i < 12 ? 6 : i < 18 ? 5 : 4,
+                  height: i < 6 ? 8 : i < 12 ? 6 : i < 18 ? 5 : 4,
+                  boxShadow: "0 0 10px rgba(255,255,255,0.9), 0 0 20px rgba(255,255,255,0.5)",
                   top: "50%",
                   left: "50%",
-                  opacity: 1 - (i * 0.04),
-                  transform: `rotate(${i * 12}deg) translateY(-92px) translateX(-50%)`,
+                  opacity: 1 - (i * 0.03),
+                  transform: `rotate(${i * 10}deg) translateY(-132px) translateX(-50%)`,
                 }}
               />
             ))}
@@ -161,20 +161,20 @@ export function WelcomeScreen() {
             className="absolute inset-0"
             animate={{ rotate: -360 }}
             transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-            style={{ width: 200, height: 200 }}
+            style={{ width: 280, height: 280 }}
           >
-            {[...Array(16)].map((_, i) => (
+            {[...Array(20)].map((_, i) => (
               <motion.div
                 key={`white-dot2-${i}`}
                 className="absolute rounded-full bg-white"
                 style={{
-                  width: i < 4 ? 5 : i < 8 ? 4 : 3,
-                  height: i < 4 ? 5 : i < 8 ? 4 : 3,
-                  boxShadow: "0 0 6px rgba(255,255,255,0.8)",
+                  width: i < 5 ? 6 : i < 10 ? 5 : 4,
+                  height: i < 5 ? 6 : i < 10 ? 5 : 4,
+                  boxShadow: "0 0 8px rgba(255,255,255,0.8)",
                   top: "50%",
                   left: "50%",
-                  opacity: 1 - (i * 0.05),
-                  transform: `rotate(${i * 15}deg) translateY(-78px) translateX(-50%)`,
+                  opacity: 1 - (i * 0.04),
+                  transform: `rotate(${i * 12}deg) translateY(-115px) translateX(-50%)`,
                 }}
               />
             ))}
@@ -184,8 +184,8 @@ export function WelcomeScreen() {
           <motion.div
             className="absolute inset-0 rounded-full"
             style={{
-              width: 190,
-              height: 190,
+              width: 270,
+              height: 270,
               top: 5,
               left: 5,
               border: "3px dashed",
@@ -199,10 +199,10 @@ export function WelcomeScreen() {
           <motion.div
             className="absolute rounded-full"
             style={{
-              width: 170,
-              height: 170,
-              top: 15,
-              left: 15,
+              width: 245,
+              height: 245,
+              top: 17.5,
+              left: 17.5,
               border: "2px dotted",
               borderColor: "rgba(168, 85, 247, 0.5)",
             }}
@@ -211,11 +211,11 @@ export function WelcomeScreen() {
           />
 
           {/* الشعار - دائرة بيضاء مع ظل */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/80">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/80">
             <img
               src={atefLogo}
               alt="جمعية عطف"
-              className="w-28 h-28 object-contain rounded-full"
+              className="w-44 h-44 object-contain rounded-full"
             />
           </div>
         </motion.div>
