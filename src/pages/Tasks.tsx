@@ -138,6 +138,18 @@ const Tasks = () => {
   const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
   const [selectedTaskForCommunication, setSelectedTaskForCommunication] = useState<Task | null>(null);
 
+  // حالة نافذة إضافة مهمة جديدة
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    title: "",
+    description: "",
+    due_date: "",
+    priority: "medium" as "low" | "medium" | "high",
+    user_id: "",
+    estimated_time_minutes: 30,
+  });
+  const [isAdding, setIsAdding] = useState(false);
+
   // فتح نافذة التواصل عند الانتقال من إشعار رسالة
   useEffect(() => {
     const taskIdFromUrl = searchParams.get("task");
@@ -503,6 +515,58 @@ const Tasks = () => {
     }
   };
 
+  // إضافة مهمة جديدة
+  const addNewTask = async () => {
+    if (!addForm.title.trim() || !addForm.user_id) {
+      toast({ title: "خطأ", description: "يرجى ملء جميع الحقول المطلوبة", variant: "destructive" });
+      return;
+    }
+    
+    setIsAdding(true);
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert({
+          title: addForm.title,
+          description: addForm.description || null,
+          due_date: addForm.due_date || null,
+          priority: addForm.priority,
+          user_id: addForm.user_id,
+          status: "upcoming",
+          estimated_time_minutes: addForm.estimated_time_minutes,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setTasks(prev => [...prev, data as Task]);
+      
+      // إرسال إشعار للموظف
+      await supabase.from("notifications").insert({
+        user_id: addForm.user_id,
+        title: "مهمة جديدة",
+        message: `تم تكليفك بمهمة جديدة: "${addForm.title}"`,
+        type: "new_task",
+        related_task_id: data.id,
+      });
+      
+      toast({ title: "تم إضافة المهمة بنجاح" });
+      setIsAddDialogOpen(false);
+      setAddForm({
+        title: "",
+        description: "",
+        due_date: "",
+        priority: "medium",
+        user_id: "",
+        estimated_time_minutes: 30,
+      });
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   // فتح نافذة التعديل
   const openEditDialog = (task: Task) => {
@@ -762,7 +826,10 @@ const Tasks = () => {
               <Sparkles className="w-5 h-5" />
               توليد بالذكاء الاصطناعي
             </Button>
-            <Button className="gap-2 bg-primary hover:bg-primary/90">
+            <Button 
+              onClick={() => setIsAddDialogOpen(true)}
+              className="gap-2 bg-primary hover:bg-primary/90"
+            >
               <Plus className="w-4 h-4" />
               إضافة مهمة
             </Button>
@@ -1622,6 +1689,120 @@ const Tasks = () => {
                   className="bg-[#3d9aa8] hover:bg-[#3d9aa8]/90"
                 >
                   حفظ التعديلات
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* نافذة إضافة مهمة جديدة */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Plus className="w-5 h-5 text-accent" />
+                إضافة مهمة جديدة
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* عنوان المهمة */}
+              <div className="space-y-2">
+                <Label>عنوان المهمة *</Label>
+                <Input
+                  value={addForm.title}
+                  onChange={(e) => setAddForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="أدخل عنوان المهمة"
+                />
+              </div>
+
+              {/* الوصف */}
+              <div className="space-y-2">
+                <Label>الوصف</Label>
+                <Textarea
+                  value={addForm.description}
+                  onChange={(e) => setAddForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="وصف المهمة (اختياري)"
+                  rows={3}
+                />
+              </div>
+
+              {/* المنفذ */}
+              <div className="space-y-2">
+                <Label>المنفذ *</Label>
+                <Select 
+                  value={addForm.user_id} 
+                  onValueChange={(v) => setAddForm(prev => ({ ...prev, user_id: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الموظف" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {employees.map(emp => (
+                      <SelectItem key={emp.id} value={emp.user_id || emp.id}>
+                        {emp.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* تاريخ التنفيذ والأولوية */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>تاريخ التنفيذ</Label>
+                  <Input
+                    type="date"
+                    value={addForm.due_date}
+                    onChange={(e) => setAddForm(prev => ({ ...prev, due_date: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>الأولوية</Label>
+                  <Select 
+                    value={addForm.priority} 
+                    onValueChange={(v: "low" | "medium" | "high") => setAddForm(prev => ({ ...prev, priority: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      <SelectItem value="low">عادية</SelectItem>
+                      <SelectItem value="medium">متوسطة</SelectItem>
+                      <SelectItem value="high">عاجلة</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* الوقت المقدر */}
+              <div className="space-y-2">
+                <Label>الوقت المقدر (بالدقائق)</Label>
+                <Input
+                  type="number"
+                  value={addForm.estimated_time_minutes}
+                  onChange={(e) => setAddForm(prev => ({ ...prev, estimated_time_minutes: parseInt(e.target.value) || 30 }))}
+                  min={1}
+                />
+              </div>
+
+              {/* أزرار */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  إلغاء
+                </Button>
+                <Button 
+                  onClick={addNewTask}
+                  disabled={isAdding}
+                  className="bg-accent hover:bg-accent/90"
+                >
+                  {isAdding ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                      جاري الإضافة...
+                    </>
+                  ) : (
+                    "إضافة المهمة"
+                  )}
                 </Button>
               </div>
             </div>
