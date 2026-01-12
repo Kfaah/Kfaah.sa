@@ -427,8 +427,8 @@ export default function HRTemplates() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6" style={{ direction: 'rtl' }}>
-          {/* محرر النموذج - يظهر على اليمين */}
-          <Card className="lg:col-span-3 lg:order-1">
+          {/* محرر النموذج - يظهر على اليسار */}
+          <Card className="lg:col-span-3 lg:order-2">
             {isEditing ? (
               <>
                 <CardHeader className="flex flex-row-reverse items-center justify-between">
@@ -956,8 +956,8 @@ export default function HRTemplates() {
             )}
           </Card>
 
-          {/* قائمة أنواع الطلبات - تظهر على اليسار */}
-          <Card className="lg:col-span-1 lg:order-2">
+          {/* قائمة أنواع الطلبات - تظهر على اليمين */}
+          <Card className="lg:col-span-1 lg:order-1">
             <CardHeader>
               <CardTitle className="text-lg flex flex-row-reverse items-center gap-2">
                 أنواع الطلبات
