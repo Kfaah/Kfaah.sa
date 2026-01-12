@@ -981,24 +981,26 @@ export default function HRTemplates() {
                         : "border-border hover:border-accent/50"
                     }`}
                   >
-                    <div className="flex flex-row-reverse items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center`}>
-                        <FileText className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 text-right">
+                    <div className="grid grid-cols-[1fr_auto] gap-3 items-center" dir="rtl">
+                      <div className="text-right">
                         <p className="font-semibold text-sm">{type.name_ar}</p>
-                        <div className="flex flex-row-reverse gap-1 mt-1">
-                          {type.custom_fields?.length > 0 && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {type.custom_fields.length} حقول
-                            </Badge>
-                          )}
-                          {type.workflow_stages?.length > 0 && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {type.workflow_stages.length} مراحل
-                            </Badge>
-                          )}
-                        </div>
+                        {(type.custom_fields?.length > 0 || type.workflow_stages?.length > 0) && (
+                          <div className="flex gap-1 mt-1">
+                            {type.custom_fields?.length > 0 && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {type.custom_fields.length} حقول
+                              </Badge>
+                            )}
+                            {type.workflow_stages?.length > 0 && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {type.workflow_stages.length} مراحل
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center shrink-0`}>
+                        <FileText className="w-5 h-5 text-white" />
                       </div>
                     </div>
                   </button>
