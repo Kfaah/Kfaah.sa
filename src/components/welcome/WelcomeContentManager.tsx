@@ -24,7 +24,8 @@ import {
   Loader2,
   Settings2,
   Eye,
-  X
+  X,
+  Star
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -34,6 +35,7 @@ interface Background {
   name: string | null;
   is_active: boolean;
   display_order: number;
+  is_featured?: boolean;
 }
 
 interface Quote {
@@ -148,6 +150,46 @@ export function WelcomeContentManager() {
         prev.map(bg => bg.id === id ? { ...bg, is_active: !isActive } : bg)
       );
       toast.success(isActive ? "تم إلغاء تفعيل الخلفية" : "تم تفعيل الخلفية");
+    } catch (error) {
+      toast.error("حدث خطأ");
+    }
+  };
+
+  const setFeaturedBackground = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("welcome_backgrounds")
+        .update({ is_featured: true, is_active: true })
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      setBackgrounds(prev => 
+        prev.map(bg => ({ 
+          ...bg, 
+          is_featured: bg.id === id,
+          is_active: bg.id === id ? true : bg.is_active
+        }))
+      );
+      toast.success("تم تعيين الخلفية الرئيسية لجميع المستخدمين");
+    } catch (error) {
+      toast.error("حدث خطأ");
+    }
+  };
+
+  const clearFeaturedBackground = async () => {
+    try {
+      const { error } = await supabase
+        .from("welcome_backgrounds")
+        .update({ is_featured: false })
+        .eq("is_featured", true);
+
+      if (error) throw error;
+      
+      setBackgrounds(prev => 
+        prev.map(bg => ({ ...bg, is_featured: false }))
+      );
+      toast.success("تم إلغاء الخلفية الرئيسية - سيتم عرض الخلفيات بشكل دوري");
     } catch (error) {
       toast.error("حدث خطأ");
     }
@@ -351,59 +393,100 @@ export function WelcomeContentManager() {
                   لا توجد خلفيات. قم برفع خلفيات جديدة.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {backgrounds.map((bg) => (
-                    <Card 
-                      key={bg.id} 
-                      className={`overflow-hidden transition-all ${!bg.is_active ? "opacity-50" : ""}`}
-                    >
-                      <div className="relative aspect-video group">
-                        <img 
-                          src={bg.image_url} 
-                          alt={bg.name || "خلفية"}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                        
-                        {/* زر المعاينة المباشرة */}
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="absolute top-2 left-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => setPreviewBg(bg.image_url)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        
-                        <div className="absolute bottom-2 right-2 left-2 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={bg.is_active}
-                              onCheckedChange={() => toggleBackgroundActive(bg.id, bg.is_active)}
-                            />
-                            <span className="text-xs text-white">
-                              {bg.is_active ? "مفعّل" : "معطّل"}
-                            </span>
-                          </div>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => deleteBackground(bg.id, bg.image_url)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                <div className="space-y-3">
+                  {/* زر إلغاء الخلفية الرئيسية */}
+                  {backgrounds.some(bg => bg.is_featured) && (
+                    <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-amber-700">
+                        <Star className="h-4 w-4 fill-amber-500" />
+                        <span className="text-sm font-medium">يوجد خلفية رئيسية معينة لجميع المستخدمين</span>
                       </div>
-                      {bg.name && (
-                        <CardContent className="p-2">
-                          <p className="text-xs text-muted-foreground truncate">
-                            {bg.name}
-                          </p>
-                        </CardContent>
-                      )}
-                    </Card>
-                  ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearFeaturedBackground}
+                        className="text-amber-700 border-amber-300 hover:bg-amber-100"
+                      >
+                        إلغاء التعيين
+                      </Button>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {backgrounds.map((bg) => (
+                      <Card 
+                        key={bg.id} 
+                        className={`overflow-hidden transition-all ${!bg.is_active ? "opacity-50" : ""} ${bg.is_featured ? "ring-2 ring-amber-500" : ""}`}
+                      >
+                        <div className="relative aspect-video group">
+                          <img 
+                            src={bg.image_url} 
+                            alt={bg.name || "خلفية"}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                          
+                          {/* علامة الخلفية الرئيسية */}
+                          {bg.is_featured && (
+                            <div className="absolute top-2 right-2 bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                              <Star className="h-3 w-3 fill-white" />
+                              رئيسية
+                            </div>
+                          )}
+                          
+                          {/* أزرار التحكم */}
+                          <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setPreviewBg(bg.image_url)}
+                              title="معاينة"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant={bg.is_featured ? "secondary" : "default"}
+                              size="icon"
+                              className={`h-8 w-8 ${bg.is_featured ? "bg-amber-500 hover:bg-amber-600" : ""}`}
+                              onClick={() => setFeaturedBackground(bg.id)}
+                              title="تعيين كخلفية رئيسية"
+                              disabled={bg.is_featured}
+                            >
+                              <Star className={`h-4 w-4 ${bg.is_featured ? "fill-white" : ""}`} />
+                            </Button>
+                          </div>
+                          
+                          <div className="absolute bottom-2 right-2 left-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={bg.is_active}
+                                onCheckedChange={() => toggleBackgroundActive(bg.id, bg.is_active)}
+                              />
+                              <span className="text-xs text-white">
+                                {bg.is_active ? "مفعّل" : "معطّل"}
+                              </span>
+                            </div>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => deleteBackground(bg.id, bg.image_url)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        {bg.name && (
+                          <CardContent className="p-2">
+                            <p className="text-xs text-muted-foreground truncate">
+                              {bg.name}
+                            </p>
+                          </CardContent>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               )}
             </ScrollArea>
