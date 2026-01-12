@@ -368,7 +368,7 @@ export function RequestPreviewDialog({
               
               {/* الورق الرسمي - الجانب الأيسر */}
               <div className="order-2 lg:order-1">
-                <div ref={previewRef} className="transform scale-[0.92] origin-top">
+                <div ref={previewRef}>
                   <LiveRequestPreview
                     employeeName={employeeData?.full_name || "---"}
                     jobRole={employeeData?.job_role || "---"}
