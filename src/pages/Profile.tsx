@@ -523,9 +523,12 @@ export default function Profile() {
               const Icon = filter.icon;
               const count = notifications.filter(n => {
                 if (filter.key === "all") return true;
-                if (filter.key === "tasks") return n.type === "status_update" || n.type === "rating_update" || n.type === "employee_update" || n.related_task_id;
+                // الرسائل أولاً (حتى لو كانت مرتبطة بمهمة)
                 if (filter.key === "messages") return n.type === "message" || n.type === "task_message";
-                return n.type === "info" || n.type === "general" || (!n.related_task_id && n.type !== "message" && n.type !== "task_message" && n.type !== "status_update" && n.type !== "rating_update" && n.type !== "employee_update");
+                // المهام (تحديثات الحالة والتقييم فقط، وليس الرسائل)
+                if (filter.key === "tasks") return n.type === "status_update" || n.type === "rating_update" || n.type === "employee_update" || n.type === "new_task" || n.type === "task_assigned";
+                // عامة (كل شيء آخر)
+                return n.type !== "message" && n.type !== "task_message" && n.type !== "status_update" && n.type !== "rating_update" && n.type !== "employee_update" && n.type !== "new_task" && n.type !== "task_assigned";
               }).length;
               
               return (
@@ -559,22 +562,17 @@ export default function Profile() {
               {notifications
                 .filter((notification) => {
                   if (notificationFilter === "all") return true;
-                  if (notificationFilter === "tasks") return notification.type === "status_update" || notification.type === "rating_update" || notification.type === "employee_update" || notification.related_task_id;
+                  // الرسائل أولاً (حتى لو كانت مرتبطة بمهمة)
                   if (notificationFilter === "messages") return notification.type === "message" || notification.type === "task_message";
-                  return notification.type === "info" || notification.type === "general" || (!notification.related_task_id && notification.type !== "message" && notification.type !== "task_message" && notification.type !== "status_update" && notification.type !== "rating_update" && notification.type !== "employee_update");
+                  // المهام (تحديثات الحالة والتقييم فقط)
+                  if (notificationFilter === "tasks") return notification.type === "status_update" || notification.type === "rating_update" || notification.type === "employee_update" || notification.type === "new_task" || notification.type === "task_assigned";
+                  // عامة
+                  return notification.type !== "message" && notification.type !== "task_message" && notification.type !== "status_update" && notification.type !== "rating_update" && notification.type !== "employee_update" && notification.type !== "new_task" && notification.type !== "task_assigned";
                 })
                 .map((notification) => {
                   // تحديد الأيقونة واللون حسب نوع الإشعار
                   const getNotificationStyle = () => {
-                    if (notification.type === "status_update" || notification.type === "rating_update" || notification.type === "employee_update" || notification.related_task_id) {
-                      return {
-                        icon: ClipboardList,
-                        bgColor: notification.is_read ? "bg-blue-50" : "bg-blue-100",
-                        iconColor: notification.is_read ? "text-blue-400" : "text-blue-600",
-                        badgeColor: "bg-blue-500",
-                        badgeLabel: "مهمة"
-                      };
-                    }
+                    // الرسائل أولاً
                     if (notification.type === "message" || notification.type === "task_message") {
                       return {
                         icon: MessageSquare,
@@ -584,6 +582,17 @@ export default function Profile() {
                         badgeLabel: "رسالة"
                       };
                     }
+                    // المهام
+                    if (notification.type === "status_update" || notification.type === "rating_update" || notification.type === "employee_update" || notification.type === "new_task" || notification.type === "task_assigned") {
+                      return {
+                        icon: ClipboardList,
+                        bgColor: notification.is_read ? "bg-blue-50" : "bg-blue-100",
+                        iconColor: notification.is_read ? "text-blue-400" : "text-blue-600",
+                        badgeColor: "bg-blue-500",
+                        badgeLabel: "مهمة"
+                      };
+                    }
+                    // عامة
                     return {
                       icon: Bell,
                       bgColor: notification.is_read ? "bg-amber-50" : "bg-amber-100",
