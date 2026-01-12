@@ -498,23 +498,6 @@ export function RequestDetailsDialog({
             <span>{format(new Date(request.created_at), "d MMM yyyy - HH:mm", { locale: ar })}</span>
           </div>
 
-          {/* زر تصدير PDF - متاح دائماً */}
-          {employeeData && (
-            <>
-              <Separator />
-              <Button
-                onClick={() => setShowPDFPreview(true)}
-                variant={request.status === "approved" ? "default" : "outline"}
-                className={request.status === "approved" 
-                  ? "w-full bg-gradient-to-r from-accent to-teal-500" 
-                  : "w-full"
-                }
-              >
-                <Printer className="w-4 h-4 ml-2" />
-                {request.status === "approved" ? "طباعة الطلب الرسمي" : "معاينة النموذج الرسمي"}
-              </Button>
-            </>
-          )}
 
           {/* أزرار الإجراءات للمدير */}
           {isAdmin && request.status === "pending" && (
