@@ -63,7 +63,7 @@ export function WelcomeScreen() {
           .order("display_order", { ascending: true }),
         supabase
           .from("welcome_backgrounds")
-          .select("image_url")
+          .select("image_url, is_featured")
           .eq("is_active", true)
           .order("display_order", { ascending: true }),
       ]);
@@ -73,6 +73,11 @@ export function WelcomeScreen() {
       }
 
       if (bgRes.data && bgRes.data.length > 0) {
+        // التحقق من وجود خلفية رئيسية
+        const featuredBg = bgRes.data.find(bg => bg.is_featured);
+        if (featuredBg) {
+          setCurrentBg(featuredBg.image_url);
+        }
         setBackgrounds(bgRes.data.map(bg => bg.image_url));
       }
     } catch (error) {
