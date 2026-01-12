@@ -33,25 +33,28 @@ export function WelcomeScreen() {
   const [currentBg, setCurrentBg] = useState<string>(defaultBackgrounds[0]);
   const [quotes, setQuotes] = useState<Quote[]>(defaultQuotes);
   const [backgrounds, setBackgrounds] = useState<string[]>(defaultBackgrounds);
+  const [hasFeaturedBg, setHasFeaturedBg] = useState(false);
 
   useEffect(() => {
     fetchContent();
   }, []);
 
   useEffect(() => {
-    // اختيار عبارة وخلفية بناءً على اليوم
+    // اختيار عبارة بناءً على اليوم
     const now = new Date();
     const dayOfMonth = now.getDate(); // 1-31
-    const dayOfYear = Math.floor(
-      (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24)
-    );
-    
     const quoteIndex = (dayOfMonth - 1) % quotes.length;
-    const bgIndex = dayOfYear % backgrounds.length;
-    
     setCurrentQuote(quotes[quoteIndex]);
-    setCurrentBg(backgrounds[bgIndex]);
-  }, [quotes, backgrounds]);
+    
+    // اختيار خلفية بناءً على اليوم فقط إذا لم توجد خلفية رئيسية
+    if (!hasFeaturedBg) {
+      const dayOfYear = Math.floor(
+        (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const bgIndex = dayOfYear % backgrounds.length;
+      setCurrentBg(backgrounds[bgIndex]);
+    }
+  }, [quotes, backgrounds, hasFeaturedBg]);
 
   const fetchContent = async () => {
     try {
@@ -77,6 +80,9 @@ export function WelcomeScreen() {
         const featuredBg = bgRes.data.find(bg => bg.is_featured);
         if (featuredBg) {
           setCurrentBg(featuredBg.image_url);
+          setHasFeaturedBg(true);
+        } else {
+          setHasFeaturedBg(false);
         }
         setBackgrounds(bgRes.data.map(bg => bg.image_url));
       }
