@@ -41,12 +41,27 @@ interface Employee {
   full_name: string;
 }
 
+interface StrategicGoal {
+  id: string;
+  name: string;
+  color: string;
+  year: number;
+}
+
+interface Initiative {
+  id: string;
+  strategic_goal_id: string;
+  name: string;
+}
+
 interface OperationalPlan {
   id: string;
   user_id: string;
   activity_name: string;
   strategic_goal: string | null;
   initiative: string | null;
+  strategic_goal_id: string | null;
+  initiative_id: string | null;
   annual_target: number;
   year: number;
   status: string;
@@ -107,16 +122,62 @@ export default function OperationalPlans() {
   const [monthlyTargets, setMonthlyTargets] = useState<number[]>(Array(12).fill(0));
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [employees, setEmployees] = useState<Employee[]>([]);
+  
+  // الأهداف الاستراتيجية والمبادرات
+  const [strategicGoals, setStrategicGoals] = useState<StrategicGoal[]>([]);
+  const [initiatives, setInitiatives] = useState<Initiative[]>([]);
+  const [selectedGoalId, setSelectedGoalId] = useState<string>("");
+  const [selectedInitiativeId, setSelectedInitiativeId] = useState<string>("");
+  const [isAddingNewGoal, setIsAddingNewGoal] = useState(false);
+  const [isAddingNewInitiative, setIsAddingNewInitiative] = useState(false);
+  const [newGoalName, setNewGoalName] = useState("");
+  const [newInitiativeName, setNewInitiativeName] = useState("");
 
   // إذا كان في وضع المعاينة، يظهر كموظف
   const isAdmin = !user.isEmployee && !previewAsEmployee;
 
+  // المبادرات المفلترة حسب الهدف المختار
+  const filteredInitiatives = initiatives.filter(
+    (init) => init.strategic_goal_id === selectedGoalId
+  );
+
   useEffect(() => {
     fetchPlans();
+    fetchStrategicGoals();
+    fetchInitiatives();
     if (isAdmin) {
       fetchEmployees();
     }
   }, [authUser, isAdmin]);
+
+  const fetchStrategicGoals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("strategic_goals")
+        .select("*")
+        .eq("year", year)
+        .order("name");
+
+      if (error) throw error;
+      setStrategicGoals(data || []);
+    } catch (error) {
+      console.error("Error fetching strategic goals:", error);
+    }
+  };
+
+  const fetchInitiatives = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("initiatives")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setInitiatives(data || []);
+    } catch (error) {
+      console.error("Error fetching initiatives:", error);
+    }
+  };
 
   const fetchEmployees = async () => {
     try {
@@ -254,13 +315,45 @@ export default function OperationalPlans() {
       // تحديد user_id بناءً على نوع المستخدم
       const targetUserId = isAdmin ? selectedEmployeeId : authUser!.id;
 
+      // إنشاء هدف استراتيجي جديد إذا لزم الأمر
+      let goalId = selectedGoalId;
+      if (isAddingNewGoal && newGoalName.trim()) {
+        const { data: newGoal, error: goalError } = await supabase
+          .from("strategic_goals")
+          .insert({ name: newGoalName.trim(), year })
+          .select()
+          .single();
+        
+        if (goalError) throw goalError;
+        goalId = newGoal.id;
+      }
+
+      // إنشاء مبادرة جديدة إذا لزم الأمر
+      let initId = selectedInitiativeId;
+      if (isAddingNewInitiative && newInitiativeName.trim() && goalId) {
+        const { data: newInit, error: initError } = await supabase
+          .from("initiatives")
+          .insert({ name: newInitiativeName.trim(), strategic_goal_id: goalId })
+          .select()
+          .single();
+        
+        if (initError) throw initError;
+        initId = newInit.id;
+      }
+
+      // الحصول على أسماء الهدف والمبادرة
+      const goalName = isAddingNewGoal ? newGoalName : strategicGoals.find(g => g.id === goalId)?.name || strategicGoal;
+      const initName = isAddingNewInitiative ? newInitiativeName : filteredInitiatives.find(i => i.id === initId)?.name || initiative;
+
       // إنشاء الخطة التشغيلية
       const { data: planData, error: planError } = await supabase
         .from("operational_plans")
         .insert({
           user_id: targetUserId,
-          strategic_goal: strategicGoal || null,
-          initiative: initiative || null,
+          strategic_goal: goalName || null,
+          initiative: initName || null,
+          strategic_goal_id: goalId || null,
+          initiative_id: initId || null,
           activity_name: activityName,
           annual_target: parseInt(annualTarget),
           year: year,
@@ -296,8 +389,16 @@ export default function OperationalPlans() {
       setYear(new Date().getFullYear());
       setMonthlyTargets(Array(12).fill(0));
       setSelectedEmployeeId("");
+      setSelectedGoalId("");
+      setSelectedInitiativeId("");
+      setIsAddingNewGoal(false);
+      setIsAddingNewInitiative(false);
+      setNewGoalName("");
+      setNewInitiativeName("");
       setIsAddDialogOpen(false);
       fetchPlans();
+      fetchStrategicGoals();
+      fetchInitiatives();
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -398,28 +499,107 @@ export default function OperationalPlans() {
 
                 {/* Basic Info */}
                 <div className="grid grid-cols-2 gap-4">
+                  {/* الهدف الاستراتيجي */}
                   <div className="col-span-2">
-                    <Label>الهدف الاستراتيجي</Label>
-                    <Input
-                      value={strategicGoal}
-                      onChange={(e) => setStrategicGoal(e.target.value)}
-                      placeholder="مثال: تحسين جودة الخدمات"
-                      className="mt-1"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>الهدف الاستراتيجي</Label>
+                      {isAdmin && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsAddingNewGoal(!isAddingNewGoal)}
+                          className="text-xs h-6"
+                        >
+                          {isAddingNewGoal ? "اختيار من القائمة" : "+ هدف جديد"}
+                        </Button>
+                      )}
+                    </div>
+                    {isAddingNewGoal ? (
+                      <Input
+                        value={newGoalName}
+                        onChange={(e) => setNewGoalName(e.target.value)}
+                        placeholder="اكتب اسم الهدف الاستراتيجي الجديد..."
+                        className="mt-1"
+                      />
+                    ) : (
+                      <Select 
+                        value={selectedGoalId} 
+                        onValueChange={(value) => {
+                          setSelectedGoalId(value);
+                          setSelectedInitiativeId("");
+                        }}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="اختر هدفاً استراتيجياً أو أضف جديداً" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {strategicGoals.map((goal) => (
+                            <SelectItem key={goal.id} value={goal.id}>
+                              {goal.name}
+                            </SelectItem>
+                          ))}
+                          {strategicGoals.length === 0 && (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                              لا توجد أهداف - أضف هدفاً جديداً
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                   
+                  {/* المبادرة */}
                   <div className="col-span-2">
-                    <Label>المبادرة</Label>
-                    <Input
-                      value={initiative}
-                      onChange={(e) => setInitiative(e.target.value)}
-                      placeholder="مثال: مبادرة التحول الرقمي"
-                      className="mt-1"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>المبادرة</Label>
+                      {isAdmin && (selectedGoalId || isAddingNewGoal) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsAddingNewInitiative(!isAddingNewInitiative)}
+                          className="text-xs h-6"
+                        >
+                          {isAddingNewInitiative ? "اختيار من القائمة" : "+ مبادرة جديدة"}
+                        </Button>
+                      )}
+                    </div>
+                    {isAddingNewInitiative ? (
+                      <Input
+                        value={newInitiativeName}
+                        onChange={(e) => setNewInitiativeName(e.target.value)}
+                        placeholder="اكتب اسم المبادرة الجديدة..."
+                        className="mt-1"
+                      />
+                    ) : (
+                      <Select 
+                        value={selectedInitiativeId} 
+                        onValueChange={setSelectedInitiativeId}
+                        disabled={!selectedGoalId && !isAddingNewGoal}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder={selectedGoalId ? "اختر مبادرة أو أضف جديدة" : "اختر الهدف أولاً"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredInitiatives.map((init) => (
+                            <SelectItem key={init.id} value={init.id}>
+                              {init.name}
+                            </SelectItem>
+                          ))}
+                          {filteredInitiatives.length === 0 && selectedGoalId && (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                              لا توجد مبادرات - أضف مبادرة جديدة
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                   
+                  {/* النشاط */}
                   <div className="col-span-2">
-                    <Label>النشاط</Label>
+                    <Label>النشاط <span className="text-destructive">*</span></Label>
                     <Input
                       value={activityName}
                       onChange={(e) => setActivityName(e.target.value)}

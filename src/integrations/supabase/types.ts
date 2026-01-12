@@ -455,6 +455,41 @@ export type Database = {
           },
         ]
       }
+      initiatives: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          strategic_goal_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          strategic_goal_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          strategic_goal_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "initiatives_strategic_goal_id_fkey"
+            columns: ["strategic_goal_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_roles: {
         Row: {
           color: string | null
@@ -611,8 +646,10 @@ export type Database = {
           created_at: string
           id: string
           initiative: string | null
+          initiative_id: string | null
           status: string
           strategic_goal: string | null
+          strategic_goal_id: string | null
           updated_at: string
           user_id: string
           year: number
@@ -623,8 +660,10 @@ export type Database = {
           created_at?: string
           id?: string
           initiative?: string | null
+          initiative_id?: string | null
           status?: string
           strategic_goal?: string | null
+          strategic_goal_id?: string | null
           updated_at?: string
           user_id: string
           year?: number
@@ -635,13 +674,30 @@ export type Database = {
           created_at?: string
           id?: string
           initiative?: string | null
+          initiative_id?: string | null
           status?: string
           strategic_goal?: string | null
+          strategic_goal_id?: string | null
           updated_at?: string
           user_id?: string
           year?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "operational_plans_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_plans_strategic_goal_id_fkey"
+            columns: ["strategic_goal_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -682,6 +738,36 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      strategic_goals: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          year?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          year?: number
         }
         Relationships: []
       }
