@@ -223,9 +223,13 @@ export function Sidebar() {
     const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
     const badgeCount = item.badge;
     
+    // إذا كان الرابط للصفحة الرئيسية، لا نضيف state
+    const linkState = item.href === "/" ? undefined : { fromNavigation: true };
+    
     return (
       <Link
         to={item.href}
+        state={linkState}
         className={cn(
           "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none",
           isActive
@@ -315,8 +319,12 @@ export function Sidebar() {
         {/* White curved background for logo */}
         <div className="bg-white rounded-b-[3rem] relative mx-4 shadow-lg">
           <div className="p-4 pb-6 flex flex-col items-center relative z-10">
-            {/* Logo with zoom animation */}
-            <div className="relative mb-3 group">
+            {/* Logo with zoom animation - قابل للنقر للعودة للصفحة الرئيسية */}
+            <Link 
+              to="/" 
+              className="relative mb-3 group cursor-pointer"
+              title="العودة للصفحة الرئيسية"
+            >
               {/* Outer rotating ring */}
               <div 
                 className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-4 border-accent/30 border-t-accent animate-spin" 
@@ -330,7 +338,7 @@ export function Sidebar() {
               />
               
               {/* Logo container with zoom animation and shimmer */}
-              <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden">
+              <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform">
                 <img 
                   src={atefLogoIcon} 
                   alt="جمعية عطف" 
@@ -349,7 +357,7 @@ export function Sidebar() {
                 className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce" 
                 style={{ animationDuration: '2s' }} 
               />
-            </div>
+            </Link>
             
             {/* Text under logo */}
             {!collapsed && (
