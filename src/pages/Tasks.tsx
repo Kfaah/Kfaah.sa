@@ -138,15 +138,20 @@ const Tasks = () => {
   const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
   const [selectedTaskForCommunication, setSelectedTaskForCommunication] = useState<Task | null>(null);
 
-  // فتح نافذة التواصل عند الانتقال من إشعار
+  // فتح نافذة التواصل عند الانتقال من إشعار رسالة
   useEffect(() => {
     const taskIdFromUrl = searchParams.get("task");
+    const openChat = searchParams.get("openChat");
+    
     if (taskIdFromUrl && tasks.length > 0 && !loading) {
       const taskToOpen = tasks.find(t => t.id === taskIdFromUrl);
       if (taskToOpen) {
-        setSelectedTaskForCommunication(taskToOpen);
-        setIsCommunicationDialogOpen(true);
-        // إزالة المعامل من URL بعد فتح النافذة
+        // فتح نافذة التواصل فقط إذا كان openChat=true (إشعار رسالة)
+        if (openChat === "true") {
+          setSelectedTaskForCommunication(taskToOpen);
+          setIsCommunicationDialogOpen(true);
+        }
+        // إزالة المعامل من URL بعد المعالجة
         setSearchParams({}, { replace: true });
       }
     }
