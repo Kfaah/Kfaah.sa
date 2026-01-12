@@ -68,22 +68,40 @@ const dateFilterOptions: { value: DateFilterType; label: string }[] = [
 export function HRStatisticsPanel() {
   const [dateFilter, setDateFilter] = useState<DateFilterType>("all");
 
+  // جلب الموظفين
+  const { data: employees = [] } = useQuery({
+    queryKey: ["hr-employees-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("user_id, full_name, job_role");
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
+
   // جلب جميع الطلبات للإحصائيات
-  const { data: allRequestsRaw = [], isLoading } = useQuery({
+  const { data: requestsData = [], isLoading } = useQuery({
     queryKey: ["hr-statistics-requests"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hr_requests")
-        .select(`
-          *,
-          hr_request_types (*),
-          employees:user_id (full_name, job_role)
-        `)
+        .select(`*, hr_request_types (*)`)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
+
+  // دمج بيانات الموظفين مع الطلبات
+  const allRequestsRaw = useMemo(() => {
+    const employeeMap = new Map(employees.map((e: any) => [e.user_id, e]));
+    return requestsData.map((r: any) => ({
+      ...r,
+      employees: employeeMap.get(r.user_id) || null,
+    }));
+  }, [requestsData, employees]);
 
   // جلب أنواع الطلبات
   const { data: requestTypes = [] } = useQuery({
