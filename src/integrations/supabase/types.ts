@@ -346,6 +346,7 @@ export type Database = {
           deducts_from_balance: boolean | null
           description: string | null
           greeting_text: string | null
+          header_offset: number | null
           header_text: string | null
           icon: string | null
           id: string
@@ -370,6 +371,7 @@ export type Database = {
           deducts_from_balance?: boolean | null
           description?: string | null
           greeting_text?: string | null
+          header_offset?: number | null
           header_text?: string | null
           icon?: string | null
           id?: string
@@ -394,6 +396,7 @@ export type Database = {
           deducts_from_balance?: boolean | null
           description?: string | null
           greeting_text?: string | null
+          header_offset?: number | null
           header_text?: string | null
           icon?: string | null
           id?: string
