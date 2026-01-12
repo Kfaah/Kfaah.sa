@@ -264,87 +264,118 @@ export default function OperationalPlans() {
     return monthlyTargets.reduce((sum, t) => sum + t, 0);
   };
 
+  // هيكل النشاط المحلي
+  interface LocalActivity {
+    id: string;
+    name: string;
+    annualTarget: number;
+  }
+
+  // هيكل المبادرة المحلية
+  interface LocalInitiative {
+    id: string;
+    name: string;
+    isNew: boolean;
+    existingId?: string;
+    activities: LocalActivity[];
+  }
+
+  // هيكل الهدف المحلي
+  interface LocalGoal {
+    id: string;
+    name: string;
+    isNew: boolean;
+    existingId?: string;
+    initiatives: LocalInitiative[];
+  }
+
   const handleDialogSubmit = async (data: {
     selectedEmployeeId: string;
-    selectedGoalId: string;
-    selectedInitiativeId: string;
-    isAddingNewGoal: boolean;
-    isAddingNewInitiative: boolean;
-    newGoalName: string;
-    newInitiativeName: string;
-    activityName: string;
-    annualTarget: string;
+    goals: LocalGoal[];
     year: number;
-    monthlyTargets: number[];
   }) => {
     try {
-      // تحديد user_id بناءً على نوع المستخدم
       const targetUserId = isAdmin ? data.selectedEmployeeId : authUser!.id;
 
-      // إنشاء هدف استراتيجي جديد إذا لزم الأمر
-      let goalId = data.selectedGoalId;
-      if (data.isAddingNewGoal && data.newGoalName.trim()) {
-        const { data: newGoal, error: goalError } = await supabase
-          .from("strategic_goals")
-          .insert({ name: data.newGoalName.trim(), year: data.year })
-          .select()
-          .single();
-        
-        if (goalError) throw goalError;
-        goalId = newGoal.id;
+      for (const goal of data.goals) {
+        if (!goal.name.trim()) continue;
+
+        // إنشاء أو استخدام الهدف الاستراتيجي
+        let goalId = goal.existingId;
+        if (goal.isNew && goal.name.trim()) {
+          const { data: newGoal, error: goalError } = await supabase
+            .from("strategic_goals")
+            .insert({ name: goal.name.trim(), year: data.year })
+            .select()
+            .single();
+          
+          if (goalError) throw goalError;
+          goalId = newGoal.id;
+        }
+
+        for (const initiative of goal.initiatives) {
+          if (!initiative.name.trim()) continue;
+
+          // إنشاء أو استخدام المبادرة
+          let initId = initiative.existingId;
+          if (initiative.isNew && initiative.name.trim() && goalId) {
+            const { data: newInit, error: initError } = await supabase
+              .from("initiatives")
+              .insert({ name: initiative.name.trim(), strategic_goal_id: goalId })
+              .select()
+              .single();
+            
+            if (initError) throw initError;
+            initId = newInit.id;
+          }
+
+          for (const activity of initiative.activities) {
+            if (!activity.name.trim() || activity.annualTarget <= 0) continue;
+
+            // إنشاء الخطة التشغيلية
+            const { data: planData, error: planError } = await supabase
+              .from("operational_plans")
+              .insert({
+                user_id: targetUserId,
+                strategic_goal: goal.name,
+                initiative: initiative.name,
+                strategic_goal_id: goalId || null,
+                initiative_id: initId || null,
+                activity_name: activity.name,
+                annual_target: activity.annualTarget,
+                year: data.year,
+              })
+              .select()
+              .single();
+
+            if (planError) throw planError;
+
+            // توزيع المستهدف بالتساوي على الأشهر
+            const perMonth = Math.floor(activity.annualTarget / 12);
+            const remainder = activity.annualTarget % 12;
+            const monthlyTargets = Array(12).fill(perMonth);
+            for (let i = 11; i >= 12 - remainder; i--) {
+              monthlyTargets[i]++;
+            }
+
+            const monthsToInsert = monthlyTargets.map((target, index) => ({
+              operational_plan_id: planData.id,
+              month: index + 1,
+              monthly_target: target,
+            }));
+
+            const { error: monthsError } = await supabase
+              .from("operational_plan_months")
+              .insert(monthsToInsert);
+
+            if (monthsError) throw monthsError;
+          }
+        }
       }
-
-      // إنشاء مبادرة جديدة إذا لزم الأمر
-      let initId = data.selectedInitiativeId;
-      if (data.isAddingNewInitiative && data.newInitiativeName.trim() && goalId) {
-        const { data: newInit, error: initError } = await supabase
-          .from("initiatives")
-          .insert({ name: data.newInitiativeName.trim(), strategic_goal_id: goalId })
-          .select()
-          .single();
-        
-        if (initError) throw initError;
-        initId = newInit.id;
-      }
-
-      // الحصول على أسماء الهدف والمبادرة
-      const goalName = data.isAddingNewGoal ? data.newGoalName : strategicGoals.find(g => g.id === goalId)?.name || "";
-      const initName = data.isAddingNewInitiative ? data.newInitiativeName : initiatives.find(i => i.id === initId)?.name || "";
-
-      // إنشاء الخطة التشغيلية
-      const { data: planData, error: planError } = await supabase
-        .from("operational_plans")
-        .insert({
-          user_id: targetUserId,
-          strategic_goal: goalName || null,
-          initiative: initName || null,
-          strategic_goal_id: goalId || null,
-          initiative_id: initId || null,
-          activity_name: data.activityName,
-          annual_target: parseInt(data.annualTarget),
-          year: data.year,
-        })
-        .select()
-        .single();
-
-      if (planError) throw planError;
-
-      // إنشاء توزيع الأشهر
-      const monthsToInsert = data.monthlyTargets.map((target, index) => ({
-        operational_plan_id: planData.id,
-        month: index + 1,
-        monthly_target: target,
-      }));
-
-      const { error: monthsError } = await supabase
-        .from("operational_plan_months")
-        .insert(monthsToInsert);
-
-      if (monthsError) throw monthsError;
 
       toast({
         title: "تم بنجاح",
-        description: "تم إنشاء الخطة التشغيلية",
+        description: "تم إنشاء الخطط التشغيلية",
       });
 
       setIsAddDialogOpen(false);
@@ -354,7 +385,7 @@ export default function OperationalPlans() {
     } catch (error: any) {
       toast({
         title: "خطأ",
-        description: error.message || "فشل في إنشاء الخطة",
+        description: error.message || "فشل في إنشاء الخطط",
         variant: "destructive",
       });
     }
