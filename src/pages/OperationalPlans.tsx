@@ -6,13 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -33,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
+import { AddOperationalPlanDialog } from "@/components/operational-plans/AddOperationalPlanDialog";
 import { formatNumber } from "@/lib/utils";
 
 interface Employee {
@@ -270,6 +264,102 @@ export default function OperationalPlans() {
     return monthlyTargets.reduce((sum, t) => sum + t, 0);
   };
 
+  const handleDialogSubmit = async (data: {
+    selectedEmployeeId: string;
+    selectedGoalId: string;
+    selectedInitiativeId: string;
+    isAddingNewGoal: boolean;
+    isAddingNewInitiative: boolean;
+    newGoalName: string;
+    newInitiativeName: string;
+    activityName: string;
+    annualTarget: string;
+    year: number;
+    monthlyTargets: number[];
+  }) => {
+    try {
+      // تحديد user_id بناءً على نوع المستخدم
+      const targetUserId = isAdmin ? data.selectedEmployeeId : authUser!.id;
+
+      // إنشاء هدف استراتيجي جديد إذا لزم الأمر
+      let goalId = data.selectedGoalId;
+      if (data.isAddingNewGoal && data.newGoalName.trim()) {
+        const { data: newGoal, error: goalError } = await supabase
+          .from("strategic_goals")
+          .insert({ name: data.newGoalName.trim(), year: data.year })
+          .select()
+          .single();
+        
+        if (goalError) throw goalError;
+        goalId = newGoal.id;
+      }
+
+      // إنشاء مبادرة جديدة إذا لزم الأمر
+      let initId = data.selectedInitiativeId;
+      if (data.isAddingNewInitiative && data.newInitiativeName.trim() && goalId) {
+        const { data: newInit, error: initError } = await supabase
+          .from("initiatives")
+          .insert({ name: data.newInitiativeName.trim(), strategic_goal_id: goalId })
+          .select()
+          .single();
+        
+        if (initError) throw initError;
+        initId = newInit.id;
+      }
+
+      // الحصول على أسماء الهدف والمبادرة
+      const goalName = data.isAddingNewGoal ? data.newGoalName : strategicGoals.find(g => g.id === goalId)?.name || "";
+      const initName = data.isAddingNewInitiative ? data.newInitiativeName : initiatives.find(i => i.id === initId)?.name || "";
+
+      // إنشاء الخطة التشغيلية
+      const { data: planData, error: planError } = await supabase
+        .from("operational_plans")
+        .insert({
+          user_id: targetUserId,
+          strategic_goal: goalName || null,
+          initiative: initName || null,
+          strategic_goal_id: goalId || null,
+          initiative_id: initId || null,
+          activity_name: data.activityName,
+          annual_target: parseInt(data.annualTarget),
+          year: data.year,
+        })
+        .select()
+        .single();
+
+      if (planError) throw planError;
+
+      // إنشاء توزيع الأشهر
+      const monthsToInsert = data.monthlyTargets.map((target, index) => ({
+        operational_plan_id: planData.id,
+        month: index + 1,
+        monthly_target: target,
+      }));
+
+      const { error: monthsError } = await supabase
+        .from("operational_plan_months")
+        .insert(monthsToInsert);
+
+      if (monthsError) throw monthsError;
+
+      toast({
+        title: "تم بنجاح",
+        description: "تم إنشاء الخطة التشغيلية",
+      });
+
+      setIsAddDialogOpen(false);
+      fetchPlans();
+      fetchStrategicGoals();
+      fetchInitiatives();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message || "فشل في إنشاء الخطة",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = async () => {
     if (!activityName.trim()) {
       toast({
@@ -465,199 +555,20 @@ export default function OperationalPlans() {
             </p>
           </div>
           
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                إضافة خطة
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>إضافة خطة تشغيلية جديدة</DialogTitle>
-              </DialogHeader>
-              
-              <div className="space-y-6 py-4">
-                {/* اختيار الموظف للمدير */}
-                {isAdmin && (
-                  <div>
-                    <Label>الموظف</Label>
-                    <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="اختر الموظف" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((emp) => (
-                          <SelectItem key={emp.id} value={emp.user_id}>
-                            {emp.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Basic Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* الهدف الاستراتيجي */}
-                  <div className="col-span-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <Label>الهدف الاستراتيجي</Label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsAddingNewGoal(!isAddingNewGoal)}
-                        className="text-xs h-6"
-                      >
-                        {isAddingNewGoal ? "اختيار من القائمة" : "+ هدف جديد"}
-                      </Button>
-                    </div>
-                    {isAddingNewGoal ? (
-                      <Input
-                        value={newGoalName}
-                        onChange={(e) => setNewGoalName(e.target.value)}
-                        placeholder="اكتب اسم الهدف الاستراتيجي الجديد..."
-                        className="mt-1"
-                      />
-                    ) : (
-                      <Select 
-                        value={selectedGoalId} 
-                        onValueChange={(value) => {
-                          setSelectedGoalId(value);
-                          setSelectedInitiativeId("");
-                        }}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="اختر هدفاً استراتيجياً أو أضف جديداً" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {strategicGoals.map((goal) => (
-                            <SelectItem key={goal.id} value={goal.id}>
-                              {goal.name}
-                            </SelectItem>
-                          ))}
-                          {strategicGoals.length === 0 && (
-                            <div className="p-2 text-sm text-muted-foreground text-center">
-                              لا توجد أهداف - أضف هدفاً جديداً
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                  
-                  {/* المبادرة */}
-                  <div className="col-span-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <Label>المبادرة</Label>
-                      {(selectedGoalId || isAddingNewGoal) && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setIsAddingNewInitiative(!isAddingNewInitiative)}
-                          className="text-xs h-6"
-                        >
-                          {isAddingNewInitiative ? "اختيار من القائمة" : "+ مبادرة جديدة"}
-                        </Button>
-                      )}
-                    </div>
-                    {isAddingNewInitiative ? (
-                      <Input
-                        value={newInitiativeName}
-                        onChange={(e) => setNewInitiativeName(e.target.value)}
-                        placeholder="اكتب اسم المبادرة الجديدة..."
-                        className="mt-1"
-                      />
-                    ) : (
-                      <Select 
-                        value={selectedInitiativeId} 
-                        onValueChange={setSelectedInitiativeId}
-                        disabled={!selectedGoalId && !isAddingNewGoal}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder={selectedGoalId ? "اختر مبادرة أو أضف جديدة" : "اختر الهدف أولاً"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {filteredInitiatives.map((init) => (
-                            <SelectItem key={init.id} value={init.id}>
-                              {init.name}
-                            </SelectItem>
-                          ))}
-                          {filteredInitiatives.length === 0 && selectedGoalId && (
-                            <div className="p-2 text-sm text-muted-foreground text-center">
-                              لا توجد مبادرات - أضف مبادرة جديدة
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                  
-                  {/* النشاط */}
-                  <div className="col-span-2">
-                    <Label>النشاط <span className="text-destructive">*</span></Label>
-                    <Input
-                      value={activityName}
-                      onChange={(e) => setActivityName(e.target.value)}
-                      placeholder="مثال: حملة التسويق الرقمي"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label>المستهدف السنوي</Label>
-                    <Input
-                      type="number"
-                      value={annualTarget}
-                      onChange={(e) => handleAnnualTargetChange(e.target.value)}
-                      placeholder="0"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label>السنة</Label>
-                    <Input
-                      type="number"
-                      value={year}
-                      onChange={(e) => setYear(parseInt(e.target.value))}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-
-                {/* Monthly Distribution */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <Label className="text-base font-semibold">توزيع المستهدف على الأشهر</Label>
-                    <span className={`text-sm ${getTotalMonthlyTargets() === parseInt(annualTarget || "0") ? "text-green-600" : "text-red-600"}`} style={{ fontFamily: 'Arial, sans-serif' }}>
-                      المجموع: {formatNumber(getTotalMonthlyTargets())} / {formatNumber(annualTarget || 0)}
-                    </span>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-3">
-                    {MONTHS_AR.map((month, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-muted/50 rounded-lg p-2">
-                        <span className="text-sm font-medium w-16">{month}</span>
-                        <Input
-                          type="number"
-                          value={monthlyTargets[index]}
-                          onChange={(e) => handleMonthlyTargetChange(index, e.target.value)}
-                          className="h-8 text-center"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Button onClick={handleSubmit} className="w-full">
-                  إنشاء الخطة التشغيلية
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="w-4 h-4" />
+            إضافة خطة
+          </Button>
+          
+          <AddOperationalPlanDialog
+            open={isAddDialogOpen}
+            onOpenChange={setIsAddDialogOpen}
+            isAdmin={isAdmin}
+            employees={employees}
+            strategicGoals={strategicGoals}
+            initiatives={initiatives}
+            onSubmit={handleDialogSubmit}
+          />
         </div>
 
         {/* Stats Cards */}
