@@ -104,7 +104,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
         const firstName = nameParts[0] || "";
         const lastName = nameParts.slice(1).join(" ") || "";
         
-        // استخدام job_role كدور إذا كان متاحاً، وإلا استخدام الدور الافتراضي
+        // جلب القسم من خلال job_roles -> departments
+        let departmentName = "";
+        if (employeeData.job_role) {
+          const { data: jobRoleData } = await supabase
+            .from("job_roles")
+            .select("department_id, departments(name)")
+            .eq("name", employeeData.job_role)
+            .maybeSingle();
+          
+          if (jobRoleData?.departments) {
+            departmentName = (jobRoleData.departments as any).name || "";
+          }
+        }
+        
+        // استخدام job_role كدور 
         const displayRole = employeeData.job_role || (userRole === "admin" ? "مدير النظام" : "موظف");
         
         setUser({
@@ -112,7 +126,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           lastName,
           email: employeeData.email || "",
           phone: employeeData.phone || "",
-          department: "", // سيتم تحديثه لاحقاً من جدول الأقسام
+          department: departmentName,
           location: "",
           profileImage: employeeData.avatar_url,
           role: displayRole,
@@ -322,7 +336,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     phone: previewingEmployee.phone || "",
     profileImage: previewingEmployee.avatar_url,
     jobRole: previewingEmployee.job_role,
-    department: "",
     role: previewingEmployee.job_role || "موظف",
     isEmployee: true,
   } : user;
