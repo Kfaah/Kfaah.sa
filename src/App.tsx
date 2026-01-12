@@ -16,6 +16,7 @@ import OperationalPlans from "./pages/OperationalPlans";
 import OperationalPlanDetails from "./pages/OperationalPlanDetails";
 import Attendance from "./pages/Attendance";
 import AttendanceManagement from "./pages/AttendanceManagement";
+import HR from "./pages/HR";
 import HRRequests from "./pages/HRRequests";
 import HRTemplates from "./pages/HRTemplates";
 import PendingApprovals from "./pages/PendingApprovals";
@@ -156,6 +157,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AttendanceManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr"
+        element={
+          <ProtectedRoute>
+            <HR />
           </ProtectedRoute>
         }
       />
