@@ -159,6 +159,7 @@ export type Database = {
           performance: number | null
           phone: string | null
           role_color: string | null
+          signature_url: string | null
           status: string | null
           tasks_completed: number | null
           tasks_total: number | null
@@ -179,6 +180,7 @@ export type Database = {
           performance?: number | null
           phone?: string | null
           role_color?: string | null
+          signature_url?: string | null
           status?: string | null
           tasks_completed?: number | null
           tasks_total?: number | null
@@ -199,6 +201,7 @@ export type Database = {
           performance?: number | null
           phone?: string | null
           role_color?: string | null
+          signature_url?: string | null
           status?: string | null
           tasks_completed?: number | null
           tasks_total?: number | null
@@ -382,11 +385,13 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          approver_signature_url: string | null
           attachment_name: string | null
           attachment_url: string | null
           created_at: string
           days_count: number | null
           end_date: string | null
+          final_pdf_url: string | null
           id: string
           notes: string | null
           reason: string | null
@@ -401,11 +406,13 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          approver_signature_url?: string | null
           attachment_name?: string | null
           attachment_url?: string | null
           created_at?: string
           days_count?: number | null
           end_date?: string | null
+          final_pdf_url?: string | null
           id?: string
           notes?: string | null
           reason?: string | null
@@ -420,11 +427,13 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          approver_signature_url?: string | null
           attachment_name?: string | null
           attachment_url?: string | null
           created_at?: string
           days_count?: number | null
           end_date?: string | null
+          final_pdf_url?: string | null
           id?: string
           notes?: string | null
           reason?: string | null
