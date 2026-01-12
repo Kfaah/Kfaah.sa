@@ -1074,6 +1074,66 @@ export type Database = {
         }
         Relationships: []
       }
+      welcome_backgrounds: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      welcome_quotes: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          emoji: string | null
+          id: string
+          is_active: boolean | null
+          quote: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          quote: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          quote?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
