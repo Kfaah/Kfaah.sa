@@ -293,7 +293,7 @@ export function OfficialRequestPDF({
           />
           
           {/* محتوى الطلب */}
-          <div className="absolute inset-0 p-6" dir="rtl">
+          <div className="absolute inset-0 flex flex-col" dir="rtl">
             {/* الرقم والتاريخ */}
             <div className="absolute top-[25px] right-[75px] text-[10px]" style={{ fontFamily: 'Arial, sans-serif' }}>
               <p>{request.request_number}</p>
@@ -303,7 +303,7 @@ export function OfficialRequestPDF({
             </div>
 
             {/* محتوى الطلب الرسمي */}
-            <div className="mt-[60px] mx-auto px-12 space-y-2 text-[11px] leading-relaxed max-w-[85%]">
+            <div className="mt-[75px] mx-auto w-[70%] space-y-2 text-[11px] leading-relaxed text-center">
               <h2 className="text-base font-bold text-center mb-4">
                 طلب {request.hr_request_types?.name_ar || "إجازة"}
               </h2>
