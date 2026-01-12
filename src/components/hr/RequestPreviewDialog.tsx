@@ -38,10 +38,31 @@ import { useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import jsPDF from "jspdf";
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: React.ComponentType<{ className?: string }> }> = {
-  pending: { label: "قيد المراجعة", color: "text-amber-700", bgColor: "bg-gradient-to-r from-amber-100 to-orange-100", icon: Clock },
-  approved: { label: "موافق عليه", color: "text-emerald-700", bgColor: "bg-gradient-to-r from-emerald-100 to-green-100", icon: CheckCircle2 },
-  rejected: { label: "مرفوض", color: "text-red-700", bgColor: "bg-gradient-to-r from-red-100 to-rose-100", icon: XCircle },
+const statusConfig: Record<string, { label: string; color: string; bgColor: string; borderColor: string; iconBg: string; icon: React.ComponentType<{ className?: string }> }> = {
+  pending: { 
+    label: "قيد المراجعة", 
+    color: "text-amber-800", 
+    bgColor: "bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50", 
+    borderColor: "border-amber-200/50",
+    iconBg: "bg-gradient-to-br from-amber-400 to-orange-500",
+    icon: Clock 
+  },
+  approved: { 
+    label: "موافق عليه", 
+    color: "text-emerald-800", 
+    bgColor: "bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50", 
+    borderColor: "border-emerald-200/50",
+    iconBg: "bg-gradient-to-br from-emerald-400 to-green-500",
+    icon: CheckCircle2 
+  },
+  rejected: { 
+    label: "مرفوض", 
+    color: "text-red-800", 
+    bgColor: "bg-gradient-to-br from-red-50 via-rose-50 to-pink-50", 
+    borderColor: "border-red-200/50",
+    iconBg: "bg-gradient-to-br from-red-400 to-rose-500",
+    icon: XCircle 
+  },
 };
 
 interface RequestPreviewDialogProps {
@@ -316,52 +337,59 @@ export function RequestPreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0 border-0 shadow-2xl">
         <div className="flex flex-col h-full max-h-[95vh]">
-          {/* Header */}
-          <div className={`${statusInfo.bgColor} p-6 border-b`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <FileText className="w-7 h-7 text-primary" />
+          {/* Header - تصميم أنيق مع تدرج فاخر */}
+          <div className={`relative ${statusInfo.bgColor} p-8 border-b ${statusInfo.borderColor} overflow-hidden`}>
+            {/* خلفية زخرفية */}
+            <div className="absolute inset-0 opacity-30">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2" />
+            </div>
+            
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-5">
+                <div className={`w-16 h-16 rounded-2xl ${statusInfo.iconBg} flex items-center justify-center shadow-xl shadow-black/10`}>
+                  <FileText className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-foreground">
+                  <h2 className="text-2xl font-bold text-foreground tracking-tight">
                     {request.hr_request_types?.name_ar || "طلب"}
                   </h2>
-                  <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                    <Hash className="w-4 h-4" />
-                    {request.request_number}
-                  </p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground bg-white/60 backdrop-blur-sm px-3 py-1 rounded-full">
+                      <Hash className="w-3.5 h-3.5" />
+                      {request.request_number}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground bg-white/60 backdrop-blur-sm px-3 py-1 rounded-full">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {format(new Date(request.created_at), "d MMMM yyyy", { locale: ar })}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <Badge className={`${statusInfo.bgColor} ${statusInfo.color} px-4 py-2 text-sm font-medium border-0 shadow-sm`}>
-                <StatusIcon className="w-4 h-4 ml-2" />
+              <div className={`flex items-center gap-2 ${statusInfo.bgColor} ${statusInfo.color} px-5 py-2.5 rounded-xl font-semibold text-sm shadow-lg border ${statusInfo.borderColor} backdrop-blur-sm`}>
+                <StatusIcon className="w-5 h-5" />
                 {statusInfo.label}
-              </Badge>
+              </div>
             </div>
           </div>
 
           {/* Content with Tabs */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "official" | "details")} dir="rtl">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="official" className="gap-2 text-sm">
-                  <FileText className="w-4 h-4" />
-                  الملف الرسمي
-                </TabsTrigger>
-                <TabsTrigger value="details" className="gap-2 text-sm">
-                  <ClipboardList className="w-4 h-4" />
-                  البيانات
-                </TabsTrigger>
-              </TabsList>
-
-              {/* تبويب الملف الرسمي */}
-              <TabsContent value="official" className="mt-0">
-                <div className="max-w-2xl mx-auto">
+          <div className="flex-1 overflow-y-auto p-8 bg-gradient-to-b from-muted/20 to-background">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* الورق الرسمي - الجانب الأيسر */}
+              <div className="order-2 lg:order-1">
+                <div className="sticky top-0">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-foreground">معاينة النموذج الرسمي</h3>
+                  </div>
                   <div 
                     ref={previewRef}
-                    className="relative bg-white rounded-xl overflow-hidden shadow-xl border"
+                    className="relative bg-white rounded-2xl overflow-hidden shadow-2xl border border-gray-100 ring-1 ring-gray-100"
                     style={{ aspectRatio: "210/297" }}
                   >
                     <img
@@ -477,11 +505,10 @@ export function RequestPreviewDialog({
                   </div>
 
                   {/* أزرار التصدير */}
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-3 mt-5">
                     <Button 
                       variant="outline" 
-                      size="sm" 
-                      className="flex-1"
+                      className="flex-1 h-11 rounded-xl border-2 hover:bg-primary/5 hover:border-primary/30 transition-all"
                       onClick={() => window.print()}
                     >
                       <Printer className="w-4 h-4 ml-2" />
@@ -489,8 +516,7 @@ export function RequestPreviewDialog({
                     </Button>
                     <Button 
                       variant="outline" 
-                      size="sm" 
-                      className="flex-1"
+                      className="flex-1 h-11 rounded-xl border-2 hover:bg-primary/5 hover:border-primary/30 transition-all"
                       onClick={generatePDF}
                       disabled={generating}
                     >
@@ -503,56 +529,62 @@ export function RequestPreviewDialog({
                     </Button>
                   </div>
                 </div>
-              </TabsContent>
+              </div>
 
-              {/* تبويب البيانات */}
-              <TabsContent value="details" className="mt-0">
-                <div className="max-w-2xl mx-auto space-y-4">
+              {/* تفاصيل الطلب - الجانب الأيمن */}
+              <div className="order-1 lg:order-2 space-y-6">
                 {/* معلومات مقدم الطلب */}
-                <div className="bg-gradient-to-br from-muted/50 to-muted/30 rounded-2xl p-5">
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    مقدم الطلب
-                  </h3>
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-16 h-16 ring-4 ring-background shadow-lg">
-                      <AvatarImage src={employeeData?.avatar_url} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white text-xl font-bold">
-                        {employeeData?.full_name?.charAt(0) || "؟"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="text-lg font-bold text-foreground">
-                        {employeeData?.full_name || "---"}
-                      </h4>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Building2 className="w-3 h-3" />
-                        {employeeData?.job_role || "---"}
-                      </p>
+                <div className="relative overflow-hidden bg-gradient-to-br from-white to-muted/30 rounded-2xl p-6 border border-gray-100 shadow-lg">
+                  <div className="absolute top-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl transform -translate-x-1/2 -translate-y-1/2" />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-5">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <User className="w-4 h-4 text-primary" />
+                      </div>
+                      <h3 className="font-semibold text-foreground">مقدم الطلب</h3>
+                    </div>
+                    <div className="flex items-center gap-5">
+                      <Avatar className="w-18 h-18 ring-4 ring-white shadow-xl">
+                        <AvatarImage src={employeeData?.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white text-2xl font-bold">
+                          {employeeData?.full_name?.charAt(0) || "؟"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="text-xl font-bold text-foreground">
+                          {employeeData?.full_name || "---"}
+                        </h4>
+                        <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                          <Building2 className="w-4 h-4" />
+                          {employeeData?.job_role || "---"}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* تفاصيل الطلب */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    تفاصيل الطلب
-                  </h3>
+                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-foreground">تفاصيل الطلب</h3>
+                  </div>
 
-                  <div className="grid gap-3">
+                  <div className="grid gap-4">
                     {/* التواريخ */}
                     {request.start_date && (
-                      <div className="flex items-center gap-3 bg-muted/50 rounded-xl p-4">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Calendar className="w-5 h-5 text-primary" />
+                      <div className="flex items-center gap-4 bg-gradient-to-r from-primary/5 to-transparent rounded-xl p-4 border border-primary/10">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
+                          <Calendar className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1">
-                          <div className="text-xs text-muted-foreground">الفترة</div>
-                          <div className="font-semibold text-foreground">
+                          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">الفترة</div>
+                          <div className="font-bold text-foreground text-lg">
                             {formatArabicDate(request.start_date)}
                             {request.end_date && request.end_date !== request.start_date && (
-                              <> - {formatArabicDate(request.end_date)}</>
+                              <span className="text-muted-foreground font-normal"> إلى {formatArabicDate(request.end_date)}</span>
                             )}
                           </div>
                         </div>
@@ -561,25 +593,25 @@ export function RequestPreviewDialog({
 
                     {/* عدد الأيام */}
                     {request.days_count && (
-                      <div className="flex items-center gap-3 bg-muted/50 rounded-xl p-4">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                          <CalendarDays className="w-5 h-5 text-emerald-500" />
+                      <div className="flex items-center gap-4 bg-gradient-to-r from-emerald-500/5 to-transparent rounded-xl p-4 border border-emerald-500/10">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                          <CalendarDays className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1">
-                          <div className="text-xs text-muted-foreground">المدة</div>
-                          <div className="font-semibold text-foreground">{request.days_count} يوم</div>
+                          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">المدة</div>
+                          <div className="font-bold text-foreground text-lg">{request.days_count} يوم</div>
                         </div>
                       </div>
                     )}
 
                     {/* تاريخ التقديم */}
-                    <div className="flex items-center gap-3 bg-muted/50 rounded-xl p-4">
-                      <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                        <Clock className="w-5 h-5 text-amber-500" />
+                    <div className="flex items-center gap-4 bg-gradient-to-r from-amber-500/5 to-transparent rounded-xl p-4 border border-amber-500/10">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                        <Clock className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex-1">
-                        <div className="text-xs text-muted-foreground">تاريخ التقديم</div>
-                        <div className="font-semibold text-foreground">
+                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">تاريخ التقديم</div>
+                        <div className="font-bold text-foreground text-lg">
                           {format(new Date(request.created_at), "d MMMM yyyy - HH:mm", { locale: ar })}
                         </div>
                       </div>
@@ -587,23 +619,27 @@ export function RequestPreviewDialog({
 
                     {/* السبب */}
                     {request.reason && (
-                      <div className="bg-muted/50 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">سبب الطلب</span>
+                      <div className="bg-gradient-to-r from-purple-500/5 to-transparent rounded-xl p-5 border border-purple-500/10">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center">
+                            <MessageSquare className="w-4 h-4 text-white" />
+                          </div>
+                          <span className="text-sm font-semibold text-foreground">سبب الطلب</span>
                         </div>
-                        <p className="text-foreground">{request.reason}</p>
+                        <p className="text-foreground leading-relaxed">{request.reason}</p>
                       </div>
                     )}
 
                     {/* ملاحظات */}
                     {request.notes && (
-                      <div className="bg-muted/50 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">ملاحظات</span>
+                      <div className="bg-gradient-to-r from-blue-500/5 to-transparent rounded-xl p-5 border border-blue-500/10">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+                            <FileText className="w-4 h-4 text-white" />
+                          </div>
+                          <span className="text-sm font-semibold text-foreground">ملاحظات</span>
                         </div>
-                        <p className="text-foreground">{request.notes}</p>
+                        <p className="text-foreground leading-relaxed">{request.notes}</p>
                       </div>
                     )}
                   </div>
@@ -611,68 +647,72 @@ export function RequestPreviewDialog({
 
                 {/* حالة الموافقات */}
                 {(substituteData || managerData) && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" />
-                      حالة الموافقات
-                    </h3>
+                  <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg">
+                    <div className="flex items-center gap-2 mb-5">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
+                        <CheckCircle2 className="w-4 h-4 text-white" />
+                      </div>
+                      <h3 className="font-semibold text-foreground">حالة الموافقات</h3>
+                    </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {/* الموظف البديل */}
                       {substituteData && (
-                        <div className={`flex items-center justify-between p-3 rounded-xl border ${
+                        <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
                           request.substitute_approved 
-                            ? "bg-emerald-50 border-emerald-200" 
-                            : "bg-amber-50 border-amber-200"
+                            ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200" 
+                            : "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200"
                         }`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              request.substitute_approved ? "bg-emerald-100" : "bg-amber-100"
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${
+                              request.substitute_approved 
+                                ? "bg-gradient-to-br from-emerald-400 to-green-500" 
+                                : "bg-gradient-to-br from-amber-400 to-orange-500"
                             }`}>
-                              <UserCheck className={`w-4 h-4 ${
-                                request.substitute_approved ? "text-emerald-600" : "text-amber-600"
-                              }`} />
+                              <UserCheck className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium">الموظف البديل</p>
-                              <p className="text-xs text-muted-foreground">{substituteData.full_name}</p>
+                              <p className="font-semibold text-foreground">الموظف البديل</p>
+                              <p className="text-sm text-muted-foreground">{substituteData.full_name}</p>
                             </div>
                           </div>
-                          <Badge className={request.substitute_approved 
-                            ? "bg-emerald-100 text-emerald-700 border-0" 
-                            : "bg-amber-100 text-amber-700 border-0"
-                          }>
-                            {request.substitute_approved ? "✓ موافق" : "في الانتظار"}
-                          </Badge>
+                          <div className={`px-4 py-2 rounded-lg font-semibold text-sm ${
+                            request.substitute_approved 
+                              ? "bg-emerald-100 text-emerald-700" 
+                              : "bg-amber-100 text-amber-700"
+                          }`}>
+                            {request.substitute_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
+                          </div>
                         </div>
                       )}
 
                       {/* المدير المباشر */}
                       {managerData && (
-                        <div className={`flex items-center justify-between p-3 rounded-xl border ${
+                        <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
                           request.manager_approved 
-                            ? "bg-emerald-50 border-emerald-200" 
-                            : "bg-blue-50 border-blue-200"
+                            ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200" 
+                            : "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200"
                         }`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              request.manager_approved ? "bg-emerald-100" : "bg-blue-100"
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${
+                              request.manager_approved 
+                                ? "bg-gradient-to-br from-emerald-400 to-green-500" 
+                                : "bg-gradient-to-br from-blue-400 to-cyan-500"
                             }`}>
-                              <Users className={`w-4 h-4 ${
-                                request.manager_approved ? "text-emerald-600" : "text-blue-600"
-                              }`} />
+                              <Users className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium">المدير المباشر</p>
-                              <p className="text-xs text-muted-foreground">{managerData.full_name}</p>
+                              <p className="font-semibold text-foreground">المدير المباشر</p>
+                              <p className="text-sm text-muted-foreground">{managerData.full_name}</p>
                             </div>
                           </div>
-                          <Badge className={request.manager_approved 
-                            ? "bg-emerald-100 text-emerald-700 border-0" 
-                            : "bg-blue-100 text-blue-700 border-0"
-                          }>
-                            {request.manager_approved ? "✓ موافق" : "في الانتظار"}
-                          </Badge>
+                          <div className={`px-4 py-2 rounded-lg font-semibold text-sm ${
+                            request.manager_approved 
+                              ? "bg-emerald-100 text-emerald-700" 
+                              : "bg-blue-100 text-blue-700"
+                          }`}>
+                            {request.manager_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -681,34 +721,35 @@ export function RequestPreviewDialog({
 
                 {/* سبب الرفض */}
                 {request.status === "rejected" && request.rejection_reason && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2 text-red-700">
-                      <XCircle className="w-4 h-4" />
-                      <span className="text-sm font-semibold">سبب الرفض</span>
+                  <div className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-2xl p-5 shadow-lg">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center shadow-md">
+                        <XCircle className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-bold text-red-800">سبب الرفض</span>
                     </div>
-                    <p className="text-red-700">{request.rejection_reason}</p>
+                    <p className="text-red-700 leading-relaxed">{request.rejection_reason}</p>
                   </div>
                 )}
-                </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+            </div>
           </div>
 
-          {/* Footer Actions */}
-          <div className="border-t p-4 bg-muted/30">
+          {/* Footer Actions - تصميم أنيق */}
+          <div className="border-t border-gray-100 p-6 bg-gradient-to-r from-muted/30 to-muted/10">
             {showRejectForm ? (
-              <div className="space-y-3">
+              <div className="space-y-4 animate-fade-in">
                 <Textarea
                   placeholder="أدخل سبب الرفض..."
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  className="min-h-[80px]"
+                  className="min-h-[100px] rounded-xl border-2 focus:border-red-300 resize-none"
                 />
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setShowRejectForm(false)}>
+                <div className="flex gap-3 justify-end">
+                  <Button variant="outline" onClick={() => setShowRejectForm(false)} className="rounded-xl px-6">
                     إلغاء
                   </Button>
-                  <Button variant="destructive" onClick={handleReject}>
+                  <Button variant="destructive" onClick={handleReject} className="rounded-xl px-6 shadow-lg shadow-red-500/20">
                     تأكيد الرفض
                   </Button>
                 </div>
@@ -721,7 +762,7 @@ export function RequestPreviewDialog({
                     variant="outline"
                     onClick={handleDelete}
                     disabled={deleteRequestMutation.isPending}
-                    className="border-red-200 text-red-600 hover:bg-red-50"
+                    className="border-2 border-red-200 text-red-600 hover:bg-red-50 rounded-xl px-6"
                   >
                     {deleteRequestMutation.isPending ? (
                       <Loader2 className="w-4 h-4 ml-2 animate-spin" />
@@ -734,12 +775,12 @@ export function RequestPreviewDialog({
 
                 {/* أزرار المعتمد */}
                 {showApprovalButtons && (
-                  <div className="flex items-center gap-3 mr-auto">
+                  <div className="flex items-center gap-4 mr-auto">
                     <Button
                       variant="outline"
                       size="lg"
                       onClick={() => setShowRejectForm(true)}
-                      className="border-red-200 text-red-600 hover:bg-red-50"
+                      className="border-2 border-red-200 text-red-600 hover:bg-red-50 rounded-xl px-8 h-12"
                     >
                       <XCircle className="w-5 h-5 ml-2" />
                       رفض
@@ -754,7 +795,7 @@ export function RequestPreviewDialog({
                         }
                       }}
                       disabled={isAdminView ? adminUpdateMutation.isPending : isApproving}
-                      className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/25 px-8"
+                      className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-xl shadow-emerald-500/30 px-10 h-12 rounded-xl font-bold"
                     >
                       {(isAdminView ? adminUpdateMutation.isPending : isApproving) ? (
                         <Loader2 className="w-5 h-5 ml-2 animate-spin" />
@@ -775,13 +816,13 @@ export function RequestPreviewDialog({
 
                 {/* زر إغلاق */}
                 {!showApprovalButtons && !canDelete && (
-                  <Button variant="outline" onClick={() => onOpenChange(false)} className="mr-auto">
+                  <Button variant="outline" onClick={() => onOpenChange(false)} className="mr-auto rounded-xl px-8">
                     إغلاق
                   </Button>
                 )}
 
                 {(showApprovalButtons || canDelete) && (
-                  <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                  <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl">
                     إغلاق
                   </Button>
                 )}
