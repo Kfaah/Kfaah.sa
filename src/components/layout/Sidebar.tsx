@@ -77,6 +77,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, previewAsEmployee, setPreviewAsEmployee, previewingEmployee } = useUser();
@@ -84,6 +85,53 @@ export function Sidebar() {
 
   // Check if user is actually an admin (not in preview mode)
   const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
+
+  // جلب عدد الموافقات المعلقة
+  useEffect(() => {
+    const fetchPendingApprovals = async () => {
+      if (!authUser) return;
+      
+      // جلب عدد الطلبات كموظف بديل
+      const { count: substituteCount } = await supabase
+        .from("hr_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("substitute_employee_id", authUser.id)
+        .eq("substitute_approved", false)
+        .neq("status", "rejected");
+      
+      // جلب عدد الطلبات كمدير مباشر
+      const { count: managerCount } = await supabase
+        .from("hr_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("direct_manager_id", authUser.id)
+        .eq("manager_approved", false)
+        .neq("status", "rejected");
+      
+      setPendingApprovalsCount((substituteCount || 0) + (managerCount || 0));
+    };
+
+    fetchPendingApprovals();
+
+    // الاستماع لتغييرات الطلبات
+    const channel = supabase
+      .channel('sidebar-pending-approvals')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'hr_requests',
+        },
+        () => {
+          fetchPendingApprovals();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [authUser]);
 
   // جلب عدد الإشعارات غير المقروءة
   useEffect(() => {
@@ -225,8 +273,18 @@ export function Sidebar() {
     navigate("/auth");
   };
 
+  // حساب العداد الديناميكي لكل صفحة
+  const getDynamicBadge = (href: string): number | undefined => {
+    if (href === "/pending-approvals") {
+      return pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined;
+    }
+    return undefined;
+  };
+
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location.pathname === item.href;
+    const dynamicBadge = getDynamicBadge(item.href);
+    const badgeCount = dynamicBadge ?? item.badge;
     
     return (
       <Link
@@ -252,12 +310,12 @@ export function Sidebar() {
             )}>
               {item.title}
             </span>
-            {item.badge && (
+            {badgeCount && badgeCount > 0 && (
               <span className={cn(
                 "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
-                isActive ? "bg-white/25 text-white" : "bg-amber-400 text-white"
+                isActive ? "bg-white/25 text-white" : dynamicBadge ? "bg-red-500 text-white animate-pulse" : "bg-amber-400 text-white"
               )} style={{ fontFamily: 'Arial, sans-serif' }}>
-                {formatNumberPlain(item.badge)}
+                {badgeCount > 9 ? '9+' : formatNumberPlain(badgeCount)}
               </span>
             )}
           </>
