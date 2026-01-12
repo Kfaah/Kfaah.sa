@@ -87,8 +87,8 @@ export function NewRequestDialog({
   const [notes, setNotes] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [showPreview, setShowPreview] = useState(true);
-  const [substituteEmployee, setSubstituteEmployee] = useState("");
-  const [directManager, setDirectManager] = useState("");
+  const [substituteEmployeeId, setSubstituteEmployeeId] = useState("");
+  const [directManagerId, setDirectManagerId] = useState("");
 
   // جلب بيانات الموظف الحالي
   const { data: currentEmployee } = useQuery({
@@ -136,6 +136,38 @@ export function NewRequestDialog({
       return data;
     },
     enabled: isAdmin && !!selectedEmployee,
+  });
+
+  // جلب بيانات الموظف البديل
+  const { data: substituteEmployeeData } = useQuery({
+    queryKey: ["substitute-employee-data", substituteEmployeeId],
+    queryFn: async () => {
+      if (!substituteEmployeeId) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", substituteEmployeeId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!substituteEmployeeId,
+  });
+
+  // جلب بيانات المدير المباشر
+  const { data: directManagerData } = useQuery({
+    queryKey: ["direct-manager-data", directManagerId],
+    queryFn: async () => {
+      if (!directManagerId) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", directManagerId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!directManagerId,
   });
 
   const currentBalances = isAdmin ? employeeBalances : leaveBalances;
@@ -236,8 +268,8 @@ export function NewRequestDialog({
     setReason("");
     setNotes("");
     setAttachment(null);
-    setSubstituteEmployee("");
-    setDirectManager("");
+    setSubstituteEmployeeId("");
+    setDirectManagerId("");
   };
 
   // إعادة تعيين النموذج عند الفتح
@@ -534,13 +566,13 @@ export function NewRequestDialog({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label className="text-right font-semibold">الموظف البديل</Label>
-                          <Select value={substituteEmployee} onValueChange={setSubstituteEmployee} dir="rtl">
+                          <Select value={substituteEmployeeId} onValueChange={setSubstituteEmployeeId} dir="rtl">
                             <SelectTrigger className="bg-background text-right">
                               <SelectValue placeholder="اختر الموظف البديل..." />
                             </SelectTrigger>
                             <SelectContent className="text-right" dir="rtl">
                               {employees.map((emp) => (
-                                <SelectItem key={emp.id} value={emp.full_name}>
+                                <SelectItem key={emp.id} value={emp.user_id}>
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden">
                                       {emp.avatar_url ? (
@@ -559,13 +591,13 @@ export function NewRequestDialog({
                         </div>
                         <div className="space-y-2">
                           <Label className="text-right font-semibold">المدير المباشر</Label>
-                          <Select value={directManager} onValueChange={setDirectManager} dir="rtl">
+                          <Select value={directManagerId} onValueChange={setDirectManagerId} dir="rtl">
                             <SelectTrigger className="bg-background text-right">
                               <SelectValue placeholder="اختر المدير المباشر..." />
                             </SelectTrigger>
                             <SelectContent className="text-right" dir="rtl">
                               {employees.map((emp) => (
-                                <SelectItem key={emp.id} value={emp.full_name}>
+                                <SelectItem key={emp.id} value={emp.user_id}>
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                                       {emp.avatar_url ? (
@@ -689,8 +721,10 @@ export function NewRequestDialog({
                   reason={reason}
                   notes={notes}
                   requestNumber={previewRequestNumber}
-                  substituteEmployee={substituteEmployee}
-                  directManager={directManager}
+                  substituteEmployee={substituteEmployeeData?.full_name || ""}
+                  substituteSignatureUrl={substituteEmployeeData?.signature_url}
+                  directManager={directManagerData?.full_name || ""}
+                  directManagerSignatureUrl={directManagerData?.signature_url}
                   headerOffset={selectedType?.header_offset ?? 35}
                 />
               </div>
