@@ -341,6 +341,39 @@ export default function HRTemplates() {
     });
   };
 
+  // حذف القالب
+  const deleteTypeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("hr_request_types")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم حذف النموذج بنجاح");
+      queryClient.invalidateQueries({ queryKey: ["hr-request-types-full"] });
+      queryClient.invalidateQueries({ queryKey: ["hr-request-types"] });
+      setIsEditing(false);
+      setSelectedType(null);
+    },
+    onError: (error: any) => {
+      console.error("Error deleting type:", error);
+      if (error?.message?.includes("foreign key")) {
+        toast.error("لا يمكن حذف النموذج لوجود طلبات مرتبطة به");
+      } else {
+        toast.error("حدث خطأ أثناء الحذف");
+      }
+    },
+  });
+
+  const handleDeleteType = () => {
+    if (!selectedType) return;
+    if (confirm(`هل أنت متأكد من حذف نموذج "${selectedType.name_ar}"؟ هذا الإجراء لا يمكن التراجع عنه.`)) {
+      deleteTypeMutation.mutate(selectedType.id);
+    }
+  };
+
   const [isCreatingNew, setIsCreatingNew] = useState(false);
 
   const createTypeMutation = useMutation({
@@ -457,6 +490,17 @@ export default function HRTemplates() {
                       >
                         <Eye className="w-4 h-4 ml-2" />
                         معاينة
+                      </Button>
+                    )}
+                    {!isCreatingNew && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteType}
+                        disabled={deleteTypeMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 ml-2" />
+                        حذف
                       </Button>
                     )}
                     <Button
