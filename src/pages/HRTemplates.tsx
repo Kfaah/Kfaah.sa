@@ -510,23 +510,23 @@ export default function HRTemplates() {
                     </CardContent>
                   </Card>
 
-                  <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="content" className="gap-2">
-                        <Type className="w-4 h-4" />
+                  <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
+                    <TabsList className="grid w-full grid-cols-4" style={{ direction: 'rtl' }}>
+                      <TabsTrigger value="content" className="gap-2 flex-row-reverse">
                         المحتوى
+                        <Type className="w-4 h-4" />
                       </TabsTrigger>
-                      <TabsTrigger value="template" className="gap-2">
-                        <Image className="w-4 h-4" />
+                      <TabsTrigger value="template" className="gap-2 flex-row-reverse">
                         القالب
+                        <Image className="w-4 h-4" />
                       </TabsTrigger>
-                      <TabsTrigger value="fields" className="gap-2">
-                        <List className="w-4 h-4" />
+                      <TabsTrigger value="fields" className="gap-2 flex-row-reverse">
                         الحقول
+                        <List className="w-4 h-4" />
                       </TabsTrigger>
-                      <TabsTrigger value="workflow" className="gap-2">
-                        <Workflow className="w-4 h-4" />
+                      <TabsTrigger value="workflow" className="gap-2 flex-row-reverse">
                         المسار
+                        <Workflow className="w-4 h-4" />
                       </TabsTrigger>
                     </TabsList>
 
