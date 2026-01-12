@@ -527,8 +527,7 @@ export default function HRRequests() {
                       return (
                         <div 
                           key={request.id} 
-                          className="flex items-center gap-4 p-4 rounded-xl border hover:shadow-md transition-shadow cursor-pointer"
-                          onClick={() => setSelectedRequest(request)}
+                          className="flex items-center gap-4 p-4 rounded-xl border hover:shadow-md transition-shadow"
                         >
                           <div className={`w-12 h-12 rounded-xl ${request.hr_request_types?.color || 'bg-primary'} flex items-center justify-center`}>
                             <Icon className="w-6 h-6 text-white" />
@@ -562,8 +561,19 @@ export default function HRRequests() {
                               )}
                             </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
+                          <div className="flex items-center gap-3">
+                            <div className="text-xs text-muted-foreground">
+                              {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedRequest(request)}
+                              className="gap-1"
+                            >
+                              <Eye className="w-4 h-4" />
+                              استعراض
+                            </Button>
                           </div>
                         </div>
                       );

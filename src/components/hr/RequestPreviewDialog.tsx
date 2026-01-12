@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Calendar, 
   Clock, 
@@ -27,7 +28,8 @@ import {
   Printer,
   ArrowLeft,
   Building2,
-  Hash
+  Hash,
+  ClipboardList
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -68,6 +70,7 @@ export function RequestPreviewDialog({
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState<"official" | "details">("official");
   const previewRef = useRef<HTMLDivElement>(null);
 
   // جلب بيانات الموظف صاحب الطلب
@@ -339,16 +342,23 @@ export function RequestPreviewDialog({
             </div>
           </div>
 
-          {/* Content */}
+          {/* Content with Tabs */}
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* الورق الرسمي - الجانب الأيسر */}
-              <div className="order-2 lg:order-1">
-                <div className="sticky top-0">
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    معاينة النموذج الرسمي
-                  </h3>
+            <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "official" | "details")} dir="rtl">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="official" className="gap-2 text-sm">
+                  <FileText className="w-4 h-4" />
+                  الملف الرسمي
+                </TabsTrigger>
+                <TabsTrigger value="details" className="gap-2 text-sm">
+                  <ClipboardList className="w-4 h-4" />
+                  البيانات
+                </TabsTrigger>
+              </TabsList>
+
+              {/* تبويب الملف الرسمي */}
+              <TabsContent value="official" className="mt-0">
+                <div className="max-w-2xl mx-auto">
                   <div 
                     ref={previewRef}
                     className="relative bg-white rounded-xl overflow-hidden shadow-xl border"
@@ -467,7 +477,7 @@ export function RequestPreviewDialog({
                   </div>
 
                   {/* أزرار التصدير */}
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 mt-4">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -493,10 +503,11 @@ export function RequestPreviewDialog({
                     </Button>
                   </div>
                 </div>
-              </div>
+              </TabsContent>
 
-              {/* تفاصيل الطلب - الجانب الأيمن */}
-              <div className="order-1 lg:order-2 space-y-4">
+              {/* تبويب البيانات */}
+              <TabsContent value="details" className="mt-0">
+                <div className="max-w-2xl mx-auto space-y-4">
                 {/* معلومات مقدم الطلب */}
                 <div className="bg-gradient-to-br from-muted/50 to-muted/30 rounded-2xl p-5">
                   <h3 className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-2">
@@ -678,8 +689,9 @@ export function RequestPreviewDialog({
                     <p className="text-red-700">{request.rejection_reason}</p>
                   </div>
                 )}
-              </div>
-            </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Footer Actions */}
