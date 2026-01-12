@@ -431,30 +431,29 @@ export default function HRTemplates() {
           <Card className="lg:col-span-3 lg:order-2">
             {isEditing ? (
               <>
-                <CardHeader className="flex flex-row-reverse items-center justify-between">
-                  <CardTitle className="flex flex-row-reverse items-center gap-2">
+                <CardHeader className="flex flex-row items-center justify-between" dir="rtl">
+                  <CardTitle className="flex items-center gap-2">
                     <Settings className="w-5 h-5" />
                     {isCreatingNew ? "إنشاء نموذج جديد" : `تحرير: ${editData.name_ar}`}
                   </CardTitle>
-                  <div className="flex flex-row-reverse gap-2">
+                  <div className="flex gap-2">
                     <Button
                       size="sm"
                       onClick={isCreatingNew ? handleSaveNew : handleSave}
                       disabled={updateTypeMutation.isPending || createTypeMutation.isPending}
-                      className="bg-gradient-to-l from-accent to-teal-500 flex-row-reverse"
+                      className="bg-gradient-to-l from-accent to-teal-500"
                     >
+                      <Save className="w-4 h-4 ml-2" />
                       {isCreatingNew ? "إنشاء النموذج" : "حفظ التعديلات"}
-                      <Save className="w-4 h-4 mr-2" />
                     </Button>
                     {!isCreatingNew && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setShowPreview(true)}
-                        className="flex-row-reverse"
                       >
+                        <Eye className="w-4 h-4 ml-2" />
                         معاينة
-                        <Eye className="w-4 h-4 mr-2" />
                       </Button>
                     )}
                     <Button
