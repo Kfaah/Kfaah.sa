@@ -55,90 +55,92 @@ export function LiveRequestPreview({
         />
         
         {/* محتوى النموذج */}
-        <div className="absolute inset-0 p-3 flex flex-col" dir="rtl">
+        <div className="absolute inset-0 p-3 flex flex-col" dir="rtl" style={{ fontFamily: "'Cairo', 'Segoe UI', Tahoma, sans-serif" }}>
           
+          {/* مساحة الهيدر - تترك فارغة للشعار */}
+          <div className="h-[85px]" />
+
           {/* رقم الطلب والتاريخ */}
-          <div className="flex justify-between items-start mt-[18px] mx-4 text-[7px]">
+          <div className="flex justify-between items-center mx-6 text-[7px]">
             <div className="text-right">
-              <span className="text-muted-foreground">رقم الطلب: </span>
-              <span className="font-semibold">{requestNumber || "HR-XXXX-XXXX"}</span>
+              <span className="text-muted-foreground/70">رقم الطلب: </span>
+              <span className="font-bold text-foreground">{requestNumber || "HR-XXXX-XXXX"}</span>
             </div>
             <div className="text-left">
-              <span className="text-muted-foreground">التاريخ: </span>
-              <span className="font-semibold">{currentDate}</span>
+              <span className="text-muted-foreground/70">التاريخ: </span>
+              <span className="font-bold text-foreground">{currentDate}</span>
             </div>
           </div>
 
           {/* عنوان النموذج */}
-          <div className="mt-3 text-center">
-            <div className="inline-block bg-primary/10 border border-primary/30 rounded-lg px-4 py-1.5">
-              <h2 className="text-[11px] font-bold text-primary">
-                نموذج {requestTypeName || "طلب"}
-              </h2>
-            </div>
+          <div className="mt-2 text-center">
+            <h2 className="text-[12px] font-bold text-foreground tracking-wide">
+              نموذج {requestTypeName || "طلب"}
+            </h2>
+            <div className="w-20 h-0.5 bg-primary/50 mx-auto mt-1 rounded-full" />
           </div>
 
           {/* جدول البيانات */}
-          <div className="mt-3 mx-3 flex-1">
-            <table className="w-full text-[8px] border-collapse" style={{ borderSpacing: 0 }}>
+          <div className="mt-3 mx-4 flex-1" style={{ fontSize: '8px' }}>
+            <table className="w-full border-collapse" style={{ borderSpacing: 0 }}>
               <tbody>
                 {/* بيانات مقدم الطلب */}
                 <tr>
-                  <td colSpan={4} className="bg-muted/40 font-bold text-[8px] py-1 px-2 border border-border/50 text-center">
+                  <td colSpan={4} className="bg-primary/10 font-bold text-[9px] py-1.5 px-3 border border-primary/20 text-center text-primary">
                     بيانات مقدم الطلب
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50 w-[25%]">اسم الموظف</td>
-                  <td className={`py-1 px-2 border border-border/50 w-[25%] ${employeeName ? '' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 w-[22%] text-[8px]">اسم الموظف</td>
+                  <td className={`py-1.5 px-2 border border-border/40 w-[28%] text-[8px] ${employeeName ? 'font-medium' : 'text-muted-foreground'}`}>
                     {employeeName || "---"}
                   </td>
-                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50 w-[25%]">المسمى الوظيفي</td>
-                  <td className={`py-1 px-2 border border-border/50 w-[25%] ${jobRole ? '' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 w-[22%] text-[8px]">المسمى الوظيفي</td>
+                  <td className={`py-1.5 px-2 border border-border/40 w-[28%] text-[8px] ${jobRole ? 'font-medium' : 'text-muted-foreground'}`}>
                     {jobRole || "---"}
                   </td>
                 </tr>
 
                 {/* تفاصيل الطلب */}
                 <tr>
-                  <td colSpan={4} className="bg-muted/40 font-bold text-[8px] py-1 px-2 border border-border/50 text-center">
+                  <td colSpan={4} className="bg-primary/10 font-bold text-[9px] py-1.5 px-3 border border-primary/20 text-center text-primary">
                     تفاصيل الطلب
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50">نوع الطلب</td>
-                  <td colSpan={3} className={`py-1 px-2 border border-border/50 ${requestTypeName ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">نوع الطلب</td>
+                  <td colSpan={3} className={`py-1.5 px-2 border border-border/40 text-[8px] ${requestTypeName ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
                     {requestTypeName || "---"}
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50">من تاريخ</td>
-                  <td className={`py-1 px-2 border border-border/50 ${startDate ? '' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">من تاريخ</td>
+                  <td className={`py-1.5 px-2 border border-border/40 text-[8px] ${startDate ? 'font-medium' : 'text-muted-foreground'}`}>
                     {startDate ? formatArabicDate(startDate) : "---"}
                   </td>
-                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50">إلى تاريخ</td>
-                  <td className={`py-1 px-2 border border-border/50 ${endDate ? '' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">إلى تاريخ</td>
+                  <td className={`py-1.5 px-2 border border-border/40 text-[8px] ${endDate ? 'font-medium' : 'text-muted-foreground'}`}>
                     {endDate ? formatArabicDate(endDate) : "---"}
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50">عدد الأيام</td>
-                  <td colSpan={3} className="py-1 px-2 border border-border/50">
-                    <span className={daysCount > 0 ? 'bg-primary/10 text-primary font-bold px-2 py-0.5 rounded' : 'text-muted-foreground'}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">عدد الأيام</td>
+                  <td colSpan={3} className="py-1.5 px-2 border border-border/40 text-[8px]">
+                    <span className={daysCount > 0 ? 'bg-primary/15 text-primary font-bold px-2 py-0.5 rounded text-[9px]' : 'text-muted-foreground'}>
                       {daysCount > 0 ? `${daysCount} يوم` : "---"}
                     </span>
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50 align-top">السبب</td>
-                  <td colSpan={3} className={`py-1 px-2 border border-border/50 min-h-[30px] ${reason ? '' : 'text-muted-foreground italic'}`}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 align-top text-[8px]">السبب</td>
+                  <td colSpan={3} className={`py-1.5 px-2 border border-border/40 text-[8px] ${reason ? 'font-medium' : 'text-muted-foreground italic'}`}>
                     {reason || "لم يتم تحديد السبب"}
                   </td>
                 </tr>
                 {notes && (
                   <tr>
-                    <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50 align-top">ملاحظات</td>
-                    <td colSpan={3} className="py-1 px-2 border border-border/50">
+                    <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 align-top text-[8px]">ملاحظات</td>
+                    <td colSpan={3} className="py-1.5 px-2 border border-border/40 text-[8px] font-medium">
                       {notes}
                     </td>
                   </tr>
@@ -146,31 +148,31 @@ export function LiveRequestPreview({
 
                 {/* التوقيعات */}
                 <tr>
-                  <td colSpan={4} className="bg-muted/40 font-bold text-[8px] py-1 px-2 border border-border/50 text-center">
+                  <td colSpan={4} className="bg-primary/10 font-bold text-[9px] py-1.5 px-3 border border-primary/20 text-center text-primary">
                     التوقيعات والاعتماد
                   </td>
                 </tr>
                 <tr>
-                  <td colSpan={2} className="py-2 px-2 border border-border/50 text-center align-top">
-                    <div className="font-semibold text-[7px] mb-1">مقدم الطلب</div>
-                    <div className="text-[7px] mb-1">{employeeName || "---"}</div>
+                  <td colSpan={2} className="py-3 px-3 border border-border/40 text-center align-top">
+                    <div className="font-bold text-[8px] mb-1 text-foreground">مقدم الطلب</div>
+                    <div className="text-[8px] mb-2 font-medium">{employeeName || "---"}</div>
                     {signatureUrl ? (
                       <img 
                         src={signatureUrl} 
                         alt="توقيع الموظف" 
-                        className="h-6 mx-auto object-contain"
+                        className="h-8 mx-auto object-contain"
                       />
                     ) : (
-                      <div className="h-6 border-b border-dashed border-muted-foreground/40 mx-4 mt-2" />
+                      <div className="h-8 border-b-2 border-dashed border-muted-foreground/30 mx-6 mt-2" />
                     )}
                   </td>
-                  <td colSpan={2} className="py-2 px-2 border border-border/50 text-center align-top bg-accent/5">
-                    <div className="font-semibold text-[7px] mb-1 text-accent">اعتماد الإدارة</div>
-                    <div className="flex items-center justify-center gap-1 mt-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      <span className="text-[6px] text-muted-foreground">في انتظار الموافقة</span>
+                  <td colSpan={2} className="py-3 px-3 border border-border/40 text-center align-top bg-accent/5">
+                    <div className="font-bold text-[8px] mb-1 text-accent">اعتماد الإدارة</div>
+                    <div className="flex items-center justify-center gap-1.5 mt-2 mb-1">
+                      <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-[7px] text-muted-foreground font-medium">في انتظار الموافقة</span>
                     </div>
-                    <div className="h-6 border-b border-dashed border-accent/40 mx-4 mt-1" />
+                    <div className="h-8 border-b-2 border-dashed border-accent/30 mx-6 mt-1" />
                   </td>
                 </tr>
               </tbody>
