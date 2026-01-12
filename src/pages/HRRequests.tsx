@@ -42,6 +42,7 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { NewRequestDialog } from "@/components/hr/NewRequestDialog";
 import { RequestDetailsDialog } from "@/components/hr/RequestDetailsDialog";
+import { RequestPreviewDialog } from "@/components/hr/RequestPreviewDialog";
 import { AdminRequestsPanel } from "@/components/hr/AdminRequestsPanel";
 import { LeaveBalanceCard } from "@/components/hr/LeaveBalanceCard";
 import { HRStatisticsPanel } from "@/components/hr/HRStatisticsPanel";
@@ -758,12 +759,12 @@ export default function HRRequests() {
           employees={employees}
         />
 
-        {/* Dialog تفاصيل الطلب */}
-        <RequestDetailsDialog
+        {/* Dialog تفاصيل الطلب - للموظف صاحب الطلب */}
+        <RequestPreviewDialog
           request={selectedRequest}
           open={!!selectedRequest}
           onOpenChange={(open) => !open && setSelectedRequest(null)}
-          isAdmin={false}
+          viewMode="owner"
         />
 
         {/* Dialog رفض الطلب */}
