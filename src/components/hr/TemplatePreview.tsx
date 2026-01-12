@@ -37,6 +37,7 @@ interface TemplateData {
   show_dates?: boolean;
   show_reason?: boolean;
   show_notes?: boolean;
+  header_offset?: number | string | null; // نسبة مئوية (0-50) تحدد منطقة الترويسة/الكليشة
 }
 
 interface TemplatePreviewProps {
@@ -47,6 +48,11 @@ interface TemplatePreviewProps {
 
 export function TemplatePreview({ open, onOpenChange, templateData }: TemplatePreviewProps) {
   const letterheadUrl = templateData.letterhead_url || "/letterhead-template.jpg";
+  const headerOffsetRaw = templateData.header_offset;
+  const headerOffset = Math.min(
+    50,
+    Math.max(5, Number(headerOffsetRaw ?? 25) || 25)
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -80,7 +86,10 @@ export function TemplatePreview({ open, onOpenChange, templateData }: TemplatePr
                   <p className="text-muted-foreground">12/01/2026</p>
                 </div>
 
-                <div className="mt-[48px] mr-4 ml-8 space-y-1.5 text-[9px] leading-relaxed">
+                <div
+                  className="mr-4 ml-8 space-y-1.5 text-[9px] leading-relaxed"
+                  style={{ paddingTop: `${headerOffset}%` }}
+                >
                   <h2 className="text-sm font-bold text-center mb-3">
                     طلب {templateData.name_ar || "___________"}
                   </h2>

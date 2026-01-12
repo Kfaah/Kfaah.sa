@@ -761,7 +761,7 @@ export default function HRTemplates() {
                     <TabsContent value="letterhead" className="space-y-4 mt-4">
                       <LetterheadAdjuster
                         letterheadUrl={editData.letterhead_url}
-                        initialOffset={editData.header_offset ?? 200}
+                        initialOffset={Number(editData.header_offset ?? 25) || 25}
                         onSave={(offset) => {
                           setEditData(prev => ({ ...prev, header_offset: offset }));
                           toast.success("تم حفظ موضع الكليشيه");
