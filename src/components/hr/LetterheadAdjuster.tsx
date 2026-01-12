@@ -1,13 +1,16 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { GripVertical, RotateCcw, Eye, EyeOff, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LetterheadAdjusterProps {
   letterheadUrl?: string | null;
-  initialOffset: number;
+  initialOffset: number; // القيمة المخزنة كنسبة مئوية (0-100)
   onSave: (offset: number) => void;
   isSaving?: boolean;
 }
+
+// ارتفاع مرجعي للورقة A4 بالنسب (297mm)
+const REFERENCE_HEIGHT = 297;
 
 export function LetterheadAdjuster({
   letterheadUrl,
@@ -15,7 +18,7 @@ export function LetterheadAdjuster({
   onSave,
   isSaving = false,
 }: LetterheadAdjusterProps) {
-  const [contentOffset, setContentOffset] = useState(initialOffset);
+  const [offsetPercent, setOffsetPercent] = useState(initialOffset); // نسبة مئوية
   const [isDragging, setIsDragging] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -23,19 +26,40 @@ export function LetterheadAdjuster({
   const startYRef = useRef(0);
   const startOffsetRef = useRef(0);
 
+  useEffect(() => {
+    setOffsetPercent(initialOffset);
+  }, [initialOffset]);
+
+  const getContainerHeight = () => {
+    return containerRef.current?.clientHeight || 400;
+  };
+
+  // تحويل النسبة المئوية إلى بكسل للعرض
+  const percentToPixel = (percent: number) => {
+    const containerHeight = getContainerHeight();
+    return (percent / 100) * containerHeight;
+  };
+
+  // تحويل البكسل إلى نسبة مئوية للحفظ
+  const pixelToPercent = (pixel: number) => {
+    const containerHeight = getContainerHeight();
+    return (pixel / containerHeight) * 100;
+  };
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
     startYRef.current = e.clientY;
-    startOffsetRef.current = contentOffset;
+    startOffsetRef.current = percentToPixel(offsetPercent);
     setSaved(false);
-  }, [contentOffset]);
+  }, [offsetPercent]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging) return;
     const deltaY = e.clientY - startYRef.current;
-    const newOffset = Math.max(50, Math.min(350, startOffsetRef.current + deltaY));
-    setContentOffset(newOffset);
+    const containerHeight = getContainerHeight();
+    const newPixelOffset = Math.max(30, Math.min(containerHeight * 0.6, startOffsetRef.current + deltaY));
+    setOffsetPercent(pixelToPercent(newPixelOffset));
   }, [isDragging]);
 
   const handleMouseUp = useCallback(() => {
@@ -45,15 +69,16 @@ export function LetterheadAdjuster({
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     setIsDragging(true);
     startYRef.current = e.touches[0].clientY;
-    startOffsetRef.current = contentOffset;
+    startOffsetRef.current = percentToPixel(offsetPercent);
     setSaved(false);
-  }, [contentOffset]);
+  }, [offsetPercent]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
     const deltaY = e.touches[0].clientY - startYRef.current;
-    const newOffset = Math.max(50, Math.min(350, startOffsetRef.current + deltaY));
-    setContentOffset(newOffset);
+    const containerHeight = getContainerHeight();
+    const newPixelOffset = Math.max(30, Math.min(containerHeight * 0.6, startOffsetRef.current + deltaY));
+    setOffsetPercent(pixelToPercent(newPixelOffset));
   }, [isDragging]);
 
   const handleTouchEnd = useCallback(() => {
@@ -61,14 +86,16 @@ export function LetterheadAdjuster({
   }, []);
 
   const resetPosition = () => {
-    setContentOffset(200);
+    setOffsetPercent(35); // 35% كقيمة افتراضية
     setSaved(false);
   };
 
   const handleSave = () => {
-    onSave(contentOffset);
+    onSave(Math.round(offsetPercent * 10) / 10); // تقريب لرقم عشري واحد
     setSaved(true);
   };
+
+  const currentPixelOffset = percentToPixel(offsetPercent);
 
   return (
     <div className="space-y-4" dir="rtl">
@@ -139,7 +166,7 @@ export function LetterheadAdjuster({
           {showGuide && (
             <div 
               className="absolute top-0 left-0 right-0 border-b-4 border-dashed border-red-600 bg-red-500/20 pointer-events-none z-10 transition-all duration-200"
-              style={{ height: `${contentOffset}px` }}
+              style={{ height: `${offsetPercent}%` }}
             >
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] px-4 py-1.5 rounded-full font-bold shadow-lg">
                 ⚠️ منطقة الكليشة - لا تضع محتوى هنا
@@ -153,7 +180,7 @@ export function LetterheadAdjuster({
               className={`absolute left-1/2 -translate-x-1/2 z-20 cursor-ns-resize select-none transition-all duration-200 ${
                 isDragging ? 'scale-110' : 'hover:scale-105'
               }`}
-              style={{ top: `${contentOffset - 12}px` }}
+              style={{ top: `calc(${offsetPercent}% - 12px)` }}
               onMouseDown={handleMouseDown}
               onTouchStart={handleTouchStart}
             >
@@ -171,7 +198,7 @@ export function LetterheadAdjuster({
             className={`absolute inset-0 px-4 pb-4 flex flex-col transition-all duration-200 ${
               isDragging ? 'opacity-60' : ''
             }`}
-            style={{ paddingTop: `${contentOffset + 10}px` }}
+            style={{ paddingTop: `calc(${offsetPercent}% + 10px)` }}
             dir="rtl"
           >
             <div className="text-center mb-2">
@@ -188,7 +215,7 @@ export function LetterheadAdjuster({
 
           {/* مؤشر الموضع */}
           <div className="absolute bottom-3 left-3 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-mono z-20">
-            الموضع: {contentOffset}px
+            الموضع: {offsetPercent.toFixed(1)}%
           </div>
         </div>
       </div>
