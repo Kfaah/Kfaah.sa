@@ -65,7 +65,7 @@ interface RequestPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   viewMode?: "owner" | "approver" | "admin";
-  approvalType?: "substitute" | "manager" | "admin";
+  approvalType?: "substitute" | "manager" | "admin" | "executive";
   onApprove?: () => void;
   onReject?: (reason: string) => void;
   isApproving?: boolean;
