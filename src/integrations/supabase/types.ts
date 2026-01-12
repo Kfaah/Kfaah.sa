@@ -254,6 +254,198 @@ export type Database = {
           },
         ]
       }
+      hr_leave_balances: {
+        Row: {
+          created_at: string
+          id: string
+          remaining_days: number | null
+          request_type_id: string
+          total_days: number
+          updated_at: string
+          used_days: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          remaining_days?: number | null
+          request_type_id: string
+          total_days?: number
+          updated_at?: string
+          used_days?: number
+          user_id: string
+          year?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          remaining_days?: number | null
+          request_type_id?: string
+          total_days?: number
+          updated_at?: string
+          used_days?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_leave_balances_request_type_id_fkey"
+            columns: ["request_type_id"]
+            isOneToOne: false
+            referencedRelation: "hr_request_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_request_approvals: {
+        Row: {
+          action: string
+          approver_id: string
+          comments: string | null
+          created_at: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          action: string
+          approver_id: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          action?: string
+          approver_id?: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_request_approvals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hr_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_request_types: {
+        Row: {
+          color: string | null
+          created_at: string
+          deducts_from_balance: boolean | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          max_days: number | null
+          name: string
+          name_ar: string
+          requires_attachment: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          deducts_from_balance?: boolean | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_days?: number | null
+          name: string
+          name_ar: string
+          requires_attachment?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          deducts_from_balance?: boolean | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_days?: number | null
+          name?: string
+          name_ar?: string
+          requires_attachment?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hr_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          attachment_name: string | null
+          attachment_url: string | null
+          created_at: string
+          days_count: number | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          reason: string | null
+          rejection_reason: string | null
+          request_number: string
+          request_type_id: string
+          start_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          attachment_name?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          days_count?: number | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          rejection_reason?: string | null
+          request_number: string
+          request_type_id: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          attachment_name?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          days_count?: number | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          rejection_reason?: string | null
+          request_number?: string
+          request_type_id?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_requests_request_type_id_fkey"
+            columns: ["request_type_id"]
+            isOneToOne: false
+            referencedRelation: "hr_request_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_roles: {
         Row: {
           color: string | null
