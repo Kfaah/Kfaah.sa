@@ -498,6 +498,19 @@ export function RequestDetailsDialog({
             <span>{format(new Date(request.created_at), "d MMM yyyy - HH:mm", { locale: ar })}</span>
           </div>
 
+          {/* زر طباعة الطلب الرسمي - يظهر فقط بعد الموافقة النهائية */}
+          {request.status === "approved" && employeeData && (
+            <>
+              <Separator />
+              <Button
+                onClick={() => setShowPDFPreview(true)}
+                className="w-full bg-gradient-to-r from-accent to-teal-500"
+              >
+                <Printer className="w-4 h-4 ml-2" />
+                طباعة الطلب الرسمي
+              </Button>
+            </>
+          )}
 
           {/* أزرار الإجراءات للمدير */}
           {isAdmin && request.status === "pending" && (
