@@ -52,7 +52,6 @@ export default function HRRequests() {
   const queryClient = useQueryClient();
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("my-requests");
 
   const isAdmin = user.role === "مدير النظام";
 
@@ -70,11 +69,11 @@ export default function HRRequests() {
     },
   });
 
-  // جلب طلباتي
+  // جلب طلباتي (للموظفين فقط)
   const { data: myRequests = [], isLoading: isLoadingRequests } = useQuery({
     queryKey: ["my-hr-requests", authUser?.id],
     queryFn: async () => {
-      if (!authUser?.id) return [];
+      if (!authUser?.id || isAdmin) return [];
       const { data, error } = await supabase
         .from("hr_requests")
         .select(`
@@ -86,14 +85,14 @@ export default function HRRequests() {
       if (error) throw error;
       return data;
     },
-    enabled: !!authUser?.id,
+    enabled: !!authUser?.id && !isAdmin,
   });
 
-  // جلب أرصدة الإجازات
+  // جلب أرصدة الإجازات (للموظفين فقط)
   const { data: leaveBalances = [] } = useQuery({
     queryKey: ["my-leave-balances", authUser?.id],
     queryFn: async () => {
-      if (!authUser?.id) return [];
+      if (!authUser?.id || isAdmin) return [];
       const { data, error } = await supabase
         .from("hr_leave_balances")
         .select(`
@@ -105,7 +104,22 @@ export default function HRRequests() {
       if (error) throw error;
       return data;
     },
-    enabled: !!authUser?.id,
+    enabled: !!authUser?.id && !isAdmin,
+  });
+
+  // جلب قائمة الموظفين (للمدير فقط)
+  const { data: employees = [] } = useQuery({
+    queryKey: ["employees-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("id, user_id, full_name, job_role, avatar_url")
+        .eq("status", "active")
+        .order("full_name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin,
   });
 
   const getStatusBadge = (status: string) => {
@@ -124,13 +138,59 @@ export default function HRRequests() {
     return Icon;
   };
 
+  // واجهة المدير
+  if (isAdmin) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">إدارة طلبات الموارد البشرية</h1>
+              <p className="text-muted-foreground">مراجعة واعتماد طلبات الموظفين</p>
+            </div>
+            <Button 
+              onClick={() => setIsNewRequestOpen(true)}
+              className="bg-gradient-to-r from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90 text-white gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              إنشاء طلب لموظف
+            </Button>
+          </div>
+
+          {/* لوحة إدارة الطلبات */}
+          <AdminRequestsPanel requestTypes={requestTypes} />
+
+          {/* Dialog إنشاء طلب لموظف */}
+          <NewRequestDialog
+            open={isNewRequestOpen}
+            onOpenChange={setIsNewRequestOpen}
+            requestTypes={requestTypes}
+            leaveBalances={[]}
+            isAdmin={true}
+            employees={employees}
+          />
+
+          {/* Dialog تفاصيل الطلب */}
+          <RequestDetailsDialog
+            request={selectedRequest}
+            open={!!selectedRequest}
+            onOpenChange={(open) => !open && setSelectedRequest(null)}
+            isAdmin={true}
+          />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // واجهة الموظف
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">طلبات الموارد البشرية</h1>
+            <h1 className="text-2xl font-bold text-foreground">طلباتي</h1>
             <p className="text-muted-foreground">إدارة الإجازات والاستئذانات والطلبات الإدارية</p>
           </div>
           <Button 
@@ -163,98 +223,82 @@ export default function HRRequests() {
             })}
         </div>
 
-        {/* Tabs للطلبات */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-            <TabsTrigger value="my-requests">طلباتي</TabsTrigger>
-            {isAdmin && <TabsTrigger value="all-requests">جميع الطلبات</TabsTrigger>}
-          </TabsList>
-
-          {/* طلباتي */}
-          <TabsContent value="my-requests" className="space-y-4">
+        {/* قائمة طلباتي */}
+        <Card>
+          <CardHeader>
+            <CardTitle>سجل الطلبات</CardTitle>
+          </CardHeader>
+          <CardContent>
             {isLoadingRequests ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-accent" />
               </div>
             ) : myRequests.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <FileText className="w-12 h-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">لا توجد طلبات</h3>
-                  <p className="text-muted-foreground mb-4">لم تقم بتقديم أي طلبات بعد</p>
-                  <Button 
-                    onClick={() => setIsNewRequestOpen(true)}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    تقديم طلب جديد
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="flex flex-col items-center justify-center py-12">
+                <FileText className="w-12 h-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">لا توجد طلبات</h3>
+                <p className="text-muted-foreground mb-4">لم تقم بتقديم أي طلبات بعد</p>
+                <Button 
+                  onClick={() => setIsNewRequestOpen(true)}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  تقديم طلب جديد
+                </Button>
+              </div>
             ) : (
               <div className="grid gap-4">
                 {myRequests.map((request: any) => {
                   const Icon = getRequestIcon(request.hr_request_types?.icon);
                   return (
-                    <Card 
+                    <div 
                       key={request.id} 
-                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      className="flex items-center gap-4 p-4 rounded-xl border hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => setSelectedRequest(request)}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-xl ${request.hr_request_types?.color || 'bg-primary'} flex items-center justify-center`}>
-                            <Icon className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-foreground">
-                                {request.hr_request_types?.name_ar}
-                              </h3>
-                              {getStatusBadge(request.status)}
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <FileText className="w-3 h-3" />
-                                {request.request_number}
-                              </span>
-                              {request.start_date && (
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  {format(new Date(request.start_date), "d MMM yyyy", { locale: ar })}
-                                  {request.end_date && request.end_date !== request.start_date && (
-                                    <> - {format(new Date(request.end_date), "d MMM yyyy", { locale: ar })}</>
-                                  )}
-                                </span>
-                              )}
-                              {request.days_count && (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {request.days_count} يوم
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
-                          </div>
+                      <div className={`w-12 h-12 rounded-xl ${request.hr_request_types?.color || 'bg-primary'} flex items-center justify-center`}>
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground">
+                            {request.hr_request_types?.name_ar}
+                          </h3>
+                          {getStatusBadge(request.status)}
                         </div>
-                      </CardContent>
-                    </Card>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <FileText className="w-3 h-3" />
+                            {request.request_number}
+                          </span>
+                          {request.start_date && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {format(new Date(request.start_date), "d MMM yyyy", { locale: ar })}
+                              {request.end_date && request.end_date !== request.start_date && (
+                                <> - {format(new Date(request.end_date), "d MMM yyyy", { locale: ar })}</>
+                              )}
+                            </span>
+                          )}
+                          {request.days_count && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {request.days_count} يوم
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             )}
-          </TabsContent>
-
-          {/* جميع الطلبات (للمدير) */}
-          {isAdmin && (
-            <TabsContent value="all-requests">
-              <AdminRequestsPanel requestTypes={requestTypes} />
-            </TabsContent>
-          )}
-        </Tabs>
+          </CardContent>
+        </Card>
 
         {/* Dialog تقديم طلب جديد */}
         <NewRequestDialog
@@ -262,6 +306,8 @@ export default function HRRequests() {
           onOpenChange={setIsNewRequestOpen}
           requestTypes={requestTypes}
           leaveBalances={leaveBalances}
+          isAdmin={false}
+          employees={[]}
         />
 
         {/* Dialog تفاصيل الطلب */}
@@ -269,7 +315,7 @@ export default function HRRequests() {
           request={selectedRequest}
           open={!!selectedRequest}
           onOpenChange={(open) => !open && setSelectedRequest(null)}
-          isAdmin={isAdmin}
+          isAdmin={false}
         />
       </div>
     </DashboardLayout>
