@@ -528,13 +528,15 @@ export default function Profile() {
             ].map((filter) => {
               const Icon = filter.icon;
               const count = notifications.filter(n => {
+                // الرسائل العادية لا تظهر في الإشعارات (تظهر فقط في قسم الرسائل أعلاه)
+                if (n.type === "message") return false;
                 if (filter.key === "all") return true;
-                // الرسائل أولاً (حتى لو كانت مرتبطة بمهمة)
-                if (filter.key === "messages") return n.type === "message" || n.type === "task_message";
+                // رسائل المهام فقط في قسم الرسائل
+                if (filter.key === "messages") return n.type === "task_message";
                 // المهام (تحديثات الحالة والتقييم فقط، وليس الرسائل)
                 if (filter.key === "tasks") return n.type === "status_update" || n.type === "rating_update" || n.type === "employee_update" || n.type === "new_task" || n.type === "task_assigned";
                 // عامة (كل شيء آخر)
-                return n.type !== "message" && n.type !== "task_message" && n.type !== "status_update" && n.type !== "rating_update" && n.type !== "employee_update" && n.type !== "new_task" && n.type !== "task_assigned";
+                return n.type !== "task_message" && n.type !== "status_update" && n.type !== "rating_update" && n.type !== "employee_update" && n.type !== "new_task" && n.type !== "task_assigned";
               }).length;
               
               return (
@@ -567,25 +569,27 @@ export default function Profile() {
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {notifications
                 .filter((notification) => {
+                  // الرسائل العادية لا تظهر في الإشعارات
+                  if (notification.type === "message") return false;
                   if (notificationFilter === "all") return true;
-                  // الرسائل أولاً (حتى لو كانت مرتبطة بمهمة)
-                  if (notificationFilter === "messages") return notification.type === "message" || notification.type === "task_message";
+                  // رسائل المهام فقط
+                  if (notificationFilter === "messages") return notification.type === "task_message";
                   // المهام (تحديثات الحالة والتقييم فقط)
                   if (notificationFilter === "tasks") return notification.type === "status_update" || notification.type === "rating_update" || notification.type === "employee_update" || notification.type === "new_task" || notification.type === "task_assigned";
                   // عامة
-                  return notification.type !== "message" && notification.type !== "task_message" && notification.type !== "status_update" && notification.type !== "rating_update" && notification.type !== "employee_update" && notification.type !== "new_task" && notification.type !== "task_assigned";
+                  return notification.type !== "task_message" && notification.type !== "status_update" && notification.type !== "rating_update" && notification.type !== "employee_update" && notification.type !== "new_task" && notification.type !== "task_assigned";
                 })
                 .map((notification) => {
                   // تحديد الأيقونة واللون حسب نوع الإشعار
                   const getNotificationStyle = () => {
-                    // الرسائل أولاً
-                    if (notification.type === "message" || notification.type === "task_message") {
+                    // رسائل المهام فقط
+                    if (notification.type === "task_message") {
                       return {
                         icon: MessageSquare,
                         bgColor: notification.is_read ? "bg-emerald-50" : "bg-emerald-100",
                         iconColor: notification.is_read ? "text-emerald-400" : "text-emerald-600",
                         badgeColor: "bg-emerald-500",
-                        badgeLabel: "رسالة"
+                        badgeLabel: "رسالة مهمة"
                       };
                     }
                     // المهام
