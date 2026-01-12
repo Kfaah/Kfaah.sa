@@ -24,6 +24,8 @@ interface RequestData {
   notes: string | null;
   created_at: string;
   approved_at: string | null;
+  substitute_approved?: boolean;
+  manager_approved?: boolean;
   hr_request_types: {
     name_ar: string;
   };
@@ -47,6 +49,10 @@ interface OfficialRequestPDFProps {
   request: RequestData;
   employee: EmployeeData;
   approver?: ApproverData | null;
+  substituteEmployee?: EmployeeData | null;
+  substituteApproved?: boolean;
+  directManager?: EmployeeData | null;
+  managerApproved?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -61,6 +67,10 @@ export function OfficialRequestPDF({
   request,
   employee,
   approver,
+  substituteEmployee,
+  substituteApproved,
+  directManager,
+  managerApproved,
 }: OfficialRequestPDFProps) {
   const [generating, setGenerating] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -343,41 +353,79 @@ export function OfficialRequestPDF({
               <p>وتقبلوا فائق الاحترام والتقدير،،،</p>
 
               {/* التوقيعات */}
-              <div className="flex justify-between mt-6 pt-4">
+              <div className="grid grid-cols-4 gap-2 mt-6 pt-4">
+                {/* مقدم الطلب */}
                 <div className="text-center">
-                  <p className="font-semibold mb-1 text-[10px]">مقدم الطلب</p>
-                  <p className="text-[10px]">{employee.full_name}</p>
+                  <p className="font-semibold mb-1 text-[9px]">مقدم الطلب</p>
+                  <p className="text-[9px]">{employee.full_name}</p>
                   {employee.signature_url && (
                     <img 
                       src={employee.signature_url} 
                       alt="توقيع الموظف" 
-                      className="h-10 mx-auto mt-1 object-contain"
+                      className="h-8 mx-auto mt-1 object-contain"
                     />
                   )}
                 </div>
 
+                {/* الموظف البديل */}
+                <div className="text-center">
+                  <p className="font-semibold mb-1 text-[9px] text-amber-700">الموظف البديل</p>
+                  {substituteEmployee ? (
+                    <>
+                      <p className="text-[9px]">{substituteEmployee.full_name}</p>
+                      {substituteApproved && substituteEmployee.signature_url ? (
+                        <img 
+                          src={substituteEmployee.signature_url} 
+                          alt="توقيع البديل" 
+                          className="h-8 mx-auto mt-1 object-contain"
+                        />
+                      ) : (
+                        <p className="text-[8px] text-amber-600 mt-2">في الانتظار</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-[8px] text-muted-foreground mt-2">---</p>
+                  )}
+                </div>
+
+                {/* المدير المباشر */}
+                <div className="text-center">
+                  <p className="font-semibold mb-1 text-[9px] text-blue-700">المدير المباشر</p>
+                  {directManager ? (
+                    <>
+                      <p className="text-[9px]">{directManager.full_name}</p>
+                      {managerApproved && directManager.signature_url ? (
+                        <img 
+                          src={directManager.signature_url} 
+                          alt="توقيع المدير" 
+                          className="h-8 mx-auto mt-1 object-contain"
+                        />
+                      ) : (
+                        <p className="text-[8px] text-blue-600 mt-2">في الانتظار</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-[8px] text-muted-foreground mt-2">---</p>
+                  )}
+                </div>
+
+                {/* اعتماد الإدارة */}
                 {request.status === "approved" && approver ? (
-                  <div className="text-center border-2 border-green-500 rounded-lg p-2 bg-green-50">
-                    <p className="font-semibold mb-1 text-[10px] text-green-700">تمت الموافقة</p>
-                    <p className="text-[10px]">{approver.full_name}</p>
-                    <p className="text-[9px] text-muted-foreground">{approver.job_role}</p>
+                  <div className="text-center border border-green-500 rounded-lg p-1 bg-green-50">
+                    <p className="font-semibold mb-1 text-[9px] text-green-700">تمت الموافقة</p>
+                    <p className="text-[9px]">{approver.full_name}</p>
                     {approver.signature_url && (
                       <img 
                         src={approver.signature_url} 
                         alt="توقيع الموافق" 
-                        className="h-10 mx-auto mt-1 object-contain"
+                        className="h-8 mx-auto mt-1 object-contain"
                       />
-                    )}
-                    {request.approved_at && (
-                      <p className="text-[9px] mt-1" style={{ fontFamily: 'Arial, sans-serif' }}>
-                        {formatArabicDate(request.approved_at)}
-                      </p>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center border-2 border-dashed border-muted-foreground/30 rounded-lg p-2 min-w-[120px]">
-                    <p className="font-semibold mb-1 text-[10px] text-muted-foreground">اعتماد الإدارة</p>
-                    <p className="text-[9px] text-muted-foreground/60 mt-4">في انتظار الموافقة</p>
+                  <div className="text-center border border-dashed border-muted-foreground/30 rounded-lg p-1">
+                    <p className="font-semibold mb-1 text-[9px] text-muted-foreground">اعتماد الإدارة</p>
+                    <p className="text-[8px] text-muted-foreground/60 mt-2">في الانتظار</p>
                   </div>
                 )}
               </div>

@@ -22,7 +22,9 @@ import {
   Loader2,
   Download,
   User,
-  Printer
+  Printer,
+  UserCheck,
+  Users
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -86,6 +88,44 @@ export function RequestDetailsDialog({
     },
     enabled: !!request?.approved_by,
   });
+
+  // جلب بيانات الموظف البديل
+  const { data: substituteData } = useQuery({
+    queryKey: ["substitute-for-request", request?.substitute_employee_id],
+    queryFn: async () => {
+      if (!request?.substitute_employee_id) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", request.substitute_employee_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!request?.substitute_employee_id,
+  });
+
+  // جلب بيانات المدير المباشر
+  const { data: managerData } = useQuery({
+    queryKey: ["manager-for-request", request?.direct_manager_id],
+    queryFn: async () => {
+      if (!request?.direct_manager_id) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", request.direct_manager_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!request?.direct_manager_id,
+  });
+
+  // التحقق إذا كان المستخدم الحالي هو البديل أو المدير
+  const isSubstitute = user?.id === request?.substitute_employee_id;
+  const isManager = user?.id === request?.direct_manager_id;
+  const canApproveAsSubstitute = isSubstitute && !request?.substitute_approved;
+  const canApproveAsManager = isManager && !request?.manager_approved;
 
   const updateRequestMutation = useMutation({
     mutationFn: async ({ status, reason }: { status: string; reason?: string }) => {
@@ -166,6 +206,52 @@ export function RequestDetailsDialog({
     },
   });
 
+  // موافقة الموظف البديل
+  const substituteApproveMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("hr_requests")
+        .update({
+          substitute_approved: true,
+          substitute_approved_at: new Date().toISOString(),
+        })
+        .eq("id", request.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تمت موافقتك كموظف بديل");
+      queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
+    },
+    onError: (error) => {
+      console.error("Error approving as substitute:", error);
+      toast.error("حدث خطأ");
+    },
+  });
+
+  // موافقة المدير المباشر
+  const managerApproveMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("hr_requests")
+        .update({
+          manager_approved: true,
+          manager_approved_at: new Date().toISOString(),
+        })
+        .eq("id", request.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تمت موافقتك كمدير مباشر");
+      queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
+    },
+    onError: (error) => {
+      console.error("Error approving as manager:", error);
+      toast.error("حدث خطأ");
+    },
+  });
+
   const handleApprove = () => {
     updateRequestMutation.mutate({ status: "approved" });
   };
@@ -185,7 +271,7 @@ export function RequestDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
@@ -276,6 +362,94 @@ export function RequestDetailsDialog({
                 <Download className="w-4 h-4 text-muted-foreground" />
               </a>
             </div>
+          )}
+
+          {/* الموظف البديل والمدير المباشر */}
+          {(substituteData || managerData) && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <span className="text-sm font-semibold text-muted-foreground">موافقات إضافية</span>
+                
+                {/* الموظف البديل */}
+                {substituteData && (
+                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-amber-600" />
+                      <div>
+                        <p className="text-sm font-medium">الموظف البديل</p>
+                        <p className="text-xs text-muted-foreground">{substituteData.full_name}</p>
+                      </div>
+                    </div>
+                    {request.substitute_approved ? (
+                      <Badge className="bg-green-100 text-green-700 gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        موافق
+                      </Badge>
+                    ) : canApproveAsSubstitute ? (
+                      <Button
+                        size="sm"
+                        onClick={() => substituteApproveMutation.mutate()}
+                        disabled={substituteApproveMutation.isPending}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        {substituteApproveMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 ml-1" />
+                            موافقة
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Badge variant="outline" className="text-amber-600 border-amber-300">
+                        في الانتظار
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
+                {/* المدير المباشر */}
+                {managerData && (
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium">المدير المباشر</p>
+                        <p className="text-xs text-muted-foreground">{managerData.full_name}</p>
+                      </div>
+                    </div>
+                    {request.manager_approved ? (
+                      <Badge className="bg-green-100 text-green-700 gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        موافق
+                      </Badge>
+                    ) : canApproveAsManager ? (
+                      <Button
+                        size="sm"
+                        onClick={() => managerApproveMutation.mutate()}
+                        disabled={managerApproveMutation.isPending}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {managerApproveMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 ml-1" />
+                            موافقة
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Badge variant="outline" className="text-blue-600 border-blue-300">
+                        في الانتظار
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {/* سبب الرفض */}
@@ -387,6 +561,10 @@ export function RequestDetailsDialog({
           request={request}
           employee={employeeData}
           approver={approverData}
+          substituteEmployee={substituteData}
+          substituteApproved={request.substitute_approved}
+          directManager={managerData}
+          managerApproved={request.manager_approved}
         />
       )}
     </Dialog>
