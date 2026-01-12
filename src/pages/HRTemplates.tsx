@@ -981,11 +981,16 @@ export default function HRTemplates() {
                         : "border-border hover:border-accent/50"
                     }`}
                   >
-                    <div className="grid grid-cols-[1fr_auto] gap-3 items-center" dir="rtl">
-                      <div className="text-right">
-                        <p className="font-semibold text-sm">{type.name_ar}</p>
+                    <div className="grid grid-cols-[auto_1fr] gap-3 items-center" dir="rtl">
+                      <div
+                        className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center shrink-0`}
+                      >
+                        <FileText className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="min-w-0 text-right">
+                        <p className="font-semibold text-sm truncate">{type.name_ar}</p>
                         {(type.custom_fields?.length > 0 || type.workflow_stages?.length > 0) && (
-                          <div className="flex gap-1 mt-1">
+                          <div className="flex flex-wrap justify-end gap-1 mt-1">
                             {type.custom_fields?.length > 0 && (
                               <Badge variant="outline" className="text-[10px]">
                                 {type.custom_fields.length} حقول
@@ -998,9 +1003,6 @@ export default function HRTemplates() {
                             )}
                           </div>
                         )}
-                      </div>
-                      <div className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center shrink-0`}>
-                        <FileText className="w-5 h-5 text-white" />
                       </div>
                     </div>
                   </button>
