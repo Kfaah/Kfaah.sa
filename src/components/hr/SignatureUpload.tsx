@@ -38,8 +38,8 @@ export function SignatureUpload({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // إعداد القلم
-    ctx.strokeStyle = "#000000";
+    // إعداد القلم بلون أزرق
+    ctx.strokeStyle = "#1e40af";
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
