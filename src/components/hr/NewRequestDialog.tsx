@@ -290,6 +290,7 @@ export function NewRequestDialog({
 
   // بيانات المعاينة
   const previewEmployeeData = isAdmin ? selectedEmployeeData : currentEmployee;
+  console.log("Preview Employee Data:", { isAdmin, selectedEmployee, previewEmployeeData, signatureUrl: previewEmployeeData?.signature_url });
   const previewRequestNumber = `HR-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-XXXX`;
 
   return (
