@@ -318,241 +318,295 @@ export function NewRequestDialog({
 
         <div className={cn("grid gap-6", showPreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1")}>
           {/* نموذج الإدخال */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-          {/* اختيار الموظف (للمدير فقط) */}
-          {isAdmin && (
-            <div className="space-y-3">
-              <Label>الموظف <span className="text-destructive">*</span></Label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر الموظف..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((emp) => (
-                    <SelectItem key={emp.user_id} value={emp.user_id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                          {emp.avatar_url ? (
-                            <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <User className="w-3 h-3 text-muted-foreground" />
-                          )}
-                        </div>
-                        <span>{emp.full_name}</span>
-                        <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
+          <form onSubmit={handleSubmit} className="space-y-6" dir="rtl">
+            
+            {/* القسم الأول: بيانات مقدم الطلب */}
+            <div className="bg-muted/30 rounded-xl p-5 border">
+              <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2 border-b pb-3">
+                <User className="w-5 h-5 text-primary" />
+                بيانات مقدم الطلب
+              </h3>
+              
+              <div className="space-y-4">
+                {/* اختيار الموظف (للمدير فقط) */}
+                {isAdmin ? (
+                  <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+                    <Label className="text-right font-semibold">الموظف <span className="text-destructive">*</span></Label>
+                    <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="اختر الموظف..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.user_id} value={emp.user_id}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                                {emp.avatar_url ? (
+                                  <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <User className="w-3 h-3 text-muted-foreground" />
+                                )}
+                              </div>
+                              <span>{emp.full_name}</span>
+                              <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+                      <Label className="text-right font-semibold">الاسم</Label>
+                      <div className="bg-background border rounded-md px-3 py-2 text-sm">
+                        {currentEmployee?.full_name || "---"}
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* اختيار نوع الطلب */}
-          <div className="space-y-3">
-            <Label>نوع الطلب <span className="text-destructive">*</span></Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {requestTypes.map((type) => {
-                const Icon = getIcon(type.icon);
-                const isSelected = selectedType?.id === type.id;
-                const balance = currentBalances.find((b: any) => b.request_type_id === type.id);
-                const remaining = balance?.remaining_days ?? type.max_days;
-                
-                return (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() => setSelectedType(type)}
-                    className={cn(
-                      "p-4 rounded-xl border-2 transition-all text-right",
-                      isSelected 
-                        ? "border-accent bg-accent/10" 
-                        : "border-border hover:border-accent/50"
-                    )}
-                  >
-                    <div className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center mb-2`}>
-                      <Icon className="w-5 h-5 text-white" />
                     </div>
-                    <h4 className="font-semibold text-sm text-foreground">{type.name_ar}</h4>
-                    {type.deducts_from_balance && (isAdmin ? selectedEmployee : true) && remaining !== null && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        المتبقي: {remaining} يوم
-                      </p>
-                    )}
-                  </button>
-                );
-              })}
+                    <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+                      <Label className="text-right font-semibold">المسمى الوظيفي</Label>
+                      <div className="bg-background border rounded-md px-3 py-2 text-sm">
+                        {currentEmployee?.job_role || "---"}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
 
-          {selectedType && (
-            <>
-              {/* التواريخ */}
-              {(selectedType.deducts_from_balance || selectedType.name === 'permission') && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>تاريخ البداية</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-right font-normal",
-                            !startDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="ml-2 h-4 w-4" />
-                          {startDate ? format(startDate, "PPP", { locale: ar }) : "اختر التاريخ"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={startDate}
-                          onSelect={setStartDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>تاريخ النهاية</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-right font-normal",
-                            !endDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="ml-2 h-4 w-4" />
-                          {endDate ? format(endDate, "PPP", { locale: ar }) : "اختر التاريخ"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={endDate}
-                          onSelect={setEndDate}
-                          disabled={(date) => startDate ? date < startDate : false}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-              )}
-
-              {/* عدد الأيام */}
-              {daysCount > 0 && (
-                <div className="bg-accent/10 rounded-lg p-3 text-center">
-                  <span className="text-sm text-muted-foreground">مدة الإجازة: </span>
-                  <span className="font-bold text-accent">{daysCount} يوم</span>
-                </div>
-              )}
-
-              {/* السبب */}
-              <div className="space-y-2">
-                <Label>السبب</Label>
-                <Textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="اكتب سبب الطلب..."
-                  rows={3}
-                />
+            {/* القسم الثاني: نوع الطلب */}
+            <div className="bg-muted/30 rounded-xl p-5 border">
+              <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2 border-b pb-3">
+                <FileText className="w-5 h-5 text-primary" />
+                نوع الطلب
+              </h3>
+              
+              <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
+                <Label className="text-right font-semibold pt-2">اختر النوع <span className="text-destructive">*</span></Label>
+                <Select 
+                  value={selectedType?.id || ""} 
+                  onValueChange={(val) => {
+                    const type = requestTypes.find(t => t.id === val);
+                    setSelectedType(type);
+                  }}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="اختر نوع الطلب..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {requestTypes.map((type) => {
+                      const Icon = getIcon(type.icon);
+                      const balance = currentBalances.find((b: any) => b.request_type_id === type.id);
+                      const remaining = balance?.remaining_days ?? type.max_days;
+                      
+                      return (
+                        <SelectItem key={type.id} value={type.id}>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-6 h-6 rounded ${type.color} flex items-center justify-center`}>
+                              <Icon className="w-3 h-3 text-white" />
+                            </div>
+                            <span>{type.name_ar}</span>
+                            {type.deducts_from_balance && remaining !== null && (
+                              <span className="text-xs text-muted-foreground">(المتبقي: {remaining} يوم)</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
 
-              {/* ملاحظات */}
-              <div className="space-y-2">
-                <Label>ملاحظات إضافية (اختياري)</Label>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="أي ملاحظات إضافية..."
-                  rows={2}
-                />
-              </div>
+            {selectedType && (
+              <>
+                {/* القسم الثالث: تفاصيل الطلب */}
+                <div className="bg-muted/30 rounded-xl p-5 border">
+                  <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2 border-b pb-3">
+                    <CalendarIcon className="w-5 h-5 text-primary" />
+                    تفاصيل الطلب
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {/* التواريخ */}
+                    {(selectedType.deducts_from_balance || selectedType.name === 'permission') && (
+                      <>
+                        <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+                          <Label className="text-right font-semibold">تاريخ البداية <span className="text-destructive">*</span></Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-right font-normal bg-background",
+                                  !startDate && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="ml-2 h-4 w-4" />
+                                {startDate ? format(startDate, "PPP", { locale: ar }) : "اختر التاريخ"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={startDate}
+                                onSelect={setStartDate}
+                                initialFocus
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
 
-              {/* المرفقات */}
-              <div className="space-y-2">
-                <Label>
-                  المرفقات 
-                  {selectedType.requires_attachment && (
-                    <span className="text-destructive mr-1">*</span>
-                  )}
-                </Label>
-                <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                  <input
-                    type="file"
-                    id="attachment"
-                    className="hidden"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                  />
-                  <label 
-                    htmlFor="attachment"
-                    className="cursor-pointer flex flex-col items-center gap-2"
-                  >
-                    {attachment ? (
-                      <>
-                        <FileText className="w-8 h-8 text-accent" />
-                        <span className="text-sm text-foreground">{attachment.name}</span>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setAttachment(null);
-                          }}
-                        >
-                          إزالة
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-8 h-8 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          اضغط لرفع ملف أو اسحبه هنا
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          PDF, DOC, JPG, PNG (حد أقصى 5MB)
-                        </span>
+                        <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+                          <Label className="text-right font-semibold">تاريخ النهاية</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-right font-normal bg-background",
+                                  !endDate && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="ml-2 h-4 w-4" />
+                                {endDate ? format(endDate, "PPP", { locale: ar }) : "اختر التاريخ"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={endDate}
+                                onSelect={setEndDate}
+                                disabled={(date) => startDate ? date < startDate : false}
+                                initialFocus
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+
+                        {/* عدد الأيام */}
+                        {daysCount > 0 && (
+                          <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
+                            <Label className="text-right font-semibold">مدة الإجازة</Label>
+                            <div className="bg-accent/10 rounded-lg px-4 py-2 text-center inline-block">
+                              <span className="font-bold text-accent">{daysCount} يوم</span>
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
-                  </label>
-                </div>
-              </div>
-            </>
-          )}
 
-          {/* أزرار الإجراءات */}
-          <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              إلغاء
-            </Button>
-            <Button
-              type="submit"
-              disabled={!selectedType || (isAdmin && !selectedEmployee) || createRequestMutation.isPending}
-              className="bg-gradient-to-r from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90"
-            >
-              {createRequestMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                  جاري الإرسال...
-                </>
-              ) : (
-                isAdmin ? "إنشاء الطلب" : "تقديم الطلب"
-              )}
-            </Button>
-          </div>
-        </form>
+                    {/* السبب */}
+                    <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
+                      <Label className="text-right font-semibold pt-2">السبب</Label>
+                      <Textarea
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="اكتب سبب الطلب..."
+                        rows={3}
+                        className="bg-background"
+                      />
+                    </div>
+
+                    {/* ملاحظات */}
+                    <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
+                      <Label className="text-right font-semibold pt-2">ملاحظات</Label>
+                      <Textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="أي ملاحظات إضافية..."
+                        rows={2}
+                        className="bg-background"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* القسم الرابع: المرفقات */}
+                <div className="bg-muted/30 rounded-xl p-5 border">
+                  <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2 border-b pb-3">
+                    <Upload className="w-5 h-5 text-primary" />
+                    المرفقات
+                    {selectedType.requires_attachment && (
+                      <span className="text-destructive text-sm">(مطلوب)</span>
+                    )}
+                  </h3>
+                  
+                  <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
+                    <Label className="text-right font-semibold pt-2">رفع ملف</Label>
+                    <div className="border-2 border-dashed rounded-lg p-4 text-center bg-background">
+                      <input
+                        type="file"
+                        id="attachment"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                      />
+                      <label 
+                        htmlFor="attachment"
+                        className="cursor-pointer flex flex-col items-center gap-2"
+                      >
+                        {attachment ? (
+                          <>
+                            <FileText className="w-8 h-8 text-accent" />
+                            <span className="text-sm text-foreground">{attachment.name}</span>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setAttachment(null);
+                              }}
+                            >
+                              إزالة
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-8 h-8 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              اضغط لرفع ملف أو اسحبه هنا
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              PDF, DOC, JPG, PNG (حد أقصى 5MB)
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* أزرار الإجراءات */}
+            <div className="flex gap-3 justify-end pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                type="submit"
+                disabled={!selectedType || (isAdmin && !selectedEmployee) || createRequestMutation.isPending}
+                className="bg-gradient-to-r from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90"
+              >
+                {createRequestMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    جاري الإرسال...
+                  </>
+                ) : (
+                  isAdmin ? "إنشاء الطلب" : "تقديم الطلب"
+                )}
+              </Button>
+            </div>
+          </form>
 
           {/* معاينة النموذج الرسمي */}
           {showPreview && (
