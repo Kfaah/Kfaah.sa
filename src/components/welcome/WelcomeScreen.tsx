@@ -4,14 +4,6 @@ import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogo from "@/assets/atef-logo-icon.jpg";
 
-// استيراد الخلفيات الافتراضية
-import bg1 from "@/assets/welcome-bg-1.jpg";
-import bg2 from "@/assets/welcome-bg-2.jpg";
-import bg3 from "@/assets/welcome-bg-3.jpg";
-import bg4 from "@/assets/welcome-bg-4.jpg";
-import bg5 from "@/assets/welcome-bg-5.jpg";
-import bg6 from "@/assets/welcome-bg-6.jpg";
-
 // العبارات الافتراضية (تستخدم إذا لم توجد عبارات في قاعدة البيانات)
 const defaultQuotes = [
   { quote: "كل يوم هو فرصة جديدة للتميز والإبداع", emoji: "🌟" },
@@ -19,35 +11,16 @@ const defaultQuotes = [
   { quote: "أنت تصنع الفرق في حياة الآخرين", emoji: "💫" },
   { quote: "الإيجابية هي مفتاح النجاح والسعادة", emoji: "☀️" },
   { quote: "كن مصدر إلهام لمن حولك", emoji: "✨" },
-  { quote: "عملك له أثر عظيم في المجتمع", emoji: "🌈" },
-  { quote: "الإبداع يبدأ من الشغف بما تفعل", emoji: "🎯" },
-  { quote: "معاً نبني مستقبلاً أفضل للأيتام", emoji: "🤝" },
-  { quote: "كل جهد صغير يصنع تغييراً كبيراً", emoji: "💪" },
-  { quote: "ابتسامتك تنير يوم الآخرين", emoji: "😊" },
-  { quote: "النجاح ليس وجهة بل رحلة ممتعة", emoji: "🏆" },
-  { quote: "أنت جزء من عائلة عطف الكبيرة", emoji: "❤️" },
-  { quote: "اجعل يومك مليئاً بالإنجازات", emoji: "📈" },
-  { quote: "طاقتك الإيجابية معدية، انشرها!", emoji: "🌻" },
-  { quote: "كل يوم جديد يحمل آمالاً جديدة", emoji: "🌅" },
-  { quote: "أنت قادر على تحقيق المستحيل", emoji: "⭐" },
-  { quote: "العطاء يجعل الحياة أجمل", emoji: "🎁" },
-  { quote: "ثق بنفسك، فأنت أقوى مما تظن", emoji: "💎" },
-  { quote: "كل تحدٍ يخفي فرصة عظيمة", emoji: "🔥" },
-  { quote: "السعادة تكمن في خدمة الآخرين", emoji: "💝" },
-  { quote: "أنت تستحق كل النجاح والتوفيق", emoji: "🌺" },
-  { quote: "الأمل هو نور يضيء أحلك الليالي", emoji: "🕯️" },
-  { quote: "كل لحظة هي بداية جديدة", emoji: "🌱" },
-  { quote: "أنت تمتلك قوة التغيير", emoji: "⚡" },
-  { quote: "العمل الجماعي يصنع المعجزات", emoji: "👥" },
-  { quote: "الصبر والمثابرة طريق النجاح", emoji: "🎖️" },
-  { quote: "أنت نعمة لكل من حولك", emoji: "🌸" },
-  { quote: "الإحسان يعود عليك أضعافاً", emoji: "♻️" },
-  { quote: "كل يوم فرصة لتكون أفضل نسخة منك", emoji: "🦋" },
-  { quote: "معاً نصنع المستحيل ممكناً", emoji: "🏅" },
 ];
 
 // الخلفيات الافتراضية
-const defaultBackgrounds = [bg1, bg2, bg3, bg4, bg5, bg6];
+const defaultBackgrounds = [
+  "/welcome-backgrounds/bg-01.jpg",
+  "/welcome-backgrounds/bg-02.jpg",
+  "/welcome-backgrounds/bg-03.jpg",
+  "/welcome-backgrounds/bg-04.jpg",
+  "/welcome-backgrounds/bg-05.jpg",
+];
 
 interface Quote {
   quote: string;
