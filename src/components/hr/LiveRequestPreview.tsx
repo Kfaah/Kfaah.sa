@@ -89,7 +89,7 @@ export function LiveRequestPreview({
           dir="rtl"
         >
           {/* رقم الطلب والتاريخ */}
-          <div className="flex justify-between items-center mx-6 text-[7px]">
+          <div className="flex justify-between items-center mx-6 text-[10px]">
             <div className="text-right">
               <span className="text-muted-foreground/70">رقم الطلب: </span>
               <span className="font-bold text-foreground">{requestNumber || "HR-XXXX-XXXX"}</span>
@@ -101,74 +101,74 @@ export function LiveRequestPreview({
           </div>
 
           {/* عنوان النموذج */}
-          <div className="mt-2 text-center">
-            <h2 className="text-[12px] font-bold text-foreground tracking-wide">
+          <div className="mt-3 text-center">
+            <h2 className="text-[15px] font-bold text-foreground tracking-wide">
               نموذج {requestTypeName || "طلب"}
             </h2>
-            <div className="w-20 h-0.5 bg-primary/50 mx-auto mt-1 rounded-full" />
+            <div className="w-24 h-0.5 bg-primary/50 mx-auto mt-1.5 rounded-full" />
           </div>
 
           {/* جدول البيانات */}
-          <div className="mt-3 mx-4 flex-1" style={{ fontSize: '8px' }}>
+          <div className="mt-4 mx-4 flex-1" style={{ fontSize: '11px' }}>
             <table className="w-full border-collapse" style={{ borderSpacing: 0 }}>
               <tbody>
                 {/* بيانات مقدم الطلب */}
                 <tr>
-                  <td colSpan={4} className="bg-primary/10 font-bold text-[9px] py-1.5 px-3 border border-primary/20 text-center text-primary">
+                  <td colSpan={4} className="bg-primary/10 font-bold text-[12px] py-2 px-3 border border-primary/20 text-center text-primary">
                     بيانات مقدم الطلب
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 w-[22%] text-[8px]">اسم الموظف</td>
-                  <td className={`py-1.5 px-2 border border-border/40 w-[28%] text-[8px] ${employeeName ? 'font-medium' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 w-[22%] text-[11px]">اسم الموظف</td>
+                  <td className={`py-2 px-3 border border-border/40 w-[28%] text-[11px] ${employeeName ? 'font-medium' : 'text-muted-foreground'}`}>
                     {employeeName || "---"}
                   </td>
-                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 w-[22%] text-[8px]">المسمى الوظيفي</td>
-                  <td className={`py-1.5 px-2 border border-border/40 w-[28%] text-[8px] ${jobRole ? 'font-medium' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 w-[22%] text-[11px]">المسمى الوظيفي</td>
+                  <td className={`py-2 px-3 border border-border/40 w-[28%] text-[11px] ${jobRole ? 'font-medium' : 'text-muted-foreground'}`}>
                     {jobRole || "---"}
                   </td>
                 </tr>
 
                 {/* تفاصيل الطلب */}
                 <tr>
-                  <td colSpan={4} className="bg-primary/10 font-bold text-[9px] py-1.5 px-3 border border-primary/20 text-center text-primary">
+                  <td colSpan={4} className="bg-primary/10 font-bold text-[12px] py-2 px-3 border border-primary/20 text-center text-primary">
                     تفاصيل الطلب
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">نوع الطلب</td>
-                  <td colSpan={3} className={`py-1.5 px-2 border border-border/40 text-[8px] ${requestTypeName ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 text-[11px]">نوع الطلب</td>
+                  <td colSpan={3} className={`py-2 px-3 border border-border/40 text-[11px] ${requestTypeName ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
                     {requestTypeName || "---"}
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">من تاريخ</td>
-                  <td className={`py-1.5 px-2 border border-border/40 text-[8px] ${startDate ? 'font-medium' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 text-[11px]">من تاريخ</td>
+                  <td className={`py-2 px-3 border border-border/40 text-[11px] ${startDate ? 'font-medium' : 'text-muted-foreground'}`}>
                     {startDate ? formatArabicDate(startDate) : "---"}
                   </td>
-                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">إلى تاريخ</td>
-                  <td className={`py-1.5 px-2 border border-border/40 text-[8px] ${endDate ? 'font-medium' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 text-[11px]">إلى تاريخ</td>
+                  <td className={`py-2 px-3 border border-border/40 text-[11px] ${endDate ? 'font-medium' : 'text-muted-foreground'}`}>
                     {endDate ? formatArabicDate(endDate) : "---"}
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">عدد الأيام</td>
-                  <td colSpan={3} className="py-1.5 px-2 border border-border/40 text-[8px]">
-                    <span className={daysCount > 0 ? 'bg-primary/15 text-primary font-bold px-2 py-0.5 rounded text-[9px]' : 'text-muted-foreground'}>
+                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 text-[11px]">عدد الأيام</td>
+                  <td colSpan={3} className="py-2 px-3 border border-border/40 text-[11px]">
+                    <span className={daysCount > 0 ? 'bg-primary/15 text-primary font-bold px-3 py-1 rounded text-[12px]' : 'text-muted-foreground'}>
                       {daysCount > 0 ? `${daysCount} يوم` : "---"}
                     </span>
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 align-top text-[8px]">السبب</td>
-                  <td colSpan={3} className={`py-1.5 px-2 border border-border/40 text-[8px] ${reason ? 'font-medium' : 'text-muted-foreground italic'}`}>
+                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 align-top text-[11px]">السبب</td>
+                  <td colSpan={3} className={`py-2 px-3 border border-border/40 text-[11px] ${reason ? 'font-medium' : 'text-muted-foreground italic'}`}>
                     {reason || "لم يتم تحديد السبب"}
                   </td>
                 </tr>
                 {notes && (
                   <tr>
-                    <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 align-top text-[8px]">ملاحظات</td>
-                    <td colSpan={3} className="py-1.5 px-2 border border-border/40 text-[8px] font-medium">
+                    <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 align-top text-[11px]">ملاحظات</td>
+                    <td colSpan={3} className="py-2 px-3 border border-border/40 text-[11px] font-medium">
                       {notes}
                     </td>
                   </tr>
@@ -176,86 +176,86 @@ export function LiveRequestPreview({
 
                 {/* التوقيعات */}
                 <tr>
-                  <td colSpan={4} className="bg-primary/10 font-bold text-[9px] py-1.5 px-3 border border-primary/20 text-center text-primary">
+                  <td colSpan={4} className="bg-primary/10 font-bold text-[12px] py-2 px-3 border border-primary/20 text-center text-primary">
                     التوقيعات والاعتماد
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2 px-2 border border-border/40 text-center align-top">
-                    <div className="font-bold text-[7px] mb-1 text-foreground">مقدم الطلب</div>
-                    <div className="text-[7px] mb-1 font-medium">{employeeName || "---"}</div>
+                  <td className="py-3 px-2 border border-border/40 text-center align-top">
+                    <div className="font-bold text-[10px] mb-1.5 text-foreground">مقدم الطلب</div>
+                    <div className="text-[10px] mb-1.5 font-medium">{employeeName || "---"}</div>
                     {signatureUrl ? (
                       <img 
                         src={signatureUrl} 
                         alt="توقيع الموظف" 
-                        className="h-6 mx-auto object-contain"
+                        className="h-8 mx-auto object-contain"
                       />
                     ) : (
-                      <div className="h-6 border-b-2 border-dashed border-muted-foreground/30 mx-2 mt-1" />
+                      <div className="h-8 border-b-2 border-dashed border-muted-foreground/30 mx-2 mt-1" />
                     )}
                   </td>
-                  <td className="py-2 px-2 border border-border/40 text-center align-top bg-amber-50/50">
-                    <div className="font-bold text-[7px] mb-1 text-amber-700">الموظف البديل</div>
-                    <div className={`text-[7px] mb-1 ${substituteEmployee ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                  <td className="py-3 px-2 border border-border/40 text-center align-top bg-amber-50/50">
+                    <div className="font-bold text-[10px] mb-1.5 text-amber-700">الموظف البديل</div>
+                    <div className={`text-[10px] mb-1.5 ${substituteEmployee ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                       {substituteEmployee || ".................."}
                     </div>
                     {substituteApproved && substituteSignatureUrl ? (
                       <img 
                         src={substituteSignatureUrl} 
                         alt="توقيع الموظف البديل" 
-                        className="h-6 mx-auto object-contain"
+                        className="h-8 mx-auto object-contain"
                       />
                     ) : substituteEmployee ? (
-                      <div className="h-6 flex items-center justify-center">
-                        <span className="text-[6px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">في انتظار الموافقة</span>
+                      <div className="h-8 flex items-center justify-center">
+                        <span className="text-[9px] text-amber-600 bg-amber-100 px-2 py-1 rounded">في انتظار الموافقة</span>
                       </div>
                     ) : (
-                      <div className="h-6 border-b-2 border-dashed border-amber-300 mx-2 mt-1" />
+                      <div className="h-8 border-b-2 border-dashed border-amber-300 mx-2 mt-1" />
                     )}
                   </td>
-                  <td className="py-2 px-2 border border-border/40 text-center align-top bg-blue-50/50">
-                    <div className="font-bold text-[7px] mb-1 text-blue-700">المدير المباشر</div>
-                    <div className={`text-[7px] mb-1 ${directManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                  <td className="py-3 px-2 border border-border/40 text-center align-top bg-blue-50/50">
+                    <div className="font-bold text-[10px] mb-1.5 text-blue-700">المدير المباشر</div>
+                    <div className={`text-[10px] mb-1.5 ${directManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                       {directManager || ".................."}
                     </div>
                     {managerApproved && directManagerSignatureUrl ? (
                       <img 
                         src={directManagerSignatureUrl} 
                         alt="توقيع المدير المباشر" 
-                        className="h-6 mx-auto object-contain"
+                        className="h-8 mx-auto object-contain"
                       />
                     ) : directManager ? (
-                      <div className="h-6 flex items-center justify-center">
-                        <span className="text-[6px] text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">في انتظار الموافقة</span>
+                      <div className="h-8 flex items-center justify-center">
+                        <span className="text-[9px] text-blue-600 bg-blue-100 px-2 py-1 rounded">في انتظار الموافقة</span>
                       </div>
                     ) : (
-                      <div className="h-6 border-b-2 border-dashed border-blue-300 mx-2 mt-1" />
+                      <div className="h-8 border-b-2 border-dashed border-blue-300 mx-2 mt-1" />
                     )}
                   </td>
-                  <td className={`py-2 px-2 border border-border/40 text-center align-top ${isApproved ? 'bg-green-50/50' : 'bg-accent/5'}`}>
-                    <div className={`font-bold text-[7px] mb-1 ${isApproved ? 'text-green-700' : 'text-accent'}`}>
+                  <td className={`py-3 px-2 border border-border/40 text-center align-top ${isApproved ? 'bg-green-50/50' : 'bg-accent/5'}`}>
+                    <div className={`font-bold text-[10px] mb-1.5 ${isApproved ? 'text-green-700' : 'text-accent'}`}>
                       {isApproved ? 'تمت الموافقة' : 'اعتماد الإدارة'}
                     </div>
                     {isApproved && approverName ? (
                       <>
-                        <div className="text-[7px] mb-1 font-medium">{approverName}</div>
+                        <div className="text-[10px] mb-1.5 font-medium">{approverName}</div>
                         {approverSignatureUrl ? (
                           <img 
                             src={approverSignatureUrl} 
                             alt="توقيع المعتمد" 
-                            className="h-6 mx-auto object-contain"
+                            className="h-8 mx-auto object-contain"
                           />
                         ) : (
-                          <div className="h-6 border-b-2 border-dashed border-green-300 mx-2 mt-1" />
+                          <div className="h-8 border-b-2 border-dashed border-green-300 mx-2 mt-1" />
                         )}
                       </>
                     ) : (
                       <>
-                        <div className="flex items-center justify-center gap-1 mt-1 mb-0.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                          <span className="text-[6px] text-muted-foreground">في الانتظار</span>
+                        <div className="flex items-center justify-center gap-1 mt-1.5 mb-1">
+                          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                          <span className="text-[9px] text-muted-foreground">في الانتظار</span>
                         </div>
-                        <div className="h-6 border-b-2 border-dashed border-accent/30 mx-2 mt-1" />
+                        <div className="h-8 border-b-2 border-dashed border-accent/30 mx-2 mt-1" />
                       </>
                     )}
                   </td>
@@ -266,8 +266,8 @@ export function LiveRequestPreview({
         </div>
 
         {/* مؤشر المعاينة */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-gradient-to-r from-primary to-accent text-white text-[7px] px-2.5 py-1 rounded-full font-medium shadow-lg z-20">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-gradient-to-r from-primary to-accent text-white text-[9px] px-3 py-1.5 rounded-full font-medium shadow-lg z-20">
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
           معاينة حية
         </div>
       </div>
