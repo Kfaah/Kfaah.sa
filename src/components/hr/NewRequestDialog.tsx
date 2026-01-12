@@ -31,12 +31,15 @@ import {
   Clock,
   DollarSign,
   Award,
-  User
+  User,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { LiveRequestPreview } from "./LiveRequestPreview";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar: CalendarIcon,
@@ -83,6 +86,39 @@ export function NewRequestDialog({
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [showPreview, setShowPreview] = useState(true);
+
+  // جلب بيانات الموظف الحالي
+  const { data: currentEmployee } = useQuery({
+    queryKey: ["current-employee-profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", user.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  // جلب بيانات الموظف المختار (للمدير)
+  const { data: selectedEmployeeData } = useQuery({
+    queryKey: ["selected-employee-profile", selectedEmployee],
+    queryFn: async () => {
+      if (!selectedEmployee) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", selectedEmployee)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin && !!selectedEmployee,
+  });
 
   // جلب رصيد الموظف المختار (للمدير)
   const { data: employeeBalances = [] } = useQuery({
@@ -248,16 +284,41 @@ export function NewRequestDialog({
     return Icon;
   };
 
+  // بيانات المعاينة
+  const previewEmployeeData = isAdmin ? selectedEmployeeData : currentEmployee;
+  const previewRequestNumber = `HR-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-XXXX`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {isAdmin ? "إنشاء طلب لموظف" : "طلب جديد"}
+          <DialogTitle className="flex items-center justify-between">
+            <span>{isAdmin ? "إنشاء طلب لموظف" : "طلب جديد"}</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+              className="gap-2"
+            >
+              {showPreview ? (
+                <>
+                  <EyeOff className="w-4 h-4" />
+                  إخفاء المعاينة
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4" />
+                  إظهار المعاينة
+                </>
+              )}
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className={cn("grid gap-6", showPreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1")}>
+          {/* نموذج الإدخال */}
+          <form onSubmit={handleSubmit} className="space-y-6">
           {/* اختيار الموظف (للمدير فقط) */}
           {isAdmin && (
             <div className="space-y-3">
@@ -492,6 +553,30 @@ export function NewRequestDialog({
             </Button>
           </div>
         </form>
+
+          {/* معاينة النموذج الرسمي */}
+          {showPreview && (
+            <div className="hidden lg:block">
+              <div className="sticky top-0">
+                <Label className="mb-3 block text-center text-muted-foreground">
+                  المعاينة الحية للنموذج الرسمي
+                </Label>
+                <LiveRequestPreview
+                  employeeName={previewEmployeeData?.full_name || ""}
+                  jobRole={previewEmployeeData?.job_role || ""}
+                  signatureUrl={previewEmployeeData?.signature_url}
+                  requestTypeName={selectedType?.name_ar || ""}
+                  startDate={startDate}
+                  endDate={endDate}
+                  daysCount={daysCount}
+                  reason={reason}
+                  notes={notes}
+                  requestNumber={previewRequestNumber}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
