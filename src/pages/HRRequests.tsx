@@ -20,7 +20,9 @@ import {
   Heart,
   AlertTriangle,
   DollarSign,
-  Award
+  Award,
+  BarChart3,
+  ClipboardList
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -29,6 +31,7 @@ import { NewRequestDialog } from "@/components/hr/NewRequestDialog";
 import { RequestDetailsDialog } from "@/components/hr/RequestDetailsDialog";
 import { AdminRequestsPanel } from "@/components/hr/AdminRequestsPanel";
 import { LeaveBalanceCard } from "@/components/hr/LeaveBalanceCard";
+import { HRStatisticsPanel } from "@/components/hr/HRStatisticsPanel";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar,
@@ -52,6 +55,7 @@ export default function HRRequests() {
   const queryClient = useQueryClient();
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [adminActiveTab, setAdminActiveTab] = useState("requests");
 
   const isAdmin = user.role === "مدير النظام";
 
@@ -147,7 +151,7 @@ export default function HRRequests() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">إدارة طلبات الموارد البشرية</h1>
-              <p className="text-muted-foreground">مراجعة واعتماد طلبات الموظفين</p>
+              <p className="text-muted-foreground">مراجعة واعتماد طلبات الموظفين والإحصائيات</p>
             </div>
             <Button 
               onClick={() => setIsNewRequestOpen(true)}
@@ -158,8 +162,27 @@ export default function HRRequests() {
             </Button>
           </div>
 
-          {/* لوحة إدارة الطلبات */}
-          <AdminRequestsPanel requestTypes={requestTypes} />
+          {/* Tabs للمدير */}
+          <Tabs value={adminActiveTab} onValueChange={setAdminActiveTab} className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+              <TabsTrigger value="requests" className="gap-2">
+                <ClipboardList className="w-4 h-4" />
+                الطلبات
+              </TabsTrigger>
+              <TabsTrigger value="statistics" className="gap-2">
+                <BarChart3 className="w-4 h-4" />
+                التقارير والإحصائيات
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="requests">
+              <AdminRequestsPanel requestTypes={requestTypes} />
+            </TabsContent>
+
+            <TabsContent value="statistics">
+              <HRStatisticsPanel />
+            </TabsContent>
+          </Tabs>
 
           {/* Dialog إنشاء طلب لموظف */}
           <NewRequestDialog
