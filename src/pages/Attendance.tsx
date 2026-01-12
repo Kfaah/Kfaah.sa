@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Clock, LogIn, LogOut, Check, ListTodo, Bell, Calendar, History, Users, TrendingUp, FileText, Filter, BarChart3 } from "lucide-react";
+import { Clock, LogIn, LogOut, Check, ListTodo, Bell, Calendar as CalendarIcon, History, Users, TrendingUp, FileText, Filter, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +14,7 @@ import { useUser } from "@/contexts/UserContext";
 import { cn, formatNumberPlain, formatDate } from "@/lib/utils";
 import { DailyTasksSelector } from "@/components/tasks/DailyTasksSelector";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { format, startOfMonth, endOfMonth, differenceInMinutes } from "date-fns";
+import { format, startOfMonth, endOfMonth, differenceInMinutes, parse } from "date-fns";
 import { ar } from "date-fns/locale";
 
 interface Task {
@@ -511,16 +513,13 @@ export default function Attendance() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-                <BarChart3 className="w-7 h-7 text-accent" />
-                تقارير الحضور والانصراف
+                <Clock className="w-7 h-7 text-accent" />
+                الحضور والانصراف
               </h1>
               <p className="text-muted-foreground mt-1">
-                مراقبة ومتابعة سجلات حضور الموظفين
+                {format(new Date(), "EEEE، d MMMM yyyy", { locale: ar })}
               </p>
             </div>
-            <Badge className="bg-accent/10 text-accent border-accent/20">
-              {format(new Date(), "EEEE، d MMMM yyyy", { locale: ar })}
-            </Badge>
           </div>
 
           {/* Stats Cards */}
@@ -586,16 +585,45 @@ export default function Attendance() {
           <Card className="border-border/50 bg-white shadow-sm">
             <CardContent className="p-4">
               <div className="flex flex-wrap gap-3 items-center">
-                {/* Date Filter */}
+                {/* Date Filter with Calendar Picker */}
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm font-medium text-muted-foreground">التاريخ:</span>
-                  <input
-                    type="date"
-                    value={adminDateFilter}
-                    onChange={(e) => setAdminDateFilter(e.target.value)}
-                    className="border rounded-md px-3 py-2 text-sm"
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-[180px] justify-start text-right font-normal gap-2"
+                      >
+                        <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                        {adminDateFilter ? (
+                          <span className="flex items-center gap-1" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            <span>{format(parse(adminDateFilter, 'yyyy-MM-dd', new Date()), 'MMMM', { locale: ar })}</span>
+                            <span className="font-bold text-lg">{format(parse(adminDateFilter, 'yyyy-MM-dd', new Date()), 'd')}</span>
+                            <span>{format(parse(adminDateFilter, 'yyyy-MM-dd', new Date()), 'yyyy')}</span>
+                          </span>
+                        ) : (
+                          <span>اختر التاريخ</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={adminDateFilter ? parse(adminDateFilter, 'yyyy-MM-dd', new Date()) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            setAdminDateFilter(`${year}-${month}-${day}`);
+                          }
+                        }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {/* Employee Filter */}
