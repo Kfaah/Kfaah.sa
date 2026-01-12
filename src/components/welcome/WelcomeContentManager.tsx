@@ -22,7 +22,9 @@ import {
   Trash2, 
   Upload,
   Loader2,
-  Settings2
+  Settings2,
+  Eye,
+  X
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -48,6 +50,10 @@ export function WelcomeContentManager() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  
+  // حالات المعاينة المباشرة
+  const [previewBg, setPreviewBg] = useState<string | null>(null);
+  const [previewQuote, setPreviewQuote] = useState<Quote | null>(null);
   
   // New quote form
   const [newQuote, setNewQuote] = useState("");
@@ -233,18 +239,62 @@ export function WelcomeContentManager() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="gap-2"
-        >
-          <Settings2 className="h-4 w-4" />
-          إدارة شاشة الترحيب
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[85vh]" dir="rtl">
+    <>
+      {/* نافذة المعاينة المباشرة للخلفية */}
+      {previewBg && (
+        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl">
+            <img 
+              src={previewBg} 
+              alt="معاينة الخلفية"
+              className="w-full h-full object-cover"
+            />
+            <Button
+              variant="secondary"
+              size="icon"
+              className="absolute top-4 left-4 h-10 w-10 rounded-full"
+              onClick={() => setPreviewBg(null)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-6 py-3 rounded-full">
+              <p className="text-sm font-medium text-slate-700">اضغط للإغلاق</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة المعاينة المباشرة للعبارة */}
+      {previewQuote && (
+        <div className="fixed inset-0 z-[100] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center p-4" onClick={() => setPreviewQuote(null)}>
+          <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl px-12 py-10 shadow-2xl max-w-2xl">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 left-4 h-8 w-8 rounded-full"
+              onClick={() => setPreviewQuote(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <p className="text-3xl md:text-4xl font-medium text-slate-700 leading-relaxed text-center">
+              {previewQuote.emoji} {previewQuote.quote}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="gap-2"
+          >
+            <Settings2 className="h-4 w-4" />
+            إدارة شاشة الترحيب
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl max-h-[85vh]" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Settings2 className="h-5 w-5 text-primary" />
@@ -307,18 +357,34 @@ export function WelcomeContentManager() {
                       key={bg.id} 
                       className={`overflow-hidden transition-all ${!bg.is_active ? "opacity-50" : ""}`}
                     >
-                      <div className="relative aspect-video">
+                      <div className="relative aspect-video group">
                         <img 
                           src={bg.image_url} 
                           alt={bg.name || "خلفية"}
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        
+                        {/* زر المعاينة المباشرة */}
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute top-2 left-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => setPreviewBg(bg.image_url)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        
                         <div className="absolute bottom-2 right-2 left-2 flex items-center justify-between">
-                          <Switch
-                            checked={bg.is_active}
-                            onCheckedChange={() => toggleBackgroundActive(bg.id, bg.is_active)}
-                          />
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={bg.is_active}
+                              onCheckedChange={() => toggleBackgroundActive(bg.id, bg.is_active)}
+                            />
+                            <span className="text-xs text-white">
+                              {bg.is_active ? "مفعّل" : "معطّل"}
+                            </span>
+                          </div>
                           <Button
                             variant="destructive"
                             size="icon"
@@ -380,7 +446,7 @@ export function WelcomeContentManager() {
                   {quotes.map((quote, index) => (
                     <Card 
                       key={quote.id} 
-                      className={`transition-all ${!quote.is_active ? "opacity-50" : ""}`}
+                      className={`transition-all hover:shadow-md ${!quote.is_active ? "opacity-50" : ""}`}
                     >
                       <CardContent className="p-3 flex items-center gap-3">
                         <span className="text-2xl">{quote.emoji}</span>
@@ -389,6 +455,15 @@ export function WelcomeContentManager() {
                           <span className="text-xs text-muted-foreground">
                             #{index + 1}
                           </span>
+                          {/* زر المعاينة المباشرة */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-primary hover:text-primary"
+                            onClick={() => setPreviewQuote(quote)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Switch
                             checked={quote.is_active}
                             onCheckedChange={() => toggleQuoteActive(quote.id, quote.is_active)}
@@ -410,7 +485,8 @@ export function WelcomeContentManager() {
             </ScrollArea>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
