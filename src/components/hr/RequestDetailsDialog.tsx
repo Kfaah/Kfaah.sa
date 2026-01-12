@@ -99,6 +99,24 @@ export function RequestDetailsDialog({
           action: status,
           comments: reason || null,
         });
+
+      // إرسال إشعار للموظف
+      const notificationTitle = status === "approved" 
+        ? "تمت الموافقة على طلبك" 
+        : "تم رفض طلبك";
+      
+      const notificationMessage = status === "approved"
+        ? `تمت الموافقة على طلب ${request.hr_request_types?.name_ar} رقم ${request.request_number}`
+        : `تم رفض طلب ${request.hr_request_types?.name_ar} رقم ${request.request_number}${reason ? `. السبب: ${reason}` : ""}`;
+
+      await supabase
+        .from("notifications")
+        .insert({
+          user_id: request.user_id,
+          title: notificationTitle,
+          message: notificationMessage,
+          type: status === "approved" ? "success" : "error",
+        });
     },
     onSuccess: (_, { status }) => {
       toast.success(status === "approved" ? "تمت الموافقة على الطلب" : "تم رفض الطلب");
