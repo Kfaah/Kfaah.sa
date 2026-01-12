@@ -54,6 +54,16 @@ export function LiveRequestPreview({
           className="absolute inset-0 w-full h-full object-cover"
         />
         
+        {/* خط إرشادي شفاف لمنطقة الكليشة */}
+        <div 
+          className="absolute top-0 left-0 right-0 h-[200px] border-b-2 border-dashed border-red-400/50 bg-red-50/10 pointer-events-none z-10"
+          title="منطقة الكليشة - لا تضع محتوى هنا"
+        >
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-red-400/80 text-white text-[6px] px-2 py-0.5 rounded-full font-medium">
+            منطقة الكليشة
+          </div>
+        </div>
+        
         {/* محتوى النموذج */}
         <div
           className="absolute inset-0 px-3 pb-3 pt-[200px] flex flex-col"
