@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
+import { supabase } from "@/integrations/supabase/client";
 import atefLogo from "@/assets/atef-logo-icon.jpg";
 
-// استيراد الخلفيات
+// استيراد الخلفيات الافتراضية
 import bg1 from "@/assets/welcome-bg-1.jpg";
 import bg2 from "@/assets/welcome-bg-2.jpg";
 import bg3 from "@/assets/welcome-bg-3.jpg";
@@ -11,8 +12,8 @@ import bg4 from "@/assets/welcome-bg-4.jpg";
 import bg5 from "@/assets/welcome-bg-5.jpg";
 import bg6 from "@/assets/welcome-bg-6.jpg";
 
-// 30 عبارة إيجابية - واحدة لكل يوم من الشهر
-const positiveQuotes = [
+// العبارات الافتراضية (تستخدم إذا لم توجد عبارات في قاعدة البيانات)
+const defaultQuotes = [
   { quote: "كل يوم هو فرصة جديدة للتميز والإبداع", emoji: "🌟" },
   { quote: "نجاحك يبدأ بخطوة واحدة، فاخطُها اليوم بثقة", emoji: "🚀" },
   { quote: "أنت تصنع الفرق في حياة الآخرين", emoji: "💫" },
@@ -45,13 +46,24 @@ const positiveQuotes = [
   { quote: "معاً نصنع المستحيل ممكناً", emoji: "🏅" },
 ];
 
-// الخلفيات الهادئة
-const backgrounds = [bg1, bg2, bg3, bg4, bg5, bg6];
+// الخلفيات الافتراضية
+const defaultBackgrounds = [bg1, bg2, bg3, bg4, bg5, bg6];
+
+interface Quote {
+  quote: string;
+  emoji: string;
+}
 
 export function WelcomeScreen() {
   const { user } = useUser();
-  const [currentQuote, setCurrentQuote] = useState(positiveQuotes[0]);
-  const [currentBg, setCurrentBg] = useState(backgrounds[0]);
+  const [currentQuote, setCurrentQuote] = useState<Quote>(defaultQuotes[0]);
+  const [currentBg, setCurrentBg] = useState<string>(defaultBackgrounds[0]);
+  const [quotes, setQuotes] = useState<Quote[]>(defaultQuotes);
+  const [backgrounds, setBackgrounds] = useState<string[]>(defaultBackgrounds);
+
+  useEffect(() => {
+    fetchContent();
+  }, []);
 
   useEffect(() => {
     // اختيار عبارة وخلفية بناءً على اليوم
@@ -61,12 +73,40 @@ export function WelcomeScreen() {
       (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24)
     );
     
-    const quoteIndex = (dayOfMonth - 1) % positiveQuotes.length;
+    const quoteIndex = (dayOfMonth - 1) % quotes.length;
     const bgIndex = dayOfYear % backgrounds.length;
     
-    setCurrentQuote(positiveQuotes[quoteIndex]);
+    setCurrentQuote(quotes[quoteIndex]);
     setCurrentBg(backgrounds[bgIndex]);
-  }, []);
+  }, [quotes, backgrounds]);
+
+  const fetchContent = async () => {
+    try {
+      const [quotesRes, bgRes] = await Promise.all([
+        supabase
+          .from("welcome_quotes")
+          .select("quote, emoji")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true }),
+        supabase
+          .from("welcome_backgrounds")
+          .select("image_url")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true }),
+      ]);
+
+      if (quotesRes.data && quotesRes.data.length > 0) {
+        setQuotes(quotesRes.data);
+      }
+
+      if (bgRes.data && bgRes.data.length > 0) {
+        setBackgrounds(bgRes.data.map(bg => bg.image_url));
+      }
+    } catch (error) {
+      console.error("Error fetching welcome content:", error);
+      // استخدام الافتراضي في حالة الخطأ
+    }
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList, MessageSquare, ExternalLink, PenTool } from "lucide-react";
+import { Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList, MessageSquare, ExternalLink, PenTool, Image } from "lucide-react";
 import { MessagingSection } from "@/components/messaging/MessagingSection";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { SignatureUpload } from "@/components/hr/SignatureUpload";
 import { useQuery } from "@tanstack/react-query";
+import { WelcomeContentManager } from "@/components/welcome/WelcomeContentManager";
 
 const positiveMessages = [
   "أهلاً بك! يومك سعيد 🌟",
@@ -450,10 +451,13 @@ export default function Profile() {
             </div>
 
             {isAdmin && (
-              <Button onClick={handleEdit} size="lg" className="gap-2 mt-4">
-                <Pencil className="w-4 h-4" />
-                تعديل الملف الشخصي
-              </Button>
+              <div className="flex flex-wrap items-center gap-3 mt-4">
+                <Button onClick={handleEdit} size="lg" className="gap-2">
+                  <Pencil className="w-4 h-4" />
+                  تعديل الملف الشخصي
+                </Button>
+                <WelcomeContentManager />
+              </div>
             )}
           </div>
         </CardContent>
