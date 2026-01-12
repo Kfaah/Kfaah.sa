@@ -70,6 +70,7 @@ export default function HRRequests() {
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [adminActiveTab, setAdminActiveTab] = useState("requests");
+  const [employeeActiveTab, setEmployeeActiveTab] = useState("my-requests");
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectingRequest, setRejectingRequest] = useState<{ id: string; type: 'substitute' | 'manager' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -401,7 +402,6 @@ export default function HRRequests() {
   }
 
   // واجهة الموظف
-  const [employeeActiveTab, setEmployeeActiveTab] = useState("my-requests");
 
   // جلب بيانات مقدم الطلب لصفحة الموافقات المعلقة
   const getRequesterData = (request: any) => {
