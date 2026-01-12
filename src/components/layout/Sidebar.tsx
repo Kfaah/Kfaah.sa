@@ -438,10 +438,10 @@ export function Sidebar() {
               </div>
               <div className="flex-1 text-right">
                 <span className="text-sm font-semibold text-white">
-                  {(user.isEmployee || previewAsEmployee) ? "تسجيل الحضور والانصراف" : "الحضور والانصراف"}
+                  {isActuallyAdmin ? "الحضور والانصراف" : "تسجيل الحضور والانصراف"}
                 </span>
                 <p className="text-xs text-white/80">
-                  {(user.isEmployee || previewAsEmployee) ? "إدارة أوقات الحضور" : "تقارير الحضور"}
+                  {isActuallyAdmin ? "تقارير الحضور" : "إدارة أوقات الحضور"}
                 </p>
               </div>
               <ChevronLeft className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
