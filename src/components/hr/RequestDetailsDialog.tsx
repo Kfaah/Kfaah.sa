@@ -628,6 +628,7 @@ export function RequestDetailsDialog({
               approverSignatureUrl={approverData?.signature_url}
               isApproved={request.status === "approved"}
               headerOffset={request.hr_request_types?.header_offset ?? 35}
+              letterheadUrl={request.hr_request_types?.letterhead_url}
             />
           </div>
         )}

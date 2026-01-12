@@ -22,6 +22,7 @@ interface LiveRequestPreviewProps {
   approverSignatureUrl?: string | null;
   isApproved?: boolean;
   headerOffset?: number; // موضع المحتوى كنسبة مئوية (0-100)
+  letterheadUrl?: string | null; // صورة الخلفية/الورق الرسمي
 }
 
 export function LiveRequestPreview({
@@ -45,8 +46,10 @@ export function LiveRequestPreview({
   approverSignatureUrl,
   isApproved = false,
   headerOffset = 35, // 35% كقيمة افتراضية
+  letterheadUrl = "/letterhead-template.jpg",
 }: LiveRequestPreviewProps) {
   const offsetPercent = headerOffset; // النسبة المئوية المحفوظة من القالب
+  const backgroundUrl = letterheadUrl || "/letterhead-template.jpg";
 
   const formatArabicDate = (date: Date | undefined) => {
     if (!date) return "---";
@@ -71,7 +74,7 @@ export function LiveRequestPreview({
       >
         {/* خلفية القالب الرسمي */}
         <img
-          src="/letterhead-template.jpg"
+          src={backgroundUrl}
           alt="قالب الخطاب الرسمي"
           className="absolute inset-0 w-full h-full object-cover"
         />

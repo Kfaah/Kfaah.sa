@@ -730,6 +730,7 @@ export function NewRequestDialog({
                   directManagerSignatureUrl={directManagerData?.signature_url}
                   managerApproved={false}
                   headerOffset={selectedType?.header_offset ?? 35}
+                  letterheadUrl={selectedType?.letterhead_url}
                 />
               </div>
             </div>
