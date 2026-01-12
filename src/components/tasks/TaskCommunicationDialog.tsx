@@ -177,6 +177,14 @@ export function TaskCommunicationDialog({
         });
 
         setMessages(messagesWithNames);
+        
+        // تحديد إشعارات رسائل المهمة كمقروءة
+        await supabase
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("related_task_id", taskId)
+          .eq("type", "task_message")
+          .eq("is_read", false);
       } catch (error: any) {
         toast({ title: "خطأ", description: error.message, variant: "destructive" });
       } finally {

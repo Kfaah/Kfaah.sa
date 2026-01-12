@@ -324,6 +324,18 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
     setConversations((prev) =>
       prev.map((c) => (c.id === conv.id ? { ...c, unreadCount: 0 } : c))
     );
+    
+    // تحديد الإشعارات المتعلقة بالرسائل كمقروءة
+    try {
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", currentUserId)
+        .eq("type", "message")
+        .eq("is_read", false);
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+    }
   };
 
   // إنشاء محادثة جديدة
