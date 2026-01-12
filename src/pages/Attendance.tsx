@@ -593,13 +593,15 @@ export default function Attendance() {
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-[180px] justify-start text-right font-normal gap-2"
+                        className="justify-start text-right font-normal gap-0"
                       >
-                        <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                        <CalendarIcon className="w-4 h-4 text-muted-foreground ml-2" />
                         {adminDateFilter ? (
-                          <span className="flex items-center gap-1" style={{ fontFamily: 'Arial, sans-serif' }}>
-                            <span>{format(parse(adminDateFilter, 'yyyy-MM-dd', new Date()), 'MMMM', { locale: ar })}</span>
-                            <span className="font-bold text-lg">{format(parse(adminDateFilter, 'yyyy-MM-dd', new Date()), 'd')}</span>
+                          <span className="flex items-center" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            <span className="font-bold">{format(parse(adminDateFilter, 'yyyy-MM-dd', new Date()), 'd')}</span>
+                            <span className="mx-1">-</span>
+                            <span>{format(parse(adminDateFilter, 'yyyy-MM-dd', new Date()), 'M')}</span>
+                            <span className="mx-1">-</span>
                             <span>{format(parse(adminDateFilter, 'yyyy-MM-dd', new Date()), 'yyyy')}</span>
                           </span>
                         ) : (
