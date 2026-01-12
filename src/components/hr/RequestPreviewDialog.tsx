@@ -134,14 +134,91 @@ export function RequestPreviewDialog({
     enabled: !!request?.direct_manager_id && open,
   });
 
+  const isAdminView = viewMode === "admin";
+
+  // اعتماد/رفض الطلب (اعتماد الإدارة النهائي)
+  const adminUpdateMutation = useMutation({
+    mutationFn: async ({ status, reason }: { status: "approved" | "rejected"; reason?: string }) => {
+      const updates: any = {
+        status,
+        approved_by: user?.id,
+        approved_at: new Date().toISOString(),
+      };
+
+      if (reason) updates.rejection_reason = reason;
+
+      const { error } = await supabase
+        .from("hr_requests")
+        .update(updates)
+        .eq("id", request.id);
+
+      if (error) throw error;
+
+      // إذا تمت الموافقة وكان الطلب يخصم من الرصيد
+      if (
+        status === "approved" &&
+        request.hr_request_types?.deducts_from_balance &&
+        request.days_count
+      ) {
+        const { data: balance, error: balanceError } = await supabase
+          .from("hr_leave_balances")
+          .select("*")
+          .eq("user_id", request.user_id)
+          .eq("request_type_id", request.request_type_id)
+          .eq("year", new Date().getFullYear())
+          .single();
+
+        // إذا لم يوجد سجل رصيد، نتجاهل (قد لا يكون مُهيأ)
+        if (!balanceError && balance) {
+          const { error: updErr } = await supabase
+            .from("hr_leave_balances")
+            .update({ used_days: balance.used_days + request.days_count })
+            .eq("id", balance.id);
+          if (updErr) throw updErr;
+        }
+      }
+
+      // تسجيل الإجراء
+      await supabase.from("hr_request_approvals").insert({
+        request_id: request.id,
+        approver_id: user?.id,
+        action: status,
+        comments: reason || null,
+      });
+
+      // إرسال إشعار لصاحب الطلب
+      const notificationTitle = status === "approved" ? "تمت الموافقة على طلبك" : "تم رفض طلبك";
+
+      const notificationMessage =
+        status === "approved"
+          ? `تمت الموافقة على طلب ${request.hr_request_types?.name_ar} رقم ${request.request_number}`
+          : `تم رفض طلب ${request.hr_request_types?.name_ar} رقم ${request.request_number}$${reason ? `. السبب: ${reason}` : ""}`;
+
+      await supabase.from("notifications").insert({
+        user_id: request.user_id,
+        title: notificationTitle,
+        message: notificationMessage,
+        type: status === "approved" ? "success" : "error",
+      });
+    },
+    onSuccess: (_, vars) => {
+      toast.success(vars.status === "approved" ? "تم اعتماد الطلب" : "تم رفض الطلب");
+      queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["my-leave-balances"] });
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error("Error updating request:", error);
+      toast.error("حدث خطأ أثناء تحديث الطلب");
+    },
+  });
+
   // حذف الطلب (فقط لصاحب الطلب)
   const deleteRequestMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("hr_requests")
-        .delete()
-        .eq("id", request.id);
-      
+      const { error } = await supabase.from("hr_requests").delete().eq("id", request.id);
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -167,7 +244,13 @@ export function RequestPreviewDialog({
       toast.error("يرجى إدخال سبب الرفض");
       return;
     }
-    onReject?.(rejectReason);
+
+    if (isAdminView) {
+      adminUpdateMutation.mutate({ status: "rejected", reason: rejectReason });
+    } else {
+      onReject?.(rejectReason);
+    }
+
     setShowRejectForm(false);
     setRejectReason("");
   };
@@ -226,7 +309,7 @@ export function RequestPreviewDialog({
   const statusInfo = statusConfig[request.status] || statusConfig.pending;
   const StatusIcon = statusInfo.icon;
   const canDelete = viewMode === "owner" && request.status === "pending";
-  const showApprovalButtons = viewMode === "approver" && request.status === "pending";
+  const showApprovalButtons = (viewMode === "approver" || viewMode === "admin") && request.status === "pending";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -651,17 +734,28 @@ export function RequestPreviewDialog({
                     </Button>
                     <Button
                       size="lg"
-                      onClick={onApprove}
-                      disabled={isApproving}
+                      onClick={() => {
+                        if (isAdminView) {
+                          adminUpdateMutation.mutate({ status: "approved" });
+                        } else {
+                          onApprove?.();
+                        }
+                      }}
+                      disabled={isAdminView ? adminUpdateMutation.isPending : isApproving}
                       className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/25 px-8"
                     >
-                      {isApproving ? (
+                      {(isAdminView ? adminUpdateMutation.isPending : isApproving) ? (
                         <Loader2 className="w-5 h-5 ml-2 animate-spin" />
                       ) : (
                         <CheckCircle2 className="w-5 h-5 ml-2" />
                       )}
-                      {approvalType === "substitute" ? "موافقة كموظف بديل" : 
-                       approvalType === "manager" ? "موافقة كمدير مباشر" : "موافقة"}
+                      {isAdminView
+                        ? "اعتماد نهائي"
+                        : approvalType === "substitute"
+                          ? "موافقة كموظف بديل"
+                          : approvalType === "manager"
+                            ? "موافقة كمدير مباشر"
+                            : "موافقة"}
                       <ArrowLeft className="w-4 h-4 mr-2" />
                     </Button>
                   </div>
