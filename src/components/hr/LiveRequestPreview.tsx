@@ -1,5 +1,8 @@
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { useState, useRef, useCallback } from "react";
+import { GripVertical, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface LiveRequestPreviewProps {
   employeeName: string;
@@ -26,12 +29,57 @@ export function LiveRequestPreview({
   notes,
   requestNumber,
 }: LiveRequestPreviewProps) {
+  const [contentOffset, setContentOffset] = useState(200); // الموضع الافتراضي
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef(0);
+  const startOffsetRef = useRef(0);
+
   const formatArabicDate = (date: Date | undefined) => {
     if (!date) return "---";
     return format(date, "dd/MM/yyyy", { locale: ar });
   };
 
   const currentDate = format(new Date(), "dd/MM/yyyy", { locale: ar });
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    startYRef.current = e.clientY;
+    startOffsetRef.current = contentOffset;
+  }, [contentOffset]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const deltaY = e.clientY - startYRef.current;
+    const newOffset = Math.max(50, Math.min(350, startOffsetRef.current + deltaY));
+    setContentOffset(newOffset);
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    setIsDragging(true);
+    startYRef.current = e.touches[0].clientY;
+    startOffsetRef.current = contentOffset;
+  }, [contentOffset]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const deltaY = e.touches[0].clientY - startYRef.current;
+    const newOffset = Math.max(50, Math.min(350, startOffsetRef.current + deltaY));
+    setContentOffset(newOffset);
+  }, [isDragging]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const resetPosition = () => {
+    setContentOffset(200);
+  };
 
   return (
     <div className="relative group">
@@ -40,12 +88,18 @@ export function LiveRequestPreview({
       
       {/* الورقة الرئيسية */}
       <div 
+        ref={containerRef}
         className="relative bg-white rounded-xl overflow-hidden border border-border/50 transform transition-all duration-300 group-hover:scale-[1.01]"
         style={{ 
           aspectRatio: "210/297", 
           minHeight: "500px",
           boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.08)"
         }}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* خلفية القالب الرسمي */}
         <img
@@ -56,19 +110,53 @@ export function LiveRequestPreview({
         
         {/* خط إرشادي واضح لمنطقة الكليشة */}
         <div 
-          className="absolute top-0 left-0 right-0 h-[200px] border-b-4 border-dashed border-red-600 bg-red-500/20 pointer-events-none z-10"
+          className="absolute top-0 left-0 right-0 border-b-4 border-dashed border-red-600 bg-red-500/20 pointer-events-none z-10 transition-all duration-200"
+          style={{ height: `${contentOffset}px` }}
           title="منطقة الكليشة - لا تضع محتوى هنا"
         >
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] px-4 py-1.5 rounded-full font-bold shadow-lg">
             ⚠️ منطقة الكليشة - لا تضع محتوى هنا
           </div>
         </div>
+
+        {/* مقبض السحب */}
+        <div
+          className={`absolute left-1/2 -translate-x-1/2 z-20 cursor-ns-resize select-none transition-all duration-200 ${
+            isDragging ? 'scale-110' : 'hover:scale-105'
+          }`}
+          style={{ top: `${contentOffset - 12}px` }}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+        >
+          <div className={`flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-full shadow-lg ${
+            isDragging ? 'ring-4 ring-primary/30' : ''
+          }`}>
+            <GripVertical className="w-4 h-4" />
+            <span className="text-[9px] font-bold">اسحب لتحريك المحتوى</span>
+          </div>
+        </div>
+
+        {/* زر إعادة التعيين */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={resetPosition}
+          className="absolute top-3 right-3 z-20 h-7 text-[8px] gap-1 bg-white/90 hover:bg-white shadow-md"
+        >
+          <RotateCcw className="w-3 h-3" />
+          إعادة تعيين
+        </Button>
         
         {/* محتوى النموذج */}
         <div
-          className="absolute inset-0 px-3 pb-3 pt-[200px] flex flex-col"
+          className={`absolute inset-0 px-3 pb-3 flex flex-col transition-all duration-200 ${
+            isDragging ? 'opacity-80' : ''
+          }`}
+          style={{ 
+            paddingTop: `${contentOffset}px`,
+            fontFamily: "'Cairo', 'Segoe UI', Tahoma, sans-serif" 
+          }}
           dir="rtl"
-          style={{ fontFamily: "'Cairo', 'Segoe UI', Tahoma, sans-serif" }}
         >
           {/* رقم الطلب والتاريخ */}
           <div className="flex justify-between items-center mx-6 text-[7px]">
@@ -191,9 +279,14 @@ export function LiveRequestPreview({
         </div>
 
         {/* مؤشر المعاينة */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-gradient-to-r from-primary to-accent text-white text-[7px] px-2.5 py-1 rounded-full font-medium shadow-lg">
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-gradient-to-r from-primary to-accent text-white text-[7px] px-2.5 py-1 rounded-full font-medium shadow-lg z-20">
           <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
           معاينة حية
+        </div>
+
+        {/* مؤشر الموضع الحالي */}
+        <div className="absolute bottom-3 left-3 bg-black/70 text-white text-[8px] px-2 py-1 rounded font-mono z-20">
+          الموضع: {contentOffset}px
         </div>
       </div>
     </div>
