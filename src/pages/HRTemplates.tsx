@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TemplatePreview } from "@/components/hr/TemplatePreview";
+import { LetterheadAdjuster } from "@/components/hr/LetterheadAdjuster";
 
 interface CustomField {
   id: string;
@@ -90,6 +91,7 @@ interface RequestType {
   show_dates: boolean;
   show_reason: boolean;
   show_notes: boolean;
+  header_offset: number | null;
 }
 
 const fieldTypeIcons: Record<string, React.ReactNode> = {
@@ -219,6 +221,7 @@ export default function HRTemplates() {
           show_dates: data.show_dates,
           show_reason: data.show_reason,
           show_notes: data.show_notes,
+          header_offset: data.header_offset,
         })
         .eq("id", data.id);
       if (error) throw error;
@@ -510,7 +513,7 @@ export default function HRTemplates() {
                   </Card>
 
                   <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
-                    <TabsList className="grid w-full grid-cols-4" style={{ direction: 'rtl' }}>
+                    <TabsList className="grid w-full grid-cols-5" style={{ direction: 'rtl' }}>
                       <TabsTrigger value="content" className="gap-2 flex-row-reverse">
                         المحتوى
                         <Type className="w-4 h-4" />
@@ -518,6 +521,10 @@ export default function HRTemplates() {
                       <TabsTrigger value="template" className="gap-2 flex-row-reverse">
                         القالب
                         <Image className="w-4 h-4" />
+                      </TabsTrigger>
+                      <TabsTrigger value="letterhead" className="gap-2 flex-row-reverse">
+                        الكليشيه
+                        <Settings className="w-4 h-4" />
                       </TabsTrigger>
                       <TabsTrigger value="fields" className="gap-2 flex-row-reverse">
                         الحقول
@@ -686,7 +693,17 @@ export default function HRTemplates() {
                       </div>
                     </TabsContent>
 
-                    {/* تبويب الحقول المخصصة */}
+                    {/* تبويب ضبط الكليشيه */}
+                    <TabsContent value="letterhead" className="space-y-4 mt-4">
+                      <LetterheadAdjuster
+                        letterheadUrl={editData.letterhead_url}
+                        initialOffset={editData.header_offset ?? 200}
+                        onSave={(offset) => {
+                          setEditData(prev => ({ ...prev, header_offset: offset }));
+                          toast.success("تم حفظ موضع الكليشيه");
+                        }}
+                      />
+                    </TabsContent>
                     <TabsContent value="fields" className="space-y-4 mt-4">
                       {/* الحقول الموجودة */}
                       <div className="space-y-2">
