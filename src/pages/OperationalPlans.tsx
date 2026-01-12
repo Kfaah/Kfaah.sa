@@ -503,17 +503,15 @@ export default function OperationalPlans() {
                   <div className="col-span-2">
                     <div className="flex items-center justify-between mb-1">
                       <Label>الهدف الاستراتيجي</Label>
-                      {isAdmin && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setIsAddingNewGoal(!isAddingNewGoal)}
-                          className="text-xs h-6"
-                        >
-                          {isAddingNewGoal ? "اختيار من القائمة" : "+ هدف جديد"}
-                        </Button>
-                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsAddingNewGoal(!isAddingNewGoal)}
+                        className="text-xs h-6"
+                      >
+                        {isAddingNewGoal ? "اختيار من القائمة" : "+ هدف جديد"}
+                      </Button>
                     </div>
                     {isAddingNewGoal ? (
                       <Input
@@ -553,7 +551,7 @@ export default function OperationalPlans() {
                   <div className="col-span-2">
                     <div className="flex items-center justify-between mb-1">
                       <Label>المبادرة</Label>
-                      {isAdmin && (selectedGoalId || isAddingNewGoal) && (
+                      {(selectedGoalId || isAddingNewGoal) && (
                         <Button
                           type="button"
                           variant="ghost"
