@@ -9,8 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
+import {
   Plus, 
   Calendar, 
   Clock, 
@@ -153,36 +152,27 @@ export default function HRRequests() {
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">إدارة طلبات الموارد البشرية</h1>
-                <p className="text-muted-foreground">مراجعة واعتماد طلبات الموظفين والإحصائيات</p>
-              </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => navigate("/hr-templates")}
-                      className="h-10 w-10 rounded-xl border-2 hover:bg-primary/10 hover:border-primary"
-                    >
-                      <Settings2 className="w-5 h-5 text-primary" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>إدارة النماذج والقوالب</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">إدارة طلبات الموارد البشرية</h1>
+              <p className="text-muted-foreground">مراجعة واعتماد طلبات الموظفين والإحصائيات</p>
             </div>
-            <Button 
-              onClick={() => setIsNewRequestOpen(true)}
-              className="bg-gradient-to-r from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90 text-white gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              إنشاء طلب لموظف
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline"
+                onClick={() => navigate("/hr-templates")}
+                className="gap-2 border-2 hover:bg-primary/10 hover:border-primary"
+              >
+                <Settings2 className="w-4 h-4" />
+                إدارة النماذج
+              </Button>
+              <Button 
+                onClick={() => setIsNewRequestOpen(true)}
+                className="bg-gradient-to-r from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90 text-white gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                إنشاء طلب لموظف
+              </Button>
+            </div>
           </div>
 
           {/* التبويبات المركزية */}
