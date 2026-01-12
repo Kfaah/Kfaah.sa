@@ -464,6 +464,18 @@ export default function HRRequests() {
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setPreviewRequest(request);
+                                  setPreviewApprovalType("substitute");
+                                }}
+                                className="border-primary text-primary hover:bg-primary/10"
+                              >
+                                <Eye className="w-4 h-4 ml-1" />
+                                استعراض
+                              </Button>
+                              <Button
+                                size="sm"
                                 onClick={() => substituteApproveMutation.mutate(request.id)}
                                 disabled={substituteApproveMutation.isPending}
                                 className="bg-amber-600 hover:bg-amber-700"
@@ -476,6 +488,15 @@ export default function HRRequests() {
                                     موافقة
                                   </>
                                 )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenRejectDialog(request.id, 'substitute')}
+                                className="border-red-300 text-red-600 hover:bg-red-50"
+                              >
+                                <XCircle className="w-4 h-4 ml-1" />
+                                رفض
                               </Button>
                             </div>
                           </div>
@@ -520,6 +541,18 @@ export default function HRRequests() {
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setPreviewRequest(request);
+                                  setPreviewApprovalType("manager");
+                                }}
+                                className="border-primary text-primary hover:bg-primary/10"
+                              >
+                                <Eye className="w-4 h-4 ml-1" />
+                                استعراض
+                              </Button>
+                              <Button
+                                size="sm"
                                 onClick={() => managerApproveMutation.mutate(request.id)}
                                 disabled={managerApproveMutation.isPending}
                                 className="bg-blue-600 hover:bg-blue-700"
@@ -532,6 +565,15 @@ export default function HRRequests() {
                                     موافقة
                                   </>
                                 )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenRejectDialog(request.id, 'manager')}
+                                className="border-red-300 text-red-600 hover:bg-red-50"
+                              >
+                                <XCircle className="w-4 h-4 ml-1" />
+                                رفض
                               </Button>
                             </div>
                           </div>
@@ -555,6 +597,77 @@ export default function HRRequests() {
             isAdmin={true}
             employees={employees}
           />
+
+          {/* Preview Dialog للموافقات */}
+          {previewRequest && (
+            <RequestPreviewDialog
+              request={previewRequest}
+              open={!!previewRequest}
+              onOpenChange={(open) => !open && setPreviewRequest(null)}
+              viewMode="approver"
+              approvalType={previewApprovalType}
+              onApprove={() => {
+                if (previewApprovalType === "substitute") {
+                  substituteApproveMutation.mutate(previewRequest.id);
+                } else {
+                  managerApproveMutation.mutate(previewRequest.id);
+                }
+                setPreviewRequest(null);
+              }}
+              onReject={(reason) => {
+                rejectRequestMutation.mutate({
+                  requestId: previewRequest.id,
+                  reason,
+                  type: previewApprovalType,
+                });
+                setPreviewRequest(null);
+              }}
+              isApproving={substituteApproveMutation.isPending || managerApproveMutation.isPending}
+            />
+          )}
+
+          {/* Reject Dialog */}
+          <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>رفض الطلب</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <Textarea
+                  placeholder="سبب الرفض..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="min-h-[100px]"
+                />
+                <div className="flex gap-3 justify-end">
+                  <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+                    إلغاء
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (rejectingRequest && rejectionReason.trim()) {
+                        rejectRequestMutation.mutate({
+                          requestId: rejectingRequest.id,
+                          reason: rejectionReason,
+                          type: rejectingRequest.type,
+                        });
+                        setRejectDialogOpen(false);
+                        setRejectionReason("");
+                        setRejectingRequest(null);
+                      }
+                    }}
+                    disabled={!rejectionReason.trim() || rejectRequestMutation.isPending}
+                  >
+                    {rejectRequestMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    ) : null}
+                    تأكيد الرفض
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
         </div>
       </DashboardLayout>
