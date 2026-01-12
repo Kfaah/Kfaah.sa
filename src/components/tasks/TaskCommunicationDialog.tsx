@@ -46,6 +46,7 @@ interface TaskMessage {
   attachment_type: string | null;
   created_at: string;
   sender_name?: string;
+  is_admin?: boolean;
 }
 
 interface AdminUser {
@@ -156,12 +157,22 @@ export function TaskCommunicationDialog({
           .select("user_id, full_name")
           .in("user_id", userIds);
 
+        // جلب المستخدمين المدراء
+        const { data: adminRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+        
+        const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
+
         // دمج أسماء المرسلين مع الرسائل
         const messagesWithNames = (messagesData || []).map(msg => {
           const employee = employeesData?.find(e => e.user_id === msg.user_id);
+          const isAdmin = adminUserIds.has(msg.user_id);
           return {
             ...msg,
-            sender_name: employee?.full_name || "مدير النظام"
+            sender_name: employee?.full_name || "مدير النظام",
+            is_admin: isAdmin
           };
         });
 
@@ -462,9 +473,9 @@ export function TaskCommunicationDialog({
                           )}>
                             {msg.sender_name || "غير معروف"}
                           </span>
-                          {isFromAdmin && !isOwn && (
+                          {msg.is_admin && (
                             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-[#3d9aa8]/10 text-[#2d7a85] border-0">
-                              مدير
+                              مدير النظام
                             </Badge>
                           )}
                         </div>

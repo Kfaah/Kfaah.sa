@@ -63,6 +63,7 @@ interface Message {
   attachment_type: string | null;
   created_at: string;
   sender_name?: string;
+  is_admin?: boolean;
 }
 
 interface Employee {
@@ -239,6 +240,14 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
         .select("user_id, full_name")
         .in("user_id", senderIds);
 
+      // جلب المستخدمين المدراء
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      
+      const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
+
       const nameMap = new Map(
         (sendersData || []).map((e) => [e.user_id, e.full_name])
       );
@@ -246,6 +255,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
       const messagesWithNames = (data || []).map((msg) => ({
         ...msg,
         sender_name: nameMap.get(msg.sender_id) || "مستخدم",
+        is_admin: adminUserIds.has(msg.sender_id),
       }));
 
       setMessages(messagesWithNames);
@@ -604,9 +614,16 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                             </div>
                             <div className={cn("flex flex-col gap-1 max-w-[70%]", isOwn ? "items-end" : "items-start")}>
                               {showAvatar && (
-                                <span className="text-xs text-muted-foreground px-1">
-                                  {msg.sender_name}
-                                </span>
+                                <div className={cn("flex items-center gap-2 px-1", isOwn ? "flex-row-reverse" : "flex-row")}>
+                                  <span className="text-xs text-muted-foreground">
+                                    {msg.sender_name}
+                                  </span>
+                                  {msg.is_admin && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#3d9aa8]/10 text-[#2d7a85] font-medium">
+                                      مدير النظام
+                                    </span>
+                                  )}
+                                </div>
                               )}
                               <div
                                 className={cn(
