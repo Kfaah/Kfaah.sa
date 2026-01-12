@@ -31,31 +31,20 @@ export function LiveRequestPreview({
     return format(date, "dd/MM/yyyy", { locale: ar });
   };
 
-  const getRequestTypeText = () => {
-    if (requestTypeName.includes("إجازة")) {
-      return `أتقدم لسعادتكم بطلب الحصول على ${requestTypeName}`;
-    } else if (requestTypeName.includes("استئذان")) {
-      return `أتقدم لسعادتكم بطلب ${requestTypeName}`;
-    } else if (requestTypeName.includes("شهادة")) {
-      return `أتقدم لسعادتكم بطلب إصدار ${requestTypeName}`;
-    }
-    return `أتقدم لسعادتكم بطلب ${requestTypeName}`;
-  };
-
   const currentDate = format(new Date(), "dd/MM/yyyy", { locale: ar });
 
   return (
     <div className="relative group">
-      {/* الظل الخارجي المتدرج */}
+      {/* الظل الخارجي */}
       <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/20 rounded-2xl blur-lg opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
       
       {/* الورقة الرئيسية */}
       <div 
-        className="relative bg-white rounded-xl overflow-hidden border border-border/50 transform transition-all duration-300 group-hover:scale-[1.01] group-hover:shadow-2xl"
+        className="relative bg-white rounded-xl overflow-hidden border border-border/50 transform transition-all duration-300 group-hover:scale-[1.01]"
         style={{ 
           aspectRatio: "210/297", 
           minHeight: "500px",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.5)"
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.08)"
         }}
       >
         {/* خلفية القالب الرسمي */}
@@ -65,119 +54,135 @@ export function LiveRequestPreview({
           className="absolute inset-0 w-full h-full object-cover"
         />
         
-        {/* تأثير الورق */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/5 pointer-events-none" />
-        
-        {/* محتوى الطلب */}
-        <div className="absolute inset-0 p-4 flex flex-col" dir="rtl">
-          {/* الرقم والتاريخ */}
-          <div className="absolute top-[20px] left-1/2 -translate-x-1/2 text-[8px] text-center" style={{ fontFamily: 'Arial, sans-serif' }}>
-            <p className="text-muted-foreground drop-shadow-sm">{requestNumber || "HR-XXXX-XXXX"}</p>
-            <p className="text-muted-foreground drop-shadow-sm">{currentDate}</p>
+        {/* محتوى النموذج */}
+        <div className="absolute inset-0 p-3 flex flex-col" dir="rtl">
+          
+          {/* رقم الطلب والتاريخ */}
+          <div className="flex justify-between items-start mt-[18px] mx-4 text-[7px]">
+            <div className="text-right">
+              <span className="text-muted-foreground">رقم الطلب: </span>
+              <span className="font-semibold">{requestNumber || "HR-XXXX-XXXX"}</span>
+            </div>
+            <div className="text-left">
+              <span className="text-muted-foreground">التاريخ: </span>
+              <span className="font-semibold">{currentDate}</span>
+            </div>
           </div>
 
-          {/* محتوى الطلب الرسمي */}
-          <div className="mt-[48px] mx-auto max-w-[85%] space-y-1.5 text-[9px] leading-relaxed text-center">
-            <h2 className="text-sm font-bold text-center mb-3 text-foreground drop-shadow-sm">
-              طلب {requestTypeName || "___________"}
-            </h2>
-
-            <p className="font-semibold text-[8px]">صاحب السعادة المدير العام    حفظه الله</p>
-            <p className="text-[8px]">السلام عليكم ورحمة الله وبركاته، وبعد:</p>
-            
-            <div className="mt-2 space-y-0.5 bg-muted/20 rounded-lg p-2 backdrop-blur-sm">
-              <p className="text-[8px]">
-                <span className="font-semibold">أنا الموقع أدناه:</span>{" "}
-                <span className={employeeName ? "text-foreground font-medium" : "text-muted-foreground"}>
-                  {employeeName || "_______________"}
-                </span>
-              </p>
-              <p className="text-[8px]">
-                <span className="font-semibold">المسمى الوظيفي:</span>{" "}
-                <span className={jobRole ? "text-foreground font-medium" : "text-muted-foreground"}>
-                  {jobRole || "_______________"}
-                </span>
-              </p>
+          {/* عنوان النموذج */}
+          <div className="mt-3 text-center">
+            <div className="inline-block bg-primary/10 border border-primary/30 rounded-lg px-4 py-1.5">
+              <h2 className="text-[11px] font-bold text-primary">
+                نموذج {requestTypeName || "طلب"}
+              </h2>
             </div>
+          </div>
 
-            <p className="mt-2 text-[8px]">
-              {requestTypeName ? getRequestTypeText() : "أتقدم لسعادتكم بطلب ___________"}
-            </p>
+          {/* جدول البيانات */}
+          <div className="mt-3 mx-3 flex-1">
+            <table className="w-full text-[8px] border-collapse" style={{ borderSpacing: 0 }}>
+              <tbody>
+                {/* بيانات مقدم الطلب */}
+                <tr>
+                  <td colSpan={4} className="bg-muted/40 font-bold text-[8px] py-1 px-2 border border-border/50 text-center">
+                    بيانات مقدم الطلب
+                  </td>
+                </tr>
+                <tr>
+                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50 w-[25%]">اسم الموظف</td>
+                  <td className={`py-1 px-2 border border-border/50 w-[25%] ${employeeName ? '' : 'text-muted-foreground'}`}>
+                    {employeeName || "---"}
+                  </td>
+                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50 w-[25%]">المسمى الوظيفي</td>
+                  <td className={`py-1 px-2 border border-border/50 w-[25%] ${jobRole ? '' : 'text-muted-foreground'}`}>
+                    {jobRole || "---"}
+                  </td>
+                </tr>
 
-            <div className="space-y-0.5 bg-primary/5 rounded-lg p-2 border border-primary/10">
-              <p className="text-[8px]">
-                <span className="font-semibold">اعتباراً من تاريخ:</span>{" "}
-                <span className={startDate ? "text-foreground font-medium" : "text-muted-foreground"}>
-                  {startDate ? formatArabicDate(startDate) : "__/__/____"}
-                </span>
-              </p>
-              <p className="text-[8px]">
-                <span className="font-semibold">وحتى تاريخ:</span>{" "}
-                <span className={endDate ? "text-foreground font-medium" : "text-muted-foreground"}>
-                  {endDate ? formatArabicDate(endDate) : "__/__/____"}
-                </span>
-              </p>
-              <p className="text-[8px]">
-                <span className="font-semibold">إجمالي الأيام:</span>{" "}
-                <span className={daysCount > 0 ? "text-primary font-bold bg-primary/10 px-1.5 py-0.5 rounded" : "text-muted-foreground"}>
-                  ({daysCount > 0 ? daysCount : "_"}) يوم
-                </span>
-              </p>
-            </div>
-
-            {(reason || !reason) && (
-              <p className="mt-1 text-[8px] bg-muted/30 rounded p-1.5">
-                <span className="font-semibold">السبب:</span>{" "}
-                <span className={reason ? "text-foreground" : "text-muted-foreground italic"}>
-                  {reason || "سيتم إضافة السبب هنا..."}
-                </span>
-              </p>
-            )}
-
-            {notes && (
-              <p className="text-[8px] bg-accent/10 rounded p-1.5 border-r-2 border-accent">
-                <span className="font-semibold">ملاحظات:</span> {notes}
-              </p>
-            )}
-
-            <p className="mt-2 text-[8px]">آمل من سعادتكم التكرم بالموافقة على طلبي.</p>
-            <p className="text-[8px]">وتقبلوا فائق الاحترام والتقدير،،،</p>
-
-            {/* التوقيعات */}
-            <div className="flex justify-between mt-4 pt-2">
-              <div className="text-center min-w-[80px] bg-white/80 rounded-lg p-2 shadow-sm border border-border/30">
-                <p className="font-semibold mb-0.5 text-[8px] text-primary">مقدم الطلب</p>
-                <p className="text-[8px] font-medium">{employeeName || "___________"}</p>
-                {signatureUrl ? (
-                  <img 
-                    src={signatureUrl} 
-                    alt="توقيع الموظف" 
-                    className="h-8 mx-auto mt-1 object-contain drop-shadow-sm"
-                  />
-                ) : (
-                  <div className="h-8 border-b-2 border-dashed border-muted-foreground/40 mt-1 mx-2" />
+                {/* تفاصيل الطلب */}
+                <tr>
+                  <td colSpan={4} className="bg-muted/40 font-bold text-[8px] py-1 px-2 border border-border/50 text-center">
+                    تفاصيل الطلب
+                  </td>
+                </tr>
+                <tr>
+                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50">نوع الطلب</td>
+                  <td colSpan={3} className={`py-1 px-2 border border-border/50 ${requestTypeName ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                    {requestTypeName || "---"}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50">من تاريخ</td>
+                  <td className={`py-1 px-2 border border-border/50 ${startDate ? '' : 'text-muted-foreground'}`}>
+                    {startDate ? formatArabicDate(startDate) : "---"}
+                  </td>
+                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50">إلى تاريخ</td>
+                  <td className={`py-1 px-2 border border-border/50 ${endDate ? '' : 'text-muted-foreground'}`}>
+                    {endDate ? formatArabicDate(endDate) : "---"}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50">عدد الأيام</td>
+                  <td colSpan={3} className="py-1 px-2 border border-border/50">
+                    <span className={daysCount > 0 ? 'bg-primary/10 text-primary font-bold px-2 py-0.5 rounded' : 'text-muted-foreground'}>
+                      {daysCount > 0 ? `${daysCount} يوم` : "---"}
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50 align-top">السبب</td>
+                  <td colSpan={3} className={`py-1 px-2 border border-border/50 min-h-[30px] ${reason ? '' : 'text-muted-foreground italic'}`}>
+                    {reason || "لم يتم تحديد السبب"}
+                  </td>
+                </tr>
+                {notes && (
+                  <tr>
+                    <td className="bg-muted/20 font-semibold py-1 px-2 border border-border/50 align-top">ملاحظات</td>
+                    <td colSpan={3} className="py-1 px-2 border border-border/50">
+                      {notes}
+                    </td>
+                  </tr>
                 )}
-              </div>
 
-              <div className="text-center border-2 border-dashed border-accent/40 rounded-lg p-2 min-w-[80px] bg-accent/5">
-                <p className="font-semibold mb-0.5 text-[8px] text-accent">اعتماد الإدارة</p>
-                <div className="flex items-center justify-center mt-2">
-                  <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse mr-1" />
-                  <p className="text-[7px] text-muted-foreground">في انتظار الموافقة</p>
-                </div>
-              </div>
-            </div>
+                {/* التوقيعات */}
+                <tr>
+                  <td colSpan={4} className="bg-muted/40 font-bold text-[8px] py-1 px-2 border border-border/50 text-center">
+                    التوقيعات والاعتماد
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={2} className="py-2 px-2 border border-border/50 text-center align-top">
+                    <div className="font-semibold text-[7px] mb-1">مقدم الطلب</div>
+                    <div className="text-[7px] mb-1">{employeeName || "---"}</div>
+                    {signatureUrl ? (
+                      <img 
+                        src={signatureUrl} 
+                        alt="توقيع الموظف" 
+                        className="h-6 mx-auto object-contain"
+                      />
+                    ) : (
+                      <div className="h-6 border-b border-dashed border-muted-foreground/40 mx-4 mt-2" />
+                    )}
+                  </td>
+                  <td colSpan={2} className="py-2 px-2 border border-border/50 text-center align-top bg-accent/5">
+                    <div className="font-semibold text-[7px] mb-1 text-accent">اعتماد الإدارة</div>
+                    <div className="flex items-center justify-center gap-1 mt-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-[6px] text-muted-foreground">في انتظار الموافقة</span>
+                    </div>
+                    <div className="h-6 border-b border-dashed border-accent/40 mx-4 mt-1" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
         {/* مؤشر المعاينة */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-gradient-to-r from-primary to-accent text-white text-[8px] px-3 py-1 rounded-full font-medium shadow-lg">
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-gradient-to-r from-primary to-accent text-white text-[7px] px-2.5 py-1 rounded-full font-medium shadow-lg">
           <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
           معاينة حية
         </div>
-
-        {/* تأثير الزاوية */}
-        <div className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-tl from-black/5 to-transparent pointer-events-none" />
       </div>
     </div>
   );
