@@ -113,6 +113,8 @@ export function WelcomeScreen() {
           alt="خلفية" 
           className="w-full h-full object-cover rounded-3xl"
         />
+        {/* طبقة تعتيم خفيفة لتحسين قراءة النصوص */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30 rounded-3xl" />
       </motion.div>
 
       {/* المحتوى الرئيسي */}
@@ -122,15 +124,57 @@ export function WelcomeScreen() {
         transition={{ duration: 0.8, delay: 0.2 }}
         className="relative z-10 flex flex-col items-center text-center px-6 max-w-2xl"
       >
-        {/* الشعار */}
+        {/* الشعار مع التأثيرات */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mb-8"
+          className="mb-8 relative"
         >
-          {/* الشعار - دائرة بيضاء */}
-          <div className="w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-xl">
+          {/* الهالات المتحركة */}
+          <motion.div
+            className="absolute inset-0 -m-4 rounded-full border-2 border-white/30"
+            animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute inset-0 -m-6 rounded-full border-2 border-white/20"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0, 0.3] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          />
+          <motion.div
+            className="absolute inset-0 -m-8 rounded-full border border-white/10"
+            animate={{ scale: [1, 1.25, 1], opacity: [0.2, 0, 0.2] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          />
+          
+          {/* النقاط المتحركة حول الشعار */}
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-white rounded-full shadow-lg"
+              style={{
+                top: "50%",
+                left: "50%",
+                transformOrigin: "center",
+              }}
+              animate={{
+                x: [0, Math.cos((i * 45 * Math.PI) / 180) * 90],
+                y: [0, Math.sin((i * 45 * Math.PI) / 180) * 90],
+                opacity: [0, 1, 0],
+                scale: [0.5, 1, 0.5],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                delay: i * 0.3,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+          
+          {/* الشعار - دائرة بيضاء مع ظل */}
+          <div className="relative w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/50">
             <img
               src={atefLogo}
               alt="جمعية عطف"
@@ -139,25 +183,27 @@ export function WelcomeScreen() {
           </div>
         </motion.div>
 
-        {/* اسم الجمعية */}
-        <motion.h2
+        {/* اسم الجمعية مع خلفية */}
+        <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="text-2xl font-bold text-slate-700 mb-6"
+          className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-2 shadow-lg mb-6"
         >
-          جمعية عطف للأيتام
-        </motion.h2>
+          <h2 className="text-2xl font-bold text-slate-700">
+            جمعية عطف للأيتام
+          </h2>
+        </motion.div>
 
-        {/* الترحيب */}
+        {/* الترحيب مع خلفية */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="space-y-2 mb-8"
+          className="bg-white/85 backdrop-blur-sm rounded-2xl px-8 py-4 shadow-lg mb-6"
         >
-          <p className="text-lg text-slate-600">{getGreeting()}</p>
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-800">
+          <p className="text-lg text-slate-600 mb-1">{getGreeting()}</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
             أهلاً بك، {user.firstName}! 👋
           </h1>
         </motion.div>
@@ -167,22 +213,24 @@ export function WelcomeScreen() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.6 }}
-          className="bg-white/80 backdrop-blur-sm rounded-2xl px-8 py-6 shadow-lg border border-white/50"
+          className="bg-white/90 backdrop-blur-sm rounded-2xl px-8 py-6 shadow-xl border border-white/50"
         >
           <p className="text-xl md:text-2xl font-medium text-slate-700 leading-relaxed">
             {currentQuote.emoji} {currentQuote.quote}
           </p>
         </motion.div>
 
-        {/* نص إرشادي */}
-        <motion.p
+        {/* نص إرشادي مع خلفية */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="mt-8 text-slate-500 text-sm"
+          className="mt-6 bg-white/80 backdrop-blur-sm rounded-full px-5 py-2 shadow-md"
         >
-          اختر من القائمة للبدء في العمل
-        </motion.p>
+          <p className="text-slate-600 text-sm font-medium">
+            اختر من القائمة للبدء في العمل
+          </p>
+        </motion.div>
       </motion.div>
     </div>
   );
