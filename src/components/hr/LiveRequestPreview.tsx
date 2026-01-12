@@ -13,7 +13,9 @@ interface LiveRequestPreviewProps {
   notes: string;
   requestNumber: string;
   substituteEmployee?: string;
+  substituteSignatureUrl?: string | null;
   directManager?: string;
+  directManagerSignatureUrl?: string | null;
   headerOffset?: number; // موضع المحتوى كنسبة مئوية (0-100)
 }
 
@@ -29,7 +31,9 @@ export function LiveRequestPreview({
   notes,
   requestNumber,
   substituteEmployee = "",
+  substituteSignatureUrl,
   directManager = "",
+  directManagerSignatureUrl,
   headerOffset = 35, // 35% كقيمة افتراضية
 }: LiveRequestPreviewProps) {
   const offsetPercent = headerOffset; // النسبة المئوية المحفوظة من القالب
@@ -182,14 +186,30 @@ export function LiveRequestPreview({
                     <div className={`text-[7px] mb-1 ${substituteEmployee ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                       {substituteEmployee || ".................."}
                     </div>
-                    <div className="h-6 border-b-2 border-dashed border-amber-300 mx-2 mt-1" />
+                    {substituteSignatureUrl ? (
+                      <img 
+                        src={substituteSignatureUrl} 
+                        alt="توقيع الموظف البديل" 
+                        className="h-6 mx-auto object-contain"
+                      />
+                    ) : (
+                      <div className="h-6 border-b-2 border-dashed border-amber-300 mx-2 mt-1" />
+                    )}
                   </td>
                   <td className="py-2 px-2 border border-border/40 text-center align-top bg-blue-50/50">
                     <div className="font-bold text-[7px] mb-1 text-blue-700">المدير المباشر</div>
                     <div className={`text-[7px] mb-1 ${directManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                       {directManager || ".................."}
                     </div>
-                    <div className="h-6 border-b-2 border-dashed border-blue-300 mx-2 mt-1" />
+                    {directManagerSignatureUrl ? (
+                      <img 
+                        src={directManagerSignatureUrl} 
+                        alt="توقيع المدير المباشر" 
+                        className="h-6 mx-auto object-contain"
+                      />
+                    ) : (
+                      <div className="h-6 border-b-2 border-dashed border-blue-300 mx-2 mt-1" />
+                    )}
                   </td>
                   <td className="py-2 px-2 border border-border/40 text-center align-top bg-accent/5">
                     <div className="font-bold text-[7px] mb-1 text-accent">اعتماد الإدارة</div>
