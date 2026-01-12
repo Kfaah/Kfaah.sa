@@ -75,8 +75,9 @@ export default function HRRequests() {
   const [adminActiveTab, setAdminActiveTab] = useState("requests");
   const [employeeActiveTab, setEmployeeActiveTab] = useState("my-requests");
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectingRequest, setRejectingRequest] = useState<{ id: string; type: 'substitute' | 'manager' } | null>(null);
+  const [rejectingRequest, setRejectingRequest] = useState<{ id: string; type: 'substitute' | 'manager' | 'executive' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [previewExecutiveType, setPreviewExecutiveType] = useState<"substitute" | "manager" | "executive">("substitute");
 
   const isAdmin = user.role === "مدير النظام";
 
@@ -188,6 +189,27 @@ export default function HRRequests() {
     enabled: !!authUser?.id,
   });
 
+  // جلب الطلبات التي تحتاج موافقة كمدير تنفيذي
+  const { data: executiveRequests = [], isLoading: loadingExecutive } = useQuery({
+    queryKey: ["pending-executive-approvals", authUser?.id],
+    queryFn: async () => {
+      if (!authUser?.id) return [];
+      const { data, error } = await supabase
+        .from("hr_requests")
+        .select(`
+          *,
+          hr_request_types (name, name_ar, icon, color)
+        `)
+        .eq("executive_manager_id", authUser.id)
+        .eq("executive_manager_approved", false)
+        .neq("status", "rejected");
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!authUser?.id,
+  });
+
   // موافقة كموظف بديل
   const substituteApproveMutation = useMutation({
     mutationFn: async (requestId: string) => {
@@ -254,9 +276,42 @@ export default function HRRequests() {
     },
   });
 
-  // رفض الطلب (كموظف بديل أو مدير مباشر)
+  // موافقة كمدير تنفيذي
+  const executiveApproveMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("signature_url")
+        .eq("user_id", authUser?.id)
+        .single();
+
+      if (!employee?.signature_url) {
+        throw new Error("يجب إضافة توقيعك في الملف الشخصي أولاً");
+      }
+
+      const { error } = await supabase
+        .from("hr_requests")
+        .update({
+          executive_manager_approved: true,
+          executive_manager_approved_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      toast.success("تمت موافقتك كمدير تنفيذي");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // رفض الطلب (كموظف بديل أو مدير مباشر أو مدير تنفيذي)
   const rejectRequestMutation = useMutation({
-    mutationFn: async ({ requestId, reason, type }: { requestId: string; reason: string; type: 'substitute' | 'manager' }) => {
+    mutationFn: async ({ requestId, reason, type }: { requestId: string; reason: string; type: 'substitute' | 'manager' | 'executive' }) => {
       // جلب بيانات الطلب أولاً للحصول على user_id صاحب الطلب ورقم الطلب
       const { data: requestData, error: fetchError } = await supabase
         .from("hr_requests")
@@ -284,7 +339,7 @@ export default function HRRequests() {
         .eq("user_id", authUser?.id)
         .single();
 
-      const rejecterName = rejecterEmployee?.full_name || (type === 'substitute' ? 'الموظف البديل' : 'المدير المباشر');
+      const rejecterName = rejecterEmployee?.full_name || (type === 'substitute' ? 'الموظف البديل' : type === 'manager' ? 'المدير المباشر' : 'المدير التنفيذي');
       const requestTypeName = (requestData.hr_request_types as any)?.name_ar || 'طلب';
 
       // إرسال إشعار للموظف صاحب الطلب
@@ -304,6 +359,7 @@ export default function HRRequests() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-substitute-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["pending-manager-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
       toast.success("تم رفض الطلب وإرسال إشعار للموظف");
       setRejectDialogOpen(false);
@@ -315,7 +371,7 @@ export default function HRRequests() {
     },
   });
 
-  const handleOpenRejectDialog = (requestId: string, type: 'substitute' | 'manager') => {
+  const handleOpenRejectDialog = (requestId: string, type: 'substitute' | 'manager' | 'executive') => {
     setRejectingRequest({ id: requestId, type });
     setRejectionReason("");
     setRejectDialogOpen(true);
@@ -333,7 +389,7 @@ export default function HRRequests() {
     });
   };
 
-  const pendingApprovalsCount = (substituteRequests?.length || 0) + (managerRequests?.length || 0);
+  const pendingApprovalsCount = (substituteRequests?.length || 0) + (managerRequests?.length || 0) + (executiveRequests?.length || 0);
 
   const getStatusBadge = (status: string) => {
     const config = statusConfig[status] || statusConfig.pending;
@@ -395,7 +451,7 @@ export default function HRRequests() {
                 <ClipboardList className="w-5 h-5" />
                 الطلبات
               </button>
-              {(substituteRequests.length > 0 || managerRequests.length > 0) && (
+              {(substituteRequests.length > 0 || managerRequests.length > 0 || executiveRequests.length > 0) && (
                 <button
                   onClick={() => setAdminActiveTab("pending-approvals")}
                   className={`flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-base transition-all relative ${
@@ -407,7 +463,7 @@ export default function HRRequests() {
                   <UserCheck className="w-5 h-5" />
                   موافقات معلقة
                   <Badge variant="destructive" className="h-5 min-w-5 p-0 flex items-center justify-center text-xs">
-                    {substituteRequests.length + managerRequests.length}
+                    {substituteRequests.length + managerRequests.length + executiveRequests.length}
                   </Badge>
                 </button>
               )}
@@ -570,6 +626,71 @@ export default function HRRequests() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleOpenRejectDialog(request.id, 'manager')}
+                                className="border-red-300 text-red-600 hover:bg-red-50"
+                              >
+                                <XCircle className="w-4 h-4 ml-1" />
+                                رفض
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* كمدير تنفيذي */}
+              {executiveRequests.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <UserCheck className="w-5 h-5 text-purple-600" />
+                      موافقتك كمدير تنفيذي
+                      <Badge variant="secondary">{executiveRequests.length}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3">
+                      {executiveRequests.map((request: any) => {
+                        const requester = employees.find((emp: any) => emp.user_id === request.user_id);
+                        return (
+                          <div key={request.id} className="flex items-center gap-4 p-4 rounded-xl border bg-purple-50/50 border-purple-200">
+                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-purple-300">
+                              {requester?.avatar_url ? (
+                                <img src={requester.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-purple-400 flex items-center justify-center text-white font-bold">
+                                  {requester?.full_name?.charAt(0) || "؟"}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-foreground">{requester?.full_name || "موظف"}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {request.hr_request_types?.name_ar} • {request.request_number}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => executiveApproveMutation.mutate(request.id)}
+                                disabled={executiveApproveMutation.isPending}
+                                className="bg-purple-600 hover:bg-purple-700"
+                              >
+                                {executiveApproveMutation.isPending ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="w-4 h-4 ml-1" />
+                                    موافقة
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenRejectDialog(request.id, 'executive')}
                                 className="border-red-300 text-red-600 hover:bg-red-50"
                               >
                                 <XCircle className="w-4 h-4 ml-1" />

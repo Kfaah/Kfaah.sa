@@ -484,6 +484,9 @@ export type Database = {
           days_count: number | null
           direct_manager_id: string | null
           end_date: string | null
+          executive_manager_approved: boolean | null
+          executive_manager_approved_at: string | null
+          executive_manager_id: string | null
           final_pdf_url: string | null
           id: string
           manager_approved: boolean | null
@@ -513,6 +516,9 @@ export type Database = {
           days_count?: number | null
           direct_manager_id?: string | null
           end_date?: string | null
+          executive_manager_approved?: boolean | null
+          executive_manager_approved_at?: string | null
+          executive_manager_id?: string | null
           final_pdf_url?: string | null
           id?: string
           manager_approved?: boolean | null
@@ -542,6 +548,9 @@ export type Database = {
           days_count?: number | null
           direct_manager_id?: string | null
           end_date?: string | null
+          executive_manager_approved?: boolean | null
+          executive_manager_approved_at?: string | null
+          executive_manager_id?: string | null
           final_pdf_url?: string | null
           id?: string
           manager_approved?: boolean | null
