@@ -21,6 +21,7 @@ import {
   Bell,
   Clock,
   Briefcase,
+  FileEdit,
 } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -43,6 +44,7 @@ const adminNavItems: NavItem[] = [
   { title: "الأدوار والصلاحيات", href: "/roles", icon: UserCog, iconBg: "bg-gradient-to-br from-pink-400 to-pink-500" },
   { title: "سجلات الحضور", href: "/attendance-management", icon: Clock, iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500" },
   { title: "الموارد البشرية", href: "/hr-requests", icon: Briefcase, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
+  { title: "إدارة النماذج", href: "/hr-templates", icon: FileEdit, iconBg: "bg-gradient-to-br from-purple-400 to-purple-500" },
   { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
   { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "المهام", href: "/tasks", icon: ClipboardList, badge: 18, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
