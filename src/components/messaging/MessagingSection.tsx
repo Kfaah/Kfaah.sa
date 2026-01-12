@@ -325,13 +325,15 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
       prev.map((c) => (c.id === conv.id ? { ...c, unreadCount: 0 } : c))
     );
     
-    // تحديد الإشعارات المتعلقة بالرسائل كمقروءة
+    // تحديد إشعارات الرسائل العادية (إن وُجدت) كمقروءة
+    // ملاحظة: إشعارات رسائل المهام لها related_task_id ولا يجب تأشيرها هنا
     try {
       await supabase
         .from("notifications")
         .update({ is_read: true })
         .eq("user_id", currentUserId)
         .eq("type", "message")
+        .is("related_task_id", null)
         .eq("is_read", false);
     } catch (error) {
       console.error("Error marking notifications as read:", error);

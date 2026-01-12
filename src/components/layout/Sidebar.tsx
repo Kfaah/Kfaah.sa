@@ -175,7 +175,7 @@ export function Sidebar() {
 
     fetchUnreadMessages();
 
-    // الاستماع للرسائل الجديدة
+    // الاستماع للرسائل الجديدة + تحديثات last_read_at (عند قراءة المحادثة)
     const messagesChannel = supabase
       .channel('sidebar-messages')
       .on(
@@ -191,8 +191,25 @@ export function Sidebar() {
       )
       .subscribe();
 
+    const participantsChannel = supabase
+      .channel('sidebar-conversation-participants')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conversation_participants',
+          filter: `user_id=eq.${authUser.id}`,
+        },
+        () => {
+          fetchUnreadMessages();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(participantsChannel);
     };
   }, [authUser]);
 

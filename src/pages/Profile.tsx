@@ -530,9 +530,9 @@ export default function Profile() {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Bell className="w-5 h-5 text-accent" />
               الإشعارات
-              {notifications.filter(n => !n.is_read).length > 0 && (
+              {notifications.filter(n => !n.is_read && !(n.type === "message" && !n.related_task_id)).length > 0 && (
                 <Badge className="bg-red-500 text-white">
-                  {notifications.filter(n => !n.is_read).length}
+                  {notifications.filter(n => !n.is_read && !(n.type === "message" && !n.related_task_id)).length}
                 </Badge>
               )}
             </CardTitle>
@@ -554,15 +554,19 @@ export default function Profile() {
             ].map((filter) => {
               const Icon = filter.icon;
               const count = notifications.filter(n => {
+                const isDirectMessage = n.type === "message" && !n.related_task_id;
+                const isTaskMessage = n.type === "message" && !!n.related_task_id;
+
                 // الرسائل العادية لا تظهر في الإشعارات (تظهر فقط في قسم الرسائل أعلاه)
-                if (n.type === "message") return false;
+                if (isDirectMessage) return false;
+
                 if (filter.key === "all") return true;
                 // رسائل المهام فقط في قسم الرسائل
-                if (filter.key === "messages") return n.type === "task_message";
+                if (filter.key === "messages") return isTaskMessage;
                 // المهام (تحديثات الحالة والتقييم فقط، وليس الرسائل)
                 if (filter.key === "tasks") return n.type === "status_update" || n.type === "rating_update" || n.type === "employee_update" || n.type === "new_task" || n.type === "task_assigned";
                 // عامة (كل شيء آخر)
-                return n.type !== "task_message" && n.type !== "status_update" && n.type !== "rating_update" && n.type !== "employee_update" && n.type !== "new_task" && n.type !== "task_assigned";
+                return !isTaskMessage && n.type !== "status_update" && n.type !== "rating_update" && n.type !== "employee_update" && n.type !== "new_task" && n.type !== "task_assigned";
               }).length;
               
               return (
@@ -595,21 +599,27 @@ export default function Profile() {
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {notifications
                 .filter((notification) => {
+                  const isDirectMessage = notification.type === "message" && !notification.related_task_id;
+                  const isTaskMessage = notification.type === "message" && !!notification.related_task_id;
+
                   // الرسائل العادية لا تظهر في الإشعارات
-                  if (notification.type === "message") return false;
+                  if (isDirectMessage) return false;
+
                   if (notificationFilter === "all") return true;
                   // رسائل المهام فقط
-                  if (notificationFilter === "messages") return notification.type === "task_message";
+                  if (notificationFilter === "messages") return isTaskMessage;
                   // المهام (تحديثات الحالة والتقييم فقط)
                   if (notificationFilter === "tasks") return notification.type === "status_update" || notification.type === "rating_update" || notification.type === "employee_update" || notification.type === "new_task" || notification.type === "task_assigned";
                   // عامة
-                  return notification.type !== "task_message" && notification.type !== "status_update" && notification.type !== "rating_update" && notification.type !== "employee_update" && notification.type !== "new_task" && notification.type !== "task_assigned";
+                  return !isTaskMessage && notification.type !== "status_update" && notification.type !== "rating_update" && notification.type !== "employee_update" && notification.type !== "new_task" && notification.type !== "task_assigned";
                 })
                 .map((notification) => {
                   // تحديد الأيقونة واللون حسب نوع الإشعار
                   const getNotificationStyle = () => {
+                    const isTaskMessage = notification.type === "message" && !!notification.related_task_id;
+
                     // رسائل المهام فقط
-                    if (notification.type === "task_message") {
+                    if (isTaskMessage) {
                       return {
                         icon: MessageSquare,
                         bgColor: notification.is_read ? "bg-emerald-50" : "bg-emerald-100",
