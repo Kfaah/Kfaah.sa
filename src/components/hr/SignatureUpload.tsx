@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, Trash2, Loader2, PenTool, RotateCcw, Check } from "lucide-react";
@@ -23,11 +24,12 @@ export function SignatureUpload({
   const [deleting, setDeleting] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
+  const [lineWidth, setLineWidth] = useState(2);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // إعداد الـ Canvas
-  useEffect(() => {
+  const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -40,10 +42,23 @@ export function SignatureUpload({
     
     // إعداد القلم بلون أزرق
     ctx.strokeStyle = "#1e40af";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+  }, [lineWidth]);
+
+  useEffect(() => {
+    setupCanvas();
   }, []);
+
+  // تحديث سُمك الخط عند التغيير
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.lineWidth = lineWidth;
+  }, [lineWidth]);
 
   // دوال الرسم
   const getCoordinates = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -315,6 +330,27 @@ export function SignatureUpload({
             </TabsList>
 
             <TabsContent value="draw" className="space-y-4">
+              {/* التحكم بسُمك الخط */}
+              <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">سُمك الخط:</span>
+                <Slider
+                  value={[lineWidth]}
+                  onValueChange={(value) => setLineWidth(value[0])}
+                  min={1}
+                  max={6}
+                  step={1}
+                  className="flex-1"
+                />
+                <div 
+                  className="w-8 h-8 rounded-full border-2 border-muted flex items-center justify-center bg-white"
+                >
+                  <div 
+                    className="rounded-full bg-blue-800"
+                    style={{ width: lineWidth * 3, height: lineWidth * 3 }}
+                  />
+                </div>
+              </div>
+
               <div className="border-2 border-dashed rounded-lg overflow-hidden bg-white">
                 <canvas
                   ref={canvasRef}
