@@ -484,10 +484,10 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="flex h-[500px]">
+      <CardContent className="p-0 overflow-visible">
+        <div className="flex h-[550px]">
           {/* قائمة المحادثات */}
-          <div className="w-1/3 border-l bg-slate-50/50">
+          <div className="w-2/5 min-w-[200px] border-l bg-slate-50/50 overflow-visible">
             <div className="p-3 border-b">
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -499,7 +499,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                 />
               </div>
             </div>
-            <ScrollArea className="h-[calc(500px-60px)]">
+            <ScrollArea className="h-[calc(550px-60px)]">
               {loading ? (
                 <div className="flex items-center justify-center h-32">
                   <Loader2 className="w-6 h-6 animate-spin text-[#3d9aa8]" />
@@ -516,7 +516,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                       key={conv.id}
                       onClick={() => openConversation(conv)}
                       className={cn(
-                        "w-full py-3 px-4 text-right hover:bg-[#3d9aa8]/5 transition-colors flex items-start gap-3",
+                        "w-full py-3 px-5 text-right hover:bg-[#3d9aa8]/5 transition-colors flex items-center gap-4 overflow-visible",
                         selectedConversation?.id === conv.id && "bg-[#3d9aa8]/10"
                       )}
                       dir="rtl"
