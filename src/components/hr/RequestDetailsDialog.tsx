@@ -294,16 +294,20 @@ export function RequestDetailsDialog({
             <span>{format(new Date(request.created_at), "d MMM yyyy - HH:mm", { locale: ar })}</span>
           </div>
 
-          {/* زر تصدير PDF للطلبات الموافق عليها */}
-          {request.status === "approved" && employeeData && (
+          {/* زر تصدير PDF - متاح دائماً */}
+          {employeeData && (
             <>
               <Separator />
               <Button
                 onClick={() => setShowPDFPreview(true)}
-                className="w-full bg-gradient-to-r from-accent to-teal-500"
+                variant={request.status === "approved" ? "default" : "outline"}
+                className={request.status === "approved" 
+                  ? "w-full bg-gradient-to-r from-accent to-teal-500" 
+                  : "w-full"
+                }
               >
                 <Printer className="w-4 h-4 ml-2" />
-                طباعة الطلب الرسمي
+                {request.status === "approved" ? "طباعة الطلب الرسمي" : "معاينة النموذج الرسمي"}
               </Button>
             </>
           )}
