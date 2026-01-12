@@ -238,8 +238,8 @@ export function LiveRequestPreview({
                       <div className="h-6 border-b-2 border-dashed border-blue-300 mx-1 mt-1" />
                     )}
                   </td>
-                  <td className="py-2 px-1 border border-border/40 text-center align-top bg-purple-50/50">
-                    <div className="font-bold text-[9px] mb-1 text-purple-700">المدير التنفيذي</div>
+                  <td className={`py-2 px-1 border border-border/40 text-center align-top ${executiveManagerApproved ? 'bg-green-100' : 'bg-green-50/50'}`}>
+                    <div className="font-bold text-[9px] mb-1 text-green-800">المدير التنفيذي</div>
                     <div className={`text-[9px] mb-1 ${executiveManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                       {executiveManager || "..........."}
                     </div>
@@ -251,37 +251,10 @@ export function LiveRequestPreview({
                       />
                     ) : executiveManager ? (
                       <div className="h-6 flex items-center justify-center">
-                        <span className="text-[8px] text-purple-600 bg-purple-100 px-1 py-0.5 rounded">انتظار</span>
+                        <span className="text-[8px] text-green-700 bg-green-200 px-1 py-0.5 rounded">انتظار</span>
                       </div>
                     ) : (
-                      <div className="h-6 border-b-2 border-dashed border-purple-300 mx-1 mt-1" />
-                    )}
-                  </td>
-                  <td className={`py-2 px-1 border border-border/40 text-center align-top ${isApproved ? 'bg-green-50/50' : 'bg-accent/5'}`}>
-                    <div className={`font-bold text-[9px] mb-1 ${isApproved ? 'text-green-700' : 'text-accent'}`}>
-                      {isApproved ? 'تمت الموافقة' : 'اعتماد الإدارة'}
-                    </div>
-                    {isApproved && approverName ? (
-                      <>
-                        <div className="text-[9px] mb-1 font-medium">{approverName}</div>
-                        {approverSignatureUrl ? (
-                          <img 
-                            src={approverSignatureUrl} 
-                            alt="توقيع المعتمد" 
-                            className="h-6 mx-auto object-contain"
-                          />
-                        ) : (
-                          <div className="h-6 border-b-2 border-dashed border-green-300 mx-1 mt-1" />
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center justify-center gap-1 mt-1 mb-0.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                          <span className="text-[8px] text-muted-foreground">انتظار</span>
-                        </div>
-                        <div className="h-6 border-b-2 border-dashed border-accent/30 mx-1 mt-1" />
-                      </>
+                      <div className="h-6 border-b-2 border-dashed border-green-400 mx-1 mt-1" />
                     )}
                   </td>
                 </tr>
