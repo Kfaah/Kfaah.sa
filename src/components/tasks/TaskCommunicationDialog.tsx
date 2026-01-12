@@ -179,12 +179,18 @@ export function TaskCommunicationDialog({
         setMessages(messagesWithNames);
         
         // تحديد إشعارات رسائل المهمة كمقروءة
-        await supabase
+        // ملاحظة: إشعارات رسائل المهام تُحفظ حالياً بنوع (message) مع related_task_id
+        const { error: markReadError } = await supabase
           .from("notifications")
           .update({ is_read: true })
+          .eq("user_id", currentUserId)
           .eq("related_task_id", taskId)
-          .eq("type", "task_message")
+          .eq("type", "message")
           .eq("is_read", false);
+
+        if (markReadError) {
+          console.error("Error marking task message notifications as read:", markReadError);
+        }
       } catch (error: any) {
         toast({ title: "خطأ", description: error.message, variant: "destructive" });
       } finally {
