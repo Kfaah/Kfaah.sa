@@ -482,9 +482,12 @@ export type Database = {
           current_stage: number | null
           custom_field_values: Json | null
           days_count: number | null
+          direct_manager_id: string | null
           end_date: string | null
           final_pdf_url: string | null
           id: string
+          manager_approved: boolean | null
+          manager_approved_at: string | null
           notes: string | null
           reason: string | null
           rejection_reason: string | null
@@ -492,6 +495,9 @@ export type Database = {
           request_type_id: string
           start_date: string | null
           status: string
+          substitute_approved: boolean | null
+          substitute_approved_at: string | null
+          substitute_employee_id: string | null
           updated_at: string
           user_id: string
         }
@@ -505,9 +511,12 @@ export type Database = {
           current_stage?: number | null
           custom_field_values?: Json | null
           days_count?: number | null
+          direct_manager_id?: string | null
           end_date?: string | null
           final_pdf_url?: string | null
           id?: string
+          manager_approved?: boolean | null
+          manager_approved_at?: string | null
           notes?: string | null
           reason?: string | null
           rejection_reason?: string | null
@@ -515,6 +524,9 @@ export type Database = {
           request_type_id: string
           start_date?: string | null
           status?: string
+          substitute_approved?: boolean | null
+          substitute_approved_at?: string | null
+          substitute_employee_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -528,9 +540,12 @@ export type Database = {
           current_stage?: number | null
           custom_field_values?: Json | null
           days_count?: number | null
+          direct_manager_id?: string | null
           end_date?: string | null
           final_pdf_url?: string | null
           id?: string
+          manager_approved?: boolean | null
+          manager_approved_at?: string | null
           notes?: string | null
           reason?: string | null
           rejection_reason?: string | null
@@ -538,6 +553,9 @@ export type Database = {
           request_type_id?: string
           start_date?: string | null
           status?: string
+          substitute_approved?: boolean | null
+          substitute_approved_at?: string | null
+          substitute_employee_id?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -225,6 +225,8 @@ export function NewRequestDialog({
           attachment_url: attachmentUrl,
           attachment_name: attachmentName,
           status: "pending",
+          substitute_employee_id: substituteEmployeeId || null,
+          direct_manager_id: directManagerId || null,
         })
         .select()
         .single();
@@ -723,8 +725,10 @@ export function NewRequestDialog({
                   requestNumber={previewRequestNumber}
                   substituteEmployee={substituteEmployeeData?.full_name || ""}
                   substituteSignatureUrl={substituteEmployeeData?.signature_url}
+                  substituteApproved={false}
                   directManager={directManagerData?.full_name || ""}
                   directManagerSignatureUrl={directManagerData?.signature_url}
+                  managerApproved={false}
                   headerOffset={selectedType?.header_offset ?? 35}
                 />
               </div>
