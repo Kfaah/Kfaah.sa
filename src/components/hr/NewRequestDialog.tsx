@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -14,6 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Calendar as CalendarIcon, 
   Loader2,
@@ -23,7 +30,8 @@ import {
   AlertTriangle,
   Clock,
   DollarSign,
-  Award
+  Award,
+  User
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
@@ -40,28 +48,59 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
 };
 
+interface Employee {
+  id: string;
+  user_id: string;
+  full_name: string;
+  job_role: string;
+  avatar_url: string | null;
+}
+
 interface NewRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   requestTypes: any[];
   leaveBalances: any[];
+  isAdmin?: boolean;
+  employees?: Employee[];
 }
 
 export function NewRequestDialog({ 
   open, 
   onOpenChange, 
   requestTypes,
-  leaveBalances 
+  leaveBalances,
+  isAdmin = false,
+  employees = []
 }: NewRequestDialogProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedType, setSelectedType] = useState<any>(null);
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
+
+  // جلب رصيد الموظف المختار (للمدير)
+  const { data: employeeBalances = [] } = useQuery({
+    queryKey: ["employee-leave-balances", selectedEmployee],
+    queryFn: async () => {
+      if (!selectedEmployee) return [];
+      const { data, error } = await supabase
+        .from("hr_leave_balances")
+        .select(`*, hr_request_types (*)`)
+        .eq("user_id", selectedEmployee)
+        .eq("year", new Date().getFullYear());
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin && !!selectedEmployee,
+  });
+
+  const currentBalances = isAdmin ? employeeBalances : leaveBalances;
 
   const daysCount = startDate && endDate 
     ? differenceInDays(endDate, startDate) + 1 
@@ -77,7 +116,8 @@ export function NewRequestDialog({
 
   const createRequestMutation = useMutation({
     mutationFn: async () => {
-      if (!user?.id || !selectedType) throw new Error("بيانات ناقصة");
+      const targetUserId = isAdmin ? selectedEmployee : user?.id;
+      if (!targetUserId || !selectedType) throw new Error("بيانات ناقصة");
 
       let attachmentUrl = null;
       let attachmentName = null;
@@ -85,7 +125,7 @@ export function NewRequestDialog({
       // رفع المرفق إن وجد
       if (attachment) {
         const fileExt = attachment.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        const fileName = `${targetUserId}/${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from('task-attachments')
@@ -104,7 +144,7 @@ export function NewRequestDialog({
       const { data, error } = await supabase
         .from("hr_requests")
         .insert({
-          user_id: user.id,
+          user_id: targetUserId,
           request_type_id: selectedType.id,
           request_number: generateRequestNumber(),
           start_date: startDate?.toISOString().split('T')[0],
@@ -123,8 +163,9 @@ export function NewRequestDialog({
       return data;
     },
     onSuccess: () => {
-      toast.success("تم تقديم الطلب بنجاح");
+      toast.success(isAdmin ? "تم إنشاء الطلب للموظف بنجاح" : "تم تقديم الطلب بنجاح");
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
       resetForm();
       onOpenChange(false);
     },
@@ -135,6 +176,7 @@ export function NewRequestDialog({
   });
 
   const resetForm = () => {
+    setSelectedEmployee("");
     setSelectedType(null);
     setStartDate(undefined);
     setEndDate(undefined);
@@ -143,9 +185,21 @@ export function NewRequestDialog({
     setAttachment(null);
   };
 
+  // إعادة تعيين النموذج عند الفتح
+  useEffect(() => {
+    if (open) {
+      resetForm();
+    }
+  }, [open]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isAdmin && !selectedEmployee) {
+      toast.error("يرجى اختيار الموظف");
+      return;
+    }
+
     if (!selectedType) {
       toast.error("يرجى اختيار نوع الطلب");
       return;
@@ -163,7 +217,7 @@ export function NewRequestDialog({
 
     // التحقق من الرصيد
     if (selectedType.deducts_from_balance) {
-      const balance = leaveBalances.find((b: any) => b.request_type_id === selectedType.id);
+      const balance = currentBalances.find((b: any) => b.request_type_id === selectedType.id);
       const remaining = balance?.remaining_days ?? selectedType.max_days ?? 0;
       if (daysCount > remaining) {
         toast.error(`الرصيد المتبقي (${remaining} يوم) لا يكفي لهذا الطلب`);
@@ -183,18 +237,49 @@ export function NewRequestDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>طلب جديد</DialogTitle>
+          <DialogTitle>
+            {isAdmin ? "إنشاء طلب لموظف" : "طلب جديد"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* اختيار الموظف (للمدير فقط) */}
+          {isAdmin && (
+            <div className="space-y-3">
+              <Label>الموظف <span className="text-destructive">*</span></Label>
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الموظف..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.user_id} value={emp.user_id}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                          {emp.avatar_url ? (
+                            <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-3 h-3 text-muted-foreground" />
+                          )}
+                        </div>
+                        <span>{emp.full_name}</span>
+                        <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* اختيار نوع الطلب */}
           <div className="space-y-3">
-            <Label>نوع الطلب</Label>
+            <Label>نوع الطلب <span className="text-destructive">*</span></Label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {requestTypes.map((type) => {
                 const Icon = getIcon(type.icon);
                 const isSelected = selectedType?.id === type.id;
-                const balance = leaveBalances.find((b: any) => b.request_type_id === type.id);
+                const balance = currentBalances.find((b: any) => b.request_type_id === type.id);
                 const remaining = balance?.remaining_days ?? type.max_days;
                 
                 return (
@@ -213,7 +298,7 @@ export function NewRequestDialog({
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <h4 className="font-semibold text-sm text-foreground">{type.name_ar}</h4>
-                    {type.deducts_from_balance && remaining !== null && (
+                    {type.deducts_from_balance && (isAdmin ? selectedEmployee : true) && remaining !== null && (
                       <p className="text-xs text-muted-foreground mt-1">
                         المتبقي: {remaining} يوم
                       </p>
@@ -378,7 +463,7 @@ export function NewRequestDialog({
             </Button>
             <Button
               type="submit"
-              disabled={!selectedType || createRequestMutation.isPending}
+              disabled={!selectedType || (isAdmin && !selectedEmployee) || createRequestMutation.isPending}
               className="bg-gradient-to-r from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90"
             >
               {createRequestMutation.isPending ? (
@@ -387,7 +472,7 @@ export function NewRequestDialog({
                   جاري الإرسال...
                 </>
               ) : (
-                "تقديم الطلب"
+                isAdmin ? "إنشاء الطلب" : "تقديم الطلب"
               )}
             </Button>
           </div>
