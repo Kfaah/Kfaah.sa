@@ -51,8 +51,8 @@ const hrModules: HRModuleCard[] = [
     description: "متابعة حضور وانصراف الموظفين",
     icon: Clock,
     href: "/attendance-management",
-    gradient: "from-[#3d9aa8] to-[#2d7a85]",
-    iconBg: "bg-[#3d9aa8]/20",
+    gradient: "from-emerald-500 to-emerald-600",
+    iconBg: "bg-emerald-500/20",
     stats: { label: "الحضور اليوم", value: "18" }
   },
   {
@@ -60,8 +60,8 @@ const hrModules: HRModuleCard[] = [
     description: "إدارة طلبات الإجازات والاستئذان",
     icon: FolderOpen,
     href: "/hr-requests",
-    gradient: "from-[#3d9aa8] to-[#2d7a85]",
-    iconBg: "bg-[#3d9aa8]/20",
+    gradient: "from-amber-500 to-amber-600",
+    iconBg: "bg-amber-500/20",
     stats: { label: "طلبات معلقة", value: "7" }
   },
   {
