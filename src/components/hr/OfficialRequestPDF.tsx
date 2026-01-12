@@ -126,7 +126,8 @@ export function OfficialRequestPDF({
       
       let yPos = 100;
       const lineHeight = 8;
-      const rightMargin = 190;
+      // تحريك كتلة النص نحو منتصف الصفحة (مع بقاء المحاذاة لليمين)
+      const rightMargin = 160;
 
       // التحية
       pdf.text("صاحب السعادة المدير العام    حفظه الله", rightMargin, yPos, { align: "right" });
@@ -303,7 +304,7 @@ export function OfficialRequestPDF({
             </div>
 
             {/* محتوى الطلب الرسمي */}
-            <div className="mt-[75px] mx-auto w-[70%] space-y-2 text-[11px] leading-relaxed text-center">
+            <div className="mt-[75px] mx-auto w-[70%] space-y-2 text-[11px] leading-relaxed text-right">
               <h2 className="text-base font-bold text-center mb-4">
                 طلب {request.hr_request_types?.name_ar || "إجازة"}
               </h2>
