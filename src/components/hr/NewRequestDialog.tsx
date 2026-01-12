@@ -690,7 +690,7 @@ export function NewRequestDialog({
                   requestNumber={previewRequestNumber}
                   substituteEmployee={substituteEmployee}
                   directManager={directManager}
-                  headerOffset={selectedType?.header_offset ?? 200}
+                  headerOffset={selectedType?.header_offset ?? 35}
                 />
               </div>
             </div>
