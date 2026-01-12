@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -94,6 +95,7 @@ const MONTHS_AR = [
 const Tasks = () => {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isAdmin, setIsAdmin] = useState(false);
   const [canEditTime, setCanEditTime] = useState(false);
   
@@ -135,6 +137,20 @@ const Tasks = () => {
   // حالة نافذة التواصل
   const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
   const [selectedTaskForCommunication, setSelectedTaskForCommunication] = useState<Task | null>(null);
+
+  // فتح نافذة التواصل عند الانتقال من إشعار
+  useEffect(() => {
+    const taskIdFromUrl = searchParams.get("task");
+    if (taskIdFromUrl && tasks.length > 0 && !loading) {
+      const taskToOpen = tasks.find(t => t.id === taskIdFromUrl);
+      if (taskToOpen) {
+        setSelectedTaskForCommunication(taskToOpen);
+        setIsCommunicationDialogOpen(true);
+        // إزالة المعامل من URL بعد فتح النافذة
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, tasks, loading]);
 
 
   // التحقق إذا كان المستخدم هو صاحب المهمة
