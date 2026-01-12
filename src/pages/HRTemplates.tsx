@@ -1,0 +1,858 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  FileText,
+  Plus,
+  Settings,
+  Image,
+  Type,
+  List,
+  Workflow,
+  Save,
+  Trash2,
+  Edit,
+  Eye,
+  Upload,
+  GripVertical,
+  Calendar,
+  FileUp,
+  AlignLeft,
+  ToggleLeft,
+  Hash,
+} from "lucide-react";
+import { toast } from "sonner";
+import { TemplatePreview } from "@/components/hr/TemplatePreview";
+
+interface CustomField {
+  id: string;
+  name: string;
+  label: string;
+  type: "text" | "textarea" | "date" | "select" | "file" | "number" | "checkbox";
+  required: boolean;
+  options?: string[];
+  placeholder?: string;
+}
+
+interface WorkflowStage {
+  id: string;
+  order: number;
+  name: string;
+  approverRole: "admin" | "moderator" | "specific_user";
+  approverUserId?: string;
+  isRequired: boolean;
+  canReject: boolean;
+}
+
+interface RequestType {
+  id: string;
+  name: string;
+  name_ar: string;
+  icon: string;
+  color: string;
+  description: string | null;
+  requires_attachment: boolean;
+  deducts_from_balance: boolean;
+  max_days: number | null;
+  is_active: boolean;
+  letterhead_url: string | null;
+  header_text: string | null;
+  greeting_text: string | null;
+  body_template: string | null;
+  closing_text: string | null;
+  custom_fields: CustomField[];
+  workflow_stages: WorkflowStage[];
+  show_dates: boolean;
+  show_reason: boolean;
+  show_notes: boolean;
+}
+
+const fieldTypeIcons: Record<string, React.ReactNode> = {
+  text: <Type className="w-4 h-4" />,
+  textarea: <AlignLeft className="w-4 h-4" />,
+  date: <Calendar className="w-4 h-4" />,
+  select: <List className="w-4 h-4" />,
+  file: <FileUp className="w-4 h-4" />,
+  number: <Hash className="w-4 h-4" />,
+  checkbox: <ToggleLeft className="w-4 h-4" />,
+};
+
+const fieldTypeLabels: Record<string, string> = {
+  text: "نص قصير",
+  textarea: "نص طويل",
+  date: "تاريخ",
+  select: "قائمة اختيار",
+  file: "ملف مرفق",
+  number: "رقم",
+  checkbox: "خيار (نعم/لا)",
+};
+
+export default function HRTemplates() {
+  const queryClient = useQueryClient();
+  const [selectedType, setSelectedType] = useState<RequestType | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [activeTab, setActiveTab] = useState("content");
+  
+  // Form state
+  const [editData, setEditData] = useState<Partial<RequestType>>({});
+  const [newField, setNewField] = useState<Partial<CustomField>>({
+    type: "text",
+    required: false,
+  });
+  const [newStage, setNewStage] = useState<Partial<WorkflowStage>>({
+    approverRole: "admin",
+    isRequired: true,
+    canReject: true,
+  });
+
+  const { data: requestTypes = [], isLoading } = useQuery({
+    queryKey: ["hr-request-types-full"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hr_request_types")
+        .select("*")
+        .order("created_at");
+      if (error) throw error;
+      return data.map((type: any) => ({
+        ...type,
+        custom_fields: type.custom_fields || [],
+        workflow_stages: type.workflow_stages || [],
+      })) as RequestType[];
+    },
+  });
+
+  const { data: employees = [] } = useQuery({
+    queryKey: ["employees-for-workflow"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("user_id, full_name, job_role")
+        .eq("status", "active");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const updateTypeMutation = useMutation({
+    mutationFn: async (data: Partial<RequestType> & { id: string }) => {
+      const { error } = await supabase
+        .from("hr_request_types")
+        .update({
+          name: data.name,
+          name_ar: data.name_ar,
+          description: data.description,
+          icon: data.icon,
+          color: data.color,
+          requires_attachment: data.requires_attachment,
+          deducts_from_balance: data.deducts_from_balance,
+          max_days: data.max_days,
+          is_active: data.is_active,
+          letterhead_url: data.letterhead_url,
+          header_text: data.header_text,
+          greeting_text: data.greeting_text,
+          body_template: data.body_template,
+          closing_text: data.closing_text,
+          custom_fields: data.custom_fields as any,
+          workflow_stages: data.workflow_stages as any,
+          show_dates: data.show_dates,
+          show_reason: data.show_reason,
+          show_notes: data.show_notes,
+        })
+        .eq("id", data.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم حفظ التعديلات بنجاح");
+      queryClient.invalidateQueries({ queryKey: ["hr-request-types-full"] });
+      queryClient.invalidateQueries({ queryKey: ["hr-request-types"] });
+      setIsEditing(false);
+    },
+    onError: (error) => {
+      console.error("Error updating type:", error);
+      toast.error("حدث خطأ أثناء الحفظ");
+    },
+  });
+
+  const handleSelectType = (type: RequestType) => {
+    setSelectedType(type);
+    setEditData({ ...type });
+    setIsEditing(true);
+  };
+
+  const handleUploadLetterhead = async (file: File) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `letterhead-${selectedType?.id}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("hr-templates")
+        .upload(fileName, file, { upsert: true });
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: urlData } = supabase.storage
+        .from("hr-templates")
+        .getPublicUrl(fileName);
+      
+      setEditData(prev => ({ ...prev, letterhead_url: urlData.publicUrl }));
+      toast.success("تم رفع صورة الخلفية");
+    } catch (error) {
+      console.error("Error uploading letterhead:", error);
+      toast.error("حدث خطأ أثناء رفع الصورة");
+    }
+  };
+
+  const handleAddField = () => {
+    if (!newField.name || !newField.label) {
+      toast.error("يرجى إدخال اسم ومسمى الحقل");
+      return;
+    }
+
+    const field: CustomField = {
+      id: crypto.randomUUID(),
+      name: newField.name!,
+      label: newField.label!,
+      type: newField.type as CustomField["type"],
+      required: newField.required || false,
+      options: newField.options,
+      placeholder: newField.placeholder,
+    };
+
+    setEditData(prev => ({
+      ...prev,
+      custom_fields: [...(prev.custom_fields || []), field],
+    }));
+
+    setNewField({ type: "text", required: false });
+    toast.success("تم إضافة الحقل");
+  };
+
+  const handleRemoveField = (fieldId: string) => {
+    setEditData(prev => ({
+      ...prev,
+      custom_fields: (prev.custom_fields || []).filter(f => f.id !== fieldId),
+    }));
+  };
+
+  const handleAddStage = () => {
+    if (!newStage.name) {
+      toast.error("يرجى إدخال اسم المرحلة");
+      return;
+    }
+
+    const stage: WorkflowStage = {
+      id: crypto.randomUUID(),
+      order: (editData.workflow_stages?.length || 0) + 1,
+      name: newStage.name!,
+      approverRole: newStage.approverRole as WorkflowStage["approverRole"],
+      approverUserId: newStage.approverUserId,
+      isRequired: newStage.isRequired ?? true,
+      canReject: newStage.canReject ?? true,
+    };
+
+    setEditData(prev => ({
+      ...prev,
+      workflow_stages: [...(prev.workflow_stages || []), stage],
+    }));
+
+    setNewStage({ approverRole: "admin", isRequired: true, canReject: true });
+    toast.success("تم إضافة المرحلة");
+  };
+
+  const handleRemoveStage = (stageId: string) => {
+    setEditData(prev => ({
+      ...prev,
+      workflow_stages: (prev.workflow_stages || [])
+        .filter(s => s.id !== stageId)
+        .map((s, i) => ({ ...s, order: i + 1 })),
+    }));
+  };
+
+  const handleSave = () => {
+    if (!selectedType) return;
+    updateTypeMutation.mutate({
+      id: selectedType.id,
+      ...editData,
+    });
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">إدارة النماذج</h1>
+            <p className="text-muted-foreground">تخصيص قوالب ومسارات طلبات الموارد البشرية</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* قائمة أنواع الطلبات */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <List className="w-5 h-5" />
+                أنواع الطلبات
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {isLoading ? (
+                <p className="text-muted-foreground text-center py-4">جاري التحميل...</p>
+              ) : (
+                requestTypes.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => handleSelectType(type)}
+                    className={`w-full p-3 rounded-lg border text-right transition-all ${
+                      selectedType?.id === type.id
+                        ? "border-accent bg-accent/10"
+                        : "border-border hover:border-accent/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center`}>
+                        <FileText className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm">{type.name_ar}</p>
+                        <div className="flex gap-1 mt-1">
+                          {type.custom_fields?.length > 0 && (
+                            <Badge variant="outline" className="text-[10px]">
+                              {type.custom_fields.length} حقول
+                            </Badge>
+                          )}
+                          {type.workflow_stages?.length > 0 && (
+                            <Badge variant="outline" className="text-[10px]">
+                              {type.workflow_stages.length} مراحل
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* محرر النموذج */}
+          <Card className="lg:col-span-3">
+            {selectedType && isEditing ? (
+              <>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    تحرير: {editData.name_ar}
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPreview(true)}
+                    >
+                      <Eye className="w-4 h-4 ml-2" />
+                      معاينة
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={updateTypeMutation.isPending}
+                      className="bg-gradient-to-r from-accent to-teal-500"
+                    >
+                      <Save className="w-4 h-4 ml-2" />
+                      حفظ التعديلات
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid w-full grid-cols-4">
+                      <TabsTrigger value="content" className="gap-2">
+                        <Type className="w-4 h-4" />
+                        المحتوى
+                      </TabsTrigger>
+                      <TabsTrigger value="template" className="gap-2">
+                        <Image className="w-4 h-4" />
+                        القالب
+                      </TabsTrigger>
+                      <TabsTrigger value="fields" className="gap-2">
+                        <List className="w-4 h-4" />
+                        الحقول
+                      </TabsTrigger>
+                      <TabsTrigger value="workflow" className="gap-2">
+                        <Workflow className="w-4 h-4" />
+                        المسار
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* تبويب المحتوى */}
+                    <TabsContent value="content" className="space-y-4 mt-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>الاسم بالعربي</Label>
+                          <Input
+                            value={editData.name_ar || ""}
+                            onChange={(e) => setEditData(prev => ({ ...prev, name_ar: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>الاسم بالإنجليزي</Label>
+                          <Input
+                            value={editData.name || ""}
+                            onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>الوصف</Label>
+                        <Textarea
+                          value={editData.description || ""}
+                          onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg">
+                          <Switch
+                            checked={editData.show_dates ?? true}
+                            onCheckedChange={(checked) => setEditData(prev => ({ ...prev, show_dates: checked }))}
+                          />
+                          <Label>إظهار التواريخ</Label>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 border rounded-lg">
+                          <Switch
+                            checked={editData.show_reason ?? true}
+                            onCheckedChange={(checked) => setEditData(prev => ({ ...prev, show_reason: checked }))}
+                          />
+                          <Label>إظهار السبب</Label>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 border rounded-lg">
+                          <Switch
+                            checked={editData.show_notes ?? true}
+                            onCheckedChange={(checked) => setEditData(prev => ({ ...prev, show_notes: checked }))}
+                          />
+                          <Label>إظهار الملاحظات</Label>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg">
+                          <Switch
+                            checked={editData.requires_attachment ?? false}
+                            onCheckedChange={(checked) => setEditData(prev => ({ ...prev, requires_attachment: checked }))}
+                          />
+                          <Label>يتطلب مرفق</Label>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 border rounded-lg">
+                          <Switch
+                            checked={editData.deducts_from_balance ?? false}
+                            onCheckedChange={(checked) => setEditData(prev => ({ ...prev, deducts_from_balance: checked }))}
+                          />
+                          <Label>يخصم من الرصيد</Label>
+                        </div>
+                      </div>
+
+                      {editData.deducts_from_balance && (
+                        <div className="space-y-2">
+                          <Label>الحد الأقصى للأيام</Label>
+                          <Input
+                            type="number"
+                            value={editData.max_days || ""}
+                            onChange={(e) => setEditData(prev => ({ ...prev, max_days: parseInt(e.target.value) || null }))}
+                          />
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    {/* تبويب القالب */}
+                    <TabsContent value="template" className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label>صورة الخلفية / الورق الرسمي</Label>
+                        <div className="border-2 border-dashed rounded-lg p-4">
+                          {editData.letterhead_url ? (
+                            <div className="relative">
+                              <img
+                                src={editData.letterhead_url}
+                                alt="الخلفية"
+                                className="max-h-40 mx-auto rounded"
+                              />
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-2 left-2"
+                                onClick={() => setEditData(prev => ({ ...prev, letterhead_url: null }))}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <label className="cursor-pointer flex flex-col items-center gap-2">
+                              <Upload className="w-8 h-8 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">اضغط لرفع صورة الخلفية</span>
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleUploadLetterhead(file);
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          إذا لم يتم تحديد خلفية، سيتم استخدام الخلفية الافتراضية
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>عنوان المخاطب</Label>
+                        <Input
+                          value={editData.header_text || ""}
+                          onChange={(e) => setEditData(prev => ({ ...prev, header_text: e.target.value }))}
+                          placeholder="صاحب السعادة المدير العام    حفظه الله"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>نص التحية</Label>
+                        <Input
+                          value={editData.greeting_text || ""}
+                          onChange={(e) => setEditData(prev => ({ ...prev, greeting_text: e.target.value }))}
+                          placeholder="السلام عليكم ورحمة الله وبركاته، وبعد:"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>نص الطلب (القالب)</Label>
+                        <Textarea
+                          value={editData.body_template || ""}
+                          onChange={(e) => setEditData(prev => ({ ...prev, body_template: e.target.value }))}
+                          placeholder="أتقدم لسعادتكم بطلب الحصول على {نوع_الطلب}..."
+                          rows={4}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          استخدم المتغيرات: {"{اسم_الموظف}"} {"{المسمى_الوظيفي}"} {"{نوع_الطلب}"} {"{تاريخ_البداية}"} {"{تاريخ_النهاية}"} {"{عدد_الأيام}"}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>نص الختام</Label>
+                        <Textarea
+                          value={editData.closing_text || ""}
+                          onChange={(e) => setEditData(prev => ({ ...prev, closing_text: e.target.value }))}
+                          placeholder="آمل من سعادتكم التكرم بالموافقة على طلبي..."
+                          rows={2}
+                        />
+                      </div>
+                    </TabsContent>
+
+                    {/* تبويب الحقول المخصصة */}
+                    <TabsContent value="fields" className="space-y-4 mt-4">
+                      {/* الحقول الموجودة */}
+                      <div className="space-y-2">
+                        <Label>الحقول المخصصة</Label>
+                        {(editData.custom_fields?.length ?? 0) === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4 border rounded-lg">
+                            لا توجد حقول مخصصة. أضف حقولاً جديدة أدناه.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {editData.custom_fields?.map((field) => (
+                              <div
+                                key={field.id}
+                                className="flex items-center gap-3 p-3 border rounded-lg"
+                              >
+                                <GripVertical className="w-4 h-4 text-muted-foreground cursor-move" />
+                                <div className="flex items-center gap-2">
+                                  {fieldTypeIcons[field.type]}
+                                  <span className="text-xs text-muted-foreground">
+                                    {fieldTypeLabels[field.type]}
+                                  </span>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm">{field.label}</p>
+                                  <p className="text-xs text-muted-foreground">{field.name}</p>
+                                </div>
+                                {field.required && (
+                                  <Badge variant="destructive" className="text-[10px]">مطلوب</Badge>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveField(field.id)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* إضافة حقل جديد */}
+                      <Card className="border-dashed">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Plus className="w-4 h-4" />
+                            إضافة حقل جديد
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs">اسم الحقل (بالإنجليزي)</Label>
+                              <Input
+                                value={newField.name || ""}
+                                onChange={(e) => setNewField(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder="field_name"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">المسمى (بالعربي)</Label>
+                              <Input
+                                value={newField.label || ""}
+                                onChange={(e) => setNewField(prev => ({ ...prev, label: e.target.value }))}
+                                placeholder="اسم الحقل"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">نوع الحقل</Label>
+                              <Select
+                                value={newField.type}
+                                onValueChange={(v) => setNewField(prev => ({ ...prev, type: v as any }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Object.entries(fieldTypeLabels).map(([key, label]) => (
+                                    <SelectItem key={key} value={key}>
+                                      <div className="flex items-center gap-2">
+                                        {fieldTypeIcons[key]}
+                                        {label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {newField.type === "select" && (
+                            <div className="space-y-1">
+                              <Label className="text-xs">الخيارات (مفصولة بفاصلة)</Label>
+                              <Input
+                                value={newField.options?.join(", ") || ""}
+                                onChange={(e) => setNewField(prev => ({ 
+                                  ...prev, 
+                                  options: e.target.value.split(",").map(o => o.trim()).filter(Boolean)
+                                }))}
+                                placeholder="خيار 1, خيار 2, خيار 3"
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={newField.required ?? false}
+                                onCheckedChange={(checked) => setNewField(prev => ({ ...prev, required: checked }))}
+                              />
+                              <Label className="text-sm">حقل مطلوب</Label>
+                            </div>
+                            <Button size="sm" onClick={handleAddField}>
+                              <Plus className="w-4 h-4 ml-2" />
+                              إضافة الحقل
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    {/* تبويب مسار الموافقات */}
+                    <TabsContent value="workflow" className="space-y-4 mt-4">
+                      {/* المراحل الموجودة */}
+                      <div className="space-y-2">
+                        <Label>مراحل سير العمل</Label>
+                        {(editData.workflow_stages?.length ?? 0) === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4 border rounded-lg">
+                            لا توجد مراحل. سيتم الموافقة مباشرة من المدير.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {editData.workflow_stages?.map((stage, index) => (
+                              <div
+                                key={stage.id}
+                                className="flex items-center gap-3 p-3 border rounded-lg"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center font-bold text-accent">
+                                  {index + 1}
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm">{stage.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {stage.approverRole === "admin" && "المدراء"}
+                                    {stage.approverRole === "moderator" && "المشرفون"}
+                                    {stage.approverRole === "specific_user" && 
+                                      employees.find(e => e.user_id === stage.approverUserId)?.full_name
+                                    }
+                                  </p>
+                                </div>
+                                <div className="flex gap-1">
+                                  {stage.isRequired && (
+                                    <Badge variant="outline" className="text-[10px]">مطلوبة</Badge>
+                                  )}
+                                  {stage.canReject && (
+                                    <Badge variant="outline" className="text-[10px]">يمكن الرفض</Badge>
+                                  )}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveStage(stage.id)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* إضافة مرحلة جديدة */}
+                      <Card className="border-dashed">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Plus className="w-4 h-4" />
+                            إضافة مرحلة جديدة
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs">اسم المرحلة</Label>
+                              <Input
+                                value={newStage.name || ""}
+                                onChange={(e) => setNewStage(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder="مثال: موافقة المدير المباشر"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">المعتمد</Label>
+                              <Select
+                                value={newStage.approverRole}
+                                onValueChange={(v) => setNewStage(prev => ({ ...prev, approverRole: v as any }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">المدراء</SelectItem>
+                                  <SelectItem value="moderator">المشرفون</SelectItem>
+                                  <SelectItem value="specific_user">موظف محدد</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {newStage.approverRole === "specific_user" && (
+                            <div className="space-y-1">
+                              <Label className="text-xs">اختر الموظف</Label>
+                              <Select
+                                value={newStage.approverUserId}
+                                onValueChange={(v) => setNewStage(prev => ({ ...prev, approverUserId: v }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="اختر..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {employees.map((emp) => (
+                                    <SelectItem key={emp.user_id} value={emp.user_id!}>
+                                      {emp.full_name} - {emp.job_role}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex gap-4">
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={newStage.isRequired ?? true}
+                                  onCheckedChange={(checked) => setNewStage(prev => ({ ...prev, isRequired: checked }))}
+                                />
+                                <Label className="text-sm">مرحلة مطلوبة</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={newStage.canReject ?? true}
+                                  onCheckedChange={(checked) => setNewStage(prev => ({ ...prev, canReject: checked }))}
+                                />
+                                <Label className="text-sm">يمكن الرفض</Label>
+                              </div>
+                            </div>
+                            <Button size="sm" onClick={handleAddStage}>
+                              <Plus className="w-4 h-4 ml-2" />
+                              إضافة المرحلة
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </>
+            ) : (
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <Settings className="w-16 h-16 text-muted-foreground/30 mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground">اختر نوع طلب للتحرير</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  اختر أحد أنواع الطلبات من القائمة لتخصيص القالب والحقول ومسار الموافقات
+                </p>
+              </CardContent>
+            )}
+          </Card>
+        </div>
+      </div>
+
+      {/* معاينة القالب */}
+      {showPreview && selectedType && (
+        <TemplatePreview
+          open={showPreview}
+          onOpenChange={setShowPreview}
+          templateData={editData}
+        />
+      )}
+    </DashboardLayout>
+  );
+}
