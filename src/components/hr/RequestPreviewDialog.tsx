@@ -8,34 +8,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Calendar, 
   Clock, 
   FileText, 
   CheckCircle2, 
   XCircle, 
-  AlertCircle,
   Loader2,
   Download,
   User,
   UserCheck,
   Users,
   Trash2,
-  Sparkles,
   CalendarDays,
   MessageSquare,
   Printer,
-  ArrowLeft,
-  Building2,
-  Hash,
-  ClipboardList
+  Building2
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LiveRequestPreview } from "./LiveRequestPreview";
 import jsPDF from "jspdf";
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string; borderColor: string; iconBg: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -337,24 +332,24 @@ export function RequestPreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[92vh] overflow-hidden p-0 border-0 shadow-2xl rounded-2xl">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0 border-0 shadow-2xl rounded-2xl">
         <div className="flex flex-col h-full">
-          {/* Header - تصميم مُحكم وأنيق */}
-          <div className={`relative ${statusInfo.bgColor} px-6 py-4 border-b ${statusInfo.borderColor}`}>
+          {/* Header - تصميم أنيق ومُحكم */}
+          <div className={`relative ${statusInfo.bgColor} px-5 py-3 border-b ${statusInfo.borderColor}`}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={`w-11 h-11 rounded-xl ${statusInfo.iconBg} flex items-center justify-center shadow-lg`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl ${statusInfo.iconBg} flex items-center justify-center shadow-lg`}>
                   <FileText className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-foreground">
+                  <h2 className="text-base font-bold text-foreground">
                     {request.hr_request_types?.name_ar || "طلب"}
                   </h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground bg-white/60 px-2 py-0.5 rounded-full">
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[11px] text-muted-foreground bg-white/60 px-2 py-0.5 rounded-full">
                       #{request.request_number}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[11px] text-muted-foreground">
                       {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
                     </span>
                   </div>
@@ -367,258 +362,240 @@ export function RequestPreviewDialog({
             </div>
           </div>
 
-          {/* Content - تخطيط ثنائي مُحكم */}
-          <div className="flex-1 overflow-y-auto p-5 bg-gradient-to-b from-muted/10 to-background">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 h-full">
+          {/* Content - تخطيط ثنائي كبير وواضح */}
+          <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-muted/10 to-background">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 h-full">
               
-              {/* الورق الرسمي - 3 أعمدة */}
-              <div className="lg:col-span-3 order-2 lg:order-1">
-                <div 
-                  ref={previewRef}
-                  className="relative bg-white rounded-xl overflow-hidden shadow-xl border border-gray-200"
-                  style={{ aspectRatio: "210/297", maxHeight: "calc(92vh - 180px)" }}
-                >
-                  <img
-                    src="/letterhead-template.jpg"
-                    alt="قالب الخطاب"
-                    className="absolute inset-0 w-full h-full object-cover"
+              {/* الورق الرسمي - الجانب الأيسر */}
+              <div className="order-2 lg:order-1">
+                <div ref={previewRef} className="transform scale-[0.92] origin-top">
+                  <LiveRequestPreview
+                    employeeName={employeeData?.full_name || "---"}
+                    jobRole={employeeData?.job_role || "---"}
+                    signatureUrl={employeeData?.signature_url}
+                    requestTypeName={request.hr_request_types?.name_ar || "طلب"}
+                    startDate={request.start_date ? new Date(request.start_date) : undefined}
+                    endDate={request.end_date ? new Date(request.end_date) : undefined}
+                    daysCount={request.days_count || 0}
+                    reason={request.reason || ""}
+                    notes={request.notes || ""}
+                    requestNumber={request.request_number}
+                    substituteEmployee={substituteData?.full_name}
+                    substituteSignatureUrl={substituteData?.signature_url}
+                    substituteApproved={request.substitute_approved}
+                    directManager={managerData?.full_name}
+                    directManagerSignatureUrl={managerData?.signature_url}
+                    managerApproved={request.manager_approved}
+                    approverName={approverData?.full_name}
+                    approverSignatureUrl={approverData?.signature_url}
+                    isApproved={request.status === "approved"}
+                    headerOffset={request.hr_request_types?.header_offset || 35}
+                    letterheadUrl={request.hr_request_types?.letterhead_url || "/letterhead-template.jpg"}
                   />
-                  
-                  <div className="absolute inset-0 flex flex-col p-4" dir="rtl">
-                    {/* رقم وتاريخ الطلب */}
-                    <div className="absolute top-[8%] right-[22%] text-[8px] space-y-1">
-                      <p className="font-semibold">{request.request_number}</p>
-                      <p>{format(new Date(request.created_at), "dd/MM/yyyy")}</p>
-                    </div>
-
-                    {/* محتوى الطلب */}
-                    <div className="mt-[25%] mx-auto w-[85%] space-y-2 text-[9px] leading-relaxed text-right">
-                      <h2 className="text-[11px] font-bold text-center mb-3">
-                        طلب {request.hr_request_types?.name_ar || "إجازة"}
-                      </h2>
-
-                      <p className="font-semibold text-[8px]">صاحب السعادة المدير العام    حفظه الله</p>
-                      <p className="text-[8px]">السلام عليكم ورحمة الله وبركاته، وبعد:</p>
-                      
-                      <div className="mt-2 space-y-0.5 text-[8px]">
-                        <p><span className="font-semibold">أنا الموقع أدناه:</span> {employeeData?.full_name || "---"}</p>
-                        <p><span className="font-semibold">المسمى الوظيفي:</span> {employeeData?.job_role || "---"}</p>
-                      </div>
-
-                      <p className="mt-2 text-[8px]">{getRequestTypeText()}</p>
-
-                      <div className="space-y-0.5 text-[8px]">
-                        {request.start_date && (
-                          <p><span className="font-semibold">من تاريخ:</span> {format(new Date(request.start_date), "dd/MM/yyyy")}</p>
-                        )}
-                        {request.end_date && request.end_date !== request.start_date && (
-                          <p><span className="font-semibold">إلى تاريخ:</span> {format(new Date(request.end_date), "dd/MM/yyyy")}</p>
-                        )}
-                        {request.days_count && (
-                          <p><span className="font-semibold">عدد الأيام:</span> ({request.days_count}) يوم</p>
-                        )}
-                      </div>
-
-                      {request.reason && (
-                        <p className="mt-1 text-[8px]"><span className="font-semibold">السبب:</span> {request.reason}</p>
-                      )}
-
-                      <p className="mt-2 text-[7px]">آمل من سعادتكم التكرم بالموافقة على طلبي.</p>
-                      <p className="text-[7px]">وتقبلوا فائق الاحترام والتقدير،،،</p>
-
-                      {/* التوقيعات */}
-                      <div className="grid grid-cols-4 gap-1 mt-4 pt-2 border-t border-gray-200">
-                        <div className="text-center">
-                          <p className="font-semibold text-[6px] text-gray-600">مقدم الطلب</p>
-                          <p className="text-[6px] truncate">{employeeData?.full_name || "---"}</p>
-                          {employeeData?.signature_url && (
-                            <img src={employeeData.signature_url} alt="توقيع" className="h-5 mx-auto mt-0.5 object-contain" />
-                          )}
-                        </div>
-                        <div className="text-center">
-                          <p className="font-semibold text-[6px] text-amber-600">الموظف البديل</p>
-                          {substituteData ? (
-                            <>
-                              <p className="text-[6px] truncate">{substituteData.full_name}</p>
-                              {request.substitute_approved && substituteData.signature_url ? (
-                                <img src={substituteData.signature_url} alt="توقيع" className="h-5 mx-auto mt-0.5 object-contain" />
-                              ) : (
-                                <p className="text-[5px] text-amber-500 mt-1">في الانتظار</p>
-                              )}
-                            </>
-                          ) : (
-                            <p className="text-[5px] text-gray-400 mt-1">---</p>
-                          )}
-                        </div>
-                        <div className="text-center">
-                          <p className="font-semibold text-[6px] text-blue-600">المدير المباشر</p>
-                          {managerData ? (
-                            <>
-                              <p className="text-[6px] truncate">{managerData.full_name}</p>
-                              {request.manager_approved && managerData.signature_url ? (
-                                <img src={managerData.signature_url} alt="توقيع" className="h-5 mx-auto mt-0.5 object-contain" />
-                              ) : (
-                                <p className="text-[5px] text-blue-500 mt-1">في الانتظار</p>
-                              )}
-                            </>
-                          ) : (
-                            <p className="text-[5px] text-gray-400 mt-1">---</p>
-                          )}
-                        </div>
-                        <div className="text-center">
-                          <p className="font-semibold text-[6px] text-emerald-600">اعتماد الإدارة</p>
-                          {request.status === "approved" && approverData ? (
-                            <>
-                              <p className="text-[6px] truncate">{approverData.full_name}</p>
-                              {approverData.signature_url && (
-                                <img src={approverData.signature_url} alt="توقيع" className="h-5 mx-auto mt-0.5 object-contain" />
-                              )}
-                            </>
-                          ) : (
-                            <p className="text-[5px] text-gray-400 mt-1">في الانتظار</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
                 {/* أزرار التصدير */}
-                <div className="flex gap-2 mt-3">
+                <div className="flex gap-3 mt-4">
                   <Button 
                     variant="outline" 
-                    size="sm"
-                    className="flex-1 rounded-lg"
+                    className="flex-1 h-10 rounded-xl border-2 hover:bg-primary/5"
                     onClick={() => window.print()}
                   >
-                    <Printer className="w-4 h-4 ml-1" />
+                    <Printer className="w-4 h-4 ml-2" />
                     طباعة
                   </Button>
                   <Button 
                     variant="outline" 
-                    size="sm"
-                    className="flex-1 rounded-lg"
+                    className="flex-1 h-10 rounded-xl border-2 hover:bg-primary/5"
                     onClick={generatePDF}
                     disabled={generating}
                   >
-                    {generating ? <Loader2 className="w-4 h-4 ml-1 animate-spin" /> : <Download className="w-4 h-4 ml-1" />}
-                    PDF
+                    {generating ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Download className="w-4 h-4 ml-2" />}
+                    تصدير PDF
                   </Button>
                 </div>
               </div>
 
-              {/* تفاصيل الطلب - 2 أعمدة */}
-              <div className="lg:col-span-2 order-1 lg:order-2 space-y-3">
-                {/* مقدم الطلب */}
-                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12 ring-2 ring-primary/10">
-                      <AvatarImage src={employeeData?.avatar_url} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                        {employeeData?.full_name?.charAt(0) || "؟"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-foreground truncate">{employeeData?.full_name || "---"}</h4>
-                      <p className="text-xs text-muted-foreground truncate">{employeeData?.job_role || "---"}</p>
+              {/* تفاصيل الطلب - الجانب الأيمن */}
+              <div className="order-1 lg:order-2 space-y-4">
+                {/* معلومات مقدم الطلب */}
+                <div className="relative overflow-hidden bg-gradient-to-br from-white to-muted/30 rounded-2xl p-5 border border-gray-100 shadow-lg">
+                  <div className="absolute top-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl transform -translate-x-1/2 -translate-y-1/2" />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <User className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <h3 className="font-semibold text-sm text-foreground">مقدم الطلب</h3>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Avatar className="w-14 h-14 ring-4 ring-white shadow-xl">
+                        <AvatarImage src={employeeData?.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white text-xl font-bold">
+                          {employeeData?.full_name?.charAt(0) || "؟"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="text-lg font-bold text-foreground">
+                          {employeeData?.full_name || "---"}
+                        </h4>
+                        <p className="text-sm text-muted-foreground flex items-center gap-2 mt-0.5">
+                          <Building2 className="w-3.5 h-3.5" />
+                          {employeeData?.job_role || "---"}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* بطاقات التفاصيل المُحكمة */}
-                <div className="grid grid-cols-2 gap-2">
-                  {request.start_date && (
-                    <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-3 border border-primary/10">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="w-4 h-4 text-primary" />
-                        <span className="text-[10px] font-medium text-muted-foreground">من</span>
+                {/* تفاصيل الطلب */}
+                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-lg space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* التواريخ */}
+                    {request.start_date && (
+                      <div className="flex items-center gap-3 bg-gradient-to-r from-primary/5 to-transparent rounded-xl p-3 border border-primary/10">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
+                          <Calendar className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[10px] font-medium text-muted-foreground">من تاريخ</div>
+                          <div className="font-bold text-foreground">{formatArabicDate(request.start_date)}</div>
+                        </div>
                       </div>
-                      <p className="text-sm font-bold text-foreground">{format(new Date(request.start_date), "d/M/yyyy")}</p>
-                    </div>
-                  )}
-                  {request.end_date && (
-                    <div className="bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 rounded-lg p-3 border border-emerald-500/10">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="w-4 h-4 text-emerald-600" />
-                        <span className="text-[10px] font-medium text-muted-foreground">إلى</span>
+                    )}
+                    
+                    {request.end_date && (
+                      <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-500/5 to-transparent rounded-xl p-3 border border-emerald-500/10">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                          <Calendar className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[10px] font-medium text-muted-foreground">إلى تاريخ</div>
+                          <div className="font-bold text-foreground">{formatArabicDate(request.end_date)}</div>
+                        </div>
                       </div>
-                      <p className="text-sm font-bold text-foreground">{format(new Date(request.end_date), "d/M/yyyy")}</p>
-                    </div>
-                  )}
-                  {request.days_count && (
-                    <div className="bg-gradient-to-br from-amber-500/5 to-amber-500/10 rounded-lg p-3 border border-amber-500/10">
-                      <div className="flex items-center gap-2 mb-1">
-                        <CalendarDays className="w-4 h-4 text-amber-600" />
-                        <span className="text-[10px] font-medium text-muted-foreground">المدة</span>
-                      </div>
-                      <p className="text-sm font-bold text-foreground">{request.days_count} يوم</p>
-                    </div>
-                  )}
-                  <div className="bg-gradient-to-br from-blue-500/5 to-blue-500/10 rounded-lg p-3 border border-blue-500/10">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="w-4 h-4 text-blue-600" />
-                      <span className="text-[10px] font-medium text-muted-foreground">التقديم</span>
-                    </div>
-                    <p className="text-sm font-bold text-foreground">{format(new Date(request.created_at), "d/M/yyyy")}</p>
-                  </div>
-                </div>
+                    )}
 
-                {/* السبب والملاحظات */}
-                {(request.reason || request.notes) && (
-                  <div className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm space-y-2">
-                    {request.reason && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <MessageSquare className="w-3.5 h-3.5 text-purple-500" />
-                          <span className="text-xs font-semibold text-muted-foreground">السبب</span>
+                    {/* عدد الأيام */}
+                    {request.days_count && (
+                      <div className="flex items-center gap-3 bg-gradient-to-r from-amber-500/5 to-transparent rounded-xl p-3 border border-amber-500/10">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                          <CalendarDays className="w-5 h-5 text-white" />
                         </div>
-                        <p className="text-sm text-foreground line-clamp-2">{request.reason}</p>
+                        <div className="flex-1">
+                          <div className="text-[10px] font-medium text-muted-foreground">المدة</div>
+                          <div className="font-bold text-foreground">{request.days_count} يوم</div>
+                        </div>
                       </div>
                     )}
-                    {request.notes && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <FileText className="w-3.5 h-3.5 text-blue-500" />
-                          <span className="text-xs font-semibold text-muted-foreground">ملاحظات</span>
-                        </div>
-                        <p className="text-sm text-foreground line-clamp-2">{request.notes}</p>
+
+                    {/* تاريخ التقديم */}
+                    <div className="flex items-center gap-3 bg-gradient-to-r from-blue-500/5 to-transparent rounded-xl p-3 border border-blue-500/10">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                        <Clock className="w-5 h-5 text-white" />
                       </div>
-                    )}
+                      <div className="flex-1">
+                        <div className="text-[10px] font-medium text-muted-foreground">تاريخ التقديم</div>
+                        <div className="font-bold text-foreground">
+                          {format(new Date(request.created_at), "d MMM yyyy", { locale: ar })}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
+
+                  {/* السبب */}
+                  {request.reason && (
+                    <div className="bg-gradient-to-r from-purple-500/5 to-transparent rounded-xl p-4 border border-purple-500/10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center">
+                          <MessageSquare className="w-3.5 h-3.5 text-white" />
+                        </div>
+                        <span className="text-xs font-semibold text-foreground">سبب الطلب</span>
+                      </div>
+                      <p className="text-sm text-foreground leading-relaxed">{request.reason}</p>
+                    </div>
+                  )}
+
+                  {/* ملاحظات */}
+                  {request.notes && (
+                    <div className="bg-gradient-to-r from-blue-500/5 to-transparent rounded-xl p-4 border border-blue-500/10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+                          <FileText className="w-3.5 h-3.5 text-white" />
+                        </div>
+                        <span className="text-xs font-semibold text-foreground">ملاحظات</span>
+                      </div>
+                      <p className="text-sm text-foreground leading-relaxed">{request.notes}</p>
+                    </div>
+                  )}
+                </div>
 
                 {/* حالة الموافقات */}
                 {(substituteData || managerData) && (
-                  <div className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm">
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                      حالة الموافقات
-                    </h4>
+                  <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <h3 className="font-semibold text-sm text-foreground">حالة الموافقات</h3>
+                    </div>
+
                     <div className="space-y-2">
                       {substituteData && (
-                        <div className={`flex items-center justify-between p-2 rounded-lg ${
-                          request.substitute_approved ? "bg-emerald-50" : "bg-amber-50"
+                        <div className={`flex items-center justify-between p-3 rounded-xl border-2 ${
+                          request.substitute_approved 
+                            ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200" 
+                            : "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200"
                         }`}>
-                          <div className="flex items-center gap-2">
-                            <UserCheck className={`w-4 h-4 ${request.substitute_approved ? "text-emerald-600" : "text-amber-600"}`} />
-                            <span className="text-xs font-medium truncate max-w-[100px]">{substituteData.full_name}</span>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                              request.substitute_approved 
+                                ? "bg-gradient-to-br from-emerald-400 to-green-500" 
+                                : "bg-gradient-to-br from-amber-400 to-orange-500"
+                            }`}>
+                              <UserCheck className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm text-foreground">الموظف البديل</p>
+                              <p className="text-xs text-muted-foreground">{substituteData.full_name}</p>
+                            </div>
                           </div>
-                          <span className={`text-[10px] font-bold ${request.substitute_approved ? "text-emerald-600" : "text-amber-600"}`}>
-                            {request.substitute_approved ? "✓ وافق" : "⏳"}
-                          </span>
+                          <div className={`px-3 py-1.5 rounded-lg font-semibold text-xs ${
+                            request.substitute_approved 
+                              ? "bg-emerald-100 text-emerald-700" 
+                              : "bg-amber-100 text-amber-700"
+                          }`}>
+                            {request.substitute_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
+                          </div>
                         </div>
                       )}
+
                       {managerData && (
-                        <div className={`flex items-center justify-between p-2 rounded-lg ${
-                          request.manager_approved ? "bg-emerald-50" : "bg-blue-50"
+                        <div className={`flex items-center justify-between p-3 rounded-xl border-2 ${
+                          request.manager_approved 
+                            ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200" 
+                            : "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200"
                         }`}>
-                          <div className="flex items-center gap-2">
-                            <Users className={`w-4 h-4 ${request.manager_approved ? "text-emerald-600" : "text-blue-600"}`} />
-                            <span className="text-xs font-medium truncate max-w-[100px]">{managerData.full_name}</span>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                              request.manager_approved 
+                                ? "bg-gradient-to-br from-emerald-400 to-green-500" 
+                                : "bg-gradient-to-br from-blue-400 to-cyan-500"
+                            }`}>
+                              <Users className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm text-foreground">المدير المباشر</p>
+                              <p className="text-xs text-muted-foreground">{managerData.full_name}</p>
+                            </div>
                           </div>
-                          <span className={`text-[10px] font-bold ${request.manager_approved ? "text-emerald-600" : "text-blue-600"}`}>
-                            {request.manager_approved ? "✓ وافق" : "⏳"}
-                          </span>
+                          <div className={`px-3 py-1.5 rounded-lg font-semibold text-xs ${
+                            request.manager_approved 
+                              ? "bg-emerald-100 text-emerald-700" 
+                              : "bg-blue-100 text-blue-700"
+                          }`}>
+                            {request.manager_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -627,12 +604,14 @@ export function RequestPreviewDialog({
 
                 {/* سبب الرفض */}
                 {request.status === "rejected" && request.rejection_reason && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <XCircle className="w-4 h-4 text-red-500" />
-                      <span className="text-xs font-semibold text-red-700">سبب الرفض</span>
+                  <div className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-2xl p-4 shadow-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center">
+                        <XCircle className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="font-bold text-sm text-red-800">سبب الرفض</span>
                     </div>
-                    <p className="text-sm text-red-600 line-clamp-2">{request.rejection_reason}</p>
+                    <p className="text-sm text-red-700 leading-relaxed">{request.rejection_reason}</p>
                   </div>
                 )}
               </div>
@@ -713,7 +692,7 @@ export function RequestPreviewDialog({
                           : approvalType === "manager"
                             ? "موافقة كمدير مباشر"
                             : "موافقة"}
-                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
                     </Button>
                   </div>
                 )}
