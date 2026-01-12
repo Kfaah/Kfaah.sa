@@ -57,17 +57,15 @@ export function LiveRequestPreview({
       />
       
       {/* محتوى الطلب */}
-      <div className="absolute inset-0 p-4" dir="rtl">
+      <div className="absolute inset-0 p-4 flex flex-col" dir="rtl">
         {/* الرقم والتاريخ */}
-        <div className="absolute top-[20px] right-[60px] text-[8px]" style={{ fontFamily: 'Arial, sans-serif' }}>
+        <div className="absolute top-[20px] left-1/2 -translate-x-1/2 text-[8px] text-center" style={{ fontFamily: 'Arial, sans-serif' }}>
           <p className="text-muted-foreground">{requestNumber || "HR-XXXX-XXXX"}</p>
-        </div>
-        <div className="absolute top-[28px] right-[60px] text-[8px]" style={{ fontFamily: 'Arial, sans-serif' }}>
           <p className="text-muted-foreground">{currentDate}</p>
         </div>
 
         {/* محتوى الطلب الرسمي */}
-        <div className="mt-[48px] mr-4 ml-8 space-y-1.5 text-[9px] leading-relaxed">
+        <div className="mt-[48px] mx-auto max-w-[85%] space-y-1.5 text-[9px] leading-relaxed text-center">
           <h2 className="text-sm font-bold text-center mb-3">
             طلب {requestTypeName || "___________"}
           </h2>
