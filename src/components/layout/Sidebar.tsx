@@ -223,8 +223,8 @@ export function Sidebar() {
     const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
     const badgeCount = item.badge;
     
-    // إذا كان الرابط للصفحة الرئيسية، لا نضيف state
-    const linkState = item.href === "/" ? undefined : { fromNavigation: true };
+    // جميع الروابط تضيف state لإخفاء شاشة الترحيب
+    const linkState = { fromNavigation: true };
     
     return (
       <Link

@@ -59,13 +59,16 @@ const Index = () => {
   });
   const [recentTasks, setRecentTasks] = useState<any[]>([]);
 
-  // تتبع تغيير الصفحة لإخفاء شاشة الترحيب
+  // تتبع تغيير الصفحة لإخفاء/إظهار شاشة الترحيب
   useEffect(() => {
-    // عند تحميل الصفحة، تحقق إذا كان المستخدم قادم من صفحة أخرى
+    // إذا جاء من القائمة الجانبية، أخفي شاشة الترحيب
     if (location.state?.fromNavigation) {
       setShowWelcome(false);
+    } else if (location.key === "default" || !location.state) {
+      // إذا ضغط على الشعار أو دخل الموقع لأول مرة، أظهر شاشة الترحيب
+      setShowWelcome(true);
     }
-  }, [location]);
+  }, [location.state, location.key]);
 
   useEffect(() => {
     const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
