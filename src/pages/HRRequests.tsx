@@ -114,7 +114,7 @@ export default function HRRequests() {
     enabled: !!authUser?.id && !isAdmin,
   });
 
-  // جلب قائمة الموظفين (للمدير فقط)
+  // جلب قائمة الموظفين (لجميع المستخدمين - للموظف البديل والمدير المباشر)
   const { data: employees = [] } = useQuery({
     queryKey: ["employees-list"],
     queryFn: async () => {
@@ -126,7 +126,6 @@ export default function HRRequests() {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
   });
 
   const getStatusBadge = (status: string) => {
@@ -356,7 +355,7 @@ export default function HRRequests() {
           requestTypes={requestTypes}
           leaveBalances={leaveBalances}
           isAdmin={false}
-          employees={[]}
+          employees={employees}
         />
 
         {/* Dialog تفاصيل الطلب */}

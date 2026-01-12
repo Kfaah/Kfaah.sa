@@ -533,21 +533,53 @@ export function NewRequestDialog({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label className="text-right font-semibold">الموظف البديل</Label>
-                          <Input
-                            value={substituteEmployee}
-                            onChange={(e) => setSubstituteEmployee(e.target.value)}
-                            placeholder="اسم الموظف البديل..."
-                            className="bg-background"
-                          />
+                          <Select value={substituteEmployee} onValueChange={setSubstituteEmployee} dir="rtl">
+                            <SelectTrigger className="bg-background text-right">
+                              <SelectValue placeholder="اختر الموظف البديل..." />
+                            </SelectTrigger>
+                            <SelectContent className="text-right" dir="rtl">
+                              {employees.map((emp) => (
+                                <SelectItem key={emp.id} value={emp.full_name}>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden">
+                                      {emp.avatar_url ? (
+                                        <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <User className="w-3 h-3 text-amber-600" />
+                                      )}
+                                    </div>
+                                    <span>{emp.full_name}</span>
+                                    <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label className="text-right font-semibold">المدير المباشر</Label>
-                          <Input
-                            value={directManager}
-                            onChange={(e) => setDirectManager(e.target.value)}
-                            placeholder="اسم المدير المباشر..."
-                            className="bg-background"
-                          />
+                          <Select value={directManager} onValueChange={setDirectManager} dir="rtl">
+                            <SelectTrigger className="bg-background text-right">
+                              <SelectValue placeholder="اختر المدير المباشر..." />
+                            </SelectTrigger>
+                            <SelectContent className="text-right" dir="rtl">
+                              {employees.map((emp) => (
+                                <SelectItem key={emp.id} value={emp.full_name}>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                                      {emp.avatar_url ? (
+                                        <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <User className="w-3 h-3 text-blue-600" />
+                                      )}
+                                    </div>
+                                    <span>{emp.full_name}</span>
+                                    <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>
