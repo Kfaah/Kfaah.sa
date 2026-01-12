@@ -254,6 +254,16 @@ export default function HRRequests() {
   // رفض الطلب (كموظف بديل أو مدير مباشر)
   const rejectRequestMutation = useMutation({
     mutationFn: async ({ requestId, reason, type }: { requestId: string; reason: string; type: 'substitute' | 'manager' }) => {
+      // جلب بيانات الطلب أولاً للحصول على user_id صاحب الطلب ورقم الطلب
+      const { data: requestData, error: fetchError } = await supabase
+        .from("hr_requests")
+        .select("user_id, request_number, hr_request_types(name_ar)")
+        .eq("id", requestId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+
+      // تحديث حالة الطلب
       const { error } = await supabase
         .from("hr_requests")
         .update({
@@ -263,12 +273,36 @@ export default function HRRequests() {
         .eq("id", requestId);
       
       if (error) throw error;
+
+      // جلب اسم الموظف الذي رفض الطلب
+      const { data: rejecterEmployee } = await supabase
+        .from("employees")
+        .select("full_name")
+        .eq("user_id", authUser?.id)
+        .single();
+
+      const rejecterName = rejecterEmployee?.full_name || (type === 'substitute' ? 'الموظف البديل' : 'المدير المباشر');
+      const requestTypeName = (requestData.hr_request_types as any)?.name_ar || 'طلب';
+
+      // إرسال إشعار للموظف صاحب الطلب
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert({
+          user_id: requestData.user_id,
+          title: `تم رفض ${requestTypeName}`,
+          message: `تم رفض طلبك رقم ${requestData.request_number} من قبل ${rejecterName}. السبب: ${reason}`,
+          type: "hr_request_rejected",
+        });
+
+      if (notificationError) {
+        console.error("Error sending notification:", notificationError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-substitute-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["pending-manager-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
-      toast.success("تم رفض الطلب");
+      toast.success("تم رفض الطلب وإرسال إشعار للموظف");
       setRejectDialogOpen(false);
       setRejectingRequest(null);
       setRejectionReason("");
