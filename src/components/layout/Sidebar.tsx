@@ -377,9 +377,8 @@ export function Sidebar() {
                 {/* Name and Role - Right side, centered vertically */}
                 <div className="flex-1 flex flex-col items-center justify-center gap-2">
                   <h3 className="font-bold text-slate-800 text-base">{user.firstName} {user.lastName}</h3>
-                  <span className="text-xs text-cyan-600 font-semibold bg-cyan-50 rounded-full px-3 py-1 border border-cyan-200 inline-flex items-center gap-1">
-                    <span>%</span>
-                    <span>{user.role}</span>
+                  <span className="text-xs text-cyan-600 font-semibold bg-cyan-50 rounded-full px-3 py-1 border border-cyan-200">
+                    {user.role}
                   </span>
                 </div>
               </div>
