@@ -410,84 +410,53 @@ export default function HRTemplates() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6" dir="rtl">
+      <div className="space-y-6 p-6" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-row-reverse items-center justify-between">
+          <Button
+            onClick={handleCreateNew}
+            className="bg-gradient-to-l from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90 text-white gap-2 flex-row-reverse"
+          >
+            إضافة نموذج جديد
+            <Plus className="w-4 h-4" />
+          </Button>
+          <div className="text-right">
             <h1 className="text-2xl font-bold text-foreground">إدارة النماذج</h1>
             <p className="text-muted-foreground">تخصيص قوالب ومسارات طلبات الموارد البشرية</p>
           </div>
-          <Button
-            onClick={handleCreateNew}
-            className="bg-gradient-to-r from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90 text-white gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            إضافة نموذج جديد
-          </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* قائمة أنواع الطلبات */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <List className="w-5 h-5" />
-                أنواع الطلبات
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {isLoading ? (
-                <p className="text-muted-foreground text-center py-4">جاري التحميل...</p>
-              ) : (
-                requestTypes.map((type) => (
-                  <button
-                    key={type.id}
-                    onClick={() => {
-                      handleSelectType(type);
-                      setIsCreatingNew(false);
-                    }}
-                    className={`w-full p-3 rounded-lg border text-right transition-all ${
-                      selectedType?.id === type.id
-                        ? "border-accent bg-accent/10"
-                        : "border-border hover:border-accent/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center`}>
-                        <FileText className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-sm">{type.name_ar}</p>
-                        <div className="flex gap-1 mt-1">
-                          {type.custom_fields?.length > 0 && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {type.custom_fields.length} حقول
-                            </Badge>
-                          )}
-                          {type.workflow_stages?.length > 0 && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {type.workflow_stages.length} مراحل
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          {/* محرر النموذج */}
-          <Card className="lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6" style={{ direction: 'rtl' }}>
+          {/* محرر النموذج - يظهر على اليمين */}
+          <Card className="lg:col-span-3 lg:order-1">
             {isEditing ? (
               <>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
+                <CardHeader className="flex flex-row-reverse items-center justify-between">
+                  <CardTitle className="flex flex-row-reverse items-center gap-2">
                     <Settings className="w-5 h-5" />
                     {isCreatingNew ? "إنشاء نموذج جديد" : `تحرير: ${editData.name_ar}`}
                   </CardTitle>
-                  <div className="flex gap-2">
+                  <div className="flex flex-row-reverse gap-2">
+                    <Button
+                      size="sm"
+                      onClick={isCreatingNew ? handleSaveNew : handleSave}
+                      disabled={updateTypeMutation.isPending || createTypeMutation.isPending}
+                      className="bg-gradient-to-l from-accent to-teal-500 flex-row-reverse"
+                    >
+                      {isCreatingNew ? "إنشاء النموذج" : "حفظ التعديلات"}
+                      <Save className="w-4 h-4 mr-2" />
+                    </Button>
+                    {!isCreatingNew && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPreview(true)}
+                        className="flex-row-reverse"
+                      >
+                        معاينة
+                        <Eye className="w-4 h-4 mr-2" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -498,25 +467,6 @@ export default function HRTemplates() {
                       }}
                     >
                       إلغاء
-                    </Button>
-                    {!isCreatingNew && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowPreview(true)}
-                      >
-                        <Eye className="w-4 h-4 ml-2" />
-                        معاينة
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={isCreatingNew ? handleSaveNew : handleSave}
-                      disabled={updateTypeMutation.isPending || createTypeMutation.isPending}
-                      className="bg-gradient-to-r from-accent to-teal-500"
-                    >
-                      <Save className="w-4 h-4 ml-2" />
-                      {isCreatingNew ? "إنشاء النموذج" : "حفظ التعديلات"}
                     </Button>
                   </div>
                 </CardHeader>
@@ -1004,6 +954,57 @@ export default function HRTemplates() {
                 </p>
               </CardContent>
             )}
+          </Card>
+
+          {/* قائمة أنواع الطلبات - تظهر على اليسار */}
+          <Card className="lg:col-span-1 lg:order-2">
+            <CardHeader>
+              <CardTitle className="text-lg flex flex-row-reverse items-center gap-2">
+                أنواع الطلبات
+                <List className="w-5 h-5" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {isLoading ? (
+                <p className="text-muted-foreground text-center py-4">جاري التحميل...</p>
+              ) : (
+                requestTypes.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => {
+                      handleSelectType(type);
+                      setIsCreatingNew(false);
+                    }}
+                    className={`w-full p-3 rounded-lg border text-right transition-all ${
+                      selectedType?.id === type.id
+                        ? "border-accent bg-accent/10"
+                        : "border-border hover:border-accent/50"
+                    }`}
+                  >
+                    <div className="flex flex-row-reverse items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center`}>
+                        <FileText className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 text-right">
+                        <p className="font-semibold text-sm">{type.name_ar}</p>
+                        <div className="flex flex-row-reverse gap-1 mt-1">
+                          {type.custom_fields?.length > 0 && (
+                            <Badge variant="outline" className="text-[10px]">
+                              {type.custom_fields.length} حقول
+                            </Badge>
+                          )}
+                          {type.workflow_stages?.length > 0 && (
+                            <Badge variant="outline" className="text-[10px]">
+                              {type.workflow_stages.length} مراحل
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </CardContent>
           </Card>
         </div>
       </div>
