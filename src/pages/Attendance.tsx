@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Clock, LogIn, LogOut, Check, ListTodo, Bell, Calendar, History } from "lucide-react";
+import { Clock, LogIn, LogOut, Check, ListTodo, Bell, Calendar, History, Users, TrendingUp, FileText, Filter, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,7 +12,7 @@ import { useUser } from "@/contexts/UserContext";
 import { cn, formatNumberPlain, formatDate } from "@/lib/utils";
 import { DailyTasksSelector } from "@/components/tasks/DailyTasksSelector";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth, differenceInMinutes } from "date-fns";
 import { ar } from "date-fns/locale";
 
 interface Task {
@@ -31,7 +32,10 @@ interface ActiveTask {
 export default function Attendance() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { previewingEmployee } = useUser();
+  const { previewingEmployee, previewAsEmployee, user: userData } = useUser();
+  
+  // Check if user is admin (not previewing)
+  const isAdmin = !previewAsEmployee && userData.role === "مدير النظام";
   
   // Use previewing employee's user_id if in preview mode, otherwise use auth user's id
   const effectiveUserId = previewingEmployee?.user_id || user?.id;
@@ -59,14 +63,154 @@ export default function Attendance() {
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [showAllHistory, setShowAllHistory] = useState(false);
 
+  // Admin state
+  const [adminRecords, setAdminRecords] = useState<any[]>([]);
+  const [adminEmployees, setAdminEmployees] = useState<any[]>([]);
+  const [adminDateFilter, setAdminDateFilter] = useState<string>(getLocalDateString());
+  const [adminSelectedEmployee, setAdminSelectedEmployee] = useState<string>("all");
+  const [adminStats, setAdminStats] = useState({
+    totalEmployees: 0,
+    presentToday: 0,
+    absentToday: 0,
+    averageHoursThisMonth: 0,
+  });
+
   useEffect(() => {
-    if (effectiveUserId) {
+    if (isAdmin) {
+      fetchAdminData();
+    } else if (effectiveUserId) {
       checkTodayAttendance();
       fetchTodayTasks();
       fetchActiveTask();
       fetchAttendanceHistory();
     }
-  }, [effectiveUserId]);
+  }, [effectiveUserId, isAdmin]);
+
+  // Fetch admin data when filters change
+  useEffect(() => {
+    if (isAdmin) {
+      fetchAdminRecords();
+      fetchAdminStats();
+    }
+  }, [adminDateFilter, adminSelectedEmployee, isAdmin]);
+
+  const fetchAdminData = async () => {
+    try {
+      // Fetch employees
+      const { data: empData } = await supabase
+        .from("employees")
+        .select("id, user_id, full_name, job_role, avatar_url")
+        .eq("status", "active")
+        .order("full_name");
+      
+      setAdminEmployees(empData || []);
+      await fetchAdminRecords();
+      await fetchAdminStats();
+    } catch (error) {
+      console.error("Error fetching admin data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAdminRecords = async () => {
+    try {
+      let query = supabase
+        .from("attendance")
+        .select("*")
+        .eq("date", adminDateFilter)
+        .order("check_in_at", { ascending: false });
+      
+      if (adminSelectedEmployee !== "all") {
+        const selectedEmp = adminEmployees.find(e => e.id === adminSelectedEmployee);
+        if (selectedEmp?.user_id) {
+          query = query.eq("user_id", selectedEmp.user_id);
+        }
+      }
+      
+      const { data: attendanceData } = await query;
+      
+      // Create employee map
+      const { data: empData } = await supabase
+        .from("employees")
+        .select("user_id, full_name, job_role, avatar_url");
+      
+      const employeeMap = new Map(empData?.map(e => [e.user_id, e]) || []);
+      
+      const recordsWithEmployees = (attendanceData || []).map(record => ({
+        ...record,
+        employee: employeeMap.get(record.user_id)
+      }));
+      
+      setAdminRecords(recordsWithEmployees);
+    } catch (error) {
+      console.error("Error fetching admin records:", error);
+    }
+  };
+
+  const fetchAdminStats = async () => {
+    try {
+      const today = getLocalDateString();
+      const monthStart = startOfMonth(new Date()).toISOString().split('T')[0];
+      const monthEnd = endOfMonth(new Date()).toISOString().split('T')[0];
+
+      const { count: totalEmployees } = await supabase
+        .from("employees")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active");
+
+      const { data: todayAttendance } = await supabase
+        .from("attendance")
+        .select("*")
+        .eq("date", today);
+
+      const { data: monthAttendance } = await supabase
+        .from("attendance")
+        .select("*")
+        .gte("date", monthStart)
+        .lte("date", monthEnd)
+        .not("check_out_at", "is", null);
+
+      let totalMinutes = 0;
+      let completedRecords = 0;
+
+      monthAttendance?.forEach(record => {
+        if (record.check_out_at) {
+          const checkIn = new Date(record.check_in_at);
+          const checkOut = new Date(record.check_out_at);
+          totalMinutes += differenceInMinutes(checkOut, checkIn);
+          completedRecords++;
+        }
+      });
+
+      const averageHours = completedRecords > 0 ? (totalMinutes / completedRecords / 60) : 0;
+
+      setAdminStats({
+        totalEmployees: totalEmployees || 0,
+        presentToday: todayAttendance?.length || 0,
+        absentToday: (totalEmployees || 0) - (todayAttendance?.length || 0),
+        averageHoursThisMonth: Math.round(averageHours * 10) / 10,
+      });
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+    }
+  };
+
+  const calculateWorkDuration = (checkIn: string, checkOut: string | null): string => {
+    if (!checkOut) return "جاري العمل";
+    
+    const minutes = differenceInMinutes(new Date(checkOut), new Date(checkIn));
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hours === 0 && mins === 0) {
+      const seconds = Math.floor((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 1000);
+      return `${seconds} ثانية`;
+    } else if (hours === 0) {
+      return `${mins} دقيقة`;
+    }
+    return `${hours} ساعة ${mins} دقيقة`;
+  };
 
   // تحديث عداد الحضور كل ثانية
   useEffect(() => {
@@ -358,6 +502,206 @@ export default function Attendance() {
     );
   }
 
+  // Admin View
+  if (isAdmin) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6 p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+                <BarChart3 className="w-7 h-7 text-accent" />
+                تقارير الحضور والانصراف
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                مراقبة ومتابعة سجلات حضور الموظفين
+              </p>
+            </div>
+            <Badge className="bg-accent/10 text-accent border-accent/20">
+              {format(new Date(), "EEEE، d MMMM yyyy", { locale: ar })}
+            </Badge>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">إجمالي الموظفين</p>
+                    <p className="text-2xl font-bold text-foreground">{adminStats.totalEmployees}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <Check className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">الحاضرون اليوم</p>
+                    <p className="text-2xl font-bold text-emerald-600">{adminStats.presentToday}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center">
+                    <LogOut className="w-6 h-6 text-rose-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">الغائبون اليوم</p>
+                    <p className="text-2xl font-bold text-rose-600">{adminStats.absentToday}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">متوسط ساعات العمل</p>
+                    <p className="text-2xl font-bold text-amber-600">{adminStats.averageHoursThisMonth}h</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <Card className="border-border/50 bg-white shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex flex-wrap gap-3 items-center">
+                {/* Date Filter */}
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">التاريخ:</span>
+                  <input
+                    type="date"
+                    value={adminDateFilter}
+                    onChange={(e) => setAdminDateFilter(e.target.value)}
+                    className="border rounded-md px-3 py-2 text-sm"
+                  />
+                </div>
+
+                {/* Employee Filter */}
+                <div className="w-64">
+                  <Select value={adminSelectedEmployee} onValueChange={setAdminSelectedEmployee}>
+                    <SelectTrigger className="w-full bg-white border-border">
+                      <Users className="w-4 h-4 text-muted-foreground ml-2" />
+                      <SelectValue placeholder="جميع الموظفين" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      <SelectItem value="all">جميع الموظفين</SelectItem>
+                      {adminEmployees.map((emp: any) => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.full_name} - {emp.job_role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Attendance Records */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-accent" />
+                سجلات الحضور
+                <Badge variant="secondary">{adminRecords.length} سجل</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {adminRecords.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>لا توجد سجلات حضور لهذا اليوم</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-accent hover:bg-accent">
+                        <TableHead className="text-center font-bold text-white">الموظف</TableHead>
+                        <TableHead className="text-center font-bold text-white">الوظيفة</TableHead>
+                        <TableHead className="text-center font-bold text-white">وقت الحضور</TableHead>
+                        <TableHead className="text-center font-bold text-white">وقت الانصراف</TableHead>
+                        <TableHead className="text-center font-bold text-white">مدة العمل</TableHead>
+                        <TableHead className="text-center font-bold text-white">الحالة</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {adminRecords.map((record: any, index: number) => (
+                        <TableRow key={record.id} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                          <TableCell className="text-center font-medium">
+                            <div className="flex items-center justify-center gap-2">
+                              {record.employee?.avatar_url ? (
+                                <img 
+                                  src={record.employee.avatar_url} 
+                                  alt="" 
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                                  <Users className="w-4 h-4 text-accent" />
+                                </div>
+                              )}
+                              <span>{record.employee?.full_name || "غير معروف"}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center text-muted-foreground">
+                            {record.employee?.job_role || "-"}
+                          </TableCell>
+                          <TableCell className="text-center text-emerald-600 font-semibold" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {format(new Date(record.check_in_at), "hh:mm a", { locale: ar })}
+                          </TableCell>
+                          <TableCell className="text-center text-rose-600 font-semibold" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {record.check_out_at 
+                              ? format(new Date(record.check_out_at), "hh:mm a", { locale: ar })
+                              : "-"
+                            }
+                          </TableCell>
+                          <TableCell className="text-center font-bold text-accent" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {calculateWorkDuration(record.check_in_at, record.check_out_at)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {record.check_out_at ? (
+                              <Badge className="bg-sky-100 text-sky-700 border-sky-200">مكتمل</Badge>
+                            ) : (
+                              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">حاضر</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Employee View
   return (
     <DashboardLayout>
       <div className="space-y-6 p-6">
@@ -595,7 +939,6 @@ export default function Attendance() {
           </CardContent>
         </Card>
 
-        {/* Attendance History Table */}
         {/* Attendance History Table */}
         {attendanceHistory.length > 0 && (
           <Card>
