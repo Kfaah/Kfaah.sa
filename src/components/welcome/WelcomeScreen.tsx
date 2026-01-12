@@ -130,51 +130,84 @@ export function WelcomeScreen() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mb-8 relative"
+          style={{ width: 200, height: 200 }}
         >
-          {/* الهالات المتحركة */}
+          {/* الدائرة الدوارة الأولى - نقاط كبيرة */}
           <motion.div
-            className="absolute inset-0 -m-4 rounded-full border-2 border-white/30"
-            animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          />
+            className="absolute inset-0"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            style={{ width: 200, height: 200 }}
+          >
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={`dot1-${i}`}
+                className="absolute w-4 h-4 rounded-full shadow-lg"
+                style={{
+                  background: `hsl(${i * 45}, 80%, 55%)`,
+                  boxShadow: `0 0 15px hsl(${i * 45}, 80%, 55%)`,
+                  top: "50%",
+                  left: "50%",
+                  transform: `rotate(${i * 45}deg) translateY(-95px) translateX(-50%)`,
+                }}
+              />
+            ))}
+          </motion.div>
+
+          {/* الدائرة الدوارة الثانية - نقاط صغيرة عكس الاتجاه */}
           <motion.div
-            className="absolute inset-0 -m-6 rounded-full border-2 border-white/20"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0, 0.3] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-          />
+            className="absolute inset-0"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+            style={{ width: 200, height: 200 }}
+          >
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={`dot2-${i}`}
+                className="absolute w-2.5 h-2.5 rounded-full"
+                style={{
+                  background: `hsl(${i * 30 + 15}, 90%, 60%)`,
+                  boxShadow: `0 0 10px hsl(${i * 30 + 15}, 90%, 60%)`,
+                  top: "50%",
+                  left: "50%",
+                  transform: `rotate(${i * 30}deg) translateY(-80px) translateX(-50%)`,
+                }}
+              />
+            ))}
+          </motion.div>
+
+          {/* خط شريطي دوار */}
           <motion.div
-            className="absolute inset-0 -m-8 rounded-full border border-white/10"
-            animate={{ scale: [1, 1.25, 1], opacity: [0.2, 0, 0.2] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute inset-0 rounded-full"
+            style={{
+              width: 190,
+              height: 190,
+              top: 5,
+              left: 5,
+              border: "3px dashed",
+              borderColor: "rgba(59, 130, 246, 0.6)",
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           />
-          
-          {/* النقاط المتحركة حول الشعار */}
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-white rounded-full shadow-lg"
-              style={{
-                top: "50%",
-                left: "50%",
-                transformOrigin: "center",
-              }}
-              animate={{
-                x: [0, Math.cos((i * 45 * Math.PI) / 180) * 90],
-                y: [0, Math.sin((i * 45 * Math.PI) / 180) * 90],
-                opacity: [0, 1, 0],
-                scale: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                delay: i * 0.3,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-          
+
+          {/* خط شريطي دوار عكسي */}
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              width: 170,
+              height: 170,
+              top: 15,
+              left: 15,
+              border: "2px dotted",
+              borderColor: "rgba(168, 85, 247, 0.5)",
+            }}
+            animate={{ rotate: -360 }}
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          />
+
           {/* الشعار - دائرة بيضاء مع ظل */}
-          <div className="relative w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/50">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/80">
             <img
               src={atefLogo}
               alt="جمعية عطف"
