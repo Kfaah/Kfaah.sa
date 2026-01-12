@@ -58,7 +58,7 @@ export function LiveRequestPreview({
         <div className="absolute inset-0 p-3 flex flex-col" dir="rtl" style={{ fontFamily: "'Cairo', 'Segoe UI', Tahoma, sans-serif" }}>
           
           {/* مساحة الهيدر - تترك فارغة للشعار */}
-          <div className="h-[85px]" />
+          <div className="h-[140px]" />
 
           {/* رقم الطلب والتاريخ */}
           <div className="flex justify-between items-center mx-6 text-[7px]">
