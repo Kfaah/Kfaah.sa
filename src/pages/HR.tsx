@@ -42,8 +42,8 @@ const hrModules: HRModuleCard[] = [
     description: "إدارة صلاحيات المستخدمين والأدوار الوظيفية",
     icon: UserCog,
     href: "/roles",
-    gradient: "from-[#3d9aa8] to-[#2d7a85]",
-    iconBg: "bg-[#3d9aa8]/20",
+    gradient: "from-indigo-500 to-indigo-600",
+    iconBg: "bg-indigo-500/20",
     stats: { label: "الأدوار النشطة", value: "5" }
   },
   {
@@ -69,8 +69,8 @@ const hrModules: HRModuleCard[] = [
     description: "تقارير شاملة وإحصائيات الموارد البشرية",
     icon: PieChart,
     href: "/hr-reports",
-    gradient: "from-[#3d9aa8] to-[#2d7a85]",
-    iconBg: "bg-[#3d9aa8]/20",
+    gradient: "from-rose-500 to-rose-600",
+    iconBg: "bg-rose-500/20",
     stats: { label: "تقارير الشهر", value: "12" }
   },
   {
