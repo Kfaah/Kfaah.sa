@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,22 +58,40 @@ export function AdminRequestsPanel({ requestTypes }: AdminRequestsPanelProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
+  // جلب الموظفين
+  const { data: employees = [] } = useQuery({
+    queryKey: ["hr-employees-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("user_id, full_name, avatar_url, job_role");
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
+
   // جلب جميع الطلبات
-  const { data: allRequests = [], isLoading } = useQuery({
+  const { data: requestsData = [], isLoading } = useQuery({
     queryKey: ["all-hr-requests"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hr_requests")
-        .select(`
-          *,
-          hr_request_types (*),
-          employees:user_id (full_name, avatar_url, job_role)
-        `)
+        .select(`*, hr_request_types (*)`)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
+
+  // دمج بيانات الموظفين مع الطلبات
+  const allRequests = useMemo(() => {
+    const employeeMap = new Map(employees.map((e: any) => [e.user_id, e]));
+    return requestsData.map((r: any) => ({
+      ...r,
+      employees: employeeMap.get(r.user_id) || null,
+    }));
+  }, [requestsData, employees]);
 
   // تصفية الطلبات
   const filteredRequests = allRequests.filter((request: any) => {
