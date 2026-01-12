@@ -33,8 +33,8 @@ const hrModules: HRModuleCard[] = [
     description: "إدارة بيانات الموظفين والملفات الشخصية",
     icon: Users,
     href: "/employees",
-    gradient: "from-blue-500 to-blue-600",
-    iconBg: "bg-blue-400/20",
+    gradient: "from-[#3d9aa8] to-[#2d7a85]",
+    iconBg: "bg-[#3d9aa8]/20",
     stats: { label: "إجمالي الموظفين", value: "24" }
   },
   {
@@ -42,8 +42,8 @@ const hrModules: HRModuleCard[] = [
     description: "إدارة صلاحيات المستخدمين والأدوار الوظيفية",
     icon: UserCog,
     href: "/roles",
-    gradient: "from-pink-500 to-rose-600",
-    iconBg: "bg-pink-400/20",
+    gradient: "from-[#3d9aa8] to-[#2d7a85]",
+    iconBg: "bg-[#3d9aa8]/20",
     stats: { label: "الأدوار النشطة", value: "5" }
   },
   {
@@ -51,8 +51,8 @@ const hrModules: HRModuleCard[] = [
     description: "متابعة حضور وانصراف الموظفين",
     icon: Clock,
     href: "/attendance-management",
-    gradient: "from-emerald-500 to-teal-600",
-    iconBg: "bg-emerald-400/20",
+    gradient: "from-[#3d9aa8] to-[#2d7a85]",
+    iconBg: "bg-[#3d9aa8]/20",
     stats: { label: "الحضور اليوم", value: "18" }
   },
   {
@@ -60,8 +60,8 @@ const hrModules: HRModuleCard[] = [
     description: "إدارة طلبات الإجازات والاستئذان",
     icon: FolderOpen,
     href: "/hr-requests",
-    gradient: "from-amber-500 to-orange-600",
-    iconBg: "bg-amber-400/20",
+    gradient: "from-[#3d9aa8] to-[#2d7a85]",
+    iconBg: "bg-[#3d9aa8]/20",
     stats: { label: "طلبات معلقة", value: "7" }
   },
   {
@@ -69,8 +69,8 @@ const hrModules: HRModuleCard[] = [
     description: "تقارير شاملة وإحصائيات الموارد البشرية",
     icon: PieChart,
     href: "/hr-reports",
-    gradient: "from-violet-500 to-purple-600",
-    iconBg: "bg-violet-400/20",
+    gradient: "from-[#3d9aa8] to-[#2d7a85]",
+    iconBg: "bg-[#3d9aa8]/20",
     stats: { label: "تقارير الشهر", value: "12" }
   },
   {
@@ -78,8 +78,8 @@ const hrModules: HRModuleCard[] = [
     description: "إعداد وتخصيص نماذج الطلبات الرسمية",
     icon: FileCheck,
     href: "/hr-templates",
-    gradient: "from-cyan-500 to-sky-600",
-    iconBg: "bg-cyan-400/20",
+    gradient: "from-[#3d9aa8] to-[#2d7a85]",
+    iconBg: "bg-[#3d9aa8]/20",
     stats: { label: "القوالب", value: "8" }
   },
 ];
@@ -87,11 +87,11 @@ const hrModules: HRModuleCard[] = [
 export default function HR() {
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-[#3d9aa8]/5 p-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-xl shadow-indigo-200">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center shadow-xl shadow-[#3d9aa8]/30">
               <Briefcase className="w-8 h-8 text-white" />
             </div>
             <div>
@@ -104,8 +104,8 @@ export default function HR() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
             <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-lg bg-[#3d9aa8]/10 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-[#3d9aa8]" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-slate-800">24</p>
@@ -115,8 +115,8 @@ export default function HR() {
             </div>
             <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                <div className="w-10 h-10 rounded-lg bg-[#3d9aa8]/10 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-[#3d9aa8]" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-slate-800">92%</p>
@@ -126,8 +126,8 @@ export default function HR() {
             </div>
             <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                  <FolderOpen className="w-5 h-5 text-amber-600" />
+                <div className="w-10 h-10 rounded-lg bg-[#3d9aa8]/10 flex items-center justify-center">
+                  <FolderOpen className="w-5 h-5 text-[#3d9aa8]" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-slate-800">7</p>
@@ -137,8 +137,8 @@ export default function HR() {
             </div>
             <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
-                  <CalendarDays className="w-5 h-5 text-violet-600" />
+                <div className="w-10 h-10 rounded-lg bg-[#3d9aa8]/10 flex items-center justify-center">
+                  <CalendarDays className="w-5 h-5 text-[#3d9aa8]" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-slate-800">15</p>
@@ -182,7 +182,7 @@ export default function HR() {
                 </div>
 
                 {/* Title & Description */}
-                <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-[#3d9aa8] transition-colors">
                   {module.title}
                 </h3>
                 <p className="text-sm text-slate-500 leading-relaxed">
