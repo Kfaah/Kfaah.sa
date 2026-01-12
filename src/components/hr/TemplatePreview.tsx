@@ -75,16 +75,16 @@ export function TemplatePreview({ open, onOpenChange, templateData }: TemplatePr
             </p>
 
             <LiveRequestPreview
-              employeeName="اسم الموظف"
-              jobRole="المسمى الوظيفي"
+              employeeName=""
+              jobRole=""
               signatureUrl={null}
               requestTypeName={templateData.name_ar || "طلب"}
-              startDate={demoStartDate}
-              endDate={demoEndDate}
-              daysCount={demoDaysCount}
-              reason={templateData.show_reason ? "سبب تجريبي" : ""}
-              notes={templateData.show_notes ? "ملاحظات تجريبية" : ""}
-              requestNumber="HR-2026XX-XXXX"
+              startDate={undefined}
+              endDate={undefined}
+              daysCount={0}
+              reason=""
+              notes=""
+              requestNumber="HR-XXXX-XXXX"
               substituteEmployee=""
               substituteSignatureUrl={null}
               substituteApproved={false}

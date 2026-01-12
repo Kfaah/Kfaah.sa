@@ -142,13 +142,13 @@ export function LiveRequestPreview({
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">إلى تاريخ</td>
-                  <td className={`py-1.5 px-2 border border-border/40 text-[8px] ${endDate ? 'font-medium' : 'text-muted-foreground'}`}>
-                    {endDate ? formatArabicDate(endDate) : "---"}
-                  </td>
                   <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">من تاريخ</td>
                   <td className={`py-1.5 px-2 border border-border/40 text-[8px] ${startDate ? 'font-medium' : 'text-muted-foreground'}`}>
                     {startDate ? formatArabicDate(startDate) : "---"}
+                  </td>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[8px]">إلى تاريخ</td>
+                  <td className={`py-1.5 px-2 border border-border/40 text-[8px] ${endDate ? 'font-medium' : 'text-muted-foreground'}`}>
+                    {endDate ? formatArabicDate(endDate) : "---"}
                   </td>
                 </tr>
                 <tr>
