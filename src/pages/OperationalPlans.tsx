@@ -51,6 +51,8 @@ interface StrategicGoal {
   year: number;
   department_id: string | null;
   department_name?: string;
+  // الأقسام المالكة (متعدد) عبر جدول الربط
+  departments?: Department[];
 }
 
 interface Initiative {
@@ -59,6 +61,8 @@ interface Initiative {
   name: string;
   department_id: string | null;
   department_name?: string;
+  // الأقسام المالكة (متعدد) عبر جدول الربط
+  departments?: Department[];
 }
 
 interface OperationalPlan {
@@ -226,18 +230,47 @@ export default function OperationalPlans() {
 
   const fetchStrategicGoals = async () => {
     try {
-      const { data, error } = await supabase
+      // 1) تحميل الأهداف
+      const { data: goals, error } = await supabase
         .from("strategic_goals")
-        .select("*, departments:department_id(name)")
+        .select("id, name, color, year, department_id")
         .eq("year", year)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      const goalsWithDept = (data || []).map(g => ({
-        ...g,
-        department_name: (g.departments as any)?.name || null
-      }));
-      setStrategicGoals(goalsWithDept);
+
+      const goalIds = (goals || []).map((g) => g.id);
+
+      // 2) تحميل الأقسام المالكة (متعدد) عبر جدول الربط
+      const deptMap = new Map<string, Department[]>();
+      if (goalIds.length > 0) {
+        const { data: links, error: linksError } = await supabase
+          .from("strategic_goal_departments")
+          .select("strategic_goal_id, department:departments(id, name, color)")
+          .in("strategic_goal_id", goalIds);
+
+        if (linksError) throw linksError;
+
+        (links || []).forEach((l: any) => {
+          const dept = l.department as Department | null;
+          if (!dept) return;
+          const prev = deptMap.get(l.strategic_goal_id) || [];
+          deptMap.set(l.strategic_goal_id, [...prev, dept]);
+        });
+      }
+
+      // 3) دمج البيانات لسهولة العرض
+      const goalsWithDepts: StrategicGoal[] = (goals || []).map((g: any) => {
+        const linkedDepts = deptMap.get(g.id) || [];
+        return {
+          ...g,
+          departments: linkedDepts,
+          // fallback للبيانات القديمة لو كانت موجودة
+          department_name: linkedDepts[0]?.name || null,
+        };
+      });
+
+      setStrategicGoals(goalsWithDepts);
     } catch (error) {
       console.error("Error fetching strategic goals:", error);
     }
@@ -245,17 +278,44 @@ export default function OperationalPlans() {
 
   const fetchInitiatives = async () => {
     try {
-      const { data, error } = await supabase
+      // 1) تحميل المبادرات
+      const { data: inits, error } = await supabase
         .from("initiatives")
-        .select("*, departments:department_id(name)")
+        .select("id, strategic_goal_id, name, department_id")
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      const initsWithDept = (data || []).map(i => ({
-        ...i,
-        department_name: (i.departments as any)?.name || null
-      }));
-      setInitiatives(initsWithDept);
+
+      const initIds = (inits || []).map((i) => i.id);
+
+      // 2) تحميل الأقسام المالكة (متعدد) عبر جدول الربط
+      const deptMap = new Map<string, Department[]>();
+      if (initIds.length > 0) {
+        const { data: links, error: linksError } = await supabase
+          .from("initiative_departments")
+          .select("initiative_id, department:departments(id, name, color)")
+          .in("initiative_id", initIds);
+
+        if (linksError) throw linksError;
+
+        (links || []).forEach((l: any) => {
+          const dept = l.department as Department | null;
+          if (!dept) return;
+          const prev = deptMap.get(l.initiative_id) || [];
+          deptMap.set(l.initiative_id, [...prev, dept]);
+        });
+      }
+
+      const initsWithDepts: Initiative[] = (inits || []).map((i: any) => {
+        const linkedDepts = deptMap.get(i.id) || [];
+        return {
+          ...i,
+          departments: linkedDepts,
+          department_name: linkedDepts[0]?.name || null,
+        };
+      });
+
+      setInitiatives(initsWithDepts);
     } catch (error) {
       console.error("Error fetching initiatives:", error);
     }
@@ -1192,9 +1252,19 @@ export default function OperationalPlans() {
                                   <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                       <p className={`font-semibold text-sm ${color.text}`}>{group.strategicGoal}</p>
-                                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                        <span className="text-[10px]">📍</span> 
-                                        {goalData?.department_name || "بدون قسم"}
+                                      <div className="text-xs text-muted-foreground mt-1 flex items-start gap-1">
+                                        <span className="text-[10px]">📍</span>
+                                        {goalData?.departments && goalData.departments.length > 0 ? (
+                                          <div className="flex flex-wrap gap-1">
+                                            {goalData.departments.map((d) => (
+                                              <Badge key={d.id} variant="secondary" className="rounded-full">
+                                                {d.name}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <span>بدون قسم</span>
+                                        )}
                                       </div>
                                     </div>
                                     {isEditMode && (
@@ -1225,9 +1295,19 @@ export default function OperationalPlans() {
                                   <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                       <p className="text-gray-700 text-sm font-medium">{initGroup.initiative}</p>
-                                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                        <span className="text-[10px]">📍</span> 
-                                        {initData?.department_name || "بدون قسم"}
+                                      <div className="text-xs text-muted-foreground mt-1 flex items-start gap-1">
+                                        <span className="text-[10px]">📍</span>
+                                        {initData?.departments && initData.departments.length > 0 ? (
+                                          <div className="flex flex-wrap gap-1">
+                                            {initData.departments.map((d) => (
+                                              <Badge key={d.id} variant="secondary" className="rounded-full">
+                                                {d.name}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <span>بدون قسم</span>
+                                        )}
                                       </div>
                                     </div>
                                     {isEditMode && (
