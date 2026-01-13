@@ -143,8 +143,13 @@ export function EditPlanDialog({
   useEffect(() => {
     if (open) {
       if (editType === "strategic_goal" && strategicGoalName) {
-        const goal = strategicGoals.find(g => g.name === strategicGoalName);
-        setGoalName(strategicGoalName);
+        // البحث بالاسم أو بـ ID من الخطط
+        const goal = strategicGoals.find(g => g.name === strategicGoalName) 
+          || strategicGoals.find(g => {
+            // البحث في الخطط للعثور على الهدف المرتبط
+            return g.name.includes(strategicGoalName) || strategicGoalName.includes(g.name);
+          });
+        setGoalName(goal?.name || strategicGoalName);
         setGoalDepartmentIds([]);
         if (goal) {
           loadGoalDepartments(goal.id);
@@ -184,13 +189,16 @@ export function EditPlanDialog({
     setLoading(true);
     try {
       if (editType === "strategic_goal") {
-        const goal = strategicGoals.find(g => g.name === strategicGoalName);
-        console.log("Editing strategic goal:", { strategicGoalName, goal, goalName, goalDepartmentIds });
+        // البحث بالاسم أو بالتضمين
+        const goal = strategicGoals.find(g => g.name === strategicGoalName) 
+          || strategicGoals.find(g => g.name.includes(strategicGoalName) || strategicGoalName.includes(g.name));
+        
+        console.log("Editing strategic goal:", { strategicGoalName, goal, goalName, goalDepartmentIds, allGoals: strategicGoals.map(g => g.name) });
         
         if (!goal) {
           toast({
             title: "خطأ",
-            description: "لم يتم العثور على الهدف الاستراتيجي",
+            description: `لم يتم العثور على الهدف الاستراتيجي "${strategicGoalName}"`,
             variant: "destructive",
           });
           setLoading(false);
