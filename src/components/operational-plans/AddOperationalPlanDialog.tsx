@@ -96,6 +96,13 @@ const createDefaultColumns = (): ColumnDef[] => [
   { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
 ];
 
+// هيكل دمج عناوين الأعمدة
+interface MergedHeader {
+  startCol: number;
+  endCol: number;
+  label: string;
+}
+
 // هيكل دمج الخلايا
 interface MergedCell {
   startRow: number;
@@ -161,19 +168,25 @@ interface AddOperationalPlanDialogProps {
   }) => void;
 }
 
-// مكون العمود القابل للسحب
+// مكون العمود القابل للسحب مع إمكانية التحديد
 function SortableColumnHeader({ 
   column, 
   editingColumn, 
   setEditingColumn, 
   updateColumnLabel, 
-  removeColumn 
+  removeColumn,
+  isSelected,
+  toggleHeaderSelection,
+  mergeInfo,
 }: {
   column: ColumnDef;
   editingColumn: string | null;
   setEditingColumn: (id: string | null) => void;
   updateColumnLabel: (id: string, label: string) => void;
   removeColumn: (id: string) => void;
+  isSelected: boolean;
+  toggleHeaderSelection: (colId: string) => void;
+  mergeInfo: { isMerged: boolean; isFirst: boolean; colSpan: number; label: string };
 }) {
   const {
     attributes,
@@ -191,18 +204,53 @@ function SortableColumnHeader({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // إذا كان العمود مدموجاً وليس الأول، لا نعرضه
+  if (mergeInfo.isMerged && !mergeInfo.isFirst) {
+    return null;
+  }
+
   return (
     <TableHead
       ref={setNodeRef}
       style={style}
+      colSpan={mergeInfo.isMerged ? mergeInfo.colSpan : 1}
       className={cn(
         "text-center border-l font-bold relative group",
         column.editable && "cursor-pointer hover:bg-muted",
-        isDragging && "bg-primary/20"
+        isDragging && "bg-primary/20",
+        isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
       )}
       onDoubleClick={() => column.editable && setEditingColumn(column.id)}
     >
       <div className="flex items-center justify-center gap-1">
+        {/* مقبض التحديد من الأطراف */}
+        {column.id !== 'action' && column.id !== 'rowNumber' && (
+          <>
+            <div
+              role="button"
+              aria-label="تحديد العمود"
+              tabIndex={-1}
+              className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/30"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleHeaderSelection(column.id);
+              }}
+            />
+            <div
+              role="button"
+              aria-label="تحديد العمود"
+              tabIndex={-1}
+              className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/30"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleHeaderSelection(column.id);
+              }}
+            />
+          </>
+        )}
+
         {/* مقبض السحب */}
         {column.id !== 'action' && column.id !== 'rowNumber' && (
           <div
@@ -216,17 +264,19 @@ function SortableColumnHeader({
         
         {editingColumn === column.id ? (
           <Input
-            value={column.label}
+            value={mergeInfo.isMerged ? mergeInfo.label : column.label}
             onChange={(e) => updateColumnLabel(column.id, e.target.value)}
             onBlur={() => setEditingColumn(null)}
             onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
             className="h-7 text-center text-sm font-bold border-primary"
             autoFocus
           />
         ) : (
           <>
-            <span>{column.label}</span>
-            {column.removable && (
+            <span>{mergeInfo.isMerged ? mergeInfo.label : column.label}</span>
+            {column.removable && !mergeInfo.isMerged && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -688,6 +738,13 @@ function SortableRow({
           );
         }
 
+// هيكل دمج عناوين الأعمدة
+interface MergedHeader {
+  startCol: number;
+  endCol: number;
+  label: string;
+}
+
 
         return null;
       })}
@@ -711,6 +768,8 @@ export function AddOperationalPlanDialog({
   const [columns, setColumns] = useState<ColumnDef[]>(createDefaultColumns);
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set()); // "rowId:colId"
   const [mergedCells, setMergedCells] = useState<MergedCell[]>([]);
+  const [selectedHeaders, setSelectedHeaders] = useState<Set<string>>(new Set()); // تحديد عناوين الأعمدة
+  const [mergedHeaders, setMergedHeaders] = useState<MergedHeader[]>([]); // دمج عناوين الأعمدة
   const [editingColumn, setEditingColumn] = useState<string | null>(null);
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
@@ -789,6 +848,8 @@ export function AddOperationalPlanDialog({
       setSelectedRows(new Set());
       setSelectedCells(new Set());
       setMergedCells([]);
+      setSelectedHeaders(new Set());
+      setMergedHeaders([]);
       setColumns(createDefaultColumns());
       setEditingColumn(null);
       setActiveColumnId(null);
@@ -875,6 +936,85 @@ export function AddOperationalPlanDialog({
       return newSet;
     });
   }, []);
+
+  // تبديل تحديد عنوان عمود
+  const toggleHeaderSelection = useCallback((colId: string) => {
+    setSelectedHeaders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(colId)) {
+        newSet.delete(colId);
+      } else {
+        newSet.add(colId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // دمج عناوين الأعمدة المحددة
+  const mergeSelectedHeaders = useCallback(() => {
+    if (selectedHeaders.size < 2) return;
+
+    const selectedIndices = Array.from(selectedHeaders)
+      .map(id => columns.findIndex(c => c.id === id))
+      .filter(i => i !== -1)
+      .sort((a, b) => a - b);
+
+    if (selectedIndices.length < 2) return;
+
+    // التحقق من أن الأعمدة متجاورة
+    for (let i = 1; i < selectedIndices.length; i++) {
+      if (selectedIndices[i] !== selectedIndices[i - 1] + 1) {
+        return; // الأعمدة غير متجاورة
+      }
+    }
+
+    const startCol = selectedIndices[0];
+    const endCol = selectedIndices[selectedIndices.length - 1];
+    
+    // استخدام عنوان العمود الأول كعنوان للعمود المدموج
+    const label = columns[startCol].label;
+
+    const newMerge: MergedHeader = {
+      startCol,
+      endCol,
+      label,
+    };
+
+    setMergedHeaders(prev => [...prev, newMerge]);
+    setSelectedHeaders(new Set());
+  }, [selectedHeaders, columns]);
+
+  // إلغاء دمج عناوين الأعمدة المحددة
+  const unmergeSelectedHeaders = useCallback(() => {
+    if (selectedHeaders.size === 0) return;
+
+    const selectedIndices = Array.from(selectedHeaders)
+      .map(id => columns.findIndex(c => c.id === id))
+      .filter(i => i !== -1);
+
+    setMergedHeaders(prev => prev.filter(merge => {
+      return !selectedIndices.some(idx => 
+        idx >= merge.startCol && idx <= merge.endCol
+      );
+    }));
+    setSelectedHeaders(new Set());
+  }, [selectedHeaders, columns]);
+
+  // الحصول على معلومات دمج عنوان العمود
+  const getHeaderMergeInfo = useCallback((colIndex: number) => {
+    for (const merge of mergedHeaders) {
+      if (colIndex >= merge.startCol && colIndex <= merge.endCol) {
+        const isFirst = colIndex === merge.startCol;
+        return {
+          isMerged: true,
+          isFirst,
+          colSpan: merge.endCol - merge.startCol + 1,
+          label: merge.label,
+        };
+      }
+    }
+    return { isMerged: false, isFirst: false, colSpan: 1, label: '' };
+  }, [mergedHeaders]);
 
   // دمج الخلايا المحددة
   const mergeSelectedCells = useCallback(() => {
@@ -1408,6 +1548,29 @@ export function AddOperationalPlanDialog({
               إلغاء دمج الخلايا
             </Button>
 
+            <div className="h-4 w-px bg-border mx-2" />
+
+            <Button
+              variant="default"
+              size="sm"
+              onClick={mergeSelectedHeaders}
+              disabled={selectedHeaders.size < 2}
+              className="h-7 text-xs gap-1"
+            >
+              <Merge className="w-3 h-3" />
+              دمج العناوين
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={unmergeSelectedHeaders}
+              disabled={selectedHeaders.size === 0}
+              className="h-7 text-xs gap-1"
+            >
+              <SplitSquareHorizontal className="w-3 h-3" />
+              إلغاء دمج العناوين
+            </Button>
+
             {selectedRows.size > 0 && (
               <span className="text-xs text-muted-foreground mr-auto">
                 {selectedRows.size} صف محدد
@@ -1416,6 +1579,11 @@ export function AddOperationalPlanDialog({
             {selectedCells.size > 0 && (
               <span className="text-xs text-primary mr-2">
                 {selectedCells.size} خلية محددة
+              </span>
+            )}
+            {selectedHeaders.size > 0 && (
+              <span className="text-xs text-accent-foreground mr-2">
+                {selectedHeaders.size} عمود محدد
               </span>
             )}
           </div>
@@ -1435,7 +1603,7 @@ export function AddOperationalPlanDialog({
                     <TableHeader>
                       <TableRow className="bg-muted/50 hover:bg-muted/50">
                         <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-                          {columns.map((col) => (
+                          {columns.map((col, colIndex) => (
                             <SortableColumnHeader
                               key={col.id}
                               column={col}
@@ -1443,6 +1611,9 @@ export function AddOperationalPlanDialog({
                               setEditingColumn={setEditingColumn}
                               updateColumnLabel={updateColumnLabel}
                               removeColumn={removeColumn}
+                              isSelected={selectedHeaders.has(col.id)}
+                              toggleHeaderSelection={toggleHeaderSelection}
+                              mergeInfo={getHeaderMergeInfo(colIndex)}
                             />
                           ))}
                         </SortableContext>
