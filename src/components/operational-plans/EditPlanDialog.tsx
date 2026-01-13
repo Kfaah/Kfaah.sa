@@ -185,39 +185,53 @@ export function EditPlanDialog({
     try {
       if (editType === "strategic_goal") {
         const goal = strategicGoals.find(g => g.name === strategicGoalName);
-        if (goal) {
-          // تحديث اسم الهدف
-          const { error } = await supabase
-            .from("strategic_goals")
-            .update({ name: goalName })
-            .eq("id", goal.id);
-          if (error) throw error;
+        console.log("Editing strategic goal:", { strategicGoalName, goal, goalName, goalDepartmentIds });
+        
+        if (!goal) {
+          toast({
+            title: "خطأ",
+            description: "لم يتم العثور على الهدف الاستراتيجي",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+        
+        // تحديث اسم الهدف
+        const { error } = await supabase
+          .from("strategic_goals")
+          .update({ name: goalName })
+          .eq("id", goal.id);
+        if (error) throw error;
 
-          // حذف الأقسام القديمة وإضافة الجديدة
-          await supabase
+        // حذف الأقسام القديمة وإضافة الجديدة
+        const { error: deleteError } = await supabase
+          .from("strategic_goal_departments")
+          .delete()
+          .eq("strategic_goal_id", goal.id);
+        
+        if (deleteError) {
+          console.log("Delete error (may be normal if no existing records):", deleteError);
+        }
+
+        if (goalDepartmentIds.length > 0) {
+          const { error: insertError } = await supabase
             .from("strategic_goal_departments")
-            .delete()
-            .eq("strategic_goal_id", goal.id);
+            .insert(
+              goalDepartmentIds.map(deptId => ({
+                strategic_goal_id: goal.id,
+                department_id: deptId,
+              }))
+            );
+          if (insertError) throw insertError;
+        }
 
-          if (goalDepartmentIds.length > 0) {
-            const { error: insertError } = await supabase
-              .from("strategic_goal_departments")
-              .insert(
-                goalDepartmentIds.map(deptId => ({
-                  strategic_goal_id: goal.id,
-                  department_id: deptId,
-                }))
-              );
-            if (insertError) throw insertError;
-          }
-
-          // تحديث اسم الهدف في الخطط
-          if (goalName !== strategicGoalName) {
-            await supabase
-              .from("operational_plans")
-              .update({ strategic_goal: goalName })
-              .eq("strategic_goal", strategicGoalName);
-          }
+        // تحديث اسم الهدف في الخطط
+        if (goalName !== strategicGoalName) {
+          await supabase
+            .from("operational_plans")
+            .update({ strategic_goal: goalName })
+            .eq("strategic_goal", strategicGoalName);
         }
         toast({ title: "تم الحفظ", description: "تم تحديث الهدف الاستراتيجي" });
       } else if (editType === "initiative") {
