@@ -454,7 +454,7 @@ export function AddOperationalPlanDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0" dir="rtl">
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-4 border-b">
