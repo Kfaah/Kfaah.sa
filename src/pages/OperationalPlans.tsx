@@ -1597,21 +1597,34 @@ export default function OperationalPlans() {
                             return planSum + 1 + (expandedPlanId === plan.id ? 1 : 0);
                           }, 0);
 
-                          // في وضع التعديل نضيف صف "إضافة نشاط جديد" أسفل كل مبادرة
-                          const addActivityRow = isEditMode ? 1 : 0;
+                          // نضيف صف "إضافة نشاط" فقط عندما يكون المستخدم فعلاً يضيف نشاطاً تحت هذه المبادرة
+                          const addActivityRow =
+                            isEditMode &&
+                            addingActivityUnder?.strategicGoal === group.strategicGoal &&
+                            addingActivityUnder?.initiative === init.initiative
+                              ? 1
+                              : 0;
+
                           return sum + planRows + addActivityRow;
                         }, 0) +
-                        // في وضع التعديل نضيف صف "إضافة مبادرة جديدة" أسفل الهدف
+                        // في وضع التعديل نضيف صف "إضافة مبادرة جديدة" (إما زر أو نموذج) أسفل الهدف
                         (isEditMode ? 1 : 0);
                       
                       let goalRowRendered = false;
                       
                       group.initiatives.forEach((initGroup, initIndex) => {
-                        // حساب الصفوف للمبادرة (مع احتساب الصفوف الموسعة + صف إضافة نشاط في وضع التعديل)
+                        // حساب الصفوف للمبادرة (مع احتساب الصفوف الموسعة + صف إضافة نشاط عند الإضافة فعلياً)
+                        const addActivityRowForThisInitiative =
+                          isEditMode &&
+                          addingActivityUnder?.strategicGoal === group.strategicGoal &&
+                          addingActivityUnder?.initiative === initGroup.initiative
+                            ? 1
+                            : 0;
+
                         const totalRowsInInitiative =
                           initGroup.plans.reduce((sum, plan) => {
                             return sum + 1 + (expandedPlanId === plan.id ? 1 : 0);
-                          }, 0) + (isEditMode ? 1 : 0);
+                          }, 0) + addActivityRowForThisInitiative;
                         let initRowRendered = false;
                         
                         initGroup.plans.forEach((plan, planIndex) => {
@@ -1933,10 +1946,7 @@ export default function OperationalPlans() {
                                 key={`add-activity-${group.strategicGoal}-${initGroup.initiative}`} 
                                 className={`${color.bg} border-r-4 ${color.border} bg-green-50/50`}
                               >
-                                {/* الهدف الاستراتيجي (فارغ) */}
-                                <td className="py-2 px-2"></td>
-                                {/* المبادرة (فارغ) */}
-                                <td className="py-2 px-2"></td>
+                                {/* ملاحظة: الهدف الاستراتيجي والمبادرة يغطيان هذا الصف عبر rowSpan */}
                                 {/* النشاط */}
                                 <td className="py-2 px-4 border-l-2 border-gray-300">
                                   <Input
@@ -2003,8 +2013,7 @@ export default function OperationalPlans() {
                               key={`add-initiative-${group.strategicGoal}`} 
                               className={`${color.bg} border-r-4 ${color.border} bg-blue-50/50`}
                             >
-                              {/* الهدف الاستراتيجي (فارغ) */}
-                              <td className="py-2 px-2"></td>
+                              {/* ملاحظة: الهدف الاستراتيجي يغطي هذا الصف عبر rowSpan */}
                               {/* المبادرة */}
                               <td className="py-2 px-4 border-l-2 border-gray-300">
                                 <Input
@@ -2073,7 +2082,7 @@ export default function OperationalPlans() {
                               key={`add-init-btn-${group.strategicGoal}`} 
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-gray-50/50 transition-colors border-b-4 border-b-gray-400`}
                             >
-                              <td colSpan={isEditMode ? 7 : 6} className="py-3 px-4">
+                              <td colSpan={isEditMode ? 6 : 5} className="py-3 px-4">
                                 <div className="flex justify-center items-center gap-3">
                                   {/* زر إضافة مبادرة جديدة */}
                                   <Button
