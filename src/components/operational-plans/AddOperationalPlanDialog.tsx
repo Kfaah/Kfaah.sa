@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, forwardRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -310,6 +310,7 @@ function SortableRow({
   removeRow,
   updateCell,
   updateCustomColumn,
+  onBeforeEdit,
 }: {
   row: TableRowData;
   index: number;
@@ -328,6 +329,7 @@ function SortableRow({
   removeRow: (id: string) => void;
   updateCell: (rowId: string, field: keyof TableRowData, value: string | number) => void;
   updateCustomColumn: (rowId: string, columnId: string, value: string) => void;
+  onBeforeEdit: () => void;
 }) {
   const {
     attributes,
@@ -517,6 +519,7 @@ function SortableRow({
                   updateCell(row.id, 'annualTarget', parseFloat(e.target.value) || 0);
                 }}
                 onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
                 placeholder="0"
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-center text-sm"
               />
@@ -566,6 +569,7 @@ function SortableRow({
                   updateCell(row.id, 'activity', e.target.value);
                 }}
                 onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
                 placeholder="النشاط..."
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
               />
@@ -617,6 +621,7 @@ function SortableRow({
                   updateCell(row.id, 'initiative', e.target.value);
                 }}
                 onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
                 placeholder="المبادرة..."
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
                 list="initiatives-list"
@@ -669,6 +674,7 @@ function SortableRow({
                   updateCell(row.id, 'strategicGoal', e.target.value);
                 }}
                 onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
                 placeholder="الهدف الاستراتيجي..."
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
                 list="goals-list"
@@ -732,20 +738,13 @@ function SortableRow({
                   updateCustomColumn(row.id, col.id, e.target.value);
                 }}
                 onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
                 placeholder={col.label}
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
               />
             </TableCell>
           );
         }
-
-// هيكل دمج عناوين الأعمدة
-interface MergedHeader {
-  startCol: number;
-  endCol: number;
-  label: string;
-}
-
 
         return null;
       })}
@@ -942,7 +941,7 @@ export function AddOperationalPlanDialog({
     });
   }, [saveToUndo]);
 
-  // تحديث خلية
+  // تحديث خلية مع حفظ للتراجع عند فقدان التركيز
   const updateCell = useCallback((rowId: string, field: keyof TableRowData, value: string | number) => {
     setRows(prev => prev.map(row => {
       if (row.id === rowId) {
@@ -955,6 +954,11 @@ export function AddOperationalPlanDialog({
       return row;
     }));
   }, []);
+
+  // حفظ الحالة قبل بدء التعديل (عند التركيز على الحقل)
+  const saveBeforeEdit = useCallback(() => {
+    saveToUndo();
+  }, [saveToUndo]);
 
   // تبديل تحديد صف
   const toggleRowSelection = useCallback((rowId: string) => {
@@ -1212,6 +1216,7 @@ export function AddOperationalPlanDialog({
     setActiveColumnId(null);
 
     if (over && active.id !== over.id) {
+      saveToUndo();
       setColumns((items) => {
         const oldIndex = items.findIndex(i => i.id === active.id);
         const newIndex = items.findIndex(i => i.id === over.id);
@@ -1226,6 +1231,7 @@ export function AddOperationalPlanDialog({
     setActiveRowId(null);
 
     if (over && active.id !== over.id) {
+      saveToUndo();
       setRows((items) => {
         const oldIndex = items.findIndex(i => i.id === active.id);
         const newIndex = items.findIndex(i => i.id === over.id);
@@ -1548,6 +1554,7 @@ export function AddOperationalPlanDialog({
                               removeRow={removeRow}
                               updateCell={updateCell}
                               updateCustomColumn={updateCustomColumn}
+                              onBeforeEdit={saveBeforeEdit}
                             />
                           ))}
                         </SortableContext>
