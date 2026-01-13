@@ -1991,33 +1991,6 @@ export default function OperationalPlans() {
                                 </td>
                               </tr>
                             );
-                          } else {
-                            // زر إضافة نشاط جديد في نهاية كل مبادرة
-                            rows.push(
-                              <tr 
-                                key={`add-btn-${group.strategicGoal}-${initGroup.initiative}`} 
-                                className={`${color.bg} border-r-4 ${color.border} hover:bg-teal-50/50 transition-colors`}
-                              >
-                                <td colSpan={isEditMode ? 7 : 6} className="py-2 px-4">
-                                  <div className="flex justify-center">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-8 px-4 text-xs font-medium text-teal-700 border-teal-300 bg-teal-50 hover:bg-teal-100 hover:text-teal-800 hover:border-teal-400"
-                                      onClick={() => {
-                                        setAddItemDialogType("activity");
-                                        setAddItemDialogParentGoal(group.strategicGoal);
-                                        setAddItemDialogParentInit(initGroup.initiative);
-                                        setAddItemDialogOpen(true);
-                                      }}
-                                    >
-                                      <Plus className="w-3.5 h-3.5 ml-1" />
-                                      إضافة نشاط
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
                           }
                         }
                       });
@@ -2119,7 +2092,7 @@ export default function OperationalPlans() {
                                     <Plus className="w-3.5 h-3.5 ml-1" />
                                     إضافة مبادرة
                                   </Button>
-                                  {/* زر إضافة نشاط جديد */}
+                                  {/* زر إضافة نشاط جديد - يفتح حوار لاختيار المبادرة */}
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -2127,7 +2100,7 @@ export default function OperationalPlans() {
                                     onClick={() => {
                                       setAddItemDialogType("activity");
                                       setAddItemDialogParentGoal(group.strategicGoal);
-                                      setAddItemDialogParentInit(group.initiatives[group.initiatives.length - 1]?.initiative || "");
+                                      setAddItemDialogParentInit(""); // لا تحديد مبادرة مسبقاً - المستخدم يختار
                                       setAddItemDialogOpen(true);
                                     }}
                                   >
