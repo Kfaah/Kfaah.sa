@@ -680,6 +680,7 @@ export type Database = {
           created_at: string
           department_id: string | null
           description: string | null
+          display_order: number | null
           id: string
           name: string
           strategic_goal_id: string
@@ -689,6 +690,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           description?: string | null
+          display_order?: number | null
           id?: string
           name: string
           strategic_goal_id: string
@@ -698,6 +700,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           description?: string | null
+          display_order?: number | null
           id?: string
           name?: string
           strategic_goal_id?: string
@@ -874,6 +877,7 @@ export type Database = {
           activity_name: string
           annual_target: number
           created_at: string
+          display_order: number | null
           id: string
           initiative: string | null
           initiative_id: string | null
@@ -889,6 +893,7 @@ export type Database = {
           activity_name: string
           annual_target?: number
           created_at?: string
+          display_order?: number | null
           id?: string
           initiative?: string | null
           initiative_id?: string | null
@@ -904,6 +909,7 @@ export type Database = {
           activity_name?: string
           annual_target?: number
           created_at?: string
+          display_order?: number | null
           id?: string
           initiative?: string | null
           initiative_id?: string | null
