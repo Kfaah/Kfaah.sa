@@ -1999,20 +1999,22 @@ export default function OperationalPlans() {
                                 className={`${color.bg} border-r-4 ${color.border} hover:bg-green-50/30 transition-colors`}
                               >
                                 <td colSpan={isEditMode ? 7 : 6} className="py-1 px-4">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full text-[#3d9aa8] hover:text-[#2d7a85] hover:bg-[#3d9aa8]/10 gap-1"
-                                    onClick={() => {
-                                      setAddItemDialogType("activity");
-                                      setAddItemDialogParentGoal(group.strategicGoal);
-                                      setAddItemDialogParentInit(initGroup.initiative);
-                                      setAddItemDialogOpen(true);
-                                    }}
-                                  >
-                                    <Plus className="w-4 h-4" />
-                                    إضافة نشاط جديد
-                                  </Button>
+                                  <div className="flex justify-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-[#3d9aa8] hover:text-[#2d7a85] hover:bg-[#3d9aa8]/10"
+                                      onClick={() => {
+                                        setAddItemDialogType("activity");
+                                        setAddItemDialogParentGoal(group.strategicGoal);
+                                        setAddItemDialogParentInit(initGroup.initiative);
+                                        setAddItemDialogOpen(true);
+                                      }}
+                                      title="إضافة نشاط جديد"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -2101,20 +2103,39 @@ export default function OperationalPlans() {
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-blue-50/30 transition-colors border-b-4 border-b-gray-400`}
                             >
                               <td colSpan={isEditMode ? 7 : 6} className="py-1 px-4">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full text-blue-600 hover:text-blue-800 hover:bg-blue-100 gap-1"
-                                  onClick={() => {
-                                    setAddItemDialogType("initiative");
-                                    setAddItemDialogParentGoal(group.strategicGoal);
-                                    setAddItemDialogParentInit("");
-                                    setAddItemDialogOpen(true);
-                                  }}
-                                >
-                                  <Plus className="w-4 h-4" />
-                                  إضافة مبادرة جديدة
-                                </Button>
+                                <div className="flex justify-center gap-2">
+                                  {/* زر إضافة مبادرة جديدة */}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+                                    onClick={() => {
+                                      setAddItemDialogType("initiative");
+                                      setAddItemDialogParentGoal(group.strategicGoal);
+                                      setAddItemDialogParentInit("");
+                                      setAddItemDialogOpen(true);
+                                    }}
+                                    title="إضافة مبادرة جديدة"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                  {/* زر إضافة نشاط جديد */}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-[#3d9aa8] hover:text-[#2d7a85] hover:bg-[#3d9aa8]/10"
+                                    onClick={() => {
+                                      // فتح دايلوج إضافة نشاط تحت الهدف مباشرة
+                                      setAddItemDialogType("activity");
+                                      setAddItemDialogParentGoal(group.strategicGoal);
+                                      setAddItemDialogParentInit(group.initiatives[group.initiatives.length - 1]?.initiative || "");
+                                      setAddItemDialogOpen(true);
+                                    }}
+                                    title="إضافة نشاط جديد"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           );
