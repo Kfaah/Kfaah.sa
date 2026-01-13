@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { 
   Type, 
@@ -13,10 +14,14 @@ import {
   Calendar, 
   Building2, 
   User,
-  GripVertical,
   Trash2,
   Plus,
-  Settings2
+  Settings2,
+  ArrowUp,
+  ArrowDown,
+  Pencil,
+  Check,
+  X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -61,6 +66,8 @@ export function ManageCustomColumnsDialog({
   const [columns, setColumns] = useState<CustomColumn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const fetchColumns = async () => {
     setIsLoading(true);
@@ -129,6 +136,107 @@ export function ManageCustomColumnsDialog({
     }
   };
 
+  const handleStartEdit = (column: CustomColumn) => {
+    setEditingColumnId(column.id);
+    setEditingName(column.name);
+  };
+
+  const handleSaveEdit = async (column: CustomColumn) => {
+    if (!editingName.trim()) {
+      toast.error("يجب إدخال اسم العمود");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("operational_plan_custom_columns")
+        .update({ name: editingName.trim() })
+        .eq("id", column.id);
+
+      if (error) throw error;
+
+      setColumns(prev =>
+        prev.map(c =>
+          c.id === column.id ? { ...c, name: editingName.trim() } : c
+        )
+      );
+      setEditingColumnId(null);
+      setEditingName("");
+      toast.success("تم تحديث اسم العمود");
+      onColumnsChange();
+    } catch (error) {
+      console.error("Error updating column name:", error);
+      toast.error("حدث خطأ في تحديث اسم العمود");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingColumnId(null);
+    setEditingName("");
+  };
+
+  const handleMoveUp = async (index: number) => {
+    if (index === 0) return;
+
+    const newColumns = [...columns];
+    const temp = newColumns[index];
+    newColumns[index] = newColumns[index - 1];
+    newColumns[index - 1] = temp;
+
+    // Update display_order for both columns
+    try {
+      const updates = [
+        supabase
+          .from("operational_plan_custom_columns")
+          .update({ display_order: index - 1 })
+          .eq("id", temp.id),
+        supabase
+          .from("operational_plan_custom_columns")
+          .update({ display_order: index })
+          .eq("id", columns[index - 1].id),
+      ];
+
+      await Promise.all(updates);
+
+      setColumns(newColumns.map((col, i) => ({ ...col, display_order: i })));
+      onColumnsChange();
+    } catch (error) {
+      console.error("Error reordering columns:", error);
+      toast.error("حدث خطأ في ترتيب الأعمدة");
+    }
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index === columns.length - 1) return;
+
+    const newColumns = [...columns];
+    const temp = newColumns[index];
+    newColumns[index] = newColumns[index + 1];
+    newColumns[index + 1] = temp;
+
+    // Update display_order for both columns
+    try {
+      const updates = [
+        supabase
+          .from("operational_plan_custom_columns")
+          .update({ display_order: index + 1 })
+          .eq("id", temp.id),
+        supabase
+          .from("operational_plan_custom_columns")
+          .update({ display_order: index })
+          .eq("id", columns[index + 1].id),
+      ];
+
+      await Promise.all(updates);
+
+      setColumns(newColumns.map((col, i) => ({ ...col, display_order: i })));
+      onColumnsChange();
+    } catch (error) {
+      console.error("Error reordering columns:", error);
+      toast.error("حدث خطأ في ترتيب الأعمدة");
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -162,16 +270,36 @@ export function ManageCustomColumnsDialog({
               </div>
             ) : (
               <div className="space-y-2">
-                {columns.map((column) => (
+                {columns.map((column, index) => (
                   <div
                     key={column.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                    className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
                       column.is_active
                         ? "bg-white border-gray-200"
                         : "bg-gray-50 border-gray-100 opacity-60"
                     }`}
                   >
-                    <GripVertical className="w-4 h-4 text-gray-400 cursor-grab" />
+                    {/* أزرار الترتيب */}
+                    <div className="flex flex-col gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-gray-400 hover:text-primary hover:bg-primary/10"
+                        onClick={() => handleMoveUp(index)}
+                        disabled={index === 0}
+                      >
+                        <ArrowUp className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-gray-400 hover:text-primary hover:bg-primary/10"
+                        onClick={() => handleMoveDown(index)}
+                        disabled={index === columns.length - 1}
+                      >
+                        <ArrowDown className="w-3 h-3" />
+                      </Button>
+                    </div>
                     
                     <div className={`p-2 rounded-lg ${
                       column.is_active ? "bg-primary/10 text-primary" : "bg-gray-200 text-gray-500"
@@ -180,26 +308,72 @@ export function ManageCustomColumnsDialog({
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{column.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {TYPE_LABELS[column.column_type]}
-                        {column.is_required && " • مطلوب"}
-                      </p>
+                      {editingColumnId === column.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            className="h-8 text-sm"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveEdit(column);
+                              if (e.key === "Escape") handleCancelEdit();
+                            }}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-green-600 hover:bg-green-50"
+                            onClick={() => handleSaveEdit(column)}
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-red-500 hover:bg-red-50"
+                            onClick={handleCancelEdit}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="font-medium text-sm truncate">{column.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {TYPE_LABELS[column.column_type]}
+                            {column.is_required && " • مطلوب"}
+                          </p>
+                        </>
+                      )}
                     </div>
 
-                    <Switch
-                      checked={column.is_active}
-                      onCheckedChange={() => handleToggleActive(column)}
-                    />
+                    {editingColumnId !== column.id && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-500 hover:text-primary hover:bg-primary/10"
+                          onClick={() => handleStartEdit(column)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-red-500 hover:bg-red-50"
-                      onClick={() => handleDeleteColumn(column)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                        <Switch
+                          checked={column.is_active}
+                          onCheckedChange={() => handleToggleActive(column)}
+                        />
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-500 hover:bg-red-50"
+                          onClick={() => handleDeleteColumn(column)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
