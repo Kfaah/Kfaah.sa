@@ -2349,7 +2349,7 @@ export default function OperationalPlans() {
                     <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm">
                       {index + 1}
                     </span>
-                    <span className="flex-1 font-medium text-gray-700">{init.name}</span>
+                    <span className="flex-1 font-medium text-gray-700 text-center">{init.name}</span>
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
@@ -2474,7 +2474,7 @@ export default function OperationalPlans() {
                   return uniqueGoals.map((goalName) => (
                     <button
                       key={goalName}
-                      className="w-full text-right p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      className="w-full text-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors"
                       onClick={() => {
                         setIsSelectGoalForInitiativesOpen(false);
                         openReorderInitiativesDialog(goalName);
@@ -2550,7 +2550,7 @@ export default function OperationalPlans() {
                         {inits.map((initName) => (
                           <button
                             key={initName}
-                            className="w-full text-right p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition-colors mr-4"
+                            className="w-full text-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition-colors mr-4"
                             onClick={() => {
                               setIsSelectInitiativeForActivitiesOpen(false);
                               openReorderActivitiesDialog(goalName, initName);
