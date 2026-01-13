@@ -654,36 +654,31 @@ export default function OperationalPlans() {
 
   // فتح نافذة ترتيب المبادرات لهدف معين
   const openReorderInitiativesDialog = (goalName: string) => {
-    const goalId = strategicGoals.find(g => g.name === goalName)?.id;
-
-    // استخراج المبادرات الفريدة من الخطط لهذا الهدف (بالاعتماد على initiative_id أولاً لتفادي مشاكل تطابق الأسماء)
-    const unique = new Map<string, { id?: string; name: string }>();
+    // نجمع المبادرات حسب الاسم (لأن بعض السجلات القديمة قد لا تحتوي initiative_id)
+    const byName = new Map<string, { name: string; id?: string }>();
 
     plans
-      .filter(p => p.strategic_goal === goalName)
-      .forEach(p => {
+      .filter((p) => p.strategic_goal === goalName)
+      .forEach((p) => {
         const name = (p.initiative || "").trim();
-        const id = p.initiative_id || undefined;
-        if (!name && !id) return;
+        if (!name) return;
 
-        const key = id ?? `name:${name}`;
-        if (!unique.has(key)) unique.set(key, { id, name });
+        const existing = byName.get(name) || { name };
+        // خذ أول initiative_id غير فارغ إن وجد (حتى لو كانت سجلات أخرى بدون id)
+        const candidateId = p.initiative_id || existing.id;
+        byName.set(name, { name, id: candidateId });
       });
 
-    // مطابقة مع initiatives للحصول على البيانات الكاملة
-    const initsFromPlans = [...unique.values()]
+    const initsFromPlans = [...byName.values()]
       .map(({ id, name }) => {
-        const matchedInit =
-          (id ? initiatives.find(i => i.id === id) : undefined) ||
-          initiatives.find(i => i.name === name && (!goalId || i.strategic_goal_id === goalId));
-
+        const matchedInit = (id ? initiatives.find((i) => i.id === id) : undefined) || initiatives.find((i) => i.name === name);
         return {
           name: matchedInit?.name ?? name,
           id: matchedInit?.id ?? id,
           display_order: matchedInit?.display_order ?? 999,
         };
       })
-      .filter(i => !!i.name);
+      .filter((i) => !!i.name);
 
     // ترتيب حسب display_order
     initsFromPlans.sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999));
@@ -706,14 +701,11 @@ export default function OperationalPlans() {
   // حفظ ترتيب المبادرات
   const saveInitiativesOrder = async () => {
     try {
-      const goalId = strategicGoals.find(g => g.name === reorderInitiativesGoal)?.id;
       const skipped: string[] = [];
 
       for (let i = 0; i < reorderInitiatives.length; i++) {
         const init = reorderInitiatives[i];
-        const initId =
-          init.id ||
-          initiatives.find(x => x.name === init.name && (!goalId || x.strategic_goal_id === goalId))?.id;
+        const initId = init.id || initiatives.find((x) => x.name === init.name)?.id;
 
         if (!initId) {
           skipped.push(init.name);
@@ -726,9 +718,18 @@ export default function OperationalPlans() {
           .eq("id", initId);
 
         if (error) throw error;
+
+        // إصلاح سجلات الخطط القديمة التي لا تحتوي initiative_id (لضمان أن الفرز يتبع نفس الترتيب)
+        await supabase
+          .from("operational_plans")
+          .update({ initiative_id: initId })
+          .eq("strategic_goal", reorderInitiativesGoal)
+          .eq("initiative", init.name)
+          .is("initiative_id", null);
       }
 
       await fetchInitiatives();
+      await fetchPlans();
       setIsReorderInitiativesDialogOpen(false);
 
       if (skipped.length) {
@@ -1487,12 +1488,13 @@ export default function OperationalPlans() {
                       
                       const goalIdForSort = strategicGoals.find(g => g.name === goalName)?.id;
                       
-                      // ترتيب المبادرات حسب display_order (بالاعتماد على initiative_id أولاً لتفادي تطابق الأسماء)
+                      // ترتيب المبادرات حسب display_order (استخدم أول initiative_id غير فارغ داخل المجموعة إن وجد)
                       const sortedInitNames = [...goalData.initiatives.keys()].sort((a, b) => {
                         const aPlans = goalData.initiatives.get(a) || [];
                         const bPlans = goalData.initiatives.get(b) || [];
-                        const aInitId = aPlans[0]?.initiative_id;
-                        const bInitId = bPlans[0]?.initiative_id;
+
+                        const aInitId = aPlans.find(p => !!p.initiative_id)?.initiative_id;
+                        const bInitId = bPlans.find(p => !!p.initiative_id)?.initiative_id;
 
                         const initA =
                           (aInitId ? initiatives.find(i => i.id === aInitId) : undefined) ||
