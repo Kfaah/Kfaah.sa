@@ -86,6 +86,15 @@ interface ColumnDef {
   isCustom: boolean;
 }
 
+// هيكل دمج الخلايا
+interface MergedCell {
+  startRow: number;
+  endRow: number;
+  startCol: number;
+  endCol: number;
+  value: string;
+}
+
 // هيكل الصف في الجدول
 interface TableRowData {
   id: string;
@@ -425,13 +434,15 @@ export function AddOperationalPlanDialog({
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [columns, setColumns] = useState<ColumnDef[]>([
     { id: 'action', label: 'إجراء', width: '70px', editable: false, removable: false, isCustom: false },
-    { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '10%', editable: true, removable: false, isCustom: false },
-    { id: 'annualTarget', label: 'المستهدف السنوي', width: '10%', editable: true, removable: false, isCustom: false },
-    { id: 'activity', label: 'النشاط', width: '20%', editable: true, removable: false, isCustom: false },
-    { id: 'initiative', label: 'المبادرة', width: '20%', editable: true, removable: false, isCustom: false },
-    { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '20%', editable: true, removable: false, isCustom: false },
+    { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '10%', editable: true, removable: true, isCustom: false },
+    { id: 'annualTarget', label: 'المستهدف السنوي', width: '10%', editable: true, removable: true, isCustom: false },
+    { id: 'activity', label: 'النشاط', width: '20%', editable: true, removable: true, isCustom: false },
+    { id: 'initiative', label: 'المبادرة', width: '20%', editable: true, removable: true, isCustom: false },
+    { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '20%', editable: true, removable: true, isCustom: false },
     { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
   ]);
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set()); // "rowId:colId"
+  const [mergedCells, setMergedCells] = useState<MergedCell[]>([]);
   const [editingColumn, setEditingColumn] = useState<string | null>(null);
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
@@ -574,6 +585,108 @@ export function AddOperationalPlanDialog({
       return newSet;
     });
   }, []);
+
+  // تبديل تحديد خلية
+  const toggleCellSelection = useCallback((rowId: string, colId: string) => {
+    const cellKey = `${rowId}:${colId}`;
+    setSelectedCells(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cellKey)) {
+        newSet.delete(cellKey);
+      } else {
+        newSet.add(cellKey);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // دمج الخلايا المحددة
+  const mergeSelectedCells = useCallback(() => {
+    if (selectedCells.size < 2) return;
+
+    const cells = Array.from(selectedCells).map(key => {
+      const [rowId, colId] = key.split(':');
+      const rowIndex = rows.findIndex(r => r.id === rowId);
+      const colIndex = columns.findIndex(c => c.id === colId);
+      return { rowId, colId, rowIndex, colIndex };
+    }).filter(c => c.rowIndex !== -1 && c.colIndex !== -1);
+
+    if (cells.length < 2) return;
+
+    const minRow = Math.min(...cells.map(c => c.rowIndex));
+    const maxRow = Math.max(...cells.map(c => c.rowIndex));
+    const minCol = Math.min(...cells.map(c => c.colIndex));
+    const maxCol = Math.max(...cells.map(c => c.colIndex));
+
+    // التحقق من أن الخلايا تشكل مستطيلاً
+    const expectedCount = (maxRow - minRow + 1) * (maxCol - minCol + 1);
+    if (cells.length !== expectedCount) {
+      return; // الخلايا ليست مستطيلة
+    }
+
+    // الحصول على قيمة الخلية الأولى
+    const firstCell = cells[0];
+    const firstRow = rows[firstCell.rowIndex];
+    const firstColId = columns[firstCell.colIndex].id;
+    let value = '';
+    
+    if (firstColId === 'strategicGoal') value = firstRow.strategicGoal;
+    else if (firstColId === 'initiative') value = firstRow.initiative;
+    else if (firstColId === 'activity') value = firstRow.activity;
+    else if (firstColId === 'annualTarget') value = firstRow.annualTarget.toString();
+    else if (firstRow.customColumns[firstColId]) value = firstRow.customColumns[firstColId];
+
+    const newMerge: MergedCell = {
+      startRow: minRow,
+      endRow: maxRow,
+      startCol: minCol,
+      endCol: maxCol,
+      value,
+    };
+
+    setMergedCells(prev => [...prev, newMerge]);
+    setSelectedCells(new Set());
+  }, [selectedCells, rows, columns]);
+
+  // إلغاء دمج الخلايا
+  const unmergeSelectedCells = useCallback(() => {
+    if (selectedCells.size === 0) return;
+
+    const cells = Array.from(selectedCells).map(key => {
+      const [rowId, colId] = key.split(':');
+      const rowIndex = rows.findIndex(r => r.id === rowId);
+      const colIndex = columns.findIndex(c => c.id === colId);
+      return { rowIndex, colIndex };
+    });
+
+    setMergedCells(prev => prev.filter(merge => {
+      return !cells.some(cell => 
+        cell.rowIndex >= merge.startRow && 
+        cell.rowIndex <= merge.endRow &&
+        cell.colIndex >= merge.startCol && 
+        cell.colIndex <= merge.endCol
+      );
+    }));
+    setSelectedCells(new Set());
+  }, [selectedCells, rows, columns]);
+
+  // التحقق مما إذا كانت الخلية مدموجة
+  const getMergeInfo = useCallback((rowIndex: number, colIndex: number) => {
+    for (const merge of mergedCells) {
+      if (rowIndex >= merge.startRow && rowIndex <= merge.endRow &&
+          colIndex >= merge.startCol && colIndex <= merge.endCol) {
+        const isFirst = rowIndex === merge.startRow && colIndex === merge.startCol;
+        return {
+          isMerged: true,
+          isFirst,
+          rowSpan: merge.endRow - merge.startRow + 1,
+          colSpan: merge.endCol - merge.startCol + 1,
+          value: merge.value,
+        };
+      }
+    }
+    return { isMerged: false, isFirst: false, rowSpan: 1, colSpan: 1, value: '' };
+  }, [mergedCells]);
 
   // إعادة حساب الدمج
   const recalculateMerges = (currentRows: TableRowData[]): TableRowData[] => {
@@ -996,9 +1109,37 @@ export function AddOperationalPlanDialog({
               إلغاء دمج المبادرات
             </Button>
 
+            <div className="h-4 w-px bg-border mx-2" />
+
+            <Button
+              variant="default"
+              size="sm"
+              onClick={mergeSelectedCells}
+              disabled={selectedCells.size < 2}
+              className="h-7 text-xs gap-1"
+            >
+              <Merge className="w-3 h-3" />
+              دمج الخلايا المحددة
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={unmergeSelectedCells}
+              disabled={selectedCells.size === 0}
+              className="h-7 text-xs gap-1"
+            >
+              <SplitSquareHorizontal className="w-3 h-3" />
+              إلغاء دمج الخلايا
+            </Button>
+
             {selectedRows.size > 0 && (
               <span className="text-xs text-muted-foreground mr-auto">
                 {selectedRows.size} صف محدد
+              </span>
+            )}
+            {selectedCells.size > 0 && (
+              <span className="text-xs text-primary mr-2">
+                {selectedCells.size} خلية محددة
               </span>
             )}
           </div>
