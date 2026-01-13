@@ -209,9 +209,8 @@ export default function OperationalPlans() {
     fetchStrategicGoals();
     fetchInitiatives();
     fetchDepartments();
-    if (isAdmin) {
-      fetchEmployees();
-    }
+    // قائمة الموظفين مطلوبة لاختيار مسؤول التنفيذ داخل تعديل النشاط
+    fetchEmployees();
   }, [authUser, isAdmin]);
 
   const fetchDepartments = async () => {
@@ -331,8 +330,14 @@ export default function OperationalPlans() {
 
       if (error) throw error;
       setEmployees(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching employees:", error);
+      toast({
+        title: "تنبيه",
+        description: error?.message || "تعذر تحميل قائمة الموظفين",
+        variant: "destructive",
+      });
+      setEmployees([]);
     }
   };
 

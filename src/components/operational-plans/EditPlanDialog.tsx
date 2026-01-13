@@ -370,7 +370,14 @@ export function EditPlanDialog({
     
     // إذا لا يوجد أقسام، نعرض كل الموظفين
     if (allDepts.length === 0) return employees;
-    return employees.filter(e => e.department_id && allDepts.includes(e.department_id));
+
+    const filtered = employees.filter((e) => e.department_id && allDepts.includes(e.department_id));
+
+    // fallback: إذا لا يوجد موظفين في الأقسام المالكة (أو لم يتم ربط الموظفين بقسم)
+    // نعرض كل الموظفين المتاحين بدل قائمة فارغة
+    if (filtered.length === 0) return employees;
+
+    return filtered;
   };
 
   const getTitle = () => {
