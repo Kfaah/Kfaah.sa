@@ -17,8 +17,8 @@ import {
   Trash2,
   Plus,
   Settings2,
-  ArrowUp,
-  ArrowDown,
+  ArrowRight,
+  ArrowLeft,
   Pencil,
   Check,
   X
@@ -280,24 +280,26 @@ export function ManageCustomColumnsDialog({
                     }`}
                   >
                     {/* أزرار الترتيب */}
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex gap-0.5">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5 text-gray-400 hover:text-primary hover:bg-primary/10"
+                        className="h-6 w-6 text-gray-400 hover:text-primary hover:bg-primary/10"
                         onClick={() => handleMoveUp(index)}
                         disabled={index === 0}
+                        title="تحريك لليمين"
                       >
-                        <ArrowUp className="w-3 h-3" />
+                        <ArrowRight className="w-3 h-3" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5 text-gray-400 hover:text-primary hover:bg-primary/10"
+                        className="h-6 w-6 text-gray-400 hover:text-primary hover:bg-primary/10"
                         onClick={() => handleMoveDown(index)}
                         disabled={index === columns.length - 1}
+                        title="تحريك لليسار"
                       >
-                        <ArrowDown className="w-3 h-3" />
+                        <ArrowLeft className="w-3 h-3" />
                       </Button>
                     </div>
                     
