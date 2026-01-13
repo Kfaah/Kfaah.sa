@@ -95,11 +95,11 @@ const MONTHS_AR = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
 
-// ثلاثة ألوان متناسقة ومريحة للعين: أبيض - أزرق فاتح (الهوية) - تركوازي فاتح (مكمّل)
+// ثلاثة ألوان متناسقة: أخضر/تركوازي - أبيض - برتقالي خفيف
 const GOAL_COLORS = [
-  { bg: "bg-white", border: "border-l-primary", text: "text-primary" },
-  { bg: "bg-primary/5", border: "border-l-primary/70", text: "text-primary" },
-  { bg: "bg-accent/10", border: "border-l-accent", text: "text-accent" },
+  { bg: "bg-teal-50", border: "border-l-teal-500", text: "text-teal-700" },
+  { bg: "bg-white", border: "border-l-gray-300", text: "text-gray-700" },
+  { bg: "bg-orange-50", border: "border-l-orange-400", text: "text-orange-700" },
 ];
 
 interface GroupedPlans {
