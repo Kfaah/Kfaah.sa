@@ -1647,14 +1647,14 @@ export default function OperationalPlans() {
                               {isFirstRowOfGoal && (
                                 <td 
                                   rowSpan={totalRowsInGoal} 
-                                  className={`py-4 px-5 align-top ${color.bg} border-l-2 border-gray-200`}
+                                  className={`py-4 px-5 align-middle ${color.bg} border-l-2 border-gray-200`}
                                 >
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1">
-                                      <p className={`font-semibold text-sm ${color.text} leading-relaxed mb-2`}>{group.strategicGoal}</p>
+                                  <div className="flex flex-col items-center justify-center text-center gap-2">
+                                    <div className="w-full">
+                                      <p className={`font-semibold text-sm ${color.text} leading-relaxed mb-2 text-center`}>{group.strategicGoal}</p>
                                       {/* الأقسام */}
                                       {goalData?.departments && goalData.departments.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5">
+                                        <div className="flex flex-wrap gap-1.5 justify-center">
                                           {goalData.departments.map((d) => (
                                             <Badge 
                                               key={d.id} 
@@ -1671,7 +1671,7 @@ export default function OperationalPlans() {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
+                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100 mx-auto"
                                         onClick={() => {
                                           const actualGoalName = goalData?.name || group.strategicGoal;
                                           openEditDialog("strategic_goal", actualGoalName, undefined, plan);
