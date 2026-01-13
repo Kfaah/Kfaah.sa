@@ -86,6 +86,16 @@ interface ColumnDef {
   isCustom: boolean;
 }
 
+const createDefaultColumns = (): ColumnDef[] => [
+  { id: 'action', label: 'إجراء', width: '70px', editable: false, removable: false, isCustom: false },
+  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '10%', editable: true, removable: true, isCustom: false },
+  { id: 'annualTarget', label: 'المستهدف السنوي', width: '10%', editable: true, removable: true, isCustom: false },
+  { id: 'activity', label: 'النشاط', width: '20%', editable: true, removable: true, isCustom: false },
+  { id: 'initiative', label: 'المبادرة', width: '20%', editable: true, removable: true, isCustom: false },
+  { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '20%', editable: true, removable: true, isCustom: false },
+  { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
+];
+
 // هيكل دمج الخلايا
 interface MergedCell {
   startRow: number;
@@ -358,7 +368,10 @@ function SortableRow({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeRow(row.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeRow(row.id);
+                  }}
                   className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -695,15 +708,7 @@ export function AddOperationalPlanDialog({
   const [year, setYear] = useState(new Date().getFullYear());
   const [rows, setRows] = useState<TableRowData[]>([]);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [columns, setColumns] = useState<ColumnDef[]>([
-    { id: 'action', label: 'إجراء', width: '70px', editable: false, removable: false, isCustom: false },
-    { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '10%', editable: true, removable: true, isCustom: false },
-    { id: 'annualTarget', label: 'المستهدف السنوي', width: '10%', editable: true, removable: true, isCustom: false },
-    { id: 'activity', label: 'النشاط', width: '20%', editable: true, removable: true, isCustom: false },
-    { id: 'initiative', label: 'المبادرة', width: '20%', editable: true, removable: true, isCustom: false },
-    { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '20%', editable: true, removable: true, isCustom: false },
-    { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
-  ]);
+  const [columns, setColumns] = useState<ColumnDef[]>(createDefaultColumns);
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set()); // "rowId:colId"
   const [mergedCells, setMergedCells] = useState<MergedCell[]>([]);
   const [editingColumn, setEditingColumn] = useState<string | null>(null);
@@ -778,8 +783,16 @@ export function AddOperationalPlanDialog({
     if (!open) {
       setSelectedEmployeeId("");
       setYear(new Date().getFullYear());
+
+      // ابدأ من جديد تماماً (لا نحفظ أي عمليات دمج/تحديد/ترتيب بدون حفظ)
       setRows([]);
       setSelectedRows(new Set());
+      setSelectedCells(new Set());
+      setMergedCells([]);
+      setColumns(createDefaultColumns());
+      setEditingColumn(null);
+      setActiveColumnId(null);
+      setActiveRowId(null);
     }
   }, [open]);
 
