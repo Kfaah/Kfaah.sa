@@ -1172,8 +1172,11 @@ export default function OperationalPlans() {
                             bottomBorder = 'border-b border-b-gray-200';
                           }
                           
-                          const goalData = strategicGoals.find(g => g.name === group.strategicGoal);
-                          const initData = initiatives.find(i => i.name === initGroup.initiative);
+                          // البحث بالـ ID أولاً ثم بالاسم
+                          const goalData = strategicGoals.find(g => g.id === plan.strategic_goal_id) 
+                            || strategicGoals.find(g => g.name === group.strategicGoal);
+                          const initData = initiatives.find(i => i.id === plan.initiative_id)
+                            || initiatives.find(i => i.name === initGroup.initiative);
                           
                           rows.push(
                             <tr 
@@ -1199,7 +1202,11 @@ export default function OperationalPlans() {
                                         variant="ghost"
                                         size="icon"
                                         className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full flex-shrink-0"
-                                        onClick={() => openEditDialog("strategic_goal", group.strategicGoal)}
+                                        onClick={() => {
+                                          // استخدام الاسم من strategic_goals إذا وجد
+                                          const actualGoalName = goalData?.name || group.strategicGoal;
+                                          openEditDialog("strategic_goal", actualGoalName);
+                                        }}
                                       >
                                         <Settings2 className="w-4 h-4" />
                                       </Button>
@@ -1227,7 +1234,11 @@ export default function OperationalPlans() {
                                         variant="ghost"
                                         size="icon"
                                         className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full flex-shrink-0"
-                                        onClick={() => openEditDialog("initiative", group.strategicGoal, initGroup.initiative)}
+                                        onClick={() => {
+                                          // استخدام الاسم من initiatives إذا وجد
+                                          const actualInitName = initData?.name || initGroup.initiative;
+                                          openEditDialog("initiative", group.strategicGoal, actualInitName);
+                                        }}
                                       >
                                         <Settings2 className="w-4 h-4" />
                                       </Button>
