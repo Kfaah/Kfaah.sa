@@ -27,7 +27,8 @@ import {
   Columns,
   X,
   GripVertical,
-  Undo2
+  Undo2,
+  Grip
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -314,6 +315,9 @@ function SortableRow({
   updateCell,
   updateCustomColumn,
   onBeforeEdit,
+  draggedCell,
+  startCellDrag,
+  dropCellOnCell,
 }: {
   row: TableRowData;
   index: number;
@@ -333,6 +337,9 @@ function SortableRow({
   updateCell: (rowId: string, field: keyof TableRowData, value: string | number) => void;
   updateCustomColumn: (rowId: string, columnId: string, value: string) => void;
   onBeforeEdit: () => void;
+  draggedCell: { rowId: string; colId: string } | null;
+  startCellDrag: (rowId: string, colId: string) => void;
+  dropCellOnCell: (targetRowId: string, targetColId: string) => void;
 }) {
   const {
     attributes,
@@ -482,14 +489,31 @@ function SortableRow({
         // عمود المستهدف السنوي
         if (col.id === 'annualTarget') {
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
           return (
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
               )}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
             >
+              {/* مقبض سحب الخلية */}
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
               {/* تحديد الخلية من الأطراف فقط */}
               <div
                 role="button"
@@ -533,14 +557,31 @@ function SortableRow({
         // عمود النشاط
         if (col.id === 'activity') {
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
           return (
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
               )}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
             >
+              {/* مقبض سحب الخلية */}
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
               {/* تحديد الخلية من الأطراف فقط */}
               <div
                 role="button"
@@ -584,15 +625,32 @@ function SortableRow({
         if (col.id === 'initiative') {
           if (!row.showInitiativeCell) return null;
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
           return (
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
               )}
               rowSpan={row.initiativeRowSpan}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
             >
+              {/* مقبض سحب الخلية */}
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
               {/* تحديد الخلية من الأطراف فقط */}
               <div
                 role="button"
@@ -637,15 +695,32 @@ function SortableRow({
         if (col.id === 'strategicGoal') {
           if (!row.showGoalCell) return null;
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
           return (
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
               )}
               rowSpan={row.goalRowSpan}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
             >
+              {/* مقبض سحب الخلية */}
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
               {/* تحديد الخلية من الأطراف فقط */}
               <div
                 role="button"
@@ -702,14 +777,31 @@ function SortableRow({
         // الأعمدة المخصصة
         if (col.isCustom) {
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
           return (
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
               )}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
             >
+              {/* مقبض سحب الخلية */}
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
               {/* تحديد الخلية من الأطراف فقط */}
               <div
                 role="button"
@@ -776,6 +868,7 @@ export function AddOperationalPlanDialog({
   const [editingColumn, setEditingColumn] = useState<string | null>(null);
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
+  const [draggedCell, setDraggedCell] = useState<{ rowId: string; colId: string } | null>(null);
 
   // نظام التراجع (Undo) - حتى 10 عمليات
   interface UndoState {
@@ -962,6 +1055,62 @@ export function AddOperationalPlanDialog({
   const saveBeforeEdit = useCallback(() => {
     saveToUndo();
   }, [saveToUndo]);
+
+  // بدء سحب خلية
+  const startCellDrag = useCallback((rowId: string, colId: string) => {
+    setDraggedCell({ rowId, colId });
+  }, []);
+
+  // إفلات خلية على خلية أخرى (تبديل المحتوى)
+  const dropCellOnCell = useCallback((targetRowId: string, targetColId: string) => {
+    if (!draggedCell || (draggedCell.rowId === targetRowId && draggedCell.colId === targetColId)) {
+      setDraggedCell(null);
+      return;
+    }
+
+    saveToUndo();
+
+    setRows(prev => {
+      const newRows = [...prev];
+      const sourceRow = newRows.find(r => r.id === draggedCell.rowId);
+      const targetRow = newRows.find(r => r.id === targetRowId);
+
+      if (!sourceRow || !targetRow) return prev;
+
+      const sourceColId = draggedCell.colId;
+      
+      // تبديل القيم بناءً على نوع العمود
+      const getFieldValue = (row: TableRowData, colId: string): string | number => {
+        if (colId === 'annualTarget') return row.annualTarget;
+        if (colId === 'activity') return row.activity;
+        if (colId === 'initiative') return row.initiative;
+        if (colId === 'strategicGoal') return row.strategicGoal;
+        if (row.customColumns[colId] !== undefined) return row.customColumns[colId];
+        return '';
+      };
+
+      const setFieldValue = (row: TableRowData, colId: string, value: string | number) => {
+        if (colId === 'annualTarget') row.annualTarget = typeof value === 'number' ? value : parseFloat(value) || 0;
+        else if (colId === 'activity') row.activity = String(value);
+        else if (colId === 'initiative') row.initiative = String(value);
+        else if (colId === 'strategicGoal') row.strategicGoal = String(value);
+        else if (row.customColumns[colId] !== undefined || columns.find(c => c.id === colId)?.isCustom) {
+          row.customColumns[colId] = String(value);
+        }
+      };
+
+      const sourceValue = getFieldValue(sourceRow, sourceColId);
+      const targetValue = getFieldValue(targetRow, targetColId);
+
+      // تبديل القيم
+      setFieldValue(sourceRow, sourceColId, targetValue);
+      setFieldValue(targetRow, targetColId, sourceValue);
+
+      return newRows;
+    });
+
+    setDraggedCell(null);
+  }, [draggedCell, saveToUndo, columns]);
 
   // تبديل تحديد صف
   const toggleRowSelection = useCallback((rowId: string) => {
@@ -1491,9 +1640,28 @@ export function AddOperationalPlanDialog({
             )}
           </div>
 
+          {/* مؤشر السحب */}
+          {draggedCell && (
+            <div className="bg-primary/20 text-primary text-xs px-2 py-1 rounded mb-2 flex items-center gap-2">
+              <Grip className="w-3 h-3" />
+              جاري سحب خلية - أفلتها على خلية أخرى للتبديل
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDraggedCell(null)}
+                className="h-5 px-2 text-xs"
+              >
+                إلغاء
+              </Button>
+            </div>
+          )}
+
           {/* Excel-like Table */}
           <ScrollArea className="flex-1">
-            <div className="p-4">
+            <div 
+              className="p-4"
+              onMouseUp={() => draggedCell && setDraggedCell(null)}
+            >
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   {/* رأس الجدول مع سحب وإفلات للأعمدة */}
@@ -1559,6 +1727,9 @@ export function AddOperationalPlanDialog({
                               updateCell={updateCell}
                               updateCustomColumn={updateCustomColumn}
                               onBeforeEdit={saveBeforeEdit}
+                              draggedCell={draggedCell}
+                              startCellDrag={startCellDrag}
+                              dropCellOnCell={dropCellOnCell}
                             />
                           ))}
                         </SortableContext>
