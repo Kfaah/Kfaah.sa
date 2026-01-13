@@ -104,16 +104,16 @@ export function EditPlanDialog({
 
   // الهدف الاستراتيجي
   const [goalName, setGoalName] = useState("");
-  const [goalDepartmentId, setGoalDepartmentId] = useState<string>("");
+  const [goalDepartmentId, setGoalDepartmentId] = useState<string>("none");
 
   // المبادرة
   const [initName, setInitName] = useState("");
-  const [initDepartmentId, setInitDepartmentId] = useState<string>("");
+  const [initDepartmentId, setInitDepartmentId] = useState<string>("none");
 
   // النشاط
   const [activityName, setActivityName] = useState("");
   const [annualTarget, setAnnualTarget] = useState<number>(0);
-  const [responsibleEmployeeId, setResponsibleEmployeeId] = useState<string>("");
+  const [responsibleEmployeeId, setResponsibleEmployeeId] = useState<string>("none");
 
   useEffect(() => {
     if (open) {
