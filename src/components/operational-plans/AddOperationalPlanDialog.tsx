@@ -170,7 +170,7 @@ interface AddOperationalPlanDialogProps {
   }) => void;
 }
 
-// مكون العمود القابل للسحب مع إمكانية التحديد
+// مكون العمود القابل للسحب مع إمكانية التحديد وتغيير الحجم
 function SortableColumnHeader({ 
   column, 
   editingColumn, 
@@ -181,6 +181,8 @@ function SortableColumnHeader({
   toggleHeaderSelection,
   mergeInfo,
   onBeforeEdit,
+  onResizeStart,
+  isResizing,
 }: {
   column: ColumnDef;
   editingColumn: string | null;
@@ -191,6 +193,8 @@ function SortableColumnHeader({
   toggleHeaderSelection: (colId: string) => void;
   mergeInfo: { isMerged: boolean; isFirst: boolean; colSpan: number; label: string };
   onBeforeEdit: () => void;
+  onResizeStart: (columnId: string, startX: number) => void;
+  isResizing: boolean;
 }) {
   const {
     attributes,
@@ -297,6 +301,21 @@ function SortableColumnHeader({
           </>
         )}
       </div>
+      
+      {/* مقبض تغيير عرض العمود */}
+      {column.id !== 'action' && column.id !== 'rowNumber' && (
+        <div
+          className={cn(
+            "absolute inset-y-0 start-0 w-1 cursor-col-resize hover:bg-primary z-30 transition-colors",
+            isResizing && "bg-primary"
+          )}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onResizeStart(column.id, e.clientX);
+          }}
+        />
+      )}
     </TableHead>
   );
 }
@@ -899,6 +918,9 @@ export function AddOperationalPlanDialog({
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
   const [draggedCell, setDraggedCell] = useState<{ rowId: string; colId: string } | null>(null);
+  
+  // حالة تغيير حجم الأعمدة
+  const [resizingColumn, setResizingColumn] = useState<{ columnId: string; startX: number; startWidth: number } | null>(null);
 
   // نظام التراجع (Undo) - حتى 10 عمليات
   interface UndoState {
@@ -1024,8 +1046,58 @@ export function AddOperationalPlanDialog({
       setActiveColumnId(null);
       setActiveRowId(null);
       setUndoStack([]);
+      setResizingColumn(null);
     }
   }, [open]);
+
+  // دالة بدء تغيير حجم العمود
+  const handleResizeStart = useCallback((columnId: string, startX: number) => {
+    const column = columns.find(c => c.id === columnId);
+    if (!column) return;
+    
+    // تحويل العرض إلى بكسل
+    let startWidth = 100;
+    if (column.width.endsWith('px')) {
+      startWidth = parseInt(column.width);
+    } else if (column.width.endsWith('%')) {
+      // تقريب النسبة المئوية إلى بكسل (افتراض عرض الجدول 1000px)
+      startWidth = (parseInt(column.width) / 100) * 1000;
+    }
+    
+    saveToUndo();
+    setResizingColumn({ columnId, startX, startWidth });
+  }, [columns, saveToUndo]);
+
+  // دالة معالجة حركة الماوس أثناء تغيير الحجم
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!resizingColumn) return;
+    
+    const diff = resizingColumn.startX - e.clientX; // عكس الاتجاه للـ RTL
+    const newWidth = Math.max(50, resizingColumn.startWidth + diff);
+    
+    setColumns(prev => prev.map(col => 
+      col.id === resizingColumn.columnId 
+        ? { ...col, width: `${newWidth}px` }
+        : col
+    ));
+  }, [resizingColumn]);
+
+  // دالة إنهاء تغيير الحجم
+  const handleResizeEnd = useCallback(() => {
+    setResizingColumn(null);
+  }, []);
+
+  // إضافة وإزالة مستمعي الأحداث لتغيير الحجم
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove);
+      window.addEventListener('mouseup', handleResizeEnd);
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove);
+        window.removeEventListener('mouseup', handleResizeEnd);
+      };
+    }
+  }, [resizingColumn, handleResizeMove, handleResizeEnd]);
 
   // إضافة صف جديد
   const addRow = useCallback(() => {
@@ -1716,6 +1788,8 @@ export function AddOperationalPlanDialog({
                               toggleHeaderSelection={toggleHeaderSelection}
                               mergeInfo={getHeaderMergeInfo(colIndex)}
                               onBeforeEdit={saveBeforeEdit}
+                              onResizeStart={handleResizeStart}
+                              isResizing={resizingColumn?.columnId === col.id}
                             />
                           ))}
                         </SortableContext>
