@@ -33,6 +33,7 @@ interface Employee {
   id: string;
   user_id: string;
   full_name: string;
+  department_id: string | null;
 }
 
 interface Department {
@@ -124,10 +125,19 @@ export default function OperationalPlans() {
     annual_target: number;
     strategic_goal: string;
     initiative: string;
+    responsible_employee_id: string | null;
   } | null>(null);
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
   const [editingMonthlyTargets, setEditingMonthlyTargets] = useState<{ [planId: string]: number[] }>({});
   const [isEditingMonths, setIsEditingMonths] = useState<string | null>(null);
+  
+  // تعديل الهدف الاستراتيجي
+  const [editingGoalName, setEditingGoalName] = useState<string | null>(null);
+  const [editGoalDepartmentId, setEditGoalDepartmentId] = useState<string>("");
+  
+  // تعديل المبادرة
+  const [editingInitiativeName, setEditingInitiativeName] = useState<string | null>(null);
+  const [editInitiativeDepartmentId, setEditInitiativeDepartmentId] = useState<string>("");
   
   // إضافة نشاط جديد مباشرة
   const [addingActivityUnder, setAddingActivityUnder] = useState<{
@@ -248,7 +258,7 @@ export default function OperationalPlans() {
     try {
       const { data, error } = await supabase
         .from("employees")
-        .select("id, user_id, full_name")
+        .select("id, user_id, full_name, department_id")
         .eq("status", "active")
         .order("full_name");
 
@@ -643,6 +653,7 @@ export default function OperationalPlans() {
           annual_target: editFormData.annual_target,
           strategic_goal: editFormData.strategic_goal || null,
           initiative: editFormData.initiative || null,
+          responsible_employee_id: editFormData.responsible_employee_id || null,
         })
         .eq("id", planId);
 
@@ -663,6 +674,72 @@ export default function OperationalPlans() {
         variant: "destructive",
       });
     }
+  };
+
+  // حفظ تعديلات قسم الهدف الاستراتيجي
+  const handleSaveGoalDepartment = async (goalName: string) => {
+    const goal = strategicGoals.find(g => g.name === goalName);
+    if (!goal) return;
+    
+    try {
+      const { error } = await supabase
+        .from("strategic_goals")
+        .update({ department_id: editGoalDepartmentId || null })
+        .eq("id", goal.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحفظ",
+        description: "تم تحديث مالك الهدف الاستراتيجي",
+      });
+
+      setEditingGoalName(null);
+      setEditGoalDepartmentId("");
+      fetchStrategicGoals();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: "فشل في حفظ التعديلات",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // حفظ تعديلات قسم المبادرة
+  const handleSaveInitiativeDepartment = async (initiativeName: string) => {
+    const init = initiatives.find(i => i.name === initiativeName);
+    if (!init) return;
+    
+    try {
+      const { error } = await supabase
+        .from("initiatives")
+        .update({ department_id: editInitiativeDepartmentId || null })
+        .eq("id", init.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحفظ",
+        description: "تم تحديث مالك المبادرة",
+      });
+
+      setEditingInitiativeName(null);
+      setEditInitiativeDepartmentId("");
+      fetchInitiatives();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: "فشل في حفظ التعديلات",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // الحصول على الموظفين حسب القسم
+  const getEmployeesByDepartment = (departmentId: string | null) => {
+    if (!departmentId) return employees;
+    return employees.filter(emp => emp.department_id === departmentId);
   };
 
   // بدء تعديل الأهداف الشهرية
@@ -1152,13 +1229,62 @@ export default function OperationalPlans() {
                                   className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${color.bg}`}
                                 >
                                   <p className={`font-semibold text-sm ${color.text}`}>{group.strategicGoal}</p>
-                                  {/* عرض مالك الهدف (القسم) */}
+                                  {/* عرض واختيار مالك الهدف (القسم) */}
                                   {(() => {
                                     const goalData = strategicGoals.find(g => g.name === group.strategicGoal);
-                                    return goalData?.department_name && (
-                                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                        <span className="text-[10px]">📍</span> {goalData.department_name}
-                                      </p>
+                                    const isEditingThisGoal = editingGoalName === group.strategicGoal;
+                                    
+                                    if (isEditMode && isEditingThisGoal) {
+                                      return (
+                                        <div className="mt-2 flex items-center gap-1">
+                                          <Select
+                                            value={editGoalDepartmentId}
+                                            onValueChange={setEditGoalDepartmentId}
+                                          >
+                                            <SelectTrigger className="h-7 text-xs">
+                                              <SelectValue placeholder="اختر القسم" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="none">بدون قسم</SelectItem>
+                                              {departments.map(dept => (
+                                                <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-green-600"
+                                            onClick={() => handleSaveGoalDepartment(group.strategicGoal)}
+                                          >
+                                            <Check className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-gray-500"
+                                            onClick={() => { setEditingGoalName(null); setEditGoalDepartmentId(""); }}
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    return (
+                                      <div 
+                                        className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isEditMode ? 'cursor-pointer hover:text-primary' : ''}`}
+                                        onClick={() => {
+                                          if (isEditMode && goalData) {
+                                            setEditingGoalName(group.strategicGoal);
+                                            setEditGoalDepartmentId(goalData.department_id || "none");
+                                          }
+                                        }}
+                                      >
+                                        <span className="text-[10px]">📍</span> 
+                                        {goalData?.department_name || (isEditMode ? "انقر لاختيار القسم" : "بدون قسم")}
+                                        {isEditMode && <Pencil className="w-3 h-3 mr-1 opacity-50" />}
+                                      </div>
                                     );
                                   })()}
                                 </td>
@@ -1180,13 +1306,62 @@ export default function OperationalPlans() {
                                   className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${initIndex > 0 ? 'border-t-2 border-t-gray-400' : ''}`}
                                 >
                                   <p className="text-gray-700 text-sm font-medium">{initGroup.initiative}</p>
-                                  {/* عرض مالك المبادرة (القسم) */}
+                                  {/* عرض واختيار مالك المبادرة (القسم) */}
                                   {(() => {
                                     const initData = initiatives.find(i => i.name === initGroup.initiative);
-                                    return initData?.department_name && (
-                                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                        <span className="text-[10px]">📍</span> {initData.department_name}
-                                      </p>
+                                    const isEditingThisInit = editingInitiativeName === initGroup.initiative;
+                                    
+                                    if (isEditMode && isEditingThisInit) {
+                                      return (
+                                        <div className="mt-2 flex items-center gap-1">
+                                          <Select
+                                            value={editInitiativeDepartmentId}
+                                            onValueChange={setEditInitiativeDepartmentId}
+                                          >
+                                            <SelectTrigger className="h-7 text-xs">
+                                              <SelectValue placeholder="اختر القسم" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="none">بدون قسم</SelectItem>
+                                              {departments.map(dept => (
+                                                <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-green-600"
+                                            onClick={() => handleSaveInitiativeDepartment(initGroup.initiative)}
+                                          >
+                                            <Check className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-gray-500"
+                                            onClick={() => { setEditingInitiativeName(null); setEditInitiativeDepartmentId(""); }}
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    return (
+                                      <div 
+                                        className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isEditMode ? 'cursor-pointer hover:text-primary' : ''}`}
+                                        onClick={() => {
+                                          if (isEditMode && initData) {
+                                            setEditingInitiativeName(initGroup.initiative);
+                                            setEditInitiativeDepartmentId(initData.department_id || "none");
+                                          }
+                                        }}
+                                      >
+                                        <span className="text-[10px]">📍</span> 
+                                        {initData?.department_name || (isEditMode ? "انقر لاختيار القسم" : "بدون قسم")}
+                                        {isEditMode && <Pencil className="w-3 h-3 mr-1 opacity-50" />}
+                                      </div>
                                     );
                                   })()}
                                 </td>
@@ -1250,6 +1425,7 @@ export default function OperationalPlans() {
                                               annual_target: plan.annual_target,
                                               strategic_goal: plan.strategic_goal || '',
                                               initiative: plan.initiative || '',
+                                              responsible_employee_id: plan.responsible_employee_id || null,
                                             });
                                           }}
                                         >
@@ -1274,7 +1450,37 @@ export default function OperationalPlans() {
                               
                               {/* مسؤول التنفيذ */}
                               <td className="py-4 px-4 border-l-2 border-gray-300">
-                                <p className="text-gray-700 text-sm">{plan.responsible_employee_name || "-"}</p>
+                                {editingPlanId === plan.id ? (
+                                  (() => {
+                                    // جلب قسم المبادرة أو الهدف لفلترة الموظفين
+                                    const initData = initiatives.find(i => i.name === (editFormData?.initiative || plan.initiative));
+                                    const goalData = strategicGoals.find(g => g.name === (editFormData?.strategic_goal || plan.strategic_goal));
+                                    const ownerDeptId = initData?.department_id || goalData?.department_id || null;
+                                    const filteredEmployees = getEmployeesByDepartment(ownerDeptId);
+                                    
+                                    return (
+                                      <Select
+                                        value={editFormData?.responsible_employee_id || "none"}
+                                        onValueChange={(value) => setEditFormData(prev => prev ? {...prev, responsible_employee_id: value === "none" ? null : value} : null)}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs">
+                                          <SelectValue placeholder="اختر مسؤول التنفيذ" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="none">بدون مسؤول</SelectItem>
+                                          {filteredEmployees.map(emp => (
+                                            <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
+                                          ))}
+                                          {filteredEmployees.length === 0 && ownerDeptId && (
+                                            <div className="px-2 py-1.5 text-xs text-muted-foreground">لا يوجد موظفين في هذا القسم</div>
+                                          )}
+                                        </SelectContent>
+                                      </Select>
+                                    );
+                                  })()
+                                ) : (
+                                  <p className="text-gray-700 text-sm">{plan.responsible_employee_name || "-"}</p>
+                                )}
                               </td>
                               
                               {/* المستهدف السنوي */}
