@@ -1539,6 +1539,12 @@ export default function OperationalPlans() {
                       <th className="w-28 py-4 px-3 text-center border-r border-white/20">
                         <span className="text-sm font-semibold text-white">المتوسط الشهري</span>
                       </th>
+                      {/* الأعمدة المخصصة */}
+                      {customColumns.map((col) => (
+                        <th key={col.id} className="py-4 px-3 text-center border-r border-white/20">
+                          <span className="text-sm font-semibold text-white">{col.name}</span>
+                        </th>
+                      ))}
                       {isEditMode && (
                         <th className="w-24 py-4 px-3 text-center border-r border-white/20 bg-amber-600">
                           <span className="text-sm font-semibold text-white">إجراء</span>
@@ -1815,6 +1821,13 @@ export default function OperationalPlans() {
                                 </span>
                               </td>
                               
+                              {/* الأعمدة المخصصة */}
+                              {customColumns.map((col) => (
+                                <td key={col.id} className="py-4 px-3 text-center border-l-2 border-gray-200">
+                                  <span className="text-sm text-gray-500">—</span>
+                                </td>
+                              ))}
+                              
                               {/* عمود الإجراء - يظهر فقط في وضع التعديل */}
                               {isEditMode && (
                                 <td className="w-24 py-4 px-3 text-center">
@@ -1849,9 +1862,9 @@ export default function OperationalPlans() {
                             const currentMonthlyValues = editingMonthlyTargets[plan.id] || [];
                             
                             // حساب عدد الأعمدة للصف الموسع
-                            // النشاط + المسؤول + المستهدف السنوي + المتوسط الشهري + (الإجراء في وضع التعديل)
+                            // النشاط + المسؤول + المستهدف السنوي + المتوسط الشهري + الأعمدة المخصصة + (الإجراء في وضع التعديل)
                             // لا نشمل عمود الهدف الاستراتيجي والمبادرة لأنها تستخدم rowSpan
-                            const expandedColSpan = isEditMode ? 5 : 4;
+                            const expandedColSpan = 4 + customColumns.length + (isEditMode ? 1 : 0);
                             
                             rows.push(
                               <tr key={`${plan.id}-expanded`} className="bg-white">
@@ -2007,6 +2020,10 @@ export default function OperationalPlans() {
                                 </td>
                                 {/* المتوسط الشهري (فارغ) */}
                                 <td className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                {/* خلايا فارغة للأعمدة المخصصة */}
+                                {customColumns.map((col) => (
+                                  <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                ))}
                                 {/* إجراء */}
                                 <td className="py-2 px-2 text-center">
                                   <div className="flex justify-center gap-1">
@@ -2083,6 +2100,10 @@ export default function OperationalPlans() {
                               </td>
                               {/* المتوسط الشهري (فارغ) */}
                               <td className="py-2 px-2 border-l-2 border-gray-300"></td>
+                              {/* خلايا فارغة للأعمدة المخصصة */}
+                              {customColumns.map((col) => (
+                                <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
+                              ))}
                               {/* إجراء */}
                               <td className="py-2 px-2 text-center">
                                 <div className="flex justify-center gap-1">
@@ -2118,7 +2139,7 @@ export default function OperationalPlans() {
                               key={`add-init-btn-${group.strategicGoal}`} 
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-gray-50/50 transition-colors border-b-4 border-b-gray-400`}
                             >
-                              <td colSpan={isEditMode ? 6 : 5} className="py-3 px-4">
+                              <td colSpan={6 + customColumns.length} className="py-3 px-4">
                                 <div className="flex justify-center items-center gap-3">
                                   {/* زر إضافة مبادرة جديدة */}
                                   <Button
@@ -2208,6 +2229,10 @@ export default function OperationalPlans() {
                             </td>
                             {/* المتوسط الشهري (فارغ) */}
                             <td className="py-2 px-2 border-l-2 border-gray-300"></td>
+                            {/* خلايا فارغة للأعمدة المخصصة */}
+                            {customColumns.map((col) => (
+                              <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
+                            ))}
                             {/* إجراء */}
                             <td className="py-2 px-2 text-center">
                               <div className="flex justify-center gap-1">
@@ -2244,7 +2269,7 @@ export default function OperationalPlans() {
                             key="add-goal-btn" 
                             className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
                           >
-                            <td colSpan={isEditMode ? 7 : 6} className="py-3 px-4">
+                            <td colSpan={7 + customColumns.length} className="py-3 px-4">
                               <div className="flex justify-center">
                                 <Button
                                   variant="outline"
