@@ -123,13 +123,23 @@ export function AddOperationalPlanDialog({
   const [year, setYear] = useState(new Date().getFullYear());
   const [rows, setRows] = useState<TableRowData[]>([]);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [columns] = useState([
-    { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '25%' },
-    { id: 'initiative', label: 'المبادرة', width: '25%' },
-    { id: 'activity', label: 'النشاط', width: '25%' },
-    { id: 'annualTarget', label: 'المستهدف السنوي', width: '12.5%' },
-    { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '12.5%' },
+  const [columns, setColumns] = useState([
+    { id: 'action', label: 'إجراء', width: '50px', editable: false },
+    { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '12.5%', editable: true },
+    { id: 'annualTarget', label: 'المستهدف السنوي', width: '12.5%', editable: true },
+    { id: 'activity', label: 'النشاط', width: '25%', editable: true },
+    { id: 'initiative', label: 'المبادرة', width: '25%', editable: true },
+    { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '25%', editable: true },
+    { id: 'rowNumber', label: '#', width: '40px', editable: false },
   ]);
+  const [editingColumn, setEditingColumn] = useState<string | null>(null);
+
+  // تحديث عنوان العمود
+  const updateColumnLabel = useCallback((columnId: string, newLabel: string) => {
+    setColumns(prev => prev.map(col => 
+      col.id === columnId ? { ...col, label: newLabel } : col
+    ));
+  }, []);
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -596,13 +606,30 @@ export function AddOperationalPlanDialog({
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="w-12 text-center border-l">إجراء</TableHead>
-                      <TableHead className="text-center border-l font-bold" style={{ width: '12.5%' }}>المتوسط الشهري</TableHead>
-                      <TableHead className="text-center border-l font-bold" style={{ width: '12.5%' }}>المستهدف السنوي</TableHead>
-                      <TableHead className="text-center border-l font-bold" style={{ width: '25%' }}>النشاط</TableHead>
-                      <TableHead className="text-center border-l font-bold" style={{ width: '25%' }}>المبادرة</TableHead>
-                      <TableHead className="text-center border-l font-bold" style={{ width: '25%' }}>الهدف الاستراتيجي</TableHead>
-                      <TableHead className="w-10 text-center">#</TableHead>
+                      {columns.map((col) => (
+                        <TableHead 
+                          key={col.id}
+                          className={cn(
+                            "text-center border-l font-bold",
+                            col.editable && "cursor-pointer hover:bg-muted"
+                          )}
+                          style={{ width: col.width }}
+                          onDoubleClick={() => col.editable && setEditingColumn(col.id)}
+                        >
+                          {editingColumn === col.id ? (
+                            <Input
+                              value={col.label}
+                              onChange={(e) => updateColumnLabel(col.id, e.target.value)}
+                              onBlur={() => setEditingColumn(null)}
+                              onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                              className="h-7 text-center text-sm font-bold border-primary"
+                              autoFocus
+                            />
+                          ) : (
+                            col.label
+                          )}
+                        </TableHead>
+                      ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
