@@ -596,17 +596,13 @@ export function AddOperationalPlanDialog({
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="w-10 text-center border-l">#</TableHead>
-                      {columns.map((col) => (
-                        <TableHead 
-                          key={col.id} 
-                          className="text-center border-l font-bold"
-                          style={{ width: col.width }}
-                        >
-                          {col.label}
-                        </TableHead>
-                      ))}
-                      <TableHead className="w-12 text-center">إجراء</TableHead>
+                      <TableHead className="w-12 text-center border-l">إجراء</TableHead>
+                      <TableHead className="text-center border-l font-bold" style={{ width: '12.5%' }}>المتوسط الشهري</TableHead>
+                      <TableHead className="text-center border-l font-bold" style={{ width: '12.5%' }}>المستهدف السنوي</TableHead>
+                      <TableHead className="text-center border-l font-bold" style={{ width: '25%' }}>النشاط</TableHead>
+                      <TableHead className="text-center border-l font-bold" style={{ width: '25%' }}>المبادرة</TableHead>
+                      <TableHead className="text-center border-l font-bold" style={{ width: '25%' }}>الهدف الاستراتيجي</TableHead>
+                      <TableHead className="w-10 text-center">#</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -628,29 +624,43 @@ export function AddOperationalPlanDialog({
                             selectedRows.has(row.id) && "bg-primary/10 hover:bg-primary/15"
                           )}
                         >
-                          {/* Row number with selection */}
-                          <TableCell 
-                            className="text-center border-l cursor-pointer select-none font-medium text-muted-foreground"
-                            onClick={() => toggleRowSelection(row.id)}
-                          >
-                            {index + 1}
+                          {/* Actions */}
+                          <TableCell className="text-center p-1 border-l">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeRow(row.id)}
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           </TableCell>
 
-                          {/* Strategic Goal */}
-                          {row.showGoalCell && (
-                            <TableCell 
-                              className="border-l p-0"
-                              rowSpan={row.goalRowSpan}
-                            >
-                              <Input
-                                value={row.strategicGoal}
-                                onChange={(e) => updateCell(row.id, 'strategicGoal', e.target.value)}
-                                placeholder="الهدف الاستراتيجي..."
-                                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
-                                list="goals-list"
-                              />
-                            </TableCell>
-                          )}
+                          {/* Monthly Average (read-only) */}
+                          <TableCell className="border-l text-center bg-muted/30 text-sm font-medium">
+                            {row.monthlyAverage.toLocaleString('ar-SA', { maximumFractionDigits: 2 })}
+                          </TableCell>
+
+                          {/* Annual Target */}
+                          <TableCell className="border-l p-0">
+                            <Input
+                              type="number"
+                              value={row.annualTarget || ""}
+                              onChange={(e) => updateCell(row.id, 'annualTarget', parseFloat(e.target.value) || 0)}
+                              placeholder="0"
+                              className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-center text-sm"
+                            />
+                          </TableCell>
+
+                          {/* Activity */}
+                          <TableCell className="border-l p-0">
+                            <Input
+                              value={row.activity}
+                              onChange={(e) => updateCell(row.id, 'activity', e.target.value)}
+                              placeholder="النشاط..."
+                              className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                            />
+                          </TableCell>
 
                           {/* Initiative */}
                           {row.showInitiativeCell && (
@@ -668,42 +678,28 @@ export function AddOperationalPlanDialog({
                             </TableCell>
                           )}
 
-                          {/* Activity */}
-                          <TableCell className="border-l p-0">
-                            <Input
-                              value={row.activity}
-                              onChange={(e) => updateCell(row.id, 'activity', e.target.value)}
-                              placeholder="النشاط..."
-                              className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
-                            />
-                          </TableCell>
-
-                          {/* Annual Target */}
-                          <TableCell className="border-l p-0">
-                            <Input
-                              type="number"
-                              value={row.annualTarget || ""}
-                              onChange={(e) => updateCell(row.id, 'annualTarget', parseFloat(e.target.value) || 0)}
-                              placeholder="0"
-                              className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-center text-sm"
-                            />
-                          </TableCell>
-
-                          {/* Monthly Average (read-only) */}
-                          <TableCell className="border-l text-center bg-muted/30 text-sm font-medium">
-                            {row.monthlyAverage.toLocaleString('ar-SA', { maximumFractionDigits: 2 })}
-                          </TableCell>
-
-                          {/* Actions */}
-                          <TableCell className="text-center p-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeRow(row.id)}
-                              className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          {/* Strategic Goal */}
+                          {row.showGoalCell && (
+                            <TableCell 
+                              className="border-l p-0"
+                              rowSpan={row.goalRowSpan}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                              <Input
+                                value={row.strategicGoal}
+                                onChange={(e) => updateCell(row.id, 'strategicGoal', e.target.value)}
+                                placeholder="الهدف الاستراتيجي..."
+                                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                                list="goals-list"
+                              />
+                            </TableCell>
+                          )}
+
+                          {/* Row number with selection */}
+                          <TableCell 
+                            className="text-center cursor-pointer select-none font-medium text-muted-foreground"
+                            onClick={() => toggleRowSelection(row.id)}
+                          >
+                            {index + 1}
                           </TableCell>
                         </TableRow>
                       ))
