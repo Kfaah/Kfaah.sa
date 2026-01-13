@@ -307,12 +307,37 @@ function SortableRow({
               rowSpan={mergeInfo.rowSpan}
               colSpan={mergeInfo.colSpan}
               className={cn(
-                "border-l text-center text-sm font-medium cursor-pointer align-middle",
+                "border-l text-center text-sm font-medium align-middle relative p-0",
                 isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
               )}
-              onClick={() => toggleCellSelection(row.id, col.id)}
             >
-              {mergeInfo.value || ""}
+              {/* تحديد الخلية من الأطراف فقط */}
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+
+              <div className="px-2 py-2">
+                {mergeInfo.value || ""}
+              </div>
             </TableCell>
           );
         }
@@ -350,12 +375,37 @@ function SortableRow({
             <TableCell 
               key={col.id} 
               className={cn(
-                "border-l text-center bg-muted/30 text-sm font-medium cursor-pointer",
+                "border-l bg-muted/30 text-sm font-medium relative p-0",
                 isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
               )}
-              onClick={() => toggleCellSelection(row.id, col.id)}
             >
-              {row.monthlyAverage.toLocaleString('ar-SA', { maximumFractionDigits: 2 })}
+              {/* تحديد الخلية من الأطراف فقط */}
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+
+              <div className="px-2 py-2 text-center">
+                {row.monthlyAverage.toLocaleString('ar-SA', { maximumFractionDigits: 2 })}
+              </div>
             </TableCell>
           );
         }
