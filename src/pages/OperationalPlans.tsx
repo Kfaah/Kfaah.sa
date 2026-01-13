@@ -1685,7 +1685,8 @@ export default function OperationalPlans() {
                             const currentMonthlyValues = editingMonthlyTargets[plan.id] || [];
                             
                             rows.push(
-                              <tr key={`${plan.id}-expanded`}>
+                              <tr key={`${plan.id}-expanded`} className="bg-white">
+                                {/* الخلية الموسعة - تمتد على جميع الأعمدة */}
                                 <td colSpan={isEditMode ? 7 : 6} className="p-0">
                                   <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
                                     {/* أزرار التحكم - تظهر فقط في وضع التعديل */}
