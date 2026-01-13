@@ -1820,8 +1820,11 @@ export default function OperationalPlans() {
                                 key={`add-activity-${group.strategicGoal}-${initGroup.initiative}`} 
                                 className={`${color.bg} border-r-4 ${color.border} bg-green-50/50`}
                               >
+                                {/* الهدف الاستراتيجي (فارغ) */}
                                 <td className="py-2 px-2"></td>
+                                {/* المبادرة (فارغ) */}
                                 <td className="py-2 px-2"></td>
+                                {/* النشاط */}
                                 <td className="py-2 px-4 border-l-2 border-gray-300">
                                   <Input
                                     value={newActivityName}
@@ -1831,7 +1834,9 @@ export default function OperationalPlans() {
                                     autoFocus
                                   />
                                 </td>
-                                {isAdmin && <td className="py-2 px-2"></td>}
+                                {/* مسؤول التنفيذ (فارغ) */}
+                                <td className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                {/* المستهدف السنوي */}
                                 <td className="py-2 px-2 border-l-2 border-gray-300">
                                   <Input
                                     type="number"
@@ -1841,7 +1846,9 @@ export default function OperationalPlans() {
                                     placeholder="المستهدف"
                                   />
                                 </td>
-                                <td className="py-2 px-2"></td>
+                                {/* المتوسط الشهري (فارغ) */}
+                                <td className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                {/* إجراء */}
                                 <td className="py-2 px-2 text-center">
                                   <div className="flex justify-center gap-1">
                                     <Button
@@ -1908,7 +1915,9 @@ export default function OperationalPlans() {
                               key={`add-initiative-${group.strategicGoal}`} 
                               className={`${color.bg} border-r-4 ${color.border} bg-blue-50/50`}
                             >
+                              {/* الهدف الاستراتيجي (فارغ) */}
                               <td className="py-2 px-2"></td>
+                              {/* المبادرة */}
                               <td className="py-2 px-4 border-l-2 border-gray-300">
                                 <Input
                                   value={newInlineInitiativeName}
@@ -1918,6 +1927,7 @@ export default function OperationalPlans() {
                                   autoFocus
                                 />
                               </td>
+                              {/* النشاط */}
                               <td className="py-2 px-4 border-l-2 border-gray-300">
                                 <Input
                                   value={newInlineActivityName}
@@ -1926,7 +1936,9 @@ export default function OperationalPlans() {
                                   placeholder="اسم النشاط"
                                 />
                               </td>
-                              {isAdmin && <td className="py-2 px-2"></td>}
+                              {/* مسؤول التنفيذ (فارغ) */}
+                              <td className="py-2 px-2 border-l-2 border-gray-300"></td>
+                              {/* المستهدف السنوي */}
                               <td className="py-2 px-2 border-l-2 border-gray-300">
                                 <Input
                                   type="number"
@@ -1936,7 +1948,9 @@ export default function OperationalPlans() {
                                   placeholder="المستهدف"
                                 />
                               </td>
-                              <td className="py-2 px-2"></td>
+                              {/* المتوسط الشهري (فارغ) */}
+                              <td className="py-2 px-2 border-l-2 border-gray-300"></td>
+                              {/* إجراء */}
                               <td className="py-2 px-2 text-center">
                                 <div className="flex justify-center gap-1">
                                   <Button
@@ -1971,7 +1985,7 @@ export default function OperationalPlans() {
                               key={`add-init-btn-${group.strategicGoal}`} 
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-blue-50/30 transition-colors border-b-4 border-b-gray-400`}
                             >
-                              <td colSpan={isAdmin ? 7 : 6} className="py-1 px-4">
+                              <td colSpan={isEditMode ? 7 : 6} className="py-1 px-4">
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -2072,7 +2086,7 @@ export default function OperationalPlans() {
                             key="add-goal-btn" 
                             className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
                           >
-                            <td colSpan={isAdmin ? 7 : 6} className="py-2 px-4">
+                            <td colSpan={isEditMode ? 7 : 6} className="py-2 px-4">
                                 <Button
                                   variant="ghost"
                                   size="sm"
