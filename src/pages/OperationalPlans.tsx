@@ -1483,20 +1483,28 @@ export default function OperationalPlans() {
                     
                     groupedPlans.forEach((group, groupIndex) => {
                       const color = GOAL_COLORS[group.colorIndex];
-                      // حساب إجمالي الصفوف لهذا الهدف (مع احتساب الصفوف الموسعة)
-                      const totalRowsInGoal = group.initiatives.reduce((sum, init) => {
-                        return sum + init.plans.reduce((planSum, plan) => {
-                          return planSum + 1 + (expandedPlanId === plan.id ? 1 : 0);
-                        }, 0);
-                      }, 0);
+                      // حساب إجمالي الصفوف لهذا الهدف (مع احتساب الصفوف الموسعة + صفوف الإضافة في وضع التعديل)
+                      const totalRowsInGoal =
+                        group.initiatives.reduce((sum, init) => {
+                          const planRows = init.plans.reduce((planSum, plan) => {
+                            return planSum + 1 + (expandedPlanId === plan.id ? 1 : 0);
+                          }, 0);
+
+                          // في وضع التعديل نضيف صف "إضافة نشاط جديد" أسفل كل مبادرة
+                          const addActivityRow = isEditMode ? 1 : 0;
+                          return sum + planRows + addActivityRow;
+                        }, 0) +
+                        // في وضع التعديل نضيف صف "إضافة مبادرة جديدة" أسفل الهدف
+                        (isEditMode ? 1 : 0);
                       
                       let goalRowRendered = false;
                       
                       group.initiatives.forEach((initGroup, initIndex) => {
-                        // حساب الصفوف للمبادرة (مع احتساب الصفوف الموسعة)
-                        const totalRowsInInitiative = initGroup.plans.reduce((sum, plan) => {
-                          return sum + 1 + (expandedPlanId === plan.id ? 1 : 0);
-                        }, 0);
+                        // حساب الصفوف للمبادرة (مع احتساب الصفوف الموسعة + صف إضافة نشاط في وضع التعديل)
+                        const totalRowsInInitiative =
+                          initGroup.plans.reduce((sum, plan) => {
+                            return sum + 1 + (expandedPlanId === plan.id ? 1 : 0);
+                          }, 0) + (isEditMode ? 1 : 0);
                         let initRowRendered = false;
                         
                         initGroup.plans.forEach((plan, planIndex) => {
