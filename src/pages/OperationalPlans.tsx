@@ -275,6 +275,7 @@ export default function OperationalPlans() {
         .order("display_order", { ascending: true });
 
       if (error) throw error;
+      console.log("Custom columns loaded:", data);
       setCustomColumns(data || []);
     } catch (error) {
       console.error("Error fetching custom columns:", error);
