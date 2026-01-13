@@ -349,9 +349,13 @@ export function EditPlanDialog({
   const getFilteredEmployees = () => {
     if (editType !== "activity" || !plan) return employees;
     
-    // الحصول على أقسام المبادرة أو الهدف
-    const init = initiatives.find(i => i.name === plan.initiative);
-    const goal = strategicGoals.find(g => g.name === plan.strategic_goal);
+    // البحث بالـ ID أولاً ثم بالاسم
+    const init = plan.initiative_id
+      ? initiatives.find(i => i.id === plan.initiative_id)
+      : initiatives.find(i => i.name === plan.initiative);
+    const goal = plan.strategic_goal_id
+      ? strategicGoals.find(g => g.id === plan.strategic_goal_id)
+      : strategicGoals.find(g => g.name === plan.strategic_goal);
     
     // في حالة تعدد المالكين، نجمع كل الموظفين من الأقسام المالكة
     // التحقق من أن departments هي مصفوفة قبل استخدام map
@@ -364,6 +368,7 @@ export function EditPlanDialog({
     
     const allDepts = [...new Set([...initDepts, ...goalDepts])];
     
+    // إذا لا يوجد أقسام، نعرض كل الموظفين
     if (allDepts.length === 0) return employees;
     return employees.filter(e => e.department_id && allDepts.includes(e.department_id));
   };
