@@ -126,6 +126,19 @@ export default function OperationalPlans() {
   const [newActivityName, setNewActivityName] = useState("");
   const [newActivityTarget, setNewActivityTarget] = useState("");
   
+  // إضافة مبادرة جديدة مباشرة
+  const [addingInitiativeUnder, setAddingInitiativeUnder] = useState<string | null>(null);
+  const [newInlineInitiativeName, setNewInlineInitiativeName] = useState("");
+  const [newInlineActivityName, setNewInlineActivityName] = useState("");
+  const [newInlineActivityTarget, setNewInlineActivityTarget] = useState("");
+  
+  // إضافة هدف استراتيجي جديد مباشرة
+  const [isAddingNewStrategicGoal, setIsAddingNewStrategicGoal] = useState(false);
+  const [newInlineGoalName, setNewInlineGoalName] = useState("");
+  const [newInlineGoalInitiative, setNewInlineGoalInitiative] = useState("");
+  const [newInlineGoalActivity, setNewInlineGoalActivity] = useState("");
+  const [newInlineGoalTarget, setNewInlineGoalTarget] = useState("");
+  
   // Form state
   const [strategicGoal, setStrategicGoal] = useState("");
   const [initiative, setInitiative] = useState("");
@@ -728,6 +741,87 @@ export default function OperationalPlans() {
       toast({
         title: "خطأ",
         description: "فشل في إضافة النشاط",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // إضافة مبادرة جديدة مباشرة تحت هدف استراتيجي
+  const handleAddInitiativeUnder = async () => {
+    if (!addingInitiativeUnder || !newInlineInitiativeName.trim() || !newInlineActivityName.trim()) return;
+
+    try {
+      const { data: planData, error: planError } = await supabase
+        .from("operational_plans")
+        .insert({
+          user_id: authUser!.id,
+          strategic_goal: addingInitiativeUnder,
+          initiative: newInlineInitiativeName.trim(),
+          activity_name: newInlineActivityName.trim(),
+          annual_target: parseInt(newInlineActivityTarget) || 0,
+          year: year,
+        })
+        .select()
+        .single();
+
+      if (planError) throw planError;
+
+      toast({
+        title: "تم بنجاح",
+        description: "تم إضافة المبادرة والنشاط الجديد",
+      });
+
+      setAddingInitiativeUnder(null);
+      setNewInlineInitiativeName("");
+      setNewInlineActivityName("");
+      setNewInlineActivityTarget("");
+      fetchPlans();
+    } catch (error: any) {
+      console.error("Error adding initiative:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إضافة المبادرة",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // إضافة هدف استراتيجي جديد مباشرة
+  const handleAddNewStrategicGoal = async () => {
+    if (!newInlineGoalName.trim() || !newInlineGoalInitiative.trim() || !newInlineGoalActivity.trim()) return;
+
+    try {
+      const { data: planData, error: planError } = await supabase
+        .from("operational_plans")
+        .insert({
+          user_id: authUser!.id,
+          strategic_goal: newInlineGoalName.trim(),
+          initiative: newInlineGoalInitiative.trim(),
+          activity_name: newInlineGoalActivity.trim(),
+          annual_target: parseInt(newInlineGoalTarget) || 0,
+          year: year,
+        })
+        .select()
+        .single();
+
+      if (planError) throw planError;
+
+      toast({
+        title: "تم بنجاح",
+        description: "تم إضافة الهدف الاستراتيجي الجديد",
+      });
+
+      setIsAddingNewStrategicGoal(false);
+      setNewInlineGoalName("");
+      setNewInlineGoalInitiative("");
+      setNewInlineGoalActivity("");
+      setNewInlineGoalTarget("");
+      fetchPlans();
+    } catch (error: any) {
+      console.error("Error adding strategic goal:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إضافة الهدف الاستراتيجي",
         variant: "destructive",
       });
     }
@@ -1379,7 +1473,191 @@ export default function OperationalPlans() {
                           }
                         }
                       });
+                      
+                      // صف إضافة مبادرة جديدة تحت هذا الهدف (يظهر فقط في وضع التعديل)
+                      if (isEditMode) {
+                        const isAddingInitHere = addingInitiativeUnder === group.strategicGoal;
+                        
+                        if (isAddingInitHere) {
+                          rows.push(
+                            <tr 
+                              key={`add-initiative-${group.strategicGoal}`} 
+                              className={`${color.bg} border-r-4 ${color.border} bg-blue-50/50`}
+                            >
+                              <td className="py-2 px-2"></td>
+                              <td className="py-2 px-4 border-l-2 border-gray-300">
+                                <Input
+                                  value={newInlineInitiativeName}
+                                  onChange={(e) => setNewInlineInitiativeName(e.target.value)}
+                                  className="h-8 text-sm"
+                                  placeholder="اسم المبادرة الجديدة"
+                                  autoFocus
+                                />
+                              </td>
+                              <td className="py-2 px-4 border-l-2 border-gray-300">
+                                <Input
+                                  value={newInlineActivityName}
+                                  onChange={(e) => setNewInlineActivityName(e.target.value)}
+                                  className="h-8 text-sm"
+                                  placeholder="اسم النشاط"
+                                />
+                              </td>
+                              {isAdmin && <td className="py-2 px-2"></td>}
+                              <td className="py-2 px-2 border-l-2 border-gray-300">
+                                <Input
+                                  type="number"
+                                  value={newInlineActivityTarget}
+                                  onChange={(e) => setNewInlineActivityTarget(e.target.value)}
+                                  className="h-8 text-sm text-center"
+                                  placeholder="المستهدف"
+                                />
+                              </td>
+                              <td className="py-2 px-2"></td>
+                              <td className="py-2 px-2 text-center">
+                                <div className="flex justify-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-green-600 hover:bg-green-100 rounded-full h-8 w-8"
+                                    onClick={handleAddInitiativeUnder}
+                                    disabled={!newInlineInitiativeName.trim() || !newInlineActivityName.trim()}
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-red-600 hover:bg-red-100 rounded-full h-8 w-8"
+                                    onClick={() => {
+                                      setAddingInitiativeUnder(null);
+                                      setNewInlineInitiativeName("");
+                                      setNewInlineActivityName("");
+                                      setNewInlineActivityTarget("");
+                                    }}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        } else {
+                          rows.push(
+                            <tr 
+                              key={`add-init-btn-${group.strategicGoal}`} 
+                              className={`${color.bg} border-r-4 ${color.border} hover:bg-blue-50/30 transition-colors border-b-4 border-b-gray-400`}
+                            >
+                              <td colSpan={isAdmin ? 7 : 6} className="py-1 px-4">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-blue-600 hover:text-blue-800 hover:bg-blue-100 gap-1"
+                                  onClick={() => setAddingInitiativeUnder(group.strategicGoal)}
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  إضافة مبادرة جديدة
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        }
+                      }
                     });
+                    
+                    // صف إضافة هدف استراتيجي جديد
+                    if (isEditMode) {
+                      if (isAddingNewStrategicGoal) {
+                        rows.push(
+                          <tr 
+                            key="add-new-strategic-goal" 
+                            className="bg-purple-50/50 border-r-4 border-purple-400"
+                          >
+                            <td className="py-2 px-4 border-l-2 border-gray-300">
+                              <Input
+                                value={newInlineGoalName}
+                                onChange={(e) => setNewInlineGoalName(e.target.value)}
+                                className="h-8 text-sm"
+                                placeholder="الهدف الاستراتيجي"
+                                autoFocus
+                              />
+                            </td>
+                            <td className="py-2 px-4 border-l-2 border-gray-300">
+                              <Input
+                                value={newInlineGoalInitiative}
+                                onChange={(e) => setNewInlineGoalInitiative(e.target.value)}
+                                className="h-8 text-sm"
+                                placeholder="المبادرة"
+                              />
+                            </td>
+                            <td className="py-2 px-4 border-l-2 border-gray-300">
+                              <Input
+                                value={newInlineGoalActivity}
+                                onChange={(e) => setNewInlineGoalActivity(e.target.value)}
+                                className="h-8 text-sm"
+                                placeholder="النشاط"
+                              />
+                            </td>
+                            {isAdmin && <td className="py-2 px-2"></td>}
+                            <td className="py-2 px-2 border-l-2 border-gray-300">
+                              <Input
+                                type="number"
+                                value={newInlineGoalTarget}
+                                onChange={(e) => setNewInlineGoalTarget(e.target.value)}
+                                className="h-8 text-sm text-center"
+                                placeholder="المستهدف"
+                              />
+                            </td>
+                            <td className="py-2 px-2"></td>
+                            <td className="py-2 px-2 text-center">
+                              <div className="flex justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-green-600 hover:bg-green-100 rounded-full h-8 w-8"
+                                  onClick={handleAddNewStrategicGoal}
+                                  disabled={!newInlineGoalName.trim() || !newInlineGoalInitiative.trim() || !newInlineGoalActivity.trim()}
+                                >
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-600 hover:bg-red-100 rounded-full h-8 w-8"
+                                  onClick={() => {
+                                    setIsAddingNewStrategicGoal(false);
+                                    setNewInlineGoalName("");
+                                    setNewInlineGoalInitiative("");
+                                    setNewInlineGoalActivity("");
+                                    setNewInlineGoalTarget("");
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      } else {
+                        rows.push(
+                          <tr 
+                            key="add-goal-btn" 
+                            className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
+                          >
+                            <td colSpan={isAdmin ? 7 : 6} className="py-2 px-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full text-purple-600 hover:text-purple-800 hover:bg-purple-100 gap-1"
+                                onClick={() => setIsAddingNewStrategicGoal(true)}
+                              >
+                                <Plus className="w-4 h-4" />
+                                إضافة هدف استراتيجي جديد
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      }
+                    }
                     
                     return rows;
                   })()}
