@@ -364,14 +364,37 @@ function SortableRow({
         if (col.id === 'annualTarget') {
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
-            <TableCell 
-              key={col.id} 
+            <TableCell
+              key={col.id}
               className={cn(
-                "border-l p-0 cursor-pointer",
+                "border-l p-0 relative",
                 isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
               )}
-              onClick={() => toggleCellSelection(row.id, col.id)}
             >
+              {/* تحديد الخلية من الأطراف فقط */}
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+
               <Input
                 type="number"
                 value={row.annualTarget || ""}
@@ -391,14 +414,37 @@ function SortableRow({
         if (col.id === 'activity') {
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
-            <TableCell 
-              key={col.id} 
+            <TableCell
+              key={col.id}
               className={cn(
-                "border-l p-0 cursor-pointer",
+                "border-l p-0 relative",
                 isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
               )}
-              onClick={() => toggleCellSelection(row.id, col.id)}
             >
+              {/* تحديد الخلية من الأطراف فقط */}
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+
               <Input
                 value={row.activity}
                 onChange={(e) => {
@@ -418,15 +464,38 @@ function SortableRow({
           if (!row.showInitiativeCell) return null;
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
-            <TableCell 
+            <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 cursor-pointer",
+                "border-l p-0 relative",
                 isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
               )}
               rowSpan={row.initiativeRowSpan}
-              onClick={() => toggleCellSelection(row.id, col.id)}
             >
+              {/* تحديد الخلية من الأطراف فقط */}
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+
               <Input
                 value={row.initiative}
                 onChange={(e) => {
@@ -447,15 +516,38 @@ function SortableRow({
           if (!row.showGoalCell) return null;
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
-            <TableCell 
+            <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 cursor-pointer",
+                "border-l p-0 relative",
                 isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
               )}
               rowSpan={row.goalRowSpan}
-              onClick={() => toggleCellSelection(row.id, col.id)}
             >
+              {/* تحديد الخلية من الأطراف فقط */}
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+
               <Input
                 value={row.strategicGoal}
                 onChange={(e) => {
@@ -474,7 +566,7 @@ function SortableRow({
         // عمود رقم الصف
         if (col.id === 'rowNumber') {
           return (
-            <TableCell 
+            <TableCell
               key={col.id}
               className="text-center cursor-pointer select-none font-medium text-muted-foreground hover:bg-muted/50"
               onClick={() => toggleRowSelection(row.id)}
@@ -488,14 +580,37 @@ function SortableRow({
         if (col.isCustom) {
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
-            <TableCell 
-              key={col.id} 
+            <TableCell
+              key={col.id}
               className={cn(
-                "border-l p-0 cursor-pointer",
+                "border-l p-0 relative",
                 isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
               )}
-              onClick={() => toggleCellSelection(row.id, col.id)}
             >
+              {/* تحديد الخلية من الأطراف فقط */}
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+
               <Input
                 value={row.customColumns[col.id] || ""}
                 onChange={(e) => {
@@ -509,6 +624,7 @@ function SortableRow({
             </TableCell>
           );
         }
+
 
         return null;
       })}
