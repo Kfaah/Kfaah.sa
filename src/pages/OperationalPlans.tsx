@@ -35,17 +35,27 @@ interface Employee {
   full_name: string;
 }
 
+interface Department {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface StrategicGoal {
   id: string;
   name: string;
   color: string;
   year: number;
+  department_id: string | null;
+  department_name?: string;
 }
 
 interface Initiative {
   id: string;
   strategic_goal_id: string;
   name: string;
+  department_id: string | null;
+  department_name?: string;
 }
 
 interface OperationalPlan {
@@ -62,6 +72,8 @@ interface OperationalPlan {
   created_at: string;
   months?: OperationalPlanMonth[];
   employee_name?: string;
+  responsible_employee_id: string | null;
+  responsible_employee_name?: string;
 }
 
 interface OperationalPlanMonth {
@@ -149,15 +161,19 @@ export default function OperationalPlans() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [employees, setEmployees] = useState<Employee[]>([]);
   
-  // الأهداف الاستراتيجية والمبادرات
+  // الأهداف الاستراتيجية والمبادرات والأقسام
   const [strategicGoals, setStrategicGoals] = useState<StrategicGoal[]>([]);
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedGoalId, setSelectedGoalId] = useState<string>("");
   const [selectedInitiativeId, setSelectedInitiativeId] = useState<string>("");
   const [isAddingNewGoal, setIsAddingNewGoal] = useState(false);
   const [isAddingNewInitiative, setIsAddingNewInitiative] = useState(false);
   const [newGoalName, setNewGoalName] = useState("");
   const [newInitiativeName, setNewInitiativeName] = useState("");
+  
+  // اختيار مسؤول التنفيذ
+  const [selectedResponsibleEmployee, setSelectedResponsibleEmployee] = useState<string>("");
 
   // إذا كان في وضع المعاينة، يظهر كموظف
   const isAdmin = !user.isEmployee && !previewAsEmployee;
@@ -171,21 +187,40 @@ export default function OperationalPlans() {
     fetchPlans();
     fetchStrategicGoals();
     fetchInitiatives();
+    fetchDepartments();
     if (isAdmin) {
       fetchEmployees();
     }
   }, [authUser, isAdmin]);
 
+  const fetchDepartments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("id, name, color")
+        .order("name");
+
+      if (error) throw error;
+      setDepartments(data || []);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+    }
+  };
+
   const fetchStrategicGoals = async () => {
     try {
       const { data, error } = await supabase
         .from("strategic_goals")
-        .select("*")
+        .select("*, departments:department_id(name)")
         .eq("year", year)
-        .order("name");
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
-      setStrategicGoals(data || []);
+      const goalsWithDept = (data || []).map(g => ({
+        ...g,
+        department_name: (g.departments as any)?.name || null
+      }));
+      setStrategicGoals(goalsWithDept);
     } catch (error) {
       console.error("Error fetching strategic goals:", error);
     }
@@ -195,11 +230,15 @@ export default function OperationalPlans() {
     try {
       const { data, error } = await supabase
         .from("initiatives")
-        .select("*")
-        .order("name");
+        .select("*, departments:department_id(name)")
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
-      setInitiatives(data || []);
+      const initsWithDept = (data || []).map(i => ({
+        ...i,
+        department_name: (i.departments as any)?.name || null
+      }));
+      setInitiatives(initsWithDept);
     } catch (error) {
       console.error("Error fetching initiatives:", error);
     }
@@ -227,7 +266,7 @@ export default function OperationalPlans() {
     try {
       const { data: plansData, error } = await supabase
         .from("operational_plans")
-        .select("*")
+        .select("*, responsible_employee:responsible_employee_id(full_name)")
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -255,7 +294,8 @@ export default function OperationalPlans() {
           return {
             ...plan,
             months: monthsData || [],
-            employee_name
+            employee_name,
+            responsible_employee_name: (plan.responsible_employee as any)?.full_name || null
           };
         })
       );
@@ -1003,19 +1043,14 @@ export default function OperationalPlans() {
                       <th className="py-3 px-4 border-l-2 border-white/30 text-right">
                         <span className="text-sm font-semibold">النشاط</span>
                       </th>
-                      {isAdmin && (
-                        <th className="py-3 px-4 border-l-2 border-white/30 text-right">
-                          <span className="text-sm font-semibold">الموظف المكلف</span>
-                        </th>
-                      )}
+                      <th className="py-3 px-4 border-l-2 border-white/30 text-right">
+                        <span className="text-sm font-semibold">مسؤول التنفيذ</span>
+                      </th>
                       <th className="w-28 py-3 px-2 border-l-2 border-white/30 text-center">
                         <span className="text-sm font-semibold">المستهدف السنوي</span>
                       </th>
-                      <th className="w-28 py-3 px-2 border-l-2 border-white/30 text-center">
+                      <th className="w-28 py-3 px-2 text-center">
                         <span className="text-sm font-semibold">المتوسط الشهري</span>
-                      </th>
-                      <th className="w-24 py-3 px-2 text-center">
-                        <span className="text-sm font-semibold">الإجراء</span>
                       </th>
                     </tr>
                   </thead>
@@ -1117,6 +1152,15 @@ export default function OperationalPlans() {
                                   className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${color.bg}`}
                                 >
                                   <p className={`font-semibold text-sm ${color.text}`}>{group.strategicGoal}</p>
+                                  {/* عرض مالك الهدف (القسم) */}
+                                  {(() => {
+                                    const goalData = strategicGoals.find(g => g.name === group.strategicGoal);
+                                    return goalData?.department_name && (
+                                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                        <span className="text-[10px]">📍</span> {goalData.department_name}
+                                      </p>
+                                    );
+                                  })()}
                                 </td>
                               )}
                               
@@ -1136,38 +1180,102 @@ export default function OperationalPlans() {
                                   className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${initIndex > 0 ? 'border-t-2 border-t-gray-400' : ''}`}
                                 >
                                   <p className="text-gray-700 text-sm font-medium">{initGroup.initiative}</p>
+                                  {/* عرض مالك المبادرة (القسم) */}
+                                  {(() => {
+                                    const initData = initiatives.find(i => i.name === initGroup.initiative);
+                                    return initData?.department_name && (
+                                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                        <span className="text-[10px]">📍</span> {initData.department_name}
+                                      </p>
+                                    );
+                                  })()}
                                 </td>
                               )}
                               
-                              {/* النشاط مع السهم */}
+                              {/* النشاط مع السهم وأزرار التعديل */}
                               <td className="py-4 px-4 border-l-2 border-gray-300">
                                 {editingPlanId === plan.id ? (
-                                  <Input
-                                    value={editFormData?.activity_name || ''}
-                                    onChange={(e) => setEditFormData(prev => prev ? {...prev, activity_name: e.target.value} : null)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="h-8 text-sm font-semibold"
-                                    autoFocus
-                                  />
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      value={editFormData?.activity_name || ''}
+                                      onChange={(e) => setEditFormData(prev => prev ? {...prev, activity_name: e.target.value} : null)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="h-8 text-sm font-semibold flex-1"
+                                      autoFocus
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-green-500 hover:text-green-700 hover:bg-green-50 rounded-full h-8 w-8 flex-shrink-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSaveEdit(plan.id);
+                                      }}
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-full h-8 w-8 flex-shrink-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingPlanId(null);
+                                        setEditFormData(null);
+                                      }}
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  </div>
                                 ) : (
                                   <div 
-                                    className="flex items-center gap-2 cursor-pointer"
+                                    className="flex items-center gap-2 cursor-pointer group"
                                     onClick={() => handleViewPlan(plan)}
                                   >
                                     <ChevronDown 
                                       className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-180 text-[#2d7a85]' : 'text-[#3d9aa8]'}`} 
                                     />
-                                    <p className="font-semibold text-gray-800 text-sm">{plan.activity_name}</p>
+                                    <p className="font-semibold text-gray-800 text-sm flex-1">{plan.activity_name}</p>
+                                    {isEditMode && (isAdmin || plan.user_id === authUser?.id) && (
+                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-7 w-7"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingPlanId(plan.id);
+                                            setEditFormData({
+                                              activity_name: plan.activity_name,
+                                              annual_target: plan.annual_target,
+                                              strategic_goal: plan.strategic_goal || '',
+                                              initiative: plan.initiative || '',
+                                            });
+                                          }}
+                                        >
+                                          <Pencil className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full h-7 w-7"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeletePlan(plan.id);
+                                          }}
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </td>
                               
-                              {/* الموظف المكلف - يظهر فقط للمدير */}
-                              {isAdmin && (
-                                <td className="py-4 px-4 border-l-2 border-gray-300">
-                                  <p className="text-gray-700 text-sm">{plan.employee_name || "-"}</p>
-                                </td>
-                              )}
+                              {/* مسؤول التنفيذ */}
+                              <td className="py-4 px-4 border-l-2 border-gray-300">
+                                <p className="text-gray-700 text-sm">{plan.responsible_employee_name || "-"}</p>
+                              </td>
                               
                               {/* المستهدف السنوي */}
                               <td className="w-28 py-4 px-2 border-l-2 border-gray-300 text-center">
@@ -1194,73 +1302,6 @@ export default function OperationalPlans() {
                                 </p>
                               </td>
                               
-                              {/* الإجراء */}
-                              <td className="w-24 text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  {isEditMode && (isAdmin || plan.user_id === authUser?.id) && (
-                                    <>
-                                      {editingPlanId === plan.id ? (
-                                        <>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-green-500 hover:text-green-700 hover:bg-green-50 rounded-full h-8 w-8"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleSaveEdit(plan.id);
-                                            }}
-                                          >
-                                            <Check className="w-4 h-4" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-full h-8 w-8"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEditingPlanId(null);
-                                              setEditFormData(null);
-                                            }}
-                                          >
-                                            <X className="w-4 h-4" />
-                                          </Button>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-8 w-8"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEditingPlanId(plan.id);
-                                              setEditFormData({
-                                                activity_name: plan.activity_name,
-                                                annual_target: plan.annual_target,
-                                                strategic_goal: plan.strategic_goal || '',
-                                                initiative: plan.initiative || '',
-                                              });
-                                            }}
-                                          >
-                                            <Pencil className="w-4 h-4" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full h-8 w-8"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleDeletePlan(plan.id);
-                                            }}
-                                          >
-                                            <Trash2 className="w-4 h-4" />
-                                          </Button>
-                                        </>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
-                              </td>
                             </tr>
                           );
                           
@@ -1271,7 +1312,7 @@ export default function OperationalPlans() {
                             
                             rows.push(
                               <tr key={`${plan.id}-expanded`}>
-                                <td colSpan={isAdmin ? 7 : 6} className="p-0">
+                                <td colSpan={6} className="p-0">
                                   <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
                                     {/* أزرار التحكم - تظهر فقط في وضع التعديل */}
                                     {isEditMode && (
