@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,22 +15,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  Target, 
-  Lightbulb, 
-  Activity, 
   Plus,
   Trash2,
-  Sparkles,
   Users,
-  ChevronDown,
-  ChevronLeft,
-  Save
+  Save,
+  Merge,
+  SplitSquareHorizontal,
+  FileSpreadsheet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatNumber } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Employee {
   id: string;
@@ -51,14 +54,32 @@ interface Initiative {
   name: string;
 }
 
-// هيكل النشاط المحلي
+// هيكل الصف في الجدول
+interface TableRowData {
+  id: string;
+  strategicGoal: string;
+  strategicGoalId?: string;
+  initiative: string;
+  initiativeId?: string;
+  activity: string;
+  annualTarget: number;
+  monthlyAverage: number;
+  // خصائص الدمج
+  goalRowSpan: number;
+  initiativeRowSpan: number;
+  isGoalMerged: boolean;
+  isInitiativeMerged: boolean;
+  showGoalCell: boolean;
+  showInitiativeCell: boolean;
+}
+
+// هيكل البيانات للتصدير
 interface LocalActivity {
   id: string;
   name: string;
   annualTarget: number;
 }
 
-// هيكل المبادرة المحلية
 interface LocalInitiative {
   id: string;
   name: string;
@@ -67,7 +88,6 @@ interface LocalInitiative {
   activities: LocalActivity[];
 }
 
-// هيكل الهدف المحلي
 interface LocalGoal {
   id: string;
   name: string;
@@ -101,223 +121,311 @@ export function AddOperationalPlanDialog({
 }: AddOperationalPlanDialogProps) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
-  const [goals, setGoals] = useState<LocalGoal[]>([]);
-  const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
-  const [expandedInitiatives, setExpandedInitiatives] = useState<Set<string>>(new Set());
+  const [rows, setRows] = useState<TableRowData[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [columns] = useState([
+    { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '25%' },
+    { id: 'initiative', label: 'المبادرة', width: '25%' },
+    { id: 'activity', label: 'النشاط', width: '25%' },
+    { id: 'annualTarget', label: 'المستهدف السنوي', width: '12.5%' },
+    { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '12.5%' },
+  ]);
 
   // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
       setSelectedEmployeeId("");
       setYear(new Date().getFullYear());
-      setGoals([]);
-      setExpandedGoals(new Set());
-      setExpandedInitiatives(new Set());
+      setRows([]);
+      setSelectedRows(new Set());
     }
   }, [open]);
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
-  // إضافة هدف جديد
-  const addNewGoal = () => {
-    const newGoal: LocalGoal = {
+  // إضافة صف جديد
+  const addRow = useCallback(() => {
+    const newRow: TableRowData = {
       id: generateId(),
-      name: "",
-      isNew: true,
-      initiatives: [],
-    };
-    setGoals([...goals, newGoal]);
-    setExpandedGoals(new Set([...expandedGoals, newGoal.id]));
-  };
-
-  // إضافة هدف موجود
-  const addExistingGoal = (goalId: string) => {
-    const existingGoal = strategicGoals.find(g => g.id === goalId);
-    if (!existingGoal) return;
-    
-    // تحقق من عدم الإضافة المكررة
-    if (goals.some(g => g.existingId === goalId)) return;
-
-    const newGoal: LocalGoal = {
-      id: generateId(),
-      name: existingGoal.name,
-      isNew: false,
-      existingId: goalId,
-      initiatives: [],
-    };
-    setGoals([...goals, newGoal]);
-    setExpandedGoals(new Set([...expandedGoals, newGoal.id]));
-  };
-
-  // حذف هدف
-  const removeGoal = (goalId: string) => {
-    setGoals(goals.filter(g => g.id !== goalId));
-  };
-
-  // تحديث اسم الهدف
-  const updateGoalName = (goalId: string, name: string) => {
-    setGoals(goals.map(g => g.id === goalId ? { ...g, name } : g));
-  };
-
-  // إضافة مبادرة جديدة
-  const addNewInitiative = (goalId: string) => {
-    const newInitiative: LocalInitiative = {
-      id: generateId(),
-      name: "",
-      isNew: true,
-      activities: [],
-    };
-    setGoals(goals.map(g => 
-      g.id === goalId 
-        ? { ...g, initiatives: [...g.initiatives, newInitiative] }
-        : g
-    ));
-    setExpandedInitiatives(new Set([...expandedInitiatives, newInitiative.id]));
-  };
-
-  // إضافة مبادرة موجودة
-  const addExistingInitiative = (goalId: string, initiativeId: string) => {
-    const goal = goals.find(g => g.id === goalId);
-    if (!goal) return;
-
-    const existingInitiative = initiatives.find(i => i.id === initiativeId);
-    if (!existingInitiative) return;
-
-    // تحقق من عدم الإضافة المكررة
-    if (goal.initiatives.some(i => i.existingId === initiativeId)) return;
-
-    const newInitiative: LocalInitiative = {
-      id: generateId(),
-      name: existingInitiative.name,
-      isNew: false,
-      existingId: initiativeId,
-      activities: [],
-    };
-    setGoals(goals.map(g => 
-      g.id === goalId 
-        ? { ...g, initiatives: [...g.initiatives, newInitiative] }
-        : g
-    ));
-    setExpandedInitiatives(new Set([...expandedInitiatives, newInitiative.id]));
-  };
-
-  // حذف مبادرة
-  const removeInitiative = (goalId: string, initiativeId: string) => {
-    setGoals(goals.map(g => 
-      g.id === goalId 
-        ? { ...g, initiatives: g.initiatives.filter(i => i.id !== initiativeId) }
-        : g
-    ));
-  };
-
-  // تحديث اسم المبادرة
-  const updateInitiativeName = (goalId: string, initiativeId: string, name: string) => {
-    setGoals(goals.map(g => 
-      g.id === goalId 
-        ? { ...g, initiatives: g.initiatives.map(i => i.id === initiativeId ? { ...i, name } : i) }
-        : g
-    ));
-  };
-
-  // إضافة نشاط
-  const addActivity = (goalId: string, initiativeId: string) => {
-    const newActivity: LocalActivity = {
-      id: generateId(),
-      name: "",
+      strategicGoal: "",
+      initiative: "",
+      activity: "",
       annualTarget: 0,
+      monthlyAverage: 0,
+      goalRowSpan: 1,
+      initiativeRowSpan: 1,
+      isGoalMerged: false,
+      isInitiativeMerged: false,
+      showGoalCell: true,
+      showInitiativeCell: true,
     };
-    setGoals(goals.map(g => 
-      g.id === goalId 
-        ? { 
-            ...g, 
-            initiatives: g.initiatives.map(i => 
-              i.id === initiativeId 
-                ? { ...i, activities: [...i.activities, newActivity] }
-                : i
-            ) 
-          }
-        : g
-    ));
-  };
+    setRows(prev => [...prev, newRow]);
+  }, []);
 
-  // حذف نشاط
-  const removeActivity = (goalId: string, initiativeId: string, activityId: string) => {
-    setGoals(goals.map(g => 
-      g.id === goalId 
-        ? { 
-            ...g, 
-            initiatives: g.initiatives.map(i => 
-              i.id === initiativeId 
-                ? { ...i, activities: i.activities.filter(a => a.id !== activityId) }
-                : i
-            ) 
-          }
-        : g
-    ));
-  };
+  // حذف صف
+  const removeRow = useCallback((rowId: string) => {
+    setRows(prev => {
+      const rowToRemove = prev.find(r => r.id === rowId);
+      if (!rowToRemove) return prev;
 
-  // تحديث النشاط
-  const updateActivity = (goalId: string, initiativeId: string, activityId: string, updates: Partial<LocalActivity>) => {
-    setGoals(goals.map(g => 
-      g.id === goalId 
-        ? { 
-            ...g, 
-            initiatives: g.initiatives.map(i => 
-              i.id === initiativeId 
-                ? { ...i, activities: i.activities.map(a => a.id === activityId ? { ...a, ...updates } : a) }
-                : i
-            ) 
-          }
-        : g
-    ));
-  };
+      // إعادة حساب الدمج بعد الحذف
+      return recalculateMerges(prev.filter(r => r.id !== rowId));
+    });
+    setSelectedRows(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(rowId);
+      return newSet;
+    });
+  }, []);
 
-  // Toggle expand/collapse
-  const toggleGoal = (goalId: string) => {
-    const newExpanded = new Set(expandedGoals);
-    if (newExpanded.has(goalId)) {
-      newExpanded.delete(goalId);
-    } else {
-      newExpanded.add(goalId);
+  // تحديث خلية
+  const updateCell = useCallback((rowId: string, field: keyof TableRowData, value: string | number) => {
+    setRows(prev => prev.map(row => {
+      if (row.id === rowId) {
+        const updatedRow = { ...row, [field]: value };
+        if (field === 'annualTarget') {
+          updatedRow.monthlyAverage = Math.round((value as number) / 12 * 100) / 100;
+        }
+        return updatedRow;
+      }
+      return row;
+    }));
+  }, []);
+
+  // تبديل تحديد صف
+  const toggleRowSelection = useCallback((rowId: string) => {
+    setSelectedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowId)) {
+        newSet.delete(rowId);
+      } else {
+        newSet.add(rowId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // إعادة حساب الدمج
+  const recalculateMerges = (currentRows: TableRowData[]): TableRowData[] => {
+    if (currentRows.length === 0) return currentRows;
+
+    const result = [...currentRows];
+    
+    // إعادة تعيين جميع خصائص الدمج
+    result.forEach(row => {
+      row.goalRowSpan = 1;
+      row.initiativeRowSpan = 1;
+      row.showGoalCell = true;
+      row.showInitiativeCell = true;
+    });
+
+    // حساب دمج الأهداف
+    let i = 0;
+    while (i < result.length) {
+      if (result[i].isGoalMerged && result[i].strategicGoal) {
+        let span = 1;
+        let j = i + 1;
+        while (j < result.length && result[j].isGoalMerged && result[j].strategicGoal === result[i].strategicGoal) {
+          result[j].showGoalCell = false;
+          span++;
+          j++;
+        }
+        result[i].goalRowSpan = span;
+        i = j;
+      } else {
+        i++;
+      }
     }
-    setExpandedGoals(newExpanded);
-  };
 
-  const toggleInitiative = (initiativeId: string) => {
-    const newExpanded = new Set(expandedInitiatives);
-    if (newExpanded.has(initiativeId)) {
-      newExpanded.delete(initiativeId);
-    } else {
-      newExpanded.add(initiativeId);
+    // حساب دمج المبادرات
+    i = 0;
+    while (i < result.length) {
+      if (result[i].isInitiativeMerged && result[i].initiative) {
+        let span = 1;
+        let j = i + 1;
+        while (j < result.length && 
+               result[j].isInitiativeMerged && 
+               result[j].initiative === result[i].initiative &&
+               result[j].strategicGoal === result[i].strategicGoal) {
+          result[j].showInitiativeCell = false;
+          span++;
+          j++;
+        }
+        result[i].initiativeRowSpan = span;
+        i = j;
+      } else {
+        i++;
+      }
     }
-    setExpandedInitiatives(newExpanded);
+
+    return result;
   };
 
-  // حساب إجمالي الأنشطة
-  const getTotalActivities = () => {
-    return goals.reduce((sum, g) => 
-      sum + g.initiatives.reduce((iSum, i) => iSum + i.activities.length, 0), 0
-    );
+  // دمج الصفوف المحددة (عمود الهدف)
+  const mergeGoalCells = useCallback(() => {
+    if (selectedRows.size < 2) return;
+
+    const selectedIndices = Array.from(selectedRows)
+      .map(id => rows.findIndex(r => r.id === id))
+      .filter(i => i !== -1)
+      .sort((a, b) => a - b);
+
+    // تحقق من أن الصفوف متتالية
+    for (let i = 1; i < selectedIndices.length; i++) {
+      if (selectedIndices[i] !== selectedIndices[i - 1] + 1) {
+        return; // الصفوف غير متتالية
+      }
+    }
+
+    const firstRowGoal = rows[selectedIndices[0]].strategicGoal;
+    if (!firstRowGoal) return;
+
+    setRows(prev => {
+      const updated = prev.map((row, idx) => {
+        if (selectedIndices.includes(idx)) {
+          return {
+            ...row,
+            strategicGoal: firstRowGoal,
+            isGoalMerged: true,
+          };
+        }
+        return row;
+      });
+      return recalculateMerges(updated);
+    });
+    setSelectedRows(new Set());
+  }, [selectedRows, rows]);
+
+  // دمج المبادرات
+  const mergeInitiativeCells = useCallback(() => {
+    if (selectedRows.size < 2) return;
+
+    const selectedIndices = Array.from(selectedRows)
+      .map(id => rows.findIndex(r => r.id === id))
+      .filter(i => i !== -1)
+      .sort((a, b) => a - b);
+
+    // تحقق من أن الصفوف متتالية ولها نفس الهدف
+    for (let i = 1; i < selectedIndices.length; i++) {
+      if (selectedIndices[i] !== selectedIndices[i - 1] + 1) return;
+      if (rows[selectedIndices[i]].strategicGoal !== rows[selectedIndices[0]].strategicGoal) return;
+    }
+
+    const firstRowInitiative = rows[selectedIndices[0]].initiative;
+    if (!firstRowInitiative) return;
+
+    setRows(prev => {
+      const updated = prev.map((row, idx) => {
+        if (selectedIndices.includes(idx)) {
+          return {
+            ...row,
+            initiative: firstRowInitiative,
+            isInitiativeMerged: true,
+          };
+        }
+        return row;
+      });
+      return recalculateMerges(updated);
+    });
+    setSelectedRows(new Set());
+  }, [selectedRows, rows]);
+
+  // إلغاء دمج الهدف
+  const unmergeGoalCells = useCallback(() => {
+    if (selectedRows.size === 0) return;
+
+    setRows(prev => {
+      const updated = prev.map(row => {
+        if (selectedRows.has(row.id)) {
+          return { ...row, isGoalMerged: false };
+        }
+        return row;
+      });
+      return recalculateMerges(updated);
+    });
+    setSelectedRows(new Set());
+  }, [selectedRows]);
+
+  // إلغاء دمج المبادرة
+  const unmergeInitiativeCells = useCallback(() => {
+    if (selectedRows.size === 0) return;
+
+    setRows(prev => {
+      const updated = prev.map(row => {
+        if (selectedRows.has(row.id)) {
+          return { ...row, isInitiativeMerged: false };
+        }
+        return row;
+      });
+      return recalculateMerges(updated);
+    });
+    setSelectedRows(new Set());
+  }, [selectedRows]);
+
+  // تحويل الصفوف إلى الهيكل المطلوب للتصدير
+  const convertRowsToGoals = (): LocalGoal[] => {
+    const goalsMap = new Map<string, LocalGoal>();
+
+    rows.forEach(row => {
+      if (!row.strategicGoal || !row.initiative || !row.activity) return;
+
+      const goalKey = row.strategicGoal;
+      
+      if (!goalsMap.has(goalKey)) {
+        const existingGoal = strategicGoals.find(g => g.name === row.strategicGoal);
+        goalsMap.set(goalKey, {
+          id: generateId(),
+          name: row.strategicGoal,
+          isNew: !existingGoal,
+          existingId: existingGoal?.id,
+          initiatives: [],
+        });
+      }
+
+      const goal = goalsMap.get(goalKey)!;
+      const initiativeKey = `${goalKey}-${row.initiative}`;
+      
+      let initiative = goal.initiatives.find(i => i.name === row.initiative);
+      if (!initiative) {
+        const existingInitiative = initiatives.find(i => 
+          i.name === row.initiative && 
+          (goal.existingId ? i.strategic_goal_id === goal.existingId : true)
+        );
+        initiative = {
+          id: generateId(),
+          name: row.initiative,
+          isNew: !existingInitiative,
+          existingId: existingInitiative?.id,
+          activities: [],
+        };
+        goal.initiatives.push(initiative);
+      }
+
+      initiative.activities.push({
+        id: generateId(),
+        name: row.activity,
+        annualTarget: row.annualTarget,
+      });
+    });
+
+    return Array.from(goalsMap.values());
   };
 
   // التحقق من صحة البيانات
   const canSubmit = () => {
     if (isAdmin && !selectedEmployeeId) return false;
-    if (goals.length === 0) return false;
+    if (rows.length === 0) return false;
     
-    // تحقق من وجود نشاط واحد على الأقل مع اسم ومستهدف
-    const hasValidActivity = goals.some(g => 
-      g.name.trim() && g.initiatives.some(i => 
-        i.name.trim() && i.activities.some(a => 
-          a.name.trim() && a.annualTarget > 0
-        )
-      )
+    return rows.some(row => 
+      row.strategicGoal.trim() && 
+      row.initiative.trim() && 
+      row.activity.trim() && 
+      row.annualTarget > 0
     );
-    
-    return hasValidActivity;
   };
 
   const handleSubmit = () => {
+    const goals = convertRowsToGoals();
     onSubmit({
       selectedEmployeeId,
       goals,
@@ -325,43 +433,50 @@ export function AddOperationalPlanDialog({
     });
   };
 
-  // المبادرات المتاحة للهدف المحدد
-  const getAvailableInitiatives = (goalExistingId?: string) => {
-    if (!goalExistingId) return [];
-    return initiatives.filter(i => i.strategic_goal_id === goalExistingId);
-  };
-
-  // الأهداف غير المضافة
-  const getAvailableGoals = () => {
-    const addedGoalIds = goals.filter(g => !g.isNew).map(g => g.existingId);
-    return strategicGoals.filter(g => !addedGoalIds.includes(g.id));
+  // إضافة عدة صفوف دفعة واحدة
+  const addMultipleRows = (count: number) => {
+    const newRows: TableRowData[] = Array.from({ length: count }, () => ({
+      id: generateId(),
+      strategicGoal: "",
+      initiative: "",
+      activity: "",
+      annualTarget: 0,
+      monthlyAverage: 0,
+      goalRowSpan: 1,
+      initiativeRowSpan: 1,
+      isGoalMerged: false,
+      isInitiativeMerged: false,
+      showGoalCell: true,
+      showInitiativeCell: true,
+    }));
+    setRows(prev => [...prev, ...newRows]);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-6 border-b">
+          <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-4 border-b">
             <DialogHeader>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <FileSpreadsheet className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <DialogTitle className="text-xl">إضافة خطط تشغيلية</DialogTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    أضف الأهداف والمبادرات والأنشطة بشكل هرمي
+                  <DialogTitle className="text-lg">إضافة خطط تشغيلية</DialogTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    اعمل كأنك في ملف Excel - أضف الصفوف وادمج الخلايا كما تريد
                   </p>
                 </div>
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <Label>السنة:</Label>
+                    <Label className="text-sm">السنة:</Label>
                     <Input
                       type="number"
                       value={year}
                       onChange={(e) => setYear(parseInt(e.target.value))}
-                      className="w-24 h-8"
+                      className="w-20 h-8 text-sm"
                     />
                   </div>
                 </div>
@@ -371,12 +486,12 @@ export function AddOperationalPlanDialog({
 
           {/* Employee Selection for Admin */}
           {isAdmin && (
-            <div className="px-6 py-3 border-b bg-muted/30">
+            <div className="px-4 py-2 border-b bg-muted/30">
               <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-muted-foreground" />
-                <Label className="font-medium">الموظف:</Label>
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">الموظف:</Label>
                 <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                  <SelectTrigger className="w-64">
+                  <SelectTrigger className="w-56 h-8 text-sm">
                     <SelectValue placeholder="اختر الموظف المسؤول" />
                   </SelectTrigger>
                   <SelectContent>
@@ -391,263 +506,242 @@ export function AddOperationalPlanDialog({
             </div>
           )}
 
-          {/* Table Header */}
-          <div className="grid grid-cols-12 gap-2 px-6 py-3 bg-muted/50 border-b text-sm font-medium">
-            <div className="col-span-4 flex items-center gap-2">
-              <Target className="w-4 h-4 text-primary" />
-              الهدف الاستراتيجي
-            </div>
-            <div className="col-span-3 flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-amber-500" />
-              المبادرة
-            </div>
-            <div className="col-span-3 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-500" />
-              النشاط
-            </div>
-            <div className="col-span-1 text-center">السنوي</div>
-            <div className="col-span-1 text-center">الشهري</div>
+          {/* Toolbar */}
+          <div className="px-4 py-2 border-b bg-muted/20 flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addRow}
+              className="h-7 text-xs gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              صف جديد
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addMultipleRows(5)}
+              className="h-7 text-xs gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              5 صفوف
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addMultipleRows(10)}
+              className="h-7 text-xs gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              10 صفوف
+            </Button>
+            
+            <div className="h-4 w-px bg-border mx-2" />
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={mergeGoalCells}
+              disabled={selectedRows.size < 2}
+              className="h-7 text-xs gap-1"
+            >
+              <Merge className="w-3 h-3" />
+              دمج الأهداف
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={mergeInitiativeCells}
+              disabled={selectedRows.size < 2}
+              className="h-7 text-xs gap-1"
+            >
+              <Merge className="w-3 h-3" />
+              دمج المبادرات
+            </Button>
+            
+            <div className="h-4 w-px bg-border mx-2" />
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={unmergeGoalCells}
+              disabled={selectedRows.size === 0}
+              className="h-7 text-xs gap-1"
+            >
+              <SplitSquareHorizontal className="w-3 h-3" />
+              إلغاء دمج الأهداف
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={unmergeInitiativeCells}
+              disabled={selectedRows.size === 0}
+              className="h-7 text-xs gap-1"
+            >
+              <SplitSquareHorizontal className="w-3 h-3" />
+              إلغاء دمج المبادرات
+            </Button>
+
+            {selectedRows.size > 0 && (
+              <span className="text-xs text-muted-foreground mr-auto">
+                {selectedRows.size} صف محدد
+              </span>
+            )}
           </div>
 
-          {/* Content */}
-          <ScrollArea className="flex-1 px-6">
-            <div className="py-4 space-y-3">
-              {goals.map((goal) => (
-                <Card key={goal.id} className="overflow-hidden border-r-4 border-r-primary">
-                  {/* Goal Row */}
-                  <div className="grid grid-cols-12 gap-2 p-3 bg-primary/5 items-center">
-                    <div className="col-span-4 flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() => toggleGoal(goal.id)}
-                      >
-                        <ChevronDown className={cn(
-                          "w-4 h-4 transition-transform",
-                          !expandedGoals.has(goal.id) && "-rotate-90"
-                        )} />
-                      </Button>
-                      {goal.isNew ? (
-                        <Input
-                          value={goal.name}
-                          onChange={(e) => updateGoalName(goal.id, e.target.value)}
-                          placeholder="اسم الهدف الاستراتيجي..."
-                          className="h-8 bg-background"
-                        />
-                      ) : (
-                        <span className="font-medium text-primary">{goal.name}</span>
-                      )}
-                    </div>
-                    <div className="col-span-7" />
-                    <div className="col-span-1 flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                        onClick={() => removeGoal(goal.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Initiatives */}
-                  {expandedGoals.has(goal.id) && (
-                    <div className="border-t">
-                      {goal.initiatives.map((initiative) => (
-                        <div key={initiative.id} className="border-b last:border-b-0">
-                          {/* Initiative Row */}
-                          <div className="grid grid-cols-12 gap-2 p-3 pr-10 bg-amber-500/5 items-center">
-                            <div className="col-span-4" />
-                            <div className="col-span-3 flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() => toggleInitiative(initiative.id)}
-                              >
-                                <ChevronDown className={cn(
-                                  "w-4 h-4 transition-transform",
-                                  !expandedInitiatives.has(initiative.id) && "-rotate-90"
-                                )} />
-                              </Button>
-                              {initiative.isNew ? (
-                                <Input
-                                  value={initiative.name}
-                                  onChange={(e) => updateInitiativeName(goal.id, initiative.id, e.target.value)}
-                                  placeholder="اسم المبادرة..."
-                                  className="h-8 bg-background"
-                                />
-                              ) : (
-                                <span className="font-medium text-amber-700">{initiative.name}</span>
-                              )}
-                            </div>
-                            <div className="col-span-4" />
-                            <div className="col-span-1 flex justify-end">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                                onClick={() => removeInitiative(goal.id, initiative.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Activities */}
-                          {expandedInitiatives.has(initiative.id) && (
-                            <div className="bg-background">
-                              {initiative.activities.map((activity) => (
-                                <div 
-                                  key={activity.id} 
-                                  className="grid grid-cols-12 gap-2 p-3 pr-16 border-t items-center hover:bg-muted/30"
-                                >
-                                  <div className="col-span-4" />
-                                  <div className="col-span-3" />
-                                  <div className="col-span-3">
-                                    <Input
-                                      value={activity.name}
-                                      onChange={(e) => updateActivity(goal.id, initiative.id, activity.id, { name: e.target.value })}
-                                      placeholder="اسم النشاط..."
-                                      className="h-8"
-                                    />
-                                  </div>
-                                  <div className="col-span-1">
-                                    <Input
-                                      type="number"
-                                      value={activity.annualTarget || ""}
-                                      onChange={(e) => updateActivity(goal.id, initiative.id, activity.id, { annualTarget: parseInt(e.target.value) || 0 })}
-                                      placeholder="0"
-                                      className="h-8 text-center"
-                                    />
-                                  </div>
-                                  <div className="col-span-1 flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground font-mono">
-                                      {activity.annualTarget ? Math.round(activity.annualTarget / 12) : 0}
-                                    </span>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                                      onClick={() => removeActivity(goal.id, initiative.id, activity.id)}
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                              
-                              {/* Add Activity Button */}
-                              <div className="p-2 pr-16 border-t">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 mr-auto"
-                                  onClick={() => addActivity(goal.id, initiative.id)}
-                                >
-                                  <Plus className="w-3 h-3 ml-1" />
-                                  إضافة نشاط
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-
-                      {/* Add Initiative Buttons */}
-                      <div className="p-2 pr-10 flex gap-2 border-t bg-muted/20">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                          onClick={() => addNewInitiative(goal.id)}
+          {/* Excel-like Table */}
+          <ScrollArea className="flex-1">
+            <div className="p-4">
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="w-10 text-center border-l">#</TableHead>
+                      {columns.map((col) => (
+                        <TableHead 
+                          key={col.id} 
+                          className="text-center border-l font-bold"
+                          style={{ width: col.width }}
                         >
-                          <Plus className="w-3 h-3 ml-1" />
-                          مبادرة جديدة
-                        </Button>
-                        {!goal.isNew && getAvailableInitiatives(goal.existingId).length > 0 && (
-                          <Select onValueChange={(id) => addExistingInitiative(goal.id, id)}>
-                            <SelectTrigger className="h-7 w-48 text-xs">
-                              <SelectValue placeholder="اختر مبادرة موجودة" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getAvailableInitiatives(goal.existingId).map((init) => (
-                                <SelectItem key={init.id} value={init.id}>
-                                  {init.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              ))}
+                          {col.label}
+                        </TableHead>
+                      ))}
+                      <TableHead className="w-12 text-center">إجراء</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                          <div className="flex flex-col items-center gap-2">
+                            <FileSpreadsheet className="w-8 h-8 opacity-50" />
+                            <p>لا توجد صفوف - اضغط "صف جديد" للبدء</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      rows.map((row, index) => (
+                        <TableRow 
+                          key={row.id}
+                          className={cn(
+                            "hover:bg-muted/30",
+                            selectedRows.has(row.id) && "bg-primary/10 hover:bg-primary/15"
+                          )}
+                        >
+                          {/* Row number with selection */}
+                          <TableCell 
+                            className="text-center border-l cursor-pointer select-none font-medium text-muted-foreground"
+                            onClick={() => toggleRowSelection(row.id)}
+                          >
+                            {index + 1}
+                          </TableCell>
 
-              {/* Add Goal Buttons */}
-              <Card className="p-4 border-dashed border-2">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={addNewGoal}
-                  >
-                    <Plus className="w-4 h-4" />
-                    هدف استراتيجي جديد
-                  </Button>
-                  
-                  {getAvailableGoals().length > 0 && (
-                    <>
-                      <span className="text-muted-foreground text-sm">أو</span>
-                      <Select onValueChange={addExistingGoal}>
-                        <SelectTrigger className="w-64">
-                          <SelectValue placeholder="اختر هدفاً موجوداً" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getAvailableGoals().map((goal) => (
-                            <SelectItem key={goal.id} value={goal.id}>
-                              {goal.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                </div>
-              </Card>
+                          {/* Strategic Goal */}
+                          {row.showGoalCell && (
+                            <TableCell 
+                              className="border-l p-0"
+                              rowSpan={row.goalRowSpan}
+                            >
+                              <Input
+                                value={row.strategicGoal}
+                                onChange={(e) => updateCell(row.id, 'strategicGoal', e.target.value)}
+                                placeholder="الهدف الاستراتيجي..."
+                                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                                list="goals-list"
+                              />
+                            </TableCell>
+                          )}
 
-              {goals.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Target className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                  <p>ابدأ بإضافة هدف استراتيجي</p>
-                </div>
-              )}
+                          {/* Initiative */}
+                          {row.showInitiativeCell && (
+                            <TableCell 
+                              className="border-l p-0"
+                              rowSpan={row.initiativeRowSpan}
+                            >
+                              <Input
+                                value={row.initiative}
+                                onChange={(e) => updateCell(row.id, 'initiative', e.target.value)}
+                                placeholder="المبادرة..."
+                                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                                list="initiatives-list"
+                              />
+                            </TableCell>
+                          )}
+
+                          {/* Activity */}
+                          <TableCell className="border-l p-0">
+                            <Input
+                              value={row.activity}
+                              onChange={(e) => updateCell(row.id, 'activity', e.target.value)}
+                              placeholder="النشاط..."
+                              className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                            />
+                          </TableCell>
+
+                          {/* Annual Target */}
+                          <TableCell className="border-l p-0">
+                            <Input
+                              type="number"
+                              value={row.annualTarget || ""}
+                              onChange={(e) => updateCell(row.id, 'annualTarget', parseFloat(e.target.value) || 0)}
+                              placeholder="0"
+                              className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-center text-sm"
+                            />
+                          </TableCell>
+
+                          {/* Monthly Average (read-only) */}
+                          <TableCell className="border-l text-center bg-muted/30 text-sm font-medium">
+                            {row.monthlyAverage.toLocaleString('ar-SA', { maximumFractionDigits: 2 })}
+                          </TableCell>
+
+                          {/* Actions */}
+                          <TableCell className="text-center p-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeRow(row.id)}
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Datalists for autocomplete */}
+              <datalist id="goals-list">
+                {strategicGoals.map(goal => (
+                  <option key={goal.id} value={goal.name} />
+                ))}
+              </datalist>
+              <datalist id="initiatives-list">
+                {initiatives.map(init => (
+                  <option key={init.id} value={init.name} />
+                ))}
+              </datalist>
             </div>
           </ScrollArea>
 
           {/* Footer */}
-          <div className="border-t p-4 bg-muted/30 flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>الأهداف: <strong className="text-foreground">{goals.length}</strong></span>
-              <span>المبادرات: <strong className="text-foreground">{goals.reduce((s, g) => s + g.initiatives.length, 0)}</strong></span>
-              <span>الأنشطة: <strong className="text-foreground">{getTotalActivities()}</strong></span>
+          <div className="p-4 border-t bg-muted/30 flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {rows.length} صف | {rows.filter(r => r.strategicGoal && r.initiative && r.activity).length} نشاط مكتمل
             </div>
-            
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 إلغاء
               </Button>
-              <Button
-                onClick={handleSubmit}
+              <Button 
+                onClick={handleSubmit} 
                 disabled={!canSubmit()}
-                className="gap-2 bg-gradient-to-r from-primary to-primary/80"
+                className="gap-2"
               >
                 <Save className="w-4 h-4" />
-                حفظ الخطط ({getTotalActivities()})
+                حفظ الخطط
               </Button>
             </div>
           </div>
