@@ -1240,17 +1240,17 @@ export default function OperationalPlans() {
                           const isLastInitiative = initIndex === group.initiatives.length - 1;
                           const isLastGoal = groupIndex === groupedPlans.length - 1;
                           
-                          // تحديد نوع الفاصل السفلي - أنيق وخفيف
+                          // تحديد نوع الفاصل السفلي - خطوط واضحة ومميزة
                           let bottomBorder = '';
                           if (isLastInInitiative && isLastInitiative && !isLastGoal) {
-                            // فاصل بين الأهداف الاستراتيجية
-                            bottomBorder = 'border-b-2 border-b-primary/30';
+                            // فاصل بين الأهداف الاستراتيجية - خط عريض واضح
+                            bottomBorder = 'border-b-[3px] border-b-primary/50';
                           } else if (isLastInInitiative && !isLastInitiative) {
-                            // فاصل بين المبادرات
-                            bottomBorder = 'border-b border-b-gray-200 border-dashed';
+                            // فاصل بين المبادرات - خط متوسط ملون
+                            bottomBorder = 'border-b-2 border-b-teal-300';
                           } else if (!isLastInInitiative) {
-                            // فاصل بين الأنشطة
-                            bottomBorder = 'border-b border-b-gray-100';
+                            // فاصل بين الأنشطة - خط خفيف متقطع
+                            bottomBorder = 'border-b border-b-gray-200 border-dashed';
                           }
                           
                           // البحث بالـ ID أولاً ثم بالاسم
