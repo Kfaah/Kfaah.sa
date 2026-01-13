@@ -654,27 +654,40 @@ export default function OperationalPlans() {
 
   // فتح نافذة ترتيب المبادرات لهدف معين
   const openReorderInitiativesDialog = (goalName: string) => {
-    // استخراج المبادرات الفريدة من الخطط لهذا الهدف
-    const uniqueInitNames = [...new Set(
-      plans
-        .filter(p => p.strategic_goal === goalName)
-        .map(p => p.initiative)
-        .filter(Boolean)
-    )] as string[];
-    
+    const goalId = strategicGoals.find(g => g.name === goalName)?.id;
+
+    // استخراج المبادرات الفريدة من الخطط لهذا الهدف (بالاعتماد على initiative_id أولاً لتفادي مشاكل تطابق الأسماء)
+    const unique = new Map<string, { id?: string; name: string }>();
+
+    plans
+      .filter(p => p.strategic_goal === goalName)
+      .forEach(p => {
+        const name = (p.initiative || "").trim();
+        const id = p.initiative_id || undefined;
+        if (!name && !id) return;
+
+        const key = id ?? `name:${name}`;
+        if (!unique.has(key)) unique.set(key, { id, name });
+      });
+
     // مطابقة مع initiatives للحصول على البيانات الكاملة
-    const initsFromPlans = uniqueInitNames.map(initName => {
-      const matchedInit = initiatives.find(i => i.name === initName);
-      return {
-        name: initName,
-        id: matchedInit?.id,
-        display_order: matchedInit?.display_order ?? 999
-      };
-    });
-    
+    const initsFromPlans = [...unique.values()]
+      .map(({ id, name }) => {
+        const matchedInit =
+          (id ? initiatives.find(i => i.id === id) : undefined) ||
+          initiatives.find(i => i.name === name && (!goalId || i.strategic_goal_id === goalId));
+
+        return {
+          name: matchedInit?.name ?? name,
+          id: matchedInit?.id ?? id,
+          display_order: matchedInit?.display_order ?? 999,
+        };
+      })
+      .filter(i => !!i.name);
+
     // ترتيب حسب display_order
-    initsFromPlans.sort((a, b) => (a.display_order || 999) - (b.display_order || 999));
-    
+    initsFromPlans.sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999));
+
     setReorderInitiatives(initsFromPlans);
     setReorderInitiativesGoal(goalName);
     setIsReorderInitiativesDialogOpen(true);
@@ -693,23 +706,42 @@ export default function OperationalPlans() {
   // حفظ ترتيب المبادرات
   const saveInitiativesOrder = async () => {
     try {
+      const goalId = strategicGoals.find(g => g.name === reorderInitiativesGoal)?.id;
+      const skipped: string[] = [];
+
       for (let i = 0; i < reorderInitiatives.length; i++) {
         const init = reorderInitiatives[i];
-        if (init.id) {
-          await supabase
-            .from("initiatives")
-            .update({ display_order: i + 1 })
-            .eq("id", init.id);
+        const initId =
+          init.id ||
+          initiatives.find(x => x.name === init.name && (!goalId || x.strategic_goal_id === goalId))?.id;
+
+        if (!initId) {
+          skipped.push(init.name);
+          continue;
         }
+
+        const { error } = await supabase
+          .from("initiatives")
+          .update({ display_order: i + 1 })
+          .eq("id", initId);
+
+        if (error) throw error;
       }
 
       await fetchInitiatives();
       setIsReorderInitiativesDialogOpen(false);
-      
-      toast({
-        title: "تم الحفظ",
-        description: "تم حفظ ترتيب المبادرات بنجاح",
-      });
+
+      if (skipped.length) {
+        toast({
+          title: "تم الحفظ مع تنبيه",
+          description: `تم حفظ الترتيب، لكن تعذر تحديث: ${skipped.join("، ")}`,
+        });
+      } else {
+        toast({
+          title: "تم الحفظ",
+          description: "تم حفظ ترتيب المبادرات بنجاح",
+        });
+      }
     } catch (error: any) {
       console.error("Error saving initiatives order:", error);
       toast({
@@ -1453,10 +1485,23 @@ export default function OperationalPlans() {
                       const goalData = goalMap.get(goalName)!;
                       const inits: { initiative: string; plans: OperationalPlan[] }[] = [];
                       
-                      // ترتيب المبادرات حسب display_order
+                      const goalIdForSort = strategicGoals.find(g => g.name === goalName)?.id;
+                      
+                      // ترتيب المبادرات حسب display_order (بالاعتماد على initiative_id أولاً لتفادي تطابق الأسماء)
                       const sortedInitNames = [...goalData.initiatives.keys()].sort((a, b) => {
-                        const initA = initiatives.find(i => i.name === a);
-                        const initB = initiatives.find(i => i.name === b);
+                        const aPlans = goalData.initiatives.get(a) || [];
+                        const bPlans = goalData.initiatives.get(b) || [];
+                        const aInitId = aPlans[0]?.initiative_id;
+                        const bInitId = bPlans[0]?.initiative_id;
+
+                        const initA =
+                          (aInitId ? initiatives.find(i => i.id === aInitId) : undefined) ||
+                          initiatives.find(i => i.name === a && (!goalIdForSort || i.strategic_goal_id === goalIdForSort));
+
+                        const initB =
+                          (bInitId ? initiatives.find(i => i.id === bInitId) : undefined) ||
+                          initiatives.find(i => i.name === b && (!goalIdForSort || i.strategic_goal_id === goalIdForSort));
+
                         const orderA = initA?.display_order ?? 999;
                         const orderB = initB?.display_order ?? 999;
                         return orderA - orderB;
