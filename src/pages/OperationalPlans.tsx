@@ -2317,6 +2317,16 @@ export default function OperationalPlans() {
               <div className="p-4 max-h-[60vh] overflow-y-auto space-y-2">
                 {(() => {
                   const uniqueGoals = [...new Set(plans.map(p => p.strategic_goal).filter(Boolean))] as string[];
+
+                  // نفس ترتيب الجدول (حسب display_order)
+                  uniqueGoals.sort((a, b) => {
+                    const goalA = strategicGoals.find(g => g.name === a);
+                    const goalB = strategicGoals.find(g => g.name === b);
+                    const orderA = goalA?.display_order ?? 999;
+                    const orderB = goalB?.display_order ?? 999;
+                    return orderA - orderB;
+                  });
+
                   return uniqueGoals.map((goalName) => (
                     <button
                       key={goalName}
@@ -2367,24 +2377,47 @@ export default function OperationalPlans() {
                       }
                     }
                   });
-                  
-                  return [...groupedByGoal.entries()].map(([goalName, inits]) => (
-                    <div key={goalName} className="space-y-2">
-                      <p className="text-sm font-semibold text-gray-500 px-2">{goalName}</p>
-                      {inits.map((initName) => (
-                        <button
-                          key={initName}
-                          className="w-full text-right p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition-colors mr-4"
-                          onClick={() => {
-                            setIsSelectInitiativeForActivitiesOpen(false);
-                            openReorderActivitiesDialog(goalName, initName);
-                          }}
-                        >
-                          <span className="font-medium text-gray-700">{initName}</span>
-                        </button>
-                      ))}
-                    </div>
-                  ));
+
+                  // ترتيب الأهداف مثل الجدول
+                  const sortedGoals = [...groupedByGoal.keys()].sort((a, b) => {
+                    const goalA = strategicGoals.find(g => g.name === a);
+                    const goalB = strategicGoals.find(g => g.name === b);
+                    const orderA = goalA?.display_order ?? 999;
+                    const orderB = goalB?.display_order ?? 999;
+                    return orderA - orderB;
+                  });
+
+                  return sortedGoals.map((goalName) => {
+                    const goalId = strategicGoals.find(g => g.name === goalName)?.id;
+                    const inits = [...(groupedByGoal.get(goalName) || [])];
+
+                    // ترتيب المبادرات داخل الهدف حسب display_order
+                    inits.sort((a, b) => {
+                      const initA = initiatives.find(i => i.name === a && (!goalId || i.strategic_goal_id === goalId));
+                      const initB = initiatives.find(i => i.name === b && (!goalId || i.strategic_goal_id === goalId));
+                      const orderA = initA?.display_order ?? 999;
+                      const orderB = initB?.display_order ?? 999;
+                      return orderA - orderB;
+                    });
+
+                    return (
+                      <div key={goalName} className="space-y-2">
+                        <p className="text-sm font-semibold text-gray-500 px-2">{goalName}</p>
+                        {inits.map((initName) => (
+                          <button
+                            key={initName}
+                            className="w-full text-right p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition-colors mr-4"
+                            onClick={() => {
+                              setIsSelectInitiativeForActivitiesOpen(false);
+                              openReorderActivitiesDialog(goalName, initName);
+                            }}
+                          >
+                            <span className="font-medium text-gray-700">{initName}</span>
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  });
                 })()}
               </div>
               
