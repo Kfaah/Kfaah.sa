@@ -300,8 +300,13 @@ export function EditPlanDialog({
     const goal = strategicGoals.find(g => g.name === plan.strategic_goal);
     
     // في حالة تعدد المالكين، نجمع كل الموظفين من الأقسام المالكة
-    const initDepts = init?.departments?.map(d => d.id) || (init?.department_id ? [init.department_id] : []);
-    const goalDepts = goal?.departments?.map(d => d.id) || (goal?.department_id ? [goal.department_id] : []);
+    // التحقق من أن departments هي مصفوفة قبل استخدام map
+    const initDepts = Array.isArray(init?.departments) 
+      ? init.departments.map(d => d.id) 
+      : (init?.department_id ? [init.department_id] : []);
+    const goalDepts = Array.isArray(goal?.departments) 
+      ? goal.departments.map(d => d.id) 
+      : (goal?.department_id ? [goal.department_id] : []);
     
     const allDepts = [...new Set([...initDepts, ...goalDepts])];
     
