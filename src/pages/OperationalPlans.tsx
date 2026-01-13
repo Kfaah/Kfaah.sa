@@ -2015,6 +2015,7 @@ export default function OperationalPlans() {
                             key="add-new-strategic-goal" 
                             className="bg-purple-50/50 border-r-4 border-purple-400"
                           >
+                            {/* الهدف الاستراتيجي */}
                             <td className="py-2 px-4 border-l-2 border-gray-300">
                               <Input
                                 value={newInlineGoalName}
@@ -2024,6 +2025,7 @@ export default function OperationalPlans() {
                                 autoFocus
                               />
                             </td>
+                            {/* المبادرة */}
                             <td className="py-2 px-4 border-l-2 border-gray-300">
                               <Input
                                 value={newInlineGoalInitiative}
@@ -2032,6 +2034,7 @@ export default function OperationalPlans() {
                                 placeholder="المبادرة"
                               />
                             </td>
+                            {/* النشاط */}
                             <td className="py-2 px-4 border-l-2 border-gray-300">
                               <Input
                                 value={newInlineGoalActivity}
@@ -2040,7 +2043,9 @@ export default function OperationalPlans() {
                                 placeholder="النشاط"
                               />
                             </td>
-                            {isAdmin && <td className="py-2 px-2"></td>}
+                            {/* مسؤول التنفيذ (فارغ) */}
+                            <td className="py-2 px-2 border-l-2 border-gray-300"></td>
+                            {/* المستهدف السنوي */}
                             <td className="py-2 px-2 border-l-2 border-gray-300">
                               <Input
                                 type="number"
@@ -2050,7 +2055,9 @@ export default function OperationalPlans() {
                                 placeholder="المستهدف"
                               />
                             </td>
-                            <td className="py-2 px-2"></td>
+                            {/* المتوسط الشهري (فارغ) */}
+                            <td className="py-2 px-2 border-l-2 border-gray-300"></td>
+                            {/* إجراء */}
                             <td className="py-2 px-2 text-center">
                               <div className="flex justify-center gap-1">
                                 <Button
