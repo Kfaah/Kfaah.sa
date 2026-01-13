@@ -23,7 +23,9 @@ import {
   Save,
   Merge,
   SplitSquareHorizontal,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Columns,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -71,6 +73,8 @@ interface TableRowData {
   isInitiativeMerged: boolean;
   showGoalCell: boolean;
   showInitiativeCell: boolean;
+  // أعمدة مخصصة
+  customColumns: Record<string, string>;
 }
 
 // هيكل البيانات للتصدير
@@ -124,13 +128,13 @@ export function AddOperationalPlanDialog({
   const [rows, setRows] = useState<TableRowData[]>([]);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [columns, setColumns] = useState([
-    { id: 'action', label: 'إجراء', width: '50px', editable: false },
-    { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '12.5%', editable: true },
-    { id: 'annualTarget', label: 'المستهدف السنوي', width: '12.5%', editable: true },
-    { id: 'activity', label: 'النشاط', width: '25%', editable: true },
-    { id: 'initiative', label: 'المبادرة', width: '25%', editable: true },
-    { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '25%', editable: true },
-    { id: 'rowNumber', label: '#', width: '40px', editable: false },
+    { id: 'action', label: 'إجراء', width: '50px', editable: false, removable: false, isCustom: false },
+    { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '10%', editable: true, removable: false, isCustom: false },
+    { id: 'annualTarget', label: 'المستهدف السنوي', width: '10%', editable: true, removable: false, isCustom: false },
+    { id: 'activity', label: 'النشاط', width: '20%', editable: true, removable: false, isCustom: false },
+    { id: 'initiative', label: 'المبادرة', width: '20%', editable: true, removable: false, isCustom: false },
+    { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '20%', editable: true, removable: false, isCustom: false },
+    { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
   ]);
   const [editingColumn, setEditingColumn] = useState<string | null>(null);
 
@@ -138,6 +142,50 @@ export function AddOperationalPlanDialog({
   const updateColumnLabel = useCallback((columnId: string, newLabel: string) => {
     setColumns(prev => prev.map(col => 
       col.id === columnId ? { ...col, label: newLabel } : col
+    ));
+  }, []);
+
+  // إضافة عمود جديد
+  const addColumn = useCallback(() => {
+    const newColumnId = `custom_${generateId()}`;
+    const newColumn = {
+      id: newColumnId,
+      label: 'عمود جديد',
+      width: '15%',
+      editable: true,
+      removable: true,
+      isCustom: true,
+    };
+    // إضافة العمود قبل عمود الهدف الاستراتيجي
+    setColumns(prev => {
+      const strategicGoalIndex = prev.findIndex(c => c.id === 'strategicGoal');
+      const newColumns = [...prev];
+      newColumns.splice(strategicGoalIndex, 0, newColumn);
+      return newColumns;
+    });
+    // تحديث الصفوف الموجودة بالعمود الجديد
+    setRows(prev => prev.map(row => ({
+      ...row,
+      customColumns: { ...row.customColumns, [newColumnId]: '' }
+    })));
+  }, []);
+
+  // حذف عمود
+  const removeColumn = useCallback((columnId: string) => {
+    setColumns(prev => prev.filter(col => col.id !== columnId));
+    setRows(prev => prev.map(row => {
+      const newCustomColumns = { ...row.customColumns };
+      delete newCustomColumns[columnId];
+      return { ...row, customColumns: newCustomColumns };
+    }));
+  }, []);
+
+  // تحديث قيمة عمود مخصص
+  const updateCustomColumn = useCallback((rowId: string, columnId: string, value: string) => {
+    setRows(prev => prev.map(row => 
+      row.id === rowId 
+        ? { ...row, customColumns: { ...row.customColumns, [columnId]: value } }
+        : row
     ));
   }, []);
 
@@ -155,6 +203,12 @@ export function AddOperationalPlanDialog({
 
   // إضافة صف جديد
   const addRow = useCallback(() => {
+    // تهيئة الأعمدة المخصصة
+    const customColumnsInit: Record<string, string> = {};
+    columns.filter(c => c.isCustom).forEach(c => {
+      customColumnsInit[c.id] = '';
+    });
+
     const newRow: TableRowData = {
       id: generateId(),
       strategicGoal: "",
@@ -168,9 +222,10 @@ export function AddOperationalPlanDialog({
       isInitiativeMerged: false,
       showGoalCell: true,
       showInitiativeCell: true,
+      customColumns: customColumnsInit,
     };
     setRows(prev => [...prev, newRow]);
-  }, []);
+  }, [columns]);
 
   // حذف صف
   const removeRow = useCallback((rowId: string) => {
@@ -445,6 +500,12 @@ export function AddOperationalPlanDialog({
 
   // إضافة عدة صفوف دفعة واحدة
   const addMultipleRows = (count: number) => {
+    // تهيئة الأعمدة المخصصة
+    const customColumnsInit: Record<string, string> = {};
+    columns.filter(c => c.isCustom).forEach(c => {
+      customColumnsInit[c.id] = '';
+    });
+
     const newRows: TableRowData[] = Array.from({ length: count }, () => ({
       id: generateId(),
       strategicGoal: "",
@@ -458,6 +519,7 @@ export function AddOperationalPlanDialog({
       isInitiativeMerged: false,
       showGoalCell: true,
       showInitiativeCell: true,
+      customColumns: { ...customColumnsInit },
     }));
     setRows(prev => [...prev, ...newRows]);
   };
@@ -547,6 +609,18 @@ export function AddOperationalPlanDialog({
             </Button>
             
             <div className="h-4 w-px bg-border mx-2" />
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addColumn}
+              className="h-7 text-xs gap-1"
+            >
+              <Columns className="w-3 h-3" />
+              عمود جديد
+            </Button>
+            
+            <div className="h-4 w-px bg-border mx-2" />
             
             <Button
               variant="outline"
@@ -610,24 +684,41 @@ export function AddOperationalPlanDialog({
                         <TableHead 
                           key={col.id}
                           className={cn(
-                            "text-center border-l font-bold",
+                            "text-center border-l font-bold relative group",
                             col.editable && "cursor-pointer hover:bg-muted"
                           )}
                           style={{ width: col.width }}
                           onDoubleClick={() => col.editable && setEditingColumn(col.id)}
                         >
-                          {editingColumn === col.id ? (
-                            <Input
-                              value={col.label}
-                              onChange={(e) => updateColumnLabel(col.id, e.target.value)}
-                              onBlur={() => setEditingColumn(null)}
-                              onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                              className="h-7 text-center text-sm font-bold border-primary"
-                              autoFocus
-                            />
-                          ) : (
-                            col.label
-                          )}
+                          <div className="flex items-center justify-center gap-1">
+                            {editingColumn === col.id ? (
+                              <Input
+                                value={col.label}
+                                onChange={(e) => updateColumnLabel(col.id, e.target.value)}
+                                onBlur={() => setEditingColumn(null)}
+                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                className="h-7 text-center text-sm font-bold border-primary"
+                                autoFocus
+                              />
+                            ) : (
+                              <>
+                                <span>{col.label}</span>
+                                {col.removable && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeColumn(col.id);
+                                    }}
+                                    className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </TableHead>
                       ))}
                     </TableRow>
@@ -635,7 +726,7 @@ export function AddOperationalPlanDialog({
                   <TableBody>
                     {rows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                        <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
                           <div className="flex flex-col items-center gap-2">
                             <FileSpreadsheet className="w-8 h-8 opacity-50" />
                             <p>لا توجد صفوف - اضغط "صف جديد" للبدء</p>
@@ -651,83 +742,130 @@ export function AddOperationalPlanDialog({
                             selectedRows.has(row.id) && "bg-primary/10 hover:bg-primary/15"
                           )}
                         >
-                          {/* Actions */}
-                          <TableCell className="text-center p-1 border-l">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeRow(row.id)}
-                              className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </TableCell>
+                          {columns.map((col) => {
+                            // عمود الإجراءات
+                            if (col.id === 'action') {
+                              return (
+                                <TableCell key={col.id} className="text-center p-1 border-l">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeRow(row.id)}
+                                    className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </TableCell>
+                              );
+                            }
 
-                          {/* Monthly Average (read-only) */}
-                          <TableCell className="border-l text-center bg-muted/30 text-sm font-medium">
-                            {row.monthlyAverage.toLocaleString('ar-SA', { maximumFractionDigits: 2 })}
-                          </TableCell>
+                            // عمود المتوسط الشهري
+                            if (col.id === 'monthlyAverage') {
+                              return (
+                                <TableCell key={col.id} className="border-l text-center bg-muted/30 text-sm font-medium">
+                                  {row.monthlyAverage.toLocaleString('ar-SA', { maximumFractionDigits: 2 })}
+                                </TableCell>
+                              );
+                            }
 
-                          {/* Annual Target */}
-                          <TableCell className="border-l p-0">
-                            <Input
-                              type="number"
-                              value={row.annualTarget || ""}
-                              onChange={(e) => updateCell(row.id, 'annualTarget', parseFloat(e.target.value) || 0)}
-                              placeholder="0"
-                              className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-center text-sm"
-                            />
-                          </TableCell>
+                            // عمود المستهدف السنوي
+                            if (col.id === 'annualTarget') {
+                              return (
+                                <TableCell key={col.id} className="border-l p-0">
+                                  <Input
+                                    type="number"
+                                    value={row.annualTarget || ""}
+                                    onChange={(e) => updateCell(row.id, 'annualTarget', parseFloat(e.target.value) || 0)}
+                                    placeholder="0"
+                                    className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-center text-sm"
+                                  />
+                                </TableCell>
+                              );
+                            }
 
-                          {/* Activity */}
-                          <TableCell className="border-l p-0">
-                            <Input
-                              value={row.activity}
-                              onChange={(e) => updateCell(row.id, 'activity', e.target.value)}
-                              placeholder="النشاط..."
-                              className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
-                            />
-                          </TableCell>
+                            // عمود النشاط
+                            if (col.id === 'activity') {
+                              return (
+                                <TableCell key={col.id} className="border-l p-0">
+                                  <Input
+                                    value={row.activity}
+                                    onChange={(e) => updateCell(row.id, 'activity', e.target.value)}
+                                    placeholder="النشاط..."
+                                    className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                                  />
+                                </TableCell>
+                              );
+                            }
 
-                          {/* Initiative */}
-                          {row.showInitiativeCell && (
-                            <TableCell 
-                              className="border-l p-0"
-                              rowSpan={row.initiativeRowSpan}
-                            >
-                              <Input
-                                value={row.initiative}
-                                onChange={(e) => updateCell(row.id, 'initiative', e.target.value)}
-                                placeholder="المبادرة..."
-                                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
-                                list="initiatives-list"
-                              />
-                            </TableCell>
-                          )}
+                            // عمود المبادرة
+                            if (col.id === 'initiative') {
+                              if (!row.showInitiativeCell) return null;
+                              return (
+                                <TableCell 
+                                  key={col.id}
+                                  className="border-l p-0"
+                                  rowSpan={row.initiativeRowSpan}
+                                >
+                                  <Input
+                                    value={row.initiative}
+                                    onChange={(e) => updateCell(row.id, 'initiative', e.target.value)}
+                                    placeholder="المبادرة..."
+                                    className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                                    list="initiatives-list"
+                                  />
+                                </TableCell>
+                              );
+                            }
 
-                          {/* Strategic Goal */}
-                          {row.showGoalCell && (
-                            <TableCell 
-                              className="border-l p-0"
-                              rowSpan={row.goalRowSpan}
-                            >
-                              <Input
-                                value={row.strategicGoal}
-                                onChange={(e) => updateCell(row.id, 'strategicGoal', e.target.value)}
-                                placeholder="الهدف الاستراتيجي..."
-                                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
-                                list="goals-list"
-                              />
-                            </TableCell>
-                          )}
+                            // عمود الهدف الاستراتيجي
+                            if (col.id === 'strategicGoal') {
+                              if (!row.showGoalCell) return null;
+                              return (
+                                <TableCell 
+                                  key={col.id}
+                                  className="border-l p-0"
+                                  rowSpan={row.goalRowSpan}
+                                >
+                                  <Input
+                                    value={row.strategicGoal}
+                                    onChange={(e) => updateCell(row.id, 'strategicGoal', e.target.value)}
+                                    placeholder="الهدف الاستراتيجي..."
+                                    className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                                    list="goals-list"
+                                  />
+                                </TableCell>
+                              );
+                            }
 
-                          {/* Row number with selection */}
-                          <TableCell 
-                            className="text-center cursor-pointer select-none font-medium text-muted-foreground"
-                            onClick={() => toggleRowSelection(row.id)}
-                          >
-                            {index + 1}
-                          </TableCell>
+                            // عمود رقم الصف
+                            if (col.id === 'rowNumber') {
+                              return (
+                                <TableCell 
+                                  key={col.id}
+                                  className="text-center cursor-pointer select-none font-medium text-muted-foreground"
+                                  onClick={() => toggleRowSelection(row.id)}
+                                >
+                                  {index + 1}
+                                </TableCell>
+                              );
+                            }
+
+                            // الأعمدة المخصصة
+                            if (col.isCustom) {
+                              return (
+                                <TableCell key={col.id} className="border-l p-0">
+                                  <Input
+                                    value={row.customColumns[col.id] || ""}
+                                    onChange={(e) => updateCustomColumn(row.id, col.id, e.target.value)}
+                                    placeholder={col.label}
+                                    className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                                  />
+                                </TableCell>
+                              );
+                            }
+
+                            return null;
+                          })}
                         </TableRow>
                       ))
                     )}
