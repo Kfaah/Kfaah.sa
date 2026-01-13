@@ -95,11 +95,29 @@ const MONTHS_AR = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
 
-// ثلاثة ألوان متناسقة: أخضر/تركوازي - أبيض - برتقالي خفيف
+// ثلاثة ألوان متناسقة وأنيقة مستوحاة من هوية الجمعية
 const GOAL_COLORS = [
-  { bg: "bg-teal-50", border: "border-l-teal-500", text: "text-teal-700" },
-  { bg: "bg-white", border: "border-l-gray-300", text: "text-gray-700" },
-  { bg: "bg-orange-50", border: "border-l-orange-400", text: "text-orange-700" },
+  { 
+    bg: "bg-gradient-to-l from-teal-50 to-white", 
+    border: "border-l-teal-500", 
+    text: "text-teal-700",
+    hover: "hover:from-teal-100 hover:to-teal-50",
+    badge: "bg-teal-100 text-teal-700 border-teal-200"
+  },
+  { 
+    bg: "bg-gradient-to-l from-slate-50 to-white", 
+    border: "border-l-slate-400", 
+    text: "text-slate-700",
+    hover: "hover:from-slate-100 hover:to-slate-50",
+    badge: "bg-slate-100 text-slate-600 border-slate-200"
+  },
+  { 
+    bg: "bg-gradient-to-l from-amber-50 to-white", 
+    border: "border-l-amber-400", 
+    text: "text-amber-700",
+    hover: "hover:from-amber-100 hover:to-amber-50",
+    badge: "bg-amber-100 text-amber-700 border-amber-200"
+  },
 ];
 
 interface GroupedPlans {
@@ -1128,32 +1146,32 @@ export default function OperationalPlans() {
                 لا توجد خطط تشغيلية حتى الآن
               </div>
             ) : (
-              <div className="border border-gray-300 rounded-lg overflow-hidden shadow-sm overflow-x-auto">
+              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg overflow-x-auto bg-white">
                 <table className="w-full">
-                  {/* رأس الجدول الرسمي */}
+                  {/* رأس الجدول الأنيق */}
                   <thead>
-                    <tr className="bg-gradient-to-r from-[#2d7a85] to-[#3d9aa8] text-white">
-                      <th className="py-3 px-4 border-l-2 border-white/30 text-right">
-                        <span className="text-sm font-semibold">الهدف الاستراتيجي</span>
+                    <tr className="bg-gradient-to-r from-primary via-primary/90 to-accent text-white shadow-md">
+                      <th className="py-4 px-5 border-l border-white/20 text-right">
+                        <span className="text-sm font-bold tracking-wide">الهدف الاستراتيجي</span>
                       </th>
-                      <th className="py-3 px-4 border-l-2 border-white/30 text-right">
-                        <span className="text-sm font-semibold">المبادرة</span>
+                      <th className="py-4 px-5 border-l border-white/20 text-right">
+                        <span className="text-sm font-bold tracking-wide">المبادرة</span>
                       </th>
-                      <th className="py-3 px-4 border-l-2 border-white/30 text-right">
-                        <span className="text-sm font-semibold">النشاط</span>
+                      <th className="py-4 px-5 border-l border-white/20 text-right">
+                        <span className="text-sm font-bold tracking-wide">النشاط</span>
                       </th>
-                      <th className="py-3 px-4 border-l-2 border-white/30 text-right">
-                        <span className="text-sm font-semibold">مسؤول التنفيذ</span>
+                      <th className="py-4 px-5 border-l border-white/20 text-right">
+                        <span className="text-sm font-bold tracking-wide">مسؤول التنفيذ</span>
                       </th>
-                      <th className="w-28 py-3 px-2 border-l-2 border-white/30 text-center">
-                        <span className="text-sm font-semibold">المستهدف السنوي</span>
+                      <th className="w-28 py-4 px-3 border-l border-white/20 text-center">
+                        <span className="text-sm font-bold tracking-wide">المستهدف السنوي</span>
                       </th>
-                      <th className="w-28 py-3 px-2 border-l-2 border-white/30 text-center">
-                        <span className="text-sm font-semibold">المتوسط الشهري</span>
+                      <th className="w-28 py-4 px-3 border-l border-white/20 text-center">
+                        <span className="text-sm font-bold tracking-wide">المتوسط الشهري</span>
                       </th>
                       {isEditMode && (
-                        <th className="w-24 py-3 px-2 text-center bg-orange-500">
-                          <span className="text-sm font-semibold">الإجراء</span>
+                        <th className="w-24 py-4 px-3 text-center bg-gradient-to-r from-amber-500 to-orange-500">
+                          <span className="text-sm font-bold tracking-wide">إجراء</span>
                         </th>
                       )}
                     </tr>
@@ -1222,14 +1240,17 @@ export default function OperationalPlans() {
                           const isLastInitiative = initIndex === group.initiatives.length - 1;
                           const isLastGoal = groupIndex === groupedPlans.length - 1;
                           
-                          // تحديد نوع الفاصل السفلي
+                          // تحديد نوع الفاصل السفلي - أنيق وخفيف
                           let bottomBorder = '';
                           if (isLastInInitiative && isLastInitiative && !isLastGoal) {
-                            bottomBorder = 'border-b-4 border-b-gray-500';
+                            // فاصل بين الأهداف الاستراتيجية
+                            bottomBorder = 'border-b-2 border-b-primary/30';
                           } else if (isLastInInitiative && !isLastInitiative) {
-                            bottomBorder = 'border-b-4 border-b-gray-400';
+                            // فاصل بين المبادرات
+                            bottomBorder = 'border-b border-b-gray-200 border-dashed';
                           } else if (!isLastInInitiative) {
-                            bottomBorder = 'border-b border-b-gray-200';
+                            // فاصل بين الأنشطة
+                            bottomBorder = 'border-b border-b-gray-100';
                           }
                           
                           // البحث بالـ ID أولاً ثم بالاسم
@@ -1241,29 +1262,35 @@ export default function OperationalPlans() {
                           rows.push(
                             <tr 
                               key={plan.id} 
-                              className={`${color.bg} border-r-4 ${color.border} hover:bg-white/50 transition-all duration-200 ${isExpanded ? 'bg-white/70' : ''} ${bottomBorder}`}
+                              className={`${color.bg} ${color.hover} border-r-4 ${color.border} transition-all duration-300 ease-in-out ${isExpanded ? 'shadow-inner !bg-white' : ''} ${bottomBorder}`}
                             >
                               {/* الهدف الاستراتيجي */}
                               {isFirstRowOfGoal && (
                                 <td 
                                   rowSpan={totalRowsInGoal} 
-                                  className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${color.bg}`}
+                                  className={`py-5 px-5 border-l border-gray-100 align-middle ${color.bg}`}
                                 >
-                                  <div className="flex items-start justify-between">
+                                  <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1">
-                                      <p className={`font-semibold text-sm ${color.text}`}>{group.strategicGoal}</p>
-                                      <div className="text-xs text-muted-foreground mt-1 flex items-start gap-1">
-                                        <span className="text-[10px]">📍</span>
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <div className={`w-2 h-2 rounded-full ${color.border.replace('border-l-', 'bg-')}`}></div>
+                                        <p className={`font-bold text-sm ${color.text}`}>{group.strategicGoal}</p>
+                                      </div>
+                                      <div className="text-xs mt-2">
                                         {goalData?.departments && goalData.departments.length > 0 ? (
-                                          <div className="flex flex-wrap gap-1">
+                                          <div className="flex flex-wrap gap-1.5">
                                             {goalData.departments.map((d) => (
-                                              <Badge key={d.id} variant="secondary" className="rounded-full">
+                                              <Badge 
+                                                key={d.id} 
+                                                variant="outline" 
+                                                className={`rounded-full text-[10px] px-2.5 py-0.5 font-medium border ${color.badge}`}
+                                              >
                                                 {d.name}
                                               </Badge>
                                             ))}
                                           </div>
                                         ) : (
-                                          <span>بدون قسم</span>
+                                          <span className="text-muted-foreground/60 italic">بدون قسم</span>
                                         )}
                                       </div>
                                     </div>
@@ -1271,11 +1298,9 @@ export default function OperationalPlans() {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full flex-shrink-0"
+                                        className={`h-8 w-8 rounded-full flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity ${color.text} hover:bg-white/50`}
                                         onClick={() => {
-                                          // استخدام الاسم من strategic_goals إذا وجد
                                           const actualGoalName = goalData?.name || group.strategicGoal;
-                                          // تمرير plan حتى نستطيع التحديث بالـ ID وليس فقط بالاسم
                                           openEditDialog("strategic_goal", actualGoalName, undefined, plan);
                                         }}
                                       >
@@ -1290,23 +1315,26 @@ export default function OperationalPlans() {
                               {isFirstRowOfInit && (
                                 <td 
                                   rowSpan={totalRowsInInitiative} 
-                                  className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${initIndex > 0 ? 'border-t-2 border-t-gray-400' : ''}`}
+                                  className={`py-5 px-5 border-l border-gray-100 align-middle ${initIndex > 0 ? 'border-t border-t-gray-200' : ''}`}
                                 >
-                                  <div className="flex items-start justify-between">
+                                  <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1">
-                                      <p className="text-gray-700 text-sm font-medium">{initGroup.initiative}</p>
-                                      <div className="text-xs text-muted-foreground mt-1 flex items-start gap-1">
-                                        <span className="text-[10px]">📍</span>
+                                      <p className="text-gray-700 text-sm font-semibold">{initGroup.initiative}</p>
+                                      <div className="text-xs mt-2">
                                         {initData?.departments && initData.departments.length > 0 ? (
-                                          <div className="flex flex-wrap gap-1">
+                                          <div className="flex flex-wrap gap-1.5">
                                             {initData.departments.map((d) => (
-                                              <Badge key={d.id} variant="secondary" className="rounded-full">
+                                              <Badge 
+                                                key={d.id} 
+                                                variant="outline" 
+                                                className="rounded-full text-[10px] px-2.5 py-0.5 font-medium border bg-gray-50 text-gray-600 border-gray-200"
+                                              >
                                                 {d.name}
                                               </Badge>
                                             ))}
                                           </div>
                                         ) : (
-                                          <span>بدون قسم</span>
+                                          <span className="text-muted-foreground/60 italic">بدون قسم</span>
                                         )}
                                       </div>
                                     </div>
@@ -1314,11 +1342,9 @@ export default function OperationalPlans() {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full flex-shrink-0"
+                                        className="h-8 w-8 text-gray-500 hover:text-primary hover:bg-white/50 rounded-full flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
                                         onClick={() => {
-                                          // استخدام الاسم من initiatives إذا وجد
                                           const actualInitName = initData?.name || initGroup.initiative;
-                                          // تمرير plan حتى نستطيع التحديث بالـ ID وليس فقط بالاسم
                                           openEditDialog("initiative", group.strategicGoal, actualInitName, plan);
                                         }}
                                       >
@@ -1330,43 +1356,58 @@ export default function OperationalPlans() {
                               )}
                               
                               {/* النشاط */}
-                              <td className="py-4 px-4 border-l-2 border-gray-300">
+                              <td className="py-5 px-5 border-l border-gray-100">
                                 <div 
-                                  className="flex items-center gap-2 cursor-pointer group"
+                                  className="flex items-center gap-3 cursor-pointer group"
                                   onClick={() => handleViewPlan(plan)}
                                 >
-                                  <ChevronDown 
-                                    className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-180 text-[#2d7a85]' : 'text-[#3d9aa8]'}`} 
-                                  />
-                                  <p className="font-semibold text-gray-800 text-sm flex-1">{plan.activity_name}</p>
+                                  <div className={`p-1.5 rounded-lg transition-all duration-300 ${isExpanded ? 'bg-accent/20 rotate-180' : 'bg-gray-100 group-hover:bg-accent/10'}`}>
+                                    <ChevronDown 
+                                      className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'text-accent' : 'text-gray-500 group-hover:text-accent'}`} 
+                                    />
+                                  </div>
+                                  <p className="font-semibold text-gray-800 text-sm flex-1 group-hover:text-primary transition-colors">{plan.activity_name}</p>
                                 </div>
                               </td>
                               
                               {/* مسؤول التنفيذ */}
-                              <td className="py-4 px-4 border-l-2 border-gray-300">
-                                <p className="text-gray-700 text-sm">{plan.responsible_employee_name || "-"}</p>
+                              <td className="py-5 px-5 border-l border-gray-100">
+                                {plan.responsible_employee_name ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                                      <span className="text-xs font-bold text-primary">{plan.responsible_employee_name.charAt(0)}</span>
+                                    </div>
+                                    <p className="text-gray-700 text-sm font-medium">{plan.responsible_employee_name}</p>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 text-sm italic">غير محدد</span>
+                                )}
                               </td>
                               
                               {/* المستهدف السنوي */}
-                              <td className="w-28 py-4 px-2 border-l-2 border-gray-300 text-center">
-                                <p className="text-lg font-bold text-[#3d9aa8]">{plan.annual_target}</p>
+                              <td className="w-28 py-5 px-3 border-l border-gray-100 text-center">
+                                <div className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg">
+                                  <p className="text-lg font-bold text-accent">{formatNumber(plan.annual_target)}</p>
+                                </div>
                               </td>
                               
                               {/* المتوسط الشهري */}
-                              <td className={`w-28 py-4 px-2 text-center bg-white/50 ${isEditMode ? 'border-l-2 border-gray-300' : ''}`}>
-                                <p className="text-lg font-bold text-[#2d7a85]">
-                                  {Math.round(plan.annual_target / 12)}
-                                </p>
+                              <td className={`w-28 py-5 px-3 text-center ${isEditMode ? 'border-l border-gray-100' : ''}`}>
+                                <div className="inline-flex items-center justify-center px-3 py-1.5 bg-gray-50 rounded-lg">
+                                  <p className="text-lg font-bold text-primary">
+                                    {formatNumber(Math.round(plan.annual_target / 12))}
+                                  </p>
+                                </div>
                               </td>
                               
                               {/* عمود الإجراء - يظهر فقط في وضع التعديل */}
                               {isEditMode && (
-                                <td className="w-24 py-4 px-2 text-center bg-orange-50">
-                                  <div className="flex items-center justify-center gap-1">
+                                <td className="w-24 py-5 px-3 text-center bg-gradient-to-l from-amber-50 to-transparent">
+                                  <div className="flex items-center justify-center gap-1.5">
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-8 w-8 text-orange-600 hover:text-orange-800 hover:bg-orange-100 rounded-full"
+                                      className="h-9 w-9 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded-xl transition-all duration-200 hover:scale-105"
                                       onClick={() => openEditDialog("activity", group.strategicGoal, initGroup.initiative, plan)}
                                       title="تعديل النشاط"
                                     >
@@ -1375,7 +1416,7 @@ export default function OperationalPlans() {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full"
+                                      className="h-9 w-9 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-105"
                                       onClick={() => handleDeletePlan(plan.id)}
                                       title="حذف النشاط"
                                     >
