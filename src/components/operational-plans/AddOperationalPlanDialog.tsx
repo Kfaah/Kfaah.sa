@@ -245,6 +245,7 @@ function SortableRow({
   selectedCells,
   toggleRowSelection,
   toggleCellSelection,
+  getMergeInfo,
   removeRow,
   updateCell,
   updateCustomColumn,
@@ -256,6 +257,13 @@ function SortableRow({
   selectedCells: Set<string>;
   toggleRowSelection: (id: string) => void;
   toggleCellSelection: (rowId: string, colId: string) => void;
+  getMergeInfo: (rowIndex: number, colIndex: number) => {
+    isMerged: boolean;
+    isFirst: boolean;
+    rowSpan: number;
+    colSpan: number;
+    value: string;
+  };
   removeRow: (id: string) => void;
   updateCell: (rowId: string, field: keyof TableRowData, value: string | number) => void;
   updateCustomColumn: (rowId: string, columnId: string, value: string) => void;
@@ -285,9 +293,29 @@ function SortableRow({
         isDragging && "bg-primary/20"
       )}
     >
-      {columns.map((col) => {
-        // عمود الإجراءات
-        if (col.id === 'action') {
+      {columns.map((col, colIndex) => {
+        const mergeInfo = getMergeInfo(index, colIndex);
+
+        // تطبيق دمج الخلايا (مرئي)
+        if (mergeInfo.isMerged) {
+          if (!mergeInfo.isFirst) return null;
+
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          return (
+            <TableCell
+              key={`${col.id}-merged-${index}`}
+              rowSpan={mergeInfo.rowSpan}
+              colSpan={mergeInfo.colSpan}
+              className={cn(
+                "border-l text-center text-sm font-medium cursor-pointer align-middle",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+              )}
+              onClick={() => toggleCellSelection(row.id, col.id)}
+            >
+              {mergeInfo.value || ""}
+            </TableCell>
+          );
+        }
           return (
             <TableCell key={col.id} className="text-center p-1 border-l">
               <div className="flex items-center justify-center gap-1">
@@ -1269,6 +1297,7 @@ export function AddOperationalPlanDialog({
                               selectedCells={selectedCells}
                               toggleRowSelection={toggleRowSelection}
                               toggleCellSelection={toggleCellSelection}
+                              getMergeInfo={getMergeInfo}
                               removeRow={removeRow}
                               updateCell={updateCell}
                               updateCustomColumn={updateCustomColumn}
