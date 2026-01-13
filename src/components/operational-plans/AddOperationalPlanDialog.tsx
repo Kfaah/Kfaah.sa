@@ -28,8 +28,14 @@ import {
   X,
   GripVertical,
   Undo2,
-  Grip
+  Grip,
+  Palette
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
   Table,
@@ -131,7 +137,17 @@ interface TableRowData {
   showGoalCell: boolean;
   showInitiativeCell: boolean;
   customColumns: Record<string, string>;
+  bgColor?: string; // لون خلفية الصف
 }
+
+// ألوان مسبقة للاختيار السريع
+const PRESET_COLORS = [
+  '#ffffff', '#f8fafc', '#f1f5f9', '#e2e8f0',
+  '#fef2f2', '#fef7c3', '#dcfce7', '#dbeafe',
+  '#f3e8ff', '#fce7f3', '#fed7aa', '#a5f3fc',
+  '#ef4444', '#f59e0b', '#22c55e', '#3b82f6',
+  '#8b5cf6', '#ec4899', '#f97316', '#06b6d4',
+];
 
 // هيكل البيانات للتصدير
 interface LocalActivity {
@@ -378,11 +394,15 @@ function SortableRow({
   return (
     <TableRow
       ref={setNodeRef}
-      style={style}
+      style={{
+        ...style,
+        backgroundColor: row.bgColor || undefined,
+      }}
       className={cn(
         "hover:bg-muted/30",
         selectedRows.has(row.id) && "bg-primary/10 hover:bg-primary/15",
-        isDragging && "bg-primary/20"
+        isDragging && "bg-primary/20",
+        !row.bgColor && "bg-background"
       )}
     >
       {columns.map((col, colIndex) => {
@@ -1099,6 +1119,18 @@ export function AddOperationalPlanDialog({
     }
   }, [resizingColumn, handleResizeMove, handleResizeEnd]);
 
+  // تغيير لون الصفوف المحددة
+  const applyColorToSelectedRows = useCallback((color: string) => {
+    if (selectedRows.size === 0) return;
+    saveToUndo();
+    setRows(prev => prev.map(row => 
+      selectedRows.has(row.id) ? { ...row, bgColor: color } : row
+    ));
+  }, [selectedRows, saveToUndo]);
+
+  // التحقق من وجود تحديد يمكن تلوينه
+  const hasSelection = selectedRows.size > 0 || selectedCells.size > 0 || selectedHeaders.size > 0;
+
   // إضافة صف جديد
   const addRow = useCallback(() => {
     const customColumnsInit: Record<string, string> = {};
@@ -1594,13 +1626,18 @@ export function AddOperationalPlanDialog({
   const rowIds = rows.map(r => r.id);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0" dir="rtl">
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent 
+        className="max-w-6xl max-h-[90vh] overflow-hidden p-0" 
+        dir="rtl"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-4 border-b">
-            <DialogHeader>
-              <div className="flex items-center gap-3">
+            <DialogHeader className="flex flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                   <FileSpreadsheet className="w-5 h-5 text-primary" />
                 </div>
@@ -1622,6 +1659,15 @@ export function AddOperationalPlanDialog({
                   </div>
                 </div>
               </div>
+              {/* زر الإغلاق */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="h-8 w-8 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </DialogHeader>
           </div>
 
@@ -1711,6 +1757,46 @@ export function AddOperationalPlanDialog({
               <SplitSquareHorizontal className="w-3 h-3" />
               إلغاء دمج الخلايا
             </Button>
+
+            <div className="h-4 w-px bg-border mx-2" />
+
+            {/* أداة اختيار الألوان */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!hasSelection}
+                  className="h-7 text-xs gap-1"
+                >
+                  <Palette className="w-3 h-3" />
+                  لون الخلفية
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-3" align="start">
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">اختر لون الخلفية:</p>
+                  <div className="grid grid-cols-5 gap-1">
+                    {PRESET_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform"
+                        style={{ backgroundColor: color }}
+                        onClick={() => applyColorToSelectedRows(color)}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <Label className="text-xs">مخصص:</Label>
+                    <input
+                      type="color"
+                      className="w-8 h-6 rounded cursor-pointer"
+                      onChange={(e) => applyColorToSelectedRows(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <div className="h-4 w-px bg-border mx-2" />
 
