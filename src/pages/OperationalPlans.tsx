@@ -193,6 +193,10 @@ export default function OperationalPlans() {
   const [addItemDialogParentGoal, setAddItemDialogParentGoal] = useState<string>("");
   const [addItemDialogParentInit, setAddItemDialogParentInit] = useState<string>("");
   
+  // نافذة ترتيب الأهداف الاستراتيجية
+  const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
+  const [reorderGoals, setReorderGoals] = useState<StrategicGoal[]>([]);
+  
   // Form state
   const [strategicGoal, setStrategicGoal] = useState("");
   const [initiative, setInitiative] = useState("");
@@ -566,41 +570,45 @@ export default function OperationalPlans() {
     }
   };
 
-  // تغيير ترتيب الهدف الاستراتيجي
-  const handleMoveGoal = async (goalId: string, direction: 'up' | 'down') => {
-    const currentIndex = strategicGoals.findIndex(g => g.id === goalId);
-    if (currentIndex === -1) return;
-    
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (targetIndex < 0 || targetIndex >= strategicGoals.length) return;
+  // فتح نافذة ترتيب الأهداف
+  const openReorderDialog = () => {
+    setReorderGoals([...strategicGoals]);
+    setIsReorderDialogOpen(true);
+  };
 
-    const currentGoal = strategicGoals[currentIndex];
-    const targetGoal = strategicGoals[targetIndex];
+  // تحريك هدف في القائمة المحلية
+  const moveGoalInList = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= reorderGoals.length) return;
 
+    const newGoals = [...reorderGoals];
+    [newGoals[index], newGoals[targetIndex]] = [newGoals[targetIndex], newGoals[index]];
+    setReorderGoals(newGoals);
+  };
+
+  // حفظ الترتيب الجديد
+  const saveGoalsOrder = async () => {
     try {
-      // تبديل الترتيب
-      await supabase
-        .from("strategic_goals")
-        .update({ display_order: targetGoal.display_order ?? targetIndex })
-        .eq("id", currentGoal.id);
+      // تحديث كل هدف بترتيبه الجديد
+      for (let i = 0; i < reorderGoals.length; i++) {
+        await supabase
+          .from("strategic_goals")
+          .update({ display_order: i + 1 })
+          .eq("id", reorderGoals[i].id);
+      }
 
-      await supabase
-        .from("strategic_goals")
-        .update({ display_order: currentGoal.display_order ?? currentIndex })
-        .eq("id", targetGoal.id);
-
-      // إعادة تحميل الأهداف
       await fetchStrategicGoals();
+      setIsReorderDialogOpen(false);
       
       toast({
-        title: "تم",
-        description: "تم تغيير ترتيب الهدف الاستراتيجي",
+        title: "تم الحفظ",
+        description: "تم حفظ ترتيب الأهداف الاستراتيجية بنجاح",
       });
     } catch (error: any) {
-      console.error("Error moving goal:", error);
+      console.error("Error saving goals order:", error);
       toast({
         title: "خطأ",
-        description: "فشل في تغيير الترتيب",
+        description: "فشل في حفظ الترتيب",
         variant: "destructive",
       });
     }
@@ -1123,21 +1131,32 @@ export default function OperationalPlans() {
                 <p className="text-sm text-orange-600">انقر على أي خلية للتعديل، أو استخدم أزرار الإضافة والحذف</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              className="border-orange-300 text-orange-700 hover:bg-orange-100"
-              onClick={() => {
-                setIsEditMode(false);
-                setEditingPlanId(null);
-                setEditFormData(null);
-                setIsEditingMonths(null);
-                setEditingMonthlyTargets({});
-                setAddingActivityUnder(null);
-              }}
-            >
-              <X className="w-4 h-4 ml-1" />
-              إلغاء التعديل
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="border-primary/30 text-primary hover:bg-primary/10"
+                onClick={openReorderDialog}
+              >
+                <ArrowUp className="w-4 h-4 ml-1" />
+                <ArrowDown className="w-4 h-4 ml-1" />
+                ترتيب الأهداف
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                onClick={() => {
+                  setIsEditMode(false);
+                  setEditingPlanId(null);
+                  setEditFormData(null);
+                  setIsEditingMonths(null);
+                  setEditingMonthlyTargets({});
+                  setAddingActivityUnder(null);
+                }}
+              >
+                <X className="w-4 h-4 ml-1" />
+                إلغاء التعديل
+              </Button>
+            </div>
           </div>
         )}
 
@@ -1335,45 +1354,17 @@ export default function OperationalPlans() {
                                       )}
                                     </div>
                                     {isEditMode && (
-                                      <div className="flex flex-col gap-1 flex-shrink-0">
-                                        <div className="flex gap-1">
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (goalData?.id) handleMoveGoal(goalData.id, 'up');
-                                            }}
-                                            disabled={groupIndex === 0}
-                                          >
-                                            <ArrowUp className="w-3 h-3" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (goalData?.id) handleMoveGoal(goalData.id, 'down');
-                                            }}
-                                            disabled={groupIndex === groupedPlans.length - 1}
-                                          >
-                                            <ArrowDown className="w-3 h-3" />
-                                          </Button>
-                                        </div>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-7 w-7 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
-                                          onClick={() => {
-                                            const actualGoalName = goalData?.name || group.strategicGoal;
-                                            openEditDialog("strategic_goal", actualGoalName, undefined, plan);
-                                          }}
-                                        >
-                                          <Settings2 className="w-3.5 h-3.5" />
-                                        </Button>
-                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
+                                        onClick={() => {
+                                          const actualGoalName = goalData?.name || group.strategicGoal;
+                                          openEditDialog("strategic_goal", actualGoalName, undefined, plan);
+                                        }}
+                                      >
+                                        <Settings2 className="w-3.5 h-3.5" />
+                                      </Button>
                                     )}
                                   </div>
                                 </td>
@@ -1935,6 +1926,65 @@ export default function OperationalPlans() {
             fetchInitiatives();
           }}
         />
+
+        {/* نافذة ترتيب الأهداف الاستراتيجية */}
+        {isReorderDialogOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+              <div className="bg-primary/10 px-6 py-4 border-b">
+                <h3 className="text-lg font-bold text-primary">ترتيب الأهداف الاستراتيجية</h3>
+                <p className="text-sm text-muted-foreground">استخدم الأسهم لتحريك الأهداف ثم اضغط حفظ</p>
+              </div>
+              
+              <div className="p-4 max-h-[60vh] overflow-y-auto space-y-2">
+                {reorderGoals.map((goal, index) => (
+                  <div 
+                    key={goal.id} 
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 group hover:bg-gray-100 transition-colors"
+                  >
+                    <span className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm">
+                      {index + 1}
+                    </span>
+                    <span className="flex-1 font-medium text-gray-700">{goal.name}</span>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-gray-500 hover:text-primary hover:bg-primary/10"
+                        onClick={() => moveGoalInList(index, 'up')}
+                        disabled={index === 0}
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-gray-500 hover:text-primary hover:bg-primary/10"
+                        onClick={() => moveGoalInList(index, 'down')}
+                        disabled={index === reorderGoals.length - 1}
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsReorderDialogOpen(false)}
+                >
+                  إلغاء
+                </Button>
+                <Button onClick={saveGoalsOrder}>
+                  <Check className="w-4 h-4 ml-1" />
+                  حفظ الترتيب
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
