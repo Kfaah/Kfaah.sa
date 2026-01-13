@@ -1249,13 +1249,13 @@ export default function OperationalPlans() {
                           const isLastGoal = groupIndex === groupedPlans.length - 1;
                           
                           // تحديد نوع الفاصل السفلي
-                          let bottomBorder = 'border-b border-gray-100';
+                          let bottomBorder = 'border-b border-gray-200';
                           if (isLastInInitiative && isLastInitiative && !isLastGoal) {
                             // فاصل بين الأهداف الاستراتيجية
-                            bottomBorder = 'border-b-2 border-gray-300';
+                            bottomBorder = 'border-b-[3px] border-gray-400';
                           } else if (isLastInInitiative && !isLastInitiative) {
                             // فاصل بين المبادرات
-                            bottomBorder = 'border-b border-gray-200';
+                            bottomBorder = 'border-b-2 border-gray-300';
                           }
                           
                           // البحث بالـ ID أولاً ثم بالاسم
@@ -1273,7 +1273,7 @@ export default function OperationalPlans() {
                               {isFirstRowOfGoal && (
                                 <td 
                                   rowSpan={totalRowsInGoal} 
-                                  className={`py-4 px-5 align-top ${color.bg} border-l border-gray-100`}
+                                  className={`py-4 px-5 align-top ${color.bg} border-l-2 border-gray-200`}
                                 >
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1">
@@ -1314,7 +1314,7 @@ export default function OperationalPlans() {
                               {isFirstRowOfInit && (
                                 <td 
                                   rowSpan={totalRowsInInitiative} 
-                                  className="py-4 px-5 align-top bg-gray-50/50 border-l border-gray-100"
+                                  className="py-4 px-5 align-top bg-gray-50/50 border-l-2 border-gray-200"
                                 >
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1">
@@ -1352,7 +1352,7 @@ export default function OperationalPlans() {
                               )}
                               
                               {/* النشاط */}
-                              <td className="py-4 px-5 border-l border-gray-100">
+                              <td className="py-4 px-5 border-l-2 border-gray-200">
                                 <div 
                                   className="flex items-center gap-2 cursor-pointer group/activity"
                                   onClick={() => handleViewPlan(plan)}
@@ -1365,7 +1365,7 @@ export default function OperationalPlans() {
                               </td>
                               
                               {/* مسؤول التنفيذ */}
-                              <td className="py-4 px-5 border-l border-gray-100">
+                              <td className="py-4 px-5 border-l-2 border-gray-200">
                                 {plan.responsible_employee_name ? (
                                   <div className="flex items-center gap-2">
                                     <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
@@ -1379,12 +1379,12 @@ export default function OperationalPlans() {
                               </td>
                               
                               {/* المستهدف السنوي */}
-                              <td className="w-28 py-4 px-3 text-center border-l border-gray-100">
+                              <td className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
                                 <span className="text-lg font-bold text-gray-800">{formatNumber(plan.annual_target)}</span>
                               </td>
                               
                               {/* المتوسط الشهري */}
-                              <td className="w-28 py-4 px-3 text-center border-l border-gray-100">
+                              <td className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
                                 <span className="text-lg font-bold text-[#3d9aa8]">
                                   {formatNumber(Math.round(plan.annual_target / 12))}
                                 </span>
