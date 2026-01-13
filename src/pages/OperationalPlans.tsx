@@ -1996,23 +1996,23 @@ export default function OperationalPlans() {
                             rows.push(
                               <tr 
                                 key={`add-btn-${group.strategicGoal}-${initGroup.initiative}`} 
-                                className={`${color.bg} border-r-4 ${color.border} hover:bg-green-50/30 transition-colors`}
+                                className={`${color.bg} border-r-4 ${color.border} hover:bg-teal-50/50 transition-colors`}
                               >
-                                <td colSpan={isEditMode ? 7 : 6} className="py-1 px-4">
+                                <td colSpan={isEditMode ? 7 : 6} className="py-2 px-4">
                                   <div className="flex justify-center">
                                     <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 text-[#3d9aa8] hover:text-[#2d7a85] hover:bg-[#3d9aa8]/10"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 px-4 text-xs font-medium text-teal-700 border-teal-300 bg-teal-50 hover:bg-teal-100 hover:text-teal-800 hover:border-teal-400"
                                       onClick={() => {
                                         setAddItemDialogType("activity");
                                         setAddItemDialogParentGoal(group.strategicGoal);
                                         setAddItemDialogParentInit(initGroup.initiative);
                                         setAddItemDialogOpen(true);
                                       }}
-                                      title="إضافة نشاط جديد"
                                     >
-                                      <Plus className="w-4 h-4" />
+                                      <Plus className="w-3.5 h-3.5 ml-1" />
+                                      إضافة نشاط
                                     </Button>
                                   </div>
                                 </td>
@@ -2100,40 +2100,39 @@ export default function OperationalPlans() {
                           rows.push(
                             <tr 
                               key={`add-init-btn-${group.strategicGoal}`} 
-                              className={`${color.bg} border-r-4 ${color.border} hover:bg-blue-50/30 transition-colors border-b-4 border-b-gray-400`}
+                              className={`${color.bg} border-r-4 ${color.border} hover:bg-gray-50/50 transition-colors border-b-4 border-b-gray-400`}
                             >
-                              <td colSpan={isEditMode ? 7 : 6} className="py-1 px-4">
-                                <div className="flex justify-center gap-2">
+                              <td colSpan={isEditMode ? 7 : 6} className="py-3 px-4">
+                                <div className="flex justify-center items-center gap-3">
                                   {/* زر إضافة مبادرة جديدة */}
                                   <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-4 text-xs font-medium text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-400"
                                     onClick={() => {
                                       setAddItemDialogType("initiative");
                                       setAddItemDialogParentGoal(group.strategicGoal);
                                       setAddItemDialogParentInit("");
                                       setAddItemDialogOpen(true);
                                     }}
-                                    title="إضافة مبادرة جديدة"
                                   >
-                                    <Plus className="w-4 h-4" />
+                                    <Plus className="w-3.5 h-3.5 ml-1" />
+                                    إضافة مبادرة
                                   </Button>
                                   {/* زر إضافة نشاط جديد */}
                                   <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-[#3d9aa8] hover:text-[#2d7a85] hover:bg-[#3d9aa8]/10"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-4 text-xs font-medium text-teal-700 border-teal-300 bg-teal-50 hover:bg-teal-100 hover:text-teal-800 hover:border-teal-400"
                                     onClick={() => {
-                                      // فتح دايلوج إضافة نشاط تحت الهدف مباشرة
                                       setAddItemDialogType("activity");
                                       setAddItemDialogParentGoal(group.strategicGoal);
                                       setAddItemDialogParentInit(group.initiatives[group.initiatives.length - 1]?.initiative || "");
                                       setAddItemDialogOpen(true);
                                     }}
-                                    title="إضافة نشاط جديد"
                                   >
-                                    <Plus className="w-4 h-4" />
+                                    <Plus className="w-3.5 h-3.5 ml-1" />
+                                    إضافة نشاط
                                   </Button>
                                 </div>
                               </td>
@@ -2229,11 +2228,12 @@ export default function OperationalPlans() {
                             key="add-goal-btn" 
                             className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
                           >
-                            <td colSpan={isEditMode ? 7 : 6} className="py-2 px-4">
+                            <td colSpan={isEditMode ? 7 : 6} className="py-3 px-4">
+                              <div className="flex justify-center">
                                 <Button
-                                  variant="ghost"
+                                  variant="outline"
                                   size="sm"
-                                  className="w-full text-purple-600 hover:text-purple-800 hover:bg-purple-100 gap-1"
+                                  className="h-8 px-4 text-xs font-medium text-purple-700 border-purple-300 bg-purple-50 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-400"
                                   onClick={() => {
                                     setAddItemDialogType("strategic_goal");
                                     setAddItemDialogParentGoal("");
@@ -2241,9 +2241,10 @@ export default function OperationalPlans() {
                                     setAddItemDialogOpen(true);
                                   }}
                                 >
-                                  <Plus className="w-4 h-4" />
-                                  إضافة هدف استراتيجي جديد
+                                  <Plus className="w-3.5 h-3.5 ml-1" />
+                                  إضافة هدف استراتيجي
                                 </Button>
+                              </div>
                             </td>
                           </tr>
                         );
