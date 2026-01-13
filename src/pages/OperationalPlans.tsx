@@ -105,6 +105,7 @@ export default function OperationalPlans() {
   const [plans, setPlans] = useState<OperationalPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false); // وضع التعديل الشامل
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<{
     activity_name: string;
@@ -759,10 +760,45 @@ export default function OperationalPlans() {
             </p>
           </div>
           
-          <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="w-4 h-4" />
-            إضافة خطة
-          </Button>
+          <div className="flex gap-2">
+            {/* زر وضع التعديل */}
+            <Button 
+              variant={isEditMode ? "default" : "outline"}
+              className={`gap-2 ${isEditMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+              onClick={() => {
+                if (isEditMode) {
+                  // إغلاق وضع التعديل
+                  setIsEditMode(false);
+                  setEditingPlanId(null);
+                  setEditFormData(null);
+                  setIsEditingMonths(null);
+                  setEditingMonthlyTargets({});
+                  setAddingActivityUnder(null);
+                  setNewActivityName("");
+                  setNewActivityTarget("");
+                } else {
+                  setIsEditMode(true);
+                }
+              }}
+            >
+              {isEditMode ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  إنهاء التعديل
+                </>
+              ) : (
+                <>
+                  <Pencil className="w-4 h-4" />
+                  التعديل على الخطة
+                </>
+              )}
+            </Button>
+            
+            <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="w-4 h-4" />
+              إضافة خطة
+            </Button>
+          </div>
           
           <AddOperationalPlanDialog
             open={isAddDialogOpen}
@@ -774,6 +810,36 @@ export default function OperationalPlans() {
             onSubmit={handleDialogSubmit}
           />
         </div>
+        
+        {/* شريط وضع التعديل */}
+        {isEditMode && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <Pencil className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-orange-800">وضع التعديل مفعّل</p>
+                <p className="text-sm text-orange-600">انقر على أي خلية للتعديل، أو استخدم أزرار الإضافة والحذف</p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              className="border-orange-300 text-orange-700 hover:bg-orange-100"
+              onClick={() => {
+                setIsEditMode(false);
+                setEditingPlanId(null);
+                setEditFormData(null);
+                setIsEditingMonths(null);
+                setEditingMonthlyTargets({});
+                setAddingActivityUnder(null);
+              }}
+            >
+              <X className="w-4 h-4 ml-1" />
+              إلغاء التعديل
+            </Button>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1037,7 +1103,7 @@ export default function OperationalPlans() {
                               {/* الإجراء */}
                               <td className="w-24 text-center">
                                 <div className="flex items-center justify-center gap-1">
-                                  {(isAdmin || plan.user_id === authUser?.id) && (
+                                  {isEditMode && (isAdmin || plan.user_id === authUser?.id) && (
                                     <>
                                       {editingPlanId === plan.id ? (
                                         <>
@@ -1066,35 +1132,37 @@ export default function OperationalPlans() {
                                           </Button>
                                         </>
                                       ) : (
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-8 w-8"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setEditingPlanId(plan.id);
-                                            setEditFormData({
-                                              activity_name: plan.activity_name,
-                                              annual_target: plan.annual_target,
-                                              strategic_goal: plan.strategic_goal || '',
-                                              initiative: plan.initiative || '',
-                                            });
-                                          }}
-                                        >
-                                          <Pencil className="w-4 h-4" />
-                                        </Button>
+                                        <>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-8 w-8"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingPlanId(plan.id);
+                                              setEditFormData({
+                                                activity_name: plan.activity_name,
+                                                annual_target: plan.annual_target,
+                                                strategic_goal: plan.strategic_goal || '',
+                                                initiative: plan.initiative || '',
+                                              });
+                                            }}
+                                          >
+                                            <Pencil className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full h-8 w-8"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDeletePlan(plan.id);
+                                            }}
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </Button>
+                                        </>
                                       )}
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full h-8 w-8"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeletePlan(plan.id);
-                                        }}
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
                                     </>
                                   )}
                                 </div>
@@ -1111,48 +1179,50 @@ export default function OperationalPlans() {
                               <tr key={`${plan.id}-expanded`}>
                                 <td colSpan={isAdmin ? 7 : 6} className="p-0">
                                   <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
-                                    {/* أزرار التحكم */}
-                                    <div className="flex justify-end mb-3 gap-2">
-                                      {isEditingThisMonth ? (
-                                        <>
+                                    {/* أزرار التحكم - تظهر فقط في وضع التعديل */}
+                                    {isEditMode && (
+                                      <div className="flex justify-end mb-3 gap-2">
+                                        {isEditingThisMonth ? (
+                                          <>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="text-green-600 hover:bg-green-50"
+                                              onClick={() => handleSaveMonthlyTargets(plan)}
+                                            >
+                                              <Check className="w-4 h-4 ml-1" />
+                                              حفظ
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="text-red-600 hover:bg-red-50"
+                                              onClick={() => {
+                                                setIsEditingMonths(null);
+                                                setEditingMonthlyTargets(prev => {
+                                                  const updated = { ...prev };
+                                                  delete updated[plan.id];
+                                                  return updated;
+                                                });
+                                              }}
+                                            >
+                                              <X className="w-4 h-4 ml-1" />
+                                              إلغاء
+                                            </Button>
+                                          </>
+                                        ) : (
                                           <Button
                                             size="sm"
-                                            variant="ghost"
-                                            className="text-green-600 hover:bg-green-50"
-                                            onClick={() => handleSaveMonthlyTargets(plan)}
+                                            variant="outline"
+                                            className="text-[#3d9aa8] border-[#3d9aa8]/30 hover:bg-[#3d9aa8]/10"
+                                            onClick={() => handleStartEditMonths(plan)}
                                           >
-                                            <Check className="w-4 h-4 ml-1" />
-                                            حفظ
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-red-600 hover:bg-red-50"
-                                            onClick={() => {
-                                              setIsEditingMonths(null);
-                                              setEditingMonthlyTargets(prev => {
-                                                const updated = { ...prev };
-                                                delete updated[plan.id];
-                                                return updated;
-                                              });
-                                            }}
-                                          >
-                                            <X className="w-4 h-4 ml-1" />
-                                            إلغاء
-                                          </Button>
-                                        </>
-                                      ) : (
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="text-[#3d9aa8] border-[#3d9aa8]/30 hover:bg-[#3d9aa8]/10"
-                                          onClick={() => handleStartEditMonths(plan)}
-                                        >
-                                          <Pencil className="w-4 h-4 ml-1" />
-                                          تعديل الأهداف الشهرية
+                                            <Pencil className="w-4 h-4 ml-1" />
+                                            تعديل الأهداف الشهرية
                                         </Button>
-                                      )}
-                                    </div>
+                                        )}
+                                      </div>
+                                    )}
                                     
                                     <div className="overflow-x-auto rounded-xl border border-[#3d9aa8]/20 shadow-sm">
                                       <Table>
@@ -1222,91 +1292,91 @@ export default function OperationalPlans() {
                           initRowRendered = true;
                         });
                         
-                        // صف إضافة نشاط جديد تحت هذه المبادرة
-                        const isAddingHere = addingActivityUnder?.strategicGoal === group.strategicGoal && 
-                                             addingActivityUnder?.initiative === initGroup.initiative;
-                        
-                        if (isAddingHere) {
-                          rows.push(
-                            <tr 
-                              key={`add-activity-${group.strategicGoal}-${initGroup.initiative}`} 
-                              className={`${color.bg} border-r-4 ${color.border} bg-green-50/50`}
-                            >
-                              <td className="py-2 px-2"></td>
-                              <td className="py-2 px-2"></td>
-                              <td className="py-2 px-4 border-l-2 border-gray-300">
-                                <Input
-                                  value={newActivityName}
-                                  onChange={(e) => setNewActivityName(e.target.value)}
-                                  className="h-8 text-sm"
-                                  placeholder="اسم النشاط الجديد"
-                                  autoFocus
-                                />
-                              </td>
-                              {isAdmin && <td className="py-2 px-2"></td>}
-                              <td className="py-2 px-2 border-l-2 border-gray-300">
-                                <Input
-                                  type="number"
-                                  value={newActivityTarget}
-                                  onChange={(e) => setNewActivityTarget(e.target.value)}
-                                  className="h-8 text-sm text-center"
-                                  placeholder="المستهدف"
-                                />
-                              </td>
-                              <td className="py-2 px-2"></td>
-                              <td className="py-2 px-2 text-center">
-                                <div className="flex justify-center gap-1">
+                        // صف إضافة نشاط جديد تحت هذه المبادرة (يظهر فقط في وضع التعديل)
+                        if (isEditMode) {
+                          const isAddingHere = addingActivityUnder?.strategicGoal === group.strategicGoal && 
+                                               addingActivityUnder?.initiative === initGroup.initiative;
+                          
+                          if (isAddingHere) {
+                            rows.push(
+                              <tr 
+                                key={`add-activity-${group.strategicGoal}-${initGroup.initiative}`} 
+                                className={`${color.bg} border-r-4 ${color.border} bg-green-50/50`}
+                              >
+                                <td className="py-2 px-2"></td>
+                                <td className="py-2 px-2"></td>
+                                <td className="py-2 px-4 border-l-2 border-gray-300">
+                                  <Input
+                                    value={newActivityName}
+                                    onChange={(e) => setNewActivityName(e.target.value)}
+                                    className="h-8 text-sm"
+                                    placeholder="اسم النشاط الجديد"
+                                    autoFocus
+                                  />
+                                </td>
+                                {isAdmin && <td className="py-2 px-2"></td>}
+                                <td className="py-2 px-2 border-l-2 border-gray-300">
+                                  <Input
+                                    type="number"
+                                    value={newActivityTarget}
+                                    onChange={(e) => setNewActivityTarget(e.target.value)}
+                                    className="h-8 text-sm text-center"
+                                    placeholder="المستهدف"
+                                  />
+                                </td>
+                                <td className="py-2 px-2"></td>
+                                <td className="py-2 px-2 text-center">
+                                  <div className="flex justify-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-green-600 hover:bg-green-100 rounded-full h-8 w-8"
+                                      onClick={handleAddActivityUnder}
+                                      disabled={!newActivityName.trim()}
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-red-600 hover:bg-red-100 rounded-full h-8 w-8"
+                                      onClick={() => {
+                                        setAddingActivityUnder(null);
+                                        setNewActivityName("");
+                                        setNewActivityTarget("");
+                                      }}
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          } else {
+                            // زر إضافة نشاط جديد في نهاية كل مبادرة
+                            rows.push(
+                              <tr 
+                                key={`add-btn-${group.strategicGoal}-${initGroup.initiative}`} 
+                                className={`${color.bg} border-r-4 ${color.border} hover:bg-green-50/30 transition-colors`}
+                              >
+                                <td colSpan={isAdmin ? 7 : 6} className="py-1 px-4">
                                   <Button
                                     variant="ghost"
-                                    size="icon"
-                                    className="text-green-600 hover:bg-green-100 rounded-full h-8 w-8"
-                                    onClick={handleAddActivityUnder}
-                                    disabled={!newActivityName.trim()}
+                                    size="sm"
+                                    className="w-full text-[#3d9aa8] hover:text-[#2d7a85] hover:bg-[#3d9aa8]/10 gap-1"
+                                    onClick={() => setAddingActivityUnder({
+                                      strategicGoal: group.strategicGoal,
+                                      initiative: initGroup.initiative,
+                                      userId: initGroup.plans[0]?.user_id || authUser!.id
+                                    })}
                                   >
-                                    <Check className="w-4 h-4" />
+                                    <Plus className="w-4 h-4" />
+                                    إضافة نشاط جديد
                                   </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-red-600 hover:bg-red-100 rounded-full h-8 w-8"
-                                    onClick={() => {
-                                      setAddingActivityUnder(null);
-                                      setNewActivityName("");
-                                      setNewActivityTarget("");
-                                    }}
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        }
-                        
-                        // زر إضافة نشاط جديد في نهاية كل مبادرة
-                        if (!isAddingHere) {
-                          rows.push(
-                            <tr 
-                              key={`add-btn-${group.strategicGoal}-${initGroup.initiative}`} 
-                              className={`${color.bg} border-r-4 ${color.border} hover:bg-green-50/30 transition-colors`}
-                            >
-                              <td colSpan={isAdmin ? 7 : 6} className="py-1 px-4">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full text-[#3d9aa8] hover:text-[#2d7a85] hover:bg-[#3d9aa8]/10 gap-1"
-                                  onClick={() => setAddingActivityUnder({
-                                    strategicGoal: group.strategicGoal,
-                                    initiative: initGroup.initiative,
-                                    userId: initGroup.plans[0]?.user_id || authUser!.id
-                                  })}
-                                >
-                                  <Plus className="w-4 h-4" />
-                                  إضافة نشاط جديد
-                                </Button>
-                              </td>
-                            </tr>
-                          );
+                                </td>
+                              </tr>
+                            );
+                          }
                         }
                       });
                     });
