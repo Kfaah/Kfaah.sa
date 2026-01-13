@@ -70,6 +70,13 @@ interface Employee {
   id: string;
   user_id: string;
   full_name: string;
+  department_id?: string | null;
+}
+
+interface Department {
+  id: string;
+  name: string;
+  color?: string;
 }
 
 interface StrategicGoal {
@@ -77,12 +84,14 @@ interface StrategicGoal {
   name: string;
   color: string;
   year: number;
+  departments?: Department[];
 }
 
 interface Initiative {
   id: string;
   strategic_goal_id: string;
   name: string;
+  departments?: Department[];
 }
 
 interface ColumnDef {
@@ -96,11 +105,12 @@ interface ColumnDef {
 
 const createDefaultColumns = (): ColumnDef[] => [
   { id: 'action', label: 'إجراء', width: '70px', editable: false, removable: false, isCustom: false },
-  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '10%', editable: true, removable: true, isCustom: false },
-  { id: 'annualTarget', label: 'المستهدف السنوي', width: '10%', editable: true, removable: true, isCustom: false },
-  { id: 'activity', label: 'النشاط', width: '20%', editable: true, removable: true, isCustom: false },
-  { id: 'initiative', label: 'المبادرة', width: '20%', editable: true, removable: true, isCustom: false },
-  { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '20%', editable: true, removable: true, isCustom: false },
+  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '8%', editable: true, removable: true, isCustom: false },
+  { id: 'annualTarget', label: 'المستهدف السنوي', width: '8%', editable: true, removable: true, isCustom: false },
+  { id: 'responsibleEmployee', label: 'المنفذ', width: '12%', editable: false, removable: false, isCustom: false },
+  { id: 'activity', label: 'النشاط', width: '18%', editable: true, removable: true, isCustom: false },
+  { id: 'initiative', label: 'المبادرة', width: '18%', editable: true, removable: true, isCustom: false },
+  { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '18%', editable: true, removable: true, isCustom: false },
   { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
 ];
 
@@ -128,6 +138,8 @@ interface TableRowData {
   initiative: string;
   initiativeId?: string;
   activity: string;
+  responsibleEmployeeId?: string;
+  responsibleEmployeeName?: string;
   annualTarget: number;
   monthlyAverage: number;
   goalRowSpan: number;
@@ -154,6 +166,7 @@ interface LocalActivity {
   id: string;
   name: string;
   annualTarget: number;
+  responsibleEmployeeId?: string;
 }
 
 interface LocalInitiative {
@@ -369,6 +382,8 @@ function SortableRow({
   draggedCell,
   startCellDrag,
   dropCellOnCell,
+  employees,
+  updateResponsibleEmployee,
 }: {
   row: TableRowData;
   index: number;
@@ -391,6 +406,8 @@ function SortableRow({
   draggedCell: { rowId: string; colId: string } | null;
   startCellDrag: (rowId: string, colId: string) => void;
   dropCellOnCell: (targetRowId: string, targetColId: string) => void;
+  employees: Employee[];
+  updateResponsibleEmployee: (rowId: string, employeeId: string, employeeName: string) => void;
 }) {
   const {
     attributes,
@@ -684,6 +701,34 @@ function SortableRow({
                 placeholder="النشاط..."
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
               />
+            </TableCell>
+          );
+        }
+
+        // عمود الموظف المنفذ
+        if (col.id === 'responsibleEmployee') {
+          return (
+            <TableCell key={col.id} className="border-l p-1">
+              <Select
+                value={row.responsibleEmployeeId || ""}
+                onValueChange={(value) => {
+                  const emp = employees.find(e => e.id === value);
+                  if (emp) {
+                    updateResponsibleEmployee(row.id, emp.id, emp.full_name);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs border-0 bg-transparent hover:bg-muted/50">
+                  <SelectValue placeholder="اختر المنفذ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id} className="text-xs">
+                      {emp.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </TableCell>
           );
         }
@@ -1195,6 +1240,8 @@ export function AddOperationalPlanDialog({
       strategicGoal: "",
       initiative: "",
       activity: "",
+      responsibleEmployeeId: undefined,
+      responsibleEmployeeName: undefined,
       annualTarget: 0,
       monthlyAverage: 0,
       goalRowSpan: 1,
@@ -1235,6 +1282,15 @@ export function AddOperationalPlanDialog({
       }
       return row;
     }));
+  }, []);
+
+  // تحديث الموظف المنفذ للصف
+  const updateResponsibleEmployee = useCallback((rowId: string, employeeId: string, employeeName: string) => {
+    setRows(prev => prev.map(row => 
+      row.id === rowId 
+        ? { ...row, responsibleEmployeeId: employeeId, responsibleEmployeeName: employeeName }
+        : row
+    ));
   }, []);
 
   // حفظ الحالة قبل بدء التعديل (عند التركيز على الحقل)
@@ -1621,6 +1677,7 @@ export function AddOperationalPlanDialog({
         id: generateId(),
         name: row.activity,
         annualTarget: row.annualTarget,
+        responsibleEmployeeId: row.responsibleEmployeeId,
       });
     });
 
@@ -1661,6 +1718,8 @@ export function AddOperationalPlanDialog({
       strategicGoal: "",
       initiative: "",
       activity: "",
+      responsibleEmployeeId: undefined,
+      responsibleEmployeeName: undefined,
       annualTarget: 0,
       monthlyAverage: 0,
       goalRowSpan: 1,
@@ -1972,6 +2031,8 @@ export function AddOperationalPlanDialog({
                               draggedCell={draggedCell}
                               startCellDrag={startCellDrag}
                               dropCellOnCell={dropCellOnCell}
+                              employees={employees}
+                              updateResponsibleEmployee={updateResponsibleEmployee}
                             />
                           ))}
                         </SortableContext>
