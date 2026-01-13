@@ -15,10 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Target, Folder, Activity, User, Trash2, Save, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Target, Folder, Activity, User, Trash2, Save, X, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Employee {
   id: string;
@@ -40,6 +42,7 @@ interface StrategicGoal {
   year: number;
   department_id: string | null;
   department_name?: string;
+  departments?: Department[];
 }
 
 interface Initiative {
@@ -48,6 +51,7 @@ interface Initiative {
   name: string;
   department_id: string | null;
   department_name?: string;
+  departments?: Department[];
 }
 
 interface OperationalPlan {
@@ -104,27 +108,54 @@ export function EditPlanDialog({
 
   // الهدف الاستراتيجي
   const [goalName, setGoalName] = useState("");
-  const [goalDepartmentId, setGoalDepartmentId] = useState<string>("none");
+  const [goalDepartmentIds, setGoalDepartmentIds] = useState<string[]>([]);
 
   // المبادرة
   const [initName, setInitName] = useState("");
-  const [initDepartmentId, setInitDepartmentId] = useState<string>("none");
+  const [initDepartmentIds, setInitDepartmentIds] = useState<string[]>([]);
 
   // النشاط
   const [activityName, setActivityName] = useState("");
   const [annualTarget, setAnnualTarget] = useState<number>(0);
   const [responsibleEmployeeId, setResponsibleEmployeeId] = useState<string>("none");
 
+  // تحميل الأقسام المرتبطة
+  const loadGoalDepartments = async (goalId: string) => {
+    const { data } = await supabase
+      .from("strategic_goal_departments")
+      .select("department_id")
+      .eq("strategic_goal_id", goalId);
+    if (data) {
+      setGoalDepartmentIds(data.map(d => d.department_id));
+    }
+  };
+
+  const loadInitDepartments = async (initId: string) => {
+    const { data } = await supabase
+      .from("initiative_departments")
+      .select("department_id")
+      .eq("initiative_id", initId);
+    if (data) {
+      setInitDepartmentIds(data.map(d => d.department_id));
+    }
+  };
+
   useEffect(() => {
     if (open) {
       if (editType === "strategic_goal" && strategicGoalName) {
         const goal = strategicGoals.find(g => g.name === strategicGoalName);
         setGoalName(strategicGoalName);
-        setGoalDepartmentId(goal?.department_id || "none");
+        setGoalDepartmentIds([]);
+        if (goal) {
+          loadGoalDepartments(goal.id);
+        }
       } else if (editType === "initiative" && initiativeName) {
         const init = initiatives.find(i => i.name === initiativeName);
         setInitName(initiativeName);
-        setInitDepartmentId(init?.department_id || "none");
+        setInitDepartmentIds([]);
+        if (init) {
+          loadInitDepartments(init.id);
+        }
       } else if (editType === "activity" && plan) {
         setActivityName(plan.activity_name);
         setAnnualTarget(plan.annual_target);
@@ -133,20 +164,52 @@ export function EditPlanDialog({
     }
   }, [open, editType, plan, strategicGoalName, initiativeName, strategicGoals, initiatives]);
 
+  const handleToggleDepartment = (deptId: string, type: "goal" | "init") => {
+    if (type === "goal") {
+      setGoalDepartmentIds(prev => 
+        prev.includes(deptId) 
+          ? prev.filter(id => id !== deptId)
+          : [...prev, deptId]
+      );
+    } else {
+      setInitDepartmentIds(prev => 
+        prev.includes(deptId) 
+          ? prev.filter(id => id !== deptId)
+          : [...prev, deptId]
+      );
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
       if (editType === "strategic_goal") {
         const goal = strategicGoals.find(g => g.name === strategicGoalName);
         if (goal) {
+          // تحديث اسم الهدف
           const { error } = await supabase
             .from("strategic_goals")
-            .update({
-              name: goalName,
-              department_id: goalDepartmentId === "none" ? null : goalDepartmentId,
-            })
+            .update({ name: goalName })
             .eq("id", goal.id);
           if (error) throw error;
+
+          // حذف الأقسام القديمة وإضافة الجديدة
+          await supabase
+            .from("strategic_goal_departments")
+            .delete()
+            .eq("strategic_goal_id", goal.id);
+
+          if (goalDepartmentIds.length > 0) {
+            const { error: insertError } = await supabase
+              .from("strategic_goal_departments")
+              .insert(
+                goalDepartmentIds.map(deptId => ({
+                  strategic_goal_id: goal.id,
+                  department_id: deptId,
+                }))
+              );
+            if (insertError) throw insertError;
+          }
 
           // تحديث اسم الهدف في الخطط
           if (goalName !== strategicGoalName) {
@@ -160,14 +223,30 @@ export function EditPlanDialog({
       } else if (editType === "initiative") {
         const init = initiatives.find(i => i.name === initiativeName);
         if (init) {
+          // تحديث اسم المبادرة
           const { error } = await supabase
             .from("initiatives")
-            .update({
-              name: initName,
-              department_id: initDepartmentId === "none" ? null : initDepartmentId,
-            })
+            .update({ name: initName })
             .eq("id", init.id);
           if (error) throw error;
+
+          // حذف الأقسام القديمة وإضافة الجديدة
+          await supabase
+            .from("initiative_departments")
+            .delete()
+            .eq("initiative_id", init.id);
+
+          if (initDepartmentIds.length > 0) {
+            const { error: insertError } = await supabase
+              .from("initiative_departments")
+              .insert(
+                initDepartmentIds.map(deptId => ({
+                  initiative_id: init.id,
+                  department_id: deptId,
+                }))
+              );
+            if (insertError) throw insertError;
+          }
 
           // تحديث اسم المبادرة في الخطط
           if (initName !== initiativeName) {
@@ -212,14 +291,22 @@ export function EditPlanDialog({
     }
   };
 
-  // الحصول على الموظفين حسب القسم
+  // الحصول على الموظفين حسب الأقسام المالكة
   const getFilteredEmployees = () => {
     if (editType !== "activity" || !plan) return employees;
+    
+    // الحصول على أقسام المبادرة أو الهدف
     const init = initiatives.find(i => i.name === plan.initiative);
     const goal = strategicGoals.find(g => g.name === plan.strategic_goal);
-    const deptId = init?.department_id || goal?.department_id;
-    if (!deptId) return employees;
-    return employees.filter(e => e.department_id === deptId);
+    
+    // في حالة تعدد المالكين، نجمع كل الموظفين من الأقسام المالكة
+    const initDepts = init?.departments?.map(d => d.id) || (init?.department_id ? [init.department_id] : []);
+    const goalDepts = goal?.departments?.map(d => d.id) || (goal?.department_id ? [goal.department_id] : []);
+    
+    const allDepts = [...new Set([...initDepts, ...goalDepts])];
+    
+    if (allDepts.length === 0) return employees;
+    return employees.filter(e => e.department_id && allDepts.includes(e.department_id));
   };
 
   const getTitle = () => {
@@ -244,6 +331,65 @@ export function EditPlanDialog({
     }
   };
 
+  const DepartmentSelector = ({ 
+    selectedIds, 
+    onToggle, 
+    label 
+  }: { 
+    selectedIds: string[]; 
+    onToggle: (id: string) => void;
+    label: string;
+  }) => (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-1">
+        <Building2 className="w-4 h-4" />
+        {label}
+      </Label>
+      <div className="border rounded-lg p-3 bg-muted/30">
+        {selectedIds.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {selectedIds.map(deptId => {
+              const dept = departments.find(d => d.id === deptId);
+              return dept ? (
+                <Badge 
+                  key={deptId} 
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => onToggle(deptId)}
+                >
+                  {dept.name}
+                  <X className="w-3 h-3" />
+                </Badge>
+              ) : null;
+            })}
+          </div>
+        )}
+        <ScrollArea className="h-32">
+          <div className="space-y-2">
+            {departments.map((dept) => (
+              <div key={dept.id} className="flex items-center gap-2">
+                <Checkbox
+                  id={`dept-${dept.id}`}
+                  checked={selectedIds.includes(dept.id)}
+                  onCheckedChange={() => onToggle(dept.id)}
+                />
+                <label
+                  htmlFor={`dept-${dept.id}`}
+                  className="text-sm font-medium leading-none cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {dept.name}
+                </label>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+      {selectedIds.length === 0 && (
+        <p className="text-xs text-muted-foreground">لم يتم تحديد أي قسم</p>
+      )}
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -265,25 +411,11 @@ export function EditPlanDialog({
                   placeholder="أدخل اسم الهدف"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1">
-                  <span className="text-xs">📍</span>
-                  مالك الهدف (القسم)
-                </Label>
-                <Select value={goalDepartmentId} onValueChange={setGoalDepartmentId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر القسم المالك" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">بدون قسم</SelectItem>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <DepartmentSelector
+                selectedIds={goalDepartmentIds}
+                onToggle={(id) => handleToggleDepartment(id, "goal")}
+                label="الأقسام المالكة للهدف (يمكن اختيار أكثر من قسم)"
+              />
             </>
           )}
 
@@ -297,25 +429,11 @@ export function EditPlanDialog({
                   placeholder="أدخل اسم المبادرة"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1">
-                  <span className="text-xs">📍</span>
-                  مالك المبادرة (القسم)
-                </Label>
-                <Select value={initDepartmentId} onValueChange={setInitDepartmentId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر القسم المالك" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">بدون قسم</SelectItem>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <DepartmentSelector
+                selectedIds={initDepartmentIds}
+                onToggle={(id) => handleToggleDepartment(id, "init")}
+                label="الأقسام المالكة للمبادرة (يمكن اختيار أكثر من قسم)"
+              />
             </>
           )}
 
@@ -341,7 +459,7 @@ export function EditPlanDialog({
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">
                   <User className="w-4 h-4" />
-                  مسؤول التنفيذ
+                  مسؤول التنفيذ (مالك واحد فقط)
                 </Label>
                 <Select value={responsibleEmployeeId} onValueChange={setResponsibleEmployeeId}>
                   <SelectTrigger>
@@ -357,7 +475,7 @@ export function EditPlanDialog({
                   </SelectContent>
                 </Select>
                 {getFilteredEmployees().length === 0 && (
-                  <p className="text-xs text-muted-foreground">لا يوجد موظفين مسجلين في قسم مالك المبادرة</p>
+                  <p className="text-xs text-muted-foreground">لا يوجد موظفين مسجلين في أقسام المالكين</p>
                 )}
               </div>
             </>

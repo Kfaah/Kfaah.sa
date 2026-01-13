@@ -639,6 +639,42 @@ export type Database = {
           },
         ]
       }
+      initiative_departments: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          initiative_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          initiative_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          initiative_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "initiative_departments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "initiative_departments_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       initiatives: {
         Row: {
           created_at: string
@@ -944,6 +980,42 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      strategic_goal_departments: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          strategic_goal_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          strategic_goal_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          strategic_goal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_goal_departments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_goal_departments_strategic_goal_id_fkey"
+            columns: ["strategic_goal_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       strategic_goals: {
         Row: {
