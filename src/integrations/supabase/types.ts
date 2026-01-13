@@ -840,6 +840,107 @@ export type Database = {
           },
         ]
       }
+      operational_plan_custom_columns: {
+        Row: {
+          column_type: Database["public"]["Enums"]["custom_column_type"]
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          column_type: Database["public"]["Enums"]["custom_column_type"]
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          column_type?: Database["public"]["Enums"]["custom_column_type"]
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      operational_plan_custom_values: {
+        Row: {
+          column_id: string
+          created_at: string
+          date_value: string | null
+          department_id: string | null
+          employee_id: string | null
+          id: string
+          number_value: number | null
+          operational_plan_id: string
+          text_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          column_id: string
+          created_at?: string
+          date_value?: string | null
+          department_id?: string | null
+          employee_id?: string | null
+          id?: string
+          number_value?: number | null
+          operational_plan_id: string
+          text_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          column_id?: string
+          created_at?: string
+          date_value?: string | null
+          department_id?: string | null
+          employee_id?: string | null
+          id?: string
+          number_value?: number | null
+          operational_plan_id?: string
+          text_value?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_plan_custom_values_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "operational_plan_custom_columns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_plan_custom_values_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_plan_custom_values_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_plan_custom_values_operational_plan_id_fkey"
+            columns: ["operational_plan_id"]
+            isOneToOne: false
+            referencedRelation: "operational_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operational_plan_months: {
         Row: {
           created_at: string
@@ -1297,6 +1398,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "time_editor"
+      custom_column_type: "text" | "number" | "date" | "department" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1425,6 +1527,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user", "time_editor"],
+      custom_column_type: ["text", "number", "date", "department", "employee"],
     },
   },
 } as const

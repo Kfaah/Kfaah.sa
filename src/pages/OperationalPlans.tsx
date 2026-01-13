@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle, ArrowUp, ArrowDown, Columns } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AddOperationalPlanDialog } from "@/components/operational-plans/AddOperationalPlanDialog";
 import { EditPlanDialog } from "@/components/operational-plans/EditPlanDialog";
 import { AddItemDialog } from "@/components/operational-plans/AddItemDialog";
+import { ManageCustomColumnsDialog } from "@/components/operational-plans/ManageCustomColumnsDialog";
 import { formatNumber } from "@/lib/utils";
 
 interface Employee {
@@ -211,6 +212,17 @@ export default function OperationalPlans() {
   const [reorderActivities, setReorderActivities] = useState<OperationalPlan[]>([]);
   const [reorderActivitiesInitiative, setReorderActivitiesInitiative] = useState<string>("");
   const [reorderActivitiesGoal, setReorderActivitiesGoal] = useState<string>("");
+  
+  // نافذة إدارة الأعمدة المخصصة
+  const [isManageColumnsDialogOpen, setIsManageColumnsDialogOpen] = useState(false);
+  const [customColumns, setCustomColumns] = useState<{
+    id: string;
+    name: string;
+    column_type: "text" | "number" | "date" | "department" | "employee";
+    display_order: number;
+    is_required: boolean;
+    is_active: boolean;
+  }[]>([]);
 
   // Form state
   const [strategicGoal, setStrategicGoal] = useState("");
@@ -251,7 +263,23 @@ export default function OperationalPlans() {
     fetchDepartments();
     // قائمة الموظفين مطلوبة لاختيار مسؤول التنفيذ داخل تعديل النشاط
     fetchEmployees();
+    fetchCustomColumns();
   }, [authUser, isAdmin]);
+
+  const fetchCustomColumns = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("operational_plan_custom_columns")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+      setCustomColumns(data || []);
+    } catch (error) {
+      console.error("Error fetching custom columns:", error);
+    }
+  };
 
   const fetchDepartments = async () => {
     try {
@@ -1406,6 +1434,14 @@ export default function OperationalPlans() {
                 <ArrowUp className="w-4 h-4 ml-1" />
                 <ArrowDown className="w-4 h-4" />
                 ترتيب الأنشطة
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                onClick={() => setIsManageColumnsDialogOpen(true)}
+              >
+                <Columns className="w-4 h-4 ml-1" />
+                إدارة الأعمدة
               </Button>
               <Button 
                 variant="outline" 
@@ -2578,6 +2614,13 @@ export default function OperationalPlans() {
             </div>
           </div>
         )}
+
+        {/* نافذة إدارة الأعمدة المخصصة */}
+        <ManageCustomColumnsDialog
+          open={isManageColumnsDialogOpen}
+          onOpenChange={setIsManageColumnsDialogOpen}
+          onColumnsChange={fetchCustomColumns}
+        />
       </div>
     </DashboardLayout>
   );
