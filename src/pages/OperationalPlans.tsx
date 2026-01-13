@@ -572,7 +572,30 @@ export default function OperationalPlans() {
 
   // فتح نافذة ترتيب الأهداف
   const openReorderDialog = () => {
-    setReorderGoals([...strategicGoals]);
+    // استخراج الأهداف الفريدة من الخطط الموجودة
+    const uniqueGoalNames = [...new Set(plans.map(p => p.strategic_goal).filter(Boolean))] as string[];
+    
+    // مطابقة مع strategicGoals للحصول على البيانات الكاملة مع الترتيب
+    const goalsFromPlans: StrategicGoal[] = uniqueGoalNames.map(goalName => {
+      const matchedGoal = strategicGoals.find(g => g.name === goalName);
+      if (matchedGoal) {
+        return matchedGoal;
+      }
+      // إذا لم يوجد في قاعدة البيانات، أنشئ كائن مؤقت
+      return {
+        id: goalName, // استخدم الاسم كمعرف مؤقت
+        name: goalName,
+        color: 'bg-gray-500',
+        year: year,
+        department_id: null,
+        display_order: 999
+      };
+    });
+    
+    // ترتيب حسب display_order
+    goalsFromPlans.sort((a, b) => (a.display_order || 999) - (b.display_order || 999));
+    
+    setReorderGoals(goalsFromPlans);
     setIsReorderDialogOpen(true);
   };
 
@@ -1266,8 +1289,18 @@ export default function OperationalPlans() {
                       goalData.initiatives.get(init)!.push(plan);
                     });
                     
+                    // ترتيب الأهداف حسب display_order من strategicGoals
+                    const sortedGoalNames = [...goalMap.keys()].sort((a, b) => {
+                      const goalA = strategicGoals.find(g => g.name === a);
+                      const goalB = strategicGoals.find(g => g.name === b);
+                      const orderA = goalA?.display_order ?? 999;
+                      const orderB = goalB?.display_order ?? 999;
+                      return orderA - orderB;
+                    });
+                    
                     let colorIndex = 0;
-                    goalMap.forEach((goalData, goalName) => {
+                    sortedGoalNames.forEach((goalName) => {
+                      const goalData = goalMap.get(goalName)!;
                       const inits: { initiative: string; plans: OperationalPlan[] }[] = [];
                       goalData.initiatives.forEach((plans, initName) => {
                         inits.push({ initiative: initName, plans });
