@@ -120,15 +120,15 @@ export function EditPlanDialog({
       if (editType === "strategic_goal" && strategicGoalName) {
         const goal = strategicGoals.find(g => g.name === strategicGoalName);
         setGoalName(strategicGoalName);
-        setGoalDepartmentId(goal?.department_id || "");
+        setGoalDepartmentId(goal?.department_id || "none");
       } else if (editType === "initiative" && initiativeName) {
         const init = initiatives.find(i => i.name === initiativeName);
         setInitName(initiativeName);
-        setInitDepartmentId(init?.department_id || "");
+        setInitDepartmentId(init?.department_id || "none");
       } else if (editType === "activity" && plan) {
         setActivityName(plan.activity_name);
         setAnnualTarget(plan.annual_target);
-        setResponsibleEmployeeId(plan.responsible_employee_id || "");
+        setResponsibleEmployeeId(plan.responsible_employee_id || "none");
       }
     }
   }, [open, editType, plan, strategicGoalName, initiativeName, strategicGoals, initiatives]);
@@ -143,7 +143,7 @@ export function EditPlanDialog({
             .from("strategic_goals")
             .update({
               name: goalName,
-              department_id: goalDepartmentId || null,
+              department_id: goalDepartmentId === "none" ? null : goalDepartmentId,
             })
             .eq("id", goal.id);
           if (error) throw error;
@@ -164,7 +164,7 @@ export function EditPlanDialog({
             .from("initiatives")
             .update({
               name: initName,
-              department_id: initDepartmentId || null,
+              department_id: initDepartmentId === "none" ? null : initDepartmentId,
             })
             .eq("id", init.id);
           if (error) throw error;
@@ -184,7 +184,7 @@ export function EditPlanDialog({
           .update({
             activity_name: activityName,
             annual_target: annualTarget,
-            responsible_employee_id: responsibleEmployeeId || null,
+            responsible_employee_id: responsibleEmployeeId === "none" ? null : responsibleEmployeeId,
           })
           .eq("id", plan.id);
         if (error) throw error;
@@ -275,7 +275,7 @@ export function EditPlanDialog({
                     <SelectValue placeholder="اختر القسم المالك" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">بدون قسم</SelectItem>
+                    <SelectItem value="none">بدون قسم</SelectItem>
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
@@ -307,7 +307,7 @@ export function EditPlanDialog({
                     <SelectValue placeholder="اختر القسم المالك" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">بدون قسم</SelectItem>
+                    <SelectItem value="none">بدون قسم</SelectItem>
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
@@ -348,7 +348,7 @@ export function EditPlanDialog({
                     <SelectValue placeholder="اختر مسؤول التنفيذ" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">بدون مسؤول</SelectItem>
+                    <SelectItem value="none">بدون مسؤول</SelectItem>
                     {getFilteredEmployees().map((emp) => (
                       <SelectItem key={emp.id} value={emp.id}>
                         {emp.full_name}
