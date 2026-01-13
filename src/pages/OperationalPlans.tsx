@@ -200,11 +200,13 @@ export default function OperationalPlans() {
   const [reorderGoals, setReorderGoals] = useState<StrategicGoal[]>([]);
   
   // نافذة ترتيب المبادرات
+  const [isSelectGoalForInitiativesOpen, setIsSelectGoalForInitiativesOpen] = useState(false);
   const [isReorderInitiativesDialogOpen, setIsReorderInitiativesDialogOpen] = useState(false);
   const [reorderInitiatives, setReorderInitiatives] = useState<{name: string; id?: string; display_order?: number}[]>([]);
   const [reorderInitiativesGoal, setReorderInitiativesGoal] = useState<string>("");
   
   // نافذة ترتيب الأنشطة
+  const [isSelectInitiativeForActivitiesOpen, setIsSelectInitiativeForActivitiesOpen] = useState(false);
   const [isReorderActivitiesDialogOpen, setIsReorderActivitiesDialogOpen] = useState(false);
   const [reorderActivities, setReorderActivities] = useState<OperationalPlan[]>([]);
   const [reorderActivitiesInitiative, setReorderActivitiesInitiative] = useState<string>("");
@@ -1284,15 +1286,33 @@ export default function OperationalPlans() {
                 <p className="text-sm text-orange-600">انقر على أي خلية للتعديل، أو استخدم أزرار الإضافة والحذف</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button 
                 variant="outline" 
                 className="border-primary/30 text-primary hover:bg-primary/10"
                 onClick={openReorderDialog}
               >
                 <ArrowUp className="w-4 h-4 ml-1" />
-                <ArrowDown className="w-4 h-4 ml-1" />
+                <ArrowDown className="w-4 h-4" />
                 ترتيب الأهداف
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                onClick={() => setIsSelectGoalForInitiativesOpen(true)}
+              >
+                <ArrowUp className="w-4 h-4 ml-1" />
+                <ArrowDown className="w-4 h-4" />
+                ترتيب المبادرات
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-green-300 text-green-700 hover:bg-green-50"
+                onClick={() => setIsSelectInitiativeForActivitiesOpen(true)}
+              >
+                <ArrowUp className="w-4 h-4 ml-1" />
+                <ArrowDown className="w-4 h-4" />
+                ترتيب الأنشطة
               </Button>
               <Button 
                 variant="outline" 
@@ -1533,33 +1553,18 @@ export default function OperationalPlans() {
                                       )}
                                     </div>
                                     {isEditMode && (
-                                      <div className="flex flex-col gap-1 flex-shrink-0">
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-blue-600 hover:bg-blue-50"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            openReorderInitiativesDialog(group.strategicGoal);
-                                          }}
-                                          title="ترتيب المبادرات"
-                                        >
-                                          <ArrowUp className="w-3 h-3" />
-                                          <ArrowDown className="w-3 h-3 -mr-1" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
-                                          onClick={() => {
-                                            const actualGoalName = goalData?.name || group.strategicGoal;
-                                            openEditDialog("strategic_goal", actualGoalName, undefined, plan);
-                                          }}
-                                          title="تعديل الهدف"
-                                        >
-                                          <Settings2 className="w-3 h-3" />
-                                        </Button>
-                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
+                                        onClick={() => {
+                                          const actualGoalName = goalData?.name || group.strategicGoal;
+                                          openEditDialog("strategic_goal", actualGoalName, undefined, plan);
+                                        }}
+                                        title="تعديل الهدف"
+                                      >
+                                        <Settings2 className="w-3.5 h-3.5" />
+                                      </Button>
                                     )}
                                   </div>
                                 </td>
@@ -1590,33 +1595,18 @@ export default function OperationalPlans() {
                                       )}
                                     </div>
                                     {isEditMode && (
-                                      <div className="flex flex-col gap-1 flex-shrink-0">
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-green-600 hover:bg-green-50"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            openReorderActivitiesDialog(group.strategicGoal, initGroup.initiative);
-                                          }}
-                                          title="ترتيب الأنشطة"
-                                        >
-                                          <ArrowUp className="w-3 h-3" />
-                                          <ArrowDown className="w-3 h-3 -mr-1" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
-                                          onClick={() => {
-                                            const actualInitName = initData?.name || initGroup.initiative;
-                                            openEditDialog("initiative", group.strategicGoal, actualInitName, plan);
-                                          }}
-                                          title="تعديل المبادرة"
-                                        >
-                                          <Settings2 className="w-3 h-3" />
-                                        </Button>
-                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
+                                        onClick={() => {
+                                          const actualInitName = initData?.name || initGroup.initiative;
+                                          openEditDialog("initiative", group.strategicGoal, actualInitName, plan);
+                                        }}
+                                        title="تعديل المبادرة"
+                                      >
+                                        <Settings2 className="w-3.5 h-3.5" />
+                                      </Button>
                                     )}
                                   </div>
                                 </td>
@@ -2309,6 +2299,101 @@ export default function OperationalPlans() {
                 <Button onClick={saveActivitiesOrder} className="bg-green-600 hover:bg-green-700">
                   <Check className="w-4 h-4 ml-1" />
                   حفظ الترتيب
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* نافذة اختيار الهدف لترتيب المبادرات */}
+        {isSelectGoalForInitiativesOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+              <div className="bg-blue-50 px-6 py-4 border-b">
+                <h3 className="text-lg font-bold text-blue-700">اختر الهدف الاستراتيجي</h3>
+                <p className="text-sm text-blue-600">لترتيب المبادرات داخله</p>
+              </div>
+              
+              <div className="p-4 max-h-[60vh] overflow-y-auto space-y-2">
+                {(() => {
+                  const uniqueGoals = [...new Set(plans.map(p => p.strategic_goal).filter(Boolean))] as string[];
+                  return uniqueGoals.map((goalName) => (
+                    <button
+                      key={goalName}
+                      className="w-full text-right p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      onClick={() => {
+                        setIsSelectGoalForInitiativesOpen(false);
+                        openReorderInitiativesDialog(goalName);
+                      }}
+                    >
+                      <span className="font-medium text-gray-700">{goalName}</span>
+                    </button>
+                  ));
+                })()}
+              </div>
+              
+              <div className="px-6 py-4 border-t bg-gray-50 flex justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsSelectGoalForInitiativesOpen(false)}
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* نافذة اختيار المبادرة لترتيب الأنشطة */}
+        {isSelectInitiativeForActivitiesOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+              <div className="bg-green-50 px-6 py-4 border-b">
+                <h3 className="text-lg font-bold text-green-700">اختر المبادرة</h3>
+                <p className="text-sm text-green-600">لترتيب الأنشطة داخلها</p>
+              </div>
+              
+              <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+                {(() => {
+                  const groupedByGoal = new Map<string, string[]>();
+                  plans.forEach(p => {
+                    if (p.strategic_goal && p.initiative) {
+                      if (!groupedByGoal.has(p.strategic_goal)) {
+                        groupedByGoal.set(p.strategic_goal, []);
+                      }
+                      const inits = groupedByGoal.get(p.strategic_goal)!;
+                      if (!inits.includes(p.initiative)) {
+                        inits.push(p.initiative);
+                      }
+                    }
+                  });
+                  
+                  return [...groupedByGoal.entries()].map(([goalName, inits]) => (
+                    <div key={goalName} className="space-y-2">
+                      <p className="text-sm font-semibold text-gray-500 px-2">{goalName}</p>
+                      {inits.map((initName) => (
+                        <button
+                          key={initName}
+                          className="w-full text-right p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition-colors mr-4"
+                          onClick={() => {
+                            setIsSelectInitiativeForActivitiesOpen(false);
+                            openReorderActivitiesDialog(goalName, initName);
+                          }}
+                        >
+                          <span className="font-medium text-gray-700">{initName}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ));
+                })()}
+              </div>
+              
+              <div className="px-6 py-4 border-t bg-gray-50 flex justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsSelectInitiativeForActivitiesOpen(false)}
+                >
+                  إلغاء
                 </Button>
               </div>
             </div>
