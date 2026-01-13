@@ -28,6 +28,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { AddOperationalPlanDialog } from "@/components/operational-plans/AddOperationalPlanDialog";
 import { EditPlanDialog } from "@/components/operational-plans/EditPlanDialog";
+import { AddItemDialog } from "@/components/operational-plans/AddItemDialog";
 import { formatNumber } from "@/lib/utils";
 
 interface Employee {
@@ -160,6 +161,12 @@ export default function OperationalPlans() {
   const [newInlineGoalInitiative, setNewInlineGoalInitiative] = useState("");
   const [newInlineGoalActivity, setNewInlineGoalActivity] = useState("");
   const [newInlineGoalTarget, setNewInlineGoalTarget] = useState("");
+  
+  // نافذة الإضافة المنظمة
+  const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
+  const [addItemDialogType, setAddItemDialogType] = useState<"strategic_goal" | "initiative" | "activity">("strategic_goal");
+  const [addItemDialogParentGoal, setAddItemDialogParentGoal] = useState<string>("");
+  const [addItemDialogParentInit, setAddItemDialogParentInit] = useState<string>("");
   
   // Form state
   const [strategicGoal, setStrategicGoal] = useState("");
@@ -1481,11 +1488,12 @@ export default function OperationalPlans() {
                                     variant="ghost"
                                     size="sm"
                                     className="w-full text-[#3d9aa8] hover:text-[#2d7a85] hover:bg-[#3d9aa8]/10 gap-1"
-                                    onClick={() => setAddingActivityUnder({
-                                      strategicGoal: group.strategicGoal,
-                                      initiative: initGroup.initiative,
-                                      userId: initGroup.plans[0]?.user_id || authUser!.id
-                                    })}
+                                    onClick={() => {
+                                      setAddItemDialogType("activity");
+                                      setAddItemDialogParentGoal(group.strategicGoal);
+                                      setAddItemDialogParentInit(initGroup.initiative);
+                                      setAddItemDialogOpen(true);
+                                    }}
                                   >
                                     <Plus className="w-4 h-4" />
                                     إضافة نشاط جديد
@@ -1575,7 +1583,12 @@ export default function OperationalPlans() {
                                   variant="ghost"
                                   size="sm"
                                   className="w-full text-blue-600 hover:text-blue-800 hover:bg-blue-100 gap-1"
-                                  onClick={() => setAddingInitiativeUnder(group.strategicGoal)}
+                                  onClick={() => {
+                                    setAddItemDialogType("initiative");
+                                    setAddItemDialogParentGoal(group.strategicGoal);
+                                    setAddItemDialogParentInit("");
+                                    setAddItemDialogOpen(true);
+                                  }}
                                 >
                                   <Plus className="w-4 h-4" />
                                   إضافة مبادرة جديدة
@@ -1667,15 +1680,20 @@ export default function OperationalPlans() {
                             className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
                           >
                             <td colSpan={isAdmin ? 7 : 6} className="py-2 px-4">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full text-purple-600 hover:text-purple-800 hover:bg-purple-100 gap-1"
-                                onClick={() => setIsAddingNewStrategicGoal(true)}
-                              >
-                                <Plus className="w-4 h-4" />
-                                إضافة هدف استراتيجي جديد
-                              </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-purple-600 hover:text-purple-800 hover:bg-purple-100 gap-1"
+                                  onClick={() => {
+                                    setAddItemDialogType("strategic_goal");
+                                    setAddItemDialogParentGoal("");
+                                    setAddItemDialogParentInit("");
+                                    setAddItemDialogOpen(true);
+                                  }}
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  إضافة هدف استراتيجي جديد
+                                </Button>
                             </td>
                           </tr>
                         );
@@ -1705,6 +1723,24 @@ export default function OperationalPlans() {
           employees={employees}
           onSave={handleDialogSave}
           onDelete={() => editDialogPlan && handleDeletePlan(editDialogPlan.id)}
+        />
+        
+        {/* نافذة الإضافة المنظمة */}
+        <AddItemDialog
+          open={addItemDialogOpen}
+          onOpenChange={setAddItemDialogOpen}
+          addType={addItemDialogType}
+          parentGoalName={addItemDialogParentGoal}
+          parentInitiativeName={addItemDialogParentInit}
+          departments={departments}
+          employees={employees}
+          year={year}
+          userId={authUser?.id || ""}
+          onSave={() => {
+            fetchPlans();
+            fetchStrategicGoals();
+            fetchInitiatives();
+          }}
         />
       </div>
     </DashboardLayout>
