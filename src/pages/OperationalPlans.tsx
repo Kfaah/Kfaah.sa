@@ -896,21 +896,12 @@ export default function OperationalPlans() {
                               {/* الهدف الاستراتيجي - مدمج أو قابل للتعديل */}
                               {editingPlanId === plan.id ? (
                                 <td className={`py-2 px-2 border-l-2 border-gray-300 align-middle ${color.bg}`}>
-                                  <Select 
-                                    value={editFormData?.strategic_goal || ''} 
-                                    onValueChange={(value) => setEditFormData(prev => prev ? {...prev, strategic_goal: value} : null)}
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue placeholder="اختر الهدف" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {strategicGoals.map((goal) => (
-                                        <SelectItem key={goal.id} value={goal.name}>
-                                          {goal.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                  <Input
+                                    value={editFormData?.strategic_goal || ''}
+                                    onChange={(e) => setEditFormData(prev => prev ? {...prev, strategic_goal: e.target.value} : null)}
+                                    className="h-8 text-xs"
+                                    placeholder="الهدف الاستراتيجي"
+                                  />
                                 </td>
                               ) : isFirstRowOfGoal && (
                                 <td 
@@ -924,26 +915,12 @@ export default function OperationalPlans() {
                               {/* المبادرة - مدمج أو قابل للتعديل */}
                               {editingPlanId === plan.id ? (
                                 <td className={`py-2 px-2 border-l-2 border-gray-300 align-middle`}>
-                                  <Select 
-                                    value={editFormData?.initiative || ''} 
-                                    onValueChange={(value) => setEditFormData(prev => prev ? {...prev, initiative: value} : null)}
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue placeholder="اختر المبادرة" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {initiatives
-                                        .filter(init => {
-                                          const selectedGoal = strategicGoals.find(g => g.name === editFormData?.strategic_goal);
-                                          return selectedGoal ? init.strategic_goal_id === selectedGoal.id : true;
-                                        })
-                                        .map((init) => (
-                                          <SelectItem key={init.id} value={init.name}>
-                                            {init.name}
-                                          </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                  </Select>
+                                  <Input
+                                    value={editFormData?.initiative || ''}
+                                    onChange={(e) => setEditFormData(prev => prev ? {...prev, initiative: e.target.value} : null)}
+                                    className="h-8 text-xs"
+                                    placeholder="المبادرة"
+                                  />
                                 </td>
                               ) : isFirstRowOfInit && (
                                 <td 
