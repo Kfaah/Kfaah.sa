@@ -242,7 +242,9 @@ function SortableRow({
   index,
   columns,
   selectedRows,
+  selectedCells,
   toggleRowSelection,
+  toggleCellSelection,
   removeRow,
   updateCell,
   updateCustomColumn,
@@ -251,7 +253,9 @@ function SortableRow({
   index: number;
   columns: ColumnDef[];
   selectedRows: Set<string>;
+  selectedCells: Set<string>;
   toggleRowSelection: (id: string) => void;
+  toggleCellSelection: (rowId: string, colId: string) => void;
   removeRow: (id: string) => void;
   updateCell: (rowId: string, field: keyof TableRowData, value: string | number) => void;
   updateCustomColumn: (rowId: string, columnId: string, value: string) => void;
@@ -310,8 +314,16 @@ function SortableRow({
 
         // عمود المتوسط الشهري
         if (col.id === 'monthlyAverage') {
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
-            <TableCell key={col.id} className="border-l text-center bg-muted/30 text-sm font-medium">
+            <TableCell 
+              key={col.id} 
+              className={cn(
+                "border-l text-center bg-muted/30 text-sm font-medium cursor-pointer",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+              )}
+              onClick={() => toggleCellSelection(row.id, col.id)}
+            >
               {row.monthlyAverage.toLocaleString('ar-SA', { maximumFractionDigits: 2 })}
             </TableCell>
           );
@@ -319,12 +331,24 @@ function SortableRow({
 
         // عمود المستهدف السنوي
         if (col.id === 'annualTarget') {
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
-            <TableCell key={col.id} className="border-l p-0">
+            <TableCell 
+              key={col.id} 
+              className={cn(
+                "border-l p-0 cursor-pointer",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+              )}
+              onClick={() => toggleCellSelection(row.id, col.id)}
+            >
               <Input
                 type="number"
                 value={row.annualTarget || ""}
-                onChange={(e) => updateCell(row.id, 'annualTarget', parseFloat(e.target.value) || 0)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCell(row.id, 'annualTarget', parseFloat(e.target.value) || 0);
+                }}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="0"
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-center text-sm"
               />
@@ -334,11 +358,23 @@ function SortableRow({
 
         // عمود النشاط
         if (col.id === 'activity') {
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
-            <TableCell key={col.id} className="border-l p-0">
+            <TableCell 
+              key={col.id} 
+              className={cn(
+                "border-l p-0 cursor-pointer",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+              )}
+              onClick={() => toggleCellSelection(row.id, col.id)}
+            >
               <Input
                 value={row.activity}
-                onChange={(e) => updateCell(row.id, 'activity', e.target.value)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCell(row.id, 'activity', e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="النشاط..."
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
               />
@@ -349,15 +385,24 @@ function SortableRow({
         // عمود المبادرة
         if (col.id === 'initiative') {
           if (!row.showInitiativeCell) return null;
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
             <TableCell 
               key={col.id}
-              className="border-l p-0"
+              className={cn(
+                "border-l p-0 cursor-pointer",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+              )}
               rowSpan={row.initiativeRowSpan}
+              onClick={() => toggleCellSelection(row.id, col.id)}
             >
               <Input
                 value={row.initiative}
-                onChange={(e) => updateCell(row.id, 'initiative', e.target.value)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCell(row.id, 'initiative', e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="المبادرة..."
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
                 list="initiatives-list"
@@ -369,15 +414,24 @@ function SortableRow({
         // عمود الهدف الاستراتيجي
         if (col.id === 'strategicGoal') {
           if (!row.showGoalCell) return null;
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
             <TableCell 
               key={col.id}
-              className="border-l p-0"
+              className={cn(
+                "border-l p-0 cursor-pointer",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+              )}
               rowSpan={row.goalRowSpan}
+              onClick={() => toggleCellSelection(row.id, col.id)}
             >
               <Input
                 value={row.strategicGoal}
-                onChange={(e) => updateCell(row.id, 'strategicGoal', e.target.value)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCell(row.id, 'strategicGoal', e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="الهدف الاستراتيجي..."
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
                 list="goals-list"
@@ -401,11 +455,23 @@ function SortableRow({
 
         // الأعمدة المخصصة
         if (col.isCustom) {
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           return (
-            <TableCell key={col.id} className="border-l p-0">
+            <TableCell 
+              key={col.id} 
+              className={cn(
+                "border-l p-0 cursor-pointer",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+              )}
+              onClick={() => toggleCellSelection(row.id, col.id)}
+            >
               <Input
                 value={row.customColumns[col.id] || ""}
-                onChange={(e) => updateCustomColumn(row.id, col.id, e.target.value)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCustomColumn(row.id, col.id, e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
                 placeholder={col.label}
                 className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
               />
@@ -1200,7 +1266,9 @@ export function AddOperationalPlanDialog({
                               index={index}
                               columns={columns}
                               selectedRows={selectedRows}
+                              selectedCells={selectedCells}
                               toggleRowSelection={toggleRowSelection}
+                              toggleCellSelection={toggleCellSelection}
                               removeRow={removeRow}
                               updateCell={updateCell}
                               updateCustomColumn={updateCustomColumn}
