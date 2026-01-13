@@ -223,6 +223,16 @@ export default function OperationalPlans() {
     is_required: boolean;
     is_active: boolean;
   }[]>([]);
+  
+  // ترتيب جميع الأعمدة
+  const [columnOrder, setColumnOrder] = useState<{
+    id: string;
+    column_key: string;
+    column_name: string;
+    display_order: number;
+    is_visible: boolean;
+    is_standard: boolean;
+  }[]>([]);
 
   // Form state
   const [strategicGoal, setStrategicGoal] = useState("");
@@ -264,6 +274,7 @@ export default function OperationalPlans() {
     // قائمة الموظفين مطلوبة لاختيار مسؤول التنفيذ داخل تعديل النشاط
     fetchEmployees();
     fetchCustomColumns();
+    fetchColumnOrder();
   }, [authUser, isAdmin]);
 
   const fetchCustomColumns = async () => {
@@ -275,10 +286,23 @@ export default function OperationalPlans() {
         .order("display_order", { ascending: true });
 
       if (error) throw error;
-      console.log("Custom columns loaded:", data);
       setCustomColumns(data || []);
     } catch (error) {
       console.error("Error fetching custom columns:", error);
+    }
+  };
+
+  const fetchColumnOrder = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("operational_plan_column_order")
+        .select("*")
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+      setColumnOrder(data || []);
+    } catch (error) {
+      console.error("Error fetching column order:", error);
     }
   };
 
@@ -1522,30 +1546,21 @@ export default function OperationalPlans() {
                   {/* رأس الجدول */}
                   <thead>
                     <tr className="bg-[#3d9aa8]">
-                      <th className="py-4 px-5 text-right">
-                        <span className="text-sm font-semibold text-white">الهدف الاستراتيجي</span>
-                      </th>
-                      <th className="py-4 px-5 text-right border-r border-white/20">
-                        <span className="text-sm font-semibold text-white">المبادرة</span>
-                      </th>
-                      <th className="py-4 px-5 text-right border-r border-white/20">
-                        <span className="text-sm font-semibold text-white">النشاط</span>
-                      </th>
-                      <th className="py-4 px-5 text-right border-r border-white/20">
-                        <span className="text-sm font-semibold text-white">مسؤول التنفيذ</span>
-                      </th>
-                      <th className="w-28 py-4 px-3 text-center border-r border-white/20">
-                        <span className="text-sm font-semibold text-white">المستهدف السنوي</span>
-                      </th>
-                      <th className="w-28 py-4 px-3 text-center border-r border-white/20">
-                        <span className="text-sm font-semibold text-white">المتوسط الشهري</span>
-                      </th>
-                      {/* الأعمدة المخصصة */}
-                      {customColumns.map((col) => (
-                        <th key={col.id} className="py-4 px-3 text-center border-r border-white/20">
-                          <span className="text-sm font-semibold text-white">{col.name}</span>
-                        </th>
-                      ))}
+                      {/* عرض الأعمدة حسب الترتيب من columnOrder */}
+                      {columnOrder.filter(c => c.is_visible).map((col, idx) => {
+                        // تحديد خصائص العمود
+                        const isFirst = idx === 0;
+                        const isNumeric = ['annual_target', 'monthly_average'].includes(col.column_key);
+                        
+                        return (
+                          <th 
+                            key={col.id} 
+                            className={`py-4 px-5 ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
+                          >
+                            <span className="text-sm font-semibold text-white">{col.column_name}</span>
+                          </th>
+                        );
+                      })}
                       {isEditMode && (
                         <th className="w-24 py-4 px-3 text-center border-r border-white/20 bg-amber-600">
                           <span className="text-sm font-semibold text-white">إجراء</span>
@@ -1796,38 +1811,56 @@ export default function OperationalPlans() {
                                 </div>
                               </td>
                               
-                              {/* مسؤول التنفيذ */}
-                              <td className="py-4 px-5 border-l-2 border-gray-200">
-                                {plan.responsible_employee_name ? (
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                                      <span className="text-xs font-semibold text-primary">{plan.responsible_employee_name.charAt(0)}</span>
-                                    </div>
-                                    <span className="text-gray-700 text-sm">{plan.responsible_employee_name}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400 text-sm">غير محدد</span>
-                                )}
-                              </td>
-                              
-                              {/* المستهدف السنوي */}
-                              <td className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
-                                <span className="text-lg font-bold text-gray-800">{formatNumber(plan.annual_target)}</span>
-                              </td>
-                              
-                              {/* المتوسط الشهري */}
-                              <td className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
-                                <span className="text-lg font-bold text-[#3d9aa8]">
-                                  {formatNumber(Math.round(plan.annual_target / 12))}
-                                </span>
-                              </td>
-                              
-                              {/* الأعمدة المخصصة */}
-                              {customColumns.map((col) => (
-                                <td key={col.id} className="py-4 px-3 text-center border-l-2 border-gray-200">
-                                  <span className="text-sm text-gray-500">—</span>
-                                </td>
-                              ))}
+                              {/* الأعمدة المتحركة (بعد النشاط) */}
+                              {columnOrder
+                                .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
+                                .map((col) => {
+                                  // مسؤول التنفيذ
+                                  if (col.column_key === 'responsible_employee') {
+                                    return (
+                                      <td key={col.id} className="py-4 px-5 border-l-2 border-gray-200">
+                                        {plan.responsible_employee_name ? (
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                                              <span className="text-xs font-semibold text-primary">{plan.responsible_employee_name.charAt(0)}</span>
+                                            </div>
+                                            <span className="text-gray-700 text-sm">{plan.responsible_employee_name}</span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-gray-400 text-sm">غير محدد</span>
+                                        )}
+                                      </td>
+                                    );
+                                  }
+                                  
+                                  // المستهدف السنوي
+                                  if (col.column_key === 'annual_target') {
+                                    return (
+                                      <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
+                                        <span className="text-lg font-bold text-gray-800">{formatNumber(plan.annual_target)}</span>
+                                      </td>
+                                    );
+                                  }
+                                  
+                                  // المتوسط الشهري
+                                  if (col.column_key === 'monthly_average') {
+                                    return (
+                                      <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
+                                        <span className="text-lg font-bold text-[#3d9aa8]">
+                                          {formatNumber(Math.round(plan.annual_target / 12))}
+                                        </span>
+                                      </td>
+                                    );
+                                  }
+                                  
+                                  // الأعمدة المخصصة
+                                  return (
+                                    <td key={col.id} className="py-4 px-3 text-center border-l-2 border-gray-200">
+                                      <span className="text-sm text-gray-500">—</span>
+                                    </td>
+                                  );
+                                })
+                              }
                               
                               {/* عمود الإجراء - يظهر فقط في وضع التعديل */}
                               {isEditMode && (
@@ -1863,9 +1896,9 @@ export default function OperationalPlans() {
                             const currentMonthlyValues = editingMonthlyTargets[plan.id] || [];
                             
                             // حساب عدد الأعمدة للصف الموسع
-                            // النشاط + المسؤول + المستهدف السنوي + المتوسط الشهري + الأعمدة المخصصة + (الإجراء في وضع التعديل)
-                            // لا نشمل عمود الهدف الاستراتيجي والمبادرة لأنها تستخدم rowSpan
-                            const expandedColSpan = 4 + customColumns.length + (isEditMode ? 1 : 0);
+                            // الأعمدة المرئية بعد الهدف والمبادرة + (الإجراء في وضع التعديل)
+                            const visibleMovableColumns = columnOrder.filter(c => c.is_visible && !['strategic_goal', 'initiative'].includes(c.column_key)).length;
+                            const expandedColSpan = visibleMovableColumns + (isEditMode ? 1 : 0);
                             
                             rows.push(
                               <tr key={`${plan.id}-expanded`} className="bg-white">
@@ -2007,24 +2040,28 @@ export default function OperationalPlans() {
                                     autoFocus
                                   />
                                 </td>
-                                {/* مسؤول التنفيذ (فارغ) */}
-                                <td className="py-2 px-2 border-l-2 border-gray-300"></td>
-                                {/* المستهدف السنوي */}
-                                <td className="py-2 px-2 border-l-2 border-gray-300">
-                                  <Input
-                                    type="number"
-                                    value={newActivityTarget}
-                                    onChange={(e) => setNewActivityTarget(e.target.value)}
-                                    className="h-8 text-sm text-center"
-                                    placeholder="المستهدف"
-                                  />
-                                </td>
-                                {/* المتوسط الشهري (فارغ) */}
-                                <td className="py-2 px-2 border-l-2 border-gray-300"></td>
-                                {/* خلايا فارغة للأعمدة المخصصة */}
-                                {customColumns.map((col) => (
-                                  <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
-                                ))}
+                                {/* خلايا فارغة للأعمدة المتحركة */}
+                                {columnOrder
+                                  .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
+                                  .map((col) => {
+                                    if (col.column_key === 'annual_target') {
+                                      return (
+                                        <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300">
+                                          <Input
+                                            type="number"
+                                            value={newActivityTarget}
+                                            onChange={(e) => setNewActivityTarget(e.target.value)}
+                                            className="h-8 text-sm text-center"
+                                            placeholder="المستهدف"
+                                          />
+                                        </td>
+                                      );
+                                    }
+                                    return (
+                                      <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                    );
+                                  })
+                                }
                                 {/* إجراء */}
                                 <td className="py-2 px-2 text-center">
                                   <div className="flex justify-center gap-1">
@@ -2087,24 +2124,28 @@ export default function OperationalPlans() {
                                   placeholder="اسم النشاط"
                                 />
                               </td>
-                              {/* مسؤول التنفيذ (فارغ) */}
-                              <td className="py-2 px-2 border-l-2 border-gray-300"></td>
-                              {/* المستهدف السنوي */}
-                              <td className="py-2 px-2 border-l-2 border-gray-300">
-                                <Input
-                                  type="number"
-                                  value={newInlineActivityTarget}
-                                  onChange={(e) => setNewInlineActivityTarget(e.target.value)}
-                                  className="h-8 text-sm text-center"
-                                  placeholder="المستهدف"
-                                />
-                              </td>
-                              {/* المتوسط الشهري (فارغ) */}
-                              <td className="py-2 px-2 border-l-2 border-gray-300"></td>
-                              {/* خلايا فارغة للأعمدة المخصصة */}
-                              {customColumns.map((col) => (
-                                <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
-                              ))}
+                              {/* خلايا فارغة للأعمدة المتحركة */}
+                              {columnOrder
+                                .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
+                                .map((col) => {
+                                  if (col.column_key === 'annual_target') {
+                                    return (
+                                      <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300">
+                                        <Input
+                                          type="number"
+                                          value={newInlineActivityTarget}
+                                          onChange={(e) => setNewInlineActivityTarget(e.target.value)}
+                                          className="h-8 text-sm text-center"
+                                          placeholder="المستهدف"
+                                        />
+                                      </td>
+                                    );
+                                  }
+                                  return (
+                                    <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                  );
+                                })
+                              }
                               {/* إجراء */}
                               <td className="py-2 px-2 text-center">
                                 <div className="flex justify-center gap-1">
@@ -2140,7 +2181,7 @@ export default function OperationalPlans() {
                               key={`add-init-btn-${group.strategicGoal}`} 
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-gray-50/50 transition-colors border-b-4 border-b-gray-400`}
                             >
-                              <td colSpan={6 + customColumns.length} className="py-3 px-4">
+                              <td colSpan={columnOrder.filter(c => c.is_visible && !['strategic_goal'].includes(c.column_key)).length + 1} className="py-3 px-4">
                                 <div className="flex justify-center items-center gap-3">
                                   {/* زر إضافة مبادرة جديدة */}
                                   <Button
@@ -2216,24 +2257,28 @@ export default function OperationalPlans() {
                                 placeholder="النشاط"
                               />
                             </td>
-                            {/* مسؤول التنفيذ (فارغ) */}
-                            <td className="py-2 px-2 border-l-2 border-gray-300"></td>
-                            {/* المستهدف السنوي */}
-                            <td className="py-2 px-2 border-l-2 border-gray-300">
-                              <Input
-                                type="number"
-                                value={newInlineGoalTarget}
-                                onChange={(e) => setNewInlineGoalTarget(e.target.value)}
-                                className="h-8 text-sm text-center"
-                                placeholder="المستهدف"
-                              />
-                            </td>
-                            {/* المتوسط الشهري (فارغ) */}
-                            <td className="py-2 px-2 border-l-2 border-gray-300"></td>
-                            {/* خلايا فارغة للأعمدة المخصصة */}
-                            {customColumns.map((col) => (
-                              <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
-                            ))}
+                            {/* خلايا فارغة للأعمدة المتحركة */}
+                            {columnOrder
+                              .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
+                              .map((col) => {
+                                if (col.column_key === 'annual_target') {
+                                  return (
+                                    <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300">
+                                      <Input
+                                        type="number"
+                                        value={newInlineGoalTarget}
+                                        onChange={(e) => setNewInlineGoalTarget(e.target.value)}
+                                        className="h-8 text-sm text-center"
+                                        placeholder="المستهدف"
+                                      />
+                                    </td>
+                                  );
+                                }
+                                return (
+                                  <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                );
+                              })
+                            }
                             {/* إجراء */}
                             <td className="py-2 px-2 text-center">
                               <div className="flex justify-center gap-1">
@@ -2270,7 +2315,7 @@ export default function OperationalPlans() {
                             key="add-goal-btn" 
                             className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
                           >
-                            <td colSpan={7 + customColumns.length} className="py-3 px-4">
+                            <td colSpan={columnOrder.filter(c => c.is_visible).length + 1} className="py-3 px-4">
                               <div className="flex justify-center">
                                 <Button
                                   variant="outline"
@@ -2645,7 +2690,10 @@ export default function OperationalPlans() {
         <ManageCustomColumnsDialog
           open={isManageColumnsDialogOpen}
           onOpenChange={setIsManageColumnsDialogOpen}
-          onColumnsChange={fetchCustomColumns}
+          onColumnsChange={() => {
+            fetchCustomColumns();
+            fetchColumnOrder();
+          }}
         />
       </div>
     </DashboardLayout>
