@@ -98,11 +98,11 @@ const MONTHS_AR = [
 // ألوان رسمية وبسيطة
 const GOAL_COLORS = [
   { 
-    bg: "bg-teal-50/50", 
-    border: "border-r-teal-600", 
-    text: "text-teal-700",
-    hover: "hover:bg-teal-50",
-    badge: "bg-teal-100 text-teal-700 border-teal-200",
+    bg: "bg-white", 
+    border: "border-r-gray-400", 
+    text: "text-gray-700",
+    hover: "hover:bg-gray-50",
+    badge: "bg-gray-100 text-gray-600 border-gray-200",
   },
   { 
     bg: "bg-blue-50/50", 
