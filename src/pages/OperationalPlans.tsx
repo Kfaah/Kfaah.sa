@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2 } from "lucide-react";
+import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
@@ -95,28 +95,43 @@ const MONTHS_AR = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
 
-// ثلاثة ألوان متناسقة وأنيقة مستوحاة من هوية الجمعية
+// ألوان عصرية وأنيقة مع تدرجات لطيفة
 const GOAL_COLORS = [
   { 
-    bg: "bg-gradient-to-l from-teal-50 to-white", 
-    border: "border-l-teal-500", 
-    text: "text-teal-700",
-    hover: "hover:from-teal-100 hover:to-teal-50",
-    badge: "bg-teal-100 text-teal-700 border-teal-200"
+    bg: "bg-gradient-to-l from-emerald-50/80 via-teal-50/50 to-white", 
+    border: "border-r-emerald-500", 
+    text: "text-emerald-800",
+    hover: "hover:from-emerald-100/90 hover:via-teal-100/60 hover:to-emerald-50/30",
+    badge: "bg-emerald-100/80 text-emerald-700 border-emerald-300 shadow-sm",
+    accent: "emerald",
+    icon: "bg-gradient-to-br from-emerald-500 to-teal-600"
   },
   { 
-    bg: "bg-gradient-to-l from-slate-50 to-white", 
-    border: "border-l-slate-400", 
-    text: "text-slate-700",
-    hover: "hover:from-slate-100 hover:to-slate-50",
-    badge: "bg-slate-100 text-slate-600 border-slate-200"
+    bg: "bg-gradient-to-l from-sky-50/80 via-blue-50/50 to-white", 
+    border: "border-r-sky-500", 
+    text: "text-sky-800",
+    hover: "hover:from-sky-100/90 hover:via-blue-100/60 hover:to-sky-50/30",
+    badge: "bg-sky-100/80 text-sky-700 border-sky-300 shadow-sm",
+    accent: "sky",
+    icon: "bg-gradient-to-br from-sky-500 to-blue-600"
   },
   { 
-    bg: "bg-gradient-to-l from-amber-50 to-white", 
-    border: "border-l-amber-400", 
-    text: "text-amber-700",
-    hover: "hover:from-amber-100 hover:to-amber-50",
-    badge: "bg-amber-100 text-amber-700 border-amber-200"
+    bg: "bg-gradient-to-l from-violet-50/80 via-purple-50/50 to-white", 
+    border: "border-r-violet-500", 
+    text: "text-violet-800",
+    hover: "hover:from-violet-100/90 hover:via-purple-100/60 hover:to-violet-50/30",
+    badge: "bg-violet-100/80 text-violet-700 border-violet-300 shadow-sm",
+    accent: "violet",
+    icon: "bg-gradient-to-br from-violet-500 to-purple-600"
+  },
+  { 
+    bg: "bg-gradient-to-l from-rose-50/80 via-pink-50/50 to-white", 
+    border: "border-r-rose-500", 
+    text: "text-rose-800",
+    hover: "hover:from-rose-100/90 hover:via-pink-100/60 hover:to-rose-50/30",
+    badge: "bg-rose-100/80 text-rose-700 border-rose-300 shadow-sm",
+    accent: "rose",
+    icon: "bg-gradient-to-br from-rose-500 to-pink-600"
   },
 ];
 
@@ -1147,32 +1162,62 @@ export default function OperationalPlans() {
                 لا توجد خطط تشغيلية حتى الآن
               </div>
             ) : (
-              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg overflow-x-auto bg-white">
+              <div className="rounded-2xl overflow-hidden shadow-2xl overflow-x-auto bg-white border-0 ring-1 ring-black/5">
                 <table className="w-full">
-                  {/* رأس الجدول الأنيق */}
+                  {/* رأس الجدول العصري */}
                   <thead>
-                    <tr className="bg-gradient-to-r from-primary via-primary/90 to-accent text-white shadow-md">
-                      <th className="py-4 px-5 border-l border-white/20 text-right">
-                        <span className="text-sm font-bold tracking-wide">الهدف الاستراتيجي</span>
+                    <tr className="bg-gradient-to-l from-slate-900 via-slate-800 to-slate-900">
+                      <th className="py-5 px-6 text-right relative">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                            <Target className="w-4 h-4 text-emerald-400" />
+                          </div>
+                          <span className="text-sm font-bold text-white tracking-wide">الهدف الاستراتيجي</span>
+                        </div>
                       </th>
-                      <th className="py-4 px-5 border-l border-white/20 text-right">
-                        <span className="text-sm font-bold tracking-wide">المبادرة</span>
+                      <th className="py-5 px-6 text-right">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                            <Lightbulb className="w-4 h-4 text-sky-400" />
+                          </div>
+                          <span className="text-sm font-bold text-white tracking-wide">المبادرة</span>
+                        </div>
                       </th>
-                      <th className="py-4 px-5 border-l border-white/20 text-right">
-                        <span className="text-sm font-bold tracking-wide">النشاط</span>
+                      <th className="py-5 px-6 text-right">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                            <Zap className="w-4 h-4 text-violet-400" />
+                          </div>
+                          <span className="text-sm font-bold text-white tracking-wide">النشاط</span>
+                        </div>
                       </th>
-                      <th className="py-4 px-5 border-l border-white/20 text-right">
-                        <span className="text-sm font-bold tracking-wide">مسؤول التنفيذ</span>
+                      <th className="py-5 px-6 text-right">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center">
+                            <UserCircle className="w-4 h-4 text-rose-400" />
+                          </div>
+                          <span className="text-sm font-bold text-white tracking-wide">مسؤول التنفيذ</span>
+                        </div>
                       </th>
-                      <th className="w-28 py-4 px-3 border-l border-white/20 text-center">
-                        <span className="text-sm font-bold tracking-wide">المستهدف السنوي</span>
+                      <th className="w-32 py-5 px-4 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                            <TrendingUp className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <span className="text-xs font-bold text-white/90">المستهدف السنوي</span>
+                        </div>
                       </th>
-                      <th className="w-28 py-4 px-3 border-l border-white/20 text-center">
-                        <span className="text-sm font-bold tracking-wide">المتوسط الشهري</span>
+                      <th className="w-32 py-5 px-4 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                            <Calendar className="w-4 h-4 text-cyan-400" />
+                          </div>
+                          <span className="text-xs font-bold text-white/90">المتوسط الشهري</span>
+                        </div>
                       </th>
                       {isEditMode && (
-                        <th className="w-24 py-4 px-3 text-center bg-gradient-to-r from-amber-500 to-orange-500">
-                          <span className="text-sm font-bold tracking-wide">إجراء</span>
+                        <th className="w-28 py-5 px-4 text-center bg-gradient-to-l from-amber-600 to-orange-600">
+                          <span className="text-sm font-bold text-white">إجراء</span>
                         </th>
                       )}
                     </tr>
@@ -1241,17 +1286,17 @@ export default function OperationalPlans() {
                           const isLastInitiative = initIndex === group.initiatives.length - 1;
                           const isLastGoal = groupIndex === groupedPlans.length - 1;
                           
-                          // تحديد نوع الفاصل السفلي - خطوط واضحة ومميزة
+                          // تحديد نوع الفاصل السفلي - خطوط متصلة وواضحة
                           let bottomBorder = '';
                           if (isLastInInitiative && isLastInitiative && !isLastGoal) {
-                            // فاصل بين الأهداف الاستراتيجية - خط عريض واضح
-                            bottomBorder = 'border-b-4 border-b-primary/60';
+                            // فاصل بين الأهداف الاستراتيجية - خط عريض متصل
+                            bottomBorder = 'border-b-4 border-b-slate-300';
                           } else if (isLastInInitiative && !isLastInitiative) {
-                            // فاصل بين المبادرات - خط متوسط ملون
-                            bottomBorder = 'border-b-[3px] border-b-teal-400';
+                            // فاصل بين المبادرات - خط متوسط متصل
+                            bottomBorder = 'border-b-[3px] border-b-slate-200';
                           } else if (!isLastInInitiative) {
-                            // فاصل بين الأنشطة - خط واضح متقطع
-                            bottomBorder = 'border-b-2 border-b-gray-300 border-dashed';
+                            // فاصل بين الأنشطة - خط رفيع متصل
+                            bottomBorder = 'border-b border-b-slate-100';
                           }
                           
                           // البحث بالـ ID أولاً ثم بالاسم
@@ -1263,35 +1308,44 @@ export default function OperationalPlans() {
                           rows.push(
                             <tr 
                               key={plan.id} 
-                              className={`${color.bg} ${color.hover} border-r-4 ${color.border} transition-all duration-300 ease-in-out ${isExpanded ? 'shadow-inner !bg-white' : ''} ${bottomBorder}`}
+                              className={`group/row ${color.bg} ${color.hover} border-r-4 ${color.border} transition-all duration-300 ease-in-out hover:shadow-md ${isExpanded ? 'shadow-lg ring-2 ring-primary/20 !bg-gradient-to-l from-primary/5 to-white' : ''} ${bottomBorder}`}
                             >
                               {/* الهدف الاستراتيجي */}
                               {isFirstRowOfGoal && (
                                 <td 
                                   rowSpan={totalRowsInGoal} 
-                                  className={`py-5 px-5 border-l border-gray-100 align-middle ${color.bg}`}
+                                  className={`py-6 px-6 align-top ${color.bg} relative`}
                                 >
-                                  <div className="flex items-start justify-between gap-2">
+                                  {/* خط جانبي ملون */}
+                                  <div className={`absolute right-0 top-0 bottom-0 w-1 ${color.icon} rounded-l-full`}></div>
+                                  
+                                  <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <div className={`w-2 h-2 rounded-full ${color.border.replace('border-l-', 'bg-')}`}></div>
-                                        <p className={`font-bold text-sm ${color.text}`}>{group.strategicGoal}</p>
+                                      {/* رقم الهدف */}
+                                      <div className="flex items-center gap-3 mb-3">
+                                        <div className={`w-10 h-10 rounded-xl ${color.icon} flex items-center justify-center shadow-lg`}>
+                                          <span className="text-white font-bold text-sm">{groupIndex + 1}</span>
+                                        </div>
+                                        <div className="flex-1">
+                                          <p className={`font-bold text-base ${color.text} leading-relaxed`}>{group.strategicGoal}</p>
+                                        </div>
                                       </div>
-                                      <div className="text-xs mt-2">
+                                      {/* الأقسام */}
+                                      <div className="text-xs mr-12">
                                         {goalData?.departments && goalData.departments.length > 0 ? (
-                                          <div className="flex flex-wrap gap-1.5">
+                                          <div className="flex flex-wrap gap-2">
                                             {goalData.departments.map((d) => (
                                               <Badge 
                                                 key={d.id} 
                                                 variant="outline" 
-                                                className={`rounded-full text-[10px] px-2.5 py-0.5 font-medium border ${color.badge}`}
+                                                className={`rounded-lg text-[11px] px-3 py-1 font-medium ${color.badge}`}
                                               >
                                                 {d.name}
                                               </Badge>
                                             ))}
                                           </div>
                                         ) : (
-                                          <span className="text-muted-foreground/60 italic">بدون قسم</span>
+                                          <span className="text-slate-400 italic text-xs">بدون قسم محدد</span>
                                         )}
                                       </div>
                                     </div>
@@ -1299,7 +1353,7 @@ export default function OperationalPlans() {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className={`h-8 w-8 rounded-full flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity ${color.text} hover:bg-white/50`}
+                                        className={`h-9 w-9 rounded-xl flex-shrink-0 opacity-0 group-hover/row:opacity-100 transition-all duration-300 ${color.text} hover:bg-white/80 hover:shadow-md`}
                                         onClick={() => {
                                           const actualGoalName = goalData?.name || group.strategicGoal;
                                           openEditDialog("strategic_goal", actualGoalName, undefined, plan);
@@ -1316,26 +1370,33 @@ export default function OperationalPlans() {
                               {isFirstRowOfInit && (
                                 <td 
                                   rowSpan={totalRowsInInitiative} 
-                                  className={`py-5 px-5 border-l border-gray-100 align-middle ${initIndex > 0 ? 'border-t border-t-gray-200' : ''}`}
+                                  className={`py-6 px-6 align-top bg-gradient-to-l from-slate-50/50 to-white`}
                                 >
-                                  <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1">
-                                      <p className="text-gray-700 text-sm font-semibold">{initGroup.initiative}</p>
-                                      <div className="text-xs mt-2">
+                                      {/* عنوان المبادرة مع أيقونة */}
+                                      <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center">
+                                          <Lightbulb className="w-4 h-4 text-sky-600" />
+                                        </div>
+                                        <p className="text-slate-700 text-sm font-bold leading-relaxed">{initGroup.initiative}</p>
+                                      </div>
+                                      {/* الأقسام */}
+                                      <div className="text-xs mr-11">
                                         {initData?.departments && initData.departments.length > 0 ? (
-                                          <div className="flex flex-wrap gap-1.5">
+                                          <div className="flex flex-wrap gap-2">
                                             {initData.departments.map((d) => (
                                               <Badge 
                                                 key={d.id} 
                                                 variant="outline" 
-                                                className="rounded-full text-[10px] px-2.5 py-0.5 font-medium border bg-gray-50 text-gray-600 border-gray-200"
+                                                className="rounded-lg text-[11px] px-3 py-1 font-medium bg-slate-50 text-slate-600 border-slate-200 shadow-sm"
                                               >
                                                 {d.name}
                                               </Badge>
                                             ))}
                                           </div>
                                         ) : (
-                                          <span className="text-muted-foreground/60 italic">بدون قسم</span>
+                                          <span className="text-slate-400 italic text-xs">بدون قسم محدد</span>
                                         )}
                                       </div>
                                     </div>
@@ -1343,7 +1404,7 @@ export default function OperationalPlans() {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8 text-gray-500 hover:text-primary hover:bg-white/50 rounded-full flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+                                        className="h-9 w-9 text-slate-500 hover:text-primary hover:bg-white rounded-xl flex-shrink-0 opacity-0 group-hover/row:opacity-100 transition-all duration-300 hover:shadow-md"
                                         onClick={() => {
                                           const actualInitName = initData?.name || initGroup.initiative;
                                           openEditDialog("initiative", group.strategicGoal, actualInitName, plan);
@@ -1357,47 +1418,59 @@ export default function OperationalPlans() {
                               )}
                               
                               {/* النشاط */}
-                              <td className="py-5 px-5 border-l border-gray-100">
+                              <td className="py-5 px-6">
                                 <div 
-                                  className="flex items-center gap-3 cursor-pointer group"
+                                  className="flex items-center gap-3 cursor-pointer group/activity"
                                   onClick={() => handleViewPlan(plan)}
                                 >
-                                  <div className={`p-1.5 rounded-lg transition-all duration-300 ${isExpanded ? 'bg-accent/20 rotate-180' : 'bg-gray-100 group-hover:bg-accent/10'}`}>
+                                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 ${isExpanded ? 'bg-primary shadow-lg shadow-primary/30 rotate-180' : 'bg-slate-100 group-hover/activity:bg-primary/10 group-hover/activity:shadow-md'}`}>
                                     <ChevronDown 
-                                      className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'text-accent' : 'text-gray-500 group-hover:text-accent'}`} 
+                                      className={`w-5 h-5 transition-all duration-300 ${isExpanded ? 'text-white' : 'text-slate-400 group-hover/activity:text-primary'}`} 
                                     />
                                   </div>
-                                  <p className="font-semibold text-gray-800 text-sm flex-1 group-hover:text-primary transition-colors">{plan.activity_name}</p>
+                                  <div className="flex-1">
+                                    <p className={`font-semibold text-sm transition-colors ${isExpanded ? 'text-primary' : 'text-slate-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
+                                  </div>
                                 </div>
                               </td>
                               
                               {/* مسؤول التنفيذ */}
-                              <td className="py-5 px-5 border-l border-gray-100">
+                              <td className="py-5 px-6">
                                 {plan.responsible_employee_name ? (
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                                      <span className="text-xs font-bold text-primary">{plan.responsible_employee_name.charAt(0)}</span>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg shadow-rose-200/50">
+                                      <span className="text-sm font-bold text-white">{plan.responsible_employee_name.charAt(0)}</span>
                                     </div>
-                                    <p className="text-gray-700 text-sm font-medium">{plan.responsible_employee_name}</p>
+                                    <div>
+                                      <p className="text-slate-700 text-sm font-bold">{plan.responsible_employee_name}</p>
+                                      <p className="text-slate-400 text-[11px]">مسؤول التنفيذ</p>
+                                    </div>
                                   </div>
                                 ) : (
-                                  <span className="text-gray-400 text-sm italic">غير محدد</span>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                                      <UserCircle className="w-5 h-5 text-slate-300" />
+                                    </div>
+                                    <span className="text-slate-400 text-sm">غير محدد</span>
+                                  </div>
                                 )}
                               </td>
                               
                               {/* المستهدف السنوي */}
-                              <td className="w-28 py-5 px-3 border-l border-gray-100 text-center">
-                                <div className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg">
-                                  <p className="text-lg font-bold text-accent">{formatNumber(plan.annual_target)}</p>
+                              <td className="w-32 py-5 px-4 text-center">
+                                <div className="inline-flex flex-col items-center justify-center px-4 py-2 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200/50 shadow-sm">
+                                  <p className="text-2xl font-black text-amber-600">{formatNumber(plan.annual_target)}</p>
+                                  <p className="text-[10px] text-amber-500/80 font-medium">سنوي</p>
                                 </div>
                               </td>
                               
                               {/* المتوسط الشهري */}
-                              <td className={`w-28 py-5 px-3 text-center ${isEditMode ? 'border-l border-gray-100' : ''}`}>
-                                <div className="inline-flex items-center justify-center px-3 py-1.5 bg-gray-50 rounded-lg">
-                                  <p className="text-lg font-bold text-primary">
+                              <td className={`w-32 py-5 px-4 text-center`}>
+                                <div className="inline-flex flex-col items-center justify-center px-4 py-2 bg-gradient-to-br from-cyan-50 to-teal-50 rounded-xl border border-cyan-200/50 shadow-sm">
+                                  <p className="text-2xl font-black text-cyan-600">
                                     {formatNumber(Math.round(plan.annual_target / 12))}
                                   </p>
+                                  <p className="text-[10px] text-cyan-500/80 font-medium">شهري</p>
                                 </div>
                               </td>
                               
