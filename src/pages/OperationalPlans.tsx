@@ -21,12 +21,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X } from "lucide-react";
+import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { AddOperationalPlanDialog } from "@/components/operational-plans/AddOperationalPlanDialog";
+import { EditPlanDialog } from "@/components/operational-plans/EditPlanDialog";
 import { formatNumber } from "@/lib/utils";
 
 interface Employee {
@@ -131,13 +132,12 @@ export default function OperationalPlans() {
   const [editingMonthlyTargets, setEditingMonthlyTargets] = useState<{ [planId: string]: number[] }>({});
   const [isEditingMonths, setIsEditingMonths] = useState<string | null>(null);
   
-  // تعديل الهدف الاستراتيجي
-  const [editingGoalName, setEditingGoalName] = useState<string | null>(null);
-  const [editGoalDepartmentId, setEditGoalDepartmentId] = useState<string>("");
-  
-  // تعديل المبادرة
-  const [editingInitiativeName, setEditingInitiativeName] = useState<string | null>(null);
-  const [editInitiativeDepartmentId, setEditInitiativeDepartmentId] = useState<string>("");
+  // نافذة التعديل المنظمة
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editDialogType, setEditDialogType] = useState<"strategic_goal" | "initiative" | "activity">("activity");
+  const [editDialogPlan, setEditDialogPlan] = useState<OperationalPlan | null>(null);
+  const [editDialogGoalName, setEditDialogGoalName] = useState<string>("");
+  const [editDialogInitiativeName, setEditDialogInitiativeName] = useState<string>("");
   
   // إضافة نشاط جديد مباشرة
   const [addingActivityUnder, setAddingActivityUnder] = useState<{
@@ -676,64 +676,19 @@ export default function OperationalPlans() {
     }
   };
 
-  // حفظ تعديلات قسم الهدف الاستراتيجي
-  const handleSaveGoalDepartment = async (goalName: string) => {
-    const goal = strategicGoals.find(g => g.name === goalName);
-    if (!goal) return;
-    
-    try {
-      const { error } = await supabase
-        .from("strategic_goals")
-        .update({ department_id: editGoalDepartmentId || null })
-        .eq("id", goal.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "تم الحفظ",
-        description: "تم تحديث مالك الهدف الاستراتيجي",
-      });
-
-      setEditingGoalName(null);
-      setEditGoalDepartmentId("");
-      fetchStrategicGoals();
-    } catch (error: any) {
-      toast({
-        title: "خطأ",
-        description: "فشل في حفظ التعديلات",
-        variant: "destructive",
-      });
-    }
+  // فتح نافذة التعديل
+  const openEditDialog = (type: "strategic_goal" | "initiative" | "activity", goalName?: string, initName?: string, plan?: OperationalPlan) => {
+    setEditDialogType(type);
+    setEditDialogGoalName(goalName || "");
+    setEditDialogInitiativeName(initName || "");
+    setEditDialogPlan(plan || null);
+    setEditDialogOpen(true);
   };
 
-  // حفظ تعديلات قسم المبادرة
-  const handleSaveInitiativeDepartment = async (initiativeName: string) => {
-    const init = initiatives.find(i => i.name === initiativeName);
-    if (!init) return;
-    
-    try {
-      const { error } = await supabase
-        .from("initiatives")
-        .update({ department_id: editInitiativeDepartmentId || null })
-        .eq("id", init.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "تم الحفظ",
-        description: "تم تحديث مالك المبادرة",
-      });
-
-      setEditingInitiativeName(null);
-      setEditInitiativeDepartmentId("");
-      fetchInitiatives();
-    } catch (error: any) {
-      toast({
-        title: "خطأ",
-        description: "فشل في حفظ التعديلات",
-        variant: "destructive",
-      });
-    }
+  const handleDialogSave = () => {
+    fetchPlans();
+    fetchStrategicGoals();
+    fetchInitiatives();
   };
 
   // الحصول على الموظفين حسب القسم
@@ -1126,9 +1081,14 @@ export default function OperationalPlans() {
                       <th className="w-28 py-3 px-2 border-l-2 border-white/30 text-center">
                         <span className="text-sm font-semibold">المستهدف السنوي</span>
                       </th>
-                      <th className="w-28 py-3 px-2 text-center">
+                      <th className="w-28 py-3 px-2 border-l-2 border-white/30 text-center">
                         <span className="text-sm font-semibold">المتوسط الشهري</span>
                       </th>
+                      {isEditMode && (
+                        <th className="w-24 py-3 px-2 text-center bg-orange-500">
+                          <span className="text-sm font-semibold">الإجراء</span>
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   
@@ -1155,14 +1115,14 @@ export default function OperationalPlans() {
                     
                     let colorIndex = 0;
                     goalMap.forEach((goalData, goalName) => {
-                      const initiatives: { initiative: string; plans: OperationalPlan[] }[] = [];
+                      const inits: { initiative: string; plans: OperationalPlan[] }[] = [];
                       goalData.initiatives.forEach((plans, initName) => {
-                        initiatives.push({ initiative: initName, plans });
+                        inits.push({ initiative: initName, plans });
                       });
                       groupedPlans.push({
                         strategicGoal: goalName,
                         colorIndex: colorIndex % GOAL_COLORS.length,
-                        initiatives
+                        initiatives: inits
                       });
                       colorIndex++;
                     });
@@ -1198,316 +1158,132 @@ export default function OperationalPlans() {
                           // تحديد نوع الفاصل السفلي
                           let bottomBorder = '';
                           if (isLastInInitiative && isLastInitiative && !isLastGoal) {
-                            // فاصل كبير بين الأهداف الاستراتيجية
                             bottomBorder = 'border-b-4 border-b-gray-500';
                           } else if (isLastInInitiative && !isLastInitiative) {
-                            // فاصل كبير بين المبادرات
                             bottomBorder = 'border-b-4 border-b-gray-400';
                           } else if (!isLastInInitiative) {
-                            // فاصل صغير بين الأنشطة
                             bottomBorder = 'border-b border-b-gray-200';
                           }
+                          
+                          const goalData = strategicGoals.find(g => g.name === group.strategicGoal);
+                          const initData = initiatives.find(i => i.name === initGroup.initiative);
                           
                           rows.push(
                             <tr 
                               key={plan.id} 
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-white/50 transition-all duration-200 ${isExpanded ? 'bg-white/70' : ''} ${bottomBorder}`}
                             >
-                              {/* الهدف الاستراتيجي - مدمج أو قابل للتعديل */}
-                              {editingPlanId === plan.id ? (
-                                <td className={`py-2 px-2 border-l-2 border-gray-300 align-middle ${color.bg}`}>
-                                  <Input
-                                    value={editFormData?.strategic_goal || ''}
-                                    onChange={(e) => setEditFormData(prev => prev ? {...prev, strategic_goal: e.target.value} : null)}
-                                    className="h-8 text-xs"
-                                    placeholder="الهدف الاستراتيجي"
-                                  />
-                                </td>
-                              ) : isFirstRowOfGoal && (
+                              {/* الهدف الاستراتيجي */}
+                              {isFirstRowOfGoal && (
                                 <td 
                                   rowSpan={totalRowsInGoal} 
                                   className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${color.bg}`}
                                 >
-                                  <p className={`font-semibold text-sm ${color.text}`}>{group.strategicGoal}</p>
-                                  {/* عرض واختيار مالك الهدف (القسم) */}
-                                  {(() => {
-                                    const goalData = strategicGoals.find(g => g.name === group.strategicGoal);
-                                    const isEditingThisGoal = editingGoalName === group.strategicGoal;
-                                    
-                                    if (isEditMode && isEditingThisGoal) {
-                                      return (
-                                        <div className="mt-2 flex items-center gap-1">
-                                          <Select
-                                            value={editGoalDepartmentId}
-                                            onValueChange={setEditGoalDepartmentId}
-                                          >
-                                            <SelectTrigger className="h-7 text-xs">
-                                              <SelectValue placeholder="اختر القسم" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="none">بدون قسم</SelectItem>
-                                              {departments.map(dept => (
-                                                <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 text-green-600"
-                                            onClick={() => handleSaveGoalDepartment(group.strategicGoal)}
-                                          >
-                                            <Check className="w-3 h-3" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 text-gray-500"
-                                            onClick={() => { setEditingGoalName(null); setEditGoalDepartmentId(""); }}
-                                          >
-                                            <X className="w-3 h-3" />
-                                          </Button>
-                                        </div>
-                                      );
-                                    }
-                                    
-                                    return (
-                                      <div 
-                                        className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isEditMode ? 'cursor-pointer hover:text-primary' : ''}`}
-                                        onClick={() => {
-                                          if (isEditMode && goalData) {
-                                            setEditingGoalName(group.strategicGoal);
-                                            setEditGoalDepartmentId(goalData.department_id || "none");
-                                          }
-                                        }}
-                                      >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <p className={`font-semibold text-sm ${color.text}`}>{group.strategicGoal}</p>
+                                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                                         <span className="text-[10px]">📍</span> 
-                                        {goalData?.department_name || (isEditMode ? "انقر لاختيار القسم" : "بدون قسم")}
-                                        {isEditMode && <Pencil className="w-3 h-3 mr-1 opacity-50" />}
+                                        {goalData?.department_name || "بدون قسم"}
                                       </div>
-                                    );
-                                  })()}
+                                    </div>
+                                    {isEditMode && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full flex-shrink-0"
+                                        onClick={() => openEditDialog("strategic_goal", group.strategicGoal)}
+                                      >
+                                        <Settings2 className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 </td>
                               )}
                               
-                              {/* المبادرة - مدمج أو قابل للتعديل */}
-                              {editingPlanId === plan.id ? (
-                                <td className={`py-2 px-2 border-l-2 border-gray-300 align-middle`}>
-                                  <Input
-                                    value={editFormData?.initiative || ''}
-                                    onChange={(e) => setEditFormData(prev => prev ? {...prev, initiative: e.target.value} : null)}
-                                    className="h-8 text-xs"
-                                    placeholder="المبادرة"
-                                  />
-                                </td>
-                              ) : isFirstRowOfInit && (
+                              {/* المبادرة */}
+                              {isFirstRowOfInit && (
                                 <td 
                                   rowSpan={totalRowsInInitiative} 
                                   className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${initIndex > 0 ? 'border-t-2 border-t-gray-400' : ''}`}
                                 >
-                                  <p className="text-gray-700 text-sm font-medium">{initGroup.initiative}</p>
-                                  {/* عرض واختيار مالك المبادرة (القسم) */}
-                                  {(() => {
-                                    const initData = initiatives.find(i => i.name === initGroup.initiative);
-                                    const isEditingThisInit = editingInitiativeName === initGroup.initiative;
-                                    
-                                    if (isEditMode && isEditingThisInit) {
-                                      return (
-                                        <div className="mt-2 flex items-center gap-1">
-                                          <Select
-                                            value={editInitiativeDepartmentId}
-                                            onValueChange={setEditInitiativeDepartmentId}
-                                          >
-                                            <SelectTrigger className="h-7 text-xs">
-                                              <SelectValue placeholder="اختر القسم" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="none">بدون قسم</SelectItem>
-                                              {departments.map(dept => (
-                                                <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 text-green-600"
-                                            onClick={() => handleSaveInitiativeDepartment(initGroup.initiative)}
-                                          >
-                                            <Check className="w-3 h-3" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 text-gray-500"
-                                            onClick={() => { setEditingInitiativeName(null); setEditInitiativeDepartmentId(""); }}
-                                          >
-                                            <X className="w-3 h-3" />
-                                          </Button>
-                                        </div>
-                                      );
-                                    }
-                                    
-                                    return (
-                                      <div 
-                                        className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isEditMode ? 'cursor-pointer hover:text-primary' : ''}`}
-                                        onClick={() => {
-                                          if (isEditMode && initData) {
-                                            setEditingInitiativeName(initGroup.initiative);
-                                            setEditInitiativeDepartmentId(initData.department_id || "none");
-                                          }
-                                        }}
-                                      >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <p className="text-gray-700 text-sm font-medium">{initGroup.initiative}</p>
+                                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                                         <span className="text-[10px]">📍</span> 
-                                        {initData?.department_name || (isEditMode ? "انقر لاختيار القسم" : "بدون قسم")}
-                                        {isEditMode && <Pencil className="w-3 h-3 mr-1 opacity-50" />}
+                                        {initData?.department_name || "بدون قسم"}
                                       </div>
-                                    );
-                                  })()}
+                                    </div>
+                                    {isEditMode && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full flex-shrink-0"
+                                        onClick={() => openEditDialog("initiative", group.strategicGoal, initGroup.initiative)}
+                                      >
+                                        <Settings2 className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 </td>
                               )}
                               
-                              {/* النشاط مع السهم وأزرار التعديل */}
+                              {/* النشاط */}
                               <td className="py-4 px-4 border-l-2 border-gray-300">
-                                {editingPlanId === plan.id ? (
-                                  <div className="flex items-center gap-2">
-                                    <Input
-                                      value={editFormData?.activity_name || ''}
-                                      onChange={(e) => setEditFormData(prev => prev ? {...prev, activity_name: e.target.value} : null)}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="h-8 text-sm font-semibold flex-1"
-                                      autoFocus
-                                    />
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="text-green-500 hover:text-green-700 hover:bg-green-50 rounded-full h-8 w-8 flex-shrink-0"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSaveEdit(plan.id);
-                                      }}
-                                    >
-                                      <Check className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-full h-8 w-8 flex-shrink-0"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditingPlanId(null);
-                                        setEditFormData(null);
-                                      }}
-                                    >
-                                      <X className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <div 
-                                    className="flex items-center gap-2 cursor-pointer group"
-                                    onClick={() => handleViewPlan(plan)}
-                                  >
-                                    <ChevronDown 
-                                      className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-180 text-[#2d7a85]' : 'text-[#3d9aa8]'}`} 
-                                    />
-                                    <p className="font-semibold text-gray-800 text-sm flex-1">{plan.activity_name}</p>
-                                    {isEditMode && (isAdmin || plan.user_id === authUser?.id) && (
-                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-7 w-7"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setEditingPlanId(plan.id);
-                                            setEditFormData({
-                                              activity_name: plan.activity_name,
-                                              annual_target: plan.annual_target,
-                                              strategic_goal: plan.strategic_goal || '',
-                                              initiative: plan.initiative || '',
-                                              responsible_employee_id: plan.responsible_employee_id || null,
-                                            });
-                                          }}
-                                        >
-                                          <Pencil className="w-3.5 h-3.5" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full h-7 w-7"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeletePlan(plan.id);
-                                          }}
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" />
-                                        </Button>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                                <div 
+                                  className="flex items-center gap-2 cursor-pointer group"
+                                  onClick={() => handleViewPlan(plan)}
+                                >
+                                  <ChevronDown 
+                                    className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-180 text-[#2d7a85]' : 'text-[#3d9aa8]'}`} 
+                                  />
+                                  <p className="font-semibold text-gray-800 text-sm flex-1">{plan.activity_name}</p>
+                                </div>
                               </td>
                               
                               {/* مسؤول التنفيذ */}
                               <td className="py-4 px-4 border-l-2 border-gray-300">
-                                {editingPlanId === plan.id ? (
-                                  (() => {
-                                    // جلب قسم المبادرة أو الهدف لفلترة الموظفين
-                                    const initData = initiatives.find(i => i.name === (editFormData?.initiative || plan.initiative));
-                                    const goalData = strategicGoals.find(g => g.name === (editFormData?.strategic_goal || plan.strategic_goal));
-                                    const ownerDeptId = initData?.department_id || goalData?.department_id || null;
-                                    const filteredEmployees = getEmployeesByDepartment(ownerDeptId);
-                                    
-                                    return (
-                                      <Select
-                                        value={editFormData?.responsible_employee_id || "none"}
-                                        onValueChange={(value) => setEditFormData(prev => prev ? {...prev, responsible_employee_id: value === "none" ? null : value} : null)}
-                                      >
-                                        <SelectTrigger className="h-8 text-xs">
-                                          <SelectValue placeholder="اختر مسؤول التنفيذ" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="none">بدون مسؤول</SelectItem>
-                                          {filteredEmployees.map(emp => (
-                                            <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
-                                          ))}
-                                          {filteredEmployees.length === 0 && ownerDeptId && (
-                                            <div className="px-2 py-1.5 text-xs text-muted-foreground">لا يوجد موظفين في هذا القسم</div>
-                                          )}
-                                        </SelectContent>
-                                      </Select>
-                                    );
-                                  })()
-                                ) : (
-                                  <p className="text-gray-700 text-sm">{plan.responsible_employee_name || "-"}</p>
-                                )}
+                                <p className="text-gray-700 text-sm">{plan.responsible_employee_name || "-"}</p>
                               </td>
                               
                               {/* المستهدف السنوي */}
                               <td className="w-28 py-4 px-2 border-l-2 border-gray-300 text-center">
-                                {editingPlanId === plan.id ? (
-                                  <Input
-                                    type="number"
-                                    value={editFormData?.annual_target || 0}
-                                    onChange={(e) => setEditFormData(prev => prev ? {...prev, annual_target: parseFloat(e.target.value) || 0} : null)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="h-8 text-sm text-center w-full"
-                                  />
-                                ) : (
-                                  <p className="text-lg font-bold text-[#3d9aa8]">{plan.annual_target}</p>
-                                )}
+                                <p className="text-lg font-bold text-[#3d9aa8]">{plan.annual_target}</p>
                               </td>
                               
                               {/* المتوسط الشهري */}
-                              <td className="w-28 py-4 px-2 border-l-2 border-gray-300 text-center bg-white/50">
+                              <td className={`w-28 py-4 px-2 text-center bg-white/50 ${isEditMode ? 'border-l-2 border-gray-300' : ''}`}>
                                 <p className="text-lg font-bold text-[#2d7a85]">
-                                  {editingPlanId === plan.id 
-                                    ? Math.round((editFormData?.annual_target || 0) / 12)
-                                    : Math.round(plan.annual_target / 12)
-                                  }
+                                  {Math.round(plan.annual_target / 12)}
                                 </p>
                               </td>
                               
+                              {/* عمود الإجراء - يظهر فقط في وضع التعديل */}
+                              {isEditMode && (
+                                <td className="w-24 py-4 px-2 text-center bg-orange-50">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-orange-600 hover:text-orange-800 hover:bg-orange-100 rounded-full"
+                                      onClick={() => openEditDialog("activity", group.strategicGoal, initGroup.initiative, plan)}
+                                      title="تعديل النشاط"
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full"
+                                      onClick={() => handleDeletePlan(plan.id)}
+                                      title="حذف النشاط"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              )}
                             </tr>
                           );
                           
@@ -1518,7 +1294,7 @@ export default function OperationalPlans() {
                             
                             rows.push(
                               <tr key={`${plan.id}-expanded`}>
-                                <td colSpan={6} className="p-0">
+                                <td colSpan={isEditMode ? 7 : 6} className="p-0">
                                   <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
                                     {/* أزرار التحكم - تظهر فقط في وضع التعديل */}
                                     {isEditMode && (
@@ -1700,7 +1476,7 @@ export default function OperationalPlans() {
                                 key={`add-btn-${group.strategicGoal}-${initGroup.initiative}`} 
                                 className={`${color.bg} border-r-4 ${color.border} hover:bg-green-50/30 transition-colors`}
                               >
-                                <td colSpan={isAdmin ? 7 : 6} className="py-1 px-4">
+                                <td colSpan={isEditMode ? 7 : 6} className="py-1 px-4">
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -1914,6 +1690,22 @@ export default function OperationalPlans() {
             )}
           </CardContent>
         </Card>
+        
+        {/* نافذة التعديل المنظمة */}
+        <EditPlanDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          editType={editDialogType}
+          plan={editDialogPlan}
+          strategicGoalName={editDialogGoalName}
+          initiativeName={editDialogInitiativeName}
+          strategicGoals={strategicGoals}
+          initiatives={initiatives}
+          departments={departments}
+          employees={employees}
+          onSave={handleDialogSave}
+          onDelete={() => editDialogPlan && handleDeletePlan(editDialogPlan.id)}
+        />
       </div>
     </DashboardLayout>
   );
