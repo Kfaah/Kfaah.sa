@@ -228,7 +228,7 @@ export default function OperationalPlans() {
       const { data: plansData, error } = await supabase
         .from("operational_plans")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
 
