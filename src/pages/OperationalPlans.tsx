@@ -1689,14 +1689,14 @@ export default function OperationalPlans() {
                               {isFirstRowOfInit && (
                                 <td 
                                   rowSpan={totalRowsInInitiative} 
-                                  className="py-4 px-5 align-top bg-gray-50/50 border-l-2 border-gray-200"
+                                  className="py-4 px-5 align-middle bg-gray-50/50 border-l-2 border-gray-200"
                                 >
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1">
-                                      <p className="text-gray-700 text-sm font-medium leading-relaxed mb-2">{initGroup.initiative}</p>
+                                  <div className="flex flex-col items-center justify-center text-center gap-2">
+                                    <div className="w-full">
+                                      <p className="text-gray-700 text-sm font-medium leading-relaxed mb-2 text-center">{initGroup.initiative}</p>
                                       {/* الأقسام */}
                                       {initData?.departments && initData.departments.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5">
+                                        <div className="flex flex-wrap gap-1.5 justify-center">
                                           {initData.departments.map((d) => (
                                             <Badge 
                                               key={d.id} 
@@ -1713,7 +1713,7 @@ export default function OperationalPlans() {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
+                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100 mx-auto"
                                         onClick={() => {
                                           const actualInitName = initData?.name || initGroup.initiative;
                                           openEditDialog("initiative", group.strategicGoal, actualInitName, plan);
