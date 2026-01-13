@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle } from "lucide-react";
+import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle, ArrowUp, ArrowDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
@@ -51,6 +51,7 @@ interface StrategicGoal {
   year: number;
   department_id: string | null;
   department_name?: string;
+  display_order?: number;
   // الأقسام المالكة (متعدد) عبر جدول الربط
   departments?: Department[];
 }
@@ -252,9 +253,9 @@ export default function OperationalPlans() {
       // 1) تحميل الأهداف
       const { data: goals, error } = await supabase
         .from("strategic_goals")
-        .select("id, name, color, year, department_id")
+        .select("id, name, color, year, department_id, display_order")
         .eq("year", year)
-        .order("created_at", { ascending: true });
+        .order("display_order", { ascending: true });
 
       if (error) throw error;
 
@@ -560,6 +561,46 @@ export default function OperationalPlans() {
       toast({
         title: "خطأ",
         description: error.message || "فشل في إنشاء الخطط",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // تغيير ترتيب الهدف الاستراتيجي
+  const handleMoveGoal = async (goalId: string, direction: 'up' | 'down') => {
+    const currentIndex = strategicGoals.findIndex(g => g.id === goalId);
+    if (currentIndex === -1) return;
+    
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= strategicGoals.length) return;
+
+    const currentGoal = strategicGoals[currentIndex];
+    const targetGoal = strategicGoals[targetIndex];
+
+    try {
+      // تبديل الترتيب
+      await supabase
+        .from("strategic_goals")
+        .update({ display_order: targetGoal.display_order ?? targetIndex })
+        .eq("id", currentGoal.id);
+
+      await supabase
+        .from("strategic_goals")
+        .update({ display_order: currentGoal.display_order ?? currentIndex })
+        .eq("id", targetGoal.id);
+
+      // إعادة تحميل الأهداف
+      await fetchStrategicGoals();
+      
+      toast({
+        title: "تم",
+        description: "تم تغيير ترتيب الهدف الاستراتيجي",
+      });
+    } catch (error: any) {
+      console.error("Error moving goal:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تغيير الترتيب",
         variant: "destructive",
       });
     }
@@ -1294,17 +1335,45 @@ export default function OperationalPlans() {
                                       )}
                                     </div>
                                     {isEditMode && (
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
-                                        onClick={() => {
-                                          const actualGoalName = goalData?.name || group.strategicGoal;
-                                          openEditDialog("strategic_goal", actualGoalName, undefined, plan);
-                                        }}
-                                      >
-                                        <Settings2 className="w-3.5 h-3.5" />
-                                      </Button>
+                                      <div className="flex flex-col gap-1 flex-shrink-0">
+                                        <div className="flex gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (goalData?.id) handleMoveGoal(goalData.id, 'up');
+                                            }}
+                                            disabled={groupIndex === 0}
+                                          >
+                                            <ArrowUp className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (goalData?.id) handleMoveGoal(goalData.id, 'down');
+                                            }}
+                                            disabled={groupIndex === groupedPlans.length - 1}
+                                          >
+                                            <ArrowDown className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100"
+                                          onClick={() => {
+                                            const actualGoalName = goalData?.name || group.strategicGoal;
+                                            openEditDialog("strategic_goal", actualGoalName, undefined, plan);
+                                          }}
+                                        >
+                                          <Settings2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </div>
                                     )}
                                   </div>
                                 </td>
