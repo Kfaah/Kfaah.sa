@@ -1056,6 +1056,7 @@ export default function OperationalPlans() {
             onOpenChange={setIsAddDialogOpen}
             isAdmin={isAdmin}
             employees={employees}
+            departments={departments}
             strategicGoals={strategicGoals}
             initiatives={initiatives}
             onSubmit={handleDialogSubmit}
@@ -1244,13 +1245,13 @@ export default function OperationalPlans() {
                           let bottomBorder = '';
                           if (isLastInInitiative && isLastInitiative && !isLastGoal) {
                             // فاصل بين الأهداف الاستراتيجية - خط عريض واضح
-                            bottomBorder = 'border-b-[3px] border-b-primary/50';
+                            bottomBorder = 'border-b-4 border-b-primary/60';
                           } else if (isLastInInitiative && !isLastInitiative) {
                             // فاصل بين المبادرات - خط متوسط ملون
-                            bottomBorder = 'border-b-2 border-b-teal-300';
+                            bottomBorder = 'border-b-[3px] border-b-teal-400';
                           } else if (!isLastInInitiative) {
-                            // فاصل بين الأنشطة - خط خفيف متقطع
-                            bottomBorder = 'border-b border-b-gray-200 border-dashed';
+                            // فاصل بين الأنشطة - خط واضح متقطع
+                            bottomBorder = 'border-b-2 border-b-gray-300 border-dashed';
                           }
                           
                           // البحث بالـ ID أولاً ثم بالاسم

@@ -104,13 +104,15 @@ interface ColumnDef {
 }
 
 const createDefaultColumns = (): ColumnDef[] => [
-  { id: 'action', label: 'إجراء', width: '70px', editable: false, removable: false, isCustom: false },
-  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '8%', editable: true, removable: true, isCustom: false },
-  { id: 'annualTarget', label: 'المستهدف السنوي', width: '8%', editable: true, removable: true, isCustom: false },
-  { id: 'responsibleEmployee', label: 'المنفذ', width: '12%', editable: false, removable: false, isCustom: false },
-  { id: 'activity', label: 'النشاط', width: '18%', editable: true, removable: true, isCustom: false },
-  { id: 'initiative', label: 'المبادرة', width: '18%', editable: true, removable: true, isCustom: false },
-  { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '18%', editable: true, removable: true, isCustom: false },
+  { id: 'action', label: 'إجراء', width: '60px', editable: false, removable: false, isCustom: false },
+  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '7%', editable: true, removable: true, isCustom: false },
+  { id: 'annualTarget', label: 'المستهدف السنوي', width: '7%', editable: true, removable: true, isCustom: false },
+  { id: 'responsibleEmployee', label: 'منفذ النشاط', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'activity', label: 'النشاط', width: '14%', editable: true, removable: true, isCustom: false },
+  { id: 'initiativeOwner', label: 'مالك المبادرة', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'initiative', label: 'المبادرة', width: '14%', editable: true, removable: true, isCustom: false },
+  { id: 'goalOwner', label: 'مالك الهدف', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '14%', editable: true, removable: true, isCustom: false },
   { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
 ];
 
@@ -135,8 +137,10 @@ interface TableRowData {
   id: string;
   strategicGoal: string;
   strategicGoalId?: string;
+  goalOwnerDepartmentIds: string[];
   initiative: string;
   initiativeId?: string;
+  initiativeOwnerDepartmentIds: string[];
   activity: string;
   responsibleEmployeeId?: string;
   responsibleEmployeeName?: string;
@@ -174,6 +178,7 @@ interface LocalInitiative {
   name: string;
   isNew: boolean;
   existingId?: string;
+  departmentIds: string[];
   activities: LocalActivity[];
 }
 
@@ -182,6 +187,7 @@ interface LocalGoal {
   name: string;
   isNew: boolean;
   existingId?: string;
+  departmentIds: string[];
   initiatives: LocalInitiative[];
 }
 
@@ -205,6 +211,7 @@ interface AddOperationalPlanDialogProps {
   onOpenChange: (open: boolean) => void;
   isAdmin: boolean;
   employees: Employee[];
+  departments: Department[];
   strategicGoals: StrategicGoal[];
   initiatives: Initiative[];
   onSubmit: (data: {
@@ -383,7 +390,10 @@ function SortableRow({
   startCellDrag,
   dropCellOnCell,
   employees,
+  departments,
   updateResponsibleEmployee,
+  updateGoalDepartments,
+  updateInitiativeDepartments,
 }: {
   row: TableRowData;
   index: number;
@@ -407,7 +417,10 @@ function SortableRow({
   startCellDrag: (rowId: string, colId: string) => void;
   dropCellOnCell: (targetRowId: string, targetColId: string) => void;
   employees: Employee[];
+  departments: Department[];
   updateResponsibleEmployee: (rowId: string, employeeId: string, employeeName: string) => void;
+  updateGoalDepartments: (rowId: string, deptIds: string[]) => void;
+  updateInitiativeDepartments: (rowId: string, deptIds: string[]) => void;
 }) {
   const {
     attributes,
@@ -733,7 +746,86 @@ function SortableRow({
           );
         }
 
-        // عمود المبادرة
+        // عمود مالك المبادرة (الأقسام)
+        if (col.id === 'initiativeOwner') {
+          if (!row.showInitiativeCell) return null;
+          return (
+            <TableCell key={col.id} className="border-l p-1" rowSpan={row.initiativeRowSpan}>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-full text-xs justify-start gap-1 hover:bg-muted/50">
+                    {row.initiativeOwnerDepartmentIds.length > 0 ? (
+                      <span className="truncate">{row.initiativeOwnerDepartmentIds.length} قسم</span>
+                    ) : (
+                      <span className="text-muted-foreground">اختر...</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="start">
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {departments.map((dept) => (
+                      <label key={dept.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 p-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={row.initiativeOwnerDepartmentIds.includes(dept.id)}
+                          onChange={() => {
+                            const newIds = row.initiativeOwnerDepartmentIds.includes(dept.id)
+                              ? row.initiativeOwnerDepartmentIds.filter(id => id !== dept.id)
+                              : [...row.initiativeOwnerDepartmentIds, dept.id];
+                            updateInitiativeDepartments(row.id, newIds);
+                          }}
+                          className="rounded"
+                        />
+                        {dept.name}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </TableCell>
+          );
+        }
+
+        // عمود مالك الهدف الاستراتيجي (الأقسام)
+        if (col.id === 'goalOwner') {
+          if (!row.showGoalCell) return null;
+          return (
+            <TableCell key={col.id} className="border-l p-1" rowSpan={row.goalRowSpan}>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-full text-xs justify-start gap-1 hover:bg-muted/50">
+                    {row.goalOwnerDepartmentIds.length > 0 ? (
+                      <span className="truncate">{row.goalOwnerDepartmentIds.length} قسم</span>
+                    ) : (
+                      <span className="text-muted-foreground">اختر...</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="start">
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {departments.map((dept) => (
+                      <label key={dept.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 p-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={row.goalOwnerDepartmentIds.includes(dept.id)}
+                          onChange={() => {
+                            const newIds = row.goalOwnerDepartmentIds.includes(dept.id)
+                              ? row.goalOwnerDepartmentIds.filter(id => id !== dept.id)
+                              : [...row.goalOwnerDepartmentIds, dept.id];
+                            updateGoalDepartments(row.id, newIds);
+                          }}
+                          className="rounded"
+                        />
+                        {dept.name}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </TableCell>
+          );
+        }
+
         if (col.id === 'initiative') {
           if (!row.showInitiativeCell) return null;
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
@@ -982,6 +1074,7 @@ export function AddOperationalPlanDialog({
   onOpenChange,
   isAdmin,
   employees,
+  departments,
   strategicGoals,
   initiatives,
   onSubmit,
@@ -1149,8 +1242,10 @@ export function AddOperationalPlanDialog({
         id: editingPlan.id,
         strategicGoal: editingPlan.strategic_goal || "",
         strategicGoalId: editingPlan.strategic_goal_id || undefined,
+        goalOwnerDepartmentIds: [],
         initiative: editingPlan.initiative || "",
         initiativeId: editingPlan.initiative_id || undefined,
+        initiativeOwnerDepartmentIds: [],
         activity: editingPlan.activity_name,
         annualTarget: editingPlan.annual_target,
         monthlyAverage: Math.round(editingPlan.annual_target / 12),
@@ -1238,7 +1333,9 @@ export function AddOperationalPlanDialog({
     const newRow: TableRowData = {
       id: generateId(),
       strategicGoal: "",
+      goalOwnerDepartmentIds: [],
       initiative: "",
+      initiativeOwnerDepartmentIds: [],
       activity: "",
       responsibleEmployeeId: undefined,
       responsibleEmployeeName: undefined,
@@ -1290,6 +1387,20 @@ export function AddOperationalPlanDialog({
       row.id === rowId 
         ? { ...row, responsibleEmployeeId: employeeId, responsibleEmployeeName: employeeName }
         : row
+    ));
+  }, []);
+
+  // تحديث أقسام مالك الهدف الاستراتيجي
+  const updateGoalDepartments = useCallback((rowId: string, deptIds: string[]) => {
+    setRows(prev => prev.map(row => 
+      row.id === rowId ? { ...row, goalOwnerDepartmentIds: deptIds } : row
+    ));
+  }, []);
+
+  // تحديث أقسام مالك المبادرة
+  const updateInitiativeDepartments = useCallback((rowId: string, deptIds: string[]) => {
+    setRows(prev => prev.map(row => 
+      row.id === rowId ? { ...row, initiativeOwnerDepartmentIds: deptIds } : row
     ));
   }, []);
 
@@ -1651,11 +1762,17 @@ export function AddOperationalPlanDialog({
           name: row.strategicGoal,
           isNew: !existingGoal,
           existingId: existingGoal?.id,
+          departmentIds: row.goalOwnerDepartmentIds || [],
           initiatives: [],
         });
       }
 
       const goal = goalsMap.get(goalKey)!;
+      
+      // تحديث الأقسام إذا كانت فارغة
+      if (goal.departmentIds.length === 0 && row.goalOwnerDepartmentIds.length > 0) {
+        goal.departmentIds = row.goalOwnerDepartmentIds;
+      }
       
       let initiative = goal.initiatives.find(i => i.name === row.initiative);
       if (!initiative) {
@@ -1668,9 +1785,15 @@ export function AddOperationalPlanDialog({
           name: row.initiative,
           isNew: !existingInitiative,
           existingId: existingInitiative?.id,
+          departmentIds: row.initiativeOwnerDepartmentIds || [],
           activities: [],
         };
         goal.initiatives.push(initiative);
+      }
+      
+      // تحديث أقسام المبادرة إذا كانت فارغة
+      if (initiative.departmentIds.length === 0 && row.initiativeOwnerDepartmentIds.length > 0) {
+        initiative.departmentIds = row.initiativeOwnerDepartmentIds;
       }
 
       initiative.activities.push({
@@ -1716,7 +1839,9 @@ export function AddOperationalPlanDialog({
     const newRows: TableRowData[] = Array.from({ length: count }, () => ({
       id: generateId(),
       strategicGoal: "",
+      goalOwnerDepartmentIds: [],
       initiative: "",
+      initiativeOwnerDepartmentIds: [],
       activity: "",
       responsibleEmployeeId: undefined,
       responsibleEmployeeName: undefined,
@@ -2032,7 +2157,10 @@ export function AddOperationalPlanDialog({
                               startCellDrag={startCellDrag}
                               dropCellOnCell={dropCellOnCell}
                               employees={employees}
+                              departments={departments}
                               updateResponsibleEmployee={updateResponsibleEmployee}
+                              updateGoalDepartments={updateGoalDepartments}
+                              updateInitiativeDepartments={updateInitiativeDepartments}
                             />
                           ))}
                         </SortableContext>
