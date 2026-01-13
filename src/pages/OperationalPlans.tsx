@@ -809,8 +809,26 @@ export default function OperationalPlans() {
                               key={plan.id} 
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-white/50 transition-all duration-200 ${isExpanded ? 'bg-white/70' : ''} ${bottomBorder}`}
                             >
-                              {/* الهدف الاستراتيجي - مدمج */}
-                              {isFirstRowOfGoal && (
+                              {/* الهدف الاستراتيجي - مدمج أو قابل للتعديل */}
+                              {editingPlanId === plan.id ? (
+                                <td className={`py-2 px-2 border-l-2 border-gray-300 align-middle ${color.bg}`}>
+                                  <Select 
+                                    value={editFormData?.strategic_goal || ''} 
+                                    onValueChange={(value) => setEditFormData(prev => prev ? {...prev, strategic_goal: value} : null)}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs">
+                                      <SelectValue placeholder="اختر الهدف" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {strategicGoals.map((goal) => (
+                                        <SelectItem key={goal.id} value={goal.name}>
+                                          {goal.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </td>
+                              ) : isFirstRowOfGoal && (
                                 <td 
                                   rowSpan={totalRowsInGoal} 
                                   className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${color.bg}`}
@@ -819,8 +837,31 @@ export default function OperationalPlans() {
                                 </td>
                               )}
                               
-                              {/* المبادرة - مدمج */}
-                              {isFirstRowOfInit && (
+                              {/* المبادرة - مدمج أو قابل للتعديل */}
+                              {editingPlanId === plan.id ? (
+                                <td className={`py-2 px-2 border-l-2 border-gray-300 align-middle`}>
+                                  <Select 
+                                    value={editFormData?.initiative || ''} 
+                                    onValueChange={(value) => setEditFormData(prev => prev ? {...prev, initiative: value} : null)}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs">
+                                      <SelectValue placeholder="اختر المبادرة" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {initiatives
+                                        .filter(init => {
+                                          const selectedGoal = strategicGoals.find(g => g.name === editFormData?.strategic_goal);
+                                          return selectedGoal ? init.strategic_goal_id === selectedGoal.id : true;
+                                        })
+                                        .map((init) => (
+                                          <SelectItem key={init.id} value={init.name}>
+                                            {init.name}
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                </td>
+                              ) : isFirstRowOfInit && (
                                 <td 
                                   rowSpan={totalRowsInInitiative} 
                                   className={`py-4 px-4 border-l-2 border-gray-300 align-middle ${initIndex > 0 ? 'border-t-2 border-t-gray-400' : ''}`}
