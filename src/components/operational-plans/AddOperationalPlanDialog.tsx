@@ -179,6 +179,7 @@ function SortableColumnHeader({
   isSelected,
   toggleHeaderSelection,
   mergeInfo,
+  onBeforeEdit,
 }: {
   column: ColumnDef;
   editingColumn: string | null;
@@ -188,6 +189,7 @@ function SortableColumnHeader({
   isSelected: boolean;
   toggleHeaderSelection: (colId: string) => void;
   mergeInfo: { isMerged: boolean; isFirst: boolean; colSpan: number; label: string };
+  onBeforeEdit: () => void;
 }) {
   const {
     attributes,
@@ -271,6 +273,7 @@ function SortableColumnHeader({
             onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
+            onFocus={onBeforeEdit}
             className="h-7 text-center text-sm font-bold border-primary"
             autoFocus
           />
@@ -1514,6 +1517,7 @@ export function AddOperationalPlanDialog({
                               isSelected={selectedHeaders.has(col.id)}
                               toggleHeaderSelection={toggleHeaderSelection}
                               mergeInfo={getHeaderMergeInfo(colIndex)}
+                              onBeforeEdit={saveBeforeEdit}
                             />
                           ))}
                         </SortableContext>
