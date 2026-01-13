@@ -113,6 +113,8 @@ export default function OperationalPlans() {
     initiative: string;
   } | null>(null);
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
+  const [editingMonthlyTargets, setEditingMonthlyTargets] = useState<{ [planId: string]: number[] }>({});
+  const [isEditingMonths, setIsEditingMonths] = useState<string | null>(null);
   
   // Form state
   const [strategicGoal, setStrategicGoal] = useState("");
@@ -600,6 +602,88 @@ export default function OperationalPlans() {
     }
   };
 
+  // بدء تعديل الأهداف الشهرية
+  const handleStartEditMonths = (plan: OperationalPlan) => {
+    const monthlyValues = Array(12).fill(0);
+    plan.months?.forEach(m => {
+      if (m.month >= 1 && m.month <= 12) {
+        monthlyValues[m.month - 1] = m.monthly_target;
+      }
+    });
+    setEditingMonthlyTargets(prev => ({ ...prev, [plan.id]: monthlyValues }));
+    setIsEditingMonths(plan.id);
+  };
+
+  // حفظ تعديلات الأهداف الشهرية
+  const handleSaveMonthlyTargets = async (plan: OperationalPlan) => {
+    const monthlyValues = editingMonthlyTargets[plan.id];
+    if (!monthlyValues) return;
+
+    try {
+      // تحديث أو إنشاء سجلات الأشهر
+      for (let i = 0; i < 12; i++) {
+        const monthNum = i + 1;
+        const existingMonth = plan.months?.find(m => m.month === monthNum);
+        
+        if (existingMonth) {
+          // تحديث السجل الموجود
+          const { error } = await supabase
+            .from("operational_plan_months")
+            .update({ monthly_target: monthlyValues[i] })
+            .eq("id", existingMonth.id);
+          if (error) throw error;
+        } else {
+          // إنشاء سجل جديد
+          const { error } = await supabase
+            .from("operational_plan_months")
+            .insert({
+              operational_plan_id: plan.id,
+              month: monthNum,
+              monthly_target: monthlyValues[i]
+            });
+          if (error) throw error;
+        }
+      }
+
+      // تحديث المستهدف السنوي
+      const newAnnualTarget = monthlyValues.reduce((sum, val) => sum + val, 0);
+      await supabase
+        .from("operational_plans")
+        .update({ annual_target: newAnnualTarget })
+        .eq("id", plan.id);
+
+      toast({
+        title: "تم الحفظ",
+        description: "تم حفظ الأهداف الشهرية بنجاح",
+      });
+
+      setIsEditingMonths(null);
+      setEditingMonthlyTargets(prev => {
+        const updated = { ...prev };
+        delete updated[plan.id];
+        return updated;
+      });
+      fetchPlans();
+    } catch (error: any) {
+      console.error("Error saving monthly targets:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حفظ الأهداف الشهرية",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // تحديث قيمة شهر معين
+  const handleMonthTargetChange = (planId: string, monthIndex: number, value: number) => {
+    setEditingMonthlyTargets(prev => {
+      const current = prev[planId] || Array(12).fill(0);
+      const updated = [...current];
+      updated[monthIndex] = value;
+      return { ...prev, [planId]: updated };
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -995,10 +1079,56 @@ export default function OperationalPlans() {
                           
                           // المحتوى المنسدل
                           if (isExpanded) {
+                            const isEditingThisMonth = isEditingMonths === plan.id;
+                            const currentMonthlyValues = editingMonthlyTargets[plan.id] || [];
+                            
                             rows.push(
                               <tr key={`${plan.id}-expanded`}>
                                 <td colSpan={isAdmin ? 7 : 6} className="p-0">
                                   <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
+                                    {/* أزرار التحكم */}
+                                    <div className="flex justify-end mb-3 gap-2">
+                                      {isEditingThisMonth ? (
+                                        <>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-green-600 hover:bg-green-50"
+                                            onClick={() => handleSaveMonthlyTargets(plan)}
+                                          >
+                                            <Check className="w-4 h-4 ml-1" />
+                                            حفظ
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-red-600 hover:bg-red-50"
+                                            onClick={() => {
+                                              setIsEditingMonths(null);
+                                              setEditingMonthlyTargets(prev => {
+                                                const updated = { ...prev };
+                                                delete updated[plan.id];
+                                                return updated;
+                                              });
+                                            }}
+                                          >
+                                            <X className="w-4 h-4 ml-1" />
+                                            إلغاء
+                                          </Button>
+                                        </>
+                                      ) : (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="text-[#3d9aa8] border-[#3d9aa8]/30 hover:bg-[#3d9aa8]/10"
+                                          onClick={() => handleStartEditMonths(plan)}
+                                        >
+                                          <Pencil className="w-4 h-4 ml-1" />
+                                          تعديل الأهداف الشهرية
+                                        </Button>
+                                      )}
+                                    </div>
+                                    
                                     <div className="overflow-x-auto rounded-xl border border-[#3d9aa8]/20 shadow-sm">
                                       <Table>
                                         <TableHeader>
@@ -1020,20 +1150,38 @@ export default function OperationalPlans() {
                                           <TableRow className="hover:bg-[#3d9aa8]/5">
                                             {MONTHS_AR.map((_, index) => {
                                               const monthData = plan.months?.find(m => m.month === index + 1);
-                                              const target = monthData?.monthly_target || 0;
+                                              const target = isEditingThisMonth 
+                                                ? (currentMonthlyValues[index] || 0)
+                                                : (monthData?.monthly_target || 0);
+                                              
                                               return (
                                                 <TableCell 
                                                   key={index} 
-                                                  className="text-center border-l border-[#3d9aa8]/10"
+                                                  className="text-center border-l border-[#3d9aa8]/10 p-1"
                                                 >
-                                                  <span className={`text-lg font-bold ${target > 0 ? 'text-[#3d9aa8]' : 'text-muted-foreground'}`}>
-                                                    {target}
-                                                  </span>
+                                                  {isEditingThisMonth ? (
+                                                    <Input
+                                                      type="number"
+                                                      min="0"
+                                                      value={target}
+                                                      onChange={(e) => handleMonthTargetChange(plan.id, index, parseInt(e.target.value) || 0)}
+                                                      className="w-16 h-8 text-center text-sm font-bold mx-auto"
+                                                    />
+                                                  ) : (
+                                                    <span className={`text-lg font-bold ${target > 0 ? 'text-[#3d9aa8]' : 'text-muted-foreground'}`}>
+                                                      {target}
+                                                    </span>
+                                                  )}
                                                 </TableCell>
                                               );
                                             })}
                                             <TableCell className="text-center bg-[#3d9aa8]/20">
-                                              <span className="text-xl font-bold text-[#2d7a85]">{plan.annual_target}</span>
+                                              <span className="text-xl font-bold text-[#2d7a85]">
+                                                {isEditingThisMonth 
+                                                  ? currentMonthlyValues.reduce((sum, val) => sum + (val || 0), 0)
+                                                  : plan.annual_target
+                                                }
+                                              </span>
                                             </TableCell>
                                           </TableRow>
                                         </TableBody>
