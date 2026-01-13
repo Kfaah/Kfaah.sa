@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil } from "lucide-react";
+import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
@@ -105,7 +105,13 @@ export default function OperationalPlans() {
   const [plans, setPlans] = useState<OperationalPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<OperationalPlan | null>(null);
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<{
+    activity_name: string;
+    annual_target: number;
+    strategic_goal: string;
+    initiative: string;
+  } | null>(null);
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
   
   // Form state
@@ -560,6 +566,40 @@ export default function OperationalPlans() {
     }
   };
 
+  // حفظ تعديلات الخطة
+  const handleSaveEdit = async (planId: string) => {
+    if (!editFormData) return;
+    
+    try {
+      const { error } = await supabase
+        .from("operational_plans")
+        .update({
+          activity_name: editFormData.activity_name,
+          annual_target: editFormData.annual_target,
+          strategic_goal: editFormData.strategic_goal || null,
+          initiative: editFormData.initiative || null,
+        })
+        .eq("id", planId);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحفظ",
+        description: "تم حفظ التعديلات بنجاح",
+      });
+
+      setEditingPlanId(null);
+      setEditFormData(null);
+      fetchPlans();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: "فشل في حفظ التعديلات",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -594,16 +634,12 @@ export default function OperationalPlans() {
           
           <AddOperationalPlanDialog
             open={isAddDialogOpen}
-            onOpenChange={(open) => {
-              setIsAddDialogOpen(open);
-              if (!open) setEditingPlan(null);
-            }}
+            onOpenChange={setIsAddDialogOpen}
             isAdmin={isAdmin}
             employees={employees}
             strategicGoals={strategicGoals}
             initiatives={initiatives}
             onSubmit={handleDialogSubmit}
-            editingPlan={editingPlan}
           />
         </div>
 
@@ -795,15 +831,25 @@ export default function OperationalPlans() {
                               
                               {/* النشاط مع السهم */}
                               <td className="py-4 px-4 border-l-2 border-gray-300">
-                                <div 
-                                  className="flex items-center gap-2 cursor-pointer"
-                                  onClick={() => handleViewPlan(plan)}
-                                >
-                                  <ChevronDown 
-                                    className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-180 text-[#2d7a85]' : 'text-[#3d9aa8]'}`} 
+                                {editingPlanId === plan.id ? (
+                                  <Input
+                                    value={editFormData?.activity_name || ''}
+                                    onChange={(e) => setEditFormData(prev => prev ? {...prev, activity_name: e.target.value} : null)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="h-8 text-sm font-semibold"
+                                    autoFocus
                                   />
-                                  <p className="font-semibold text-gray-800 text-sm">{plan.activity_name}</p>
-                                </div>
+                                ) : (
+                                  <div 
+                                    className="flex items-center gap-2 cursor-pointer"
+                                    onClick={() => handleViewPlan(plan)}
+                                  >
+                                    <ChevronDown 
+                                      className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-180 text-[#2d7a85]' : 'text-[#3d9aa8]'}`} 
+                                    />
+                                    <p className="font-semibold text-gray-800 text-sm">{plan.activity_name}</p>
+                                  </div>
+                                )}
                               </td>
                               
                               {/* الموظف المكلف - يظهر فقط للمدير */}
@@ -815,13 +861,26 @@ export default function OperationalPlans() {
                               
                               {/* المستهدف السنوي */}
                               <td className="w-28 py-4 px-2 border-l-2 border-gray-300 text-center">
-                                <p className="text-lg font-bold text-[#3d9aa8]">{plan.annual_target}</p>
+                                {editingPlanId === plan.id ? (
+                                  <Input
+                                    type="number"
+                                    value={editFormData?.annual_target || 0}
+                                    onChange={(e) => setEditFormData(prev => prev ? {...prev, annual_target: parseFloat(e.target.value) || 0} : null)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="h-8 text-sm text-center w-full"
+                                  />
+                                ) : (
+                                  <p className="text-lg font-bold text-[#3d9aa8]">{plan.annual_target}</p>
+                                )}
                               </td>
                               
                               {/* المتوسط الشهري */}
                               <td className="w-28 py-4 px-2 border-l-2 border-gray-300 text-center bg-white/50">
                                 <p className="text-lg font-bold text-[#2d7a85]">
-                                  {Math.round(plan.annual_target / 12)}
+                                  {editingPlanId === plan.id 
+                                    ? Math.round((editFormData?.annual_target || 0) / 12)
+                                    : Math.round(plan.annual_target / 12)
+                                  }
                                 </p>
                               </td>
                               
@@ -830,18 +889,51 @@ export default function OperationalPlans() {
                                 <div className="flex items-center justify-center gap-1">
                                   {(isAdmin || plan.user_id === authUser?.id) && (
                                     <>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-8 w-8"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingPlan(plan);
-                                          setIsAddDialogOpen(true);
-                                        }}
-                                      >
-                                        <Pencil className="w-4 h-4" />
-                                      </Button>
+                                      {editingPlanId === plan.id ? (
+                                        <>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-green-500 hover:text-green-700 hover:bg-green-50 rounded-full h-8 w-8"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleSaveEdit(plan.id);
+                                            }}
+                                          >
+                                            <Check className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-full h-8 w-8"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingPlanId(null);
+                                              setEditFormData(null);
+                                            }}
+                                          >
+                                            <X className="w-4 h-4" />
+                                          </Button>
+                                        </>
+                                      ) : (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-8 w-8"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingPlanId(plan.id);
+                                            setEditFormData({
+                                              activity_name: plan.activity_name,
+                                              annual_target: plan.annual_target,
+                                              strategic_goal: plan.strategic_goal || '',
+                                              initiative: plan.initiative || '',
+                                            });
+                                          }}
+                                        >
+                                          <Pencil className="w-4 h-4" />
+                                        </Button>
+                                      )}
                                       <Button
                                         variant="ghost"
                                         size="icon"
