@@ -1023,6 +1023,7 @@ export type Database = {
           created_at: string
           department_id: string | null
           description: string | null
+          display_order: number | null
           id: string
           name: string
           updated_at: string
@@ -1033,6 +1034,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           description?: string | null
+          display_order?: number | null
           id?: string
           name: string
           updated_at?: string
@@ -1043,6 +1045,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           description?: string | null
+          display_order?: number | null
           id?: string
           name?: string
           updated_at?: string
