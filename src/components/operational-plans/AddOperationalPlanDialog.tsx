@@ -316,6 +316,9 @@ function SortableRow({
             </TableCell>
           );
         }
+
+        // عمود الإجراءات
+        if (col.id === 'action') {
           return (
             <TableCell key={col.id} className="text-center p-1 border-l">
               <div className="flex items-center justify-center gap-1">
