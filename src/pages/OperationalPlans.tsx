@@ -95,16 +95,10 @@ const MONTHS_AR = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
 
-// ألوان مميزة لكل هدف استراتيجي
+// لونين فقط بالتناوب: لون قريب من الهوية (أزرق فاتح / تركوازي فاتح) وأبيض
 const GOAL_COLORS = [
-  { bg: "bg-blue-50", border: "border-l-blue-500", text: "text-blue-700" },
-  { bg: "bg-emerald-50", border: "border-l-emerald-500", text: "text-emerald-700" },
-  { bg: "bg-amber-50", border: "border-l-amber-500", text: "text-amber-700" },
-  { bg: "bg-purple-50", border: "border-l-purple-500", text: "text-purple-700" },
-  { bg: "bg-rose-50", border: "border-l-rose-500", text: "text-rose-700" },
-  { bg: "bg-cyan-50", border: "border-l-cyan-500", text: "text-cyan-700" },
-  { bg: "bg-orange-50", border: "border-l-orange-500", text: "text-orange-700" },
-  { bg: "bg-indigo-50", border: "border-l-indigo-500", text: "text-indigo-700" },
+  { bg: "bg-primary/5", border: "border-l-primary", text: "text-primary" },
+  { bg: "bg-white", border: "border-l-accent", text: "text-accent" },
 ];
 
 interface GroupedPlans {
