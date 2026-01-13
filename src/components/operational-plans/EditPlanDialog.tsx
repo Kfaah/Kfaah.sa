@@ -142,14 +142,20 @@ export function EditPlanDialog({
 
   useEffect(() => {
     if (open) {
-      if (editType === "strategic_goal" && strategicGoalName) {
-        // البحث بالاسم أو بـ ID من الخطط
-        const goal = strategicGoals.find(g => g.name === strategicGoalName) 
-          || strategicGoals.find(g => {
-            // البحث في الخطط للعثور على الهدف المرتبط
-            return g.name.includes(strategicGoalName) || strategicGoalName.includes(g.name);
-          });
-        setGoalName(goal?.name || strategicGoalName);
+      if (editType === "strategic_goal" && (strategicGoalName || plan?.strategic_goal_id)) {
+        // الأولوية للـ ID (أدق)، ثم الاسم كخطة بديلة
+        const goalFromId = plan?.strategic_goal_id
+          ? strategicGoals.find((g) => g.id === plan.strategic_goal_id)
+          : undefined;
+
+        const goalFromName = strategicGoalName
+          ? strategicGoals.find((g) => g.name === strategicGoalName) ||
+            strategicGoals.find((g) => g.name.includes(strategicGoalName) || strategicGoalName.includes(g.name))
+          : undefined;
+
+        const goal = goalFromId || goalFromName;
+
+        setGoalName(goal?.name || strategicGoalName || "");
         setGoalDepartmentIds([]);
         if (goal) {
           loadGoalDepartments(goal.id);
@@ -189,22 +195,38 @@ export function EditPlanDialog({
     setLoading(true);
     try {
       if (editType === "strategic_goal") {
-        // البحث بالاسم أو بالتضمين
-        const goal = strategicGoals.find(g => g.name === strategicGoalName) 
-          || strategicGoals.find(g => g.name.includes(strategicGoalName) || strategicGoalName.includes(g.name));
-        
-        console.log("Editing strategic goal:", { strategicGoalName, goal, goalName, goalDepartmentIds, allGoals: strategicGoals.map(g => g.name) });
-        
+        // الأولوية للـ ID (أدق)، ثم الاسم كخطة بديلة
+        const goalFromId = plan?.strategic_goal_id
+          ? strategicGoals.find((g) => g.id === plan.strategic_goal_id)
+          : undefined;
+
+        const goalFromName = strategicGoalName
+          ? strategicGoals.find((g) => g.name === strategicGoalName) ||
+            strategicGoals.find((g) => g.name.includes(strategicGoalName) || strategicGoalName.includes(g.name))
+          : undefined;
+
+        const goal = goalFromId || goalFromName;
+
+        console.log("Editing strategic goal:", {
+          strategicGoalName,
+          planStrategicGoal: plan?.strategic_goal,
+          planStrategicGoalId: plan?.strategic_goal_id,
+          goal,
+          goalName,
+          goalDepartmentIds,
+          allGoals: strategicGoals.map((g) => g.name),
+        });
+
         if (!goal) {
           toast({
             title: "خطأ",
-            description: `لم يتم العثور على الهدف الاستراتيجي "${strategicGoalName}"`,
+            description: `لم يتم العثور على الهدف الاستراتيجي "${strategicGoalName || plan?.strategic_goal_id || ""}"`,
             variant: "destructive",
           });
           setLoading(false);
           return;
         }
-        
+
         // تحديث اسم الهدف
         const { error } = await supabase
           .from("strategic_goals")
@@ -217,7 +239,7 @@ export function EditPlanDialog({
           .from("strategic_goal_departments")
           .delete()
           .eq("strategic_goal_id", goal.id);
-        
+
         if (deleteError) {
           console.log("Delete error (may be normal if no existing records):", deleteError);
         }
@@ -226,7 +248,7 @@ export function EditPlanDialog({
           const { error: insertError } = await supabase
             .from("strategic_goal_departments")
             .insert(
-              goalDepartmentIds.map(deptId => ({
+              goalDepartmentIds.map((deptId) => ({
                 strategic_goal_id: goal.id,
                 department_id: deptId,
               }))
@@ -234,13 +256,23 @@ export function EditPlanDialog({
           if (insertError) throw insertError;
         }
 
-        // تحديث اسم الهدف في الخطط
-        if (goalName !== strategicGoalName) {
-          await supabase
+        // تحديث اسم الهدف في الخطط: بالـ ID أولاً (الأصح)
+        const { error: plansByIdError } = await supabase
+          .from("operational_plans")
+          .update({ strategic_goal: goalName })
+          .eq("strategic_goal_id", goal.id);
+        if (plansByIdError) throw plansByIdError;
+
+        // دعم للخطط القديمة التي ليس لديها strategic_goal_id (تحديث بالاسم القديم إذا كان متوفر)
+        if (plan?.strategic_goal) {
+          const { error: plansByNameError } = await supabase
             .from("operational_plans")
             .update({ strategic_goal: goalName })
-            .eq("strategic_goal", strategicGoalName);
+            .is("strategic_goal_id", null)
+            .eq("strategic_goal", plan.strategic_goal);
+          if (plansByNameError) throw plansByNameError;
         }
+
         toast({ title: "تم الحفظ", description: "تم تحديث الهدف الاستراتيجي" });
       } else if (editType === "initiative") {
         const init = initiatives.find(i => i.name === initiativeName);

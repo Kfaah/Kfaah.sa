@@ -1205,7 +1205,8 @@ export default function OperationalPlans() {
                                         onClick={() => {
                                           // استخدام الاسم من strategic_goals إذا وجد
                                           const actualGoalName = goalData?.name || group.strategicGoal;
-                                          openEditDialog("strategic_goal", actualGoalName);
+                                          // تمرير plan حتى نستطيع التحديث بالـ ID وليس فقط بالاسم
+                                          openEditDialog("strategic_goal", actualGoalName, undefined, plan);
                                         }}
                                       >
                                         <Settings2 className="w-4 h-4" />
@@ -1237,7 +1238,8 @@ export default function OperationalPlans() {
                                         onClick={() => {
                                           // استخدام الاسم من initiatives إذا وجد
                                           const actualInitName = initData?.name || initGroup.initiative;
-                                          openEditDialog("initiative", group.strategicGoal, actualInitName);
+                                          // تمرير plan حتى نستطيع التحديث بالـ ID وليس فقط بالاسم
+                                          openEditDialog("initiative", group.strategicGoal, actualInitName, plan);
                                         }}
                                       >
                                         <Settings2 className="w-4 h-4" />
