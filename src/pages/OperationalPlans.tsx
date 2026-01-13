@@ -654,6 +654,8 @@ export default function OperationalPlans() {
 
   // فتح نافذة ترتيب المبادرات لهدف معين
   const openReorderInitiativesDialog = (goalName: string) => {
+    const goalId = strategicGoals.find((g) => g.name === goalName)?.id;
+
     // نجمع المبادرات حسب الاسم (لأن بعض السجلات القديمة قد لا تحتوي initiative_id)
     const byName = new Map<string, { name: string; id?: string }>();
 
@@ -664,14 +666,22 @@ export default function OperationalPlans() {
         if (!name) return;
 
         const existing = byName.get(name) || { name };
-        // خذ أول initiative_id غير فارغ إن وجد (حتى لو كانت سجلات أخرى بدون id)
+
+        // خذ أول initiative_id غير فارغ إن وجد لكن لا تقبله إذا كان مربوطًا بهدف آخر
         const candidateId = p.initiative_id || existing.id;
-        byName.set(name, { name, id: candidateId });
+        const candidateInit = candidateId ? initiatives.find((i) => i.id === candidateId) : undefined;
+        const safeId = candidateInit && goalId && candidateInit.strategic_goal_id !== goalId ? undefined : candidateId;
+
+        byName.set(name, { name, id: safeId });
       });
 
     const initsFromPlans = [...byName.values()]
       .map(({ id, name }) => {
-        const matchedInit = (id ? initiatives.find((i) => i.id === id) : undefined) || initiatives.find((i) => i.name === name);
+        const matchedInit =
+          (id ? initiatives.find((i) => i.id === id) : undefined) ||
+          (goalId ? initiatives.find((i) => i.name === name && i.strategic_goal_id === goalId) : undefined) ||
+          initiatives.find((i) => i.name === name);
+
         return {
           name: matchedInit?.name ?? name,
           id: matchedInit?.id ?? id,
@@ -701,35 +711,85 @@ export default function OperationalPlans() {
   // حفظ ترتيب المبادرات
   const saveInitiativesOrder = async () => {
     try {
+      const goalId = strategicGoals.find((g) => g.name === reorderInitiativesGoal)?.id;
+      if (!goalId) {
+        toast({
+          title: "خطأ",
+          description: "لم يتم العثور على الهدف الاستراتيجي في قاعدة البيانات",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // ثبّت strategic_goal_id لكل الخطط تحت هذا الهدف (تصحيح بيانات قديمة)
+      await supabase
+        .from("operational_plans")
+        .update({ strategic_goal_id: goalId })
+        .eq("strategic_goal", reorderInitiativesGoal)
+        .neq("strategic_goal_id", goalId);
+
+      await supabase
+        .from("operational_plans")
+        .update({ strategic_goal_id: goalId })
+        .eq("strategic_goal", reorderInitiativesGoal)
+        .is("strategic_goal_id", null);
+
       const skipped: string[] = [];
 
       for (let i = 0; i < reorderInitiatives.length; i++) {
         const init = reorderInitiatives[i];
-        const initId = init.id || initiatives.find((x) => x.name === init.name)?.id;
+        const order = i + 1;
+
+        // نحتاج مبادرة ضمن هذا الهدف تحديدًا
+        let initId: string | undefined = undefined;
+
+        // 1) لو جاي ID من الخطط، تأكد أنه لنفس الهدف
+        if (init.id) {
+          const known = initiatives.find((x) => x.id === init.id);
+          if (!known || known.strategic_goal_id === goalId) initId = init.id;
+        }
+
+        // 2) لو ما فيه، ابحث بالاسم داخل نفس الهدف
+        if (!initId) {
+          initId = initiatives.find((x) => x.name === init.name && x.strategic_goal_id === goalId)?.id;
+        }
+
+        // 3) لو ما فيه، أنشئ مبادرة جديدة ضمن هذا الهدف
+        if (!initId) {
+          const { data: created, error: createError } = await supabase
+            .from("initiatives")
+            .insert({ name: init.name, strategic_goal_id: goalId, display_order: order })
+            .select("id")
+            .single();
+
+          if (createError) throw createError;
+          initId = created?.id;
+        } else {
+          const { error } = await supabase
+            .from("initiatives")
+            .update({ display_order: order })
+            .eq("id", initId);
+          if (error) throw error;
+        }
 
         if (!initId) {
           skipped.push(init.name);
           continue;
         }
 
-        const { error } = await supabase
-          .from("initiatives")
-          .update({ display_order: i + 1 })
-          .eq("id", initId);
-
-        if (error) throw error;
-
-        // إصلاح سجلات الخطط القديمة التي لا تحتوي initiative_id (لضمان أن الفرز يتبع نفس الترتيب)
-        await supabase
+        // اربط كل خطط (الهدف + اسم المبادرة) بهذا الـ initiative_id (حتى لو كان مرتبطًا خطأً سابقًا)
+        const { error: linkError } = await supabase
           .from("operational_plans")
-          .update({ initiative_id: initId })
+          .update({ initiative_id: initId, strategic_goal_id: goalId })
           .eq("strategic_goal", reorderInitiativesGoal)
-          .eq("initiative", init.name)
-          .is("initiative_id", null);
+          .eq("initiative", init.name);
+
+        if (linkError) throw linkError;
       }
 
       await fetchInitiatives();
       await fetchPlans();
+      await fetchStrategicGoals();
       setIsReorderInitiativesDialogOpen(false);
 
       if (skipped.length) {
