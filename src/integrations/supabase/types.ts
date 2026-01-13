@@ -151,6 +151,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          department_id: string | null
           email: string
           full_name: string
           id: string
@@ -172,6 +173,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          department_id?: string | null
           email: string
           full_name: string
           id?: string
@@ -193,6 +195,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          department_id?: string | null
           email?: string
           full_name?: string
           id?: string
@@ -211,7 +214,15 @@ export type Database = {
           work_end_time?: string | null
           work_start_time?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employees_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       executive_plans: {
         Row: {
@@ -631,6 +642,7 @@ export type Database = {
       initiatives: {
         Row: {
           created_at: string
+          department_id: string | null
           description: string | null
           id: string
           name: string
@@ -639,6 +651,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          department_id?: string | null
           description?: string | null
           id?: string
           name: string
@@ -647,6 +660,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          department_id?: string | null
           description?: string | null
           id?: string
           name?: string
@@ -654,6 +668,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "initiatives_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "initiatives_strategic_goal_id_fkey"
             columns: ["strategic_goal_id"]
@@ -820,6 +841,7 @@ export type Database = {
           id: string
           initiative: string | null
           initiative_id: string | null
+          responsible_employee_id: string | null
           status: string
           strategic_goal: string | null
           strategic_goal_id: string | null
@@ -834,6 +856,7 @@ export type Database = {
           id?: string
           initiative?: string | null
           initiative_id?: string | null
+          responsible_employee_id?: string | null
           status?: string
           strategic_goal?: string | null
           strategic_goal_id?: string | null
@@ -848,6 +871,7 @@ export type Database = {
           id?: string
           initiative?: string | null
           initiative_id?: string | null
+          responsible_employee_id?: string | null
           status?: string
           strategic_goal?: string | null
           strategic_goal_id?: string | null
@@ -861,6 +885,13 @@ export type Database = {
             columns: ["initiative_id"]
             isOneToOne: false
             referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_plans_responsible_employee_id_fkey"
+            columns: ["responsible_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
@@ -918,6 +949,7 @@ export type Database = {
         Row: {
           color: string | null
           created_at: string
+          department_id: string | null
           description: string | null
           id: string
           name: string
@@ -927,6 +959,7 @@ export type Database = {
         Insert: {
           color?: string | null
           created_at?: string
+          department_id?: string | null
           description?: string | null
           id?: string
           name: string
@@ -936,13 +969,22 @@ export type Database = {
         Update: {
           color?: string | null
           created_at?: string
+          department_id?: string | null
           description?: string | null
           id?: string
           name?: string
           updated_at?: string
           year?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "strategic_goals_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_messages: {
         Row: {
