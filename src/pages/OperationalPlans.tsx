@@ -112,11 +112,11 @@ const GOAL_COLORS = [
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   { 
-    bg: "bg-purple-50/50", 
-    border: "border-r-purple-600", 
-    text: "text-purple-700",
-    hover: "hover:bg-purple-50",
-    badge: "bg-purple-100 text-purple-700 border-purple-200",
+    bg: "bg-green-50/50", 
+    border: "border-r-green-600", 
+    text: "text-green-700",
+    hover: "hover:bg-green-50",
+    badge: "bg-green-100 text-green-700 border-green-200",
   },
   { 
     bg: "bg-amber-50/50", 
