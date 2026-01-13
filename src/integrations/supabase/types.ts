@@ -840,6 +840,39 @@ export type Database = {
           },
         ]
       }
+      operational_plan_column_order: {
+        Row: {
+          column_key: string
+          column_name: string
+          created_at: string
+          display_order: number
+          id: string
+          is_standard: boolean
+          is_visible: boolean
+          updated_at: string
+        }
+        Insert: {
+          column_key: string
+          column_name: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_standard?: boolean
+          is_visible?: boolean
+          updated_at?: string
+        }
+        Update: {
+          column_key?: string
+          column_name?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_standard?: boolean
+          is_visible?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       operational_plan_custom_columns: {
         Row: {
           column_type: Database["public"]["Enums"]["custom_column_type"]
