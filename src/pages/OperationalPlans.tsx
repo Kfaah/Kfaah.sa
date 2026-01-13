@@ -116,6 +116,15 @@ export default function OperationalPlans() {
   const [editingMonthlyTargets, setEditingMonthlyTargets] = useState<{ [planId: string]: number[] }>({});
   const [isEditingMonths, setIsEditingMonths] = useState<string | null>(null);
   
+  // إضافة نشاط جديد مباشرة
+  const [addingActivityUnder, setAddingActivityUnder] = useState<{
+    strategicGoal: string;
+    initiative: string;
+    userId: string;
+  } | null>(null);
+  const [newActivityName, setNewActivityName] = useState("");
+  const [newActivityTarget, setNewActivityTarget] = useState("");
+  
   // Form state
   const [strategicGoal, setStrategicGoal] = useState("");
   const [initiative, setInitiative] = useState("");
@@ -684,6 +693,45 @@ export default function OperationalPlans() {
     });
   };
 
+  // إضافة نشاط جديد مباشرة تحت مبادرة
+  const handleAddActivityUnder = async () => {
+    if (!addingActivityUnder || !newActivityName.trim()) return;
+
+    try {
+      const { data: planData, error: planError } = await supabase
+        .from("operational_plans")
+        .insert({
+          user_id: addingActivityUnder.userId,
+          strategic_goal: addingActivityUnder.strategicGoal,
+          initiative: addingActivityUnder.initiative,
+          activity_name: newActivityName.trim(),
+          annual_target: parseInt(newActivityTarget) || 0,
+          year: year,
+        })
+        .select()
+        .single();
+
+      if (planError) throw planError;
+
+      toast({
+        title: "تم بنجاح",
+        description: "تم إضافة النشاط الجديد",
+      });
+
+      setAddingActivityUnder(null);
+      setNewActivityName("");
+      setNewActivityTarget("");
+      fetchPlans();
+    } catch (error: any) {
+      console.error("Error adding activity:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إضافة النشاط",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -1173,6 +1221,93 @@ export default function OperationalPlans() {
                           goalRowRendered = true;
                           initRowRendered = true;
                         });
+                        
+                        // صف إضافة نشاط جديد تحت هذه المبادرة
+                        const isAddingHere = addingActivityUnder?.strategicGoal === group.strategicGoal && 
+                                             addingActivityUnder?.initiative === initGroup.initiative;
+                        
+                        if (isAddingHere) {
+                          rows.push(
+                            <tr 
+                              key={`add-activity-${group.strategicGoal}-${initGroup.initiative}`} 
+                              className={`${color.bg} border-r-4 ${color.border} bg-green-50/50`}
+                            >
+                              <td className="py-2 px-2"></td>
+                              <td className="py-2 px-2"></td>
+                              <td className="py-2 px-4 border-l-2 border-gray-300">
+                                <Input
+                                  value={newActivityName}
+                                  onChange={(e) => setNewActivityName(e.target.value)}
+                                  className="h-8 text-sm"
+                                  placeholder="اسم النشاط الجديد"
+                                  autoFocus
+                                />
+                              </td>
+                              {isAdmin && <td className="py-2 px-2"></td>}
+                              <td className="py-2 px-2 border-l-2 border-gray-300">
+                                <Input
+                                  type="number"
+                                  value={newActivityTarget}
+                                  onChange={(e) => setNewActivityTarget(e.target.value)}
+                                  className="h-8 text-sm text-center"
+                                  placeholder="المستهدف"
+                                />
+                              </td>
+                              <td className="py-2 px-2"></td>
+                              <td className="py-2 px-2 text-center">
+                                <div className="flex justify-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-green-600 hover:bg-green-100 rounded-full h-8 w-8"
+                                    onClick={handleAddActivityUnder}
+                                    disabled={!newActivityName.trim()}
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-red-600 hover:bg-red-100 rounded-full h-8 w-8"
+                                    onClick={() => {
+                                      setAddingActivityUnder(null);
+                                      setNewActivityName("");
+                                      setNewActivityTarget("");
+                                    }}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+                        
+                        // زر إضافة نشاط جديد في نهاية كل مبادرة
+                        if (!isAddingHere) {
+                          rows.push(
+                            <tr 
+                              key={`add-btn-${group.strategicGoal}-${initGroup.initiative}`} 
+                              className={`${color.bg} border-r-4 ${color.border} hover:bg-green-50/30 transition-colors`}
+                            >
+                              <td colSpan={isAdmin ? 7 : 6} className="py-1 px-4">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-[#3d9aa8] hover:text-[#2d7a85] hover:bg-[#3d9aa8]/10 gap-1"
+                                  onClick={() => setAddingActivityUnder({
+                                    strategicGoal: group.strategicGoal,
+                                    initiative: initGroup.initiative,
+                                    userId: initGroup.plans[0]?.user_id || authUser!.id
+                                  })}
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  إضافة نشاط جديد
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        }
                       });
                     });
                     
