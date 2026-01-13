@@ -172,6 +172,21 @@ interface LocalGoal {
   initiatives: LocalInitiative[];
 }
 
+interface EditingPlan {
+  id: string;
+  user_id: string;
+  activity_name: string;
+  strategic_goal: string | null;
+  initiative: string | null;
+  strategic_goal_id: string | null;
+  initiative_id: string | null;
+  annual_target: number;
+  year: number;
+  status: string;
+  created_at: string;
+  employee_name?: string;
+}
+
 interface AddOperationalPlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -184,6 +199,7 @@ interface AddOperationalPlanDialogProps {
     goals: LocalGoal[];
     year: number;
   }) => void;
+  editingPlan?: EditingPlan | null;
 }
 
 // مكون العمود القابل للسحب مع إمكانية التحديد وتغيير الحجم
@@ -924,6 +940,7 @@ export function AddOperationalPlanDialog({
   strategicGoals,
   initiatives,
   onSubmit,
+  editingPlan,
 }: AddOperationalPlanDialogProps) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
@@ -1048,7 +1065,7 @@ export function AddOperationalPlanDialog({
     ));
   }, []);
 
-  // Reset form when dialog closes
+  // Reset form when dialog closes or load editing plan data
   useEffect(() => {
     if (!open) {
       setSelectedEmployeeId("");
@@ -1067,8 +1084,43 @@ export function AddOperationalPlanDialog({
       setActiveRowId(null);
       setUndoStack([]);
       setResizingColumn(null);
+    } else if (editingPlan) {
+      // تحميل بيانات الخطة للتعديل
+      const customColumnsInit: Record<string, string> = {};
+      columns.filter(c => c.isCustom).forEach(c => {
+        customColumnsInit[c.id] = '';
+      });
+
+      // البحث عن الموظف المكلف من user_id
+      const employee = employees.find(e => e.user_id === editingPlan.user_id);
+      if (employee) {
+        setSelectedEmployeeId(employee.id);
+      }
+
+      setYear(editingPlan.year);
+      
+      // إنشاء صف للخطة المراد تعديلها
+      const editRow: TableRowData = {
+        id: editingPlan.id,
+        strategicGoal: editingPlan.strategic_goal || "",
+        strategicGoalId: editingPlan.strategic_goal_id || undefined,
+        initiative: editingPlan.initiative || "",
+        initiativeId: editingPlan.initiative_id || undefined,
+        activity: editingPlan.activity_name,
+        annualTarget: editingPlan.annual_target,
+        monthlyAverage: Math.round(editingPlan.annual_target / 12),
+        goalRowSpan: 1,
+        initiativeRowSpan: 1,
+        isGoalMerged: false,
+        isInitiativeMerged: false,
+        showGoalCell: true,
+        showInitiativeCell: true,
+        customColumns: customColumnsInit,
+      };
+      
+      setRows([editRow]);
     }
-  }, [open]);
+  }, [open, editingPlan, employees]);
 
   // دالة بدء تغيير حجم العمود
   const handleResizeStart = useCallback((columnId: string, startX: number) => {
@@ -1642,7 +1694,7 @@ export function AddOperationalPlanDialog({
                   <FileSpreadsheet className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <DialogTitle className="text-lg">إضافة خطط تشغيلية</DialogTitle>
+                  <DialogTitle className="text-lg">{editingPlan ? 'تعديل خطة تشغيلية' : 'إضافة خطط تشغيلية'}</DialogTitle>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     اسحب الأعمدة والصفوف لإعادة ترتيبها - انقر مزدوج على العناوين لتعديلها
                   </p>
@@ -1958,7 +2010,7 @@ export function AddOperationalPlanDialog({
                 className="gap-2"
               >
                 <Save className="w-4 h-4" />
-                حفظ الخطط
+                {editingPlan ? 'حفظ التعديلات' : 'حفظ الخطط'}
               </Button>
             </div>
           </div>

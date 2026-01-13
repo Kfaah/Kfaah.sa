@@ -105,6 +105,7 @@ export default function OperationalPlans() {
   const [plans, setPlans] = useState<OperationalPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<OperationalPlan | null>(null);
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
   
   // Form state
@@ -593,12 +594,16 @@ export default function OperationalPlans() {
           
           <AddOperationalPlanDialog
             open={isAddDialogOpen}
-            onOpenChange={setIsAddDialogOpen}
+            onOpenChange={(open) => {
+              setIsAddDialogOpen(open);
+              if (!open) setEditingPlan(null);
+            }}
             isAdmin={isAdmin}
             employees={employees}
             strategicGoals={strategicGoals}
             initiatives={initiatives}
             onSubmit={handleDialogSubmit}
+            editingPlan={editingPlan}
           />
         </div>
 
@@ -831,7 +836,8 @@ export default function OperationalPlans() {
                                         className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full h-8 w-8"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          // TODO: فتح نافذة التعديل
+                                          setEditingPlan(plan);
+                                          setIsAddDialogOpen(true);
                                         }}
                                       >
                                         <Pencil className="w-4 h-4" />
