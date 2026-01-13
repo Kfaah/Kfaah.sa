@@ -514,28 +514,34 @@ function SortableRow({
                 <Grip className="w-3 h-3 text-muted-foreground" />
               </div>
               
-              {/* تحديد الخلية من الأطراف فقط */}
+              {/* تحديد الخلية من جميع الأطراف */}
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 top-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 bottom-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
 
               <Input
@@ -582,28 +588,34 @@ function SortableRow({
                 <Grip className="w-3 h-3 text-muted-foreground" />
               </div>
               
-              {/* تحديد الخلية من الأطراف فقط */}
+              {/* تحديد الخلية من جميع الأطراف */}
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 top-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 bottom-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
 
               <Input
@@ -651,28 +663,34 @@ function SortableRow({
                 <Grip className="w-3 h-3 text-muted-foreground" />
               </div>
               
-              {/* تحديد الخلية من الأطراف فقط */}
+              {/* تحديد الخلية من جميع الأطراف */}
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 top-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 bottom-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
 
               <Input
@@ -721,28 +739,34 @@ function SortableRow({
                 <Grip className="w-3 h-3 text-muted-foreground" />
               </div>
               
-              {/* تحديد الخلية من الأطراف فقط */}
+              {/* تحديد الخلية من جميع الأطراف */}
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 top-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 bottom-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
 
               <Input
@@ -802,28 +826,34 @@ function SortableRow({
                 <Grip className="w-3 h-3 text-muted-foreground" />
               </div>
               
-              {/* تحديد الخلية من الأطراف فقط */}
+              {/* تحديد الخلية من جميع الأطراف */}
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
               <div
                 role="button"
                 aria-label="تحديد الخلية"
                 tabIndex={-1}
-                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleCellSelection(row.id, col.id);
-                }}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 top-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-x-0 bottom-0 h-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
 
               <Input
