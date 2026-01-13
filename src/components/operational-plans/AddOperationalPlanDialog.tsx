@@ -26,7 +26,8 @@ import {
   FileSpreadsheet,
   Columns,
   X,
-  GripVertical
+  GripVertical,
+  Undo2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -774,6 +775,48 @@ export function AddOperationalPlanDialog({
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
 
+  // نظام التراجع (Undo) - حتى 10 عمليات
+  interface UndoState {
+    rows: TableRowData[];
+    mergedCells: MergedCell[];
+    mergedHeaders: MergedHeader[];
+    columns: ColumnDef[];
+  }
+  const [undoStack, setUndoStack] = useState<UndoState[]>([]);
+  const MAX_UNDO = 10;
+
+  // حفظ الحالة الحالية قبل أي عملية
+  const saveToUndo = useCallback(() => {
+    setUndoStack(prev => {
+      const newStack = [...prev, {
+        rows: JSON.parse(JSON.stringify(rows)),
+        mergedCells: JSON.parse(JSON.stringify(mergedCells)),
+        mergedHeaders: JSON.parse(JSON.stringify(mergedHeaders)),
+        columns: JSON.parse(JSON.stringify(columns)),
+      }];
+      // الاحتفاظ بآخر 10 عمليات فقط
+      if (newStack.length > MAX_UNDO) {
+        return newStack.slice(-MAX_UNDO);
+      }
+      return newStack;
+    });
+  }, [rows, mergedCells, mergedHeaders, columns]);
+
+  // التراجع عن آخر عملية
+  const undo = useCallback(() => {
+    if (undoStack.length === 0) return;
+    
+    const lastState = undoStack[undoStack.length - 1];
+    setRows(lastState.rows);
+    setMergedCells(lastState.mergedCells);
+    setMergedHeaders(lastState.mergedHeaders);
+    setColumns(lastState.columns);
+    setUndoStack(prev => prev.slice(0, -1));
+    setSelectedCells(new Set());
+    setSelectedHeaders(new Set());
+    setSelectedRows(new Set());
+  }, [undoStack]);
+
   // إعداد مستشعرات السحب
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -820,13 +863,14 @@ export function AddOperationalPlanDialog({
 
   // حذف عمود
   const removeColumn = useCallback((columnId: string) => {
+    saveToUndo();
     setColumns(prev => prev.filter(col => col.id !== columnId));
     setRows(prev => prev.map(row => {
       const newCustomColumns = { ...row.customColumns };
       delete newCustomColumns[columnId];
       return { ...row, customColumns: newCustomColumns };
     }));
-  }, []);
+  }, [saveToUndo]);
 
   // تحديث قيمة عمود مخصص
   const updateCustomColumn = useCallback((rowId: string, columnId: string, value: string) => {
@@ -854,6 +898,7 @@ export function AddOperationalPlanDialog({
       setEditingColumn(null);
       setActiveColumnId(null);
       setActiveRowId(null);
+      setUndoStack([]);
     }
   }, [open]);
 
@@ -884,6 +929,7 @@ export function AddOperationalPlanDialog({
 
   // حذف صف
   const removeRow = useCallback((rowId: string) => {
+    saveToUndo();
     setRows(prev => {
       const rowToRemove = prev.find(r => r.id === rowId);
       if (!rowToRemove) return prev;
@@ -894,7 +940,7 @@ export function AddOperationalPlanDialog({
       newSet.delete(rowId);
       return newSet;
     });
-  }, []);
+  }, [saveToUndo]);
 
   // تحديث خلية
   const updateCell = useCallback((rowId: string, field: keyof TableRowData, value: string | number) => {
@@ -1060,9 +1106,10 @@ export function AddOperationalPlanDialog({
       value,
     };
 
+    saveToUndo();
     setMergedCells(prev => [...prev, newMerge]);
     setSelectedCells(new Set());
-  }, [selectedCells, rows, columns]);
+  }, [selectedCells, rows, columns, saveToUndo]);
 
   // إلغاء دمج الخلايا
   const unmergeSelectedCells = useCallback(() => {
@@ -1075,6 +1122,7 @@ export function AddOperationalPlanDialog({
       return { rowIndex, colIndex };
     });
 
+    saveToUndo();
     setMergedCells(prev => prev.filter(merge => {
       return !cells.some(cell => 
         cell.rowIndex >= merge.startRow && 
@@ -1084,7 +1132,7 @@ export function AddOperationalPlanDialog({
       );
     }));
     setSelectedCells(new Set());
-  }, [selectedCells, rows, columns]);
+  }, [selectedCells, rows, columns, saveToUndo]);
 
   // التحقق مما إذا كانت الخلية مدموجة
   const getMergeInfo = useCallback((rowIndex: number, colIndex: number) => {
@@ -1157,104 +1205,6 @@ export function AddOperationalPlanDialog({
     return result;
   };
 
-  // دمج الصفوف المحددة (عمود الهدف)
-  const mergeGoalCells = useCallback(() => {
-    if (selectedRows.size < 2) return;
-
-    const selectedIndices = Array.from(selectedRows)
-      .map(id => rows.findIndex(r => r.id === id))
-      .filter(i => i !== -1)
-      .sort((a, b) => a - b);
-
-    for (let i = 1; i < selectedIndices.length; i++) {
-      if (selectedIndices[i] !== selectedIndices[i - 1] + 1) {
-        return;
-      }
-    }
-
-    const firstRowGoal = rows[selectedIndices[0]].strategicGoal;
-    if (!firstRowGoal) return;
-
-    setRows(prev => {
-      const updated = prev.map((row, idx) => {
-        if (selectedIndices.includes(idx)) {
-          return {
-            ...row,
-            strategicGoal: firstRowGoal,
-            isGoalMerged: true,
-          };
-        }
-        return row;
-      });
-      return recalculateMerges(updated);
-    });
-    setSelectedRows(new Set());
-  }, [selectedRows, rows]);
-
-  // دمج المبادرات
-  const mergeInitiativeCells = useCallback(() => {
-    if (selectedRows.size < 2) return;
-
-    const selectedIndices = Array.from(selectedRows)
-      .map(id => rows.findIndex(r => r.id === id))
-      .filter(i => i !== -1)
-      .sort((a, b) => a - b);
-
-    for (let i = 1; i < selectedIndices.length; i++) {
-      if (selectedIndices[i] !== selectedIndices[i - 1] + 1) return;
-      if (rows[selectedIndices[i]].strategicGoal !== rows[selectedIndices[0]].strategicGoal) return;
-    }
-
-    const firstRowInitiative = rows[selectedIndices[0]].initiative;
-    if (!firstRowInitiative) return;
-
-    setRows(prev => {
-      const updated = prev.map((row, idx) => {
-        if (selectedIndices.includes(idx)) {
-          return {
-            ...row,
-            initiative: firstRowInitiative,
-            isInitiativeMerged: true,
-          };
-        }
-        return row;
-      });
-      return recalculateMerges(updated);
-    });
-    setSelectedRows(new Set());
-  }, [selectedRows, rows]);
-
-  // إلغاء دمج الهدف
-  const unmergeGoalCells = useCallback(() => {
-    if (selectedRows.size === 0) return;
-
-    setRows(prev => {
-      const updated = prev.map(row => {
-        if (selectedRows.has(row.id)) {
-          return { ...row, isGoalMerged: false };
-        }
-        return row;
-      });
-      return recalculateMerges(updated);
-    });
-    setSelectedRows(new Set());
-  }, [selectedRows]);
-
-  // إلغاء دمج المبادرة
-  const unmergeInitiativeCells = useCallback(() => {
-    if (selectedRows.size === 0) return;
-
-    setRows(prev => {
-      const updated = prev.map(row => {
-        if (selectedRows.has(row.id)) {
-          return { ...row, isInitiativeMerged: false };
-        }
-        return row;
-      });
-      return recalculateMerges(updated);
-    });
-    setSelectedRows(new Set());
-  }, [selectedRows]);
 
   // معالجة انتهاء سحب العمود
   const handleColumnDragEnd = (event: DragEndEvent) => {
@@ -1482,52 +1432,6 @@ export function AddOperationalPlanDialog({
             <div className="h-4 w-px bg-border mx-2" />
             
             <Button
-              variant="outline"
-              size="sm"
-              onClick={mergeGoalCells}
-              disabled={selectedRows.size < 2}
-              className="h-7 text-xs gap-1"
-            >
-              <Merge className="w-3 h-3" />
-              دمج الأهداف
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={mergeInitiativeCells}
-              disabled={selectedRows.size < 2}
-              className="h-7 text-xs gap-1"
-            >
-              <Merge className="w-3 h-3" />
-              دمج المبادرات
-            </Button>
-            
-            <div className="h-4 w-px bg-border mx-2" />
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={unmergeGoalCells}
-              disabled={selectedRows.size === 0}
-              className="h-7 text-xs gap-1"
-            >
-              <SplitSquareHorizontal className="w-3 h-3" />
-              إلغاء دمج الأهداف
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={unmergeInitiativeCells}
-              disabled={selectedRows.size === 0}
-              className="h-7 text-xs gap-1"
-            >
-              <SplitSquareHorizontal className="w-3 h-3" />
-              إلغاء دمج المبادرات
-            </Button>
-
-            <div className="h-4 w-px bg-border mx-2" />
-
-            <Button
               variant="default"
               size="sm"
               onClick={mergeSelectedCells}
@@ -1551,24 +1455,14 @@ export function AddOperationalPlanDialog({
             <div className="h-4 w-px bg-border mx-2" />
 
             <Button
-              variant="default"
-              size="sm"
-              onClick={mergeSelectedHeaders}
-              disabled={selectedHeaders.size < 2}
-              className="h-7 text-xs gap-1"
-            >
-              <Merge className="w-3 h-3" />
-              دمج العناوين
-            </Button>
-            <Button
               variant="outline"
               size="sm"
-              onClick={unmergeSelectedHeaders}
-              disabled={selectedHeaders.size === 0}
+              onClick={undo}
+              disabled={undoStack.length === 0}
               className="h-7 text-xs gap-1"
             >
-              <SplitSquareHorizontal className="w-3 h-3" />
-              إلغاء دمج العناوين
+              <Undo2 className="w-3 h-3" />
+              تراجع ({undoStack.length})
             </Button>
 
             {selectedRows.size > 0 && (
