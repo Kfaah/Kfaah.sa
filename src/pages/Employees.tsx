@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera, Loader2, Upload, X, Pencil, LogIn, Building, Briefcase } from "lucide-react";
+import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera, Loader2, Upload, X, Pencil, LogIn, Building, Briefcase, ClipboardList } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn, formatNumber, formatPercent } from "@/lib/utils";
 import { toast } from "sonner";
@@ -486,6 +486,47 @@ const Employees = () => {
     }
   };
 
+  const handleImpersonateToApprovals = async (employee: Employee) => {
+    if (!employee.user_id) {
+      toast.error("هذا الموظف ليس له حساب مستخدم");
+      return;
+    }
+    
+    setIsImpersonating(true);
+    
+    try {
+      const response = await supabase.functions.invoke("impersonate-user", {
+        body: { userId: employee.user_id },
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message || "حدث خطأ أثناء الدخول");
+      }
+      
+      if (response.data?.actionLink) {
+        // Save original admin session info with redirect to approvals history
+        localStorage.setItem("adminReturnSession", JSON.stringify({
+          returnUrl: window.location.pathname,
+          adminName: "المدير",
+        }));
+        
+        toast.success(`جاري فتح سجل موافقات ${employee.full_name}...`);
+        
+        // Redirect to the magic link with a redirect param to approvals history
+        const actionUrl = new URL(response.data.actionLink);
+        actionUrl.searchParams.set("redirect_to", "/hr-requests?tab=my-approvals-history");
+        window.location.href = actionUrl.toString();
+      } else {
+        throw new Error("لم يتم إنشاء رابط الدخول");
+      }
+    } catch (error: any) {
+      console.error("Impersonate error:", error);
+      toast.error(error.message || "حدث خطأ أثناء الدخول على حساب الموظف");
+    } finally {
+      setIsImpersonating(false);
+    }
+  };
+
   const stats = [
     { label: "إجمالي الموظفين", value: formatNumber(employees.length), icon: Users, iconBg: "bg-accent/10", iconColor: "text-accent" },
     { label: "نشطين", value: formatNumber(employees.filter(e => e.status === "active").length), icon: UserCheck, iconBg: "bg-emerald-100", iconColor: "text-emerald-500" },
@@ -928,6 +969,21 @@ const Employees = () => {
                       <LogIn className="w-3 h-3" />
                     )}
                     دخول
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-1 text-amber-600 hover:bg-amber-500 hover:text-white border-amber-200"
+                    onClick={() => handleImpersonateToApprovals(employee)}
+                    disabled={!employee.user_id || isImpersonating}
+                    title="عرض سجل موافقات الموظف"
+                  >
+                    {isImpersonating ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <ClipboardList className="w-3 h-3" />
+                    )}
+                    الموافقات
                   </Button>
                 </div>
               </div>
