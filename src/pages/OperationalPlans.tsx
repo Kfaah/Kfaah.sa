@@ -1711,9 +1711,8 @@ export default function OperationalPlans() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="p-5 flex items-center gap-4 relative">
+          <Card className="overflow-hidden border-0 shadow-lg">
+            <CardContent className="p-5 flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
                 <Target className="w-7 h-7 text-white" />
               </div>
@@ -1721,17 +1720,11 @@ export default function OperationalPlans() {
                 <p className="text-sm text-muted-foreground font-medium">إجمالي الخطط</p>
                 <p className="text-3xl font-bold text-primary" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(plans.length)}</p>
               </div>
-              <div className="mr-auto">
-                <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin-slow" style={{ animationDuration: '3s' }} />
-                </div>
-              </div>
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="p-5 flex items-center gap-4 relative">
+          <Card className="overflow-hidden border-0 shadow-lg">
+            <CardContent className="p-5 flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
                 <TrendingUp className="w-7 h-7 text-white" />
               </div>
@@ -1746,9 +1739,8 @@ export default function OperationalPlans() {
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="p-5 flex items-center gap-4 relative">
+          <Card className="overflow-hidden border-0 shadow-lg">
+            <CardContent className="p-5 flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <Calendar className="w-7 h-7 text-white" />
               </div>
