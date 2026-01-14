@@ -316,11 +316,11 @@ export default function Profile() {
               {authUser && employeeData ? (
                 employeeData.signature_url ? (
                   <div className="space-y-4">
-                    <div className="p-6 bg-white rounded-xl border-2 border-dashed border-sky-200 flex items-center justify-center" style={{ backgroundImage: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px' }}>
+                    <div className="p-6 bg-white rounded-xl border-2 border-dashed border-sky-200 flex items-center justify-center">
                       <img 
                         src={employeeData.signature_url} 
                         alt="التوقيع" 
-                        className="max-h-32 object-contain"
+                        className="max-h-32 object-contain mix-blend-multiply"
                         style={{ filter: 'sepia(100%) saturate(300%) hue-rotate(180deg) brightness(0.9)' }}
                       />
                     </div>
