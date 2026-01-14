@@ -382,15 +382,14 @@ export default function HRRequests() {
         .eq("id", requestId)
         .single();
 
-      // تعيين المدير التنفيذي - إذا لم يكن معيناً، نعين المدير المباشر نفسه كمدير تنفيذي
-      const executiveManagerId = requestData?.executive_manager_id || authUser?.id;
+      // لا نغير المدير التنفيذي - يجب أن يكون محدداً مسبقاً عند إنشاء الطلب
 
       const { error } = await supabase
         .from("hr_requests")
         .update({
           manager_approved: true,
           manager_approved_at: new Date().toISOString(),
-          executive_manager_id: executiveManagerId,
+          workflow_stage: 3,
         })
         .eq("id", requestId);
       
@@ -405,12 +404,13 @@ export default function HRRequests() {
           type: "hr_request_approved",
         });
 
-        // إشعار المدير التنفيذي إذا كان مختلفاً عن المدير المباشر
-        if (executiveManagerId && executiveManagerId !== authUser?.id) {
+        // إشعار مدير الموارد البشرية
+        const { data: hrManagerId } = await supabase.rpc("get_hr_manager_id");
+        if (hrManagerId) {
           await supabase.from("notifications").insert({
-            user_id: executiveManagerId,
-            title: `طلب جديد يحتاج موافقتك التنفيذية`,
-            message: `الطلب رقم ${requestData.request_number} بانتظار موافقتك كمدير تنفيذي.`,
+            user_id: hrManagerId,
+            title: `طلب جديد يحتاج موافقتك`,
+            message: `الطلب رقم ${requestData.request_number} بانتظار موافقتك كمدير موارد بشرية.`,
             type: "hr_request_pending",
           });
         }
