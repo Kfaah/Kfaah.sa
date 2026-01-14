@@ -1404,6 +1404,7 @@ export type Database = {
         Args: { _other_user_id: string }
         Returns: string
       }
+      get_accountants: { Args: never; Returns: string[] }
       get_conversations_for_user: {
         Args: { _user_id: string }
         Returns: {
@@ -1413,9 +1414,18 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_finance_manager_id: { Args: never; Returns: string }
+      get_hr_manager_id: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_any_role: {
+        Args: {
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _user_id: string
+        }
+        Returns: boolean
       }
       has_role: {
         Args: {
@@ -1430,7 +1440,14 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "time_editor"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "user"
+        | "time_editor"
+        | "hr_manager"
+        | "finance_manager"
+        | "accountant"
       custom_column_type: "text" | "number" | "date" | "department" | "employee"
     }
     CompositeTypes: {
@@ -1559,7 +1576,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "time_editor"],
+      app_role: [
+        "admin",
+        "moderator",
+        "user",
+        "time_editor",
+        "hr_manager",
+        "finance_manager",
+        "accountant",
+      ],
       custom_column_type: ["text", "number", "date", "department", "employee"],
     },
   },
