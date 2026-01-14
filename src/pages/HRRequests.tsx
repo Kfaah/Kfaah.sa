@@ -333,15 +333,19 @@ export default function HRRequests() {
 
       const { data: requestData } = await supabase
         .from("hr_requests")
-        .select("user_id, request_number, hr_request_types(name_ar)")
+        .select("user_id, request_number, hr_request_types(name_ar), executive_manager_id")
         .eq("id", requestId)
         .single();
+
+      // تعيين المدير التنفيذي - إذا لم يكن معيناً، نعين المدير المباشر نفسه كمدير تنفيذي
+      const executiveManagerId = requestData?.executive_manager_id || authUser?.id;
 
       const { error } = await supabase
         .from("hr_requests")
         .update({
           manager_approved: true,
           manager_approved_at: new Date().toISOString(),
+          executive_manager_id: executiveManagerId,
         })
         .eq("id", requestId);
       
@@ -355,13 +359,24 @@ export default function HRRequests() {
           message: `وافق ${employee.full_name} على طلبك رقم ${requestData.request_number} كمدير مباشر.`,
           type: "hr_request_approved",
         });
+
+        // إشعار المدير التنفيذي إذا كان مختلفاً عن المدير المباشر
+        if (executiveManagerId && executiveManagerId !== authUser?.id) {
+          await supabase.from("notifications").insert({
+            user_id: executiveManagerId,
+            title: `طلب جديد يحتاج موافقتك التنفيذية`,
+            message: `الطلب رقم ${requestData.request_number} بانتظار موافقتك كمدير تنفيذي.`,
+            type: "hr_request_pending",
+          });
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-manager-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["approved-as-manager"] });
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
-      toast.success("تمت موافقتك كمدير مباشر");
+      toast.success("تمت موافقتك كمدير مباشر - الطلب بانتظار الموافقة التنفيذية");
     },
     onError: (error: Error) => {
       toast.error(error.message);
