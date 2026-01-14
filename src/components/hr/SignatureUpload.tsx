@@ -14,11 +14,70 @@ interface SignatureUploadProps {
   isEmployee?: boolean;
 }
 
-export function SignatureUpload({ 
-  currentSignature, 
-  userId, 
+const SIGNATURE_INK_CSS = "hsl(var(--signature-ink))";
+
+function hslToRgb(h: number, s: number, l: number) {
+  // h: 0-360, s/l: 0-1
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+
+  let r1 = 0;
+  let g1 = 0;
+  let b1 = 0;
+
+  if (0 <= h && h < 60) {
+    r1 = c;
+    g1 = x;
+  } else if (60 <= h && h < 120) {
+    r1 = x;
+    g1 = c;
+  } else if (120 <= h && h < 180) {
+    g1 = c;
+    b1 = x;
+  } else if (180 <= h && h < 240) {
+    g1 = x;
+    b1 = c;
+  } else if (240 <= h && h < 300) {
+    r1 = x;
+    b1 = c;
+  } else {
+    r1 = c;
+    b1 = x;
+  }
+
+  return {
+    r: Math.round((r1 + m) * 255),
+    g: Math.round((g1 + m) * 255),
+    b: Math.round((b1 + m) * 255),
+  };
+}
+
+function getSignatureInkRgb() {
+  if (typeof window === "undefined") return { r: 96, g: 165, b: 250 };
+
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue("--signature-ink")
+    .trim();
+
+  // Expected format: "210 100% 62%"
+  const [hStr, sStr, lStr] = raw.split(/\s+/);
+  const h = Number.parseFloat(hStr || "210");
+  const s = Number.parseFloat((sStr || "100%").replace("%", "")) / 100;
+  const l = Number.parseFloat((lStr || "62%").replace("%", "")) / 100;
+
+  if (!Number.isFinite(h) || !Number.isFinite(s) || !Number.isFinite(l)) {
+    return { r: 96, g: 165, b: 250 };
+  }
+
+  return hslToRgb(h, s, l);
+}
+
+export function SignatureUpload({
+  currentSignature,
+  userId,
   onSignatureUpdate,
-  isEmployee = false 
+  isEmployee = false,
 }: SignatureUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -87,7 +146,7 @@ export function SignatureUpload({
     }
 
     // تلوين التوقيع أزرق فاتح + تفريغ الخلفية
-    const BLUE = { r: 59, g: 130, b: 246 };
+    const BLUE = getSignatureInkRgb();
     const THRESH_MIN = 18;
     const THRESH_MAX = 55;
 
@@ -149,7 +208,7 @@ export function SignatureUpload({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // إعداد القلم بلون أزرق فاتح
-    ctx.strokeStyle = "rgb(59, 130, 246)";
+    ctx.strokeStyle = SIGNATURE_INK_CSS;
     ctx.lineWidth = lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";

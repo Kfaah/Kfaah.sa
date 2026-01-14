@@ -28,6 +28,8 @@
     --accent: 174 52% 52%;
     --accent-foreground: 0 0% 100%;
 
+    /* لون حبر التوقيع (أزرق فاتح) */
+    --signature-ink: 210 100% 62%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
@@ -88,6 +90,7 @@
     --accent: 174 52% 52%;
     --accent-foreground: 210 50% 10%;
 
+    --signature-ink: 210 100% 70%;
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 

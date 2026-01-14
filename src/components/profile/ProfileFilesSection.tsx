@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,7 +65,80 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const [category, setCategory] = useState("other");
   const [isUploading, setIsUploading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
   const [previewFile, setPreviewFile] = useState<ProfileFile | null>(null);
+  const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const inferFileKind = (file: ProfileFile) => {
+    const type = (file.file_type || "").toLowerCase();
+    const url = file.file_url || "";
+
+    if (
+      type.startsWith("image/") ||
+      /\.(png|jpe?g|webp|gif|bmp|svg)(\?|$)/i.test(url)
+    ) {
+      return "image" as const;
+    }
+
+    if (type === "application/pdf" || /\.pdf(\?|$)/i.test(url)) {
+      return "pdf" as const;
+    }
+
+    return "other" as const;
+  };
+
+  useEffect(() => {
+    let canceled = false;
+    let objectUrl: string | null = null;
+
+    const cleanup = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+    };
+
+    const load = async () => {
+      if (!previewFile) {
+        setPreviewObjectUrl(null);
+        setPreviewError(null);
+        setPreviewLoading(false);
+        return;
+      }
+
+      setPreviewLoading(true);
+      setPreviewError(null);
+
+      try {
+        const res = await fetch(previewFile.file_url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`http_${res.status}`);
+
+        const blob = await res.blob();
+        objectUrl = URL.createObjectURL(blob);
+
+        if (canceled) {
+          cleanup();
+          return;
+        }
+
+        setPreviewObjectUrl(objectUrl);
+      } catch (e) {
+        if (!canceled) {
+          setPreviewObjectUrl(null);
+          setPreviewError("تعذر عرض الملف داخل الصفحة. يمكنك تنزيله وفتحه.");
+        }
+      } finally {
+        if (!canceled) setPreviewLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      canceled = true;
+      cleanup();
+    };
+  }, [previewFile?.file_url]);
 
   // جلب ملفات الموظف
   const { data: files = [], isLoading } = useQuery({
@@ -352,8 +425,17 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
       </CardContent>
 
       {/* مربع حوار معاينة الملف */}
-      <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
-        <DialogContent className="max-w-4xl h-[85vh] p-0" dir="rtl">
+      <Dialog
+        open={!!previewFile}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewFile(null);
+            setPreviewObjectUrl(null);
+            setPreviewError(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl h-[85vh] p-0 flex flex-col" dir="rtl">
           <DialogHeader className="p-4 border-b flex flex-row items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-accent" />
@@ -371,32 +453,47 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
               </Button>
             </div>
           </DialogHeader>
+
           <div className="flex-1 overflow-auto p-4">
-            {previewFile && (
-              previewFile.file_type?.startsWith("image/") ? (
-                <img 
-                  src={previewFile.file_url} 
-                  alt={previewFile.file_name}
-                  className="max-w-full h-auto mx-auto rounded-lg"
-                />
-              ) : previewFile.file_type === "application/pdf" ? (
-                <iframe
-                  src={previewFile.file_url}
-                  className="w-full h-full min-h-[70vh] rounded-lg border"
-                  title={previewFile.file_name}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
-                  <FileText className="w-20 h-20 opacity-30" />
-                  <p>لا يمكن عرض هذا النوع من الملفات</p>
-                  <Button asChild>
-                    <a href={previewFile.file_url} download className="gap-2">
-                      <Download className="w-4 h-4" />
-                      تحميل الملف
-                    </a>
-                  </Button>
-                </div>
-              )
+            {!previewFile ? null : previewLoading ? (
+              <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            ) : previewError ? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground text-center">
+                <FileText className="w-20 h-20 opacity-30" />
+                <p>{previewError}</p>
+                <Button asChild>
+                  <a href={previewFile.file_url} download className="gap-2">
+                    <Download className="w-4 h-4" />
+                    تحميل الملف
+                  </a>
+                </Button>
+              </div>
+            ) : inferFileKind(previewFile) === "image" ? (
+              <img
+                src={previewObjectUrl || previewFile.file_url}
+                alt={previewFile.file_name}
+                className="max-w-full h-auto mx-auto rounded-lg"
+              />
+            ) : inferFileKind(previewFile) === "pdf" ? (
+              <iframe
+                key={previewObjectUrl || previewFile.file_url}
+                src={previewObjectUrl || previewFile.file_url}
+                className="w-full h-full min-h-[70vh] rounded-lg border"
+                title={previewFile.file_name}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
+                <FileText className="w-20 h-20 opacity-30" />
+                <p>لا يمكن عرض هذا النوع من الملفات</p>
+                <Button asChild>
+                  <a href={previewFile.file_url} download className="gap-2">
+                    <Download className="w-4 h-4" />
+                    تحميل الملف
+                  </a>
+                </Button>
+              </div>
             )}
           </div>
         </DialogContent>
