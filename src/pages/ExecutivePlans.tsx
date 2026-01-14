@@ -50,6 +50,10 @@ import {
   Filter,
   X,
   Users,
+  TrendingUp,
+  BarChart3,
+  Activity,
+  Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -967,19 +971,107 @@ export default function ExecutivePlans() {
           </div>
         </div>
 
+        {/* إحصائيات سريعة */}
+        {!loading && groupedPlans.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* إجمالي الأيام */}
+            <div className="bg-gradient-to-br from-[#3d9aa8] to-[#2d8090] rounded-2xl p-5 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/80 text-sm font-medium">إجمالي أيام التنفيذ</p>
+                  <p className="text-4xl font-bold mt-1">
+                    {groupedPlans.reduce((sum, g) => sum + g.dateGroups.length, 0)}
+                  </p>
+                </div>
+                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                  <CalendarDays className="w-7 h-7" />
+                </div>
+              </div>
+            </div>
+            
+            {/* إجمالي الأنشطة */}
+            <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl p-5 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/80 text-sm font-medium">إجمالي الأنشطة</p>
+                  <p className="text-4xl font-bold mt-1">
+                    {groupedPlans.reduce((sum, g) => sum + g.activities.length, 0)}
+                  </p>
+                </div>
+                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Activity className="w-7 h-7" />
+                </div>
+              </div>
+            </div>
+            
+            {/* المهام المرتبطة */}
+            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/80 text-sm font-medium">المهام المرتبطة</p>
+                  <p className="text-4xl font-bold mt-1">{tasks.length}</p>
+                </div>
+                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                  <ListTodo className="w-7 h-7" />
+                </div>
+              </div>
+            </div>
+            
+            {/* الأشهر المغطاة */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/80 text-sm font-medium">الأشهر المغطاة</p>
+                  <p className="text-4xl font-bold mt-1">{groupedPlans.length}</p>
+                </div>
+                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Calendar className="w-7 h-7" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* المحتوى الرئيسي */}
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin w-10 h-10 border-4 border-[#3d9aa8] border-t-transparent rounded-full" />
           </div>
         ) : groupedPlans.length === 0 ? (
-          <Card className="py-20">
+          <Card className="py-20 bg-gradient-to-br from-slate-50 to-white border-dashed border-2">
             <CardContent className="text-center">
-              <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">لا توجد خطط تنفيذية</h3>
-              <p className="text-muted-foreground mb-4">
-                اضغط على "إضافة خطة تنفيذية" لتوزيع المستهدفات على الأيام
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#3d9aa8]/20 to-[#3d9aa8]/5 flex items-center justify-center">
+                <Calendar className="w-10 h-10 text-[#3d9aa8]" />
+              </div>
+              <h3 className="text-2xl font-bold mb-2 text-slate-800">لا توجد خطط تنفيذية</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                استخدم الذكاء الاصطناعي لتوليد خطط تنفيذية ذكية بناءً على الخطط التشغيلية، 
+                أو أضف خطة يدوياً
               </p>
+              <div className="flex items-center justify-center gap-3">
+                {isAdmin && (
+                  <Button
+                    onClick={() => setIsAIDialogOpen(true)}
+                    className="gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    توليد بالذكاء الاصطناعي
+                  </Button>
+                )}
+                <Button
+                  onClick={() => {
+                    setIsDialogOpen(true);
+                    setSelectedPlanMonthId("");
+                    setSelectedDays([]);
+                    setAddingMonth(new Date().getMonth() + 1);
+                  }}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  إضافة يدوية
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
@@ -1153,49 +1245,112 @@ export default function ExecutivePlans() {
                                     <div className="flex flex-wrap items-center gap-2">
                                       {dateGroup.activities.map((activity) => {
                                         const activityTasks = getTasksForExecutivePlan(activity.id);
+                                        const completedTasks = activityTasks.filter(t => t.status === "completed").length;
+                                        const hasProgress = activityTasks.length > 0 && completedTasks > 0;
                                         
                                         return (
                                           <DropdownMenu key={activity.id}>
                                             <DropdownMenuTrigger asChild>
                                               <div
                                                 className={cn(
-                                                  "flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg transition-all hover:opacity-90",
+                                                  "group flex items-center gap-3 cursor-pointer px-4 py-2.5 rounded-xl transition-all hover:scale-[1.02] hover:shadow-md",
                                                   activity.status === "completed" 
-                                                    ? "bg-green-600 text-white"
+                                                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-green-500/25"
                                                     : activity.status === "in_progress"
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-[#3d9aa8] text-white"
+                                                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-blue-500/25"
+                                                    : "bg-gradient-to-r from-[#3d9aa8] to-[#2d8090] text-white shadow-[#3d9aa8]/25"
                                                 )}
                                               >
-                                                <span className="text-sm font-medium">{activity.activityName}</span>
-                                                <ChevronDown className="w-4 h-4" />
+                                                <div className="flex flex-col items-start">
+                                                  <span className="text-sm font-semibold">{activity.activityName}</span>
+                                                  {activityTasks.length > 0 && (
+                                                    <span className="text-xs opacity-80">
+                                                      {completedTasks}/{activityTasks.length} مهمة
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                  {activityTasks.length > 0 && (
+                                                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                                                      <span className="text-xs font-bold">{activityTasks.length}</span>
+                                                    </div>
+                                                  )}
+                                                  <ChevronDown className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                                                </div>
                                               </div>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent 
-                                              className="bg-white z-50 min-w-[280px] shadow-lg border p-0"
+                                              className="bg-white z-50 min-w-[320px] shadow-xl border-0 rounded-xl p-0 overflow-hidden"
                                               align="end"
-                                              sideOffset={5}
+                                              sideOffset={8}
                                             >
+                                              {/* Header */}
+                                              <div className="bg-gradient-to-r from-[#3d9aa8] to-[#2d8090] p-4 text-white">
+                                                <h4 className="font-bold text-lg">{activity.activityName}</h4>
+                                                <div className="flex items-center gap-3 mt-2 text-sm opacity-90">
+                                                  <span>المستهدف: {activity.dailyTarget}</span>
+                                                  <span>•</span>
+                                                  <span>المنجز: {activity.achieved}</span>
+                                                </div>
+                                              </div>
+                                              
                                               {activityTasks.length === 0 ? (
-                                                <div className="text-muted-foreground text-center py-4 px-3" dir="rtl">
-                                                  لا توجد مهام مرتبطة
+                                                <div className="p-6 text-center" dir="rtl">
+                                                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                                                    <ListTodo className="w-6 h-6 text-gray-400" />
+                                                  </div>
+                                                  <p className="text-gray-500 font-medium">لا توجد مهام مرتبطة</p>
+                                                  <p className="text-gray-400 text-sm mt-1">سيتم إنشاء المهام عند التوليد بالذكاء الاصطناعي</p>
                                                 </div>
                                               ) : (
-                                                <div className="divide-y divide-gray-200" dir="rtl">
-                                                  {activityTasks.map((task) => (
+                                                <div className="divide-y divide-gray-100 max-h-[300px] overflow-y-auto" dir="rtl">
+                                                  {activityTasks.map((task, taskIdx) => (
                                                     <div 
                                                       key={task.id} 
-                                                      className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50"
+                                                      className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 transition-colors"
                                                     >
                                                       <div className={cn(
-                                                        "w-3 h-3 rounded-full flex-shrink-0",
-                                                        task.status === "completed" ? "bg-green-500" :
-                                                        task.status === "in_progress" ? "bg-blue-500" :
-                                                        "bg-gray-400"
-                                                      )} />
-                                                      <div className="text-sm font-medium text-gray-800 text-right flex-1">
-                                                        {task.title}
+                                                        "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                                                        task.status === "completed" ? "bg-green-100" :
+                                                        task.status === "in_progress" ? "bg-blue-100" :
+                                                        "bg-gray-100"
+                                                      )}>
+                                                        {task.status === "completed" ? (
+                                                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                                        ) : task.status === "in_progress" ? (
+                                                          <Clock className="w-4 h-4 text-blue-600" />
+                                                        ) : (
+                                                          <span className="text-xs font-bold text-gray-500">{taskIdx + 1}</span>
+                                                        )}
                                                       </div>
+                                                      <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium text-gray-800 truncate text-right">
+                                                          {task.title}
+                                                        </p>
+                                                        <p className={cn(
+                                                          "text-xs",
+                                                          task.status === "completed" ? "text-green-600" :
+                                                          task.status === "in_progress" ? "text-blue-600" :
+                                                          "text-gray-400"
+                                                        )}>
+                                                          {task.status === "completed" ? "مكتملة" :
+                                                           task.status === "in_progress" ? "قيد التنفيذ" :
+                                                           "معلقة"}
+                                                        </p>
+                                                      </div>
+                                                      <Badge 
+                                                        variant="outline" 
+                                                        className={cn(
+                                                          "text-xs",
+                                                          task.priority === "high" ? "border-red-300 text-red-600" :
+                                                          task.priority === "medium" ? "border-amber-300 text-amber-600" :
+                                                          "border-gray-300 text-gray-600"
+                                                        )}
+                                                      >
+                                                        {task.priority === "high" ? "عالية" :
+                                                         task.priority === "medium" ? "متوسطة" :
+                                                         "منخفضة"}
+                                                      </Badge>
                                                     </div>
                                                   ))}
                                                 </div>
@@ -1554,23 +1709,49 @@ export default function ExecutivePlans() {
 
         {/* نافذة التوليد بالذكاء الاصطناعي */}
         <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl">
-                <Sparkles className="w-6 h-6 text-purple-500" />
+              <DialogTitle className="flex items-center gap-3 text-xl">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
                 توليد الخطط التنفيذية بالذكاء الاصطناعي
               </DialogTitle>
             </DialogHeader>
             
             <div className="space-y-6 py-4">
-              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                <h4 className="font-semibold text-purple-800 mb-2">كيف يعمل؟</h4>
-                <ul className="text-sm text-purple-700 space-y-1">
-                  <li>• يحلل الذكاء الاصطناعي الخطط التشغيلية والمستهدفات</li>
-                  <li>• يوزع المستهدفات الشهرية على أيام العمل بذكاء</li>
-                  <li>• يتجنب عطلات نهاية الأسبوع (الجمعة والسبت)</li>
-                  <li>• يراعي التوازن في التوزيع</li>
-                </ul>
+              {/* شرح العملية */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-200">
+                <h4 className="font-bold text-purple-800 mb-3 flex items-center gap-2">
+                  <Zap className="w-5 h-5" />
+                  ماذا سيفعل الذكاء الاصطناعي؟
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-purple-700">1</span>
+                    </div>
+                    <p className="text-sm text-purple-700">تحليل الخطط التشغيلية والمستهدفات الشهرية</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-purple-700">2</span>
+                    </div>
+                    <p className="text-sm text-purple-700">توزيع المستهدفات على أيام العمل بذكاء</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-purple-700">3</span>
+                    </div>
+                    <p className="text-sm text-purple-700">تجنب عطلات نهاية الأسبوع تلقائياً</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-purple-700">4</span>
+                    </div>
+                    <p className="text-sm text-purple-700">إنشاء مهام مرتبطة بكل يوم تنفيذي</p>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -1630,44 +1811,63 @@ export default function ExecutivePlans() {
                 )}
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium mb-2">سيتم التوليد لـ:</h4>
-                <div className="flex items-center gap-2">
+              {/* الموظفين المستهدفين */}
+              <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-slate-700">
+                  <Users className="w-4 h-4" />
+                  سيتم التوليد لـ:
+                </h4>
+                <div className="flex flex-wrap items-center gap-2">
                   {selectedEmployeeId === "all" ? (
-                    <Badge className="bg-purple-100 text-purple-800">جميع الموظفين</Badge>
+                    <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 py-1.5 px-3">
+                      <Users className="w-3 h-3 ml-1" />
+                      جميع الموظفين
+                    </Badge>
                   ) : getSelectedEmployee() ? (
                     <>
-                      <Badge className="bg-blue-100 text-blue-800">{getSelectedEmployee()?.full_name}</Badge>
+                      <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0 py-1.5 px-3">
+                        <User className="w-3 h-3 ml-1" />
+                        {getSelectedEmployee()?.full_name}
+                      </Badge>
                       {getSelectedEmployee()?.job_role?.includes('رئيس قسم') && (
-                        <span className="text-xs text-gray-500">+ موظفي القسم</span>
+                        <Badge variant="outline" className="text-gray-600">+ موظفي القسم</Badge>
                       )}
                     </>
                   ) : (
-                    <Badge className="bg-gray-100 text-gray-800">الموظف المحدد</Badge>
+                    <Badge className="bg-gray-200 text-gray-700">الموظف المحدد</Badge>
                   )}
                 </div>
               </div>
 
-              <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                <p className="text-sm text-amber-800">
-                  ⚠️ سيتم استبدال الخطط التنفيذية الموجودة للأشهر المحددة
-                </p>
+              {/* تحذير */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-200 flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg">⚠️</span>
+                </div>
+                <div>
+                  <p className="font-medium text-amber-800">تنبيه هام</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    سيتم استبدال الخطط التنفيذية والمهام الموجودة للأشهر المحددة بالخطط الجديدة
+                  </p>
+                </div>
               </div>
 
+              {/* زر التوليد */}
               <Button
                 onClick={handleAIGenerate}
                 disabled={isAIGenerating || aiSelectedMonths.length === 0}
-                className="w-full gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-12 text-lg"
+                className="w-full gap-3 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 hover:from-purple-700 hover:via-pink-600 hover:to-purple-700 h-14 text-lg font-bold shadow-lg shadow-purple-500/30 transition-all hover:shadow-xl hover:shadow-purple-500/40"
               >
                 {isAIGenerating ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    جاري التوليد...
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span>جاري التوليد بالذكاء الاصطناعي...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" />
-                    توليد الخطط التنفيذية
+                    <Sparkles className="w-6 h-6" />
+                    <span>توليد الخطط التنفيذية والمهام</span>
+                    <Zap className="w-5 h-5" />
                   </>
                 )}
               </Button>
