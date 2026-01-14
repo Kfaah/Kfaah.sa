@@ -1535,6 +1535,29 @@ export default function HRRequests() {
 
           {/* سجل موافقاتي */}
           <TabsContent value="my-approvals-history" className="mt-4 space-y-6">
+            {approvedAsSubstitute.length + approvedAsManager.length === 0 && (
+              <Card>
+                <CardContent className="py-10">
+                  <div className="flex flex-col items-center justify-center text-center gap-3">
+                    <CheckCircle2 className="w-12 h-12 text-muted-foreground/40" />
+                    <div className="space-y-1">
+                      <p className="text-foreground font-semibold">لا يوجد سجل موافقات حتى الآن</p>
+                      <p className="text-sm text-muted-foreground">
+                        عند اعتمادك لأي طلب كموظف بديل أو كمدير مباشر سيظهر هنا.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="mt-2"
+                      onClick={() => handleEmployeeTabChange("pending-approvals")}
+                    >
+                      الانتقال إلى الموافقات المعلقة
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* موافقاتي كموظف بديل */}
             <Card>
               <CardHeader>
