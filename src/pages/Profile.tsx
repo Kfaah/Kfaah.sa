@@ -313,13 +313,41 @@ export default function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {authUser && employeeData && (
-                <SignatureUpload
-                  currentSignature={employeeData.signature_url}
-                  userId={authUser.id}
-                  onSignatureUpdate={() => refetchEmployee()}
-                  isEmployee={true}
-                />
+              {authUser && employeeData ? (
+                employeeData.signature_url ? (
+                  <div className="space-y-4">
+                    <div className="p-6 bg-muted/30 rounded-xl border-2 border-dashed border-muted-foreground/20 flex items-center justify-center">
+                      <img 
+                        src={employeeData.signature_url} 
+                        alt="التوقيع" 
+                        className="max-h-32 object-contain"
+                      />
+                    </div>
+                    <SignatureUpload
+                      currentSignature={employeeData.signature_url}
+                      userId={authUser.id}
+                      onSignatureUpdate={() => refetchEmployee()}
+                      isEmployee={true}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-8 bg-muted/30 rounded-xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center gap-3">
+                      <PenTool className="w-12 h-12 text-muted-foreground/40" />
+                      <p className="text-muted-foreground text-center">لم يتم إضافة توقيع بعد</p>
+                    </div>
+                    <SignatureUpload
+                      currentSignature={null}
+                      userId={authUser.id}
+                      onSignatureUpdate={() => refetchEmployee()}
+                      isEmployee={true}
+                    />
+                  </div>
+                )
+              ) : (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
+                </div>
               )}
             </CardContent>
           </Card>
