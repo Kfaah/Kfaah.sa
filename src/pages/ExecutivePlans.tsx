@@ -1360,7 +1360,7 @@ export default function ExecutivePlans() {
                                   
                                   {/* عمود الأنشطة */}
                                   <TableCell className="py-2">
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-3 gap-1.5">
                                       {dateGroup.activities.map((activity, activityIdx) => {
                                         const activityTasks = getTasksForExecutivePlan(activity.id);
                                         const completedTasks = activityTasks.filter(t => t.status === "completed").length;
@@ -1379,33 +1379,51 @@ export default function ExecutivePlans() {
                                             <PopoverTrigger asChild>
                                               <div
                                                 className={cn(
-                                                  "flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg transition-all hover:shadow-md",
+                                                  "flex items-center gap-1.5 cursor-pointer px-2 py-1.5 rounded-md transition-all hover:scale-[1.02] hover:shadow-lg border",
                                                   activity.status === "completed" 
-                                                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                                                    ? "bg-green-50 border-green-300 text-green-800 hover:bg-green-100"
                                                     : activity.status === "in_progress"
-                                                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                                                    : "bg-gradient-to-r from-[#3d9aa8] to-[#2d8090] text-white"
+                                                    ? "bg-blue-50 border-blue-300 text-blue-800 hover:bg-blue-100"
+                                                    : "bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100"
                                                 )}
                                               >
                                                 {/* الرقم التسلسلي */}
-                                                <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
-                                                  <span className="text-xs font-bold">{activityIdx + 1}</span>
+                                                <div className={cn(
+                                                  "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white",
+                                                  activity.status === "completed" 
+                                                    ? "bg-green-500"
+                                                    : activity.status === "in_progress"
+                                                    ? "bg-blue-500"
+                                                    : "bg-[#3d9aa8]"
+                                                )}>
+                                                  {activityIdx + 1}
                                                 </div>
                                                 
                                                 {/* اسم النشاط */}
-                                                <div className="flex-1 min-w-0">
-                                                  <span className="text-sm font-medium truncate block">{activity.activityName}</span>
-                                                </div>
+                                                <span className="text-xs font-medium truncate flex-1" title={activity.activityName}>
+                                                  {activity.activityName.length > 20 
+                                                    ? activity.activityName.substring(0, 20) + '...' 
+                                                    : activity.activityName}
+                                                </span>
                                                 
                                                 {/* عدد المهام */}
                                                 {activityTasks.length > 0 && (
-                                                  <div className="flex items-center gap-1 text-xs opacity-90 flex-shrink-0">
-                                                    <ListTodo className="w-3 h-3" />
-                                                    <span>{completedTasks}/{activityTasks.length}</span>
-                                                  </div>
+                                                  <Badge 
+                                                    variant="secondary" 
+                                                    className={cn(
+                                                      "text-[10px] px-1 py-0 h-4 flex-shrink-0",
+                                                      activity.status === "completed" 
+                                                        ? "bg-green-200 text-green-700"
+                                                        : activity.status === "in_progress"
+                                                        ? "bg-blue-200 text-blue-700"
+                                                        : "bg-slate-200 text-slate-600"
+                                                    )}
+                                                  >
+                                                    {completedTasks}/{activityTasks.length}
+                                                  </Badge>
                                                 )}
                                                 
-                                                <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                                                <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-50" />
                                               </div>
                                             </PopoverTrigger>
                                             <PopoverContent 
