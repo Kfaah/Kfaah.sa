@@ -337,7 +337,12 @@ export default function ExecutivePlans() {
 
     // "الكل" = كل الموظفين الذين لديهم user_id فقط
     if (selectedEmployeeId === "all") {
-      return filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
+      const ids = filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
+      // دائماً أضف المستخدم الحالي إذا لم يكن موجوداً
+      if (authUser && !ids.includes(authUser.id)) {
+        ids.push(authUser.id);
+      }
+      return ids;
     }
 
     // قد تكون القيمة المختارة user_id أو employee.id (لبعض الموظفين الذين لا يملكون حساباً مرتبطاً)
@@ -357,7 +362,12 @@ export default function ExecutivePlans() {
       selectedEmployee?.job_role === "مدير النظام" ||
       selectedEmployee?.job_role === "المدير التنفيذي";
     if (isExecutiveOrAdmin) {
-      return filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
+      const ids = filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
+      // دائماً أضف المستخدم الحالي إذا لم يكن موجوداً
+      if (authUser && !ids.includes(authUser.id)) {
+        ids.push(authUser.id);
+      }
+      return ids;
     }
 
     // إذا كان رئيس قسم - عرض موظفي القسم فقط
