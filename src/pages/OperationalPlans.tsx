@@ -259,6 +259,7 @@ export default function OperationalPlans() {
   // فلاتر الخطط التشغيلية
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
   const [filterEmployeeId, setFilterEmployeeId] = useState<string>("all");
+  const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
   
   // توليد AI
   const [isAIGenerating, setIsAIGenerating] = useState(false);
@@ -457,6 +458,11 @@ export default function OperationalPlans() {
 
   // الخطط المفلترة
   const filteredPlans = plans.filter(plan => {
+    // فلتر السنة
+    if (plan.year !== filterYear) {
+      return false;
+    }
+    
     // فلتر القسم
     if (filterDepartmentId !== "all") {
       const responsibleEmployee = employees.find(e => e.id === plan.responsible_employee_id);
@@ -1569,6 +1575,25 @@ export default function OperationalPlans() {
               <span className="text-sm font-semibold">فلترة</span>
             </div>
             
+            {/* فلتر السنة */}
+            <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-blue-100 shadow-sm hover:border-blue-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-white" />
+              </div>
+              <Select value={filterYear.toString()} onValueChange={(val) => setFilterYear(parseInt(val))}>
+                <SelectTrigger className="w-[120px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
+                  <SelectValue placeholder="اختر السنة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[2024, 2025, 2026, 2027, 2028].map((yr) => (
+                    <SelectItem key={yr} value={yr.toString()}>
+                      {yr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             {/* فلتر القسم */}
             <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-indigo-100 shadow-sm hover:border-indigo-300 transition-colors">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
@@ -1615,7 +1640,7 @@ export default function OperationalPlans() {
             </div>
             
             {/* زر إعادة تعيين الفلاتر */}
-            {(filterDepartmentId !== "all" || filterEmployeeId !== "all") && (
+            {(filterDepartmentId !== "all" || filterEmployeeId !== "all" || filterYear !== new Date().getFullYear()) && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -1623,6 +1648,7 @@ export default function OperationalPlans() {
                 onClick={() => {
                   setFilterDepartmentId("all");
                   setFilterEmployeeId("all");
+                  setFilterYear(new Date().getFullYear());
                 }}
               >
                 <X className="w-4 h-4 ml-1" />
