@@ -25,6 +25,7 @@ export function SignatureUpload({
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [lineWidth, setLineWidth] = useState(2);
+  const [previewBgGray, setPreviewBgGray] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -397,10 +398,23 @@ export function SignatureUpload({
   };
 
   return (
-    <div className="bg-background rounded-2xl p-6 border">
-      <div className="flex items-center gap-2 mb-4">
-        <PenTool className="w-5 h-5 text-accent" />
-        <h3 className="text-lg font-semibold">التوقيع الرسمي</h3>
+    <div className={`rounded-2xl p-6 border transition-colors ${previewBgGray ? 'bg-muted' : 'bg-background'}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <PenTool className="w-5 h-5 text-accent" />
+          <h3 className="text-lg font-semibold">التوقيع</h3>
+        </div>
+        {currentSignature && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setPreviewBgGray(!previewBgGray)}
+            className="text-xs gap-1"
+          >
+            <div className={`w-4 h-4 rounded border ${previewBgGray ? 'bg-muted' : 'bg-background'}`} />
+            {previewBgGray ? 'خلفية بيضاء' : 'خلفية رصاصية'}
+          </Button>
+        )}
       </div>
       <div className="space-y-4">
         {currentSignature ? (
