@@ -1312,8 +1312,8 @@ export default function ExecutivePlans() {
                                 <TableRow 
                                   key={`${monthGroup.month}-${dateGroup.day}`}
                                   className={cn(
-                                    dateIdx % 2 === 0 ? "bg-white" : "bg-sky-50",
-                                    "hover:bg-emerald-100 transition-colors",
+                                    dateIdx % 2 === 0 ? "bg-white" : "bg-[#3d9aa8]/10",
+                                    "transition-colors",
                                     isFirstRow ? "border-t-2 border-[#3d9aa8]/30" : "",
                                     dateIdx < monthGroup.dateGroups.length - 1 ? "border-b border-gray-200" : ""
                                   )}
