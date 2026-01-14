@@ -1359,19 +1359,26 @@ export default function ExecutivePlans() {
                                   
                                   {/* عمود الأنشطة */}
                                   <TableCell className="py-2">
-                                    <div className="space-y-2">
+                                    <div className="grid grid-cols-2 gap-2">
                                       {dateGroup.activities.map((activity, activityIdx) => {
                                         const activityTasks = getTasksForExecutivePlan(activity.id);
                                         const completedTasks = activityTasks.filter(t => t.status === "completed").length;
                                         const activityKey = `${monthGroup.month}-${dateGroup.day}-${activity.id}`;
                                         const isActivityExpanded = expandedActivities.has(activityKey);
                                         
+                                        // تحقق من وجود مهام لكل مرحلة
+                                        const hasPreTasks = activityTasks.some(t => t.category === "ما قبل");
+                                        const hasDuringTasks = activityTasks.some(t => t.category === "أثناء");
+                                        const hasPostTasks = activityTasks.some(t => t.category === "ما بعد");
+                                        const hasUncategorizedTasks = activityTasks.some(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category));
+                                        const hasPhases = hasPreTasks || hasDuringTasks || hasPostTasks;
+                                        
                                         return (
                                           <Popover key={activity.id}>
                                             <PopoverTrigger asChild>
                                               <div
                                                 className={cn(
-                                                  "flex items-center gap-3 cursor-pointer px-3 py-2.5 rounded-xl transition-all hover:shadow-md",
+                                                  "flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg transition-all hover:shadow-md",
                                                   activity.status === "completed" 
                                                     ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
                                                     : activity.status === "in_progress"
@@ -1379,115 +1386,205 @@ export default function ExecutivePlans() {
                                                     : "bg-gradient-to-r from-[#3d9aa8] to-[#2d8090] text-white"
                                                 )}
                                               >
-                                                {/* الرقم على اليمين */}
-                                                <div className="flex items-center gap-2">
-                                                  <div className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center">
-                                                    <span className="text-xs font-bold">{activityIdx + 1}</span>
-                                                  </div>
-                                                  <ChevronDown className="w-4 h-4" />
+                                                {/* الرقم التسلسلي */}
+                                                <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
+                                                  <span className="text-xs font-bold">{activityIdx + 1}</span>
                                                 </div>
                                                 
                                                 {/* اسم النشاط */}
-                                                <div className="flex-1">
-                                                  <span className="text-sm font-semibold">{activity.activityName}</span>
+                                                <div className="flex-1 min-w-0">
+                                                  <span className="text-sm font-medium truncate block">{activity.activityName}</span>
                                                 </div>
                                                 
                                                 {/* عدد المهام */}
                                                 {activityTasks.length > 0 && (
-                                                  <div className="flex items-center gap-1 text-xs opacity-90">
-                                                    <ListTodo className="w-3.5 h-3.5" />
+                                                  <div className="flex items-center gap-1 text-xs opacity-90 flex-shrink-0">
+                                                    <ListTodo className="w-3 h-3" />
                                                     <span>{completedTasks}/{activityTasks.length}</span>
                                                   </div>
                                                 )}
+                                                
+                                                <ChevronDown className="w-4 h-4 flex-shrink-0" />
                                               </div>
                                             </PopoverTrigger>
                                             <PopoverContent 
-                                              className="w-80 p-3 bg-white border shadow-xl rounded-xl z-50" 
+                                              className="w-96 p-4 bg-white border-2 border-gray-200 shadow-2xl rounded-xl z-[100]" 
                                               align="start"
                                               side="bottom"
-                                              sideOffset={5}
+                                              sideOffset={8}
                                             >
-                                              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                                                <div className="font-bold text-sm text-gray-800 border-b pb-2 mb-2">
+                                              <div className="space-y-4 max-h-[450px] overflow-y-auto">
+                                                {/* عنوان النشاط */}
+                                                <div className="font-bold text-base text-gray-900 border-b-2 border-[#3d9aa8] pb-3">
                                                   {activity.activityName}
                                                 </div>
                                                 
                                                 {activityTasks.length === 0 ? (
-                                                  <div className="py-4 text-center text-gray-400 text-sm">
-                                                    <ListTodo className="w-6 h-6 mx-auto mb-2 text-gray-300" />
-                                                    لا توجد مهام مرتبطة
+                                                  <div className="py-6 text-center text-gray-500">
+                                                    <ListTodo className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                                                    <p className="text-base">لا توجد مهام مرتبطة</p>
                                                   </div>
                                                 ) : (
                                                   <>
-                                                    {/* تجميع المهام حسب المرحلة */}
-                                                    {[
-                                                      { phase: "ما قبل", color: "from-amber-400 to-orange-500", bgColor: "bg-amber-50", borderColor: "border-amber-200", icon: "🔧" },
-                                                      { phase: "أثناء", color: "from-blue-400 to-indigo-500", bgColor: "bg-blue-50", borderColor: "border-blue-200", icon: "⚡" },
-                                                      { phase: "ما بعد", color: "from-emerald-400 to-teal-500", bgColor: "bg-emerald-50", borderColor: "border-emerald-200", icon: "✅" },
-                                                    ].map(({ phase, color, bgColor, borderColor, icon }) => {
-                                                      const phaseTasks = activityTasks.filter(t => t.category === phase);
-                                                      if (phaseTasks.length === 0) return null;
-                                                      
-                                                      return (
-                                                        <div key={phase} className={cn("rounded-lg border p-2", bgColor, borderColor)}>
-                                                          <div className={cn("text-xs font-bold mb-2 px-2 py-1 rounded-md text-white w-fit bg-gradient-to-r", color)}>
-                                                            {icon} {phase}
-                                                          </div>
-                                                          <div className="space-y-1">
-                                                            {phaseTasks.map((task, taskIdx) => (
-                                                              <div 
-                                                                key={task.id}
-                                                                className="flex items-center gap-2 p-1.5 bg-white rounded-lg border border-gray-100"
-                                                              >
-                                                                <div className={cn(
-                                                                  "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold",
-                                                                  task.status === "completed" ? "bg-green-100 text-green-600" :
-                                                                  task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
-                                                                  "bg-gray-100 text-gray-500"
-                                                                )}>
-                                                                  {task.status === "completed" ? (
-                                                                    <CheckCircle2 className="w-3 h-3" />
-                                                                  ) : task.status === "in_progress" ? (
-                                                                    <Clock className="w-3 h-3" />
-                                                                  ) : (
-                                                                    taskIdx + 1
-                                                                  )}
-                                                                </div>
-                                                                <p className="text-xs text-gray-700 flex-1 line-clamp-2">
-                                                                  {task.title}
-                                                                </p>
+                                                    {/* عرض المراحل فقط إذا كانت موجودة */}
+                                                    {hasPhases && (
+                                                      <div className="space-y-3">
+                                                        {/* مرحلة ما قبل */}
+                                                        {hasPreTasks && (
+                                                          <div className="rounded-xl border-2 border-amber-300 p-3 bg-amber-50">
+                                                            <div className="flex items-center gap-2 mb-3">
+                                                              <div className="px-3 py-1.5 rounded-lg text-white text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 shadow-md">
+                                                                🔧 ما قبل
                                                               </div>
-                                                            ))}
+                                                              <span className="text-sm text-amber-700 font-medium">
+                                                                ({activityTasks.filter(t => t.category === "ما قبل").length} مهام)
+                                                              </span>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                              {activityTasks.filter(t => t.category === "ما قبل").map((task, taskIdx) => (
+                                                                <div 
+                                                                  key={task.id}
+                                                                  className="flex items-start gap-3 p-2.5 bg-white rounded-lg border border-amber-200 shadow-sm"
+                                                                >
+                                                                  <div className={cn(
+                                                                    "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
+                                                                    task.status === "completed" ? "bg-green-100 text-green-600" :
+                                                                    task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
+                                                                    "bg-gray-100 text-gray-500"
+                                                                  )}>
+                                                                    {task.status === "completed" ? (
+                                                                      <CheckCircle2 className="w-4 h-4" />
+                                                                    ) : task.status === "in_progress" ? (
+                                                                      <Clock className="w-4 h-4" />
+                                                                    ) : (
+                                                                      taskIdx + 1
+                                                                    )}
+                                                                  </div>
+                                                                  <p className="text-sm text-gray-800 flex-1 leading-relaxed">
+                                                                    {task.title}
+                                                                  </p>
+                                                                </div>
+                                                              ))}
+                                                            </div>
                                                           </div>
-                                                        </div>
-                                                      );
-                                                    })}
+                                                        )}
+                                                        
+                                                        {/* مرحلة أثناء */}
+                                                        {hasDuringTasks && (
+                                                          <div className="rounded-xl border-2 border-blue-300 p-3 bg-blue-50">
+                                                            <div className="flex items-center gap-2 mb-3">
+                                                              <div className="px-3 py-1.5 rounded-lg text-white text-sm font-bold bg-gradient-to-r from-blue-500 to-indigo-500 shadow-md">
+                                                                ⚡ أثناء
+                                                              </div>
+                                                              <span className="text-sm text-blue-700 font-medium">
+                                                                ({activityTasks.filter(t => t.category === "أثناء").length} مهام)
+                                                              </span>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                              {activityTasks.filter(t => t.category === "أثناء").map((task, taskIdx) => (
+                                                                <div 
+                                                                  key={task.id}
+                                                                  className="flex items-start gap-3 p-2.5 bg-white rounded-lg border border-blue-200 shadow-sm"
+                                                                >
+                                                                  <div className={cn(
+                                                                    "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
+                                                                    task.status === "completed" ? "bg-green-100 text-green-600" :
+                                                                    task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
+                                                                    "bg-gray-100 text-gray-500"
+                                                                  )}>
+                                                                    {task.status === "completed" ? (
+                                                                      <CheckCircle2 className="w-4 h-4" />
+                                                                    ) : task.status === "in_progress" ? (
+                                                                      <Clock className="w-4 h-4" />
+                                                                    ) : (
+                                                                      taskIdx + 1
+                                                                    )}
+                                                                  </div>
+                                                                  <p className="text-sm text-gray-800 flex-1 leading-relaxed">
+                                                                    {task.title}
+                                                                  </p>
+                                                                </div>
+                                                              ))}
+                                                            </div>
+                                                          </div>
+                                                        )}
+                                                        
+                                                        {/* مرحلة ما بعد */}
+                                                        {hasPostTasks && (
+                                                          <div className="rounded-xl border-2 border-emerald-300 p-3 bg-emerald-50">
+                                                            <div className="flex items-center gap-2 mb-3">
+                                                              <div className="px-3 py-1.5 rounded-lg text-white text-sm font-bold bg-gradient-to-r from-emerald-500 to-teal-500 shadow-md">
+                                                                ✅ ما بعد
+                                                              </div>
+                                                              <span className="text-sm text-emerald-700 font-medium">
+                                                                ({activityTasks.filter(t => t.category === "ما بعد").length} مهام)
+                                                              </span>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                              {activityTasks.filter(t => t.category === "ما بعد").map((task, taskIdx) => (
+                                                                <div 
+                                                                  key={task.id}
+                                                                  className="flex items-start gap-3 p-2.5 bg-white rounded-lg border border-emerald-200 shadow-sm"
+                                                                >
+                                                                  <div className={cn(
+                                                                    "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
+                                                                    task.status === "completed" ? "bg-green-100 text-green-600" :
+                                                                    task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
+                                                                    "bg-gray-100 text-gray-500"
+                                                                  )}>
+                                                                    {task.status === "completed" ? (
+                                                                      <CheckCircle2 className="w-4 h-4" />
+                                                                    ) : task.status === "in_progress" ? (
+                                                                      <Clock className="w-4 h-4" />
+                                                                    ) : (
+                                                                      taskIdx + 1
+                                                                    )}
+                                                                  </div>
+                                                                  <p className="text-sm text-gray-800 flex-1 leading-relaxed">
+                                                                    {task.title}
+                                                                  </p>
+                                                                </div>
+                                                              ))}
+                                                            </div>
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    )}
                                                     
-                                                    {/* المهام بدون تصنيف */}
-                                                    {activityTasks.filter(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category)).length > 0 && (
-                                                      <div className="rounded-lg border border-gray-200 p-2 bg-gray-50">
-                                                        <div className="text-xs font-bold mb-2 text-gray-600">📋 مهام أخرى</div>
-                                                        <div className="space-y-1">
+                                                    {/* المهام بدون تصنيف - تظهر كقائمة بسيطة إذا لا توجد مراحل */}
+                                                    {hasUncategorizedTasks && (
+                                                      <div className={cn(
+                                                        "rounded-xl border-2 border-gray-300 p-3 bg-gray-50",
+                                                        hasPhases ? "mt-3" : ""
+                                                      )}>
+                                                        {hasPhases && (
+                                                          <div className="flex items-center gap-2 mb-3">
+                                                            <div className="px-3 py-1.5 rounded-lg text-white text-sm font-bold bg-gradient-to-r from-gray-500 to-gray-600 shadow-md">
+                                                              📋 مهام أخرى
+                                                            </div>
+                                                          </div>
+                                                        )}
+                                                        <div className="space-y-2">
                                                           {activityTasks.filter(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category)).map((task, taskIdx) => (
                                                             <div 
                                                               key={task.id}
-                                                              className="flex items-center gap-2 p-1.5 bg-white rounded-lg border border-gray-100"
+                                                              className="flex items-start gap-3 p-2.5 bg-white rounded-lg border border-gray-200 shadow-sm"
                                                             >
                                                               <div className={cn(
-                                                                "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold",
+                                                                "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
                                                                 task.status === "completed" ? "bg-green-100 text-green-600" :
                                                                 task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
                                                                 "bg-gray-100 text-gray-500"
                                                               )}>
                                                                 {task.status === "completed" ? (
-                                                                  <CheckCircle2 className="w-3 h-3" />
+                                                                  <CheckCircle2 className="w-4 h-4" />
                                                                 ) : task.status === "in_progress" ? (
-                                                                  <Clock className="w-3 h-3" />
+                                                                  <Clock className="w-4 h-4" />
                                                                 ) : (
                                                                   taskIdx + 1
                                                                 )}
                                                               </div>
-                                                              <p className="text-xs text-gray-700 flex-1 line-clamp-2">
+                                                              <p className="text-sm text-gray-800 flex-1 leading-relaxed">
                                                                 {task.title}
                                                               </p>
                                                             </div>
