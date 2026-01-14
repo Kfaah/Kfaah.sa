@@ -1250,6 +1250,9 @@ export default function HRRequests() {
               )}
             </TabsTrigger>
           </TabsList>
+          <p className="mt-2 text-xs text-muted-foreground sm:hidden">
+            إذا لم يظهر تبويب (سجل موافقاتي)، اسحب التبويبات يمينًا/يسارًا لعرض الباقي.
+          </p>
 
           {/* طلباتي */}
           <TabsContent value="my-requests" className="mt-4">
