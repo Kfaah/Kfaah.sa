@@ -161,19 +161,27 @@ serve(async (req) => {
       const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
 
       // توليد الخطط التنفيذية باستخدام الذكاء الاصطناعي
-      const systemPrompt = `أنت مستشار تخطيط استراتيجي متخصص في توزيع المستهدفات على أيام العمل.
+      const systemPrompt = `أنت مستشار تخطيط استراتيجي متخصص في توزيع المستهدفات على أيام العمل وتفصيل المهام.
       
-مهمتك: توزيع المستهدف الشهري على أيام العمل بشكل ذكي ومتوازن.
+مهمتك الأولى: توزيع المستهدف الشهري على أيام العمل بشكل ذكي ومتوازن.
+مهمتك الثانية: لكل يوم تنفيذي، توليد مهام تفصيلية مقسمة إلى ثلاث مراحل:
+- مهام ما قبل (التحضير والإعداد)
+- مهام أثناء (التنفيذ الفعلي)
+- مهام ما بعد (المتابعة والتوثيق)
 
 قواعد التوزيع:
 1. تجنب أيام الجمعة والسبت (عطلة نهاية الأسبوع)
 2. وزّع المستهدف بشكل متساوي قدر الإمكان
 3. إذا كان المستهدف صغير (1-4)، اختر أيام متفرقة
 4. إذا كان المستهدف كبير، وزّعه على معظم أيام العمل
-5. اختر عدد الأيام المناسب بناءً على حجم المستهدف
-6. تأكد أن مجموع المستهدفات اليومية يساوي المستهدف الشهري
+5. تأكد أن مجموع المستهدفات اليومية يساوي المستهدف الشهري
 
-يجب أن ترد باستخدام الأداة distribute_targets فقط.`;
+قواعد المهام:
+1. كل يوم تنفيذي يحتاج 3-5 مهام كحد أدنى
+2. المهام يجب أن تكون عملية ومحددة وقابلة للقياس
+3. اجعل المهام متناسبة مع طبيعة النشاط
+
+يجب أن ترد باستخدام الأداة distribute_targets_with_tasks فقط.`;
 
       const userPrompt = `الشهر: ${monthName} ${targetYear}
 عدد أيام الشهر: ${daysInMonth}
@@ -182,11 +190,14 @@ serve(async (req) => {
 ${plansData.map((p, i) => `
 ${i + 1}. النشاط: ${p.activityName}
    المبادرة: ${p.initiative || "غير محدد"}
+   الهدف الاستراتيجي: ${p.strategicGoal || "غير محدد"}
    المستهدف الشهري: ${p.monthlyTarget}
    الموظف: ${p.employeeName} (${p.jobRole})
 `).join("\n")}
 
-قم بتوزيع المستهدف الشهري لكل نشاط على أيام العمل المناسبة في الشهر.`;
+قم بـ:
+1. توزيع المستهدف الشهري لكل نشاط على أيام العمل المناسبة
+2. لكل يوم تنفيذي، أنشئ مهام تفصيلية مقسمة إلى (قبل - أثناء - بعد)`;
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -204,8 +215,8 @@ ${i + 1}. النشاط: ${p.activityName}
             {
               type: "function",
               function: {
-                name: "distribute_targets",
-                description: "توزيع المستهدفات الشهرية على الأيام",
+                name: "distribute_targets_with_tasks",
+                description: "توزيع المستهدفات الشهرية على الأيام مع المهام التفصيلية",
                 parameters: {
                   type: "object",
                   properties: {
@@ -225,8 +236,29 @@ ${i + 1}. النشاط: ${p.activityName}
                               properties: {
                                 day: { type: "number", description: "رقم اليوم في الشهر" },
                                 target: { type: "number", description: "المستهدف لهذا اليوم" },
+                                tasks: {
+                                  type: "object",
+                                  properties: {
+                                    before: {
+                                      type: "array",
+                                      items: { type: "string" },
+                                      description: "مهام ما قبل التنفيذ (التحضير والإعداد)"
+                                    },
+                                    during: {
+                                      type: "array",
+                                      items: { type: "string" },
+                                      description: "مهام أثناء التنفيذ"
+                                    },
+                                    after: {
+                                      type: "array",
+                                      items: { type: "string" },
+                                      description: "مهام ما بعد التنفيذ (المتابعة والتوثيق)"
+                                    }
+                                  },
+                                  required: ["before", "during", "after"]
+                                }
                               },
-                              required: ["day", "target"],
+                              required: ["day", "target", "tasks"],
                             },
                           },
                         },
@@ -240,7 +272,7 @@ ${i + 1}. النشاط: ${p.activityName}
               },
             },
           ],
-          tool_choice: { type: "function", function: { name: "distribute_targets" } },
+          tool_choice: { type: "function", function: { name: "distribute_targets_with_tasks" } },
         }),
       });
 
@@ -265,14 +297,21 @@ ${i + 1}. النشاط: ${p.activityName}
       const data = await response.json();
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
 
-      if (!toolCall || toolCall.function.name !== "distribute_targets") {
-        console.error(`Invalid AI response for month ${targetMonth}`);
+      if (!toolCall || toolCall.function.name !== "distribute_targets_with_tasks") {
+        console.error(`Invalid AI response for month ${targetMonth}:`, JSON.stringify(toolCall));
         continue;
       }
 
       const distributions = JSON.parse(toolCall.function.arguments);
       const executivePlansToInsert: any[] = [];
-      const planMetadata: { planMonthId: string; day: number; activityName: string; userId: string; dailyTarget: number }[] = [];
+      const planMetadata: { 
+        planMonthId: string; 
+        day: number; 
+        activityName: string; 
+        userId: string; 
+        dailyTarget: number;
+        tasks?: { before: string[]; during: string[]; after: string[] };
+      }[] = [];
 
       // تحويل التوزيعات إلى خطط تنفيذية
       for (const dist of distributions.distributions) {
@@ -295,6 +334,7 @@ ${i + 1}. النشاط: ${p.activityName}
             activityName: planData.activityName,
             userId: planData.userId,
             dailyTarget: dayData.target,
+            tasks: dayData.tasks || { before: [], during: [], after: [] },
           });
         }
       }
@@ -339,7 +379,7 @@ ${i + 1}. النشاط: ${p.activityName}
         continue;
       }
 
-      // إنشاء المهام المرتبطة بكل خطة تنفيذية
+      // إنشاء المهام المرتبطة بكل خطة تنفيذية (متعددة لكل خطة)
       const tasksToInsert: any[] = [];
       
       for (let i = 0; i < insertedPlans.length; i++) {
@@ -352,17 +392,49 @@ ${i + 1}. النشاط: ${p.activityName}
         const dueDate = new Date(targetYear, targetMonth - 1, metadata.day);
         const dueDateStr = dueDate.toISOString().split('T')[0];
         
-        tasksToInsert.push({
-          title: metadata.activityName,
-          description: `مهمة مولدة بالذكاء الاصطناعي - المستهدف: ${metadata.dailyTarget}`,
-          user_id: metadata.userId,
-          executive_plan_id: executivePlan.id,
-          status: "pending",
-          priority: "medium",
-          due_date: dueDateStr,
-          ai_generated: true,
-          category: "خطة تنفيذية",
-        });
+        const phases = [
+          { phase: "before", label: "ما قبل", priority: "high" as const },
+          { phase: "during", label: "أثناء", priority: "medium" as const },
+          { phase: "after", label: "ما بعد", priority: "low" as const },
+        ];
+        
+        for (const { phase, label, priority } of phases) {
+          const phaseTasks = metadata.tasks?.[phase as keyof typeof metadata.tasks] || [];
+          
+          for (const taskTitle of phaseTasks) {
+            if (!taskTitle || taskTitle.trim() === "") continue;
+            
+            tasksToInsert.push({
+              title: taskTitle,
+              description: `${label} - ${metadata.activityName}`,
+              user_id: metadata.userId,
+              executive_plan_id: executivePlan.id,
+              status: "pending",
+              priority,
+              due_date: dueDateStr,
+              ai_generated: true,
+              category: label, // استخدام المرحلة كتصنيف
+            });
+          }
+        }
+        
+        // إذا لم تُولّد مهام، أنشئ مهمة واحدة على الأقل
+        if (!metadata.tasks || 
+            ((!metadata.tasks.before || metadata.tasks.before.length === 0) && 
+             (!metadata.tasks.during || metadata.tasks.during.length === 0) && 
+             (!metadata.tasks.after || metadata.tasks.after.length === 0))) {
+          tasksToInsert.push({
+            title: metadata.activityName,
+            description: `مهمة مولدة بالذكاء الاصطناعي - المستهدف: ${metadata.dailyTarget}`,
+            user_id: metadata.userId,
+            executive_plan_id: executivePlan.id,
+            status: "pending",
+            priority: "medium",
+            due_date: dueDateStr,
+            ai_generated: true,
+            category: "أثناء",
+          });
+        }
       }
       
       if (tasksToInsert.length > 0) {

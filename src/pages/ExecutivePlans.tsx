@@ -108,6 +108,7 @@ interface Task {
   status: string;
   priority: string;
   executive_plan_id: string | null;
+  category: string | null;
 }
 
 const MONTHS_AR = [
@@ -445,7 +446,7 @@ export default function ExecutivePlans() {
             const execIds = executive.map(e => e.id);
             const { data: tasksData, error: tasksError } = await supabase
               .from("tasks")
-              .select("id, title, status, priority, executive_plan_id")
+              .select("id, title, status, priority, executive_plan_id, category")
               .in("executive_plan_id", execIds);
             
             if (!tasksError && tasksData) {
@@ -1338,64 +1339,90 @@ export default function ExecutivePlans() {
                                               )}
                                             </div>
                                             
-                                            {/* قائمة المهام (تظهر عند التوسيع) */}
+                                            {/* قائمة المهام (تظهر عند التوسيع) - مجمّعة حسب المرحلة */}
                                             {isActivityExpanded && (
-                                              <div className="mt-2 mr-4 border-r-2 border-[#3d9aa8]/30 pr-3 space-y-2">
+                                              <div className="mt-2 mr-4 border-r-2 border-[#3d9aa8]/30 pr-3 space-y-3">
                                                 {activityTasks.length === 0 ? (
                                                   <div className="py-3 text-center text-gray-400 text-sm bg-gray-50 rounded-lg">
                                                     <ListTodo className="w-5 h-5 mx-auto mb-1 text-gray-300" />
                                                     لا توجد مهام مرتبطة
                                                   </div>
                                                 ) : (
-                                                  activityTasks.map((task, taskIdx) => (
-                                                    <div 
-                                                      key={task.id}
-                                                      className="flex items-center gap-3 p-2.5 bg-white rounded-lg border border-gray-200 hover:border-[#3d9aa8]/40 transition-colors"
-                                                    >
-                                                      <div className={cn(
-                                                        "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
-                                                        task.status === "completed" ? "bg-green-100" :
-                                                        task.status === "in_progress" ? "bg-blue-100" :
-                                                        "bg-gray-100"
-                                                      )}>
-                                                        {task.status === "completed" ? (
-                                                          <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                                        ) : task.status === "in_progress" ? (
-                                                          <Clock className="w-4 h-4 text-blue-600" />
-                                                        ) : (
-                                                          <span className="text-xs font-bold text-gray-500">{taskIdx + 1}</span>
-                                                        )}
+                                                  <>
+                                                    {/* تجميع المهام حسب المرحلة */}
+                                                    {[
+                                                      { phase: "ما قبل", color: "from-amber-400 to-orange-500", bgColor: "bg-amber-50", borderColor: "border-amber-200" },
+                                                      { phase: "أثناء", color: "from-blue-400 to-indigo-500", bgColor: "bg-blue-50", borderColor: "border-blue-200" },
+                                                      { phase: "ما بعد", color: "from-emerald-400 to-teal-500", bgColor: "bg-emerald-50", borderColor: "border-emerald-200" },
+                                                    ].map(({ phase, color, bgColor, borderColor }) => {
+                                                      const phaseTasks = activityTasks.filter(t => t.category === phase);
+                                                      if (phaseTasks.length === 0) return null;
+                                                      
+                                                      return (
+                                                        <div key={phase} className={cn("rounded-lg border p-2.5", bgColor, borderColor)}>
+                                                          <div className={cn("text-xs font-bold mb-2 px-2 py-1 rounded-md text-white w-fit bg-gradient-to-r", color)}>
+                                                            {phase}
+                                                          </div>
+                                                          <div className="space-y-1.5">
+                                                            {phaseTasks.map((task, taskIdx) => (
+                                                              <div 
+                                                                key={task.id}
+                                                                className="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-100"
+                                                              >
+                                                                <div className={cn(
+                                                                  "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold",
+                                                                  task.status === "completed" ? "bg-green-100 text-green-600" :
+                                                                  task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
+                                                                  "bg-gray-100 text-gray-500"
+                                                                )}>
+                                                                  {task.status === "completed" ? (
+                                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                  ) : task.status === "in_progress" ? (
+                                                                    <Clock className="w-3.5 h-3.5" />
+                                                                  ) : (
+                                                                    taskIdx + 1
+                                                                  )}
+                                                                </div>
+                                                                <p className="text-sm text-gray-800 flex-1 truncate">
+                                                                  {task.title}
+                                                                </p>
+                                                              </div>
+                                                            ))}
+                                                          </div>
+                                                        </div>
+                                                      );
+                                                    })}
+                                                    
+                                                    {/* المهام بدون تصنيف */}
+                                                    {activityTasks.filter(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category)).length > 0 && (
+                                                      <div className="space-y-1.5">
+                                                        {activityTasks.filter(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category)).map((task, taskIdx) => (
+                                                          <div 
+                                                            key={task.id}
+                                                            className="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200"
+                                                          >
+                                                            <div className={cn(
+                                                              "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold",
+                                                              task.status === "completed" ? "bg-green-100 text-green-600" :
+                                                              task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
+                                                              "bg-gray-100 text-gray-500"
+                                                            )}>
+                                                              {task.status === "completed" ? (
+                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                              ) : task.status === "in_progress" ? (
+                                                                <Clock className="w-3.5 h-3.5" />
+                                                              ) : (
+                                                                taskIdx + 1
+                                                              )}
+                                                            </div>
+                                                            <p className="text-sm text-gray-800 flex-1 truncate">
+                                                              {task.title}
+                                                            </p>
+                                                          </div>
+                                                        ))}
                                                       </div>
-                                                      <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium text-gray-800 truncate">
-                                                          {task.title}
-                                                        </p>
-                                                        <p className={cn(
-                                                          "text-xs",
-                                                          task.status === "completed" ? "text-green-600" :
-                                                          task.status === "in_progress" ? "text-blue-600" :
-                                                          "text-gray-400"
-                                                        )}>
-                                                          {task.status === "completed" ? "مكتملة" :
-                                                           task.status === "in_progress" ? "قيد التنفيذ" :
-                                                           "معلقة"}
-                                                        </p>
-                                                      </div>
-                                                      <Badge 
-                                                        variant="outline" 
-                                                        className={cn(
-                                                          "text-xs",
-                                                          task.priority === "high" ? "border-red-300 text-red-600" :
-                                                          task.priority === "medium" ? "border-amber-300 text-amber-600" :
-                                                          "border-gray-300 text-gray-600"
-                                                        )}
-                                                      >
-                                                        {task.priority === "high" ? "عالية" :
-                                                         task.priority === "medium" ? "متوسطة" :
-                                                         "منخفضة"}
-                                                      </Badge>
-                                                    </div>
-                                                  ))
+                                                    )}
+                                                  </>
                                                 )}
                                               </div>
                                             )}
