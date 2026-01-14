@@ -241,6 +241,7 @@ export default function ExecutivePlans() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+  const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
   const [globalViewMode, setGlobalViewMode] = useState<"dates" | "tasks">("dates"); // الافتراضي بحسب التواريخ
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
@@ -694,6 +695,18 @@ export default function ExecutivePlans() {
     });
   };
 
+  const toggleActivity = (activityKey: string) => {
+    setExpandedActivities(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(activityKey)) {
+        newSet.delete(activityKey);
+      } else {
+        newSet.add(activityKey);
+      }
+      return newSet;
+    });
+  };
+
   const getSelectedEmployee = () => {
     return (
       employees.find((e) => e.user_id === selectedEmployeeId) ||
@@ -1010,59 +1023,59 @@ export default function ExecutivePlans() {
 
         {/* إحصائيات سريعة */}
         {!loading && groupedPlans.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {/* إجمالي الأيام */}
-            <div className="bg-gradient-to-br from-[#3d9aa8] to-[#2d8090] rounded-2xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-[#3d9aa8] to-[#2d8090] rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white/80 text-sm font-medium">إجمالي أيام التنفيذ</p>
-                  <p className="text-4xl font-bold mt-1">
+                  <p className="text-white/80 text-xs font-medium">أيام التنفيذ</p>
+                  <p className="text-2xl font-bold">
                     {groupedPlans.reduce((sum, g) => sum + g.dateGroups.length, 0)}
                   </p>
                 </div>
-                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
-                  <CalendarDays className="w-7 h-7" />
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <CalendarDays className="w-5 h-5" />
                 </div>
               </div>
             </div>
             
             {/* إجمالي الأنشطة */}
-            <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white/80 text-sm font-medium">إجمالي الأنشطة</p>
-                  <p className="text-4xl font-bold mt-1">
+                  <p className="text-white/80 text-xs font-medium">الأنشطة</p>
+                  <p className="text-2xl font-bold">
                     {groupedPlans.reduce((sum, g) => sum + g.activities.length, 0)}
                   </p>
                 </div>
-                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Activity className="w-7 h-7" />
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <Activity className="w-5 h-5" />
                 </div>
               </div>
             </div>
             
             {/* المهام المرتبطة */}
-            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white/80 text-sm font-medium">المهام المرتبطة</p>
-                  <p className="text-4xl font-bold mt-1">{tasks.length}</p>
+                  <p className="text-white/80 text-xs font-medium">المهام</p>
+                  <p className="text-2xl font-bold">{tasks.length}</p>
                 </div>
-                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
-                  <ListTodo className="w-7 h-7" />
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <ListTodo className="w-5 h-5" />
                 </div>
               </div>
             </div>
             
             {/* الأشهر المغطاة */}
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white/80 text-sm font-medium">الأشهر المغطاة</p>
-                  <p className="text-4xl font-bold mt-1">{groupedPlans.length}</p>
+                  <p className="text-white/80 text-xs font-medium">الأشهر</p>
+                  <p className="text-2xl font-bold">{groupedPlans.length}</p>
                 </div>
-                <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Calendar className="w-7 h-7" />
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <Calendar className="w-5 h-5" />
                 </div>
               </div>
             </div>
@@ -1279,75 +1292,68 @@ export default function ExecutivePlans() {
                                   
                                   {/* عمود الأنشطة */}
                                   <TableCell className="py-2">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      {dateGroup.activities.map((activity) => {
+                                    <div className="space-y-2">
+                                      {dateGroup.activities.map((activity, activityIdx) => {
                                         const activityTasks = getTasksForExecutivePlan(activity.id);
                                         const completedTasks = activityTasks.filter(t => t.status === "completed").length;
-                                        const hasProgress = activityTasks.length > 0 && completedTasks > 0;
+                                        const activityKey = `${monthGroup.month}-${dateGroup.day}-${activity.id}`;
+                                        const isActivityExpanded = expandedActivities.has(activityKey);
                                         
                                         return (
-                                          <DropdownMenu key={activity.id}>
-                                            <DropdownMenuTrigger asChild>
-                                              <div
-                                                className={cn(
-                                                  "group flex items-center gap-3 cursor-pointer px-4 py-2.5 rounded-xl transition-all hover:scale-[1.02] hover:shadow-md",
-                                                  activity.status === "completed" 
-                                                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-green-500/25"
-                                                    : activity.status === "in_progress"
-                                                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-blue-500/25"
-                                                    : "bg-gradient-to-r from-[#3d9aa8] to-[#2d8090] text-white shadow-[#3d9aa8]/25"
-                                                )}
-                                              >
-                                                <div className="flex flex-col items-start">
-                                                  <span className="text-sm font-semibold">{activity.activityName}</span>
-                                                  {activityTasks.length > 0 && (
-                                                    <span className="text-xs opacity-80">
-                                                      {completedTasks}/{activityTasks.length} مهمة
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                  {activityTasks.length > 0 && (
-                                                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                                                      <span className="text-xs font-bold">{activityTasks.length}</span>
-                                                    </div>
-                                                  )}
-                                                  <ChevronDown className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-                                                </div>
-                                              </div>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent 
-                                              className="bg-white z-50 min-w-[320px] shadow-xl border-0 rounded-xl p-0 overflow-hidden"
-                                              align="end"
-                                              sideOffset={8}
+                                          <div key={activity.id} className="w-full">
+                                            {/* صف النشاط مع السهم والرقم */}
+                                            <div
+                                              onClick={() => toggleActivity(activityKey)}
+                                              className={cn(
+                                                "flex items-center gap-3 cursor-pointer px-3 py-2.5 rounded-xl transition-all hover:shadow-md",
+                                                activity.status === "completed" 
+                                                  ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                                                  : activity.status === "in_progress"
+                                                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                                                  : "bg-gradient-to-r from-[#3d9aa8] to-[#2d8090] text-white"
+                                              )}
                                             >
-                                              {/* Header */}
-                                              <div className="bg-gradient-to-r from-[#3d9aa8] to-[#2d8090] p-4 text-white">
-                                                <h4 className="font-bold text-lg">{activity.activityName}</h4>
-                                                <div className="flex items-center gap-3 mt-2 text-sm opacity-90">
-                                                  <span>المستهدف: {activity.dailyTarget}</span>
-                                                  <span>•</span>
-                                                  <span>المنجز: {activity.achieved}</span>
+                                              {/* الرقم والسهم على اليمين */}
+                                              <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center">
+                                                  <span className="text-xs font-bold">{activityIdx + 1}</span>
                                                 </div>
+                                                <ChevronDown className={cn(
+                                                  "w-4 h-4 transition-transform duration-200",
+                                                  isActivityExpanded ? "rotate-180" : ""
+                                                )} />
                                               </div>
                                               
-                                              {activityTasks.length === 0 ? (
-                                                <div className="p-6 text-center" dir="rtl">
-                                                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
-                                                    <ListTodo className="w-6 h-6 text-gray-400" />
-                                                  </div>
-                                                  <p className="text-gray-500 font-medium">لا توجد مهام مرتبطة</p>
-                                                  <p className="text-gray-400 text-sm mt-1">سيتم إنشاء المهام عند التوليد بالذكاء الاصطناعي</p>
+                                              {/* اسم النشاط */}
+                                              <div className="flex-1">
+                                                <span className="text-sm font-semibold">{activity.activityName}</span>
+                                              </div>
+                                              
+                                              {/* عدد المهام */}
+                                              {activityTasks.length > 0 && (
+                                                <div className="flex items-center gap-1 text-xs opacity-90">
+                                                  <ListTodo className="w-3.5 h-3.5" />
+                                                  <span>{completedTasks}/{activityTasks.length}</span>
                                                 </div>
-                                              ) : (
-                                                <div className="divide-y divide-gray-100 max-h-[300px] overflow-y-auto" dir="rtl">
-                                                  {activityTasks.map((task, taskIdx) => (
+                                              )}
+                                            </div>
+                                            
+                                            {/* قائمة المهام (تظهر عند التوسيع) */}
+                                            {isActivityExpanded && (
+                                              <div className="mt-2 mr-4 border-r-2 border-[#3d9aa8]/30 pr-3 space-y-2">
+                                                {activityTasks.length === 0 ? (
+                                                  <div className="py-3 text-center text-gray-400 text-sm bg-gray-50 rounded-lg">
+                                                    <ListTodo className="w-5 h-5 mx-auto mb-1 text-gray-300" />
+                                                    لا توجد مهام مرتبطة
+                                                  </div>
+                                                ) : (
+                                                  activityTasks.map((task, taskIdx) => (
                                                     <div 
-                                                      key={task.id} 
-                                                      className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 transition-colors"
+                                                      key={task.id}
+                                                      className="flex items-center gap-3 p-2.5 bg-white rounded-lg border border-gray-200 hover:border-[#3d9aa8]/40 transition-colors"
                                                     >
                                                       <div className={cn(
-                                                        "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                                                        "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
                                                         task.status === "completed" ? "bg-green-100" :
                                                         task.status === "in_progress" ? "bg-blue-100" :
                                                         "bg-gray-100"
@@ -1361,7 +1367,7 @@ export default function ExecutivePlans() {
                                                         )}
                                                       </div>
                                                       <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium text-gray-800 truncate text-right">
+                                                        <p className="text-sm font-medium text-gray-800 truncate">
                                                           {task.title}
                                                         </p>
                                                         <p className={cn(
@@ -1389,11 +1395,11 @@ export default function ExecutivePlans() {
                                                          "منخفضة"}
                                                       </Badge>
                                                     </div>
-                                                  ))}
-                                                </div>
-                                              )}
-                                            </DropdownMenuContent>
-                                          </DropdownMenu>
+                                                  ))
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
                                         );
                                       })}
                                     </div>

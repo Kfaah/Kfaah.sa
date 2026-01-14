@@ -39,14 +39,60 @@ serve(async (req) => {
     }
     
     const targetYear = year || new Date().getFullYear();
+
+    // أولاً: جلب الأشهر التي فيها خطط تشغيلية فعلاً للموظفين المحددين
+    let monthsQuery = supabase
+      .from("operational_plan_months")
+      .select(`
+        month,
+        operational_plans!inner (
+          user_id,
+          year
+        )
+      `)
+      .eq("operational_plans.year", targetYear);
+
+    if (userIds && userIds.length > 0) {
+      monthsQuery = monthsQuery.in("operational_plans.user_id", userIds);
+    }
+
+    const { data: availableMonths, error: monthsError } = await monthsQuery;
+    
+    if (monthsError) {
+      console.error("Error fetching available months:", monthsError);
+    }
+
+    // استخراج الأشهر المتاحة فقط
+    const monthsWithPlans = [...new Set((availableMonths || []).map((m: any) => m.month))];
+    
+    // تصفية الأشهر المطلوبة لتشمل فقط تلك التي فيها خطط تشغيلية
+    const filteredTargetMonths = targetMonths.filter(m => monthsWithPlans.includes(m));
+    
+    if (filteredTargetMonths.length === 0) {
+      const requestedMonthsText =
+        targetMonths.length === 12
+          ? "جميع الأشهر"
+          : targetMonths.map((m) => MONTHS_AR[m - 1]).filter(Boolean).join("، ");
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `لا توجد خطط تشغيلية للأشهر المحددة (${requestedMonthsText}) لعام ${targetYear}`,
+          monthsRequested: targetMonths,
+          monthsWithPlans: monthsWithPlans,
+          year: targetYear,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     let totalPlansGenerated = 0;
     let totalTasksGenerated = 0;
     let totalActivitiesProcessed = 0;
     const processedMonths: string[] = [];
 
-    // معالجة كل شهر على حدة
-    for (const targetMonth of targetMonths) {
+    // معالجة كل شهر على حدة (فقط الأشهر التي فيها خطط تشغيلية)
+    for (const targetMonth of filteredTargetMonths) {
       // جلب الخطط التشغيلية مع أشهرها
       let query = supabase
         .from("operational_plans")
