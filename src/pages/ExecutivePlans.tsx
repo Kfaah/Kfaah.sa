@@ -46,6 +46,10 @@ import {
   CalendarDays,
   Sparkles,
   Loader2,
+  Building2,
+  Filter,
+  X,
+  Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -238,6 +242,11 @@ export default function ExecutivePlans() {
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [aiSelectedMonth, setAiSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   
+  // فلاتر إضافية
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
+  const [filterMonths, setFilterMonths] = useState<number[]>([]); // أشهر محددة للفلترة
+  
   // حالة نافذة الإضافة
   const [selectedPlanMonthId, setSelectedPlanMonthId] = useState<string>("");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
@@ -252,6 +261,21 @@ export default function ExecutivePlans() {
     };
     checkAdmin();
   }, [authUser]);
+
+  // جلب الأقسام
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("id, name")
+        .order("name");
+      
+      if (!error && data) {
+        setDepartments(data);
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   // جلب الموظفين
   useEffect(() => {
@@ -299,25 +323,32 @@ export default function ExecutivePlans() {
 
   // تحديد الموظفين المختارين بناءً على الفلتر
   const getFilteredUserIds = (): string[] => {
+    let filteredEmployees = [...employees];
+    
+    // فلتر القسم
+    if (filterDepartmentId !== "all") {
+      filteredEmployees = filteredEmployees.filter(e => e.department_id === filterDepartmentId);
+    }
+    
     if (selectedEmployeeId === "all") {
-      // عرض جميع الخطط
-      return employees.filter(e => e.user_id).map(e => e.user_id!);
+      // عرض جميع الخطط (مع فلتر القسم إذا كان محدداً)
+      return filteredEmployees.filter(e => e.user_id).map(e => e.user_id!);
     }
     
     const selectedEmployee = employees.find(e => e.user_id === selectedEmployeeId);
     if (!selectedEmployee) return [selectedEmployeeId];
     
-    // إذا كان مدير النظام أو المدير التنفيذي - عرض الكل
+    // إذا كان مدير النظام أو المدير التنفيذي - عرض الكل (مع فلتر القسم)
     const isExecutiveOrAdmin = selectedEmployee.job_role === 'مدير النظام' || 
                                 selectedEmployee.job_role === 'المدير التنفيذي';
     if (isExecutiveOrAdmin) {
-      return employees.filter(e => e.user_id).map(e => e.user_id!);
+      return filteredEmployees.filter(e => e.user_id).map(e => e.user_id!);
     }
     
     // إذا كان رئيس قسم - عرض موظفي القسم فقط
     const isDepartmentHead = selectedEmployee.job_role?.includes('رئيس قسم');
     if (isDepartmentHead && selectedEmployee.department_id) {
-      const deptEmployees = employees.filter(e => 
+      const deptEmployees = filteredEmployees.filter(e => 
         e.department_id === selectedEmployee.department_id && e.user_id
       );
       return deptEmployees.map(e => e.user_id!);
@@ -447,8 +478,10 @@ export default function ExecutivePlans() {
       }[];
     }[] = [];
     
-    // تجميع حسب الشهر
-    for (let month = 1; month <= 12; month++) {
+    // تجميع حسب الشهر (مع تطبيق فلتر الأشهر)
+    const monthsToShow = filterMonths.length > 0 ? filterMonths : Array.from({ length: 12 }, (_, i) => i + 1);
+    
+    for (const month of monthsToShow) {
       const monthActivities: typeof groups[0]["activities"] = [];
       const dateMap = new Map<number, typeof groups[0]["dateGroups"][0]>();
       
@@ -514,7 +547,7 @@ export default function ExecutivePlans() {
     }
     
     return groups;
-  }, [planMonths, operationalPlans, executivePlans, selectedYear]);
+  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths]);
 
   // الحصول على وضع العرض (الآن موحد للصفحة كلها)
   const getViewMode = (): "tasks" | "dates" => {
@@ -730,98 +763,188 @@ export default function ExecutivePlans() {
         </div>
 
         {/* الفلاتر */}
-        <Card className="bg-gradient-to-r from-[#3d9aa8]/5 to-[#2d7a85]/5 border-[#3d9aa8]/20">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap items-center gap-4">
-              {/* اختيار الموظف */}
-              {isAdmin && (
-                <div className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-[#3d9aa8]" />
-                  <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                    <SelectTrigger className="w-[300px] bg-white">
-                      <SelectValue placeholder="اختر الموظف" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white z-50 max-h-[400px]">
-                      {/* خيار الكل */}
-                      <SelectItem value="all" className="font-bold text-[#3d9aa8]">
+        <div className="bg-gradient-to-r from-slate-50 via-white to-slate-50 rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div className="flex flex-wrap items-center gap-5">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-[#3d9aa8] to-[#2d7a85] text-white px-4 py-2 rounded-xl shadow-lg shadow-[#3d9aa8]/25">
+              <Filter className="w-4 h-4" />
+              <span className="text-sm font-semibold">فلترة</span>
+            </div>
+            
+            {/* فلتر القسم */}
+            {isAdmin && (
+              <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-indigo-100 shadow-sm hover:border-indigo-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
+                  <Building2 className="w-4 h-4 text-white" />
+                </div>
+                <Select value={filterDepartmentId} onValueChange={setFilterDepartmentId}>
+                  <SelectTrigger className="w-[160px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
+                    <SelectValue placeholder="القسم" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الأقسام</SelectItem>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {/* فلتر الموظف */}
+            {isAdmin && (
+              <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-teal-100 shadow-sm hover:border-teal-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-white" />
+                </div>
+                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                  <SelectTrigger className="w-[200px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
+                    <SelectValue placeholder="الموظف" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50 max-h-[400px]">
+                    <SelectItem value="all" className="font-bold text-[#3d9aa8]">
+                      <div className="flex items-center gap-2">
+                        <span>👥</span>
+                        <span>جميع الموظفين</span>
+                      </div>
+                    </SelectItem>
+                    
+                    {employees.filter(e => 
+                      e.job_role === 'المدير التنفيذي' || e.job_role === 'مدير النظام'
+                    ).map(emp => (
+                      <SelectItem key={emp.id} value={emp.user_id || emp.id}>
                         <div className="flex items-center gap-2">
-                          <span>👥</span>
-                          <span>الكل</span>
+                          <span>👔</span>
+                          <span>{emp.full_name}</span>
+                          <span className="text-xs text-muted-foreground">({emp.job_role})</span>
                         </div>
                       </SelectItem>
-                      
-                      {/* المدراء التنفيذيين ومدراء النظام */}
-                      {employees.filter(e => 
-                        e.job_role === 'المدير التنفيذي' || e.job_role === 'مدير النظام'
-                      ).map(emp => (
-                        <SelectItem key={emp.id} value={emp.user_id || emp.id}>
-                          <div className="flex items-center gap-2">
-                            <span>👔</span>
-                            <span>{emp.full_name}</span>
-                            <span className="text-xs text-muted-foreground">({emp.job_role})</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      
-                      {/* رؤساء الأقسام */}
-                      {employees.filter(e => e.job_role?.includes('رئيس قسم')).map(emp => (
-                        <SelectItem key={emp.id} value={emp.user_id || emp.id}>
-                          <div className="flex items-center gap-2">
-                            <span>🏢</span>
-                            <span>{emp.full_name}</span>
-                            <span className="text-xs text-muted-foreground">({emp.job_role})</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      
-                      {/* الموظفين العاديين */}
-                      {employees.filter(e => 
-                        e.job_role !== 'المدير التنفيذي' && 
-                        e.job_role !== 'مدير النظام' && 
-                        !e.job_role?.includes('رئيس قسم')
-                      ).map(emp => (
-                        <SelectItem key={emp.id} value={emp.user_id || emp.id}>
-                          <div className="flex items-center gap-2">
-                            <span>👤</span>
-                            <span>{emp.full_name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ({emp.job_role}{emp.department_name ? ` - ${emp.department_name}` : ''})
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              {/* معلومات الفلتر المختار */}
-              <div className="flex items-center gap-2 mr-auto bg-white rounded-lg px-4 py-2 shadow-sm">
-                {selectedEmployeeId === "all" ? (
-                  <>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold text-sm">
-                      👥
-                    </div>
-                    <span className="font-medium">جميع الموظفين</span>
-                  </>
-                ) : getSelectedEmployee() ? (
-                  <>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold text-sm">
-                      {getSelectedEmployee()?.full_name.charAt(0)}
-                    </div>
-                    <span className="font-medium">{getSelectedEmployee()?.full_name}</span>
-                    {getSelectedEmployee()?.job_role && (
-                      <Badge variant="outline" className="text-xs">
-                        {getSelectedEmployee()?.job_role}
-                      </Badge>
-                    )}
-                  </>
-                ) : null}
-                <span className="text-muted-foreground">- {selectedYear}</span>
+                    ))}
+                    
+                    {employees.filter(e => e.job_role?.includes('رئيس قسم')).map(emp => (
+                      <SelectItem key={emp.id} value={emp.user_id || emp.id}>
+                        <div className="flex items-center gap-2">
+                          <span>🏢</span>
+                          <span>{emp.full_name}</span>
+                          <span className="text-xs text-muted-foreground">({emp.job_role})</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    
+                    {employees.filter(e => 
+                      e.job_role !== 'المدير التنفيذي' && 
+                      e.job_role !== 'مدير النظام' && 
+                      !e.job_role?.includes('رئيس قسم')
+                    ).map(emp => (
+                      <SelectItem key={emp.id} value={emp.user_id || emp.id}>
+                        <div className="flex items-center gap-2">
+                          <span>👤</span>
+                          <span>{emp.full_name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({emp.job_role}{emp.department_name ? ` - ${emp.department_name}` : ''})
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            )}
+            
+            {/* فلتر الأشهر */}
+            <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-white" />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-9 px-3 border-0 bg-transparent hover:bg-transparent">
+                    {filterMonths.length === 0 
+                      ? "جميع الأشهر" 
+                      : filterMonths.length === 1 
+                        ? MONTHS_AR[filterMonths[0] - 1]
+                        : `${filterMonths.length} أشهر`
+                    }
+                    <ChevronDown className="w-4 h-4 mr-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48">
+                  <DropdownMenuItem 
+                    onClick={() => setFilterMonths([])}
+                    className={filterMonths.length === 0 ? "bg-[#3d9aa8]/10 font-bold" : ""}
+                  >
+                    جميع الأشهر
+                  </DropdownMenuItem>
+                  {MONTHS_AR.map((month, index) => (
+                    <DropdownMenuItem
+                      key={index}
+                      onClick={() => {
+                        const monthNum = index + 1;
+                        if (filterMonths.includes(monthNum)) {
+                          setFilterMonths(filterMonths.filter(m => m !== monthNum));
+                        } else {
+                          setFilterMonths([...filterMonths, monthNum]);
+                        }
+                      }}
+                      className={filterMonths.includes(index + 1) ? "bg-[#3d9aa8]/10" : ""}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <Checkbox 
+                          checked={filterMonths.includes(index + 1)} 
+                          className="pointer-events-none"
+                        />
+                        <span>{month}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </CardContent>
-        </Card>
+            
+            {/* زر إعادة تعيين الفلاتر */}
+            {(filterDepartmentId !== "all" || filterMonths.length > 0 || selectedEmployeeId !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl"
+                onClick={() => {
+                  setFilterDepartmentId("all");
+                  setFilterMonths([]);
+                  setSelectedEmployeeId("all");
+                }}
+              >
+                <X className="w-4 h-4 ml-1" />
+                إعادة تعيين
+              </Button>
+            )}
+            
+            {/* ملخص الفلتر */}
+            <div className="mr-auto flex items-center gap-3 bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2 rounded-xl">
+              {selectedEmployeeId === "all" ? (
+                <>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold text-sm">
+                    👥
+                  </div>
+                  <span className="font-medium text-slate-700">جميع الموظفين</span>
+                </>
+              ) : getSelectedEmployee() ? (
+                <>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold text-sm">
+                    {getSelectedEmployee()?.full_name.charAt(0)}
+                  </div>
+                  <span className="font-medium text-slate-700">{getSelectedEmployee()?.full_name}</span>
+                  {getSelectedEmployee()?.job_role && (
+                    <Badge variant="outline" className="text-xs">
+                      {getSelectedEmployee()?.job_role}
+                    </Badge>
+                  )}
+                </>
+              ) : null}
+              <span className="text-slate-500">- {selectedYear}</span>
+            </div>
+          </div>
+        </div>
 
         {/* المحتوى الرئيسي */}
         {loading ? (
