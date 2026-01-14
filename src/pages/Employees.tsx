@@ -473,8 +473,10 @@ const Employees = () => {
         
         toast.success(`جاري الدخول كـ ${employee.full_name}...`);
         
-        // Redirect to the magic link
-        window.location.href = response.data.actionLink;
+        // Redirect to the magic link with cache bust to ensure latest version
+        const actionUrl = new URL(response.data.actionLink);
+        actionUrl.searchParams.set("_t", Date.now().toString());
+        window.location.href = actionUrl.toString();
       } else {
         throw new Error("لم يتم إنشاء رابط الدخول");
       }
@@ -512,9 +514,10 @@ const Employees = () => {
         
         toast.success(`جاري فتح سجل موافقات ${employee.full_name}...`);
         
-        // Redirect to the magic link with a redirect param to approvals history
+        // Redirect to the magic link with a redirect param to approvals history + cache bust
         const actionUrl = new URL(response.data.actionLink);
         actionUrl.searchParams.set("redirect_to", "/hr-requests?section=my-approvals-history");
+        actionUrl.searchParams.set("_t", Date.now().toString());
         window.location.href = actionUrl.toString();
       } else {
         throw new Error("لم يتم إنشاء رابط الدخول");
