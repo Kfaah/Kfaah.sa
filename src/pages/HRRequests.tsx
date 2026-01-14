@@ -224,6 +224,7 @@ export default function HRRequests() {
   });
 
   // جلب الطلبات التي تحتاج موافقة كمدير مباشر
+  // استبعاد الطلبات التي فيها المدير المباشر = المدير التنفيذي (ستظهر في قائمة المدير التنفيذي فقط)
   const { data: managerRequests = [] } = useQuery({
     queryKey: ["pending-manager-approvals", authUser?.id],
     queryFn: async () => {
@@ -239,7 +240,9 @@ export default function HRRequests() {
         .neq("status", "rejected");
       
       if (error) throw error;
-      return data;
+      
+      // استبعاد الطلبات التي فيها المدير المباشر = المدير التنفيذي
+      return (data || []).filter(req => req.direct_manager_id !== req.executive_manager_id);
     },
     enabled: !!authUser?.id,
   });
@@ -289,11 +292,14 @@ export default function HRRequests() {
   });
 
   // جلب الطلبات التي تحتاج موافقة كمدير تنفيذي
+  // تشمل أيضاً الطلبات التي فيها المدير المباشر = المدير التنفيذي (بعد موافقة البديل فقط)
   const { data: executiveRequests = [] } = useQuery({
     queryKey: ["pending-executive-approvals", authUser?.id],
     queryFn: async () => {
       if (!authUser?.id) return [];
-      const { data, error } = await supabase
+      
+      // الطلبات العادية: بعد موافقة مدير الموارد البشرية
+      const { data: normalRequests, error: error1 } = await supabase
         .from("hr_requests")
         .select(`
           *,
@@ -301,11 +307,42 @@ export default function HRRequests() {
         `)
         .eq("executive_manager_id", authUser.id)
         .eq("executive_manager_approved", false)
-        .eq("hr_manager_approved", true) // بعد موافقة مدير الموارد البشرية
+        .eq("hr_manager_approved", true)
         .neq("status", "rejected");
       
-      if (error) throw error;
-      return data;
+      if (error1) throw error1;
+      
+      // الطلبات التي فيها المدير المباشر = المدير التنفيذي
+      // تظهر مباشرة بعد موافقة البديل أو إذا لم يكن هناك بديل
+      const { data: combinedRequests, error: error2 } = await supabase
+        .from("hr_requests")
+        .select(`
+          *,
+          hr_request_types (name, name_ar, icon, color)
+        `)
+        .eq("executive_manager_id", authUser.id)
+        .eq("direct_manager_id", authUser.id) // المدير المباشر = المدير التنفيذي
+        .eq("executive_manager_approved", false)
+        .eq("manager_approved", false) // لم يوافق بعد كمدير مباشر
+        .neq("status", "rejected");
+      
+      if (error2) throw error2;
+      
+      // تصفية الطلبات المجمعة: يجب أن يكون البديل قد وافق أو لا يوجد بديل
+      const filteredCombined = (combinedRequests || []).filter(req => {
+        // إذا لم يكن هناك موظف بديل، أو إذا كان البديل قد وافق
+        return !req.substitute_employee_id || req.substitute_approved === true;
+      });
+      
+      // دمج القائمتين مع إزالة التكرارات
+      const allRequests = [...(normalRequests || [])];
+      filteredCombined.forEach(req => {
+        if (!allRequests.find(r => r.id === req.id)) {
+          allRequests.push(req);
+        }
+      });
+      
+      return allRequests;
     },
     enabled: !!authUser?.id,
   });
@@ -569,15 +606,23 @@ export default function HRRequests() {
 
       const { data: requestData } = await supabase
         .from("hr_requests")
-        .select("user_id, request_number, hr_request_types(name_ar, deducts_from_balance), days_count, request_type_id")
+        .select("user_id, request_number, hr_request_types(name_ar, deducts_from_balance), days_count, request_type_id, direct_manager_id, executive_manager_id")
         .eq("id", requestId)
         .single();
+
+      // التحقق: إذا كان المدير المباشر = المدير التنفيذي، نسجل الموافقة على كلا الدورين
+      const isDirectAndExecutive = requestData?.direct_manager_id === requestData?.executive_manager_id;
 
       const { error } = await supabase
         .from("hr_requests")
         .update({
           executive_manager_approved: true,
           executive_manager_approved_at: new Date().toISOString(),
+          // إذا كان المدير المباشر = المدير التنفيذي، نسجل موافقته كمدير مباشر أيضاً
+          ...(isDirectAndExecutive ? {
+            manager_approved: true,
+            manager_approved_at: new Date().toISOString(),
+          } : {}),
           status: "approved",
           approved_by: authUser?.id,
           approved_at: new Date().toISOString(),
