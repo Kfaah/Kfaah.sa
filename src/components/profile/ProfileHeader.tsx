@@ -32,7 +32,7 @@ export function ProfileHeader({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-accent to-primary/90 min-h-[200px]"
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-accent to-primary/90"
     >
       {/* Animated Background Decorations */}
       <div className="absolute inset-0 opacity-20">
@@ -51,94 +51,8 @@ export function ProfileHeader({
       </div>
 
       <div className="relative p-6 md:p-8">
-        <div className="flex flex-col md:flex-row-reverse items-center gap-6 md:gap-10">
+        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
           
-          {/* Info Section - RIGHT Side */}
-          <div className="flex-1 text-center md:text-right space-y-3">
-            {/* Name & Role */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight">
-                {user.firstName} {user.lastName}
-              </h1>
-              <p className="text-lg md:text-xl text-white/90 font-medium mt-1">
-                {user.role}
-              </p>
-            </motion.div>
-
-            {/* Online Badge */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="flex justify-center md:justify-start"
-            >
-              <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm gap-1.5 px-3 py-1.5 text-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                متصل الآن
-              </Badge>
-            </motion.div>
-
-            {/* Edit Button */}
-            {isAdmin && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                className="pt-1"
-              >
-                <Button
-                  onClick={onEditClick}
-                  variant="secondary"
-                  size="sm"
-                  className="gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105"
-                >
-                  <Pencil className="w-4 h-4" />
-                  تعديل الملف الشخصي
-                </Button>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Employee Title - CENTER */}
-          {employeeTitle && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 300, 
-                damping: 20, 
-                delay: 0.5 
-              }}
-              className="hidden md:flex flex-col items-center justify-center flex-1"
-            >
-              <div className="relative">
-                <div className="absolute inset-0 bg-white/10 blur-xl rounded-full scale-150" />
-                <div className="relative flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md">
-                  <motion.div
-                    animate={{ rotate: [0, 15, -15, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                  >
-                    <Sparkles className="w-5 h-5 text-yellow-300" />
-                  </motion.div>
-                  <span className="text-lg font-bold text-white">
-                    {employeeTitle}
-                  </span>
-                  <motion.div
-                    animate={{ rotate: [0, -15, 15, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, delay: 0.5 }}
-                  >
-                    <Sparkles className="w-5 h-5 text-yellow-300" />
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
           {/* Avatar Section - LEFT Side */}
           <motion.div 
             initial={{ scale: 0, rotate: -180 }}
@@ -149,7 +63,7 @@ export function ProfileHeader({
               damping: 20,
               delay: 0.2 
             }}
-            className="relative group shrink-0"
+            className="relative group shrink-0 order-1 md:order-1"
           >
             <div className="relative">
               {/* Glow Effect */}
@@ -185,12 +99,107 @@ export function ProfileHeader({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", delay: 0.6 }}
-                className="absolute bottom-2 left-2 w-5 h-5 bg-emerald-400 rounded-full border-4 border-white shadow-lg"
+                className="absolute bottom-2 right-2 w-5 h-5 bg-emerald-400 rounded-full border-4 border-white shadow-lg"
               >
                 <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
               </motion.span>
             </div>
           </motion.div>
+
+          {/* Employee Title - CENTER (Desktop only) */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 300, 
+              damping: 20, 
+              delay: 0.5 
+            }}
+            className="hidden md:flex flex-col items-center justify-center flex-1 order-2"
+          >
+            {employeeTitle ? (
+              <div className="relative">
+                <div className="absolute inset-0 bg-white/10 blur-xl rounded-full scale-150" />
+                <div className="relative flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md">
+                  <motion.div
+                    animate={{ rotate: [0, 15, -15, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    <Sparkles className="w-5 h-5 text-yellow-300" />
+                  </motion.div>
+                  <span className="text-lg font-bold text-white">
+                    {employeeTitle}
+                  </span>
+                  <motion.div
+                    animate={{ rotate: [0, -15, 15, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, delay: 0.5 }}
+                  >
+                    <Sparkles className="w-5 h-5 text-yellow-300" />
+                  </motion.div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-12" /> // Placeholder to maintain spacing
+            )}
+          </motion.div>
+
+          {/* Info Section - RIGHT Side - CENTERED vertically */}
+          <div className="flex flex-col items-center text-center order-3 md:order-3 space-y-2">
+            {/* Name */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                {user.firstName} {user.lastName}
+              </h1>
+            </motion.div>
+
+            {/* Role - Centered under name */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.35 }}
+            >
+              <p className="text-lg md:text-xl text-white/90 font-medium">
+                {user.role}
+              </p>
+            </motion.div>
+
+            {/* Online Badge - Centered under role */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm gap-1.5 px-3 py-1.5 text-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                متصل الآن
+              </Badge>
+            </motion.div>
+
+            {/* Edit Button - Centered under badge */}
+            {isAdmin && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="pt-1"
+              >
+                <Button
+                  onClick={onEditClick}
+                  variant="secondary"
+                  size="sm"
+                  className="gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105"
+                >
+                  <Pencil className="w-4 h-4" />
+                  تعديل الملف الشخصي
+                </Button>
+              </motion.div>
+            )}
+          </div>
         </div>
 
         {/* Mobile Title - Shows below on mobile */}
