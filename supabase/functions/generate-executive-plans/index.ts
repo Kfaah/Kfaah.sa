@@ -295,14 +295,46 @@ ${i + 1}. النشاط: ${p.activityName}
       }
 
       const data = await response.json();
-      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-
-      if (!toolCall || toolCall.function.name !== "distribute_targets_with_tasks") {
-        console.error(`Invalid AI response for month ${targetMonth}:`, JSON.stringify(toolCall));
+      console.log(`AI response for month ${targetMonth}:`, JSON.stringify(data).substring(0, 500));
+      
+      const message = data.choices?.[0]?.message;
+      let distributions: any;
+      
+      // محاولة استخراج البيانات من tool_calls
+      const toolCall = message?.tool_calls?.[0];
+      if (toolCall && toolCall.function?.arguments) {
+        try {
+          distributions = JSON.parse(toolCall.function.arguments);
+        } catch (e) {
+          console.error(`Failed to parse tool_calls for month ${targetMonth}:`, e);
+        }
+      }
+      
+      // إذا فشل، محاولة استخراج من function_call (نسخة قديمة)
+      if (!distributions && message?.function_call?.arguments) {
+        try {
+          distributions = JSON.parse(message.function_call.arguments);
+        } catch (e) {
+          console.error(`Failed to parse function_call for month ${targetMonth}:`, e);
+        }
+      }
+      
+      // إذا فشل، محاولة استخراج JSON من النص
+      if (!distributions && message?.content) {
+        try {
+          const jsonMatch = message.content.match(/\{[\s\S]*"distributions"[\s\S]*\}/);
+          if (jsonMatch) {
+            distributions = JSON.parse(jsonMatch[0]);
+          }
+        } catch (e) {
+          console.error(`Failed to parse content JSON for month ${targetMonth}:`, e);
+        }
+      }
+      
+      if (!distributions || !distributions.distributions) {
+        console.error(`No valid distributions found for month ${targetMonth}. Full response:`, JSON.stringify(data));
         continue;
       }
-
-      const distributions = JSON.parse(toolCall.function.arguments);
       const executivePlansToInsert: any[] = [];
       const planMetadata: { 
         planMonthId: string; 
