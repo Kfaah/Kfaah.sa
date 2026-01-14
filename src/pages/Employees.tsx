@@ -514,7 +514,7 @@ const Employees = () => {
         
         // Redirect to the magic link with a redirect param to approvals history
         const actionUrl = new URL(response.data.actionLink);
-        actionUrl.searchParams.set("redirect_to", "/hr-requests?tab=my-approvals-history");
+        actionUrl.searchParams.set("redirect_to", "/hr-requests?section=my-approvals-history");
         window.location.href = actionUrl.toString();
       } else {
         throw new Error("لم يتم إنشاء رابط الدخول");

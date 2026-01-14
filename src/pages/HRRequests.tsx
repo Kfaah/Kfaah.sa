@@ -71,15 +71,21 @@ export default function HRRequests() {
     setActiveSection(section);
     const next = new URLSearchParams(searchParams);
     next.set("section", section);
+    next.delete("tab");
     setSearchParams(next, { replace: true });
   };
 
   useEffect(() => {
-    const section = searchParams.get("section") as HRSection | null;
-    if (section && ["my-requests", "pending-approvals", "my-approvals-history"].includes(section)) {
-      if (section !== activeSection) setActiveSection(section);
+    // دعم قديم: بعض الروابط كانت تستخدم ?tab=...
+    const sectionParam = (searchParams.get("section") || searchParams.get("tab")) as HRSection | null;
+
+    if (
+      sectionParam &&
+      ["my-requests", "pending-approvals", "my-approvals-history"].includes(sectionParam)
+    ) {
+      if (sectionParam !== activeSection) setActiveSection(sectionParam);
     }
-  }, [searchParams]);
+  }, [searchParams, activeSection]);
 
   // Icon helper
   const getRequestIcon = (iconName: string | null): React.ComponentType<{ className?: string }> => {
