@@ -338,9 +338,19 @@ ${i + 1}. النشاط: ${p.activityName}
     }
 
     if (totalPlansGenerated === 0) {
+      const requestedMonthsText =
+        targetMonths.length === 12
+          ? "جميع الأشهر"
+          : targetMonths.map((m) => MONTHS_AR[m - 1]).filter(Boolean).join("، ");
+
       return new Response(
-        JSON.stringify({ error: "لا توجد خطط تشغيلية للأشهر المحددة" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: false,
+          error: `لا توجد خطط تشغيلية للأشهر المحددة (${requestedMonthsText}) لعام ${targetYear}`,
+          monthsRequested: targetMonths,
+          year: targetYear,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
