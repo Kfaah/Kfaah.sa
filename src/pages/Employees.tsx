@@ -940,11 +940,11 @@ const Employees = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 mt-4 pt-3 border-t border-border">
+                <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-border">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 gap-1"
+                    className="gap-1"
                     onClick={() => {
                       setEditingEmployee(employee);
                       // تعيين القسم المختار بناءً على الدور الوظيفي الحالي
@@ -959,7 +959,7 @@ const Employees = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 gap-1 text-primary hover:bg-primary hover:text-primary-foreground"
+                    className="gap-1 text-primary hover:bg-primary hover:text-primary-foreground"
                     onClick={() => handleImpersonate(employee)}
                     disabled={!employee.user_id || isImpersonating}
                   >
@@ -973,7 +973,7 @@ const Employees = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 gap-1 text-amber-600 hover:bg-amber-500 hover:text-white border-amber-200"
+                    className="gap-1 text-accent hover:bg-accent hover:text-accent-foreground"
                     onClick={() => handleImpersonateToApprovals(employee)}
                     disabled={!employee.user_id || isImpersonating}
                     title="عرض سجل موافقات الموظف"
