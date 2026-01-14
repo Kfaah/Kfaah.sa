@@ -22,32 +22,35 @@ export function HRNavigationIcons({
       id: "my-requests" as HRSection,
       label: "طلباتي",
       icon: ClipboardList,
-      color: "bg-blue-500",
-      activeGradient: "from-blue-500 to-blue-600",
-      badge: null,
+      gradient: "from-violet-500 to-purple-600",
+      bgLight: "bg-violet-50 border-violet-200 hover:border-violet-400",
+      iconBg: "bg-violet-100",
+      iconColor: "text-violet-600",
     },
     {
       id: "pending-approvals" as HRSection,
       label: "موافقات معلقة",
       icon: UserCheck,
-      color: "bg-amber-500",
-      activeGradient: "from-amber-500 to-orange-500",
+      gradient: "from-orange-500 to-rose-500",
+      bgLight: "bg-orange-50 border-orange-200 hover:border-orange-400",
+      iconBg: "bg-orange-100",
+      iconColor: "text-orange-600",
       badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : null,
-      badgeVariant: "destructive" as const,
     },
     {
       id: "my-approvals-history" as HRSection,
       label: "سجل موافقاتي",
       icon: CheckCircle2,
-      color: "bg-emerald-500",
-      activeGradient: "from-emerald-500 to-teal-500",
+      gradient: "from-emerald-500 to-teal-500",
+      bgLight: "bg-emerald-50 border-emerald-200 hover:border-emerald-400",
+      iconBg: "bg-emerald-100",
+      iconColor: "text-emerald-600",
       badge: approvalsHistoryCount > 0 ? approvalsHistoryCount : null,
-      badgeColor: "bg-emerald-100 text-emerald-700",
     },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-3 sm:gap-4">
+    <div className="flex items-center justify-center gap-2 sm:gap-3">
       {sections.map((section) => {
         const Icon = section.icon;
         const isActive = activeSection === section.id;
@@ -57,20 +60,17 @@ export function HRNavigationIcons({
             key={section.id}
             onClick={() => onSectionChange(section.id)}
             className={cn(
-              "relative flex flex-col items-center justify-center gap-2 p-4 sm:p-6 rounded-xl border-2 transition-all duration-200",
+              "relative flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full border transition-all duration-200",
               isActive
-                ? `bg-gradient-to-br ${section.activeGradient} text-white border-transparent shadow-lg scale-[1.02]`
-                : "bg-card hover:bg-muted/50 border-border hover:border-primary/30 text-foreground"
+                ? `bg-gradient-to-r ${section.gradient} text-white border-transparent shadow-md`
+                : `${section.bgLight} text-foreground`
             )}
           >
             {/* Badge */}
             {section.badge && (
               <Badge
-                variant={section.badgeVariant || "secondary"}
-                className={cn(
-                  "absolute -top-2 -left-2 h-6 min-w-6 p-0 flex items-center justify-center text-xs font-bold",
-                  !section.badgeVariant && section.badgeColor
-                )}
+                variant="destructive"
+                className="absolute -top-1.5 -left-1.5 h-5 min-w-5 p-0 flex items-center justify-center text-[10px] font-bold"
               >
                 {section.badge}
               </Badge>
@@ -78,18 +78,18 @@ export function HRNavigationIcons({
             
             {/* Icon */}
             <div className={cn(
-              "w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center",
-              isActive ? "bg-white/20" : "bg-muted"
+              "w-7 h-7 rounded-full flex items-center justify-center",
+              isActive ? "bg-white/20" : section.iconBg
             )}>
               <Icon className={cn(
-                "w-6 h-6 sm:w-7 sm:h-7",
-                isActive ? "text-white" : "text-muted-foreground"
+                "w-4 h-4",
+                isActive ? "text-white" : section.iconColor
               )} />
             </div>
             
             {/* Label */}
             <span className={cn(
-              "text-xs sm:text-sm font-semibold text-center",
+              "text-xs sm:text-sm font-medium whitespace-nowrap",
               isActive ? "text-white" : "text-foreground"
             )}>
               {section.label}
