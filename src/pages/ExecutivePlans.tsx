@@ -325,41 +325,52 @@ export default function ExecutivePlans() {
     fetchEmployees();
   }, [isAdmin, authUser]);
 
-  // تحديد الموظفين المختارين بناءً على الفلتر
+  // تحديد المستخدمين المختارين بناءً على الفلتر
+  // ملاحظة: الخطط التشغيلية مرتبطة بـ user_id (معرّف حساب المستخدم)، وليس employee.id
   const getFilteredUserIds = (): string[] => {
     let filteredEmployees = [...employees];
-    
+
     // فلتر القسم
     if (filterDepartmentId !== "all") {
-      filteredEmployees = filteredEmployees.filter(e => e.department_id === filterDepartmentId);
+      filteredEmployees = filteredEmployees.filter((e) => e.department_id === filterDepartmentId);
     }
-    
+
+    // "الكل" = كل الموظفين الذين لديهم user_id فقط
     if (selectedEmployeeId === "all") {
-      // عرض جميع الخطط (مع فلتر القسم إذا كان محدداً)
-      return filteredEmployees.filter(e => e.user_id).map(e => e.user_id!);
+      return filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
     }
-    
-    const selectedEmployee = employees.find(e => e.user_id === selectedEmployeeId);
-    if (!selectedEmployee) return [selectedEmployeeId];
-    
+
+    // قد تكون القيمة المختارة user_id أو employee.id (لبعض الموظفين الذين لا يملكون حساباً مرتبطاً)
+    const selectedEmployee =
+      employees.find((e) => e.user_id === selectedEmployeeId) ||
+      employees.find((e) => e.id === selectedEmployeeId);
+
+    const selectedUserId = selectedEmployee?.user_id ?? selectedEmployeeId;
+
+    // إذا كان الموظف لا يملك user_id فلا يمكن ربطه بالخطط/التوليد
+    if (selectedEmployee && !selectedEmployee.user_id) {
+      return [];
+    }
+
     // إذا كان مدير النظام أو المدير التنفيذي - عرض الكل (مع فلتر القسم)
-    const isExecutiveOrAdmin = selectedEmployee.job_role === 'مدير النظام' || 
-                                selectedEmployee.job_role === 'المدير التنفيذي';
+    const isExecutiveOrAdmin =
+      selectedEmployee?.job_role === "مدير النظام" ||
+      selectedEmployee?.job_role === "المدير التنفيذي";
     if (isExecutiveOrAdmin) {
-      return filteredEmployees.filter(e => e.user_id).map(e => e.user_id!);
+      return filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
     }
-    
+
     // إذا كان رئيس قسم - عرض موظفي القسم فقط
-    const isDepartmentHead = selectedEmployee.job_role?.includes('رئيس قسم');
-    if (isDepartmentHead && selectedEmployee.department_id) {
-      const deptEmployees = filteredEmployees.filter(e => 
-        e.department_id === selectedEmployee.department_id && e.user_id
+    const isDepartmentHead = selectedEmployee?.job_role?.includes("رئيس قسم");
+    if (isDepartmentHead && selectedEmployee?.department_id) {
+      const deptEmployees = filteredEmployees.filter(
+        (e) => e.department_id === selectedEmployee.department_id && e.user_id
       );
-      return deptEmployees.map(e => e.user_id!);
+      return deptEmployees.map((e) => e.user_id!);
     }
-    
-    // موظف عادي - عرض خططه فقط
-    return [selectedEmployeeId];
+
+    // مستخدم/موظف عادي - عرض خططه فقط
+    return [selectedUserId];
   };
 
   // جلب جميع الخطط
@@ -674,7 +685,10 @@ export default function ExecutivePlans() {
   };
 
   const getSelectedEmployee = () => {
-    return employees.find(e => e.user_id === selectedEmployeeId);
+    return (
+      employees.find((e) => e.user_id === selectedEmployeeId) ||
+      employees.find((e) => e.id === selectedEmployeeId)
+    );
   };
 
   // توليد الخطط التنفيذية بالذكاء الاصطناعي
@@ -682,40 +696,53 @@ export default function ExecutivePlans() {
     setIsAIGenerating(true);
     try {
       const userIds = getFilteredUserIds();
-      
+
+      if (userIds.length === 0) {
+        toast({
+          title: "تنبيه",
+          description: "لا يمكن التوليد لأن الموظف/الموظفين المختارين غير مرتبطين بحسابات مستخدمين أو لا توجد نتائج ضمن الفلاتر.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("generate-executive-plans", {
         body: {
           months: aiSelectedMonths, // مصفوفة الأشهر المحددة
           year: selectedYear,
-          userIds: userIds.length > 0 ? userIds : undefined,
+          userIds,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // بعض الأخطاء تأتي كحالة HTTP (مثل 404 سابقاً) – نعرض رسالة واضحة للمستخدم
+        const msg = error.message || "فشل في توليد الخطط";
+        toast({ title: "خطأ", description: msg, variant: "destructive" });
+        return;
+      }
 
-      if (data.error) {
-        if (data.error.includes("429") || data.error.includes("حد الطلبات")) {
-          toast({ title: "تنبيه", description: "تم تجاوز حد الطلبات، يرجى المحاولة لاحقاً", variant: "destructive" });
-        } else if (data.error.includes("402") || data.error.includes("رصيد")) {
-          toast({ title: "تنبيه", description: "يرجى إضافة رصيد لاستخدام الذكاء الاصطناعي", variant: "destructive" });
-        } else {
-          toast({ title: "خطأ", description: data.error, variant: "destructive" });
-        }
+      if (!data?.success) {
+        const msg = data?.error || "لا توجد خطط تشغيلية للأشهر المحددة";
+        toast({ title: "تنبيه", description: msg, variant: "destructive" });
         return;
       }
 
       toast({
-        title: "تم التوليد بنجاح! ✨",
+        title: "تم التوليد بنجاح",
         description: data.message,
       });
 
       setIsAIDialogOpen(false);
-      
+
       // إعادة جلب البيانات
       window.location.reload();
     } catch (error: any) {
       console.error("AI generation error:", error);
-      toast({ title: "خطأ", description: error.message || "فشل في توليد الخطط", variant: "destructive" });
+      toast({
+        title: "خطأ",
+        description: error?.message || "فشل في توليد الخطط",
+        variant: "destructive",
+      });
     } finally {
       setIsAIGenerating(false);
     }
