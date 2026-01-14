@@ -1419,12 +1419,11 @@ export default function OperationalPlans() {
             </p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             {/* زر توليد AI */}
             {isAdmin && (
               <Button 
-                variant="outline" 
-                className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                className="gap-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-purple-500/25 border-0"
                 onClick={() => setIsAIDialogOpen(true)}
                 disabled={isAIGenerating}
               >
@@ -1433,22 +1432,26 @@ export default function OperationalPlans() {
                 ) : (
                   <Sparkles className="w-4 h-4" />
                 )}
-                توليد AI
+                توليد الخطط بالذكاء الاصطناعي
               </Button>
             )}
             
-            <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
+            <Button 
+              className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25 border-0" 
+              onClick={() => setIsAddDialogOpen(true)}
+            >
               <Plus className="w-4 h-4" />
               إضافة خطة
             </Button>
             
             {/* زر وضع التعديل */}
             <Button 
-              variant={isEditMode ? "default" : "outline"}
-              className={`gap-2 ${isEditMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+              className={`gap-2 shadow-lg ${isEditMode 
+                ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-orange-500/25' 
+                : 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 shadow-slate-500/25'
+              } text-white border-0`}
               onClick={() => {
                 if (isEditMode) {
-                  // إغلاق وضع التعديل
                   setIsEditMode(false);
                   setEditingPlanId(null);
                   setEditFormData(null);
@@ -1491,37 +1494,38 @@ export default function OperationalPlans() {
           {isAdmin && (
             <div>
               {isAIDialogOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                  <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                  <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl border border-purple-100">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Sparkles className="w-6 h-6 text-purple-600" />
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                        <Sparkles className="w-7 h-7 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">توليد بالذكاء الاصطناعي</h3>
+                        <h3 className="text-xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">توليد بالذكاء الاصطناعي</h3>
                         <p className="text-sm text-gray-500">إنشاء خطط تشغيلية تلقائياً</p>
                       </div>
                     </div>
                     
-                    <div className="bg-purple-50 rounded-lg p-4 mb-4">
+                    <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl p-4 mb-4 border border-purple-100">
                       <p className="text-sm text-purple-800">
                         سيتم توليد خطط تشغيلية بناءً على الأهداف الاستراتيجية والمبادرات والمستهدفات المحددة.
                       </p>
                     </div>
                     
-                    <div className="text-center text-sm text-gray-500 mb-4">
-                      هذه الميزة ستكون متاحة في التحديث القادم
+                    <div className="text-center text-sm text-gray-500 mb-4 bg-amber-50 rounded-lg p-3 border border-amber-200">
+                      <span className="text-amber-600">⏳</span> هذه الميزة ستكون متاحة في التحديث القادم
                     </div>
                     
                     <div className="flex gap-2 justify-end">
                       <Button 
                         variant="outline" 
+                        className="border-gray-300"
                         onClick={() => setIsAIDialogOpen(false)}
                       >
                         إغلاق
                       </Button>
                       <Button 
-                        className="bg-purple-600 hover:bg-purple-700 gap-2"
+                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 gap-2 shadow-lg shadow-purple-500/25"
                         onClick={handleAIGeneratePlans}
                         disabled={isAIGenerating}
                       >
@@ -1546,18 +1550,20 @@ export default function OperationalPlans() {
         </div>
         
         {/* شريط الفلاتر */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">فلترة:</span>
+        <div className="bg-gradient-to-r from-slate-50 via-white to-slate-50 rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div className="flex items-center gap-5 flex-wrap">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/25">
+              <Filter className="w-4 h-4" />
+              <span className="text-sm font-semibold">فلترة</span>
             </div>
             
             {/* فلتر القسم */}
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-indigo-100 shadow-sm hover:border-indigo-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-white" />
+              </div>
               <Select value={filterDepartmentId} onValueChange={setFilterDepartmentId}>
-                <SelectTrigger className="w-[180px] h-9">
+                <SelectTrigger className="w-[170px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="اختر القسم" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1572,10 +1578,12 @@ export default function OperationalPlans() {
             </div>
             
             {/* فلتر مسؤول التنفيذ */}
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-teal-100 shadow-sm hover:border-teal-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+                <Users className="w-4 h-4 text-white" />
+              </div>
               <Select value={filterEmployeeId} onValueChange={setFilterEmployeeId}>
-                <SelectTrigger className="w-[200px] h-9">
+                <SelectTrigger className="w-[190px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="اختر مسؤول التنفيذ" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1599,7 +1607,7 @@ export default function OperationalPlans() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-gray-500 hover:text-gray-700"
+                className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl"
                 onClick={() => {
                   setFilterDepartmentId("all");
                   setFilterEmployeeId("all");
@@ -1611,8 +1619,13 @@ export default function OperationalPlans() {
             )}
             
             {/* عدد النتائج */}
-            <div className="mr-auto text-sm text-gray-500">
-              عرض {filteredPlans.length} من {plans.length} خطة
+            <div className="mr-auto flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2 rounded-xl">
+              <span className="text-sm font-semibold text-slate-700">
+                {filteredPlans.length}
+              </span>
+              <span className="text-sm text-slate-500">من</span>
+              <span className="text-sm font-semibold text-slate-700">{plans.length}</span>
+              <span className="text-sm text-slate-500">خطة</span>
             </div>
           </div>
         </div>
@@ -1685,39 +1698,54 @@ export default function OperationalPlans() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Target className="w-6 h-6 text-primary" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="p-5 flex items-center gap-4 relative">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+                <Target className="w-7 h-7 text-white" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">إجمالي الخطط</p>
-                <p className="text-2xl font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(plans.length)}</p>
+                <p className="text-sm text-muted-foreground font-medium">إجمالي الخطط</p>
+                <p className="text-3xl font-bold text-primary" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(plans.length)}</p>
+              </div>
+              <div className="mr-auto">
+                <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin-slow" style={{ animationDuration: '3s' }} />
+                </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-green-500" />
+          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="p-5 flex items-center gap-4 relative">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <TrendingUp className="w-7 h-7 text-white" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">الخطط النشطة</p>
-                <p className="text-2xl font-bold">{plans.filter(p => p.status === "active").length}</p>
+                <p className="text-sm text-muted-foreground font-medium">الخطط النشطة</p>
+                <p className="text-3xl font-bold text-emerald-600">{plans.filter(p => p.status === "active").length}</p>
+              </div>
+              <div className="mr-auto flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                نشط
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-blue-500" />
+          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="p-5 flex items-center gap-4 relative">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Calendar className="w-7 h-7 text-white" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">السنة الحالية</p>
-                <p className="text-2xl font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>{new Date().getFullYear()}</p>
+                <p className="text-sm text-muted-foreground font-medium">السنة الحالية</p>
+                <p className="text-3xl font-bold text-blue-600" style={{ fontFamily: 'Arial, sans-serif' }}>{new Date().getFullYear()}</p>
+              </div>
+              <div className="mr-auto text-sm text-blue-600 bg-blue-100 px-3 py-1.5 rounded-full font-medium">
+                📅 {new Date().toLocaleDateString('ar-SA', { month: 'long' })}
               </div>
             </CardContent>
           </Card>
