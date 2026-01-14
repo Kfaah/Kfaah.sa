@@ -28,18 +28,6 @@ import { ProfileInfoSection } from "@/components/profile/ProfileInfoSection";
 import { ProfileFilesSection } from "@/components/profile/ProfileFilesSection";
 import { cn } from "@/lib/utils";
 
-const positiveMessages = [
-  "أهلاً بك! يومك سعيد 🌟",
-  "نتمنى لك يوماً مليئاً بالإنجازات ✨",
-  "رائع! استمر في العمل المميز 💪",
-  "بارك الله في جهودك 🙏",
-  "معاً نحو النجاح 🚀",
-  "أنت مميز في عملك! ⭐",
-  "عملك يصنع الفرق 🌈",
-  "استمر في التميز والإبداع 🎯",
-  "نقدر جهودك الرائعة 💎",
-  "أنت جزء مهم من فريقنا 🤝",
-];
 
 interface Department {
   id: string;
@@ -67,7 +55,6 @@ export default function Profile() {
   const { user, loading, updateUser, updateProfileImage, uploadAvatar } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...user });
-  const [currentMessage, setCurrentMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -79,18 +66,18 @@ export default function Profile() {
   const [currentSignature, setCurrentSignature] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("info");
 
-  // جلب بيانات الموظف بما فيها التوقيع
+  // جلب بيانات الموظف بما فيها التوقيع واللقب
   const { data: employeeData, refetch: refetchEmployee } = useQuery({
-    queryKey: ["employee-signature", authUser?.id],
+    queryKey: ["employee-data", authUser?.id],
     queryFn: async () => {
       if (!authUser?.id) return null;
       const { data, error } = await supabase
         .from("employees")
-        .select("id, signature_url")
+        .select("id, signature_url, title")
         .eq("user_id", authUser.id)
         .single();
       if (error && error.code !== "PGRST116") throw error;
-      return data;
+      return data as { id: string; signature_url: string | null; title: string | null } | null;
     },
     enabled: !!authUser?.id,
   });
@@ -168,13 +155,6 @@ export default function Profile() {
     return () => { supabase.removeChannel(channel); };
   }, [authUser]);
 
-  useEffect(() => {
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 0);
-    const diff = now.getTime() - startOfYear.getTime();
-    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
-    setCurrentMessage(positiveMessages[dayOfYear % positiveMessages.length]);
-  }, []);
 
   useEffect(() => {
     setEditData({ ...user });
@@ -600,7 +580,7 @@ export default function Profile() {
             {/* Profile Header */}
             <ProfileHeader
               user={user}
-              currentMessage={currentMessage}
+              employeeTitle={employeeData?.title}
               isAdmin={isAdmin}
               onEditClick={handleEdit}
               onImageClick={() => fileInputRef.current?.click()}
