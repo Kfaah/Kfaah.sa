@@ -118,8 +118,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
           }
         }
         
-        // استخدام job_role كدور 
-        const displayRole = employeeData.job_role || (userRole === "admin" ? "مدير النظام" : "موظف");
+        // استخدام الدور في النظام (admin/user) وليس job_role
+        const displayRole = userRole === "admin" ? "مدير النظام" : (employeeData.job_role || "موظف");
         
         setUser({
           firstName,
