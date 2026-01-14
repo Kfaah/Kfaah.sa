@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { SignatureUpload } from "@/components/hr/SignatureUpload";
 import { useQuery } from "@tanstack/react-query";
-import { WelcomeContentManager } from "@/components/welcome/WelcomeContentManager";
+
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileSidebar, ProfileSection } from "@/components/profile/ProfileSidebar";
 import { ProfileInfoSection } from "@/components/profile/ProfileInfoSection";
@@ -606,12 +606,7 @@ export default function Profile() {
               onImageClick={() => fileInputRef.current?.click()}
             />
 
-            {/* Admin Welcome Manager */}
-            {isAdmin && (
-              <div className="flex justify-end">
-                <WelcomeContentManager />
-              </div>
-            )}
+
 
             {/* Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
