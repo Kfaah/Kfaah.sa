@@ -406,14 +406,14 @@ export function SignatureUpload({
       </CardHeader>
       <CardContent className="space-y-4">
         {currentSignature ? (
-          <div className="space-y-4">
-            <div className="border rounded-lg p-4 bg-white flex items-center justify-center min-h-[120px]">
-              <img
-                src={currentSignature}
-                alt="التوقيع"
-                className="max-h-24 object-contain"
-              />
-            </div>
+            <div className="space-y-4">
+              <div className="border rounded-lg p-4 bg-muted flex items-center justify-center min-h-[120px]">
+                <img
+                  src={currentSignature}
+                  alt="التوقيع"
+                  className="max-h-24 object-contain"
+                />
+              </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
