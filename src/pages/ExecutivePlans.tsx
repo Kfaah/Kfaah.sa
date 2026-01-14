@@ -33,6 +33,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   ChevronDown,
   Calendar,
   User,
@@ -1301,89 +1306,93 @@ export default function ExecutivePlans() {
                                         const isActivityExpanded = expandedActivities.has(activityKey);
                                         
                                         return (
-                                          <div key={activity.id} className="w-full">
-                                            {/* صف النشاط مع السهم والرقم */}
-                                            <div
-                                              onClick={() => toggleActivity(activityKey)}
-                                              className={cn(
-                                                "flex items-center gap-3 cursor-pointer px-3 py-2.5 rounded-xl transition-all hover:shadow-md",
-                                                activity.status === "completed" 
-                                                  ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                                                  : activity.status === "in_progress"
-                                                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                                                  : "bg-gradient-to-r from-[#3d9aa8] to-[#2d8090] text-white"
-                                              )}
+                                          <Popover key={activity.id}>
+                                            <PopoverTrigger asChild>
+                                              <div
+                                                className={cn(
+                                                  "flex items-center gap-3 cursor-pointer px-3 py-2.5 rounded-xl transition-all hover:shadow-md",
+                                                  activity.status === "completed" 
+                                                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                                                    : activity.status === "in_progress"
+                                                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                                                    : "bg-gradient-to-r from-[#3d9aa8] to-[#2d8090] text-white"
+                                                )}
+                                              >
+                                                {/* الرقم على اليمين */}
+                                                <div className="flex items-center gap-2">
+                                                  <div className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center">
+                                                    <span className="text-xs font-bold">{activityIdx + 1}</span>
+                                                  </div>
+                                                  <ChevronDown className="w-4 h-4" />
+                                                </div>
+                                                
+                                                {/* اسم النشاط */}
+                                                <div className="flex-1">
+                                                  <span className="text-sm font-semibold">{activity.activityName}</span>
+                                                </div>
+                                                
+                                                {/* عدد المهام */}
+                                                {activityTasks.length > 0 && (
+                                                  <div className="flex items-center gap-1 text-xs opacity-90">
+                                                    <ListTodo className="w-3.5 h-3.5" />
+                                                    <span>{completedTasks}/{activityTasks.length}</span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </PopoverTrigger>
+                                            <PopoverContent 
+                                              className="w-80 p-3 bg-white border shadow-xl rounded-xl z-50" 
+                                              align="start"
+                                              side="bottom"
+                                              sideOffset={5}
                                             >
-                                              {/* الرقم والسهم على اليمين */}
-                                              <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center">
-                                                  <span className="text-xs font-bold">{activityIdx + 1}</span>
+                                              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                                                <div className="font-bold text-sm text-gray-800 border-b pb-2 mb-2">
+                                                  {activity.activityName}
                                                 </div>
-                                                <ChevronDown className={cn(
-                                                  "w-4 h-4 transition-transform duration-200",
-                                                  isActivityExpanded ? "rotate-180" : ""
-                                                )} />
-                                              </div>
-                                              
-                                              {/* اسم النشاط */}
-                                              <div className="flex-1">
-                                                <span className="text-sm font-semibold">{activity.activityName}</span>
-                                              </div>
-                                              
-                                              {/* عدد المهام */}
-                                              {activityTasks.length > 0 && (
-                                                <div className="flex items-center gap-1 text-xs opacity-90">
-                                                  <ListTodo className="w-3.5 h-3.5" />
-                                                  <span>{completedTasks}/{activityTasks.length}</span>
-                                                </div>
-                                              )}
-                                            </div>
-                                            
-                                            {/* قائمة المهام (تظهر عند التوسيع) - مجمّعة حسب المرحلة */}
-                                            {isActivityExpanded && (
-                                              <div className="mt-2 mr-4 border-r-2 border-[#3d9aa8]/30 pr-3 space-y-3">
+                                                
                                                 {activityTasks.length === 0 ? (
-                                                  <div className="py-3 text-center text-gray-400 text-sm bg-gray-50 rounded-lg">
-                                                    <ListTodo className="w-5 h-5 mx-auto mb-1 text-gray-300" />
+                                                  <div className="py-4 text-center text-gray-400 text-sm">
+                                                    <ListTodo className="w-6 h-6 mx-auto mb-2 text-gray-300" />
                                                     لا توجد مهام مرتبطة
                                                   </div>
                                                 ) : (
                                                   <>
                                                     {/* تجميع المهام حسب المرحلة */}
                                                     {[
-                                                      { phase: "ما قبل", color: "from-amber-400 to-orange-500", bgColor: "bg-amber-50", borderColor: "border-amber-200" },
-                                                      { phase: "أثناء", color: "from-blue-400 to-indigo-500", bgColor: "bg-blue-50", borderColor: "border-blue-200" },
-                                                      { phase: "ما بعد", color: "from-emerald-400 to-teal-500", bgColor: "bg-emerald-50", borderColor: "border-emerald-200" },
-                                                    ].map(({ phase, color, bgColor, borderColor }) => {
+                                                      { phase: "ما قبل", color: "from-amber-400 to-orange-500", bgColor: "bg-amber-50", borderColor: "border-amber-200", icon: "🔧" },
+                                                      { phase: "أثناء", color: "from-blue-400 to-indigo-500", bgColor: "bg-blue-50", borderColor: "border-blue-200", icon: "⚡" },
+                                                      { phase: "ما بعد", color: "from-emerald-400 to-teal-500", bgColor: "bg-emerald-50", borderColor: "border-emerald-200", icon: "✅" },
+                                                    ].map(({ phase, color, bgColor, borderColor, icon }) => {
                                                       const phaseTasks = activityTasks.filter(t => t.category === phase);
                                                       if (phaseTasks.length === 0) return null;
                                                       
                                                       return (
-                                                        <div key={phase} className={cn("rounded-lg border p-2.5", bgColor, borderColor)}>
+                                                        <div key={phase} className={cn("rounded-lg border p-2", bgColor, borderColor)}>
                                                           <div className={cn("text-xs font-bold mb-2 px-2 py-1 rounded-md text-white w-fit bg-gradient-to-r", color)}>
-                                                            {phase}
+                                                            {icon} {phase}
                                                           </div>
-                                                          <div className="space-y-1.5">
+                                                          <div className="space-y-1">
                                                             {phaseTasks.map((task, taskIdx) => (
                                                               <div 
                                                                 key={task.id}
-                                                                className="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-100"
+                                                                className="flex items-center gap-2 p-1.5 bg-white rounded-lg border border-gray-100"
                                                               >
                                                                 <div className={cn(
-                                                                  "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold",
+                                                                  "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold",
                                                                   task.status === "completed" ? "bg-green-100 text-green-600" :
                                                                   task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
                                                                   "bg-gray-100 text-gray-500"
                                                                 )}>
                                                                   {task.status === "completed" ? (
-                                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                    <CheckCircle2 className="w-3 h-3" />
                                                                   ) : task.status === "in_progress" ? (
-                                                                    <Clock className="w-3.5 h-3.5" />
+                                                                    <Clock className="w-3 h-3" />
                                                                   ) : (
                                                                     taskIdx + 1
                                                                   )}
                                                                 </div>
-                                                                <p className="text-sm text-gray-800 flex-1 truncate">
+                                                                <p className="text-xs text-gray-700 flex-1 line-clamp-2">
                                                                   {task.title}
                                                                 </p>
                                                               </div>
@@ -1395,38 +1404,41 @@ export default function ExecutivePlans() {
                                                     
                                                     {/* المهام بدون تصنيف */}
                                                     {activityTasks.filter(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category)).length > 0 && (
-                                                      <div className="space-y-1.5">
-                                                        {activityTasks.filter(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category)).map((task, taskIdx) => (
-                                                          <div 
-                                                            key={task.id}
-                                                            className="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200"
-                                                          >
-                                                            <div className={cn(
-                                                              "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold",
-                                                              task.status === "completed" ? "bg-green-100 text-green-600" :
-                                                              task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
-                                                              "bg-gray-100 text-gray-500"
-                                                            )}>
-                                                              {task.status === "completed" ? (
-                                                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                                              ) : task.status === "in_progress" ? (
-                                                                <Clock className="w-3.5 h-3.5" />
-                                                              ) : (
-                                                                taskIdx + 1
-                                                              )}
+                                                      <div className="rounded-lg border border-gray-200 p-2 bg-gray-50">
+                                                        <div className="text-xs font-bold mb-2 text-gray-600">📋 مهام أخرى</div>
+                                                        <div className="space-y-1">
+                                                          {activityTasks.filter(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category)).map((task, taskIdx) => (
+                                                            <div 
+                                                              key={task.id}
+                                                              className="flex items-center gap-2 p-1.5 bg-white rounded-lg border border-gray-100"
+                                                            >
+                                                              <div className={cn(
+                                                                "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold",
+                                                                task.status === "completed" ? "bg-green-100 text-green-600" :
+                                                                task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
+                                                                "bg-gray-100 text-gray-500"
+                                                              )}>
+                                                                {task.status === "completed" ? (
+                                                                  <CheckCircle2 className="w-3 h-3" />
+                                                                ) : task.status === "in_progress" ? (
+                                                                  <Clock className="w-3 h-3" />
+                                                                ) : (
+                                                                  taskIdx + 1
+                                                                )}
+                                                              </div>
+                                                              <p className="text-xs text-gray-700 flex-1 line-clamp-2">
+                                                                {task.title}
+                                                              </p>
                                                             </div>
-                                                            <p className="text-sm text-gray-800 flex-1 truncate">
-                                                              {task.title}
-                                                            </p>
-                                                          </div>
-                                                        ))}
+                                                          ))}
+                                                        </div>
                                                       </div>
                                                     )}
                                                   </>
                                                 )}
                                               </div>
-                                            )}
-                                          </div>
+                                            </PopoverContent>
+                                          </Popover>
                                         );
                                       })}
                                     </div>
