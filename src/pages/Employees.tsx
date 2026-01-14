@@ -442,25 +442,48 @@ const Employees = () => {
     }
   };
 
-  // Impersonate User - Preview in same window
-  const handleImpersonate = (employee: Employee) => {
+  // Impersonate User - Login as employee using edge function
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  
+  const handleImpersonate = async (employee: Employee) => {
     if (!employee.user_id) {
       toast.error("هذا الموظف ليس له حساب مستخدم");
       return;
     }
     
-    // Set the previewing employee in context
-    setPreviewingEmployee({
-      id: employee.id,
-      user_id: employee.user_id,
-      full_name: employee.full_name,
-      email: employee.email,
-      phone: employee.phone,
-      job_role: employee.job_role,
-      avatar_url: employee.avatar_url,
-    });
+    setIsImpersonating(true);
     
-    toast.success(`جاري معاينة حساب ${employee.full_name}`);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke("impersonate-user", {
+        body: { userId: employee.user_id },
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message || "حدث خطأ أثناء الدخول");
+      }
+      
+      if (response.data?.actionLink) {
+        // Save original admin session info
+        localStorage.setItem("adminReturnSession", JSON.stringify({
+          returnUrl: window.location.pathname,
+          adminName: "المدير",
+        }));
+        
+        toast.success(`جاري الدخول كـ ${employee.full_name}...`);
+        
+        // Redirect to the magic link
+        window.location.href = response.data.actionLink;
+      } else {
+        throw new Error("لم يتم إنشاء رابط الدخول");
+      }
+    } catch (error: any) {
+      console.error("Impersonate error:", error);
+      toast.error(error.message || "حدث خطأ أثناء الدخول على حساب الموظف");
+    } finally {
+      setIsImpersonating(false);
+    }
   };
 
   const stats = [
@@ -895,11 +918,15 @@ const Employees = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 gap-1"
+                    className="flex-1 gap-1 text-primary hover:bg-primary hover:text-primary-foreground"
                     onClick={() => handleImpersonate(employee)}
-                    disabled={!employee.user_id}
+                    disabled={!employee.user_id || isImpersonating}
                   >
-                    <LogIn className="w-3 h-3" />
+                    {isImpersonating ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <LogIn className="w-3 h-3" />
+                    )}
                     دخول
                   </Button>
                 </div>
