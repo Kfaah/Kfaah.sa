@@ -153,6 +153,22 @@ export function RequestPreviewDialog({
     enabled: !!request?.direct_manager_id && open,
   });
 
+  // جلب بيانات المدير التنفيذي
+  const { data: executiveManagerData } = useQuery({
+    queryKey: ["executive-manager-for-request", request?.executive_manager_id],
+    queryFn: async () => {
+      if (!request?.executive_manager_id) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", request.executive_manager_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!request?.executive_manager_id && open,
+  });
+
   const isAdminView = viewMode === "admin";
 
   // اعتماد/رفض الطلب (اعتماد الإدارة النهائي)
@@ -386,6 +402,9 @@ export function RequestPreviewDialog({
                     directManager={managerData?.full_name}
                     directManagerSignatureUrl={managerData?.signature_url}
                     managerApproved={request.manager_approved}
+                    executiveManager={executiveManagerData?.full_name}
+                    executiveManagerSignatureUrl={executiveManagerData?.signature_url}
+                    executiveManagerApproved={request.executive_manager_approved}
                     approverName={approverData?.full_name}
                     approverSignatureUrl={approverData?.signature_url}
                     isApproved={request.status === "approved"}
