@@ -397,7 +397,7 @@ export function SignatureUpload({
   };
 
   return (
-    <Card>
+    <Card className="bg-background">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <PenTool className="w-5 h-5 text-accent" />
@@ -407,7 +407,7 @@ export function SignatureUpload({
       <CardContent className="space-y-4">
         {currentSignature ? (
             <div className="space-y-4">
-              <div className="border rounded-lg p-4 bg-muted flex items-center justify-center min-h-[120px]">
+              <div className="border rounded-lg p-4 bg-background flex items-center justify-center min-h-[120px]">
                 <img
                   src={currentSignature}
                   alt="التوقيع"
