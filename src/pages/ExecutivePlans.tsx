@@ -44,6 +44,8 @@ import {
   Clock,
   ListTodo,
   CalendarDays,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -232,6 +234,9 @@ export default function ExecutivePlans() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [globalViewMode, setGlobalViewMode] = useState<"dates" | "tasks">("dates"); // الافتراضي بحسب التواريخ
+  const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
+  const [aiSelectedMonth, setAiSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   
   // حالة نافذة الإضافة
   const [selectedPlanMonthId, setSelectedPlanMonthId] = useState<string>("");
@@ -635,6 +640,50 @@ export default function ExecutivePlans() {
     return employees.find(e => e.user_id === selectedEmployeeId);
   };
 
+  // توليد الخطط التنفيذية بالذكاء الاصطناعي
+  const handleAIGenerate = async () => {
+    setIsAIGenerating(true);
+    try {
+      const userIds = getFilteredUserIds();
+      
+      const { data, error } = await supabase.functions.invoke("generate-executive-plans", {
+        body: {
+          month: aiSelectedMonth,
+          year: selectedYear,
+          userIds: userIds.length > 0 ? userIds : undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        if (data.error.includes("429") || data.error.includes("حد الطلبات")) {
+          toast({ title: "تنبيه", description: "تم تجاوز حد الطلبات، يرجى المحاولة لاحقاً", variant: "destructive" });
+        } else if (data.error.includes("402") || data.error.includes("رصيد")) {
+          toast({ title: "تنبيه", description: "يرجى إضافة رصيد لاستخدام الذكاء الاصطناعي", variant: "destructive" });
+        } else {
+          toast({ title: "خطأ", description: data.error, variant: "destructive" });
+        }
+        return;
+      }
+
+      toast({
+        title: "تم التوليد بنجاح! ✨",
+        description: data.message,
+      });
+
+      setIsAIDialogOpen(false);
+      
+      // إعادة جلب البيانات
+      window.location.reload();
+    } catch (error: any) {
+      console.error("AI generation error:", error);
+      toast({ title: "خطأ", description: error.message || "فشل في توليد الخطط", variant: "destructive" });
+    } finally {
+      setIsAIGenerating(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -652,18 +701,32 @@ export default function ExecutivePlans() {
             </p>
           </div>
           
-          <Button
-            onClick={() => {
-              setIsDialogOpen(true);
-              setSelectedPlanMonthId("");
-              setSelectedDays([]);
-              setAddingMonth(new Date().getMonth() + 1);
-            }}
-            className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-          >
-            <Plus className="w-5 h-5" />
-            إضافة خطة تنفيذية
-          </Button>
+          <div className="flex gap-2">
+            {/* زر التوليد بالذكاء الاصطناعي */}
+            {isAdmin && (
+              <Button
+                onClick={() => setIsAIDialogOpen(true)}
+                variant="outline"
+                className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800"
+              >
+                <Sparkles className="w-5 h-5" />
+                توليد بالذكاء الاصطناعي
+              </Button>
+            )}
+            
+            <Button
+              onClick={() => {
+                setIsDialogOpen(true);
+                setSelectedPlanMonthId("");
+                setSelectedDays([]);
+                setAddingMonth(new Date().getMonth() + 1);
+              }}
+              className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+            >
+              <Plus className="w-5 h-5" />
+              إضافة خطة تنفيذية
+            </Button>
+          </div>
         </div>
 
         {/* الفلاتر */}
@@ -1340,6 +1403,88 @@ export default function ExecutivePlans() {
               >
                 <Plus className="w-5 h-5" />
                 إضافة الخطة التنفيذية
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* نافذة التوليد بالذكاء الاصطناعي */}
+        <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Sparkles className="w-6 h-6 text-purple-500" />
+                توليد الخطط التنفيذية بالذكاء الاصطناعي
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <h4 className="font-semibold text-purple-800 mb-2">كيف يعمل؟</h4>
+                <ul className="text-sm text-purple-700 space-y-1">
+                  <li>• يحلل الذكاء الاصطناعي الخطط التشغيلية والمستهدفات</li>
+                  <li>• يوزع المستهدفات الشهرية على أيام العمل بذكاء</li>
+                  <li>• يتجنب عطلات نهاية الأسبوع (الجمعة والسبت)</li>
+                  <li>• يراعي التوازن في التوزيع</li>
+                </ul>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">اختر الشهر</label>
+                <Select value={String(aiSelectedMonth)} onValueChange={(v) => setAiSelectedMonth(Number(v))}>
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {MONTHS_AR.map((month, idx) => (
+                      <SelectItem key={idx} value={String(idx + 1)}>
+                        {month}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium mb-2">سيتم التوليد لـ:</h4>
+                <div className="flex items-center gap-2">
+                  {selectedEmployeeId === "all" ? (
+                    <Badge className="bg-purple-100 text-purple-800">جميع الموظفين</Badge>
+                  ) : getSelectedEmployee() ? (
+                    <>
+                      <Badge className="bg-blue-100 text-blue-800">{getSelectedEmployee()?.full_name}</Badge>
+                      {getSelectedEmployee()?.job_role?.includes('رئيس قسم') && (
+                        <span className="text-xs text-gray-500">+ موظفي القسم</span>
+                      )}
+                    </>
+                  ) : (
+                    <Badge className="bg-gray-100 text-gray-800">الموظف المحدد</Badge>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                <p className="text-sm text-amber-800">
+                  ⚠️ سيتم استبدال الخطط التنفيذية الموجودة للشهر المحدد
+                </p>
+              </div>
+
+              <Button
+                onClick={handleAIGenerate}
+                disabled={isAIGenerating}
+                className="w-full gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-12 text-lg"
+              >
+                {isAIGenerating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    جاري التوليد...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    توليد الخطط التنفيذية
+                  </>
+                )}
               </Button>
             </div>
           </DialogContent>
