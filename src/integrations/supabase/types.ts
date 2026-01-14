@@ -199,6 +199,7 @@ export type Database = {
           status: string | null
           tasks_completed: number | null
           tasks_total: number | null
+          title: string | null
           updated_at: string
           user_id: string | null
           username: string | null
@@ -223,6 +224,7 @@ export type Database = {
           status?: string | null
           tasks_completed?: number | null
           tasks_total?: number | null
+          title?: string | null
           updated_at?: string
           user_id?: string | null
           username?: string | null
@@ -247,6 +249,7 @@ export type Database = {
           status?: string | null
           tasks_completed?: number | null
           tasks_total?: number | null
+          title?: string | null
           updated_at?: string
           user_id?: string | null
           username?: string | null

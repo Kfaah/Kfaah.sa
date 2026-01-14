@@ -31,6 +31,7 @@ interface Employee {
   performance: number;
   direct_manager_id: string | null;
   executive_manager_id: string | null;
+  title: string | null;
 }
 
 interface Department {
@@ -110,7 +111,8 @@ const Employees = () => {
   const [editSelectedDepartment, setEditSelectedDepartment] = useState<string>("");
   const [editDirectManagerId, setEditDirectManagerId] = useState<string>("");
   const [editExecutiveManagerId, setEditExecutiveManagerId] = useState<string>("");
-  type EditEmployeeField = "full_name" | "username" | "email" | "phone" | "job_role" | "password" | "department" | "status" | "direct_manager" | "executive_manager";
+  const [editTitle, setEditTitle] = useState<string>("");
+  type EditEmployeeField = "full_name" | "username" | "email" | "phone" | "job_role" | "password" | "department" | "status" | "direct_manager" | "executive_manager" | "title";
   const [editErrors, setEditErrors] = useState<Partial<Record<EditEmployeeField, string>>>({});
   const [newDepartment, setNewDepartment] = useState({ name: "", color: "bg-primary" });
   const [newRole, setNewRole] = useState({ name: "", color: "bg-primary", department_id: "" });
@@ -397,6 +399,7 @@ const Employees = () => {
           avatar_url: avatarUrl,
           direct_manager_id: editDirectManagerId && editDirectManagerId !== "none" ? editDirectManagerId : null,
           executive_manager_id: editExecutiveManagerId && editExecutiveManagerId !== "none" ? editExecutiveManagerId : null,
+          title: editTitle.trim() || null,
         })
         .eq("id", editingEmployee.id);
       
@@ -438,6 +441,7 @@ const Employees = () => {
         avatar_url: avatarUrl,
         direct_manager_id: editDirectManagerId && editDirectManagerId !== "none" ? editDirectManagerId : null,
         executive_manager_id: editExecutiveManagerId && editExecutiveManagerId !== "none" ? editExecutiveManagerId : null,
+        title: editTitle.trim() || null,
       };
       setEmployees(employees.map(e => e.id === editingEmployee.id ? updatedEmployee : e));
       setIsEditDialogOpen(false);
@@ -446,6 +450,7 @@ const Employees = () => {
       setEditPassword("");
       setEditDirectManagerId("");
       setEditExecutiveManagerId("");
+      setEditTitle("");
       setEditErrors({});
       toast.success("تم تحديث بيانات الموظف");
     } catch (error: any) {
@@ -969,6 +974,8 @@ const Employees = () => {
                       // تعيين المدير المباشر والتنفيذي
                       setEditDirectManagerId(employee.direct_manager_id || "");
                       setEditExecutiveManagerId(employee.executive_manager_id || "");
+                      // تعيين اللقب
+                      setEditTitle(employee.title || "");
                       setIsEditDialogOpen(true);
                     }}
                   >
@@ -1274,6 +1281,17 @@ const Employees = () => {
                   </p>
                 )}
                 {editErrors.executive_manager && <p className="text-xs text-destructive">{editErrors.executive_manager}</p>}
+              </div>
+
+              {/* اللقب المميز */}
+              <div className="space-y-2">
+                <Label>اللقب المميز</Label>
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="مثال: ضابط إيقاع الجمعية، العقل المفكر..."
+                />
+                <p className="text-xs text-muted-foreground">يظهر في الملف الشخصي للموظف</p>
               </div>
 
               <Button onClick={handleEditEmployee} className="w-full bg-accent hover:bg-accent/90" disabled={isLoading}>
