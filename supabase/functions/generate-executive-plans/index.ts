@@ -211,79 +211,87 @@ ${i + 1}. النشاط: ${p.activityName}
 
       const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      // قائمة النماذج للتجربة (fallback)
-      const models = ["openai/gpt-5-mini", "google/gemini-2.5-flash", "google/gemini-3-flash-preview"];
+      // قائمة النماذج للتجربة (fallback) - نبدأ بـ Gemini لأنه يدعم temperature
+      const models = ["google/gemini-2.5-flash", "google/gemini-3-flash-preview"];
 
-      const buildAiBody = (model: string) => ({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "distribute_targets_with_tasks",
-              description: "توزيع المستهدفات الشهرية على الأيام مع المهام التفصيلية",
-              parameters: {
-                type: "object",
-                properties: {
-                  distributions: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        activityIndex: {
-                          type: "number",
-                          description: "رقم النشاط (يبدأ من 0)",
-                        },
-                        days: {
-                          type: "array",
-                          items: {
-                            type: "object",
-                            properties: {
-                              day: { type: "number", description: "رقم اليوم في الشهر" },
-                              target: { type: "number", description: "المستهدف لهذا اليوم" },
-                              tasks: {
-                                type: "object",
-                                properties: {
-                                  before: {
-                                    type: "array",
-                                    items: { type: "string" },
-                                    description: "مهام ما قبل التنفيذ (التحضير والإعداد)",
+      const buildAiBody = (model: string) => {
+        const body: any = {
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "distribute_targets_with_tasks",
+                description: "توزيع المستهدفات الشهرية على الأيام مع المهام التفصيلية",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    distributions: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          activityIndex: {
+                            type: "number",
+                            description: "رقم النشاط (يبدأ من 0)",
+                          },
+                          days: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                day: { type: "number", description: "رقم اليوم في الشهر" },
+                                target: { type: "number", description: "المستهدف لهذا اليوم" },
+                                tasks: {
+                                  type: "object",
+                                  properties: {
+                                    before: {
+                                      type: "array",
+                                      items: { type: "string" },
+                                      description: "مهام ما قبل التنفيذ (التحضير والإعداد)",
+                                    },
+                                    during: {
+                                      type: "array",
+                                      items: { type: "string" },
+                                      description: "مهام أثناء التنفيذ",
+                                    },
+                                    after: {
+                                      type: "array",
+                                      items: { type: "string" },
+                                      description: "مهام ما بعد التنفيذ (المتابعة والتوثيق)",
+                                    },
                                   },
-                                  during: {
-                                    type: "array",
-                                    items: { type: "string" },
-                                    description: "مهام أثناء التنفيذ",
-                                  },
-                                  after: {
-                                    type: "array",
-                                    items: { type: "string" },
-                                    description: "مهام ما بعد التنفيذ (المتابعة والتوثيق)",
-                                  },
+                                  required: ["before", "during", "after"],
                                 },
-                                required: ["before", "during", "after"],
                               },
+                              required: ["day", "target", "tasks"],
                             },
-                            required: ["day", "target", "tasks"],
                           },
                         },
+                        required: ["activityIndex", "days"],
                       },
-                      required: ["activityIndex", "days"],
                     },
                   },
+                  required: ["distributions"],
+                  additionalProperties: false,
                 },
-                required: ["distributions"],
-                additionalProperties: false,
               },
             },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "distribute_targets_with_tasks" } },
-        temperature: 0.2,
-      });
+          ],
+          tool_choice: { type: "function", function: { name: "distribute_targets_with_tasks" } },
+        };
+        
+        // إضافة temperature فقط لنماذج Gemini (OpenAI gpt-5 لا يدعمها)
+        if (model.startsWith("google/")) {
+          body.temperature = 0.2;
+        }
+        
+        return body;
+      };
 
       let data: any = null;
 
