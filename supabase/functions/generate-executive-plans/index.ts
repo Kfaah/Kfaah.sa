@@ -162,12 +162,16 @@ serve(async (req) => {
 
       // توليد الخطط التنفيذية باستخدام الذكاء الاصطناعي
       const systemPrompt = `أنت مستشار تخطيط استراتيجي متخصص في توزيع المستهدفات على أيام العمل وتفصيل المهام.
-      
+
 مهمتك الأولى: توزيع المستهدف الشهري على أيام العمل بشكل ذكي ومتوازن.
 مهمتك الثانية: لكل يوم تنفيذي، توليد مهام تفصيلية مقسمة إلى ثلاث مراحل:
 - مهام ما قبل (التحضير والإعداد)
 - مهام أثناء (التنفيذ الفعلي)
 - مهام ما بعد (المتابعة والتوثيق)
+
+ملاحظة مهمة جداً:
+- قد يكون في اليوم الواحد عدة أنشطة لأنها تخص أقساماً/موظفين مختلفين.
+- تكرار نفس اليوم بين أنشطة مختلفة مقبول ومطلوب.
 
 قواعد التوزيع:
 1. تجنب أيام الجمعة والسبت (عطلة نهاية الأسبوع)
@@ -187,114 +191,165 @@ serve(async (req) => {
 عدد أيام الشهر: ${daysInMonth}
 
 الخطط التشغيلية المطلوب توزيعها:
-${plansData.map((p, i) => `
+${plansData
+  .map(
+    (p, i) => `
 ${i + 1}. النشاط: ${p.activityName}
    المبادرة: ${p.initiative || "غير محدد"}
    الهدف الاستراتيجي: ${p.strategicGoal || "غير محدد"}
    المستهدف الشهري: ${p.monthlyTarget}
    الموظف: ${p.employeeName} (${p.jobRole})
-`).join("\n")}
+`
+  )
+  .join("\\n")}
 
 قم بـ:
 1. توزيع المستهدف الشهري لكل نشاط على أيام العمل المناسبة
-2. لكل يوم تنفيذي، أنشئ مهام تفصيلية مقسمة إلى (قبل - أثناء - بعد)`;
+2. لكل يوم تنفيذي، أنشئ مهام تفصيلية مقسمة إلى (قبل - أثناء - بعد)
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "distribute_targets_with_tasks",
-                description: "توزيع المستهدفات الشهرية على الأيام مع المهام التفصيلية",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    distributions: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          activityIndex: { 
-                            type: "number", 
-                            description: "رقم النشاط (يبدأ من 0)" 
-                          },
-                          days: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                day: { type: "number", description: "رقم اليوم في الشهر" },
-                                target: { type: "number", description: "المستهدف لهذا اليوم" },
-                                tasks: {
-                                  type: "object",
-                                  properties: {
-                                    before: {
-                                      type: "array",
-                                      items: { type: "string" },
-                                      description: "مهام ما قبل التنفيذ (التحضير والإعداد)"
-                                    },
-                                    during: {
-                                      type: "array",
-                                      items: { type: "string" },
-                                      description: "مهام أثناء التنفيذ"
-                                    },
-                                    after: {
-                                      type: "array",
-                                      items: { type: "string" },
-                                      description: "مهام ما بعد التنفيذ (المتابعة والتوثيق)"
-                                    }
+تنبيه: من الطبيعي أن يتكرر نفس اليوم بين عدة أنشطة.`;
+
+      const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      // قائمة النماذج للتجربة (fallback)
+      const models = ["openai/gpt-5-mini", "google/gemini-2.5-flash", "google/gemini-3-flash-preview"];
+
+      const buildAiBody = (model: string) => ({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "distribute_targets_with_tasks",
+              description: "توزيع المستهدفات الشهرية على الأيام مع المهام التفصيلية",
+              parameters: {
+                type: "object",
+                properties: {
+                  distributions: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        activityIndex: {
+                          type: "number",
+                          description: "رقم النشاط (يبدأ من 0)",
+                        },
+                        days: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              day: { type: "number", description: "رقم اليوم في الشهر" },
+                              target: { type: "number", description: "المستهدف لهذا اليوم" },
+                              tasks: {
+                                type: "object",
+                                properties: {
+                                  before: {
+                                    type: "array",
+                                    items: { type: "string" },
+                                    description: "مهام ما قبل التنفيذ (التحضير والإعداد)",
                                   },
-                                  required: ["before", "during", "after"]
-                                }
+                                  during: {
+                                    type: "array",
+                                    items: { type: "string" },
+                                    description: "مهام أثناء التنفيذ",
+                                  },
+                                  after: {
+                                    type: "array",
+                                    items: { type: "string" },
+                                    description: "مهام ما بعد التنفيذ (المتابعة والتوثيق)",
+                                  },
+                                },
+                                required: ["before", "during", "after"],
                               },
-                              required: ["day", "target", "tasks"],
                             },
+                            required: ["day", "target", "tasks"],
                           },
                         },
-                        required: ["activityIndex", "days"],
                       },
+                      required: ["activityIndex", "days"],
                     },
                   },
-                  required: ["distributions"],
-                  additionalProperties: false,
                 },
+                required: ["distributions"],
+                additionalProperties: false,
               },
             },
-          ],
-          tool_choice: { type: "function", function: { name: "distribute_targets_with_tasks" } },
-        }),
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "distribute_targets_with_tasks" } },
+        temperature: 0.2,
       });
 
-      if (!response.ok) {
-        if (response.status === 429) {
-          return new Response(
-            JSON.stringify({ error: "تم تجاوز حد الطلبات، يرجى المحاولة لاحقاً" }),
-            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+      let data: any = null;
+
+      // محاولة مع كل نموذج حتى النجاح
+      modelLoop: for (const model of models) {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 55_000);
+
+          try {
+            console.log(`Trying model ${model}, attempt ${attempt} for month ${targetMonth}`);
+            const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(buildAiBody(model)),
+              signal: controller.signal,
+            });
+
+            if (!response.ok) {
+              if (response.status === 429) {
+                return new Response(JSON.stringify({ error: "تم تجاوز حد الطلبات، يرجى المحاولة لاحقاً" }), {
+                  status: 429,
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                });
+              }
+              if (response.status === 402) {
+                return new Response(JSON.stringify({ error: "يرجى إضافة رصيد لاستخدام الذكاء الاصطناعي" }), {
+                  status: 402,
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                });
+              }
+
+              const errorText = await response.text().catch(() => "");
+              console.error(`AI HTTP ${response.status} with ${model} attempt ${attempt}:`, errorText.substring(0, 300));
+              if (attempt < 2) await sleep(1200);
+              continue;
+            }
+
+            const json = await response.json().catch(() => ({ error: { message: "Invalid JSON" } }));
+
+            if (json?.error) {
+              console.error(`AI provider error with ${model} attempt ${attempt}:`, JSON.stringify(json.error).substring(0, 300));
+              if (attempt < 2) await sleep(1200);
+              continue;
+            }
+
+            data = json;
+            console.log(`Success with model ${model} for month ${targetMonth}`);
+            break modelLoop;
+          } catch (e) {
+            console.error(`AI fetch error with ${model} attempt ${attempt}:`, e);
+            if (attempt < 2) await sleep(1200);
+          } finally {
+            clearTimeout(timeout);
+          }
         }
-        if (response.status === 402) {
-          return new Response(
-            JSON.stringify({ error: "يرجى إضافة رصيد لاستخدام الذكاء الاصطناعي" }),
-            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        const errorText = await response.text();
-        console.error(`AI error for month ${targetMonth}:`, errorText);
+      }
+
+      if (!data) {
+        console.error(`AI failed completely for month ${targetMonth} after trying all models`);
         continue;
       }
 
-      const data = await response.json();
       console.log(`AI response for month ${targetMonth}:`, JSON.stringify(data).substring(0, 500));
       
       const message = data.choices?.[0]?.message;
