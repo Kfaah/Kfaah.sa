@@ -316,15 +316,11 @@ export default function Profile() {
               {authUser && employeeData ? (
                 employeeData.signature_url ? (
                   <div className="space-y-4">
-                    <div className="p-6 bg-white rounded-xl border-2 border-dashed border-sky-200 flex items-center justify-center">
+                    <div className="p-6 bg-background rounded-xl border-2 border-dashed border-border flex items-center justify-center">
                       <img 
                         src={employeeData.signature_url} 
                         alt="التوقيع" 
                         className="max-h-32 object-contain"
-                        style={{ 
-                          filter: 'contrast(1.5) brightness(1.1) sepia(100%) saturate(400%) hue-rotate(180deg)',
-                          mixBlendMode: 'multiply'
-                        }}
                       />
                     </div>
                     <SignatureUpload

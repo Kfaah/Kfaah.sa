@@ -363,10 +363,6 @@ export function OfficialRequestPDF({
                       src={employee.signature_url} 
                       alt="توقيع الموظف" 
                       className="h-8 mx-auto mt-1 object-contain"
-                      style={{ 
-                        filter: 'contrast(1.5) brightness(1.1) sepia(100%) saturate(400%) hue-rotate(180deg)',
-                        mixBlendMode: 'multiply'
-                      }}
                     />
                   )}
                 </div>
@@ -382,10 +378,6 @@ export function OfficialRequestPDF({
                           src={substituteEmployee.signature_url} 
                           alt="توقيع البديل" 
                           className="h-8 mx-auto mt-1 object-contain"
-                          style={{ 
-                            filter: 'contrast(1.5) brightness(1.1) sepia(100%) saturate(400%) hue-rotate(180deg)',
-                            mixBlendMode: 'multiply'
-                          }}
                         />
                       ) : (
                         <p className="text-[8px] text-amber-600 mt-2">في الانتظار</p>
@@ -407,10 +399,6 @@ export function OfficialRequestPDF({
                           src={directManager.signature_url} 
                           alt="توقيع المدير" 
                           className="h-8 mx-auto mt-1 object-contain"
-                          style={{ 
-                            filter: 'contrast(1.5) brightness(1.1) sepia(100%) saturate(400%) hue-rotate(180deg)',
-                            mixBlendMode: 'multiply'
-                          }}
                         />
                       ) : (
                         <p className="text-[8px] text-blue-600 mt-2">في الانتظار</p>
@@ -431,10 +419,6 @@ export function OfficialRequestPDF({
                         src={approver.signature_url} 
                         alt="توقيع الموافق" 
                         className="h-8 mx-auto mt-1 object-contain"
-                        style={{ 
-                          filter: 'contrast(1.5) brightness(1.1) sepia(100%) saturate(400%) hue-rotate(180deg)',
-                          mixBlendMode: 'multiply'
-                        }}
                       />
                     )}
                   </div>

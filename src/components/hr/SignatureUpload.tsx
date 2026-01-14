@@ -28,7 +28,115 @@ export function SignatureUpload({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // إعداد الـ Canvas
+  const processUploadedSignature = useCallback(async (file: File): Promise<Blob> => {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      const url = URL.createObjectURL(file);
+      el.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(el);
+      };
+      el.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("failed_to_load_image"));
+      };
+      el.src = url;
+    });
+
+    const w = img.naturalWidth || img.width;
+    const h = img.naturalHeight || img.height;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("no_canvas_context");
+
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+
+    // تقدير لون الخلفية من زوايا الصورة (عادة رمادي/أبيض)
+    const sample = [
+      { x: 0, y: 0 },
+      { x: w - 1, y: 0 },
+      { x: 0, y: h - 1 },
+      { x: w - 1, y: h - 1 },
+    ];
+
+    let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
+    for (const p of sample) {
+      const idx = (p.y * w + p.x) * 4;
+      const a = data[idx + 3];
+      if (a < 10) continue;
+      bgR += data[idx];
+      bgG += data[idx + 1];
+      bgB += data[idx + 2];
+      bgCount++;
+    }
+
+    if (bgCount > 0) {
+      bgR = Math.round(bgR / bgCount);
+      bgG = Math.round(bgG / bgCount);
+      bgB = Math.round(bgB / bgCount);
+    } else {
+      // افتراضي (أبيض)
+      bgR = 255; bgG = 255; bgB = 255;
+    }
+
+    // تلوين التوقيع أزرق فاتح + تفريغ الخلفية
+    const BLUE = { r: 59, g: 130, b: 246 };
+    const THRESH_MIN = 18;
+    const THRESH_MAX = 55;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+
+      if (a < 10) {
+        data[i + 3] = 0;
+        continue;
+      }
+
+      const dr = r - bgR;
+      const dg = g - bgG;
+      const db = b - bgB;
+      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+
+      // قرب شديد من الخلفية -> شفافية
+      if (dist <= THRESH_MIN) {
+        data[i + 3] = 0;
+        continue;
+      }
+
+      // حافة ناعمة (Feather)
+      if (dist < THRESH_MAX) {
+        const t = (dist - THRESH_MIN) / (THRESH_MAX - THRESH_MIN);
+        data[i + 3] = Math.round(a * t);
+      }
+
+      // صبغ لون التوقيع (فقط لو ما صار شفاف تماماً)
+      if (data[i + 3] > 0) {
+        data[i] = BLUE.r;
+        data[i + 1] = BLUE.g;
+        data[i + 2] = BLUE.b;
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/png");
+    });
+
+    if (!blob) throw new Error("failed_to_create_png");
+    return blob;
+  }, []);
+
+  // إعداد الـ Canvas (بدون خلفية حتى يكون التوقيع PNG مفرّغ)
   const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -36,12 +144,11 @@ export function SignatureUpload({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // تعيين الخلفية البيضاء
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // إعداد القلم بلون أزرق
-    ctx.strokeStyle = "#1e40af";
+    // تنظيف (خلفية شفافة)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // إعداد القلم بلون أزرق فاتح
+    ctx.strokeStyle = "rgb(59, 130, 246)";
     ctx.lineWidth = lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -49,7 +156,7 @@ export function SignatureUpload({
 
   useEffect(() => {
     setupCanvas();
-  }, []);
+  }, [setupCanvas]);
 
   // تحديث سُمك الخط عند التغيير
   useEffect(() => {
@@ -118,8 +225,7 @@ export function SignatureUpload({
     const ctx = canvas?.getContext("2d");
     if (!ctx || !canvas) return;
 
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasDrawn(false);
   }, []);
 
@@ -187,10 +293,13 @@ export function SignatureUpload({
     }
   };
 
-  // رفع صورة التوقيع
+  // رفع صورة التوقيع (مع تفريغ الخلفية وتحويل اللون لأزرق فاتح)
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // يسمح بإعادة رفع نفس الملف
+    e.target.value = "";
 
     if (!file.type.startsWith("image/")) {
       toast.error("يرجى رفع صورة فقط");
@@ -206,6 +315,15 @@ export function SignatureUpload({
     try {
       const fileName = `signatures/${userId}/signature.png`;
 
+      // معالجة الصورة: إزالة الخلفية الرمادية/البيضاء + صبغ أزرق
+      let uploadBlob: Blob;
+      try {
+        uploadBlob = await processUploadedSignature(file);
+      } catch (err) {
+        console.warn("Signature processing failed, uploading original", err);
+        uploadBlob = file;
+      }
+
       // حذف التوقيع القديم إذا وجد
       if (currentSignature) {
         await supabase.storage
@@ -216,7 +334,10 @@ export function SignatureUpload({
       // رفع التوقيع الجديد
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, uploadBlob, {
+          upsert: true,
+          contentType: "image/png",
+        });
 
       if (uploadError) throw uploadError;
 
