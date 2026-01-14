@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
@@ -63,23 +63,48 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.C
   rejected: { label: "مرفوض", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
 };
 
+type EmployeeTab = "my-requests" | "pending-approvals" | "my-approvals-history";
+
 export default function HRRequests() {
   const { user: authUser } = useAuth();
   const { user } = useUser();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [previewRequest, setPreviewRequest] = useState<any>(null);
   const [previewApprovalType, setPreviewApprovalType] = useState<"substitute" | "manager">("substitute");
   const [adminActiveTab, setAdminActiveTab] = useState("requests");
-  const [employeeActiveTab, setEmployeeActiveTab] = useState("my-requests");
+  const [employeeActiveTab, setEmployeeActiveTab] = useState<EmployeeTab>("my-requests");
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectingRequest, setRejectingRequest] = useState<{ id: string; type: 'substitute' | 'manager' | 'executive' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [previewExecutiveType, setPreviewExecutiveType] = useState<"substitute" | "manager" | "executive">("substitute");
 
   const isAdmin = user.role === "مدير النظام";
+
+  const handleEmployeeTabChange = (value: string) => {
+    if (value !== "my-requests" && value !== "pending-approvals" && value !== "my-approvals-history") return;
+
+    const nextTab = value as EmployeeTab;
+    setEmployeeActiveTab(nextTab);
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", nextTab);
+    setSearchParams(next, { replace: true });
+  };
+
+  useEffect(() => {
+    if (isAdmin) return;
+
+    const tab = searchParams.get("tab");
+    if (!tab) return;
+
+    if (tab === "my-requests" || tab === "pending-approvals" || tab === "my-approvals-history") {
+      if (tab !== employeeActiveTab) setEmployeeActiveTab(tab);
+    }
+  }, [employeeActiveTab, isAdmin, searchParams]);
 
   // جلب أنواع الطلبات
   const { data: requestTypes = [] } = useQuery({
@@ -1200,7 +1225,7 @@ export default function HRRequests() {
         </div>
 
         {/* التبويبات */}
-        <Tabs value={employeeActiveTab} onValueChange={setEmployeeActiveTab} dir="rtl">
+        <Tabs value={employeeActiveTab} onValueChange={handleEmployeeTabChange} dir="rtl">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="my-requests" className="gap-2">
               <ClipboardList className="w-4 h-4" />
