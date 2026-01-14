@@ -22,6 +22,7 @@ import HRRequests from "./pages/HRRequests";
 import HRTemplates from "./pages/HRTemplates";
 import PendingApprovals from "./pages/PendingApprovals";
 import Auth from "./pages/Auth";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -190,6 +191,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <PendingApprovals />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         }
       />
