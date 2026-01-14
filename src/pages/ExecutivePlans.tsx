@@ -295,11 +295,7 @@ export default function ExecutivePlans() {
     const fetchEmployees = async () => {
       if (!authUser) return;
       
-      if (!isAdmin) {
-        setSelectedEmployeeId(authUser.id);
-        return;
-      }
-      
+      // جلب قائمة الموظفين للجميع (للبحث عن employee.id)
       const { data, error } = await supabase
         .from("employees")
         .select(`
@@ -327,8 +323,14 @@ export default function ExecutivePlans() {
       }));
       
       setEmployees(formattedEmployees);
-      // تعيين "الكل" كافتراضي
-      setSelectedEmployeeId("all");
+      
+      // تعيين الموظف المختار حسب الدور
+      if (!isAdmin) {
+        setSelectedEmployeeId(authUser.id);
+      } else {
+        // تعيين "الكل" كافتراضي للمدير
+        setSelectedEmployeeId("all");
+      }
     };
     
     fetchEmployees();
@@ -336,7 +338,7 @@ export default function ExecutivePlans() {
 
   // تحديد المستخدمين المختارين بناءً على الفلتر
   // ملاحظة: الخطط التشغيلية مرتبطة بـ user_id (معرّف حساب المستخدم)، وليس employee.id
-  const getFilteredUserIds = (): string[] => {
+  const getFilteredUserIds = (): { userIds: string[]; employeeIds: string[] } => {
     let filteredEmployees = [...employees];
 
     // فلتر القسم
@@ -346,12 +348,13 @@ export default function ExecutivePlans() {
 
     // "الكل" = كل الموظفين الذين لديهم user_id فقط
     if (selectedEmployeeId === "all") {
-      const ids = filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
+      const userIds = filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
+      const employeeIds = filteredEmployees.map((e) => e.id);
       // دائماً أضف المستخدم الحالي إذا لم يكن موجوداً
-      if (authUser && !ids.includes(authUser.id)) {
-        ids.push(authUser.id);
+      if (authUser && !userIds.includes(authUser.id)) {
+        userIds.push(authUser.id);
       }
-      return ids;
+      return { userIds, employeeIds };
     }
 
     // قد تكون القيمة المختارة user_id أو employee.id (لبعض الموظفين الذين لا يملكون حساباً مرتبطاً)
@@ -360,10 +363,11 @@ export default function ExecutivePlans() {
       employees.find((e) => e.id === selectedEmployeeId);
 
     const selectedUserId = selectedEmployee?.user_id ?? selectedEmployeeId;
+    const selectedEmpId = selectedEmployee?.id ?? selectedEmployeeId;
 
-    // إذا كان الموظف لا يملك user_id فلا يمكن ربطه بالخطط/التوليد
+    // إذا كان الموظف لا يملك user_id فعرض خططه كمسؤول تنفيذ
     if (selectedEmployee && !selectedEmployee.user_id) {
-      return [];
+      return { userIds: [], employeeIds: [selectedEmployee.id] };
     }
 
     // إذا كان مدير النظام أو المدير التنفيذي - عرض الكل (مع فلتر القسم)
@@ -371,25 +375,29 @@ export default function ExecutivePlans() {
       selectedEmployee?.job_role === "مدير النظام" ||
       selectedEmployee?.job_role === "المدير التنفيذي";
     if (isExecutiveOrAdmin) {
-      const ids = filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
+      const userIds = filteredEmployees.filter((e) => e.user_id).map((e) => e.user_id!);
+      const employeeIds = filteredEmployees.map((e) => e.id);
       // دائماً أضف المستخدم الحالي إذا لم يكن موجوداً
-      if (authUser && !ids.includes(authUser.id)) {
-        ids.push(authUser.id);
+      if (authUser && !userIds.includes(authUser.id)) {
+        userIds.push(authUser.id);
       }
-      return ids;
+      return { userIds, employeeIds };
     }
 
     // إذا كان رئيس قسم - عرض موظفي القسم فقط
     const isDepartmentHead = selectedEmployee?.job_role?.includes("رئيس قسم");
     if (isDepartmentHead && selectedEmployee?.department_id) {
       const deptEmployees = filteredEmployees.filter(
-        (e) => e.department_id === selectedEmployee.department_id && e.user_id
+        (e) => e.department_id === selectedEmployee.department_id
       );
-      return deptEmployees.map((e) => e.user_id!);
+      return { 
+        userIds: deptEmployees.filter(e => e.user_id).map((e) => e.user_id!), 
+        employeeIds: deptEmployees.map((e) => e.id) 
+      };
     }
 
-    // مستخدم/موظف عادي - عرض خططه فقط
-    return [selectedUserId];
+    // مستخدم/موظف عادي - عرض خططه كمنشئ أو كمسؤول تنفيذ
+    return { userIds: [selectedUserId], employeeIds: [selectedEmpId] };
   };
 
   // جلب جميع الخطط
@@ -399,8 +407,8 @@ export default function ExecutivePlans() {
       
       setLoading(true);
       try {
-        const userIds = getFilteredUserIds();
-        if (userIds.length === 0) {
+        const { userIds, employeeIds } = getFilteredUserIds();
+        if (userIds.length === 0 && employeeIds.length === 0) {
           setOperationalPlans([]);
           setPlanMonths([]);
           setExecutivePlans([]);
@@ -408,17 +416,41 @@ export default function ExecutivePlans() {
           return;
         }
 
-        // جلب الخطط التشغيلية للموظفين المختارين
-        const { data: plans, error: plansError } = await supabase
-          .from("operational_plans")
-          .select("*")
-          .in("user_id", userIds)
-          .eq("year", selectedYear);
+        // جلب الخطط التشغيلية للموظفين المختارين (كمنشئ أو كمسؤول تنفيذ)
+        let allPlans: OperationalPlan[] = [];
         
-        if (plansError) throw plansError;
-        setOperationalPlans(plans || []);
+        // جلب الخطط حسب user_id (المنشئ)
+        if (userIds.length > 0) {
+          const { data: plansByUser, error: userError } = await supabase
+            .from("operational_plans")
+            .select("*")
+            .in("user_id", userIds)
+            .eq("year", selectedYear);
+          
+          if (userError) throw userError;
+          if (plansByUser) allPlans = [...plansByUser];
+        }
         
-        if (!plans || plans.length === 0) {
+        // جلب الخطط حسب responsible_employee_id (المسؤول عن التنفيذ)
+        if (employeeIds.length > 0) {
+          const { data: plansByEmployee, error: empError } = await supabase
+            .from("operational_plans")
+            .select("*")
+            .in("responsible_employee_id", employeeIds)
+            .eq("year", selectedYear);
+          
+          if (empError) throw empError;
+          if (plansByEmployee) {
+            // دمج مع إزالة التكرار
+            const existingIds = new Set(allPlans.map(p => p.id));
+            const newPlans = plansByEmployee.filter(p => !existingIds.has(p.id));
+            allPlans = [...allPlans, ...newPlans];
+          }
+        }
+        
+        setOperationalPlans(allPlans);
+        
+        if (allPlans.length === 0) {
           setPlanMonths([]);
           setExecutivePlans([]);
           setLoading(false);
@@ -426,7 +458,7 @@ export default function ExecutivePlans() {
         }
         
         // جلب جميع أشهر الخطط
-        const planIds = plans.map(p => p.id);
+        const planIds = allPlans.map(p => p.id);
         const { data: months, error: monthsError } = await supabase
           .from("operational_plan_months")
           .select("*")
@@ -728,7 +760,7 @@ export default function ExecutivePlans() {
     setAiProgress(null);
 
     try {
-      const userIds = getFilteredUserIds();
+      const { userIds } = getFilteredUserIds();
 
       if (userIds.length === 0) {
         toast({
