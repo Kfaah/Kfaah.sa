@@ -55,6 +55,9 @@ interface Employee {
   id: string;
   full_name: string;
   user_id: string | null;
+  job_role?: string;
+  department_id?: string | null;
+  department_name?: string | null;
 }
 
 interface OperationalPlan {
@@ -257,7 +260,14 @@ export default function ExecutivePlans() {
       
       const { data, error } = await supabase
         .from("employees")
-        .select("id, full_name, user_id")
+        .select(`
+          id, 
+          full_name, 
+          user_id, 
+          job_role,
+          department_id,
+          departments:department_id (name)
+        `)
         .eq("status", "active");
       
       if (error) {
@@ -265,14 +275,52 @@ export default function ExecutivePlans() {
         return;
       }
       
-      setEmployees(data || []);
-      if (data && data.length > 0) {
-        setSelectedEmployeeId(data[0].user_id || "");
-      }
+      const formattedEmployees = (data || []).map((emp: any) => ({
+        id: emp.id,
+        full_name: emp.full_name,
+        user_id: emp.user_id,
+        job_role: emp.job_role,
+        department_id: emp.department_id,
+        department_name: emp.departments?.name || null,
+      }));
+      
+      setEmployees(formattedEmployees);
+      // تعيين "الكل" كافتراضي
+      setSelectedEmployeeId("all");
     };
     
     fetchEmployees();
   }, [isAdmin, authUser]);
+
+  // تحديد الموظفين المختارين بناءً على الفلتر
+  const getFilteredUserIds = (): string[] => {
+    if (selectedEmployeeId === "all") {
+      // عرض جميع الخطط
+      return employees.filter(e => e.user_id).map(e => e.user_id!);
+    }
+    
+    const selectedEmployee = employees.find(e => e.user_id === selectedEmployeeId);
+    if (!selectedEmployee) return [selectedEmployeeId];
+    
+    // إذا كان مدير النظام أو المدير التنفيذي - عرض الكل
+    const isExecutiveOrAdmin = selectedEmployee.job_role === 'مدير النظام' || 
+                                selectedEmployee.job_role === 'المدير التنفيذي';
+    if (isExecutiveOrAdmin) {
+      return employees.filter(e => e.user_id).map(e => e.user_id!);
+    }
+    
+    // إذا كان رئيس قسم - عرض موظفي القسم فقط
+    const isDepartmentHead = selectedEmployee.job_role?.includes('رئيس قسم');
+    if (isDepartmentHead && selectedEmployee.department_id) {
+      const deptEmployees = employees.filter(e => 
+        e.department_id === selectedEmployee.department_id && e.user_id
+      );
+      return deptEmployees.map(e => e.user_id!);
+    }
+    
+    // موظف عادي - عرض خططه فقط
+    return [selectedEmployeeId];
+  };
 
   // جلب جميع الخطط
   useEffect(() => {
@@ -281,11 +329,20 @@ export default function ExecutivePlans() {
       
       setLoading(true);
       try {
-        // جلب الخطط التشغيلية للموظف
+        const userIds = getFilteredUserIds();
+        if (userIds.length === 0) {
+          setOperationalPlans([]);
+          setPlanMonths([]);
+          setExecutivePlans([]);
+          setLoading(false);
+          return;
+        }
+
+        // جلب الخطط التشغيلية للموظفين المختارين
         const { data: plans, error: plansError } = await supabase
           .from("operational_plans")
           .select("*")
-          .eq("user_id", selectedEmployeeId)
+          .in("user_id", userIds)
           .eq("year", selectedYear);
         
         if (plansError) throw plansError;
@@ -347,7 +404,7 @@ export default function ExecutivePlans() {
     };
     
     fetchAllPlans();
-  }, [selectedEmployeeId, selectedYear]);
+  }, [selectedEmployeeId, selectedYear, employees]);
 
   // تجميع الخطط التنفيذية حسب الشهر والمهمة
   const groupedPlans = useMemo(() => {
@@ -618,13 +675,56 @@ export default function ExecutivePlans() {
                 <div className="flex items-center gap-2">
                   <User className="w-5 h-5 text-[#3d9aa8]" />
                   <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                    <SelectTrigger className="w-[200px] bg-white">
+                    <SelectTrigger className="w-[300px] bg-white">
                       <SelectValue placeholder="اختر الموظف" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white z-50">
-                      {employees.map(emp => (
+                    <SelectContent className="bg-white z-50 max-h-[400px]">
+                      {/* خيار الكل */}
+                      <SelectItem value="all" className="font-bold text-[#3d9aa8]">
+                        <div className="flex items-center gap-2">
+                          <span>👥</span>
+                          <span>الكل</span>
+                        </div>
+                      </SelectItem>
+                      
+                      {/* المدراء التنفيذيين ومدراء النظام */}
+                      {employees.filter(e => 
+                        e.job_role === 'المدير التنفيذي' || e.job_role === 'مدير النظام'
+                      ).map(emp => (
                         <SelectItem key={emp.id} value={emp.user_id || emp.id}>
-                          {emp.full_name}
+                          <div className="flex items-center gap-2">
+                            <span>👔</span>
+                            <span>{emp.full_name}</span>
+                            <span className="text-xs text-muted-foreground">({emp.job_role})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                      
+                      {/* رؤساء الأقسام */}
+                      {employees.filter(e => e.job_role?.includes('رئيس قسم')).map(emp => (
+                        <SelectItem key={emp.id} value={emp.user_id || emp.id}>
+                          <div className="flex items-center gap-2">
+                            <span>🏢</span>
+                            <span>{emp.full_name}</span>
+                            <span className="text-xs text-muted-foreground">({emp.job_role})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                      
+                      {/* الموظفين العاديين */}
+                      {employees.filter(e => 
+                        e.job_role !== 'المدير التنفيذي' && 
+                        e.job_role !== 'مدير النظام' && 
+                        !e.job_role?.includes('رئيس قسم')
+                      ).map(emp => (
+                        <SelectItem key={emp.id} value={emp.user_id || emp.id}>
+                          <div className="flex items-center gap-2">
+                            <span>👤</span>
+                            <span>{emp.full_name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({emp.job_role}{emp.department_name ? ` - ${emp.department_name}` : ''})
+                            </span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -632,16 +732,30 @@ export default function ExecutivePlans() {
                 </div>
               )}
               
-              {/* معلومات الموظف المختار */}
-              {getSelectedEmployee() && (
-                <div className="flex items-center gap-2 mr-auto bg-white rounded-lg px-4 py-2 shadow-sm">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold text-sm">
-                    {getSelectedEmployee()?.full_name.charAt(0)}
-                  </div>
-                  <span className="font-medium">{getSelectedEmployee()?.full_name}</span>
-                  <span className="text-muted-foreground">- {selectedYear}</span>
-                </div>
-              )}
+              {/* معلومات الفلتر المختار */}
+              <div className="flex items-center gap-2 mr-auto bg-white rounded-lg px-4 py-2 shadow-sm">
+                {selectedEmployeeId === "all" ? (
+                  <>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold text-sm">
+                      👥
+                    </div>
+                    <span className="font-medium">جميع الموظفين</span>
+                  </>
+                ) : getSelectedEmployee() ? (
+                  <>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center text-white font-bold text-sm">
+                      {getSelectedEmployee()?.full_name.charAt(0)}
+                    </div>
+                    <span className="font-medium">{getSelectedEmployee()?.full_name}</span>
+                    {getSelectedEmployee()?.job_role && (
+                      <Badge variant="outline" className="text-xs">
+                        {getSelectedEmployee()?.job_role}
+                      </Badge>
+                    )}
+                  </>
+                ) : null}
+                <span className="text-muted-foreground">- {selectedYear}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
