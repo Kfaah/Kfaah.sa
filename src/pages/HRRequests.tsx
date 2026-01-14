@@ -443,10 +443,67 @@ export default function HRRequests() {
 
       const { data: requestData } = await supabase
         .from("hr_requests")
-        .select("user_id, request_number, hr_request_types(name_ar), executive_manager_id")
+        .select("user_id, request_number, hr_request_types(name_ar, deducts_from_balance), executive_manager_id, direct_manager_id, days_count, request_type_id, manager_approved, manager_approved_at")
         .eq("id", requestId)
         .single();
 
+      // التحقق: إذا كان المدير المباشر هو نفسه المدير التنفيذي وقد وافق بالفعل كمدير مباشر
+      // نتخطى مرحلة المدير التنفيذي ونوافق على الطلب نهائياً
+      const directManagerIsExecutive = requestData?.direct_manager_id === requestData?.executive_manager_id;
+      const managerAlreadyApproved = requestData?.manager_approved === true;
+
+      if (directManagerIsExecutive && managerAlreadyApproved) {
+        // المدير المباشر = المدير التنفيذي، وقد وافق بالفعل
+        // نوافق نهائياً على الطلب
+        const { error } = await supabase
+          .from("hr_requests")
+          .update({
+            hr_manager_approved: true,
+            hr_manager_approved_at: new Date().toISOString(),
+            executive_manager_approved: true,
+            executive_manager_approved_at: requestData.manager_approved_at,
+            status: "approved",
+            approved_by: requestData.direct_manager_id,
+            approved_at: new Date().toISOString(),
+          })
+          .eq("id", requestId);
+        
+        if (error) throw error;
+
+        // خصم من الرصيد إذا كان الطلب يخصم من الرصيد
+        if (requestData && (requestData.hr_request_types as any)?.deducts_from_balance && requestData.days_count) {
+          const { data: balance } = await supabase
+            .from("hr_leave_balances")
+            .select("*")
+            .eq("user_id", requestData.user_id)
+            .eq("request_type_id", requestData.request_type_id)
+            .eq("year", new Date().getFullYear())
+            .single();
+
+          if (balance) {
+            await supabase
+              .from("hr_leave_balances")
+              .update({
+                used_days: (balance.used_days || 0) + requestData.days_count,
+              })
+              .eq("id", balance.id);
+          }
+        }
+
+        if (requestData) {
+          const requestTypeName = (requestData.hr_request_types as any)?.name_ar || 'طلب';
+          await supabase.from("notifications").insert({
+            user_id: requestData.user_id,
+            title: `تمت الموافقة النهائية على ${requestTypeName}`,
+            message: `تمت الموافقة على طلبك رقم ${requestData.request_number} بشكل نهائي (المدير المباشر والتنفيذي نفس الشخص).`,
+            type: "hr_request_approved",
+          });
+        }
+
+        return { skippedExecutive: true };
+      }
+
+      // الحالة العادية: المدير المباشر مختلف عن المدير التنفيذي
       const { error } = await supabase
         .from("hr_requests")
         .update({
@@ -477,13 +534,20 @@ export default function HRRequests() {
           });
         }
       }
+
+      return { skippedExecutive: false };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["pending-hr-manager-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["approved-as-hr-manager"] });
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
-      toast.success("تمت موافقتك كمدير موارد بشرية - الطلب بانتظار الموافقة التنفيذية");
+      
+      if (result?.skippedExecutive) {
+        toast.success("تمت الموافقة النهائية - المدير المباشر والتنفيذي نفس الشخص");
+      } else {
+        toast.success("تمت موافقتك كمدير موارد بشرية - الطلب بانتظار الموافقة التنفيذية");
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message);
