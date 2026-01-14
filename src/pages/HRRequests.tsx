@@ -58,10 +58,10 @@ export default function HRRequests() {
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [previewRequest, setPreviewRequest] = useState<any>(null);
-  const [previewApprovalType, setPreviewApprovalType] = useState<"substitute" | "manager" | "executive">("substitute");
+  const [previewApprovalType, setPreviewApprovalType] = useState<"substitute" | "manager" | "hr_manager" | "executive">("substitute");
   const [activeSection, setActiveSection] = useState<HRSection>("my-requests");
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectingRequest, setRejectingRequest] = useState<{ id: string; type: 'substitute' | 'manager' | 'executive' } | null>(null);
+  const [rejectingRequest, setRejectingRequest] = useState<{ id: string; type: 'substitute' | 'manager' | 'hr_manager' | 'executive' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
   const isAdmin = user.role === "مدير النظام";
@@ -244,6 +244,50 @@ export default function HRRequests() {
     enabled: !!authUser?.id,
   });
 
+  // جلب الطلبات التي تحتاج موافقة كمدير موارد بشرية
+  const { data: hrManagerRequests = [] } = useQuery({
+    queryKey: ["pending-hr-manager-approvals", authUser?.id],
+    queryFn: async () => {
+      if (!authUser?.id) return [];
+      const { data, error } = await supabase
+        .from("hr_requests")
+        .select(`
+          *,
+          hr_request_types (name, name_ar, icon, color)
+        `)
+        .eq("hr_manager_id", authUser.id)
+        .eq("hr_manager_approved", false)
+        .eq("manager_approved", true) // بعد موافقة المدير المباشر
+        .neq("status", "rejected");
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!authUser?.id,
+  });
+
+  // جلب الطلبات التي تمت الموافقة عليها كمدير موارد بشرية
+  const { data: approvedAsHrManager = [] } = useQuery({
+    queryKey: ["approved-as-hr-manager", authUser?.id],
+    queryFn: async () => {
+      if (!authUser?.id) return [];
+      const { data, error } = await supabase
+        .from("hr_requests")
+        .select(`
+          *,
+          hr_request_types (name, name_ar, icon, color)
+        `)
+        .eq("hr_manager_id", authUser.id)
+        .eq("hr_manager_approved", true)
+        .order("hr_manager_approved_at", { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!authUser?.id,
+  });
+
   // جلب الطلبات التي تحتاج موافقة كمدير تنفيذي
   const { data: executiveRequests = [] } = useQuery({
     queryKey: ["pending-executive-approvals", authUser?.id],
@@ -257,6 +301,7 @@ export default function HRRequests() {
         `)
         .eq("executive_manager_id", authUser.id)
         .eq("executive_manager_approved", false)
+        .eq("hr_manager_approved", true) // بعد موافقة مدير الموارد البشرية
         .neq("status", "rejected");
       
       if (error) throw error;
@@ -265,8 +310,8 @@ export default function HRRequests() {
     enabled: !!authUser?.id,
   });
 
-  const pendingApprovalsCount = substituteRequests.length + managerRequests.length + executiveRequests.length;
-  const approvalsHistoryCount = approvedAsSubstitute.length + approvedAsManager.length;
+  const pendingApprovalsCount = substituteRequests.length + managerRequests.length + hrManagerRequests.length + executiveRequests.length;
+  const approvalsHistoryCount = approvedAsSubstitute.length + approvedAsManager.length + approvedAsHrManager.length;
 
   // موافقة كموظف بديل
   const substituteApproveMutation = useMutation({
@@ -373,10 +418,72 @@ export default function HRRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-manager-approvals"] });
-      queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-hr-manager-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["approved-as-manager"] });
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
-      toast.success("تمت موافقتك كمدير مباشر - الطلب بانتظار الموافقة التنفيذية");
+      toast.success("تمت موافقتك كمدير مباشر - الطلب بانتظار موافقة مدير الموارد البشرية");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // موافقة كمدير موارد بشرية
+  const hrManagerApproveMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("signature_url, full_name")
+        .eq("user_id", authUser?.id)
+        .single();
+
+      if (!employee?.signature_url) {
+        throw new Error("يجب إضافة توقيعك في الملف الشخصي أولاً");
+      }
+
+      const { data: requestData } = await supabase
+        .from("hr_requests")
+        .select("user_id, request_number, hr_request_types(name_ar), executive_manager_id")
+        .eq("id", requestId)
+        .single();
+
+      const { error } = await supabase
+        .from("hr_requests")
+        .update({
+          hr_manager_approved: true,
+          hr_manager_approved_at: new Date().toISOString(),
+          workflow_stage: 4,
+        })
+        .eq("id", requestId);
+      
+      if (error) throw error;
+
+      if (requestData) {
+        const requestTypeName = (requestData.hr_request_types as any)?.name_ar || 'طلب';
+        await supabase.from("notifications").insert({
+          user_id: requestData.user_id,
+          title: `تمت موافقة مدير الموارد البشرية على ${requestTypeName}`,
+          message: `وافق ${employee.full_name} على طلبك رقم ${requestData.request_number} كمدير موارد بشرية.`,
+          type: "hr_request_approved",
+        });
+
+        // إشعار المدير التنفيذي
+        if (requestData.executive_manager_id) {
+          await supabase.from("notifications").insert({
+            user_id: requestData.executive_manager_id,
+            title: `طلب جديد يحتاج موافقتك التنفيذية`,
+            message: `الطلب رقم ${requestData.request_number} بانتظار موافقتك كمدير تنفيذي.`,
+            type: "hr_request_pending",
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-hr-manager-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["approved-as-hr-manager"] });
+      queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
+      toast.success("تمت موافقتك كمدير موارد بشرية - الطلب بانتظار الموافقة التنفيذية");
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -458,7 +565,7 @@ export default function HRRequests() {
 
   // رفض الطلب
   const rejectRequestMutation = useMutation({
-    mutationFn: async ({ requestId, reason, type }: { requestId: string; reason: string; type: 'substitute' | 'manager' | 'executive' }) => {
+    mutationFn: async ({ requestId, reason, type }: { requestId: string; reason: string; type: 'substitute' | 'manager' | 'hr_manager' | 'executive' }) => {
       const { data: employee } = await supabase
         .from("employees")
         .select("full_name")
@@ -483,7 +590,7 @@ export default function HRRequests() {
 
       if (requestData) {
         const requestTypeName = (requestData.hr_request_types as any)?.name_ar || 'طلب';
-        const roleText = type === 'substitute' ? 'الموظف البديل' : type === 'manager' ? 'المدير المباشر' : 'المدير التنفيذي';
+        const roleText = type === 'substitute' ? 'الموظف البديل' : type === 'manager' ? 'المدير المباشر' : type === 'hr_manager' ? 'مدير الموارد البشرية' : 'المدير التنفيذي';
         await supabase.from("notifications").insert({
           user_id: requestData.user_id,
           title: `تم رفض ${requestTypeName}`,
@@ -495,6 +602,7 @@ export default function HRRequests() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-substitute-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["pending-manager-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-hr-manager-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["pending-executive-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
       toast.success("تم رفض الطلب");
@@ -504,7 +612,7 @@ export default function HRRequests() {
     },
   });
 
-  const handleOpenRejectDialog = (requestId: string, type: 'substitute' | 'manager' | 'executive') => {
+  const handleOpenRejectDialog = (requestId: string, type: 'substitute' | 'manager' | 'hr_manager' | 'executive') => {
     setRejectingRequest({ id: requestId, type });
     setRejectionReason("");
     setRejectDialogOpen(true);
@@ -523,7 +631,7 @@ export default function HRRequests() {
     }
   };
 
-  const handlePreviewApproval = (request: any, type: "substitute" | "manager" | "executive") => {
+  const handlePreviewApproval = (request: any, type: "substitute" | "manager" | "hr_manager" | "executive") => {
     setPreviewRequest(request);
     setPreviewApprovalType(type);
   };
@@ -602,15 +710,18 @@ export default function HRRequests() {
           <PendingApprovalsSection
             substituteRequests={substituteRequests}
             managerRequests={managerRequests}
+            hrManagerRequests={hrManagerRequests}
             executiveRequests={executiveRequests}
             employees={employees}
             onApproveSubstitute={(id) => substituteApproveMutation.mutate(id)}
             onApproveManager={(id) => managerApproveMutation.mutate(id)}
+            onApproveHrManager={(id) => hrManagerApproveMutation.mutate(id)}
             onApproveExecutive={(id) => executiveApproveMutation.mutate(id)}
             onReject={handleOpenRejectDialog}
             onPreview={handlePreviewApproval}
             isApprovingSubstitute={substituteApproveMutation.isPending}
             isApprovingManager={managerApproveMutation.isPending}
+            isApprovingHrManager={hrManagerApproveMutation.isPending}
             isApprovingExecutive={executiveApproveMutation.isPending}
           />
         )}
@@ -657,12 +768,14 @@ export default function HRRequests() {
             open={!!previewRequest}
             onOpenChange={(open) => !open && setPreviewRequest(null)}
             viewMode="approver"
-            approvalType={previewApprovalType === "executive" ? "manager" : previewApprovalType}
+            approvalType={previewApprovalType === "executive" || previewApprovalType === "hr_manager" ? "manager" : previewApprovalType}
             onApprove={() => {
               if (previewApprovalType === "substitute") {
                 substituteApproveMutation.mutate(previewRequest.id);
               } else if (previewApprovalType === "manager") {
                 managerApproveMutation.mutate(previewRequest.id);
+              } else if (previewApprovalType === "hr_manager") {
+                hrManagerApproveMutation.mutate(previewRequest.id);
               } else {
                 executiveApproveMutation.mutate(previewRequest.id);
               }

@@ -499,6 +499,9 @@ export type Database = {
           executive_manager_approved_at: string | null
           executive_manager_id: string | null
           final_pdf_url: string | null
+          hr_manager_approved: boolean | null
+          hr_manager_approved_at: string | null
+          hr_manager_id: string | null
           id: string
           manager_approved: boolean | null
           manager_approved_at: string | null
@@ -514,6 +517,7 @@ export type Database = {
           substitute_employee_id: string | null
           updated_at: string
           user_id: string
+          workflow_stage: number | null
         }
         Insert: {
           approved_at?: string | null
@@ -531,6 +535,9 @@ export type Database = {
           executive_manager_approved_at?: string | null
           executive_manager_id?: string | null
           final_pdf_url?: string | null
+          hr_manager_approved?: boolean | null
+          hr_manager_approved_at?: string | null
+          hr_manager_id?: string | null
           id?: string
           manager_approved?: boolean | null
           manager_approved_at?: string | null
@@ -546,6 +553,7 @@ export type Database = {
           substitute_employee_id?: string | null
           updated_at?: string
           user_id: string
+          workflow_stage?: number | null
         }
         Update: {
           approved_at?: string | null
@@ -563,6 +571,9 @@ export type Database = {
           executive_manager_approved_at?: string | null
           executive_manager_id?: string | null
           final_pdf_url?: string | null
+          hr_manager_approved?: boolean | null
+          hr_manager_approved_at?: string | null
+          hr_manager_id?: string | null
           id?: string
           manager_approved?: boolean | null
           manager_approved_at?: string | null
@@ -578,6 +589,7 @@ export type Database = {
           substitute_employee_id?: string | null
           updated_at?: string
           user_id?: string
+          workflow_stage?: number | null
         }
         Relationships: [
           {
