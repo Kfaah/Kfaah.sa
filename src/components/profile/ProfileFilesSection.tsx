@@ -31,6 +31,7 @@ import {
   File,
   Loader2,
   Eye,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
@@ -64,6 +65,7 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const [category, setCategory] = useState("other");
   const [isUploading, setIsUploading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<ProfileFile | null>(null);
 
   // جلب ملفات الموظف
   const { data: files = [], isLoading } = useQuery({
@@ -319,7 +321,7 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => window.open(file.file_url, "_blank")}
+                      onClick={() => setPreviewFile(file)}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -348,6 +350,57 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
           </div>
         )}
       </CardContent>
+
+      {/* مربع حوار معاينة الملف */}
+      <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
+        <DialogContent className="max-w-4xl h-[85vh] p-0" dir="rtl">
+          <DialogHeader className="p-4 border-b flex flex-row items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-accent" />
+              {previewFile?.file_name}
+            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <a href={previewFile?.file_url} download className="gap-2">
+                  <Download className="w-4 h-4" />
+                  تحميل
+                </a>
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setPreviewFile(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto p-4">
+            {previewFile && (
+              previewFile.file_type?.startsWith("image/") ? (
+                <img 
+                  src={previewFile.file_url} 
+                  alt={previewFile.file_name}
+                  className="max-w-full h-auto mx-auto rounded-lg"
+                />
+              ) : previewFile.file_type === "application/pdf" ? (
+                <iframe
+                  src={previewFile.file_url}
+                  className="w-full h-full min-h-[70vh] rounded-lg border"
+                  title={previewFile.file_name}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
+                  <FileText className="w-20 h-20 opacity-30" />
+                  <p>لا يمكن عرض هذا النوع من الملفات</p>
+                  <Button asChild>
+                    <a href={previewFile.file_url} download className="gap-2">
+                      <Download className="w-4 h-4" />
+                      تحميل الملف
+                    </a>
+                  </Button>
+                </div>
+              )
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
