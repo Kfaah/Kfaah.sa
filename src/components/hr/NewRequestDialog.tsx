@@ -376,6 +376,12 @@ export function NewRequestDialog({
       }
     }
 
+    // التحقق من اختيار المدير التنفيذي
+    if (!executiveManagerId) {
+      toast.error("يرجى اختيار المدير التنفيذي");
+      return;
+    }
+
     createRequestMutation.mutate();
   };
 
