@@ -240,7 +240,7 @@ export default function ExecutivePlans() {
   const [globalViewMode, setGlobalViewMode] = useState<"dates" | "tasks">("dates"); // الافتراضي بحسب التواريخ
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
-  const [aiSelectedMonth, setAiSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [aiSelectedMonths, setAiSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
   
   // فلاتر إضافية
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
@@ -681,7 +681,7 @@ export default function ExecutivePlans() {
       
       const { data, error } = await supabase.functions.invoke("generate-executive-plans", {
         body: {
-          month: aiSelectedMonth,
+          months: aiSelectedMonths, // مصفوفة الأشهر المحددة
           year: selectedYear,
           userIds: userIds.length > 0 ? userIds : undefined,
         },
@@ -715,6 +715,27 @@ export default function ExecutivePlans() {
     } finally {
       setIsAIGenerating(false);
     }
+  };
+  
+  // تبديل اختيار شهر
+  const toggleAiMonth = (month: number) => {
+    setAiSelectedMonths(prev => {
+      if (prev.includes(month)) {
+        return prev.filter(m => m !== month);
+      } else {
+        return [...prev, month].sort((a, b) => a - b);
+      }
+    });
+  };
+  
+  // اختيار جميع الأشهر
+  const selectAllMonths = () => {
+    setAiSelectedMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  };
+  
+  // إلغاء تحديد الكل
+  const clearAllMonths = () => {
+    setAiSelectedMonths([]);
   };
 
   return (
@@ -1552,20 +1573,61 @@ export default function ExecutivePlans() {
                 </ul>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">اختر الشهر</label>
-                <Select value={String(aiSelectedMonth)} onValueChange={(v) => setAiSelectedMonth(Number(v))}>
-                  <SelectTrigger className="w-full bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    {MONTHS_AR.map((month, idx) => (
-                      <SelectItem key={idx} value={String(idx + 1)}>
-                        {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium">اختر الأشهر</label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={selectAllMonths}
+                      className="text-xs h-7 px-2"
+                    >
+                      تحديد الكل
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={clearAllMonths}
+                      className="text-xs h-7 px-2"
+                    >
+                      إلغاء الكل
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  {MONTHS_AR.map((month, idx) => {
+                    const monthNum = idx + 1;
+                    const isSelected = aiSelectedMonths.includes(monthNum);
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => toggleAiMonth(monthNum)}
+                        className={cn(
+                          "flex items-center gap-2 p-2.5 rounded-lg cursor-pointer transition-all border-2",
+                          isSelected 
+                            ? "bg-purple-100 border-purple-400 text-purple-800" 
+                            : "bg-white hover:bg-gray-50 border-gray-200 hover:border-purple-200"
+                        )}
+                      >
+                        <Checkbox 
+                          checked={isSelected}
+                          className="pointer-events-none"
+                        />
+                        <span className="text-sm font-medium">{month}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {aiSelectedMonths.length > 0 && (
+                  <div className="text-sm text-purple-600 text-center">
+                    تم اختيار {aiSelectedMonths.length} شهر
+                  </div>
+                )}
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">
@@ -1588,13 +1650,13 @@ export default function ExecutivePlans() {
 
               <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
                 <p className="text-sm text-amber-800">
-                  ⚠️ سيتم استبدال الخطط التنفيذية الموجودة للشهر المحدد
+                  ⚠️ سيتم استبدال الخطط التنفيذية الموجودة للأشهر المحددة
                 </p>
               </div>
 
               <Button
                 onClick={handleAIGenerate}
-                disabled={isAIGenerating}
+                disabled={isAIGenerating || aiSelectedMonths.length === 0}
                 className="w-full gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-12 text-lg"
               >
                 {isAIGenerating ? (
