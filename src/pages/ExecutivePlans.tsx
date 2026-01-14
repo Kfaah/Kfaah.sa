@@ -250,9 +250,11 @@ export default function ExecutivePlans() {
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
   const [globalViewMode, setGlobalViewMode] = useState<"dates" | "tasks">("dates"); // الافتراضي بحسب التواريخ
   const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [aiProgress, setAiProgress] = useState<
+    { current: number; total: number; month: number | null } | null
+  >(null);
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [aiSelectedMonths, setAiSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
-  
   // فلاتر إضافية
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
@@ -723,47 +725,86 @@ export default function ExecutivePlans() {
   // توليد الخطط التنفيذية بالذكاء الاصطناعي
   const handleAIGenerate = async () => {
     setIsAIGenerating(true);
+    setAiProgress(null);
+
     try {
       const userIds = getFilteredUserIds();
 
       if (userIds.length === 0) {
         toast({
           title: "تنبيه",
-          description: "لا يمكن التوليد لأن الموظف/الموظفين المختارين غير مرتبطين بحسابات مستخدمين أو لا توجد نتائج ضمن الفلاتر.",
+          description:
+            "لا يمكن التوليد لأن الموظف/الموظفين المختارين غير مرتبطين بحسابات مستخدمين أو لا توجد نتائج ضمن الفلاتر.",
           variant: "destructive",
         });
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("generate-executive-plans", {
-        body: {
-          months: aiSelectedMonths, // مصفوفة الأشهر المحددة
-          year: selectedYear,
-          userIds,
-        },
-      });
+      const monthsToRun = [...aiSelectedMonths].sort((a, b) => a - b);
+      const total = monthsToRun.length;
 
-      if (error) {
-        // بعض الأخطاء تأتي كحالة HTTP (مثل 404 سابقاً) – نعرض رسالة واضحة للمستخدم
-        const msg = error.message || "فشل في توليد الخطط";
-        toast({ title: "خطأ", description: msg, variant: "destructive" });
-        return;
+      const failed: number[] = [];
+      let successCount = 0;
+
+      // ننفّذ شهر-بشهر لتجنب Timeout المتصفح عند اختيار 12 شهر
+      for (let i = 0; i < monthsToRun.length; i++) {
+        const month = monthsToRun[i];
+        setAiProgress({ current: i + 1, total, month });
+
+        const { data, error } = await supabase.functions.invoke("generate-executive-plans", {
+          body: {
+            months: [month],
+            year: selectedYear,
+            userIds,
+          },
+        });
+
+        if (error) {
+          const msg = error.message || "فشل في توليد الخطط";
+
+          // إذا انقطع الاتصال (Failed to fetch) نوقف حتى لا نظهر فشل كاذب لبقية الأشهر
+          if (msg.toLowerCase().includes("failed to fetch")) {
+            toast({
+              title: "انقطع الاتصال",
+              description:
+                "الطلب استغرق وقتاً طويلاً. جرّب توليد عدد أقل من الأشهر أو أعد المحاولة.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          failed.push(month);
+          continue;
+        }
+
+        if (!data?.success) {
+          failed.push(month);
+          continue;
+        }
+
+        successCount++;
       }
 
-      if (!data?.success) {
-        const msg = data?.error || "لا توجد خطط تشغيلية للأشهر المحددة";
-        toast({ title: "تنبيه", description: msg, variant: "destructive" });
+      const failedText = failed.map((m) => MONTHS_AR[m - 1]).filter(Boolean).join("، ");
+
+      if (successCount === 0) {
+        toast({
+          title: "تنبيه",
+          description: "لم يتم توليد أي خطط (تأكد من وجود خطط تشغيلية للسنة/الأشهر المحددة)",
+          variant: "destructive",
+        });
         return;
       }
 
       toast({
-        title: "تم التوليد بنجاح",
-        description: data.message,
+        title: failed.length === 0 ? "تم التوليد بنجاح" : "تم التوليد مع ملاحظات",
+        description:
+          failed.length === 0
+            ? `تم توليد الخطط للأشهر المحددة (${successCount} شهر).`
+            : `تم التوليد لـ ${successCount} شهر. لم يكتمل للأشهر: ${failedText}`,
       });
 
       setIsAIDialogOpen(false);
-
-      // إعادة جلب البيانات
       window.location.reload();
     } catch (error: any) {
       console.error("AI generation error:", error);
@@ -774,6 +815,7 @@ export default function ExecutivePlans() {
       });
     } finally {
       setIsAIGenerating(false);
+      setAiProgress(null);
     }
   };
   
@@ -1962,7 +2004,11 @@ export default function ExecutivePlans() {
                 {isAIGenerating ? (
                   <>
                     <Loader2 className="w-6 h-6 animate-spin" />
-                    <span>جاري التوليد بالذكاء الاصطناعي...</span>
+                    <span>
+                      {aiProgress?.month
+                        ? `جاري توليد ${MONTHS_AR[aiProgress.month - 1]} (${aiProgress.current}/${aiProgress.total})...`
+                        : "جاري التوليد بالذكاء الاصطناعي..."}
+                    </span>
                   </>
                 ) : (
                   <>
