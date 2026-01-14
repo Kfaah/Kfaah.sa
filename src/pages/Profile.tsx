@@ -320,8 +320,11 @@ export default function Profile() {
                       <img 
                         src={employeeData.signature_url} 
                         alt="التوقيع" 
-                        className="max-h-32 object-contain mix-blend-multiply"
-                        style={{ filter: 'sepia(100%) saturate(300%) hue-rotate(180deg) brightness(0.9)' }}
+                        className="max-h-32 object-contain"
+                        style={{ 
+                          filter: 'contrast(1.5) brightness(1.1) sepia(100%) saturate(400%) hue-rotate(180deg)',
+                          mixBlendMode: 'multiply'
+                        }}
                       />
                     </div>
                     <SignatureUpload
