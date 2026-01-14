@@ -1226,25 +1226,25 @@ export default function HRRequests() {
 
         {/* التبويبات */}
         <Tabs value={employeeActiveTab} onValueChange={handleEmployeeTabChange} dir="rtl">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="my-requests" className="gap-2">
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="my-requests" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-1 sm:px-3 flex-col sm:flex-row">
               <ClipboardList className="w-4 h-4" />
-              طلباتي
+              <span>طلباتي</span>
             </TabsTrigger>
-            <TabsTrigger value="pending-approvals" className="gap-2">
+            <TabsTrigger value="pending-approvals" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-1 sm:px-3 flex-col sm:flex-row relative">
               <UserCheck className="w-4 h-4" />
-              موافقات معلقة
+              <span>موافقات معلقة</span>
               {pendingApprovalsCount > 0 && (
-                <Badge variant="destructive" className="mr-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                <Badge variant="destructive" className="absolute -top-1 -left-1 sm:relative sm:top-0 sm:left-0 sm:mr-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                   {pendingApprovalsCount}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="my-approvals-history" className="gap-2">
+            <TabsTrigger value="my-approvals-history" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-1 sm:px-3 flex-col sm:flex-row relative">
               <CheckCircle2 className="w-4 h-4" />
-              سجل موافقاتي
+              <span>سجل موافقاتي</span>
               {(approvedAsSubstitute.length + approvedAsManager.length) > 0 && (
-                <Badge variant="secondary" className="mr-1 h-5 min-w-5 p-0 flex items-center justify-center text-xs bg-green-100 text-green-700">
+                <Badge variant="secondary" className="absolute -top-1 -left-1 sm:relative sm:top-0 sm:left-0 sm:mr-1 h-5 min-w-5 p-0 flex items-center justify-center text-xs bg-green-100 text-green-700">
                   {approvedAsSubstitute.length + approvedAsManager.length}
                 </Badge>
               )}
