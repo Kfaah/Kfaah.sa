@@ -893,6 +893,75 @@ export default function ExecutivePlans() {
               <span className="text-sm font-semibold">فلترة</span>
             </div>
             
+            {/* فلتر السنة */}
+            <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-purple-100 shadow-sm hover:border-purple-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
+                <CalendarDays className="w-4 h-4 text-white" />
+              </div>
+              <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
+                <SelectTrigger className="w-[100px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
+                  <SelectValue placeholder="السنة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[2024, 2025, 2026, 2027].map((year) => (
+                    <SelectItem key={year} value={String(year)}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* فلتر الأشهر */}
+            <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-white" />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-9 px-3 border-0 bg-transparent hover:bg-transparent">
+                    {filterMonths.length === 0 
+                      ? "جميع الأشهر" 
+                      : filterMonths.length === 1 
+                        ? MONTHS_AR[filterMonths[0] - 1]
+                        : `${filterMonths.length} أشهر`
+                    }
+                    <ChevronDown className="w-4 h-4 mr-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48 bg-white z-50">
+                  <DropdownMenuItem 
+                    onClick={() => setFilterMonths([])}
+                    className={filterMonths.length === 0 ? "bg-[#3d9aa8]/10 font-bold" : ""}
+                  >
+                    جميع الأشهر
+                  </DropdownMenuItem>
+                  {MONTHS_AR.map((month, index) => (
+                    <DropdownMenuItem
+                      key={index}
+                      onClick={() => {
+                        const monthNum = index + 1;
+                        if (filterMonths.includes(monthNum)) {
+                          setFilterMonths(filterMonths.filter(m => m !== monthNum));
+                        } else {
+                          setFilterMonths([...filterMonths, monthNum]);
+                        }
+                      }}
+                      className={filterMonths.includes(index + 1) ? "bg-[#3d9aa8]/10" : ""}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <Checkbox 
+                          checked={filterMonths.includes(index + 1)} 
+                          className="pointer-events-none"
+                        />
+                        <span>{month}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
             {/* فلتر القسم */}
             {isAdmin && (
               <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-indigo-100 shadow-sm hover:border-indigo-300 transition-colors">
@@ -974,75 +1043,6 @@ export default function ExecutivePlans() {
                 </Select>
               </div>
             )}
-            
-            {/* فلتر السنة */}
-            <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-purple-100 shadow-sm hover:border-purple-300 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
-                <CalendarDays className="w-4 h-4 text-white" />
-              </div>
-              <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
-                <SelectTrigger className="w-[100px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
-                  <SelectValue placeholder="السنة" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[2024, 2025, 2026, 2027].map((year) => (
-                    <SelectItem key={year} value={String(year)}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* فلتر الأشهر */}
-            <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-white" />
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-9 px-3 border-0 bg-transparent hover:bg-transparent">
-                    {filterMonths.length === 0 
-                      ? "جميع الأشهر" 
-                      : filterMonths.length === 1 
-                        ? MONTHS_AR[filterMonths[0] - 1]
-                        : `${filterMonths.length} أشهر`
-                    }
-                    <ChevronDown className="w-4 h-4 mr-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48">
-                  <DropdownMenuItem 
-                    onClick={() => setFilterMonths([])}
-                    className={filterMonths.length === 0 ? "bg-[#3d9aa8]/10 font-bold" : ""}
-                  >
-                    جميع الأشهر
-                  </DropdownMenuItem>
-                  {MONTHS_AR.map((month, index) => (
-                    <DropdownMenuItem
-                      key={index}
-                      onClick={() => {
-                        const monthNum = index + 1;
-                        if (filterMonths.includes(monthNum)) {
-                          setFilterMonths(filterMonths.filter(m => m !== monthNum));
-                        } else {
-                          setFilterMonths([...filterMonths, monthNum]);
-                        }
-                      }}
-                      className={filterMonths.includes(index + 1) ? "bg-[#3d9aa8]/10" : ""}
-                    >
-                      <div className="flex items-center gap-2 w-full">
-                        <Checkbox 
-                          checked={filterMonths.includes(index + 1)} 
-                          className="pointer-events-none"
-                        />
-                        <span>{month}</span>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
             
             {/* زر إعادة تعيين الفلاتر */}
             {(filterDepartmentId !== "all" || filterMonths.length > 0 || selectedEmployeeId !== "all") && (
@@ -1313,7 +1313,7 @@ export default function ExecutivePlans() {
                                   key={`${monthGroup.month}-${dateGroup.day}`}
                                   className={cn(
                                     dateIdx % 2 === 0 ? "bg-white" : "bg-sky-50",
-                                    "hover:bg-sky-100 transition-colors",
+                                    "hover:bg-emerald-100 transition-colors",
                                     isFirstRow ? "border-t-2 border-[#3d9aa8]/30" : "",
                                     dateIdx < monthGroup.dateGroups.length - 1 ? "border-b border-gray-200" : ""
                                   )}
