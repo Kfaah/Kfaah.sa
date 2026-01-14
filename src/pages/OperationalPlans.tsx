@@ -1421,16 +1421,7 @@ export default function OperationalPlans() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {isAdmin ? "الخطط التشغيلية" : "الخطة التشغيلية"}
-            </h1>
-            <p className="text-muted-foreground">
-              {isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
-            </p>
-          </div>
-          
+        <div className="flex items-center justify-between flex-row-reverse">
           <div className="flex gap-3">
             {/* زر توليد AI */}
             {isAdmin && (
@@ -1559,6 +1550,15 @@ export default function OperationalPlans() {
               )}
             </div>
           )}
+          
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {isAdmin ? "الخطط التشغيلية" : "الخطة التشغيلية"}
+            </h1>
+            <p className="text-muted-foreground">
+              {isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
+            </p>
+          </div>
         </div>
         
         {/* شريط الفلاتر */}
