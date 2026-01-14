@@ -147,7 +147,7 @@ export default function HRRequests() {
     },
   });
 
-  // جلب الطلبات التي تحتاج موافقة كموظف بديل
+  // جلب الطلبات التي تحتاج موافقة كموظف بديل (معلقة)
   const { data: substituteRequests = [], isLoading: loadingSubstitute } = useQuery({
     queryKey: ["pending-substitute-approvals", authUser?.id],
     queryFn: async () => {
@@ -161,6 +161,28 @@ export default function HRRequests() {
         .eq("substitute_employee_id", authUser.id)
         .eq("substitute_approved", false)
         .neq("status", "rejected");
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!authUser?.id,
+  });
+
+  // جلب الطلبات التي تمت الموافقة عليها كموظف بديل (سجل الموافقات)
+  const { data: approvedAsSubstitute = [] } = useQuery({
+    queryKey: ["approved-as-substitute", authUser?.id],
+    queryFn: async () => {
+      if (!authUser?.id) return [];
+      const { data, error } = await supabase
+        .from("hr_requests")
+        .select(`
+          *,
+          hr_request_types (name, name_ar, icon, color)
+        `)
+        .eq("substitute_employee_id", authUser.id)
+        .eq("substitute_approved", true)
+        .order("substitute_approved_at", { ascending: false })
+        .limit(20);
       
       if (error) throw error;
       return data;
@@ -601,6 +623,22 @@ export default function HRRequests() {
                   </Badge>
                 </button>
               )}
+              {approvedAsSubstitute.length > 0 && (
+                <button
+                  onClick={() => setAdminActiveTab("my-approvals")}
+                  className={`flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-base transition-all ${
+                    adminActiveTab === "my-approvals"
+                      ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-md"
+                      : "bg-transparent text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  موافقاتي كبديل
+                  <Badge variant="secondary" className="h-5 min-w-5 p-0 flex items-center justify-center text-xs bg-emerald-100 text-emerald-700">
+                    {approvedAsSubstitute.length}
+                  </Badge>
+                </button>
+              )}
               <button
                 onClick={() => setAdminActiveTab("statistics")}
                 className={`flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-base transition-all ${
@@ -839,6 +877,80 @@ export default function HRRequests() {
                 </Card>
               )}
             </div>
+          ) : adminActiveTab === "my-approvals" ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  الطلبات التي وافقت عليها كموظف بديل
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">{approvedAsSubstitute.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {approvedAsSubstitute.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>لا توجد موافقات سابقة</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {approvedAsSubstitute.map((request: any) => {
+                      const requester = employees.find((emp: any) => emp.user_id === request.user_id);
+                      const StatusIcon = statusConfig[request.status as keyof typeof statusConfig]?.icon || AlertCircle;
+                      return (
+                        <div 
+                          key={request.id} 
+                          className={`flex items-center gap-4 p-4 rounded-xl border transition-colors ${
+                            request.status === 'approved' 
+                              ? 'bg-emerald-50/50 border-emerald-200' 
+                              : request.status === 'rejected'
+                              ? 'bg-red-50/50 border-red-200'
+                              : 'bg-amber-50/50 border-amber-200'
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-300">
+                            {requester?.avatar_url ? (
+                              <img src={requester.avatar_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-emerald-400 flex items-center justify-center text-white font-bold">
+                                {requester?.full_name?.charAt(0) || "؟"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-foreground">{requester?.full_name || "موظف"}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {request.hr_request_types?.name_ar} • {request.request_number}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              وافقت بتاريخ: {request.substitute_approved_at ? format(new Date(request.substitute_approved_at), "yyyy/MM/dd - HH:mm", { locale: ar }) : "-"}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge className={statusConfig[request.status as keyof typeof statusConfig]?.color || "bg-muted"}>
+                              <StatusIcon className="w-3 h-3 ml-1" />
+                              {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPreviewRequest(request);
+                                setPreviewApprovalType("substitute");
+                              }}
+                              className="border-primary text-primary hover:bg-primary/10"
+                            >
+                              <Eye className="w-4 h-4 ml-1" />
+                              عرض
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           ) : (
             <HRStatisticsPanel />
           )}
