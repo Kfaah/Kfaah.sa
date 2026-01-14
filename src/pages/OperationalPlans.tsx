@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle, ArrowUp, ArrowDown, Columns } from "lucide-react";
+import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle, ArrowUp, ArrowDown, Columns, Sparkles, Loader2, Filter, Building2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
@@ -37,6 +37,7 @@ interface Employee {
   user_id: string;
   full_name: string;
   department_id: string | null;
+  job_role?: string;
 }
 
 interface Department {
@@ -255,6 +256,14 @@ export default function OperationalPlans() {
   const [newGoalName, setNewGoalName] = useState("");
   const [newInitiativeName, setNewInitiativeName] = useState("");
   
+  // فلاتر الخطط التشغيلية
+  const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
+  const [filterEmployeeId, setFilterEmployeeId] = useState<string>("all");
+  
+  // توليد AI
+  const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
+  
   // اختيار مسؤول التنفيذ
   const [selectedResponsibleEmployee, setSelectedResponsibleEmployee] = useState<string>("");
 
@@ -417,7 +426,7 @@ export default function OperationalPlans() {
     try {
       const { data, error } = await supabase
         .from("employees")
-        .select("id, user_id, full_name, department_id")
+        .select("id, user_id, full_name, department_id, job_role")
         .eq("status", "active")
         .order("full_name");
 
@@ -431,6 +440,48 @@ export default function OperationalPlans() {
         variant: "destructive",
       });
       setEmployees([]);
+    }
+  };
+
+  // الخطط المفلترة
+  const filteredPlans = plans.filter(plan => {
+    // فلتر القسم
+    if (filterDepartmentId !== "all") {
+      const responsibleEmployee = employees.find(e => e.id === plan.responsible_employee_id);
+      if (!responsibleEmployee || responsibleEmployee.department_id !== filterDepartmentId) {
+        return false;
+      }
+    }
+    
+    // فلتر مسؤول التنفيذ
+    if (filterEmployeeId !== "all") {
+      if (plan.responsible_employee_id !== filterEmployeeId) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
+  // توليد AI للخطط التشغيلية
+  const handleAIGeneratePlans = async () => {
+    setIsAIGenerating(true);
+    try {
+      // هذه الوظيفة ستكون للاستخدام المستقبلي
+      toast({
+        title: "قريباً",
+        description: "ميزة توليد الخطط التشغيلية بالذكاء الاصطناعي ستكون متاحة قريباً",
+      });
+      setIsAIDialogOpen(false);
+    } catch (error: any) {
+      console.error("Error generating plans:", error);
+      toast({
+        title: "خطأ",
+        description: error?.message || "فشل في توليد الخطط",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAIGenerating(false);
     }
   };
 
@@ -1369,6 +1420,28 @@ export default function OperationalPlans() {
           </div>
           
           <div className="flex gap-2">
+            {/* زر توليد AI */}
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                onClick={() => setIsAIDialogOpen(true)}
+                disabled={isAIGenerating}
+              >
+                {isAIGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                توليد AI
+              </Button>
+            )}
+            
+            <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="w-4 h-4" />
+              إضافة خطة
+            </Button>
+            
             {/* زر وضع التعديل */}
             <Button 
               variant={isEditMode ? "default" : "outline"}
@@ -1401,11 +1474,6 @@ export default function OperationalPlans() {
                 </>
               )}
             </Button>
-            
-            <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="w-4 h-4" />
-              إضافة خطة
-            </Button>
           </div>
           
           <AddOperationalPlanDialog
@@ -1418,6 +1486,135 @@ export default function OperationalPlans() {
             initiatives={initiatives}
             onSubmit={handleDialogSubmit}
           />
+          
+          {/* Dialog توليد AI */}
+          {isAdmin && (
+            <div>
+              {isAIDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                  <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                        <Sparkles className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">توليد بالذكاء الاصطناعي</h3>
+                        <p className="text-sm text-gray-500">إنشاء خطط تشغيلية تلقائياً</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-purple-50 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-purple-800">
+                        سيتم توليد خطط تشغيلية بناءً على الأهداف الاستراتيجية والمبادرات والمستهدفات المحددة.
+                      </p>
+                    </div>
+                    
+                    <div className="text-center text-sm text-gray-500 mb-4">
+                      هذه الميزة ستكون متاحة في التحديث القادم
+                    </div>
+                    
+                    <div className="flex gap-2 justify-end">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsAIDialogOpen(false)}
+                      >
+                        إغلاق
+                      </Button>
+                      <Button 
+                        className="bg-purple-600 hover:bg-purple-700 gap-2"
+                        onClick={handleAIGeneratePlans}
+                        disabled={isAIGenerating}
+                      >
+                        {isAIGenerating ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            جاري التوليد...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            توليد الخطط
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {/* شريط الفلاتر */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">فلترة:</span>
+            </div>
+            
+            {/* فلتر القسم */}
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-gray-400" />
+              <Select value={filterDepartmentId} onValueChange={setFilterDepartmentId}>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="اختر القسم" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الأقسام</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* فلتر مسؤول التنفيذ */}
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-400" />
+              <Select value={filterEmployeeId} onValueChange={setFilterEmployeeId}>
+                <SelectTrigger className="w-[200px] h-9">
+                  <SelectValue placeholder="اختر مسؤول التنفيذ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع المسؤولين</SelectItem>
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{emp.full_name}</span>
+                        {emp.job_role && (
+                          <span className="text-xs text-gray-400">({emp.job_role})</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* زر إعادة تعيين الفلاتر */}
+            {(filterDepartmentId !== "all" || filterEmployeeId !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => {
+                  setFilterDepartmentId("all");
+                  setFilterEmployeeId("all");
+                }}
+              >
+                <X className="w-4 h-4 ml-1" />
+                إعادة تعيين
+              </Button>
+            )}
+            
+            {/* عدد النتائج */}
+            <div className="mr-auto text-sm text-gray-500">
+              عرض {filteredPlans.length} من {plans.length} خطة
+            </div>
+          </div>
         </div>
         
         {/* شريط وضع التعديل */}
@@ -1536,7 +1733,7 @@ export default function OperationalPlans() {
               <div className="flex justify-center py-8">
                 <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
               </div>
-            ) : plans.length === 0 ? (
+            ) : filteredPlans.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 لا توجد خطط تشغيلية حتى الآن
               </div>
@@ -1575,7 +1772,7 @@ export default function OperationalPlans() {
                     const groupedPlans: GroupedPlans[] = [];
                     const goalMap = new Map<string, { initiatives: Map<string, OperationalPlan[]> }>();
                     
-                    plans.forEach(plan => {
+                    filteredPlans.forEach(plan => {
                       const goal = plan.strategic_goal || "بدون هدف";
                       const init = plan.initiative || "بدون مبادرة";
                       
