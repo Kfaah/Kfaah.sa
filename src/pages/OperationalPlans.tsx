@@ -267,8 +267,20 @@ export default function OperationalPlans() {
   // اختيار مسؤول التنفيذ
   const [selectedResponsibleEmployee, setSelectedResponsibleEmployee] = useState<string>("");
 
-  // إذا كان في وضع المعاينة، يظهر كموظف
-  const isAdmin = !user.isEmployee && !previewAsEmployee;
+  // التحقق من دور المدير - نتحقق من role في user أو من user_roles
+  const [userRole, setUserRole] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!authUser) return;
+      const { data } = await supabase.rpc("get_user_role", { _user_id: authUser.id });
+      setUserRole(data);
+    };
+    checkUserRole();
+  }, [authUser]);
+  
+  // المدير هو من له دور admin في قاعدة البيانات وليس في وضع المعاينة
+  const isAdmin = (userRole === "admin" || user.role === "مدير النظام") && !previewAsEmployee;
 
   // المبادرات المفلترة حسب الهدف المختار
   const filteredInitiatives = initiatives.filter(
