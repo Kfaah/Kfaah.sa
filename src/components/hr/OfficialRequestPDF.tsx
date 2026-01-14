@@ -362,7 +362,8 @@ export function OfficialRequestPDF({
                     <img 
                       src={employee.signature_url} 
                       alt="توقيع الموظف" 
-                      className="h-8 mx-auto mt-1 object-contain"
+                      className="h-8 mx-auto mt-1 object-contain mix-blend-multiply"
+                      style={{ filter: 'sepia(100%) saturate(300%) hue-rotate(180deg) brightness(0.9)' }}
                     />
                   )}
                 </div>
@@ -377,7 +378,8 @@ export function OfficialRequestPDF({
                         <img 
                           src={substituteEmployee.signature_url} 
                           alt="توقيع البديل" 
-                          className="h-8 mx-auto mt-1 object-contain"
+                          className="h-8 mx-auto mt-1 object-contain mix-blend-multiply"
+                          style={{ filter: 'sepia(100%) saturate(300%) hue-rotate(180deg) brightness(0.9)' }}
                         />
                       ) : (
                         <p className="text-[8px] text-amber-600 mt-2">في الانتظار</p>
@@ -398,7 +400,8 @@ export function OfficialRequestPDF({
                         <img 
                           src={directManager.signature_url} 
                           alt="توقيع المدير" 
-                          className="h-8 mx-auto mt-1 object-contain"
+                          className="h-8 mx-auto mt-1 object-contain mix-blend-multiply"
+                          style={{ filter: 'sepia(100%) saturate(300%) hue-rotate(180deg) brightness(0.9)' }}
                         />
                       ) : (
                         <p className="text-[8px] text-blue-600 mt-2">في الانتظار</p>
@@ -418,7 +421,8 @@ export function OfficialRequestPDF({
                       <img 
                         src={approver.signature_url} 
                         alt="توقيع الموافق" 
-                        className="h-8 mx-auto mt-1 object-contain"
+                        className="h-8 mx-auto mt-1 object-contain mix-blend-multiply"
+                        style={{ filter: 'sepia(100%) saturate(300%) hue-rotate(180deg) brightness(0.9)' }}
                       />
                     )}
                   </div>
