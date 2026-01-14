@@ -397,23 +397,21 @@ export function SignatureUpload({
   };
 
   return (
-    <Card className="bg-background">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <PenTool className="w-5 h-5 text-accent" />
-          التوقيع الرسمي
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="bg-background rounded-2xl p-6 border">
+      <div className="flex items-center gap-2 mb-4">
+        <PenTool className="w-5 h-5 text-accent" />
+        <h3 className="text-lg font-semibold">التوقيع الرسمي</h3>
+      </div>
+      <div className="space-y-4">
         {currentSignature ? (
-            <div className="space-y-4">
-              <div className="border rounded-lg p-4 bg-background flex items-center justify-center min-h-[120px]">
-                <img
-                  src={currentSignature}
-                  alt="التوقيع"
-                  className="max-h-24 object-contain"
-                />
-              </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-center min-h-[200px]">
+              <img
+                src={currentSignature}
+                alt="التوقيع"
+                className="max-h-40 object-contain"
+              />
+            </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -545,7 +543,7 @@ export function SignatureUpload({
         <p className="text-xs text-muted-foreground text-center">
           يستخدم التوقيع في الخطابات والطلبات الرسمية
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
