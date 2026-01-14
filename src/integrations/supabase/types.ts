@@ -152,7 +152,9 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           department_id: string | null
+          direct_manager_id: string | null
           email: string
+          executive_manager_id: string | null
           full_name: string
           id: string
           job_role: string
@@ -174,7 +176,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           department_id?: string | null
+          direct_manager_id?: string | null
           email: string
+          executive_manager_id?: string | null
           full_name: string
           id?: string
           job_role: string
@@ -196,7 +200,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           department_id?: string | null
+          direct_manager_id?: string | null
           email?: string
+          executive_manager_id?: string | null
           full_name?: string
           id?: string
           job_role?: string
@@ -220,6 +226,20 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_direct_manager_id_fkey"
+            columns: ["direct_manager_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_executive_manager_id_fkey"
+            columns: ["executive_manager_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]

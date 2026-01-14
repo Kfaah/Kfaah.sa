@@ -99,13 +99,29 @@ export function NewRequestDialog({
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from("employees")
-        .select("full_name, job_role, signature_url")
+        .select("id, full_name, job_role, signature_url, direct_manager_id, executive_manager_id")
         .eq("user_id", user.id)
         .single();
       if (error) throw error;
       return data;
     },
     enabled: !!user?.id,
+  });
+
+  // جلب بيانات الموظف المختار (للمدير) مع مديره المباشر والتنفيذي
+  const { data: selectedEmployeeFullData } = useQuery({
+    queryKey: ["selected-employee-full-data", selectedEmployee],
+    queryFn: async () => {
+      if (!selectedEmployee) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("id, full_name, job_role, signature_url, direct_manager_id, executive_manager_id")
+        .eq("user_id", selectedEmployee)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin && !!selectedEmployee,
   });
 
   // جلب بيانات الموظف المختار (للمدير)
@@ -226,6 +242,61 @@ export function NewRequestDialog({
       setHrManagerId(defaultHrManager.user_id);
     }
   }, [open, defaultHrManager]);
+
+  // تعيين المدير المباشر والتنفيذي تلقائياً من بيانات الموظف
+  useEffect(() => {
+    if (!open) return;
+    
+    // للموظف العادي: جلب من بيانات الموظف الحالي
+    if (!isAdmin && currentEmployee) {
+      if (currentEmployee.direct_manager_id && !directManagerId) {
+        // جلب user_id للمدير المباشر
+        supabase
+          .from("employees")
+          .select("user_id")
+          .eq("id", currentEmployee.direct_manager_id)
+          .single()
+          .then(({ data }) => {
+            if (data?.user_id) setDirectManagerId(data.user_id);
+          });
+      }
+      if (currentEmployee.executive_manager_id && !executiveManagerId) {
+        // جلب user_id للمدير التنفيذي
+        supabase
+          .from("employees")
+          .select("user_id")
+          .eq("id", currentEmployee.executive_manager_id)
+          .single()
+          .then(({ data }) => {
+            if (data?.user_id) setExecutiveManagerId(data.user_id);
+          });
+      }
+    }
+    
+    // للمدير: جلب من بيانات الموظف المختار
+    if (isAdmin && selectedEmployeeFullData) {
+      if (selectedEmployeeFullData.direct_manager_id) {
+        supabase
+          .from("employees")
+          .select("user_id")
+          .eq("id", selectedEmployeeFullData.direct_manager_id)
+          .single()
+          .then(({ data }) => {
+            if (data?.user_id) setDirectManagerId(data.user_id);
+          });
+      }
+      if (selectedEmployeeFullData.executive_manager_id) {
+        supabase
+          .from("employees")
+          .select("user_id")
+          .eq("id", selectedEmployeeFullData.executive_manager_id)
+          .single()
+          .then(({ data }) => {
+            if (data?.user_id) setExecutiveManagerId(data.user_id);
+          });
+      }
+    }
+  }, [open, currentEmployee, selectedEmployeeFullData, isAdmin]);
 
   const currentBalances = isAdmin ? employeeBalances : leaveBalances;
 

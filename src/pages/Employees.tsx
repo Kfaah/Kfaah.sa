@@ -29,6 +29,8 @@ interface Employee {
   tasks_completed: number;
   tasks_total: number;
   performance: number;
+  direct_manager_id: string | null;
+  executive_manager_id: string | null;
 }
 
 interface Department {
@@ -106,7 +108,9 @@ const Employees = () => {
   const [editPassword, setEditPassword] = useState("");
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [editSelectedDepartment, setEditSelectedDepartment] = useState<string>("");
-  type EditEmployeeField = "full_name" | "username" | "email" | "phone" | "job_role" | "password" | "department" | "status";
+  const [editDirectManagerId, setEditDirectManagerId] = useState<string>("");
+  const [editExecutiveManagerId, setEditExecutiveManagerId] = useState<string>("");
+  type EditEmployeeField = "full_name" | "username" | "email" | "phone" | "job_role" | "password" | "department" | "status" | "direct_manager" | "executive_manager";
   const [editErrors, setEditErrors] = useState<Partial<Record<EditEmployeeField, string>>>({});
   const [newDepartment, setNewDepartment] = useState({ name: "", color: "bg-primary" });
   const [newRole, setNewRole] = useState({ name: "", color: "bg-primary", department_id: "" });
@@ -391,6 +395,8 @@ const Employees = () => {
           job_role: editingEmployee.job_role,
           status: editingEmployee.status,
           avatar_url: avatarUrl,
+          direct_manager_id: editDirectManagerId && editDirectManagerId !== "none" ? editDirectManagerId : null,
+          executive_manager_id: editExecutiveManagerId && editExecutiveManagerId !== "none" ? editExecutiveManagerId : null,
         })
         .eq("id", editingEmployee.id);
       
@@ -427,12 +433,19 @@ const Employees = () => {
           throw new Error(response.data?.error || "تعذر تحديث كلمة المرور");
         }
       }
-      const updatedEmployee = { ...editingEmployee, avatar_url: avatarUrl };
+      const updatedEmployee = { 
+        ...editingEmployee, 
+        avatar_url: avatarUrl,
+        direct_manager_id: editDirectManagerId && editDirectManagerId !== "none" ? editDirectManagerId : null,
+        executive_manager_id: editExecutiveManagerId && editExecutiveManagerId !== "none" ? editExecutiveManagerId : null,
+      };
       setEmployees(employees.map(e => e.id === editingEmployee.id ? updatedEmployee : e));
       setIsEditDialogOpen(false);
       setEditingEmployee(null);
       setEditAvatarFile(null);
       setEditPassword("");
+      setEditDirectManagerId("");
+      setEditExecutiveManagerId("");
       setEditErrors({});
       toast.success("تم تحديث بيانات الموظف");
     } catch (error: any) {
@@ -953,6 +966,9 @@ const Employees = () => {
                       // تعيين القسم المختار بناءً على الدور الوظيفي الحالي
                       const currentRole = jobRoles.find(r => r.name === employee.job_role);
                       setEditSelectedDepartment(currentRole?.department_id || "");
+                      // تعيين المدير المباشر والتنفيذي
+                      setEditDirectManagerId(employee.direct_manager_id || "");
+                      setEditExecutiveManagerId(employee.executive_manager_id || "");
                       setIsEditDialogOpen(true);
                     }}
                   >
@@ -1198,6 +1214,66 @@ const Employees = () => {
                   </SelectContent>
                 </Select>
                 {editErrors.status && <p className="text-xs text-destructive">{editErrors.status}</p>}
+              </div>
+
+              {/* المدير المباشر */}
+              <div className="space-y-2">
+                <Label>المدير المباشر</Label>
+                <Select
+                  value={editDirectManagerId}
+                  onValueChange={(value) => {
+                    setEditDirectManagerId(value);
+                    if (editErrors.direct_manager) setEditErrors(prev => ({ ...prev, direct_manager: undefined }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المدير المباشر" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">بدون مدير مباشر</SelectItem>
+                    {employees
+                      .filter(emp => emp.id !== editingEmployee.id)
+                      .map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.full_name} - {emp.job_role}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {editErrors.direct_manager && <p className="text-xs text-destructive">{editErrors.direct_manager}</p>}
+              </div>
+
+              {/* المدير التنفيذي */}
+              <div className="space-y-2">
+                <Label>المدير التنفيذي</Label>
+                <Select
+                  value={editExecutiveManagerId}
+                  onValueChange={(value) => {
+                    setEditExecutiveManagerId(value);
+                    if (editErrors.executive_manager) setEditErrors(prev => ({ ...prev, executive_manager: undefined }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المدير التنفيذي" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">بدون مدير تنفيذي</SelectItem>
+                    {employees
+                      .filter(emp => emp.id !== editingEmployee.id)
+                      .map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.full_name} - {emp.job_role}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {editDirectManagerId && editExecutiveManagerId && editDirectManagerId === editExecutiveManagerId && editDirectManagerId !== "none" && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>المدير المباشر والتنفيذي نفس الشخص - سيوافق مرة واحدة كمدير تنفيذي</span>
+                  </p>
+                )}
+                {editErrors.executive_manager && <p className="text-xs text-destructive">{editErrors.executive_manager}</p>}
               </div>
 
               <Button onClick={handleEditEmployee} className="w-full bg-accent hover:bg-accent/90" disabled={isLoading}>
