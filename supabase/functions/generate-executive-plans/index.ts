@@ -41,6 +41,7 @@ serve(async (req) => {
     const targetYear = year || new Date().getFullYear();
     
     let totalPlansGenerated = 0;
+    let totalTasksGenerated = 0;
     let totalActivitiesProcessed = 0;
     const processedMonths: string[] = [];
 
@@ -225,6 +226,7 @@ ${i + 1}. النشاط: ${p.activityName}
 
       const distributions = JSON.parse(toolCall.function.arguments);
       const executivePlansToInsert: any[] = [];
+      const planMetadata: { planMonthId: string; day: number; activityName: string; userId: string; dailyTarget: number }[] = [];
 
       // تحويل التوزيعات إلى خطط تنفيذية
       for (const dist of distributions.distributions) {
@@ -240,6 +242,14 @@ ${i + 1}. النشاط: ${p.activityName}
             status: "pending",
             notes: `تم التوليد بالذكاء الاصطناعي - ${planData.activityName}`,
           });
+          
+          planMetadata.push({
+            planMonthId: planData.planMonthId,
+            day: dayData.day,
+            activityName: planData.activityName,
+            userId: planData.userId,
+            dailyTarget: dayData.target,
+          });
         }
       }
 
@@ -250,6 +260,23 @@ ${i + 1}. النشاط: ${p.activityName}
 
       // حذف الخطط التنفيذية القديمة للشهر نفسه
       const planMonthIds = [...new Set(executivePlansToInsert.map(p => p.operational_plan_month_id))];
+      
+      // أولاً: جلب الخطط التنفيذية القديمة لحذف المهام المرتبطة بها
+      const { data: oldExecutivePlans } = await supabase
+        .from("executive_plans")
+        .select("id")
+        .in("operational_plan_month_id", planMonthIds);
+      
+      if (oldExecutivePlans && oldExecutivePlans.length > 0) {
+        const oldPlanIds = oldExecutivePlans.map(p => p.id);
+        // حذف المهام المرتبطة بالخطط القديمة
+        await supabase
+          .from("tasks")
+          .delete()
+          .in("executive_plan_id", oldPlanIds);
+      }
+      
+      // حذف الخطط التنفيذية القديمة
       await supabase
         .from("executive_plans")
         .delete()
@@ -264,6 +291,45 @@ ${i + 1}. النشاط: ${p.activityName}
       if (insertError) {
         console.error(`Insert error for month ${targetMonth}:`, insertError);
         continue;
+      }
+
+      // إنشاء المهام المرتبطة بكل خطة تنفيذية
+      const tasksToInsert: any[] = [];
+      
+      for (let i = 0; i < insertedPlans.length; i++) {
+        const executivePlan = insertedPlans[i];
+        const metadata = planMetadata[i];
+        
+        if (!metadata) continue;
+        
+        // إنشاء تاريخ المهمة
+        const dueDate = new Date(targetYear, targetMonth - 1, metadata.day);
+        const dueDateStr = dueDate.toISOString().split('T')[0];
+        
+        tasksToInsert.push({
+          title: metadata.activityName,
+          description: `مهمة مولدة بالذكاء الاصطناعي - المستهدف: ${metadata.dailyTarget}`,
+          user_id: metadata.userId,
+          executive_plan_id: executivePlan.id,
+          status: "pending",
+          priority: "medium",
+          due_date: dueDateStr,
+          ai_generated: true,
+          category: "خطة تنفيذية",
+        });
+      }
+      
+      if (tasksToInsert.length > 0) {
+        const { data: insertedTasks, error: tasksError } = await supabase
+          .from("tasks")
+          .insert(tasksToInsert)
+          .select();
+        
+        if (tasksError) {
+          console.error(`Tasks insert error for month ${targetMonth}:`, tasksError);
+        } else {
+          totalTasksGenerated += insertedTasks?.length || 0;
+        }
       }
 
       totalPlansGenerated += insertedPlans.length;
@@ -288,7 +354,8 @@ ${i + 1}. النشاط: ${p.activityName}
       JSON.stringify({
         success: true,
         plansCount: totalPlansGenerated,
-        message: `تم توليد ${totalPlansGenerated} خطة تنفيذية لـ${monthsText} بنجاح`,
+        tasksCount: totalTasksGenerated,
+        message: `تم توليد ${totalPlansGenerated} خطة تنفيذية و ${totalTasksGenerated} مهمة لـ${monthsText} بنجاح`,
         activitiesProcessed: totalActivitiesProcessed,
         monthsProcessed: processedMonths.length,
       }),
