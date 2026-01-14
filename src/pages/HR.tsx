@@ -1,17 +1,19 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { 
-  Users, 
-  UserCog, 
-  Clock, 
-  FolderOpen, 
+import {
+  Users,
+  UserCog,
+  Clock,
+  FolderOpen,
   PieChart,
   ArrowLeft,
   Briefcase,
   TrendingUp,
   CalendarDays,
-  FileCheck
+  FileCheck,
 } from "lucide-react";
+import { HRNavigationIcons, type HRSection } from "@/components/hr/HRNavigationIcons";
 import { cn } from "@/lib/utils";
 
 interface HRModuleCard {
@@ -85,6 +87,14 @@ const hrModules: HRModuleCard[] = [
 ];
 
 export default function HR() {
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState<HRSection>("my-requests");
+
+  const handleSectionChange = (section: HRSection) => {
+    setActiveSection(section);
+    navigate(`/hr-requests?section=${section}`);
+  };
+
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-[#3d9aa8]/5 p-6">
@@ -98,6 +108,16 @@ export default function HR() {
               <h1 className="text-3xl font-bold text-slate-800">الموارد البشرية</h1>
               <p className="text-slate-500 mt-1">إدارة شؤون الموظفين والطلبات</p>
             </div>
+          </div>
+
+          {/* أيقونات الطلبات (تظهر لكل الحسابات) */}
+          <div className="mt-6">
+            <HRNavigationIcons
+              activeSection={activeSection}
+              onSectionChange={handleSectionChange}
+              pendingApprovalsCount={0}
+              approvalsHistoryCount={0}
+            />
           </div>
 
           {/* Quick Stats Bar */}
