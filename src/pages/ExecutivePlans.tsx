@@ -238,7 +238,7 @@ export default function ExecutivePlans() {
   
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
-  const [selectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   
   const [operationalPlans, setOperationalPlans] = useState<OperationalPlan[]>([]);
   const [planMonths, setPlanMonths] = useState<OperationalPlanMonth[]>([]);
@@ -932,6 +932,25 @@ export default function ExecutivePlans() {
                 </Select>
               </div>
             )}
+            
+            {/* فلتر السنة */}
+            <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-purple-100 shadow-sm hover:border-purple-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
+                <CalendarDays className="w-4 h-4 text-white" />
+              </div>
+              <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
+                <SelectTrigger className="w-[100px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
+                  <SelectValue placeholder="السنة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[2024, 2025, 2026, 2027].map((year) => (
+                    <SelectItem key={year} value={String(year)}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             {/* فلتر الأشهر */}
             <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
