@@ -36,7 +36,7 @@ export function ProfileHeader({
       </div>
 
       <div className="relative p-6 md:p-8">
-        <div className="flex flex-col-reverse md:flex-row items-center gap-6 md:gap-8">
+        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
           {/* Info Section - Left Side */}
           <div className="flex-1 text-center md:text-right space-y-4">
             {/* Name */}
