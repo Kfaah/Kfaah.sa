@@ -51,9 +51,9 @@ export function ProfileHeader({
       </div>
 
       <div className="relative p-6 md:p-8">
-        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+        <div className="flex flex-col md:flex-row-reverse items-center gap-6 md:gap-8">
           
-          {/* Avatar Section - LEFT Side */}
+          {/* Avatar Section - LEFT Side (appears left due to flex-row-reverse) */}
           <motion.div 
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -63,7 +63,7 @@ export function ProfileHeader({
               damping: 20,
               delay: 0.2 
             }}
-            className="relative group shrink-0 order-1 md:order-1"
+            className="relative group shrink-0"
           >
             <div className="relative">
               {/* Glow Effect */}
@@ -78,7 +78,7 @@ export function ProfileHeader({
                 <AvatarImage 
                   src={user.profileImage || undefined} 
                   alt="صورة الملف الشخصي" 
-                  className="object-cover" 
+                  className="object-cover transform -scale-x-100" 
                 />
                 <AvatarFallback className="text-4xl md:text-5xl bg-white/20 text-white font-bold">
                   {user.firstName.charAt(0)}
@@ -99,7 +99,7 @@ export function ProfileHeader({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", delay: 0.6 }}
-                className="absolute bottom-2 right-2 w-5 h-5 bg-emerald-400 rounded-full border-4 border-white shadow-lg"
+                className="absolute bottom-2 left-2 w-5 h-5 bg-emerald-400 rounded-full border-4 border-white shadow-lg"
               >
                 <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
               </motion.span>
