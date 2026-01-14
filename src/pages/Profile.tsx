@@ -316,7 +316,7 @@ export default function Profile() {
               {authUser && employeeData ? (
                 employeeData.signature_url ? (
                   <div className="space-y-4">
-                    <div className="p-6 bg-sky-50 rounded-xl border-2 border-dashed border-sky-200 flex items-center justify-center">
+                    <div className="p-6 bg-white rounded-xl border-2 border-dashed border-sky-200 flex items-center justify-center" style={{ backgroundImage: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px' }}>
                       <img 
                         src={employeeData.signature_url} 
                         alt="التوقيع" 
