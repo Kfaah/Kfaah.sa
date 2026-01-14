@@ -89,6 +89,7 @@ export function NewRequestDialog({
   const [showPreview, setShowPreview] = useState(true);
   const [substituteEmployeeId, setSubstituteEmployeeId] = useState("");
   const [directManagerId, setDirectManagerId] = useState("");
+  const [hrManagerId, setHrManagerId] = useState("");
   const [executiveManagerId, setExecutiveManagerId] = useState("");
 
   // جلب بيانات الموظف الحالي
@@ -171,6 +172,22 @@ export function NewRequestDialog({
     enabled: !!directManagerId,
   });
 
+  // جلب بيانات مدير الموارد البشرية
+  const { data: hrManagerData } = useQuery({
+    queryKey: ["hr-manager-data", hrManagerId],
+    queryFn: async () => {
+      if (!hrManagerId) return null;
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, job_role, signature_url")
+        .eq("user_id", hrManagerId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!hrManagerId,
+  });
+
   // جلب بيانات المدير التنفيذي
   const { data: executiveManagerData } = useQuery({
     queryKey: ["executive-manager-data", executiveManagerId],
@@ -186,6 +203,29 @@ export function NewRequestDialog({
     },
     enabled: !!executiveManagerId,
   });
+
+  // جلب مدير الموارد البشرية الافتراضي
+  const { data: defaultHrManager } = useQuery({
+    queryKey: ["default-hr-manager"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_hr_manager_id");
+      if (error || !data) return null;
+      
+      const { data: empData } = await supabase
+        .from("employees")
+        .select("user_id, full_name, job_role, signature_url")
+        .eq("user_id", data)
+        .single();
+      return empData;
+    },
+  });
+
+  // تعيين مدير الموارد البشرية الافتراضي عند فتح النموذج
+  useEffect(() => {
+    if (open && defaultHrManager?.user_id && !hrManagerId) {
+      setHrManagerId(defaultHrManager.user_id);
+    }
+  }, [open, defaultHrManager]);
 
   const currentBalances = isAdmin ? employeeBalances : leaveBalances;
 
@@ -244,7 +284,9 @@ export function NewRequestDialog({
           status: "pending",
           substitute_employee_id: substituteEmployeeId || null,
           direct_manager_id: directManagerId || null,
+          hr_manager_id: hrManagerId || null,
           executive_manager_id: executiveManagerId || null,
+          workflow_stage: 1,
         })
         .select()
         .single();
@@ -290,6 +332,7 @@ export function NewRequestDialog({
     setAttachment(null);
     setSubstituteEmployeeId("");
     setDirectManagerId("");
+    setHrManagerId("");
     setExecutiveManagerId("");
   };
 
@@ -581,12 +624,16 @@ export function NewRequestDialog({
                       />
                     </div>
 
-                    {/* الموظف البديل والمدير المباشر والمدير التنفيذي */}
+                    {/* الموظف البديل والمديرين */}
                     <div className="border-t pt-4 mt-4">
-                      <h4 className="text-sm font-semibold text-muted-foreground mb-3">بيانات الموافقات</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-3">مسار الموافقات (بالترتيب)</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* 1. الموظف البديل */}
                         <div className="space-y-2">
-                          <Label className="text-right font-semibold">الموظف البديل</Label>
+                          <Label className="text-right font-semibold flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-xs flex items-center justify-center font-bold">1</span>
+                            الموظف البديل
+                          </Label>
                           <Select value={substituteEmployeeId} onValueChange={setSubstituteEmployeeId} dir="rtl">
                             <SelectTrigger className="bg-background text-right">
                               <SelectValue placeholder="اختر الموظف البديل..." />
@@ -594,7 +641,6 @@ export function NewRequestDialog({
                             <SelectContent className="text-right" dir="rtl">
                               {employees
                                 .filter((emp) => {
-                                  // استبعاد صاحب الطلب من القائمة
                                   const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
                                   return emp.user_id !== requestOwnerUserId;
                                 })
@@ -616,8 +662,13 @@ export function NewRequestDialog({
                             </SelectContent>
                           </Select>
                         </div>
+
+                        {/* 2. المدير المباشر */}
                         <div className="space-y-2">
-                          <Label className="text-right font-semibold">المدير المباشر</Label>
+                          <Label className="text-right font-semibold flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs flex items-center justify-center font-bold">2</span>
+                            المدير المباشر
+                          </Label>
                           <Select value={directManagerId} onValueChange={setDirectManagerId} dir="rtl">
                             <SelectTrigger className="bg-background text-right">
                               <SelectValue placeholder="اختر المدير المباشر..." />
@@ -625,7 +676,6 @@ export function NewRequestDialog({
                             <SelectContent className="text-right" dir="rtl">
                               {employees
                                 .filter((emp) => {
-                                  // استبعاد صاحب الطلب من القائمة
                                   const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
                                   return emp.user_id !== requestOwnerUserId;
                                 })
@@ -647,8 +697,48 @@ export function NewRequestDialog({
                             </SelectContent>
                           </Select>
                         </div>
+
+                        {/* 3. مدير الموارد البشرية */}
                         <div className="space-y-2">
-                          <Label className="text-right font-semibold">المدير التنفيذي</Label>
+                          <Label className="text-right font-semibold flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 text-xs flex items-center justify-center font-bold">3</span>
+                            مدير الموارد البشرية
+                          </Label>
+                          <Select value={hrManagerId} onValueChange={setHrManagerId} dir="rtl">
+                            <SelectTrigger className="bg-background text-right">
+                              <SelectValue placeholder="اختر مدير الموارد البشرية..." />
+                            </SelectTrigger>
+                            <SelectContent className="text-right" dir="rtl">
+                              {employees
+                                .filter((emp) => {
+                                  const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
+                                  return emp.user_id !== requestOwnerUserId;
+                                })
+                                .map((emp) => (
+                                <SelectItem key={emp.id} value={emp.user_id}>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center overflow-hidden">
+                                      {emp.avatar_url ? (
+                                        <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <User className="w-3 h-3 text-green-600" />
+                                      )}
+                                    </div>
+                                    <span>{emp.full_name}</span>
+                                    <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* 4. المدير التنفيذي */}
+                        <div className="space-y-2">
+                          <Label className="text-right font-semibold flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs flex items-center justify-center font-bold">4</span>
+                            المدير التنفيذي
+                          </Label>
                           <Select value={executiveManagerId} onValueChange={setExecutiveManagerId} dir="rtl">
                             <SelectTrigger className="bg-background text-right">
                               <SelectValue placeholder="اختر المدير التنفيذي..." />
@@ -656,7 +746,6 @@ export function NewRequestDialog({
                             <SelectContent className="text-right" dir="rtl">
                               {employees
                                 .filter((emp) => {
-                                  // استبعاد صاحب الطلب من القائمة
                                   const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
                                   return emp.user_id !== requestOwnerUserId;
                                 })
@@ -791,6 +880,9 @@ export function NewRequestDialog({
                   directManager={directManagerData?.full_name || ""}
                   directManagerSignatureUrl={directManagerData?.signature_url}
                   managerApproved={false}
+                  hrManager={hrManagerData?.full_name || defaultHrManager?.full_name || ""}
+                  hrManagerSignatureUrl={hrManagerData?.signature_url || defaultHrManager?.signature_url}
+                  hrManagerApproved={false}
                   executiveManager={executiveManagerData?.full_name || ""}
                   executiveManagerSignatureUrl={executiveManagerData?.signature_url}
                   executiveManagerApproved={false}
