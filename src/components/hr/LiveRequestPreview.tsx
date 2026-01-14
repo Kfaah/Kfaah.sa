@@ -18,14 +18,17 @@ interface LiveRequestPreviewProps {
   directManager?: string;
   directManagerSignatureUrl?: string | null;
   managerApproved?: boolean;
+  hrManager?: string;
+  hrManagerSignatureUrl?: string | null;
+  hrManagerApproved?: boolean;
   executiveManager?: string;
   executiveManagerSignatureUrl?: string | null;
   executiveManagerApproved?: boolean;
   approverName?: string;
   approverSignatureUrl?: string | null;
   isApproved?: boolean;
-  headerOffset?: number; // موضع المحتوى كنسبة مئوية (0-100)
-  letterheadUrl?: string | null; // صورة الخلفية/الورق الرسمي
+  headerOffset?: number;
+  letterheadUrl?: string | null;
 }
 
 export function LiveRequestPreview({
@@ -45,16 +48,19 @@ export function LiveRequestPreview({
   directManager = "",
   directManagerSignatureUrl,
   managerApproved = false,
+  hrManager = "",
+  hrManagerSignatureUrl,
+  hrManagerApproved = false,
   executiveManager = "",
   executiveManagerSignatureUrl,
   executiveManagerApproved = false,
   approverName,
   approverSignatureUrl,
   isApproved = false,
-  headerOffset = 35, // 35% كقيمة افتراضية
+  headerOffset = 35,
   letterheadUrl = "/letterhead-template.jpg",
 }: LiveRequestPreviewProps) {
-  const offsetPercent = headerOffset; // النسبة المئوية المحفوظة من القالب
+  const offsetPercent = headerOffset;
   const backgroundUrl = letterheadUrl || "/letterhead-template.jpg";
 
   const formatArabicDate = (date: Date | undefined) => {
@@ -63,6 +69,15 @@ export function LiveRequestPreview({
   };
 
   const currentDate = format(new Date(), "yyyy/MM/dd", { locale: ar });
+
+  // تحديد عدد خانات التوقيع المعروضة
+  const signatureSlots = [
+    { show: true, label: "مقدم الطلب", name: employeeName, signature: signatureUrl, approved: true, bgColor: "", textColor: "text-foreground" },
+    { show: !!substituteEmployee, label: "الموظف البديل", name: substituteEmployee, signature: substituteSignatureUrl, approved: substituteApproved, bgColor: "bg-amber-50/50", textColor: "text-amber-700" },
+    { show: !!directManager, label: "المدير المباشر", name: directManager, signature: directManagerSignatureUrl, approved: managerApproved, bgColor: "bg-blue-50/50", textColor: "text-blue-700" },
+    { show: !!hrManager, label: "مدير HR", name: hrManager, signature: hrManagerSignatureUrl, approved: hrManagerApproved, bgColor: "bg-purple-50/50", textColor: "text-purple-700" },
+    { show: !!executiveManager, label: "المدير التنفيذي", name: executiveManager, signature: executiveManagerSignatureUrl, approved: executiveManagerApproved, bgColor: "bg-green-50/50", textColor: "text-green-800" },
+  ].filter(slot => slot.show);
 
   return (
     <div className="relative group">
@@ -187,76 +202,33 @@ export function LiveRequestPreview({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2 px-1 border border-border/40 text-center align-top">
-                    <div className="font-bold text-[9px] mb-1 text-foreground">مقدم الطلب</div>
-                    <div className="text-[9px] mb-1 font-medium">{employeeName || "---"}</div>
-                    {signatureUrl ? (
-                      <img 
-                        src={signatureUrl} 
-                        alt="توقيع الموظف" 
-                        className="h-6 mx-auto object-contain"
-                      />
-                    ) : (
-                      <div className="h-6 border-b-2 border-dashed border-muted-foreground/30 mx-1 mt-1" />
-                    )}
-                  </td>
-                  <td className="py-2 px-1 border border-border/40 text-center align-top bg-amber-50/50">
-                    <div className="font-bold text-[9px] mb-1 text-amber-700">الموظف البديل</div>
-                    <div className={`text-[9px] mb-1 ${substituteEmployee ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                      {substituteEmployee || "..........."}
-                    </div>
-                    {substituteApproved && substituteSignatureUrl ? (
-                      <img 
-                        src={substituteSignatureUrl} 
-                        alt="توقيع الموظف البديل" 
-                        className="h-6 mx-auto object-contain"
-                      />
-                    ) : substituteEmployee ? (
-                      <div className="h-6 flex items-center justify-center">
-                        <span className="text-[8px] text-amber-600 bg-amber-100 px-1 py-0.5 rounded">انتظار</span>
+                  {signatureSlots.map((slot, index) => (
+                    <td 
+                      key={index}
+                      className={`py-2 px-1 border border-border/40 text-center align-top ${slot.bgColor} ${slot.approved ? 'bg-opacity-100' : ''}`}
+                      style={{ width: `${100 / signatureSlots.length}%` }}
+                    >
+                      <div className={`font-bold text-[8px] mb-1 ${slot.textColor}`}>{slot.label}</div>
+                      <div className={`text-[8px] mb-1 ${slot.name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                        {slot.name || "..........."}
                       </div>
-                    ) : (
-                      <div className="h-6 border-b-2 border-dashed border-amber-300 mx-1 mt-1" />
-                    )}
-                  </td>
-                  <td className="py-2 px-1 border border-border/40 text-center align-top bg-blue-50/50">
-                    <div className="font-bold text-[9px] mb-1 text-blue-700">المدير المباشر</div>
-                    <div className={`text-[9px] mb-1 ${directManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                      {directManager || "..........."}
-                    </div>
-                    {managerApproved && directManagerSignatureUrl ? (
-                      <img 
-                        src={directManagerSignatureUrl} 
-                        alt="توقيع المدير المباشر" 
-                        className="h-6 mx-auto object-contain"
-                      />
-                    ) : directManager ? (
-                      <div className="h-6 flex items-center justify-center">
-                        <span className="text-[8px] text-blue-600 bg-blue-100 px-1 py-0.5 rounded">انتظار</span>
-                      </div>
-                    ) : (
-                      <div className="h-6 border-b-2 border-dashed border-blue-300 mx-1 mt-1" />
-                    )}
-                  </td>
-                  <td className={`py-2 px-1 border border-border/40 text-center align-top ${executiveManagerApproved ? 'bg-green-100' : 'bg-green-50/50'}`}>
-                    <div className="font-bold text-[9px] mb-1 text-green-800">المدير التنفيذي</div>
-                    <div className={`text-[9px] mb-1 ${executiveManager ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                      {executiveManager || "..........."}
-                    </div>
-                    {executiveManagerApproved && executiveManagerSignatureUrl ? (
-                      <img 
-                        src={executiveManagerSignatureUrl} 
-                        alt="توقيع المدير التنفيذي" 
-                        className="h-6 mx-auto object-contain"
-                      />
-                    ) : executiveManager ? (
-                      <div className="h-6 flex items-center justify-center">
-                        <span className="text-[8px] text-green-700 bg-green-200 px-1 py-0.5 rounded">انتظار</span>
-                      </div>
-                    ) : (
-                      <div className="h-6 border-b-2 border-dashed border-green-400 mx-1 mt-1" />
-                    )}
-                  </td>
+                      {slot.approved && slot.signature ? (
+                        <img 
+                          src={slot.signature} 
+                          alt={`توقيع ${slot.label}`}
+                          className="h-5 mx-auto object-contain"
+                        />
+                      ) : slot.name ? (
+                        <div className="h-5 flex items-center justify-center">
+                          <span className={`text-[7px] ${slot.textColor} ${slot.bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>
+                            انتظار
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
+                      )}
+                    </td>
+                  ))}
                 </tr>
               </tbody>
             </table>
