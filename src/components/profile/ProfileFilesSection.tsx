@@ -35,7 +35,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
-import { PdfInlineViewer } from "./PdfInlineViewer";
 
 interface ProfileFile {
   id: string;
@@ -71,6 +70,34 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // دالة تحميل الملف عبر blob (تتجاوز مشاكل CORS)
+  const handleDownload = async (url: string, name: string) => {
+    setIsDownloading(true);
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error("فشل التحميل");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = name || "file";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      toast.success("تم تحميل الملف بنجاح");
+    } catch (error) {
+      toast.error("فشل تحميل الملف. حاول مرة أخرى.");
+      // Fallback: open in new tab
+      window.open(url, "_blank");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const inferFileKind = (file: ProfileFile) => {
     const type = (file.file_type || "").toLowerCase();
@@ -444,11 +471,15 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 {previewFile?.file_name}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <a href={previewFile?.file_url} download className="gap-2">
-                    <Download className="w-4 h-4" />
-                    تحميل
-                  </a>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => previewFile && handleDownload(previewFile.file_url, previewFile.file_name)}
+                  disabled={isDownloading}
+                  className="gap-2"
+                >
+                  {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  تحميل
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setPreviewFile(null)}>
                   <X className="w-4 h-4" />
@@ -466,11 +497,13 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground text-center">
                 <FileText className="w-20 h-20 opacity-30" />
                 <p>{previewError}</p>
-                <Button asChild>
-                  <a href={previewFile.file_url} download className="gap-2">
-                    <Download className="w-4 h-4" />
-                    تحميل الملف
-                  </a>
+                <Button 
+                  onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
+                  disabled={isDownloading}
+                  className="gap-2"
+                >
+                  {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  تحميل الملف
                 </Button>
               </div>
             ) : inferFileKind(previewFile) === "image" ? (
@@ -481,37 +514,44 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
               />
             ) : inferFileKind(previewFile) === "pdf" ? (
               <div className="h-full flex flex-col">
-                <object
-                  data={previewObjectUrl || previewFile.file_url}
-                  type="application/pdf"
-                  className="w-full h-[65vh] rounded-lg border border-border bg-background"
-                >
-                  <div className="flex flex-col items-center justify-center h-[65vh] gap-4 text-muted-foreground">
+                {previewObjectUrl ? (
+                  <embed
+                    src={previewObjectUrl}
+                    type="application/pdf"
+                    className="w-full h-[65vh] rounded-lg border border-border"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[65vh] gap-4 text-muted-foreground border border-border rounded-lg">
                     <FileText className="w-16 h-16 opacity-40" />
-                    <p className="text-center">
-                      لم يتمكن المتصفح من عرض PDF مباشرة.
-                    </p>
-                    <Button asChild>
-                      <a href={previewFile.file_url} download className="gap-2">
-                        <Download className="w-4 h-4" />
-                        تحميل الملف
-                      </a>
-                    </Button>
+                    <p className="text-center">جاري تحميل الملف...</p>
+                    <Loader2 className="w-6 h-6 animate-spin" />
                   </div>
-                </object>
-                <p className="mt-3 text-xs text-muted-foreground text-center">
-                  إذا لم يظهر ملف الـ PDF، يمكنك تحميله مباشرة.
-                </p>
+                )}
+                <div className="mt-3 flex items-center justify-center gap-3">
+                  <Button 
+                    onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
+                    disabled={isDownloading}
+                    className="gap-2"
+                  >
+                    {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    تحميل الملف
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    إذا لم يظهر ملف الـ PDF، اضغط تحميل.
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
                 <FileText className="w-20 h-20 opacity-30" />
                 <p>لا يمكن عرض هذا النوع من الملفات</p>
-                <Button asChild>
-                  <a href={previewFile.file_url} download className="gap-2">
-                    <Download className="w-4 h-4" />
-                    تحميل الملف
-                  </a>
+                <Button 
+                  onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
+                  disabled={isDownloading}
+                  className="gap-2"
+                >
+                  {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  تحميل الملف
                 </Button>
               </div>
             )}
