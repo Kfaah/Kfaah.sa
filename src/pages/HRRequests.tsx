@@ -34,6 +34,7 @@ import { RequestPreviewDialog } from "@/components/hr/RequestPreviewDialog";
 import { AdminRequestsPanel } from "@/components/hr/AdminRequestsPanel";
 import { LeaveBalanceCard } from "@/components/hr/LeaveBalanceCard";
 import { HRNavigationIcons, HRSection } from "@/components/hr/HRNavigationIcons";
+import { HRSidebarNav } from "@/components/hr/HRSidebarNav";
 import { MyRequestsSection } from "@/components/hr/MyRequestsSection";
 import { PendingApprovalsSection } from "@/components/hr/PendingApprovalsSection";
 import { ApprovalsHistorySection } from "@/components/hr/ApprovalsHistorySection";
@@ -756,36 +757,27 @@ export default function HRRequests() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 space-y-6">
+      <div className="p-4 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">الموارد البشرية</h1>
             <p className="text-muted-foreground">إدارة الإجازات والاستئذانات والطلبات الإدارية</p>
           </div>
-          <div className="flex gap-2">
-            {isAdmin && (
-              <Button
-                variant="outline"
-                onClick={() => navigate("/hr-templates")}
-                className="gap-2"
-              >
-                <Settings2 className="w-4 h-4" />
-                <span className="hidden sm:inline">إعدادات النماذج</span>
-              </Button>
-            )}
-            <Button 
-              onClick={() => setIsNewRequestOpen(true)}
-              className="bg-gradient-to-r from-accent to-teal-500 hover:from-accent/90 hover:to-teal-500/90 text-white gap-2"
+          {isAdmin && (
+            <Button
+              variant="outline"
+              onClick={() => navigate("/hr-templates")}
+              className="gap-2"
             >
-              <Plus className="w-4 h-4" />
-              طلب جديد
+              <Settings2 className="w-4 h-4" />
+              <span className="hidden sm:inline">إعدادات النماذج</span>
             </Button>
-          </div>
+          )}
         </div>
 
         {/* أرصدة الإجازات */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {requestTypes
             .filter((type: any) => type.deducts_from_balance)
             .map((type: any) => {
@@ -805,61 +797,67 @@ export default function HRRequests() {
             })}
         </div>
 
-        {/* الأيقونات الثلاثة */}
-        <HRNavigationIcons
-          activeSection={activeSection}
-          onSectionChange={handleSectionChange}
-          pendingApprovalsCount={pendingApprovalsCount}
-          approvalsHistoryCount={approvalsHistoryCount}
-        />
-
-        {/* المحتوى حسب القسم المختار */}
-        {/* قسم طلباتي - للموظفين العاديين فقط */}
-        {activeSection === "my-requests" && !hasAdminAccess && (
-          <MyRequestsSection
-            requests={myRequests}
-            isLoading={isLoadingRequests}
+        {/* التخطيط الرئيسي: أيقونات على اليمين والمحتوى على اليسار */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* القائمة الجانبية على اليمين */}
+          <HRSidebarNav
+            activeSection={activeSection}
+            onSectionChange={handleSectionChange}
+            pendingApprovalsCount={pendingApprovalsCount}
+            approvalsHistoryCount={approvalsHistoryCount}
             onNewRequest={() => setIsNewRequestOpen(true)}
-            onViewRequest={(request) => setSelectedRequest(request)}
-            getRequestIcon={getRequestIcon}
           />
-        )}
 
-        {/* قسم جميع الطلبات - لمدير النظام ومدير الموارد البشرية */}
-        {activeSection === "all-requests" && hasAdminAccess && (
-          <AdminRequestsPanel requestTypes={requestTypes} />
-        )}
+          {/* المحتوى على اليسار */}
+          <div className="flex-1 min-w-0">
+            {/* قسم طلباتي - للموظفين العاديين فقط */}
+            {activeSection === "my-requests" && !hasAdminAccess && (
+              <MyRequestsSection
+                requests={myRequests}
+                isLoading={isLoadingRequests}
+                onNewRequest={() => setIsNewRequestOpen(true)}
+                onViewRequest={(request) => setSelectedRequest(request)}
+                getRequestIcon={getRequestIcon}
+              />
+            )}
 
-        {activeSection === "pending-approvals" && (
-          <PendingApprovalsSection
-            substituteRequests={substituteRequests}
-            managerRequests={managerRequests}
-            hrManagerRequests={hrManagerRequests}
-            executiveRequests={executiveRequests}
-            employees={employees}
-            onApproveSubstitute={(id) => substituteApproveMutation.mutate(id)}
-            onApproveManager={(id) => managerApproveMutation.mutate(id)}
-            onApproveHrManager={(id) => hrManagerApproveMutation.mutate(id)}
-            onApproveExecutive={(id) => executiveApproveMutation.mutate(id)}
-            onReject={handleOpenRejectDialog}
-            onPreview={handlePreviewApproval}
-            isApprovingSubstitute={substituteApproveMutation.isPending}
-            isApprovingManager={managerApproveMutation.isPending}
-            isApprovingHrManager={hrManagerApproveMutation.isPending}
-            isApprovingExecutive={executiveApproveMutation.isPending}
-          />
-        )}
+            {/* قسم جميع الطلبات - لمدير النظام ومدير الموارد البشرية */}
+            {activeSection === "all-requests" && hasAdminAccess && (
+              <AdminRequestsPanel requestTypes={requestTypes} />
+            )}
 
-        {/* سجل الموافقات - للجميع */}
-        {activeSection === "my-approvals-history" && (
-          <ApprovalsHistorySection
-            approvedAsSubstitute={approvedAsSubstitute}
-            approvedAsManager={approvedAsManager}
-            employees={employees}
-            onViewRequest={(request) => setSelectedRequest(request)}
-            onNavigateToPending={() => handleSectionChange("pending-approvals")}
-          />
-        )}
+            {activeSection === "pending-approvals" && (
+              <PendingApprovalsSection
+                substituteRequests={substituteRequests}
+                managerRequests={managerRequests}
+                hrManagerRequests={hrManagerRequests}
+                executiveRequests={executiveRequests}
+                employees={employees}
+                onApproveSubstitute={(id) => substituteApproveMutation.mutate(id)}
+                onApproveManager={(id) => managerApproveMutation.mutate(id)}
+                onApproveHrManager={(id) => hrManagerApproveMutation.mutate(id)}
+                onApproveExecutive={(id) => executiveApproveMutation.mutate(id)}
+                onReject={handleOpenRejectDialog}
+                onPreview={handlePreviewApproval}
+                isApprovingSubstitute={substituteApproveMutation.isPending}
+                isApprovingManager={managerApproveMutation.isPending}
+                isApprovingHrManager={hrManagerApproveMutation.isPending}
+                isApprovingExecutive={executiveApproveMutation.isPending}
+              />
+            )}
+
+            {/* سجل الموافقات - للجميع */}
+            {activeSection === "my-approvals-history" && (
+              <ApprovalsHistorySection
+                approvedAsSubstitute={approvedAsSubstitute}
+                approvedAsManager={approvedAsManager}
+                employees={employees}
+                onViewRequest={(request) => setSelectedRequest(request)}
+                onNavigateToPending={() => handleSectionChange("pending-approvals")}
+              />
+            )}
+          </div>
+        </div>
 
         {/* Dialog تقديم طلب جديد */}
         <NewRequestDialog
