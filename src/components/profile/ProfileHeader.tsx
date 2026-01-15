@@ -32,7 +32,7 @@ export function ProfileHeader({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-accent to-primary/90"
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-primary via-accent to-primary/90"
     >
       {/* Animated Background Decorations */}
       <div className="absolute inset-0 opacity-20">
@@ -51,9 +51,9 @@ export function ProfileHeader({
       </div>
 
       <div className="relative p-6 md:p-8">
-        <div className="flex flex-col md:flex-row-reverse items-center gap-6 md:gap-8">
+        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
           
-          {/* Avatar Section - LEFT Side (appears left due to flex-row-reverse) */}
+          {/* Avatar Section - LEFT Side */}
           <motion.div 
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -78,7 +78,7 @@ export function ProfileHeader({
                 <AvatarImage 
                   src={user.profileImage || undefined} 
                   alt="صورة الملف الشخصي" 
-                  className="object-cover transform -scale-x-100" 
+                  className="object-cover" 
                 />
                 <AvatarFallback className="text-4xl md:text-5xl bg-white/20 text-white font-bold">
                   {user.firstName.charAt(0)}
@@ -99,7 +99,7 @@ export function ProfileHeader({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", delay: 0.6 }}
-                className="absolute bottom-2 left-2 w-5 h-5 bg-emerald-400 rounded-full border-4 border-white shadow-lg"
+                className="absolute bottom-2 right-2 w-5 h-5 bg-emerald-400 rounded-full border-4 border-white shadow-lg"
               >
                 <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
               </motion.span>
@@ -116,7 +116,7 @@ export function ProfileHeader({
               damping: 20, 
               delay: 0.5 
             }}
-            className="hidden md:flex flex-col items-center justify-center flex-1 order-2"
+            className="hidden md:flex flex-col items-center justify-center flex-1"
           >
             {employeeTitle ? (
               <div className="relative">
@@ -140,15 +140,15 @@ export function ProfileHeader({
                 </div>
               </div>
             ) : (
-              <div className="h-12" /> // Placeholder to maintain spacing
+              <div className="h-12" />
             )}
           </motion.div>
 
-          {/* Info Section - RIGHT Side - CENTERED vertically */}
-          <div className="flex flex-col items-center text-center order-3 md:order-3 space-y-2">
+          {/* Info Section - RIGHT Side */}
+          <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-3">
             {/* Name */}
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
+              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
@@ -157,7 +157,7 @@ export function ProfileHeader({
               </h1>
             </motion.div>
 
-            {/* Role - Centered under name */}
+            {/* Role */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -168,7 +168,7 @@ export function ProfileHeader({
               </p>
             </motion.div>
 
-            {/* Online Badge - Centered under role */}
+            {/* Online Badge */}
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -180,7 +180,7 @@ export function ProfileHeader({
               </Badge>
             </motion.div>
 
-            {/* Edit Button - Centered under badge */}
+            {/* Edit Button */}
             {isAdmin && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -202,7 +202,7 @@ export function ProfileHeader({
           </div>
         </div>
 
-        {/* Mobile Title - Shows below on mobile */}
+        {/* Mobile Title */}
         {employeeTitle && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
