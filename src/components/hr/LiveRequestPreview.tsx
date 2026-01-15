@@ -88,26 +88,26 @@ export function LiveRequestPreview({
     <td 
       key={slot.label}
       colSpan={colSpan}
-      className={`py-2 px-1 border border-border/40 text-center align-top ${slot.bgColor} ${slot.approved ? 'bg-opacity-100' : ''}`}
+      className={`py-1 px-0.5 border border-border/40 text-center align-top ${slot.bgColor} ${slot.approved ? 'bg-opacity-100' : ''}`}
     >
-      <div className={`font-bold text-[8px] mb-1 ${slot.textColor}`}>{slot.label}</div>
-      <div className={`text-[8px] mb-1 ${slot.name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-        {slot.name || "..........."}
+      <div className={`font-bold text-[7px] leading-tight ${slot.textColor}`}>{slot.label}</div>
+      <div className={`text-[6px] leading-tight ${slot.name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+        {slot.name || "......"}
       </div>
       {slot.approved && slot.signature ? (
         <img 
           src={slot.signature} 
           alt={`توقيع ${slot.label}`}
-          className="h-5 mx-auto object-contain"
+          className="h-3 mx-auto object-contain mt-0.5"
         />
       ) : slot.name ? (
-        <div className="h-5 flex items-center justify-center">
-          <span className={`text-[7px] ${slot.textColor} ${slot.bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>
+        <div className="h-3 flex items-center justify-center">
+          <span className={`text-[5px] ${slot.textColor} ${slot.bgColor || 'bg-gray-100'} px-0.5 rounded`}>
             انتظار
           </span>
         </div>
       ) : (
-        <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
+        <div className="h-3 border-b border-dashed border-gray-300 mx-0.5 mt-0.5" />
       )}
     </td>
   );
@@ -243,58 +243,58 @@ export function LiveRequestPreview({
                 {/* الصف الثاني: المدراء (3 خانات) */}
                 <tr>
                   <td 
-                    className={`py-2 px-1 border border-border/40 text-center align-top ${secondRowSlots[0].bgColor}`}
+                    className={`py-1 px-0.5 border border-border/40 text-center align-top ${secondRowSlots[0].bgColor}`}
                     style={{ width: '33.33%' }}
                   >
-                    <div className={`font-bold text-[8px] mb-1 ${secondRowSlots[0].textColor}`}>{secondRowSlots[0].label}</div>
-                    <div className={`text-[8px] mb-1 ${secondRowSlots[0].name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                      {secondRowSlots[0].name || "..........."}
+                    <div className={`font-bold text-[7px] leading-tight ${secondRowSlots[0].textColor}`}>{secondRowSlots[0].label}</div>
+                    <div className={`text-[6px] leading-tight ${secondRowSlots[0].name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {secondRowSlots[0].name || "......"}
                     </div>
                     {secondRowSlots[0].approved && secondRowSlots[0].signature ? (
-                      <img src={secondRowSlots[0].signature} alt="توقيع" className="h-5 mx-auto object-contain" />
+                      <img src={secondRowSlots[0].signature} alt="توقيع" className="h-3 mx-auto object-contain mt-0.5" />
                     ) : secondRowSlots[0].name ? (
-                      <div className="h-5 flex items-center justify-center">
-                        <span className={`text-[7px] ${secondRowSlots[0].textColor} ${secondRowSlots[0].bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>انتظار</span>
+                      <div className="h-3 flex items-center justify-center">
+                        <span className={`text-[5px] ${secondRowSlots[0].textColor} ${secondRowSlots[0].bgColor || 'bg-gray-100'} px-0.5 rounded`}>انتظار</span>
                       </div>
                     ) : (
-                      <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
+                      <div className="h-3 border-b border-dashed border-gray-300 mx-0.5 mt-0.5" />
                     )}
                   </td>
                   <td 
-                    className={`py-2 px-1 border border-border/40 text-center align-top ${secondRowSlots[1].bgColor}`}
+                    className={`py-1 px-0.5 border border-border/40 text-center align-top ${secondRowSlots[1].bgColor}`}
                     style={{ width: '33.33%' }}
                   >
-                    <div className={`font-bold text-[8px] mb-1 ${secondRowSlots[1].textColor}`}>{secondRowSlots[1].label}</div>
-                    <div className={`text-[8px] mb-1 ${secondRowSlots[1].name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                      {secondRowSlots[1].name || "..........."}
+                    <div className={`font-bold text-[7px] leading-tight ${secondRowSlots[1].textColor}`}>{secondRowSlots[1].label}</div>
+                    <div className={`text-[6px] leading-tight ${secondRowSlots[1].name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {secondRowSlots[1].name || "......"}
                     </div>
                     {secondRowSlots[1].approved && secondRowSlots[1].signature ? (
-                      <img src={secondRowSlots[1].signature} alt="توقيع" className="h-5 mx-auto object-contain" />
+                      <img src={secondRowSlots[1].signature} alt="توقيع" className="h-3 mx-auto object-contain mt-0.5" />
                     ) : secondRowSlots[1].name ? (
-                      <div className="h-5 flex items-center justify-center">
-                        <span className={`text-[7px] ${secondRowSlots[1].textColor} ${secondRowSlots[1].bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>انتظار</span>
+                      <div className="h-3 flex items-center justify-center">
+                        <span className={`text-[5px] ${secondRowSlots[1].textColor} ${secondRowSlots[1].bgColor || 'bg-gray-100'} px-0.5 rounded`}>انتظار</span>
                       </div>
                     ) : (
-                      <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
+                      <div className="h-3 border-b border-dashed border-gray-300 mx-0.5 mt-0.5" />
                     )}
                   </td>
                   <td 
                     colSpan={2}
-                    className={`py-2 px-1 border border-border/40 text-center align-top ${secondRowSlots[2].bgColor}`}
+                    className={`py-1 px-0.5 border border-border/40 text-center align-top ${secondRowSlots[2].bgColor}`}
                     style={{ width: '33.33%' }}
                   >
-                    <div className={`font-bold text-[8px] mb-1 ${secondRowSlots[2].textColor}`}>{secondRowSlots[2].label}</div>
-                    <div className={`text-[8px] mb-1 ${secondRowSlots[2].name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                      {secondRowSlots[2].name || "..........."}
+                    <div className={`font-bold text-[7px] leading-tight ${secondRowSlots[2].textColor}`}>{secondRowSlots[2].label}</div>
+                    <div className={`text-[6px] leading-tight ${secondRowSlots[2].name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {secondRowSlots[2].name || "......"}
                     </div>
                     {secondRowSlots[2].approved && secondRowSlots[2].signature ? (
-                      <img src={secondRowSlots[2].signature} alt="توقيع" className="h-5 mx-auto object-contain" />
+                      <img src={secondRowSlots[2].signature} alt="توقيع" className="h-3 mx-auto object-contain mt-0.5" />
                     ) : secondRowSlots[2].name ? (
-                      <div className="h-5 flex items-center justify-center">
-                        <span className={`text-[7px] ${secondRowSlots[2].textColor} ${secondRowSlots[2].bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>انتظار</span>
+                      <div className="h-3 flex items-center justify-center">
+                        <span className={`text-[5px] ${secondRowSlots[2].textColor} ${secondRowSlots[2].bgColor || 'bg-gray-100'} px-0.5 rounded`}>انتظار</span>
                       </div>
                     ) : (
-                      <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
+                      <div className="h-3 border-b border-dashed border-gray-300 mx-0.5 mt-0.5" />
                     )}
                   </td>
                 </tr>
