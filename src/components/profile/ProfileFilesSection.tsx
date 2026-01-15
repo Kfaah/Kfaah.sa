@@ -137,7 +137,14 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
 
       const kind = inferFileKind(previewFile);
 
-      // مهم: لا نمنع عرض PDF بانتظار تحميل الـ blob؛ نعرض فوراً عبر الرابط ثم نُحسّن لاحقاً بالـ blob.
+      // PDFs: لا نحمل blob مسبقاً لأنه يكرر التحميل ويزيد التأخير.
+      if (kind === "pdf") {
+        setPreviewObjectUrl(null);
+        setPreviewLoading(false);
+        setPreviewError(null);
+        return;
+      }
+
       const shouldBlockUi = kind === "image";
       setPreviewLoading(shouldBlockUi);
       setPreviewError(null);
@@ -157,13 +164,8 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
         setPreviewObjectUrl(objectUrl);
       } catch (e) {
         if (!canceled) {
-          // بالنسبة لـ PDF: لو فشل إنشاء blob لأي سبب، نستمر بالعرض عبر الرابط المباشر.
-          if (kind === "pdf") {
-            setPreviewObjectUrl(null);
-          } else {
-            setPreviewObjectUrl(null);
-            setPreviewError("تعذر عرض الملف داخل الصفحة. يمكنك تنزيله وفتحه.");
-          }
+          setPreviewObjectUrl(null);
+          setPreviewError("تعذر عرض الملف داخل الصفحة. يمكنك تنزيله وفتحه.");
         }
       } finally {
         if (!canceled && shouldBlockUi) setPreviewLoading(false);

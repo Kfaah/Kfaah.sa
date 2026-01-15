@@ -22,6 +22,7 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
 
   const docRef = useRef<PdfDocumentProxy | null>(null);
   const canvasRefs = useRef<Array<HTMLCanvasElement | null>>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const src = useMemo(() => blobUrl || fileUrl, [blobUrl, fileUrl]);
 
@@ -33,80 +34,52 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
       setError(null);
       setPageCount(0);
 
-      try {
-        const pdfjs: any = await import("pdfjs-dist/build/pdf.mjs");
+        let loadingTask: any | null = null;
 
-        // Use bundled worker (no external URLs, no CORS).
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-          "pdfjs-dist/build/pdf.worker.min.mjs",
-          import.meta.url
-        ).toString();
+        try {
+          const pdfjs: any = await import("pdfjs-dist/build/pdf.mjs");
 
-        const res = await fetch(src, { cache: "no-store" });
-        if (!res.ok) throw new Error(`http_${res.status}`);
-        const data = new Uint8Array(await res.arrayBuffer());
+          // Use bundled worker (no external URLs, no CORS).
+          pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+            "pdfjs-dist/build/pdf.worker.min.mjs",
+            import.meta.url
+          ).toString();
 
-        const pdfjsVersion = pdfjs.version || "5.4.530";
+          const pdfjsVersion = pdfjs.version || "5.4.530";
+          const assetsBase = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}`;
 
-        // بعض الشبكات/السياسات تمنع jsDelivr، لذلك نعمل فحص سريع ونستخدم بديل تلقائياً.
-        const pickWorkingAssetsBase = async () => {
-          const candidates = [
-            `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}`,
-            `https://unpkg.com/pdfjs-dist@${pdfjsVersion}`,
-            // Optional local override (if you ever decide to ship these assets under /public/pdfjs/)
-            "/pdfjs",
-          ];
+          // استخدم التحميل عبر URL (Streaming/Range) لتسريع العرض وتجنب تحميل الملف كاملاً مرة واحدة.
+          loadingTask = pdfjs.getDocument({
+            url: src,
+            cMapUrl: `${assetsBase}/cmaps/`,
+            cMapPacked: true,
+            standardFontDataUrl: `${assetsBase}/standard_fonts/`,
+            disableRange: false,
+            disableStream: false,
+            disableAutoFetch: false,
+          });
 
-          const probe = async (base: string) => {
-            // These are stable files in pdfjs standard_fonts + packed cmaps.
-            const checks = [
-              `${base}/standard_fonts/FoxitSans.pfb`,
-              `${base}/cmaps/UniJIS-UTF16-H.bcmap`,
-            ];
-            for (const url of checks) {
-              const r = await fetch(url, { cache: "force-cache" }).catch(() => null);
-              if (!r?.ok) return false;
+          const doc = (await loadingTask.promise) as PdfDocumentProxy;
+
+          if (cancelled) {
+            try {
+              loadingTask?.destroy?.();
+            } catch {
+              // ignore
             }
-            return true;
-          };
-
-          for (const base of candidates) {
-            if (await probe(base)) return base;
+            doc?.destroy?.();
+            return;
           }
 
-          // Fall back to jsDelivr (best case) if all probes fail.
-          return candidates[0];
-        };
-
-        const assetsBase = await pickWorkingAssetsBase();
-
-        const task = pdfjs.getDocument({
-          data,
-          // Enable cmaps + standard fonts for correct Arabic / non-Latin shaping.
-          cMapUrl: `${assetsBase}/cmaps/`,
-          cMapPacked: true,
-          standardFontDataUrl: `${assetsBase}/standard_fonts/`,
-          // Helps when the PDF references fonts that aren't embedded.
-          useSystemFonts: true,
-        });
-        const doc = (await task.promise) as PdfDocumentProxy;
-
-        if (cancelled) {
-          doc?.destroy?.();
-          return;
+          docRef.current = doc;
+          setPageCount(doc.numPages);
+        } catch (e) {
+          if (!cancelled) {
+            setError("تعذر عرض ملف PDF داخلياً. جرّب وضع سريع أو افتحه في نافذة جديدة.");
+          }
+        } finally {
+          if (!cancelled) setLoading(false);
         }
-
-        docRef.current = doc;
-        setPageCount(doc.numPages);
-      } catch (e) {
-        if (!cancelled) {
-          setError(
-            "تم تحميل الملف، لكن تعذّر تجهيز خطوط/خرائط الأحرف لعرض النص العربي بشكل صحيح."
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
     };
 
     load();
@@ -137,10 +110,13 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
           if (cancelled) return;
           const page = await doc.getPage(i);
 
-          // Auto-scale to container width (simple heuristic).
+          // Auto-scale to container width (measured) مع حد أعلى أقل لتسريع الرسم.
           const viewport1 = page.getViewport({ scale: 1 });
-          const containerWidth = 900; // safe default; canvas will be responsive via CSS
-          const scale = Math.max(0.75, Math.min(2.0, containerWidth / viewport1.width));
+          const containerWidth = Math.max(
+            320,
+            (containerRef.current?.clientWidth ?? 900) - 24
+          );
+          const scale = Math.max(0.6, Math.min(1.35, containerWidth / viewport1.width));
           const viewport = page.getViewport({ scale });
 
           const canvas = canvasRefs.current[i - 1];
@@ -152,6 +128,7 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
           canvas.height = Math.ceil(viewport.height);
 
           await page.render({ canvasContext: ctx, viewport }).promise;
+          await new Promise<void>((r) => requestAnimationFrame(() => r()));
         }
       } catch {
         if (!cancelled) setError("فشل عرض صفحات PDF.");
@@ -189,7 +166,10 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
 
   return (
     <div className={className || "w-full h-[65vh]"}>
-      <div className="h-full overflow-auto rounded-lg border border-border bg-background p-3">
+      <div
+        ref={containerRef}
+        className="h-full overflow-auto rounded-lg border border-border bg-background p-3"
+      >
         <div className="space-y-4">
           {Array.from({ length: pageCount }).map((_, idx) => (
             <div key={idx} className="w-full flex justify-center">
