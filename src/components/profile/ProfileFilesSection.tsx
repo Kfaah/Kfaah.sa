@@ -20,18 +20,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   FileText,
   Upload,
   Plus,
   Trash2,
   Download,
-  GraduationCap,
-  Award,
-  Briefcase,
   File,
   Loader2,
   Eye,
   X,
+  FolderPlus,
+  Settings,
+  Pencil,
+  MoreVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
@@ -46,13 +53,14 @@ interface ProfileFile {
   created_at: string;
 }
 
-const FILE_CATEGORIES = [
-  { id: "cv", label: "السيرة الذاتية", icon: FileText },
-  { id: "certificate", label: "الشهادات", icon: GraduationCap },
-  { id: "course", label: "الدورات التدريبية", icon: Award },
-  { id: "contract", label: "العقود", icon: Briefcase },
-  { id: "other", label: "أخرى", icon: File },
-];
+interface FileCategory {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string;
+  display_order: number;
+  created_at: string;
+}
 
 interface ProfileFilesSectionProps {
   userId: string;
@@ -63,7 +71,7 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
-  const [category, setCategory] = useState("other");
+  const [category, setCategory] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -72,8 +80,29 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
 
-  // رابط تحميل مباشر (بدون نوافذ منبثقة وبدون سكربتات async)
-  // يدعم روابط التخزين العامة بإضافة ?download=...
+  // إدارة الأقسام
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<FileCategory | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+
+  // جلب أقسام المستخدم
+  const { data: userCategories = [], isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ["file-categories", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("file_categories")
+        .select("*")
+        .eq("user_id", userId)
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as FileCategory[];
+    },
+    enabled: !!userId,
+  });
+
+  // رابط تحميل مباشر
   const getDownloadHref = (url: string, name?: string) => {
     try {
       const u = new URL(url);
@@ -121,7 +150,6 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
 
       const kind = inferFileKind(previewFile);
 
-      // PDFs: لا نحمل blob مسبقاً لأنه يكرر التحميل ويزيد التأخير.
       if (kind === "pdf") {
         setPreviewObjectUrl(null);
         setPreviewLoading(false);
@@ -173,17 +201,115 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      
+
       if (error) throw error;
       return (data || []) as unknown as ProfileFile[];
     },
     enabled: !!userId,
   });
 
+  // إضافة قسم جديد
+  const addCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error("يرجى إدخال اسم القسم");
+      return;
+    }
+
+    setIsSavingCategory(true);
+    try {
+      const { error } = await supabase.from("file_categories").insert({
+        user_id: userId,
+        name: newCategoryName.trim(),
+        display_order: userCategories.length,
+      });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("هذا القسم موجود مسبقاً");
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      toast.success("تم إضافة القسم بنجاح");
+      queryClient.invalidateQueries({ queryKey: ["file-categories", userId] });
+      setNewCategoryName("");
+      setIsCategoryDialogOpen(false);
+    } catch (error) {
+      console.error("Error adding category:", error);
+      toast.error("حدث خطأ أثناء إضافة القسم");
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
+
+  // تعديل قسم
+  const updateCategory = async () => {
+    if (!editingCategory || !newCategoryName.trim()) {
+      toast.error("يرجى إدخال اسم القسم");
+      return;
+    }
+
+    setIsSavingCategory(true);
+    try {
+      const { error } = await supabase
+        .from("file_categories")
+        .update({ name: newCategoryName.trim() })
+        .eq("id", editingCategory.id);
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("هذا القسم موجود مسبقاً");
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      toast.success("تم تعديل القسم بنجاح");
+      queryClient.invalidateQueries({ queryKey: ["file-categories", userId] });
+      setNewCategoryName("");
+      setEditingCategory(null);
+      setIsCategoryDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast.error("حدث خطأ أثناء تعديل القسم");
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
+
+  // حذف قسم
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (categoryId: string) => {
+      const { error } = await supabase
+        .from("file_categories")
+        .delete()
+        .eq("id", categoryId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم حذف القسم");
+      queryClient.invalidateQueries({ queryKey: ["file-categories", userId] });
+      if (activeCategory && userCategories.find((c) => c.id === activeCategory)) {
+        setActiveCategory(null);
+      }
+    },
+    onError: () => {
+      toast.error("حدث خطأ أثناء حذف القسم");
+    },
+  });
+
   // رفع ملف جديد
   const uploadFile = async () => {
     if (!selectedFile) {
       toast.error("يرجى اختيار ملف");
+      return;
+    }
+
+    if (!category) {
+      toast.error("يرجى اختيار القسم");
       return;
     }
 
@@ -219,7 +345,7 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
       setIsUploadOpen(false);
       setSelectedFile(null);
       setFileName("");
-      setCategory("other");
+      setCategory("");
     } catch (error) {
       console.error("Error uploading file:", error);
       toast.error("حدث خطأ أثناء رفع الملف");
@@ -251,7 +377,20 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
     : files;
 
   const getCategoryInfo = (categoryId: string) => {
-    return FILE_CATEGORIES.find((c) => c.id === categoryId) || FILE_CATEGORIES[4];
+    const cat = userCategories.find((c) => c.id === categoryId);
+    return cat ? { id: cat.id, label: cat.name } : { id: categoryId, label: categoryId };
+  };
+
+  const openAddCategoryDialog = () => {
+    setEditingCategory(null);
+    setNewCategoryName("");
+    setIsCategoryDialogOpen(true);
+  };
+
+  const openEditCategoryDialog = (cat: FileCategory) => {
+    setEditingCategory(cat);
+    setNewCategoryName(cat.name);
+    setIsCategoryDialogOpen(true);
   };
 
   return (
@@ -263,193 +402,302 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
           </div>
           الملفات والمستندات
         </CardTitle>
-        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus className="w-4 h-4" />
-              إضافة ملف
-            </Button>
-          </DialogTrigger>
-          <DialogContent dir="rtl">
-            <DialogHeader>
-              <DialogTitle>إضافة ملف جديد</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>اسم الملف</Label>
-                <Input
-                  value={fileName}
-                  onChange={(e) => setFileName(e.target.value)}
-                  placeholder="مثال: شهادة البكالوريوس"
-                />
-              </div>
+        <div className="flex items-center gap-2">
+          {/* زر إضافة قسم */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={openAddCategoryDialog}
+          >
+            <FolderPlus className="w-4 h-4" />
+            قسم جديد
+          </Button>
 
-              <div className="space-y-2">
-                <Label>التصنيف</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر التصنيف" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FILE_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <span className="flex items-center gap-2">
-                          <cat.icon className="w-4 h-4" />
-                          {cat.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>الملف</Label>
-                <div
-                  className="border-2 border-dashed border-muted-foreground/30 rounded-xl p-6 text-center cursor-pointer hover:border-accent transition-colors"
-                  onClick={() => document.getElementById("file-input")?.click()}
-                >
-                  {selectedFile ? (
-                    <div className="space-y-2">
-                      <FileText className="w-8 h-8 mx-auto text-accent" />
-                      <p className="text-sm font-medium">{selectedFile.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        اضغط لاختيار ملف أو اسحب الملف هنا
-                      </p>
-                    </div>
-                  )}
-                  <input
-                    id="file-input"
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+          {/* زر إضافة ملف */}
+          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2" disabled={userCategories.length === 0}>
+                <Plus className="w-4 h-4" />
+                إضافة ملف
+              </Button>
+            </DialogTrigger>
+            <DialogContent dir="rtl">
+              <DialogHeader>
+                <DialogTitle>إضافة ملف جديد</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>اسم الملف</Label>
+                  <Input
+                    value={fileName}
+                    onChange={(e) => setFileName(e.target.value)}
+                    placeholder="مثال: شهادة البكالوريوس"
                   />
                 </div>
-              </div>
 
-              <Button
-                onClick={uploadFile}
-                className="w-full"
-                disabled={isUploading || !selectedFile}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                    جاري الرفع...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4 ml-2" />
-                    رفع الملف
-                  </>
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+                <div className="space-y-2">
+                  <Label>القسم</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر القسم" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <span className="flex items-center gap-2">
+                            <File className="w-4 h-4" />
+                            {cat.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>الملف</Label>
+                  <div
+                    className="border-2 border-dashed border-muted-foreground/30 rounded-xl p-6 text-center cursor-pointer hover:border-accent transition-colors"
+                    onClick={() => document.getElementById("file-input")?.click()}
+                  >
+                    {selectedFile ? (
+                      <div className="space-y-2">
+                        <FileText className="w-8 h-8 mx-auto text-accent" />
+                        <p className="text-sm font-medium">{selectedFile.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          اضغط لاختيار ملف أو اسحب الملف هنا
+                        </p>
+                      </div>
+                    )}
+                    <input
+                      id="file-input"
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  onClick={uploadFile}
+                  className="w-full"
+                  disabled={isUploading || !selectedFile || !category}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                      جاري الرفع...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 ml-2" />
+                      رفع الملف
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         {/* فلاتر التصنيف */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <Button
-            variant={activeCategory === null ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveCategory(null)}
-          >
-            الكل ({files.length})
-          </Button>
-          {FILE_CATEGORIES.map((cat) => {
-            const count = files.filter((f) => f.category === cat.id).length;
-            const Icon = cat.icon;
-            return (
-              <Button
-                key={cat.id}
-                variant={activeCategory === cat.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveCategory(cat.id)}
-                className="gap-1.5"
-              >
-                <Icon className="w-4 h-4" />
-                {cat.label} ({count})
-              </Button>
-            );
-          })}
-        </div>
-
-        {/* قائمة الملفات */}
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        {isCategoriesLoading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="w-6 h-6 animate-spin text-accent" />
           </div>
-        ) : filteredFiles.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
-            <p className="text-lg">لا توجد ملفات</p>
-            <p className="text-sm">أضف ملفاتك مثل السيرة الذاتية والشهادات</p>
+        ) : userCategories.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-xl mb-6">
+            <FolderPlus className="w-12 h-12 mx-auto mb-3 opacity-40" />
+            <p className="font-medium">لا توجد أقسام بعد</p>
+            <p className="text-sm mb-4">أنشئ قسمًا جديدًا لتنظيم ملفاتك</p>
+            <Button size="sm" onClick={openAddCategoryDialog} className="gap-2">
+              <Plus className="w-4 h-4" />
+              إنشاء أول قسم
+            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredFiles.map((file) => {
-              const catInfo = getCategoryInfo(file.category);
-              const CatIcon = catInfo.icon;
+          <div className="flex flex-wrap gap-2 mb-6">
+            <Button
+              variant={activeCategory === null ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveCategory(null)}
+            >
+              الكل ({files.length})
+            </Button>
+            {userCategories.map((cat) => {
+              const count = files.filter((f) => f.category === cat.id).length;
               return (
-                <div
-                  key={file.id}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors group"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                    <CatIcon className="w-6 h-6 text-accent" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{file.file_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {catInfo.label} • {formatDateTime(file.created_at)}
-                    </p>
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setPreviewFile(file)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      asChild
-                    >
-                      <a
-                        href={getDownloadHref(file.file_url, file.file_name)}
-                        rel="noopener noreferrer"
+                <div key={cat.id} className="flex items-center gap-0.5">
+                  <Button
+                    variant={activeCategory === cat.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveCategory(cat.id)}
+                    className="gap-1.5 rounded-l-none"
+                  >
+                    <File className="w-4 h-4" />
+                    {cat.name} ({count})
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant={activeCategory === cat.id ? "default" : "outline"}
+                        size="sm"
+                        className="px-1.5 rounded-r-none border-r-0"
                       >
-                        <Download className="w-4 h-4" />
-                      </a>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => deleteFileMutation.mutate(file.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                        <MoreVertical className="w-3.5 h-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onClick={() => openEditCategoryDialog(cat)}>
+                        <Pencil className="w-4 h-4 ml-2" />
+                        تعديل الاسم
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => {
+                          if (confirm(`هل أنت متأكد من حذف قسم "${cat.name}"؟`)) {
+                            deleteCategoryMutation.mutate(cat.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 ml-2" />
+                        حذف القسم
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               );
             })}
           </div>
         )}
+
+        {/* قائمة الملفات */}
+        {userCategories.length > 0 && (
+          <>
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-accent" />
+              </div>
+            ) : filteredFiles.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg">لا توجد ملفات</p>
+                <p className="text-sm">أضف ملفاتك مثل السيرة الذاتية والشهادات</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredFiles.map((file) => {
+                  const catInfo = getCategoryInfo(file.category);
+                  return (
+                    <div
+                      key={file.id}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors group"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                        <File className="w-6 h-6 text-accent" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">{file.file_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {catInfo.label} • {formatDateTime(file.created_at)}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setPreviewFile(file)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
+                        >
+                          <a
+                            href={getDownloadHref(file.file_url, file.file_name)}
+                            rel="noopener noreferrer"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => deleteFileMutation.mutate(file.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
       </CardContent>
+
+      {/* مربع حوار إضافة/تعديل قسم */}
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCategory ? "تعديل القسم" : "إضافة قسم جديد"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>اسم القسم</Label>
+              <Input
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="مثال: الشهادات الأكاديمية"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    editingCategory ? updateCategory() : addCategory();
+                  }
+                }}
+              />
+            </div>
+            <Button
+              onClick={editingCategory ? updateCategory : addCategory}
+              className="w-full"
+              disabled={isSavingCategory || !newCategoryName.trim()}
+            >
+              {isSavingCategory ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                  جاري الحفظ...
+                </>
+              ) : editingCategory ? (
+                <>
+                  <Pencil className="w-4 h-4 ml-2" />
+                  حفظ التعديلات
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 ml-2" />
+                  إضافة القسم
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* مربع حوار معاينة الملف */}
       <Dialog
@@ -525,15 +773,15 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 decoding="async"
                 className="max-w-full h-auto mx-auto rounded-lg"
               />
-              ) : inferFileKind(previewFile) === "pdf" ? (
-                <div className="h-full flex flex-col">
-                  <SmartPdfViewer
-                    fileUrl={previewFile.file_url}
-                    blobUrl={previewObjectUrl}
-                    fileName={previewFile.file_name}
-                    className="w-full h-[65vh]"
-                  />
-                </div>
+            ) : inferFileKind(previewFile) === "pdf" ? (
+              <div className="h-full flex flex-col">
+                <SmartPdfViewer
+                  fileUrl={previewFile.file_url}
+                  blobUrl={previewObjectUrl}
+                  fileName={previewFile.file_name}
+                  className="w-full h-[65vh]"
+                />
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
                 <FileText className="w-20 h-20 opacity-30" />
