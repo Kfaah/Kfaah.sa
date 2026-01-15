@@ -74,7 +74,7 @@ export function HRNavigationIcons({
     },
   ];
 
-  // الأقسام لمدير النظام / مدير الموارد البشرية (بدون سجل الموافقات)
+  // الأقسام لمدير النظام / مدير الموارد البشرية
   const adminSections = [
     {
       id: "all-requests" as HRSection,
@@ -94,6 +94,16 @@ export function HRNavigationIcons({
       iconBg: "bg-orange-100",
       iconColor: "text-orange-600",
       badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : null,
+    },
+    {
+      id: "my-approvals-history" as HRSection,
+      label: "سجل الموافقات",
+      icon: CheckCircle2,
+      gradient: "from-emerald-500 to-teal-500",
+      bgLight: "bg-emerald-50 border-emerald-200 hover:border-emerald-400",
+      iconBg: "bg-emerald-100",
+      iconColor: "text-emerald-600",
+      badge: approvalsHistoryCount > 0 ? approvalsHistoryCount : null,
     },
   ];
 
