@@ -3,9 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload, Trash2, Loader2, PenTool, RotateCcw, Check } from "lucide-react";
+import { Upload, Trash2, Loader2, PenTool, RotateCcw, Check, Palette } from "lucide-react";
+
+// ألوان التوقيع المتاحة
+const SIGNATURE_COLORS = [
+  { id: "light-blue", name: "أزرق فاتح", hsl: "210 100% 68%", hex: "#60a5fa" },
+  { id: "dark-blue", name: "أزرق غامق", hsl: "210 100% 40%", hex: "#1e40af" },
+  { id: "black", name: "أسود", hsl: "0 0% 10%", hex: "#1a1a1a" },
+  { id: "navy", name: "كحلي", hsl: "220 80% 30%", hex: "#1e3a5f" },
+];
 
 interface SignatureUploadProps {
   currentSignature?: string | null;
@@ -85,6 +94,7 @@ export function SignatureUpload({
   const [hasDrawn, setHasDrawn] = useState(false);
   const [lineWidth, setLineWidth] = useState(2);
   const [previewBgGray, setPreviewBgGray] = useState(true);
+  const [selectedColor, setSelectedColor] = useState(SIGNATURE_COLORS[0]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -145,8 +155,12 @@ export function SignatureUpload({
       bgR = 255; bgG = 255; bgB = 255;
     }
 
-    // تلوين التوقيع أزرق فاتح + تفريغ الخلفية
-    const BLUE = getSignatureInkRgb();
+    // تلوين التوقيع باللون المختار + تفريغ الخلفية
+    const [inkHStr, inkSStr, inkLStr] = selectedColor.hsl.split(/\s+/);
+    const inkH = Number.parseFloat(inkHStr || "210");
+    const inkS = Number.parseFloat((inkSStr || "100%").replace("%", "")) / 100;
+    const inkL = Number.parseFloat((inkLStr || "68%").replace("%", "")) / 100;
+    const INK = hslToRgb(inkH, inkS, inkL);
     const THRESH_MIN = 18;
     const THRESH_MAX = 55;
 
@@ -180,9 +194,9 @@ export function SignatureUpload({
 
       // صبغ لون التوقيع (فقط لو ما صار شفاف تماماً)
       if (data[i + 3] > 0) {
-        data[i] = BLUE.r;
-        data[i + 1] = BLUE.g;
-        data[i + 2] = BLUE.b;
+        data[i] = INK.r;
+        data[i + 1] = INK.g;
+        data[i + 2] = INK.b;
       }
     }
 
@@ -207,25 +221,26 @@ export function SignatureUpload({
     // تنظيف (خلفية شفافة)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // إعداد القلم بلون أزرق فاتح
-    ctx.strokeStyle = SIGNATURE_INK_CSS;
+    // إعداد القلم باللون المختار
+    ctx.strokeStyle = selectedColor.hex;
     ctx.lineWidth = lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-  }, [lineWidth]);
+  }, [lineWidth, selectedColor]);
 
   useEffect(() => {
     setupCanvas();
   }, [setupCanvas]);
 
-  // تحديث سُمك الخط عند التغيير
+  // تحديث سُمك الخط واللون عند التغيير
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.lineWidth = lineWidth;
-  }, [lineWidth]);
+    ctx.strokeStyle = selectedColor.hex;
+  }, [lineWidth, selectedColor]);
 
   // دوال الرسم
   const getCoordinates = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -522,7 +537,7 @@ export function SignatureUpload({
             </TabsList>
 
             <TabsContent value="draw" className="space-y-4">
-              {/* التحكم بسُمك الخط */}
+              {/* التحكم بسُمك الخط ولون التوقيع */}
               <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
                 <span className="text-sm text-muted-foreground whitespace-nowrap">سُمك الخط:</span>
                 <Slider
@@ -537,10 +552,44 @@ export function SignatureUpload({
                   className="w-8 h-8 rounded-full border-2 border-muted flex items-center justify-center bg-white"
                 >
                   <div 
-                    className="rounded-full bg-blue-800"
-                    style={{ width: lineWidth * 3, height: lineWidth * 3 }}
+                    className="rounded-full"
+                    style={{ 
+                      width: lineWidth * 3, 
+                      height: lineWidth * 3,
+                      backgroundColor: selectedColor.hex 
+                    }}
                   />
                 </div>
+                
+                {/* اختيار لون التوقيع */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon" className="shrink-0">
+                      <Palette className="w-4 h-4" style={{ color: selectedColor.hex }} />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3" align="end">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">لون التوقيع</p>
+                      <div className="flex gap-2">
+                        {SIGNATURE_COLORS.map((color) => (
+                          <button
+                            key={color.id}
+                            onClick={() => setSelectedColor(color)}
+                            className={`w-8 h-8 rounded-full border-2 transition-all ${
+                              selectedColor.id === color.id 
+                                ? 'border-primary scale-110 ring-2 ring-primary/30' 
+                                : 'border-muted hover:scale-105'
+                            }`}
+                            style={{ backgroundColor: color.hex }}
+                            title={color.name}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">{selectedColor.name}</p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="border-2 border-dashed rounded-lg overflow-hidden bg-white">
