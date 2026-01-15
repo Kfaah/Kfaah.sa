@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
+import { PdfInlineViewer } from "./PdfInlineViewer";
 
 interface ProfileFile {
   id: string;
