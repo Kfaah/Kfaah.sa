@@ -71,84 +71,17 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
 
-  // دالة تحميل الملف - حل جذري بدون أي نوافذ منبثقة
-  const handleDownload = async (url: string, name: string) => {
-    setIsDownloading(true);
-    
+  // رابط تحميل مباشر (بدون نوافذ منبثقة وبدون سكربتات async)
+  // يدعم روابط التخزين العامة بإضافة ?download=...
+  const getDownloadHref = (url: string, name?: string) => {
     try {
-      // استخراج مسار الملف من الرابط لاستخدام Supabase Storage API
-      const storageUrl = url;
-      const bucketMatch = storageUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
-      
-      if (bucketMatch) {
-        // استخدام Supabase Storage download API مباشرة
-        const [, bucket, path] = bucketMatch;
-        const { data, error } = await supabase.storage.from(bucket).download(decodeURIComponent(path));
-        
-        if (error) throw error;
-        if (data) {
-          const blobUrl = URL.createObjectURL(data);
-          triggerDownload(blobUrl, name);
-          return;
-        }
-      }
-      
-      // Fallback: fetch عادي للروابط الأخرى
-      const response = await fetch(url, { 
-        cache: "no-store",
-        mode: "cors",
-        credentials: "omit"
-      });
-      
-      if (!response.ok) throw new Error("فشل التحميل");
-      
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      triggerDownload(blobUrl, name);
-      
-    } catch (error) {
-      console.error("Download error:", error);
-      toast.error("فشل تحميل الملف. جاري المحاولة بطريقة بديلة...");
-      
-      // Fallback أخير: إنشاء iframe مخفي للتحميل
-      try {
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = name || "file";
-        link.target = "_self";
-        link.rel = "noopener";
-        link.style.display = "none";
-        document.body.appendChild(link);
-        link.click();
-        setTimeout(() => document.body.removeChild(link), 100);
-      } catch (e) {
-        toast.error("تعذر التحميل. يرجى النقر بزر الماوس الأيمن واختيار 'حفظ باسم'");
-      }
-    } finally {
-      setIsDownloading(false);
+      const u = new URL(url);
+      u.searchParams.set("download", name || "1");
+      return u.toString();
+    } catch {
+      return url;
     }
-  };
-
-  // دالة مساعدة لتنفيذ التحميل الفعلي
-  const triggerDownload = (blobUrl: string, name: string) => {
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = name || "document";
-    link.style.display = "none";
-    document.body.appendChild(link);
-    
-    // تنفيذ الضغط
-    link.click();
-    
-    // تنظيف
-    setTimeout(() => {
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    }, 1000);
-    
-    toast.success("تم تحميل الملف بنجاح");
   };
 
   const inferFileKind = (file: ProfileFile) => {
@@ -495,7 +428,10 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                       className="h-8 w-8"
                       asChild
                     >
-                      <a href={file.file_url} download>
+                      <a
+                        href={getDownloadHref(file.file_url, file.file_name)}
+                        rel="noopener noreferrer"
+                      >
                         <Download className="w-4 h-4" />
                       </a>
                     </Button>
@@ -534,19 +470,26 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 {previewFile?.file_name}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    if (previewFile) {
-                      handleDownload(previewFile.file_url, previewFile.file_name);
-                    }
-                  }}
-                  disabled={isDownloading || !previewFile}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
                   className="flex items-center gap-2"
                 >
-                  {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  <span>تحميل</span>
+                  <a
+                    href={
+                      previewFile
+                        ? getDownloadHref(previewFile.file_url, previewFile.file_name)
+                        : "#"
+                    }
+                    onClick={(e) => {
+                      if (!previewFile) e.preventDefault();
+                    }}
+                    rel="noopener noreferrer"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>تحميل</span>
+                  </a>
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setPreviewFile(null)}>
                   <X className="w-4 h-4" />
@@ -560,17 +503,14 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground text-center">
                 <FileText className="w-20 h-20 opacity-30" />
                 <p>{previewError}</p>
-                <Button
-                  onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
-                  disabled={isDownloading}
-                  className="gap-2"
-                >
-                  {isDownloading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
+                <Button asChild className="gap-2">
+                  <a
+                    href={getDownloadHref(previewFile.file_url, previewFile.file_name)}
+                    rel="noopener noreferrer"
+                  >
                     <Download className="w-4 h-4" />
-                  )}
-                  تحميل الملف
+                    تحميل الملف
+                  </a>
                 </Button>
               </div>
             ) : previewLoading && inferFileKind(previewFile) !== "pdf" ? (
@@ -585,47 +525,27 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 decoding="async"
                 className="max-w-full h-auto mx-auto rounded-lg"
               />
-            ) : inferFileKind(previewFile) === "pdf" ? (
-              <div className="h-full flex flex-col">
-                <SmartPdfViewer
-                  fileUrl={previewFile.file_url}
-                  blobUrl={previewObjectUrl}
-                  fileName={previewFile.file_name}
-                  className="w-full h-[65vh]"
-                />
-                <div className="mt-3 flex items-center justify-center gap-3">
-                  <Button
-                    onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
-                    disabled={isDownloading}
-                    className="gap-2"
-                  >
-                    {isDownloading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Download className="w-4 h-4" />
-                    )}
-                    تحميل الملف
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    إذا تأخر العرض، اختر وضع <span className="font-medium">سريع</span>.
-                  </p>
+              ) : inferFileKind(previewFile) === "pdf" ? (
+                <div className="h-full flex flex-col">
+                  <SmartPdfViewer
+                    fileUrl={previewFile.file_url}
+                    blobUrl={previewObjectUrl}
+                    fileName={previewFile.file_name}
+                    className="w-full h-[65vh]"
+                  />
                 </div>
-              </div>
             ) : (
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
                 <FileText className="w-20 h-20 opacity-30" />
                 <p>لا يمكن عرض هذا النوع من الملفات</p>
-                <Button
-                  onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
-                  disabled={isDownloading}
-                  className="gap-2"
-                >
-                  {isDownloading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
+                <Button asChild className="gap-2">
+                  <a
+                    href={getDownloadHref(previewFile.file_url, previewFile.file_name)}
+                    rel="noopener noreferrer"
+                  >
                     <Download className="w-4 h-4" />
-                  )}
-                  تحميل الملف
+                    تحميل الملف
+                  </a>
                 </Button>
               </div>
             )}
