@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Calendar, 
   Clock, 
@@ -25,7 +27,9 @@ import {
   Printer,
   UserCheck,
   Users,
-  Trash2
+  Trash2,
+  Briefcase,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -33,6 +37,7 @@ import { ar } from "date-fns/locale";
 import { useState } from "react";
 import { OfficialRequestPDF } from "./OfficialRequestPDF";
 import { LiveRequestPreview } from "./LiveRequestPreview";
+import { motion } from "framer-motion";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   pending: { label: "قيد المراجعة", color: "bg-amber-100 text-amber-700 border-amber-200", icon: AlertCircle },
@@ -66,7 +71,7 @@ export function RequestDetailsDialog({
       if (!request?.user_id) return null;
       const { data, error } = await supabase
         .from("employees")
-        .select("full_name, job_role, signature_url")
+        .select("full_name, job_role, signature_url, avatar_url, title")
         .eq("user_id", request.user_id)
         .single();
       if (error) throw error;
@@ -82,7 +87,7 @@ export function RequestDetailsDialog({
       if (!request?.approved_by) return null;
       const { data, error } = await supabase
         .from("employees")
-        .select("full_name, job_role, signature_url")
+        .select("full_name, job_role, signature_url, avatar_url")
         .eq("user_id", request.approved_by)
         .single();
       if (error) throw error;
@@ -98,7 +103,7 @@ export function RequestDetailsDialog({
       if (!request?.substitute_employee_id) return null;
       const { data, error } = await supabase
         .from("employees")
-        .select("full_name, job_role, signature_url")
+        .select("full_name, job_role, signature_url, avatar_url")
         .eq("user_id", request.substitute_employee_id)
         .single();
       if (error) throw error;
@@ -114,7 +119,7 @@ export function RequestDetailsDialog({
       if (!request?.direct_manager_id) return null;
       const { data, error } = await supabase
         .from("employees")
-        .select("full_name, job_role, signature_url")
+        .select("full_name, job_role, signature_url, avatar_url")
         .eq("user_id", request.direct_manager_id)
         .single();
       if (error) throw error;
@@ -224,6 +229,8 @@ export function RequestDetailsDialog({
       toast.success("تمت موافقتك كموظف بديل");
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
       queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-substitute-requests"] });
+      onOpenChange(false);
     },
     onError: (error) => {
       console.error("Error approving as substitute:", error);
@@ -247,6 +254,7 @@ export function RequestDetailsDialog({
       toast.success("تمت موافقتك كمدير مباشر");
       queryClient.invalidateQueries({ queryKey: ["my-hr-requests"] });
       queryClient.invalidateQueries({ queryKey: ["all-hr-requests"] });
+      onOpenChange(false);
     },
     onError: (error) => {
       console.error("Error approving as manager:", error);
@@ -301,337 +309,426 @@ export function RequestDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            تفاصيل الطلب
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* رقم الطلب والحالة */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">رقم الطلب</span>
-            <span className="font-mono font-semibold">{request.request_number}</span>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        {/* هيدر الطلب مع بيانات صاحب الطلب */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative overflow-hidden bg-gradient-to-l from-primary via-accent to-primary/90 p-6"
+        >
+          {/* خلفية متحركة */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-0 right-0 w-60 h-60 bg-white/20 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">الحالة</span>
-            <Badge variant="outline" className={`${statusInfo.color} gap-1`}>
-              <StatusIcon className="w-3 h-3" />
-              {statusInfo.label}
-            </Badge>
-          </div>
-
-          <Separator />
-
-          {/* نوع الطلب */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">نوع الطلب</span>
-            <span className="font-semibold">{request.hr_request_types?.name_ar}</span>
-          </div>
-
-          {/* التواريخ */}
-          {request.start_date && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                التاريخ
-              </span>
-              <span>
-                {format(new Date(request.start_date), "d MMM yyyy", { locale: ar })}
-                {request.end_date && request.end_date !== request.start_date && (
-                  <> - {format(new Date(request.end_date), "d MMM yyyy", { locale: ar })}</>
-                )}
-              </span>
+          <div className="relative flex flex-col md:flex-row items-center gap-4 md:gap-6">
+            {/* صورة صاحب الطلب */}
+            <div className="relative shrink-0">
+              <Avatar className="w-20 h-20 md:w-24 md:h-24 border-4 border-white/40 shadow-xl ring-4 ring-white/10">
+                <AvatarImage 
+                  src={employeeData?.avatar_url || undefined} 
+                  alt="صورة الموظف" 
+                  className="object-cover" 
+                />
+                <AvatarFallback className="text-2xl md:text-3xl bg-white/20 text-white font-bold">
+                  {employeeData?.full_name?.charAt(0) || "؟"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-400 rounded-full border-3 border-white shadow-lg" />
             </div>
-          )}
 
-          {/* عدد الأيام */}
-          {request.days_count && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                المدة
-              </span>
-              <span>{request.days_count} يوم</span>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* السبب */}
-          {request.reason && (
-            <div className="space-y-2">
-              <span className="text-sm text-muted-foreground">السبب</span>
-              <p className="text-sm bg-muted/50 rounded-lg p-3">{request.reason}</p>
-            </div>
-          )}
-
-          {/* ملاحظات */}
-          {request.notes && (
-            <div className="space-y-2">
-              <span className="text-sm text-muted-foreground">ملاحظات</span>
-              <p className="text-sm bg-muted/50 rounded-lg p-3">{request.notes}</p>
-            </div>
-          )}
-
-          {/* المرفق */}
-          {request.attachment_url && (
-            <div className="space-y-2">
-              <span className="text-sm text-muted-foreground">المرفقات</span>
-              <a 
-                href={request.attachment_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-              >
-                <FileText className="w-5 h-5 text-accent" />
-                <span className="flex-1 text-sm truncate">{request.attachment_name || "مرفق"}</span>
-                <Download className="w-4 h-4 text-muted-foreground" />
-              </a>
-            </div>
-          )}
-
-          {/* الموظف البديل والمدير المباشر */}
-          {(substituteData || managerData) && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <span className="text-sm font-semibold text-muted-foreground">موافقات إضافية</span>
-                
-                {/* الموظف البديل */}
-                {substituteData && (
-                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-amber-600" />
-                      <div>
-                        <p className="text-sm font-medium">الموظف البديل</p>
-                        <p className="text-xs text-muted-foreground">{substituteData.full_name}</p>
-                      </div>
-                    </div>
-                    {request.substitute_approved ? (
-                      <Badge className="bg-green-100 text-green-700 gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        موافق
-                      </Badge>
-                    ) : canApproveAsSubstitute ? (
-                      <Button
-                        size="sm"
-                        onClick={() => substituteApproveMutation.mutate()}
-                        disabled={substituteApproveMutation.isPending}
-                        className="bg-amber-600 hover:bg-amber-700"
-                      >
-                        {substituteApproveMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <CheckCircle2 className="w-4 h-4 ml-1" />
-                            موافقة
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <Badge variant="outline" className="text-amber-600 border-amber-300">
-                        في الانتظار
-                      </Badge>
-                    )}
-                  </div>
-                )}
-
-                {/* المدير المباشر */}
-                {managerData && (
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center gap-2">
-                      <UserCheck className="w-4 h-4 text-blue-600" />
-                      <div>
-                        <p className="text-sm font-medium">المدير المباشر</p>
-                        <p className="text-xs text-muted-foreground">{managerData.full_name}</p>
-                      </div>
-                    </div>
-                    {request.manager_approved ? (
-                      <Badge className="bg-green-100 text-green-700 gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        موافق
-                      </Badge>
-                    ) : canApproveAsManager ? (
-                      <Button
-                        size="sm"
-                        onClick={() => managerApproveMutation.mutate()}
-                        disabled={managerApproveMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        {managerApproveMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <CheckCircle2 className="w-4 h-4 ml-1" />
-                            موافقة
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <Badge variant="outline" className="text-blue-600 border-blue-300">
-                        في الانتظار
-                      </Badge>
-                    )}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* سبب الرفض */}
-          {request.status === "rejected" && request.rejection_reason && (
-            <div className="space-y-2">
-              <span className="text-sm text-destructive">سبب الرفض</span>
-              <p className="text-sm bg-destructive/10 text-destructive rounded-lg p-3">
-                {request.rejection_reason}
-              </p>
-            </div>
-          )}
-
-          {/* تاريخ التقديم */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>تاريخ التقديم</span>
-            <span>{format(new Date(request.created_at), "d MMM yyyy - HH:mm", { locale: ar })}</span>
-          </div>
-
-          {/* زر طباعة الطلب الرسمي - يظهر فقط بعد الموافقة النهائية */}
-          {request.status === "approved" && employeeData && (
-            <>
-              <Separator />
-              <Button
-                onClick={() => setShowPDFPreview(true)}
-                className="w-full bg-gradient-to-r from-accent to-teal-500"
-              >
-                <Printer className="w-4 h-4 ml-2" />
-                طباعة الطلب الرسمي
-              </Button>
-            </>
-          )}
-
-          {/* أزرار الإجراءات للمدير */}
-          {isAdmin && request.status === "pending" && (
-            <>
-              <Separator />
-              
-              {showRejectionForm ? (
-                <div className="space-y-3">
-                  <Label>سبب الرفض</Label>
-                  <Textarea
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="اكتب سبب رفض الطلب..."
-                    rows={3}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowRejectionForm(false)}
-                      className="flex-1"
-                    >
-                      إلغاء
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={handleReject}
-                      disabled={updateRequestMutation.isPending}
-                      className="flex-1"
-                    >
-                      {updateRequestMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        "تأكيد الرفض"
-                      )}
-                    </Button>
-                  </div>
+            {/* لقب الموظف في المنتصف */}
+            {employeeData?.title && (
+              <div className="hidden md:flex flex-1 justify-center">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md">
+                  <Sparkles className="w-4 h-4 text-yellow-300" />
+                  <span className="text-sm font-bold text-white">{employeeData.title}</span>
+                  <Sparkles className="w-4 h-4 text-yellow-300" />
                 </div>
-              ) : (
-                <div className="flex gap-3">
+              </div>
+            )}
+
+            {/* بيانات صاحب الطلب */}
+            <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-2">
+              <h2 className="text-xl md:text-2xl font-bold text-white">
+                {employeeData?.full_name || "---"}
+              </h2>
+              <p className="text-white/90 font-medium">
+                {employeeData?.job_role || "---"}
+              </p>
+              <Badge variant="outline" className={`${statusInfo.color} gap-1`}>
+                <StatusIcon className="w-3 h-3" />
+                {statusInfo.label}
+              </Badge>
+            </div>
+          </div>
+
+          {/* لقب الموظف للجوال */}
+          {employeeData?.title && (
+            <div className="md:hidden flex justify-center mt-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md">
+                <Sparkles className="w-3 h-3 text-yellow-300" />
+                <span className="text-xs font-semibold text-white">{employeeData.title}</span>
+              </div>
+            </div>
+          )}
+        </motion.div>
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* القسم الأيسر: التفاصيل */}
+            <div className="space-y-4">
+              {/* بطاقة تفاصيل الطلب */}
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-end gap-2 text-base">
+                    تفاصيل الطلب
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {/* رقم الطلب */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <span className="font-mono font-semibold">{request.request_number}</span>
+                    <span className="text-sm text-muted-foreground">رقم الطلب</span>
+                  </div>
+
+                  {/* نوع الطلب */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <span className="font-semibold text-primary">{request.hr_request_types?.name_ar}</span>
+                    <span className="text-sm text-muted-foreground">نوع الطلب</span>
+                  </div>
+
+                  {/* التواريخ */}
+                  {request.start_date && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-2">
+                        <span>
+                          {format(new Date(request.start_date), "d MMM yyyy", { locale: ar })}
+                          {request.end_date && request.end_date !== request.start_date && (
+                            <> - {format(new Date(request.end_date), "d MMM yyyy", { locale: ar })}</>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4" />
+                        التاريخ
+                      </div>
+                    </div>
+                  )}
+
+                  {/* عدد الأيام */}
+                  {request.days_count && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
+                        {request.days_count} يوم
+                      </Badge>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        المدة
+                      </div>
+                    </div>
+                  )}
+
+                  {/* السبب */}
+                  {request.reason && (
+                    <div className="space-y-2">
+                      <span className="text-sm text-muted-foreground block text-right">السبب</span>
+                      <p className="text-sm bg-muted/50 rounded-lg p-3">{request.reason}</p>
+                    </div>
+                  )}
+
+                  {/* ملاحظات */}
+                  {request.notes && (
+                    <div className="space-y-2">
+                      <span className="text-sm text-muted-foreground block text-right">ملاحظات</span>
+                      <p className="text-sm bg-muted/50 rounded-lg p-3">{request.notes}</p>
+                    </div>
+                  )}
+
+                  {/* المرفق */}
+                  {request.attachment_url && (
+                    <a 
+                      href={request.attachment_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                    >
+                      <FileText className="w-5 h-5 text-accent" />
+                      <span className="flex-1 text-sm truncate">{request.attachment_name || "مرفق"}</span>
+                      <Download className="w-4 h-4 text-muted-foreground" />
+                    </a>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* بطاقة الموافقات الإضافية */}
+              {(substituteData || managerData) && (
+                <Card className="border-border/50 shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center justify-end gap-2 text-base">
+                      الموافقات الإضافية
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <Users className="w-4 h-4 text-amber-600" />
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* الموظف البديل */}
+                    {substituteData && (
+                      <div className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10 border-2 border-amber-300">
+                            <AvatarImage src={substituteData.avatar_url || undefined} />
+                            <AvatarFallback className="bg-amber-100 text-amber-700">
+                              {substituteData.full_name?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{substituteData.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{substituteData.job_role}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="text-xs text-amber-600 font-medium">الموظف البديل</span>
+                          {request.substitute_approved ? (
+                            <Badge className="bg-green-100 text-green-700 gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              موافق
+                            </Badge>
+                          ) : canApproveAsSubstitute ? (
+                            <Button
+                              size="sm"
+                              onClick={() => substituteApproveMutation.mutate()}
+                              disabled={substituteApproveMutation.isPending}
+                              className="bg-amber-600 hover:bg-amber-700"
+                            >
+                              {substituteApproveMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 ml-1" />
+                                  موافقة
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <Badge variant="outline" className="text-amber-600 border-amber-300">
+                              في الانتظار
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* المدير المباشر */}
+                    {managerData && (
+                      <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10 border-2 border-blue-300">
+                            <AvatarImage src={managerData.avatar_url || undefined} />
+                            <AvatarFallback className="bg-blue-100 text-blue-700">
+                              {managerData.full_name?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{managerData.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{managerData.job_role}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="text-xs text-blue-600 font-medium">المدير المباشر</span>
+                          {request.manager_approved ? (
+                            <Badge className="bg-green-100 text-green-700 gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              موافق
+                            </Badge>
+                          ) : canApproveAsManager ? (
+                            <Button
+                              size="sm"
+                              onClick={() => managerApproveMutation.mutate()}
+                              disabled={managerApproveMutation.isPending}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              {managerApproveMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 ml-1" />
+                                  موافقة
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <Badge variant="outline" className="text-blue-600 border-blue-300">
+                              في الانتظار
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* سبب الرفض */}
+              {request.status === "rejected" && request.rejection_reason && (
+                <Card className="border-destructive/50 bg-destructive/5">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                        <XCircle className="w-4 h-4 text-destructive" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-destructive">سبب الرفض</span>
+                        <p className="text-sm mt-1">{request.rejection_reason}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* تاريخ التقديم */}
+              <div className="flex items-center justify-between text-sm text-muted-foreground px-1">
+                <span>{format(new Date(request.created_at), "d MMM yyyy - HH:mm", { locale: ar })}</span>
+                <span>تاريخ التقديم</span>
+              </div>
+
+              {/* أزرار الإجراءات */}
+              <div className="space-y-3">
+                {/* زر طباعة الطلب الرسمي */}
+                {request.status === "approved" && employeeData && (
                   <Button
-                    variant="outline"
-                    onClick={() => setShowRejectionForm(true)}
-                    className="flex-1 border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={() => setShowPDFPreview(true)}
+                    className="w-full bg-gradient-to-r from-accent to-teal-500"
                   >
-                    <XCircle className="w-4 h-4 ml-2" />
-                    رفض
+                    <Printer className="w-4 h-4 ml-2" />
+                    طباعة الطلب الرسمي
                   </Button>
+                )}
+
+                {/* أزرار الإجراءات للمدير */}
+                {isAdmin && request.status === "pending" && (
+                  <>
+                    {showRejectionForm ? (
+                      <div className="space-y-3">
+                        <Label>سبب الرفض</Label>
+                        <Textarea
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                          placeholder="اكتب سبب رفض الطلب..."
+                          rows={3}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowRejectionForm(false)}
+                            className="flex-1"
+                          >
+                            إلغاء
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={handleReject}
+                            disabled={updateRequestMutation.isPending}
+                            className="flex-1"
+                          >
+                            {updateRequestMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              "تأكيد الرفض"
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowRejectionForm(true)}
+                          className="flex-1 border-destructive text-destructive hover:bg-destructive/10"
+                        >
+                          <XCircle className="w-4 h-4 ml-2" />
+                          رفض
+                        </Button>
+                        <Button
+                          onClick={handleApprove}
+                          disabled={updateRequestMutation.isPending}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          {updateRequestMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 ml-2" />
+                              موافقة
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* زر حذف الطلب للمخولين */}
+                {isAdmin && (
                   <Button
-                    onClick={handleApprove}
-                    disabled={updateRequestMutation.isPending}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={deleteRequestMutation.isPending}
+                    className="w-full"
                   >
-                    {updateRequestMutation.isPending ? (
+                    {deleteRequestMutation.isPending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        <CheckCircle2 className="w-4 h-4 ml-2" />
-                        موافقة
+                        <Trash2 className="w-4 h-4 ml-2" />
+                        حذف الطلب
                       </>
                     )}
                   </Button>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* زر حذف الطلب للمخولين */}
-          {isAdmin && (
-            <>
-              <Separator />
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={deleteRequestMutation.isPending}
-                className="w-full"
-              >
-                {deleteRequestMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4 ml-2" />
-                    حذف الطلب
-                  </>
                 )}
-              </Button>
-            </>
-          )}
-        </div>
+              </div>
+            </div>
 
-        {/* معاينة النموذج الرسمي - يتم عرضها بجانب التفاصيل */}
-        {employeeData && (
-          <div className="border-t pt-4">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              معاينة النموذج الرسمي
-            </h3>
-            <LiveRequestPreview
-              employeeName={employeeData.full_name}
-              jobRole={employeeData.job_role}
-              signatureUrl={employeeData.signature_url}
-              requestTypeName={request.hr_request_types?.name_ar || "طلب"}
-              startDate={request.start_date ? new Date(request.start_date) : undefined}
-              endDate={request.end_date ? new Date(request.end_date) : undefined}
-              daysCount={request.days_count || 0}
-              reason={request.reason || ""}
-              notes={request.notes || ""}
-              requestNumber={request.request_number}
-              substituteEmployee={substituteData?.full_name}
-              substituteSignatureUrl={substituteData?.signature_url}
-              substituteApproved={request.substitute_approved}
-              directManager={managerData?.full_name}
-              directManagerSignatureUrl={managerData?.signature_url}
-              managerApproved={request.manager_approved}
-              approverName={approverData?.full_name}
-              approverSignatureUrl={approverData?.signature_url}
-              isApproved={request.status === "approved"}
-              headerOffset={request.hr_request_types?.header_offset ?? 35}
-              letterheadUrl={request.hr_request_types?.letterhead_url}
-            />
+            {/* القسم الأيمن: معاينة النموذج */}
+            {employeeData && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-end gap-2 text-sm font-semibold text-muted-foreground">
+                  <span>معاينة النموذج الرسمي</span>
+                  <FileText className="w-4 h-4" />
+                </div>
+                <LiveRequestPreview
+                  employeeName={employeeData.full_name}
+                  jobRole={employeeData.job_role}
+                  signatureUrl={employeeData.signature_url}
+                  requestTypeName={request.hr_request_types?.name_ar || "طلب"}
+                  startDate={request.start_date ? new Date(request.start_date) : undefined}
+                  endDate={request.end_date ? new Date(request.end_date) : undefined}
+                  daysCount={request.days_count || 0}
+                  reason={request.reason || ""}
+                  notes={request.notes || ""}
+                  requestNumber={request.request_number}
+                  substituteEmployee={substituteData?.full_name}
+                  substituteSignatureUrl={substituteData?.signature_url}
+                  substituteApproved={request.substitute_approved}
+                  directManager={managerData?.full_name}
+                  directManagerSignatureUrl={managerData?.signature_url}
+                  managerApproved={request.manager_approved}
+                  approverName={approverData?.full_name}
+                  approverSignatureUrl={approverData?.signature_url}
+                  isApproved={request.status === "approved"}
+                  headerOffset={request.hr_request_types?.header_offset ?? 35}
+                  letterheadUrl={request.hr_request_types?.letterhead_url}
+                />
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </DialogContent>
 
       {/* نافذة معاينة PDF للطباعة */}
