@@ -32,7 +32,6 @@ import {
   Loader2,
   Eye,
   X,
-  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
@@ -480,26 +479,16 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 className="max-w-full h-auto mx-auto rounded-lg"
               />
             ) : inferFileKind(previewFile) === "pdf" ? (
-              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <FileText className="w-20 h-20 text-red-500 opacity-50" />
-                <p className="text-lg font-medium">ملف PDF</p>
-                <p className="text-muted-foreground text-center max-w-md">
-                  لا يمكن عرض ملفات PDF مباشرة في المتصفح. يمكنك تحميل الملف أو فتحه في نافذة جديدة.
+              <div className="h-full">
+                <iframe
+                  src={previewObjectUrl || previewFile.file_url}
+                  title={previewFile.file_name}
+                  className="w-full h-[65vh] rounded-lg border border-border bg-background"
+                  loading="lazy"
+                />
+                <p className="mt-3 text-xs text-muted-foreground text-center">
+                  إذا لم يظهر ملف الـ PDF هنا، استخدم زر التحميل بالأعلى.
                 </p>
-                <div className="flex gap-3">
-                  <Button asChild>
-                    <a href={previewFile.file_url} download className="gap-2">
-                      <Download className="w-4 h-4" />
-                      تحميل الملف
-                    </a>
-                  </Button>
-                  <Button variant="outline" asChild>
-                    <a href={previewFile.file_url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                      <ExternalLink className="w-4 h-4" />
-                      فتح في نافذة جديدة
-                    </a>
-                  </Button>
-                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
