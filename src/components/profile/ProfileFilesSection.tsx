@@ -638,27 +638,27 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 mb-6">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 mb-6">
             {/* زر الكل */}
             <button
               onClick={() => setActiveCategory(null)}
-              className={`relative p-2.5 rounded-xl border transition-all duration-200 text-center group ${
+              className={`relative p-3 rounded-xl border transition-all duration-200 text-center group ${
                 activeCategory === null
                   ? "border-primary bg-primary/5 shadow-md"
                   : "border-transparent bg-muted/50 hover:bg-muted hover:border-muted-foreground/20"
               }`}
             >
-              <div className={`w-8 h-8 mx-auto mb-1.5 rounded-lg flex items-center justify-center transition-all ${
+              <div className={`w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center transition-all ${
                 activeCategory === null
                   ? "bg-gradient-to-br from-primary to-primary/70 shadow-md"
                   : "bg-muted-foreground/10 group-hover:bg-muted-foreground/20"
               }`}>
-                <FolderOpen className={`w-4 h-4 ${activeCategory === null ? "text-white" : "text-muted-foreground"}`} />
+                <FolderOpen className={`w-5 h-5 ${activeCategory === null ? "text-white" : "text-muted-foreground"}`} />
               </div>
               <p className={`text-xs font-medium ${activeCategory === null ? "text-primary" : "text-foreground"}`}>
                 الكل
               </p>
-              <p className="text-[10px] text-muted-foreground">{files.length}</p>
+              <p className="text-[11px] text-muted-foreground">{files.length}</p>
             </button>
 
             {/* أقسام المستخدم */}
@@ -672,19 +672,19 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 <div key={cat.id} className="relative group">
                   <button
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`w-full p-2.5 rounded-xl border transition-all duration-200 text-center ${
+                    className={`w-full p-3 rounded-xl border transition-all duration-200 text-center ${
                       isActive
                         ? "border-primary bg-primary/5 shadow-md"
                         : "border-transparent bg-muted/50 hover:bg-muted hover:border-muted-foreground/20"
                     }`}
                   >
-                    <div className={`w-8 h-8 mx-auto mb-1.5 rounded-lg bg-gradient-to-br ${catInfo.color} flex items-center justify-center shadow-md transition-transform group-hover:scale-105`}>
-                      <CatIcon className="w-4 h-4 text-white" />
+                    <div className={`w-10 h-10 mx-auto mb-2 rounded-lg bg-gradient-to-br ${catInfo.color} flex items-center justify-center shadow-md transition-transform group-hover:scale-105`}>
+                      <CatIcon className="w-5 h-5 text-white" />
                     </div>
                     <p className={`text-xs font-medium truncate ${isActive ? "text-primary" : "text-foreground"}`}>
                       {cat.name}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">{count}</p>
+                    <p className="text-[11px] text-muted-foreground">{count}</p>
                   </button>
 
                   {/* قائمة التعديل */}
@@ -693,9 +693,9 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-1 left-1 h-5 w-5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm shadow-sm"
+                        className="absolute top-1.5 left-1.5 h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm shadow-sm"
                       >
-                        <MoreVertical className="w-3 h-3" />
+                        <MoreVertical className="w-3.5 h-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="rounded-xl">
