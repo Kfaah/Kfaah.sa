@@ -168,69 +168,59 @@ export function LiveRequestPreview({
               <tbody>
                 {/* بيانات مقدم الطلب */}
                 <tr>
-                  <td colSpan={4} className="bg-primary/10 font-bold text-[12px] py-2 px-3 border border-primary/20 text-center text-primary">
+                  <td colSpan={4} className="bg-primary/10 font-bold text-[11px] py-1.5 px-3 border border-primary/20 text-center text-primary">
                     بيانات مقدم الطلب
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 w-[22%] text-[11px]">اسم الموظف</td>
-                  <td className={`py-2 px-3 border border-border/40 w-[28%] text-[11px] ${employeeName ? 'font-medium' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 w-[20%] text-[10px]">اسم الموظف</td>
+                  <td className={`py-1.5 px-2 border border-border/40 w-[30%] text-[10px] ${employeeName ? 'font-medium' : 'text-muted-foreground'}`}>
                     {employeeName || "---"}
                   </td>
-                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 w-[22%] text-[11px]">المسمى الوظيفي</td>
-                  <td className={`py-2 px-3 border border-border/40 w-[28%] text-[11px] ${jobRole ? 'font-medium' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 w-[20%] text-[10px]">المسمى الوظيفي</td>
+                  <td className={`py-1.5 px-2 border border-border/40 w-[30%] text-[10px] ${jobRole ? 'font-medium' : 'text-muted-foreground'}`}>
                     {jobRole || "---"}
                   </td>
                 </tr>
 
                 {/* تفاصيل الطلب */}
                 <tr>
-                  <td colSpan={4} className="bg-primary/10 font-bold text-[12px] py-2 px-3 border border-primary/20 text-center text-primary">
+                  <td colSpan={4} className="bg-primary/10 font-bold text-[11px] py-1.5 px-3 border border-primary/20 text-center text-primary">
                     تفاصيل الطلب
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 text-[11px]">نوع الطلب</td>
-                  <td colSpan={3} className={`py-2 px-3 border border-border/40 text-[11px] ${requestTypeName ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[10px]">نوع الطلب</td>
+                  <td className={`py-1.5 px-2 border border-border/40 text-[10px] ${requestTypeName ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
                     {requestTypeName || "---"}
                   </td>
-                </tr>
-                <tr>
-                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 text-[11px]">من تاريخ</td>
-                  <td className={`py-2 px-3 border border-border/40 text-[11px] ${startDate ? 'font-medium' : 'text-muted-foreground'}`}>
-                    {startDate ? formatArabicDate(startDate) : "---"}
-                  </td>
-                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 text-[11px]">إلى تاريخ</td>
-                  <td className={`py-2 px-3 border border-border/40 text-[11px] ${endDate ? 'font-medium' : 'text-muted-foreground'}`}>
-                    {endDate ? formatArabicDate(endDate) : "---"}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 text-[11px]">عدد الأيام</td>
-                  <td colSpan={3} className="py-2 px-3 border border-border/40 text-[11px]">
-                    <span className={daysCount > 0 ? 'bg-primary/15 text-primary font-bold px-3 py-1 rounded text-[12px]' : 'text-muted-foreground'}>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[10px]">عدد الأيام</td>
+                  <td className="py-1.5 px-2 border border-border/40 text-[10px]">
+                    <span className={daysCount > 0 ? 'bg-primary/15 text-primary font-bold px-2 py-0.5 rounded text-[10px]' : 'text-muted-foreground'}>
                       {daysCount > 0 ? `${daysCount} يوم` : "---"}
                     </span>
                   </td>
                 </tr>
                 <tr>
-                  <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 align-top text-[11px]">السبب</td>
-                  <td colSpan={3} className={`py-2 px-3 border border-border/40 text-[11px] ${reason ? 'font-medium' : 'text-muted-foreground italic'}`}>
-                    {reason || "لم يتم تحديد السبب"}
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[10px]">من تاريخ</td>
+                  <td className={`py-1.5 px-2 border border-border/40 text-[10px] ${startDate ? 'font-medium' : 'text-muted-foreground'}`}>
+                    {startDate ? formatArabicDate(startDate) : "---"}
+                  </td>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 text-[10px]">إلى تاريخ</td>
+                  <td className={`py-1.5 px-2 border border-border/40 text-[10px] ${endDate ? 'font-medium' : 'text-muted-foreground'}`}>
+                    {endDate ? formatArabicDate(endDate) : "---"}
                   </td>
                 </tr>
-                {notes && (
-                  <tr>
-                    <td className="bg-muted/30 font-semibold py-2 px-3 border border-border/40 align-top text-[11px]">ملاحظات</td>
-                    <td colSpan={3} className="py-2 px-3 border border-border/40 text-[11px] font-medium">
-                      {notes}
-                    </td>
-                  </tr>
-                )}
+                <tr>
+                  <td className="bg-muted/30 font-semibold py-1.5 px-2 border border-border/40 align-top text-[10px]">السبب / الملاحظات</td>
+                  <td colSpan={3} className={`py-1.5 px-2 border border-border/40 text-[10px] ${reason || notes ? 'font-medium' : 'text-muted-foreground italic'}`}>
+                    {reason || "لم يتم تحديد السبب"}{notes ? ` - ${notes}` : ""}
+                  </td>
+                </tr>
 
                 {/* التوقيعات والاعتماد */}
                 <tr>
-                  <td colSpan={4} className="bg-primary/10 font-bold text-[12px] py-2 px-3 border border-primary/20 text-center text-primary">
+                  <td colSpan={4} className="bg-primary/10 font-bold text-[11px] py-1.5 px-3 border border-primary/20 text-center text-primary">
                     التوقيعات والاعتماد
                   </td>
                 </tr>
