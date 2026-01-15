@@ -46,7 +46,16 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
         if (!res.ok) throw new Error(`http_${res.status}`);
         const data = new Uint8Array(await res.arrayBuffer());
 
-        const task = pdfjs.getDocument({ data });
+        // Get pdfjs-dist version for CDN paths
+        const pdfjsVersion = pdfjs.version || "4.0.379";
+
+        const task = pdfjs.getDocument({
+          data,
+          // Enable standard fonts and cmaps for proper Arabic/non-Latin text rendering
+          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}/cmaps/`,
+          cMapPacked: true,
+          standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}/standard_fonts/`,
+        });
         const doc = (await task.promise) as PdfDocumentProxy;
 
         if (cancelled) {
