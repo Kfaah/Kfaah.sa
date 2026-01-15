@@ -479,14 +479,25 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 className="max-w-full h-auto mx-auto rounded-lg"
               />
             ) : inferFileKind(previewFile) === "pdf" ? (
-              <div className="h-full">
-                <iframe
-                  src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewFile.file_url)}&embedded=true`}
-                  title={previewFile.file_name}
+              <div className="h-full flex flex-col">
+                <object
+                  data={previewObjectUrl || previewFile.file_url}
+                  type="application/pdf"
                   className="w-full h-[65vh] rounded-lg border border-border bg-background"
-                  sandbox="allow-scripts allow-same-origin"
-                  loading="lazy"
-                />
+                >
+                  <div className="flex flex-col items-center justify-center h-[65vh] gap-4 text-muted-foreground">
+                    <FileText className="w-16 h-16 opacity-40" />
+                    <p className="text-center">
+                      لم يتمكن المتصفح من عرض PDF مباشرة.
+                    </p>
+                    <Button asChild>
+                      <a href={previewFile.file_url} download className="gap-2">
+                        <Download className="w-4 h-4" />
+                        تحميل الملف
+                      </a>
+                    </Button>
+                  </div>
+                </object>
                 <p className="mt-3 text-xs text-muted-foreground text-center">
                   إذا لم يظهر ملف الـ PDF، يمكنك تحميله مباشرة.
                 </p>
