@@ -66,6 +66,15 @@ interface ProfileFilesSectionProps {
   userId: string;
 }
 
+// الأقسام الافتراضية
+const DEFAULT_CATEGORIES = [
+  { name: "السيرة الذاتية", icon: "FileText" },
+  { name: "الشهادات", icon: "GraduationCap" },
+  { name: "الدورات التدريبية", icon: "Award" },
+  { name: "العقود", icon: "Briefcase" },
+  { name: "أخرى", icon: "File" },
+];
+
 export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const queryClient = useQueryClient();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -85,6 +94,32 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const [editingCategory, setEditingCategory] = useState<FileCategory | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isSavingCategory, setIsSavingCategory] = useState(false);
+  const [isInitializingCategories, setIsInitializingCategories] = useState(false);
+
+  // إنشاء الأقسام الافتراضية للمستخدم الجديد
+  const initializeDefaultCategories = async () => {
+    setIsInitializingCategories(true);
+    try {
+      const categoriesToInsert = DEFAULT_CATEGORIES.map((cat, index) => ({
+        user_id: userId,
+        name: cat.name,
+        icon: cat.icon,
+        display_order: index,
+      }));
+
+      const { error } = await supabase
+        .from("file_categories")
+        .insert(categoriesToInsert);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["file-categories", userId] });
+    } catch (error) {
+      console.error("Error initializing categories:", error);
+    } finally {
+      setIsInitializingCategories(false);
+    }
+  };
 
   // جلب أقسام المستخدم
   const { data: userCategories = [], isLoading: isCategoriesLoading } = useQuery({
@@ -97,10 +132,24 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
         .order("display_order", { ascending: true });
 
       if (error) throw error;
+      
+      // إذا لم يكن للمستخدم أقسام، أنشئ الأقسام الافتراضية
+      if (!data || data.length === 0) {
+        // سيتم إنشاؤها في useEffect
+        return [];
+      }
+      
       return (data || []) as FileCategory[];
     },
     enabled: !!userId,
   });
+
+  // إنشاء الأقسام الافتراضية تلقائياً للمستخدمين الجدد
+  useEffect(() => {
+    if (!isCategoriesLoading && userCategories.length === 0 && userId && !isInitializingCategories) {
+      initializeDefaultCategories();
+    }
+  }, [isCategoriesLoading, userCategories.length, userId]);
 
   // رابط تحميل مباشر
   const getDownloadHref = (url: string, name?: string) => {
