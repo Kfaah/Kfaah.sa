@@ -36,9 +36,15 @@ import {
   Eye,
   X,
   FolderPlus,
-  Settings,
   Pencil,
   MoreVertical,
+  GraduationCap,
+  Award,
+  Briefcase,
+  FolderOpen,
+  FileCheck,
+  FileBadge,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
@@ -66,13 +72,37 @@ interface ProfileFilesSectionProps {
   userId: string;
 }
 
-// الأقسام الافتراضية
+// الأقسام الافتراضية مع ألوان وأيقونات
 const DEFAULT_CATEGORIES = [
-  { name: "السيرة الذاتية", icon: "FileText" },
-  { name: "الشهادات", icon: "GraduationCap" },
-  { name: "الدورات التدريبية", icon: "Award" },
-  { name: "العقود", icon: "Briefcase" },
-  { name: "أخرى", icon: "File" },
+  { name: "السيرة الذاتية", icon: "FileText", color: "from-blue-500 to-cyan-500" },
+  { name: "الشهادات", icon: "GraduationCap", color: "from-amber-500 to-orange-500" },
+  { name: "الدورات التدريبية", icon: "Award", color: "from-emerald-500 to-green-500" },
+  { name: "العقود", icon: "Briefcase", color: "from-purple-500 to-violet-500" },
+  { name: "أخرى", icon: "File", color: "from-slate-500 to-gray-500" },
+];
+
+// خريطة الأيقونات
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  FileText,
+  GraduationCap,
+  Award,
+  Briefcase,
+  File,
+  FolderOpen,
+  FileCheck,
+  FileBadge,
+};
+
+// ألوان للأقسام
+const CATEGORY_COLORS = [
+  "from-blue-500 to-cyan-500",
+  "from-amber-500 to-orange-500",
+  "from-emerald-500 to-green-500",
+  "from-purple-500 to-violet-500",
+  "from-rose-500 to-pink-500",
+  "from-indigo-500 to-blue-500",
+  "from-teal-500 to-emerald-500",
+  "from-fuchsia-500 to-purple-500",
 ];
 
 export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
@@ -425,9 +455,17 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
     ? files.filter((f) => f.category === activeCategory)
     : files;
 
-  const getCategoryInfo = (categoryId: string) => {
+  const getCategoryInfo = (categoryId: string, index: number = 0) => {
     const cat = userCategories.find((c) => c.id === categoryId);
-    return cat ? { id: cat.id, label: cat.name } : { id: categoryId, label: categoryId };
+    const catIndex = cat ? userCategories.findIndex((c) => c.id === categoryId) : index;
+    const color = CATEGORY_COLORS[catIndex % CATEGORY_COLORS.length];
+    const IconComponent = cat?.icon ? ICON_MAP[cat.icon] || File : File;
+    return { 
+      id: cat?.id || categoryId, 
+      label: cat?.name || categoryId,
+      color,
+      Icon: IconComponent,
+    };
   };
 
   const openAddCategoryDialog = () => {
@@ -443,37 +481,50 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-            <FileText className="w-4 h-4 text-blue-600" />
+    <Card className="overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-l from-blue-50/50 to-transparent dark:from-blue-950/20 pb-6">
+        <CardTitle className="flex items-center gap-3 text-lg">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+            <FolderOpen className="w-5 h-5 text-white" />
           </div>
-          الملفات والمستندات
+          <div>
+            <span className="text-xl font-bold">الملفات والمستندات</span>
+            <p className="text-xs text-muted-foreground font-normal mt-0.5">
+              {files.length} ملف في {userCategories.length} قسم
+            </p>
+          </div>
         </CardTitle>
         <div className="flex items-center gap-2">
           {/* زر إضافة قسم */}
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 rounded-xl border-dashed hover:border-solid hover:bg-accent/10 transition-all"
             onClick={openAddCategoryDialog}
           >
             <FolderPlus className="w-4 h-4" />
-            قسم جديد
+            <span className="hidden sm:inline">قسم جديد</span>
           </Button>
 
           {/* زر إضافة ملف */}
           <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-2" disabled={userCategories.length === 0}>
-                <Plus className="w-4 h-4" />
-                إضافة ملف
+              <Button 
+                size="sm" 
+                className="gap-2 rounded-xl bg-gradient-to-l from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg shadow-blue-500/25 transition-all" 
+                disabled={userCategories.length === 0}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">إضافة ملف</span>
+                <Plus className="w-4 h-4 sm:hidden" />
               </Button>
             </DialogTrigger>
-            <DialogContent dir="rtl">
+            <DialogContent dir="rtl" className="rounded-2xl">
               <DialogHeader>
-                <DialogTitle>إضافة ملف جديد</DialogTitle>
+                <DialogTitle className="flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-accent" />
+                  إضافة ملف جديد
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -482,24 +533,31 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                     value={fileName}
                     onChange={(e) => setFileName(e.target.value)}
                     placeholder="مثال: شهادة البكالوريوس"
+                    className="rounded-xl"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label>القسم</Label>
                   <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-xl">
                       <SelectValue placeholder="اختر القسم" />
                     </SelectTrigger>
                     <SelectContent>
-                      {userCategories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          <span className="flex items-center gap-2">
-                            <File className="w-4 h-4" />
-                            {cat.name}
-                          </span>
-                        </SelectItem>
-                      ))}
+                      {userCategories.map((cat, idx) => {
+                        const catInfo = getCategoryInfo(cat.id, idx);
+                        const CatIcon = catInfo.Icon;
+                        return (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            <span className="flex items-center gap-2">
+                              <div className={`w-5 h-5 rounded-md bg-gradient-to-br ${catInfo.color} flex items-center justify-center`}>
+                                <CatIcon className="w-3 h-3 text-white" />
+                              </div>
+                              {cat.name}
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -507,20 +565,24 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 <div className="space-y-2">
                   <Label>الملف</Label>
                   <div
-                    className="border-2 border-dashed border-muted-foreground/30 rounded-xl p-6 text-center cursor-pointer hover:border-accent transition-colors"
+                    className="border-2 border-dashed border-muted-foreground/20 rounded-2xl p-8 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-all group"
                     onClick={() => document.getElementById("file-input")?.click()}
                   >
                     {selectedFile ? (
-                      <div className="space-y-2">
-                        <FileText className="w-8 h-8 mx-auto text-accent" />
-                        <p className="text-sm font-medium">{selectedFile.name}</p>
+                      <div className="space-y-3">
+                        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center shadow-lg">
+                          <FileCheck className="w-8 h-8 text-white" />
+                        </div>
+                        <p className="font-medium text-foreground">{selectedFile.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
+                      <div className="space-y-3">
+                        <div className="w-16 h-16 mx-auto rounded-2xl bg-muted/50 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
+                          <Upload className="w-8 h-8 text-muted-foreground group-hover:text-accent transition-colors" />
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           اضغط لاختيار ملف أو اسحب الملف هنا
                         </p>
@@ -537,7 +599,7 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
 
                 <Button
                   onClick={uploadFile}
-                  className="w-full"
+                  className="w-full rounded-xl h-11 bg-gradient-to-l from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
                   disabled={isUploading || !selectedFile || !category}
                 >
                   {isUploading ? (
@@ -557,68 +619,99 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {/* فلاتر التصنيف */}
         {isCategoriesLoading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="w-6 h-6 animate-spin text-accent" />
           </div>
         ) : userCategories.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-xl mb-6">
-            <FolderPlus className="w-12 h-12 mx-auto mb-3 opacity-40" />
-            <p className="font-medium">لا توجد أقسام بعد</p>
-            <p className="text-sm mb-4">أنشئ قسمًا جديدًا لتنظيم ملفاتك</p>
-            <Button size="sm" onClick={openAddCategoryDialog} className="gap-2">
+          <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-2xl mb-6 bg-muted/30">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted flex items-center justify-center">
+              <FolderPlus className="w-8 h-8 opacity-40" />
+            </div>
+            <p className="font-semibold text-lg">لا توجد أقسام بعد</p>
+            <p className="text-sm mb-5">أنشئ قسمًا جديدًا لتنظيم ملفاتك</p>
+            <Button size="sm" onClick={openAddCategoryDialog} className="gap-2 rounded-xl">
               <Plus className="w-4 h-4" />
               إنشاء أول قسم
             </Button>
           </div>
         ) : (
-          <div className="flex flex-wrap gap-2 mb-6">
-            <Button
-              variant={activeCategory === null ? "default" : "outline"}
-              size="sm"
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
+            {/* زر الكل */}
+            <button
               onClick={() => setActiveCategory(null)}
+              className={`relative p-4 rounded-2xl border-2 transition-all duration-200 text-center group ${
+                activeCategory === null
+                  ? "border-primary bg-primary/5 shadow-lg"
+                  : "border-transparent bg-muted/50 hover:bg-muted hover:border-muted-foreground/20"
+              }`}
             >
-              الكل ({files.length})
-            </Button>
-            {userCategories.map((cat) => {
+              <div className={`w-12 h-12 mx-auto mb-2 rounded-xl flex items-center justify-center transition-all ${
+                activeCategory === null
+                  ? "bg-gradient-to-br from-primary to-primary/70 shadow-lg"
+                  : "bg-muted-foreground/10 group-hover:bg-muted-foreground/20"
+              }`}>
+                <FolderOpen className={`w-6 h-6 ${activeCategory === null ? "text-white" : "text-muted-foreground"}`} />
+              </div>
+              <p className={`text-sm font-medium ${activeCategory === null ? "text-primary" : "text-foreground"}`}>
+                الكل
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">{files.length} ملف</p>
+            </button>
+
+            {/* أقسام المستخدم */}
+            {userCategories.map((cat, idx) => {
               const count = files.filter((f) => f.category === cat.id).length;
+              const catInfo = getCategoryInfo(cat.id, idx);
+              const CatIcon = catInfo.Icon;
+              const isActive = activeCategory === cat.id;
+
               return (
-                <div key={cat.id} className="flex items-center gap-0.5">
-                  <Button
-                    variant={activeCategory === cat.id ? "default" : "outline"}
-                    size="sm"
+                <div key={cat.id} className="relative group">
+                  <button
                     onClick={() => setActiveCategory(cat.id)}
-                    className="gap-1.5 rounded-l-none"
+                    className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 text-center ${
+                      isActive
+                        ? "border-primary bg-primary/5 shadow-lg"
+                        : "border-transparent bg-muted/50 hover:bg-muted hover:border-muted-foreground/20"
+                    }`}
                   >
-                    <File className="w-4 h-4" />
-                    {cat.name} ({count})
-                  </Button>
+                    <div className={`w-12 h-12 mx-auto mb-2 rounded-xl bg-gradient-to-br ${catInfo.color} flex items-center justify-center shadow-lg transition-transform group-hover:scale-105`}>
+                      <CatIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <p className={`text-sm font-medium truncate ${isActive ? "text-primary" : "text-foreground"}`}>
+                      {cat.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{count} ملف</p>
+                  </button>
+
+                  {/* قائمة التعديل */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
-                        variant={activeCategory === cat.id ? "default" : "outline"}
-                        size="sm"
-                        className="px-1.5 rounded-r-none border-r-0"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 left-2 h-7 w-7 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm shadow-sm"
                       >
-                        <MoreVertical className="w-3.5 h-3.5" />
+                        <MoreVertical className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      <DropdownMenuItem onClick={() => openEditCategoryDialog(cat)}>
-                        <Pencil className="w-4 h-4 ml-2" />
+                    <DropdownMenuContent align="start" className="rounded-xl">
+                      <DropdownMenuItem onClick={() => openEditCategoryDialog(cat)} className="gap-2">
+                        <Pencil className="w-4 h-4" />
                         تعديل الاسم
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-destructive"
+                        className="text-destructive gap-2"
                         onClick={() => {
                           if (confirm(`هل أنت متأكد من حذف قسم "${cat.name}"؟`)) {
                             deleteCategoryMutation.mutate(cat.id);
                           }
                         }}
                       >
-                        <Trash2 className="w-4 h-4 ml-2" />
+                        <Trash2 className="w-4 h-4" />
                         حذف القسم
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -637,34 +730,42 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 <Loader2 className="w-8 h-8 animate-spin text-accent" />
               </div>
             ) : filteredFiles.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg">لا توجد ملفات</p>
+              <div className="text-center py-16 text-muted-foreground">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-muted/50 flex items-center justify-center">
+                  <FileText className="w-10 h-10 opacity-30" />
+                </div>
+                <p className="text-lg font-medium">لا توجد ملفات</p>
                 <p className="text-sm">أضف ملفاتك مثل السيرة الذاتية والشهادات</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredFiles.map((file) => {
-                  const catInfo = getCategoryInfo(file.category);
+              <div className="space-y-3">
+                {filteredFiles.map((file, fileIdx) => {
+                  const catInfo = getCategoryInfo(file.category, fileIdx);
+                  const CatIcon = catInfo.Icon;
                   return (
                     <div
                       key={file.id}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors group"
+                      className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-l from-muted/30 to-muted/60 hover:from-muted/50 hover:to-muted/80 transition-all group border border-transparent hover:border-muted-foreground/10"
                     >
-                      <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                        <File className="w-6 h-6 text-accent" />
+                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${catInfo.color} flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-105`}>
+                        <CatIcon className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">{file.file_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {catInfo.label} • {formatDateTime(file.created_at)}
-                        </p>
+                        <p className="font-semibold text-foreground truncate">{file.file_name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full bg-gradient-to-l ${catInfo.color} text-white`}>
+                            {catInfo.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDateTime(file.created_at)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-9 w-9 rounded-xl hover:bg-blue-500/10 hover:text-blue-600"
                           onClick={() => setPreviewFile(file)}
                         >
                           <Eye className="w-4 h-4" />
@@ -672,7 +773,7 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-9 w-9 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600"
                           asChild
                         >
                           <a
@@ -685,7 +786,7 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          className="h-9 w-9 rounded-xl hover:bg-destructive/10 text-destructive"
                           onClick={() => deleteFileMutation.mutate(file.id)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -702,9 +803,12 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
 
       {/* مربع حوار إضافة/تعديل قسم */}
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-        <DialogContent dir="rtl">
+        <DialogContent dir="rtl" className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                {editingCategory ? <Pencil className="w-4 h-4 text-white" /> : <FolderPlus className="w-4 h-4 text-white" />}
+              </div>
               {editingCategory ? "تعديل القسم" : "إضافة قسم جديد"}
             </DialogTitle>
           </DialogHeader>
@@ -715,6 +819,7 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 placeholder="مثال: الشهادات الأكاديمية"
+                className="rounded-xl"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     editingCategory ? updateCategory() : addCategory();
@@ -724,7 +829,7 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
             </div>
             <Button
               onClick={editingCategory ? updateCategory : addCategory}
-              className="w-full"
+              className="w-full rounded-xl h-11 bg-gradient-to-l from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
               disabled={isSavingCategory || !newCategoryName.trim()}
             >
               {isSavingCategory ? (
