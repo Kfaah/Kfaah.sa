@@ -65,6 +65,15 @@ export default function HRRequests() {
   const [rejectionReason, setRejectionReason] = useState("");
 
   const isAdmin = user.role === "مدير النظام";
+  const isHRManager = user.role === "مدير الموارد البشرية";
+  const hasAdminAccess = isAdmin || isHRManager;
+
+  // تعيين القسم الافتراضي حسب نوع المستخدم
+  useEffect(() => {
+    if (hasAdminAccess && activeSection === "my-requests") {
+      setActiveSection("all-requests");
+    }
+  }, [hasAdminAccess]);
 
   // Sync URL with section
   const handleSectionChange = (section: HRSection) => {
@@ -81,7 +90,7 @@ export default function HRRequests() {
 
     if (
       sectionParam &&
-      ["my-requests", "pending-approvals", "my-approvals-history"].includes(sectionParam)
+      ["my-requests", "pending-approvals", "my-approvals-history", "all-requests"].includes(sectionParam)
     ) {
       if (sectionParam !== activeSection) setActiveSection(sectionParam);
     }
@@ -805,7 +814,8 @@ export default function HRRequests() {
         />
 
         {/* المحتوى حسب القسم المختار */}
-        {activeSection === "my-requests" && (
+        {/* قسم طلباتي - للموظفين العاديين فقط */}
+        {activeSection === "my-requests" && !hasAdminAccess && (
           <MyRequestsSection
             requests={myRequests}
             isLoading={isLoadingRequests}
@@ -813,6 +823,11 @@ export default function HRRequests() {
             onViewRequest={(request) => setSelectedRequest(request)}
             getRequestIcon={getRequestIcon}
           />
+        )}
+
+        {/* قسم جميع الطلبات - لمدير النظام ومدير الموارد البشرية */}
+        {activeSection === "all-requests" && hasAdminAccess && (
+          <AdminRequestsPanel requestTypes={requestTypes} />
         )}
 
         {activeSection === "pending-approvals" && (
@@ -835,7 +850,8 @@ export default function HRRequests() {
           />
         )}
 
-        {activeSection === "my-approvals-history" && (
+        {/* سجل الموافقات - للموظفين العاديين فقط */}
+        {activeSection === "my-approvals-history" && !hasAdminAccess && (
           <ApprovalsHistorySection
             approvedAsSubstitute={approvedAsSubstitute}
             approvedAsManager={approvedAsManager}
@@ -843,13 +859,6 @@ export default function HRRequests() {
             onViewRequest={(request) => setSelectedRequest(request)}
             onNavigateToPending={() => handleSectionChange("pending-approvals")}
           />
-        )}
-
-        {/* إدارة طلبات الموظفين (للمدير فقط) */}
-        {isAdmin && (
-          <div className="pt-6 border-t">
-            <AdminRequestsPanel requestTypes={requestTypes} />
-          </div>
         )}
 
         {/* Dialog تقديم طلب جديد */}
