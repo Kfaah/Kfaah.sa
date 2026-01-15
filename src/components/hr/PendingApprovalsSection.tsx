@@ -44,6 +44,12 @@ interface ApprovalCategoryProps {
   icon: React.ComponentType<{ className?: string }>;
   requests: any[];
   employees: Employee[];
+  color: {
+    gradient: string;
+    light: string;
+    text: string;
+    border: string;
+  };
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onPreview: (request: any) => void;
@@ -55,6 +61,7 @@ function ApprovalCategory({
   icon: Icon,
   requests,
   employees,
+  color,
   onApprove,
   onReject,
   onPreview,
@@ -67,12 +74,23 @@ function ApprovalCategory({
   if (requests.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div className={cn(
+      "rounded-xl border-2 p-4",
+      color.light,
+      color.border
+    )}>
       {/* Category Header */}
-      <div className="flex items-center gap-2">
-        <Icon className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">{title}</span>
-        <Badge variant="secondary" className="text-xs">{requests.length}</Badge>
+      <div className="flex items-center gap-3 mb-4">
+        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-sm", color.gradient)}>
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1">
+          <h3 className={cn("font-semibold text-sm", color.text)}>{title}</h3>
+          <p className="text-xs text-muted-foreground">{requests.length} طلب بانتظار موافقتك</p>
+        </div>
+        <Badge className={cn("text-xs", color.gradient, "text-white border-0")}>
+          {requests.length}
+        </Badge>
       </div>
 
       {/* Requests */}
@@ -80,62 +98,63 @@ function ApprovalCategory({
         {requests.map((request: any) => {
           const requester = getRequester(request);
           return (
-            <Card key={request.id} className="p-3">
-              <div className="flex items-center gap-3">
-                {/* Avatar */}
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={requester?.avatar_url || undefined} />
-                  <AvatarFallback className="text-xs bg-muted">
-                    {requester?.full_name?.charAt(0) || "؟"}
-                  </AvatarFallback>
-                </Avatar>
-                
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm text-foreground truncate">
-                    {requester?.full_name || "موظف"}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span>{request.hr_request_types?.name_ar}</span>
-                    <span>•</span>
-                    <span>{request.request_number}</span>
-                  </div>
+            <div 
+              key={request.id} 
+              className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border"
+            >
+              {/* Avatar */}
+              <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                <AvatarImage src={requester?.avatar_url || undefined} />
+                <AvatarFallback className="text-xs bg-muted font-medium">
+                  {requester?.full_name?.charAt(0) || "؟"}
+                </AvatarFallback>
+              </Avatar>
+              
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm text-foreground truncate">
+                  {requester?.full_name || "موظف"}
                 </div>
-                
-                {/* Actions */}
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onPreview(request)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => onApprove(request.id)}
-                    disabled={isApproving}
-                    className="h-8 gap-1 bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    {isApproving ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    )}
-                    <span className="hidden sm:inline text-xs">موافقة</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onReject(request.id)}
-                    className="h-8 w-8 p-0 border-destructive/30 text-destructive hover:bg-destructive/10"
-                  >
-                    <XCircle className="w-3.5 h-3.5" />
-                  </Button>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="truncate">{request.hr_request_types?.name_ar}</span>
+                  <span>•</span>
+                  <span className="font-mono">{request.request_number}</span>
                 </div>
               </div>
-            </Card>
+              
+              {/* Actions */}
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onPreview(request)}
+                  className="h-9 w-9 p-0 text-muted-foreground hover:text-foreground"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => onApprove(request.id)}
+                  disabled={isApproving}
+                  className="h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                >
+                  {isApproving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  <span className="hidden sm:inline text-xs">موافقة</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onReject(request.id)}
+                  className="h-9 w-9 p-0 border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                >
+                  <XCircle className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           );
         })}
       </div>
@@ -162,16 +181,84 @@ export function PendingApprovalsSection({
 }: PendingApprovalsSectionProps) {
   const totalPending = substituteRequests.length + managerRequests.length + hrManagerRequests.length + executiveRequests.length;
 
+  const categories = [
+    {
+      title: "موافقتك كموظف بديل",
+      icon: Users,
+      requests: substituteRequests,
+      color: {
+        gradient: "bg-gradient-to-br from-amber-500 to-orange-500",
+        light: "bg-amber-50/50 dark:bg-amber-950/20",
+        text: "text-amber-700 dark:text-amber-400",
+        border: "border-amber-200 dark:border-amber-800/50",
+      },
+      onApprove: onApproveSubstitute,
+      onReject: (id: string) => onReject(id, "substitute"),
+      onPreview: (req: any) => onPreview(req, "substitute"),
+      isApproving: isApprovingSubstitute,
+    },
+    {
+      title: "موافقتك كمدير مباشر",
+      icon: Briefcase,
+      requests: managerRequests,
+      color: {
+        gradient: "bg-gradient-to-br from-blue-500 to-indigo-500",
+        light: "bg-blue-50/50 dark:bg-blue-950/20",
+        text: "text-blue-700 dark:text-blue-400",
+        border: "border-blue-200 dark:border-blue-800/50",
+      },
+      onApprove: onApproveManager,
+      onReject: (id: string) => onReject(id, "manager"),
+      onPreview: (req: any) => onPreview(req, "manager"),
+      isApproving: isApprovingManager,
+    },
+    {
+      title: "موافقتك كمدير موارد بشرية",
+      icon: UserCheck,
+      requests: hrManagerRequests,
+      color: {
+        gradient: "bg-gradient-to-br from-emerald-500 to-teal-500",
+        light: "bg-emerald-50/50 dark:bg-emerald-950/20",
+        text: "text-emerald-700 dark:text-emerald-400",
+        border: "border-emerald-200 dark:border-emerald-800/50",
+      },
+      onApprove: onApproveHrManager,
+      onReject: (id: string) => onReject(id, "hr_manager"),
+      onPreview: (req: any) => onPreview(req, "hr_manager"),
+      isApproving: isApprovingHrManager,
+    },
+    {
+      title: "موافقتك كمدير تنفيذي",
+      icon: Crown,
+      requests: executiveRequests,
+      color: {
+        gradient: "bg-gradient-to-br from-purple-500 to-violet-500",
+        light: "bg-purple-50/50 dark:bg-purple-950/20",
+        text: "text-purple-700 dark:text-purple-400",
+        border: "border-purple-200 dark:border-purple-800/50",
+      },
+      onApprove: onApproveExecutive,
+      onReject: (id: string) => onReject(id, "executive"),
+      onPreview: (req: any) => onPreview(req, "executive"),
+      isApproving: isApprovingExecutive,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <Card className="p-6 border shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">الموافقات المعلقة</h1>
-          <p className="text-sm text-muted-foreground">الطلبات التي تحتاج موافقتك</p>
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
+            <UserCheck className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-foreground">الموافقات المعلقة</h2>
+            <p className="text-xs text-muted-foreground">الطلبات التي تحتاج موافقتك</p>
+          </div>
         </div>
         {totalPending > 0 && (
-          <Badge variant="destructive" className="text-xs">
+          <Badge variant="destructive" className="text-xs animate-pulse">
             {totalPending} معلق
           </Badge>
         )}
@@ -179,61 +266,31 @@ export function PendingApprovalsSection({
 
       {/* Empty State */}
       {totalPending === 0 ? (
-        <Card className="p-12">
-          <div className="flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <UserCheck className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-medium text-foreground mb-1">لا توجد موافقات معلقة</h3>
-            <p className="text-sm text-muted-foreground">
-              ستظهر هنا الطلبات التي تحتاج موافقتك
-            </p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+            <UserCheck className="w-8 h-8 text-muted-foreground" />
           </div>
-        </Card>
+          <h3 className="font-medium text-foreground mb-1">لا توجد موافقات معلقة</h3>
+          <p className="text-sm text-muted-foreground">ستظهر هنا الطلبات التي تحتاج موافقتك</p>
+        </div>
       ) : (
-        <div className="space-y-6">
-          <ApprovalCategory
-            title="موافقتك كموظف بديل"
-            icon={Users}
-            requests={substituteRequests}
-            employees={employees}
-            onApprove={onApproveSubstitute}
-            onReject={(id) => onReject(id, "substitute")}
-            onPreview={(req) => onPreview(req, "substitute")}
-            isApproving={isApprovingSubstitute}
-          />
-          <ApprovalCategory
-            title="موافقتك كمدير مباشر"
-            icon={Briefcase}
-            requests={managerRequests}
-            employees={employees}
-            onApprove={onApproveManager}
-            onReject={(id) => onReject(id, "manager")}
-            onPreview={(req) => onPreview(req, "manager")}
-            isApproving={isApprovingManager}
-          />
-          <ApprovalCategory
-            title="موافقتك كمدير موارد بشرية"
-            icon={UserCheck}
-            requests={hrManagerRequests}
-            employees={employees}
-            onApprove={onApproveHrManager}
-            onReject={(id) => onReject(id, "hr_manager")}
-            onPreview={(req) => onPreview(req, "hr_manager")}
-            isApproving={isApprovingHrManager}
-          />
-          <ApprovalCategory
-            title="موافقتك كمدير تنفيذي"
-            icon={Crown}
-            requests={executiveRequests}
-            employees={employees}
-            onApprove={onApproveExecutive}
-            onReject={(id) => onReject(id, "executive")}
-            onPreview={(req) => onPreview(req, "executive")}
-            isApproving={isApprovingExecutive}
-          />
+        <div className="space-y-4">
+          {categories.map((category) => (
+            <ApprovalCategory
+              key={category.title}
+              title={category.title}
+              icon={category.icon}
+              requests={category.requests}
+              employees={employees}
+              color={category.color}
+              onApprove={category.onApprove}
+              onReject={category.onReject}
+              onPreview={category.onPreview}
+              isApproving={category.isApproving}
+            />
+          ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
