@@ -54,6 +54,8 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
             cMapUrl: `${assetsBase}/cmaps/`,
             cMapPacked: true,
             standardFontDataUrl: `${assetsBase}/standard_fonts/`,
+            // يساعد مع ملفات تستخدم خطوط غير مضمّنة
+            useSystemFonts: true,
             disableRange: false,
             disableStream: false,
             disableAutoFetch: false,
