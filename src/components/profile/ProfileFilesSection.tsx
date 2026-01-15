@@ -486,16 +486,12 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  asChild
+                  onClick={() => previewFile && handleDownload(previewFile.file_url, previewFile.file_name)}
+                  disabled={isDownloading}
+                  className="gap-2"
                 >
-                  <a
-                    href={previewFile?.file_url}
-                    download={previewFile?.file_name || "document"}
-                    className="inline-flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    تحميل
-                  </a>
+                  {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  تحميل
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setPreviewFile(null)}>
                   <X className="w-4 h-4" />
