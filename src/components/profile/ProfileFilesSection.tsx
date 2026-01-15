@@ -73,31 +73,82 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // دالة تحميل الملف عبر blob (تتجاوز مشاكل CORS)
+  // دالة تحميل الملف - حل جذري بدون أي نوافذ منبثقة
   const handleDownload = async (url: string, name: string) => {
     setIsDownloading(true);
+    
     try {
-      const response = await fetch(url, { cache: "no-store" });
+      // استخراج مسار الملف من الرابط لاستخدام Supabase Storage API
+      const storageUrl = url;
+      const bucketMatch = storageUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
+      
+      if (bucketMatch) {
+        // استخدام Supabase Storage download API مباشرة
+        const [, bucket, path] = bucketMatch;
+        const { data, error } = await supabase.storage.from(bucket).download(decodeURIComponent(path));
+        
+        if (error) throw error;
+        if (data) {
+          const blobUrl = URL.createObjectURL(data);
+          triggerDownload(blobUrl, name);
+          return;
+        }
+      }
+      
+      // Fallback: fetch عادي للروابط الأخرى
+      const response = await fetch(url, { 
+        cache: "no-store",
+        mode: "cors",
+        credentials: "omit"
+      });
+      
       if (!response.ok) throw new Error("فشل التحميل");
+      
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
+      triggerDownload(blobUrl, name);
       
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = name || "file";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-      toast.success("تم تحميل الملف بنجاح");
     } catch (error) {
-      toast.error("فشل تحميل الملف. حاول مرة أخرى.");
-      // Fallback: open in new tab
-      window.open(url, "_blank");
+      console.error("Download error:", error);
+      toast.error("فشل تحميل الملف. جاري المحاولة بطريقة بديلة...");
+      
+      // Fallback أخير: إنشاء iframe مخفي للتحميل
+      try {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = name || "file";
+        link.target = "_self";
+        link.rel = "noopener";
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => document.body.removeChild(link), 100);
+      } catch (e) {
+        toast.error("تعذر التحميل. يرجى النقر بزر الماوس الأيمن واختيار 'حفظ باسم'");
+      }
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  // دالة مساعدة لتنفيذ التحميل الفعلي
+  const triggerDownload = (blobUrl: string, name: string) => {
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = name || "document";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    
+    // تنفيذ الضغط
+    link.click();
+    
+    // تنظيف
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    }, 1000);
+    
+    toast.success("تم تحميل الملف بنجاح");
   };
 
   const inferFileKind = (file: ProfileFile) => {
