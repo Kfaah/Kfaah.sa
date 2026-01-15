@@ -34,7 +34,7 @@ import { RequestPreviewDialog } from "@/components/hr/RequestPreviewDialog";
 import { AdminRequestsPanel } from "@/components/hr/AdminRequestsPanel";
 import { LeaveBalanceCard } from "@/components/hr/LeaveBalanceCard";
 import { HRNavigationIcons, HRSection } from "@/components/hr/HRNavigationIcons";
-import { HRSidebarNav } from "@/components/hr/HRSidebarNav";
+import { HRHorizontalNav } from "@/components/hr/HRHorizontalNav";
 import { MyRequestsSection } from "@/components/hr/MyRequestsSection";
 import { PendingApprovalsSection } from "@/components/hr/PendingApprovalsSection";
 import { ApprovalsHistorySection } from "@/components/hr/ApprovalsHistorySection";
@@ -797,19 +797,17 @@ export default function HRRequests() {
             })}
         </div>
 
-        {/* التخطيط الرئيسي: أيقونات على اليمين والمحتوى على اليسار */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* القائمة الجانبية على اليمين */}
-          <HRSidebarNav
-            activeSection={activeSection}
-            onSectionChange={handleSectionChange}
-            pendingApprovalsCount={pendingApprovalsCount}
-            approvalsHistoryCount={approvalsHistoryCount}
-            onNewRequest={() => setIsNewRequestOpen(true)}
-          />
+        {/* التنقل الأفقي */}
+        <HRHorizontalNav
+          activeSection={activeSection}
+          onSectionChange={handleSectionChange}
+          pendingApprovalsCount={pendingApprovalsCount}
+          approvalsHistoryCount={approvalsHistoryCount}
+          onNewRequest={() => setIsNewRequestOpen(true)}
+        />
 
-          {/* المحتوى على اليسار */}
-          <div className="flex-1 min-w-0">
+        {/* المحتوى */}
+        <div className="mt-6">
             {/* قسم طلباتي - للموظفين العاديين فقط */}
             {activeSection === "my-requests" && !hasAdminAccess && (
               <MyRequestsSection
@@ -857,7 +855,6 @@ export default function HRRequests() {
               />
             )}
           </div>
-        </div>
 
         {/* Dialog تقديم طلب جديد */}
         <NewRequestDialog
