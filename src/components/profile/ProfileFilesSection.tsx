@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
-import { PdfJsViewer } from "./PdfJsViewer";
+import { SmartPdfViewer } from "./SmartPdfViewer";
 
 interface ProfileFile {
   id: string;
@@ -135,7 +135,11 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
         return;
       }
 
-      setPreviewLoading(true);
+      const kind = inferFileKind(previewFile);
+
+      // مهم: لا نمنع عرض PDF بانتظار تحميل الـ blob؛ نعرض فوراً عبر الرابط ثم نُحسّن لاحقاً بالـ blob.
+      const shouldBlockUi = kind === "image";
+      setPreviewLoading(shouldBlockUi);
       setPreviewError(null);
 
       try {
@@ -153,11 +157,16 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
         setPreviewObjectUrl(objectUrl);
       } catch (e) {
         if (!canceled) {
-          setPreviewObjectUrl(null);
-          setPreviewError("تعذر عرض الملف داخل الصفحة. يمكنك تنزيله وفتحه.");
+          // بالنسبة لـ PDF: لو فشل إنشاء blob لأي سبب، نستمر بالعرض عبر الرابط المباشر.
+          if (kind === "pdf") {
+            setPreviewObjectUrl(null);
+          } else {
+            setPreviewObjectUrl(null);
+            setPreviewError("تعذر عرض الملف داخل الصفحة. يمكنك تنزيله وفتحه.");
+          }
         }
       } finally {
-        if (!canceled) setPreviewLoading(false);
+        if (!canceled && shouldBlockUi) setPreviewLoading(false);
       }
     };
 
@@ -490,48 +499,58 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
           </DialogHeader>
 
           <div className="flex-1 overflow-auto p-4">
-            {!previewFile ? null : previewLoading ? (
-              <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
-                <Loader2 className="w-8 h-8 animate-spin" />
-              </div>
-            ) : previewError ? (
+            {!previewFile ? null : previewError ? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground text-center">
                 <FileText className="w-20 h-20 opacity-30" />
                 <p>{previewError}</p>
-                <Button 
+                <Button
                   onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
                   disabled={isDownloading}
                   className="gap-2"
                 >
-                  {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {isDownloading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
                   تحميل الملف
                 </Button>
+              </div>
+            ) : previewLoading && inferFileKind(previewFile) !== "pdf" ? (
+              <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
+                <Loader2 className="w-8 h-8 animate-spin" />
               </div>
             ) : inferFileKind(previewFile) === "image" ? (
               <img
                 src={previewObjectUrl || previewFile.file_url}
                 alt={previewFile.file_name}
+                loading="lazy"
+                decoding="async"
                 className="max-w-full h-auto mx-auto rounded-lg"
               />
             ) : inferFileKind(previewFile) === "pdf" ? (
               <div className="h-full flex flex-col">
-                <PdfJsViewer
+                <SmartPdfViewer
                   fileUrl={previewFile.file_url}
                   blobUrl={previewObjectUrl}
                   fileName={previewFile.file_name}
                   className="w-full h-[65vh]"
                 />
                 <div className="mt-3 flex items-center justify-center gap-3">
-                  <Button 
+                  <Button
                     onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
                     disabled={isDownloading}
                     className="gap-2"
                   >
-                    {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    {isDownloading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
                     تحميل الملف
                   </Button>
                   <p className="text-xs text-muted-foreground">
-                    إذا لم يظهر ملف الـ PDF، اضغط تحميل.
+                    إذا تأخر العرض، اختر وضع <span className="font-medium">سريع</span>.
                   </p>
                 </div>
               </div>
@@ -539,12 +558,16 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
                 <FileText className="w-20 h-20 opacity-30" />
                 <p>لا يمكن عرض هذا النوع من الملفات</p>
-                <Button 
+                <Button
                   onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
                   disabled={isDownloading}
                   className="gap-2"
                 >
-                  {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {isDownloading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
                   تحميل الملف
                 </Button>
               </div>
