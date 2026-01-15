@@ -46,15 +46,48 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
         if (!res.ok) throw new Error(`http_${res.status}`);
         const data = new Uint8Array(await res.arrayBuffer());
 
-        // Get pdfjs-dist version for CDN paths
-        const pdfjsVersion = pdfjs.version || "4.0.379";
+        const pdfjsVersion = pdfjs.version || "5.4.530";
+
+        // بعض الشبكات/السياسات تمنع jsDelivr، لذلك نعمل فحص سريع ونستخدم بديل تلقائياً.
+        const pickWorkingAssetsBase = async () => {
+          const candidates = [
+            `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}`,
+            `https://unpkg.com/pdfjs-dist@${pdfjsVersion}`,
+            // Optional local override (if you ever decide to ship these assets under /public/pdfjs/)
+            "/pdfjs",
+          ];
+
+          const probe = async (base: string) => {
+            // These are stable files in pdfjs standard_fonts + packed cmaps.
+            const checks = [
+              `${base}/standard_fonts/FoxitSans.pfb`,
+              `${base}/cmaps/UniJIS-UTF16-H.bcmap`,
+            ];
+            for (const url of checks) {
+              const r = await fetch(url, { cache: "force-cache" }).catch(() => null);
+              if (!r?.ok) return false;
+            }
+            return true;
+          };
+
+          for (const base of candidates) {
+            if (await probe(base)) return base;
+          }
+
+          // Fall back to jsDelivr (best case) if all probes fail.
+          return candidates[0];
+        };
+
+        const assetsBase = await pickWorkingAssetsBase();
 
         const task = pdfjs.getDocument({
           data,
-          // Enable standard fonts and cmaps for proper Arabic/non-Latin text rendering
-          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}/cmaps/`,
+          // Enable cmaps + standard fonts for correct Arabic / non-Latin shaping.
+          cMapUrl: `${assetsBase}/cmaps/`,
           cMapPacked: true,
-          standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}/standard_fonts/`,
+          standardFontDataUrl: `${assetsBase}/standard_fonts/`,
+          // Helps when the PDF references fonts that aren't embedded.
+          useSystemFonts: true,
         });
         const doc = (await task.promise) as PdfDocumentProxy;
 
@@ -67,7 +100,9 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
         setPageCount(doc.numPages);
       } catch (e) {
         if (!cancelled) {
-          setError("المتصفح لا يعرض PDF مباشرة. تم تجهيز عارض داخلي لكن فشل التحميل/القراءة.");
+          setError(
+            "تم تحميل الملف، لكن تعذّر تجهيز خطوط/خرائط الأحرف لعرض النص العربي بشكل صحيح."
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
