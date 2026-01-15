@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Users,
@@ -15,6 +15,9 @@ import {
 } from "lucide-react";
 import { HRNavigationIcons, type HRSection } from "@/components/hr/HRNavigationIcons";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface HRModuleCard {
   title: string;
@@ -88,7 +91,36 @@ const hrModules: HRModuleCard[] = [
 
 export default function HR() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<HRSection>("my-requests");
+
+  // التحقق من صلاحيات المستخدم
+  const { data: userRoles = [] } = useQuery({
+    queryKey: ["user-roles", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data?.map((r) => r.role) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const isAdmin = userRoles.includes("admin");
+  const isHRManager = userRoles.includes("hr_manager");
+  const hasAdminAccess = isAdmin || isHRManager;
+
+  // تعيين القسم الافتراضي حسب نوع المستخدم
+  useEffect(() => {
+    if (hasAdminAccess) {
+      setActiveSection("all-requests");
+    } else {
+      setActiveSection("my-requests");
+    }
+  }, [hasAdminAccess]);
 
   const handleSectionChange = (section: HRSection) => {
     setActiveSection(section);

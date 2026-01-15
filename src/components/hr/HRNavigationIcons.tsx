@@ -1,8 +1,11 @@
-import { ClipboardList, UserCheck, CheckCircle2 } from "lucide-react";
+import { ClipboardList, UserCheck, CheckCircle2, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
-export type HRSection = "my-requests" | "pending-approvals" | "my-approvals-history";
+export type HRSection = "my-requests" | "pending-approvals" | "my-approvals-history" | "all-requests";
 
 interface HRNavigationIconsProps {
   activeSection: HRSection;
@@ -17,7 +20,29 @@ export function HRNavigationIcons({
   pendingApprovalsCount,
   approvalsHistoryCount,
 }: HRNavigationIconsProps) {
-  const sections = [
+  const { user } = useAuth();
+
+  // التحقق من صلاحيات المستخدم (مدير نظام أو مدير موارد بشرية)
+  const { data: userRoles = [] } = useQuery({
+    queryKey: ["user-roles", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data?.map((r) => r.role) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const isAdmin = userRoles.includes("admin");
+  const isHRManager = userRoles.includes("hr_manager");
+  const hasAdminAccess = isAdmin || isHRManager;
+
+  // الأقسام للمستخدمين العاديين
+  const userSections = [
     {
       id: "my-requests" as HRSection,
       label: "طلباتي",
@@ -48,6 +73,41 @@ export function HRNavigationIcons({
       badge: approvalsHistoryCount > 0 ? approvalsHistoryCount : null,
     },
   ];
+
+  // الأقسام لمدير النظام / مدير الموارد البشرية
+  const adminSections = [
+    {
+      id: "all-requests" as HRSection,
+      label: "الطلبات",
+      icon: FolderOpen,
+      gradient: "from-violet-500 to-purple-600",
+      bgLight: "bg-violet-50 border-violet-200 hover:border-violet-400",
+      iconBg: "bg-violet-100",
+      iconColor: "text-violet-600",
+    },
+    {
+      id: "pending-approvals" as HRSection,
+      label: "الموافقات المعلقة",
+      icon: UserCheck,
+      gradient: "from-orange-500 to-rose-500",
+      bgLight: "bg-orange-50 border-orange-200 hover:border-orange-400",
+      iconBg: "bg-orange-100",
+      iconColor: "text-orange-600",
+      badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : null,
+    },
+    {
+      id: "my-approvals-history" as HRSection,
+      label: "سجل الموافقات",
+      icon: CheckCircle2,
+      gradient: "from-emerald-500 to-teal-500",
+      bgLight: "bg-emerald-50 border-emerald-200 hover:border-emerald-400",
+      iconBg: "bg-emerald-100",
+      iconColor: "text-emerald-600",
+      badge: approvalsHistoryCount > 0 ? approvalsHistoryCount : null,
+    },
+  ];
+
+  const sections = hasAdminAccess ? adminSections : userSections;
 
   return (
     <div className="flex items-center justify-center gap-2 sm:gap-3">
