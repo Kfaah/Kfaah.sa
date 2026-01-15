@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -33,17 +32,10 @@ import {
   Loader2,
   Eye,
   X,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  ZoomOut,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
-import { Document, Page, pdfjs } from "react-pdf";
-
-// إعداد worker لـ PDF.js من CDN
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface ProfileFile {
   id: string;
@@ -79,26 +71,6 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  
-  // PDF viewer state
-  const [numPages, setNumPages] = useState<number>(0);
-  const [pageNumber, setPageNumber] = useState<number>(1);
-  const [pdfScale, setPdfScale] = useState<number>(1.0);
-
-  const pdfOptions = useMemo(() => ({
-    cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
-    cMapPacked: true,
-  }), []);
-
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-    setPageNumber(1);
-  };
-
-  const goToPrevPage = () => setPageNumber((p) => Math.max(1, p - 1));
-  const goToNextPage = () => setPageNumber((p) => Math.min(numPages, p + 1));
-  const zoomIn = () => setPdfScale((s) => Math.min(2, s + 0.2));
-  const zoomOut = () => setPdfScale((s) => Math.max(0.5, s - 0.2));
 
   const inferFileKind = (file: ProfileFile) => {
     const type = (file.file_type || "").toLowerCase();
@@ -132,9 +104,6 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
         setPreviewObjectUrl(null);
         setPreviewError(null);
         setPreviewLoading(false);
-        setNumPages(0);
-        setPageNumber(1);
-        setPdfScale(1.0);
         return;
       }
 
@@ -511,59 +480,25 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 className="max-w-full h-auto mx-auto rounded-lg"
               />
             ) : inferFileKind(previewFile) === "pdf" ? (
-              <div className="flex flex-col items-center">
-                {/* شريط أدوات PDF */}
-                <div className="flex items-center gap-2 mb-4 p-2 bg-muted rounded-lg">
-                  <Button variant="outline" size="icon" onClick={goToPrevPage} disabled={pageNumber <= 1}>
-                    <ChevronRight className="w-4 h-4" />
+              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <FileText className="w-20 h-20 text-red-500 opacity-50" />
+                <p className="text-lg font-medium">ملف PDF</p>
+                <p className="text-muted-foreground text-center max-w-md">
+                  لا يمكن عرض ملفات PDF مباشرة في المتصفح. يمكنك تحميل الملف أو فتحه في نافذة جديدة.
+                </p>
+                <div className="flex gap-3">
+                  <Button asChild>
+                    <a href={previewFile.file_url} download className="gap-2">
+                      <Download className="w-4 h-4" />
+                      تحميل الملف
+                    </a>
                   </Button>
-                  <span className="text-sm px-2">
-                    {pageNumber} / {numPages}
-                  </span>
-                  <Button variant="outline" size="icon" onClick={goToNextPage} disabled={pageNumber >= numPages}>
-                    <ChevronLeft className="w-4 h-4" />
+                  <Button variant="outline" asChild>
+                    <a href={previewFile.file_url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                      <ExternalLink className="w-4 h-4" />
+                      فتح في نافذة جديدة
+                    </a>
                   </Button>
-                  <div className="w-px h-6 bg-border mx-2" />
-                  <Button variant="outline" size="icon" onClick={zoomOut} disabled={pdfScale <= 0.5}>
-                    <ZoomOut className="w-4 h-4" />
-                  </Button>
-                  <span className="text-sm px-2">{Math.round(pdfScale * 100)}%</span>
-                  <Button variant="outline" size="icon" onClick={zoomIn} disabled={pdfScale >= 2}>
-                    <ZoomIn className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                {/* عارض PDF */}
-                <div className="border rounded-lg overflow-auto max-h-[65vh] bg-gray-100">
-                  <Document
-                    file={previewObjectUrl || previewFile.file_url}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                    options={pdfOptions}
-                    loading={
-                      <div className="flex items-center justify-center p-8">
-                        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-                      </div>
-                    }
-                    error={
-                      <div className="flex flex-col items-center justify-center p-8 gap-4 text-muted-foreground">
-                        <FileText className="w-16 h-16 opacity-30" />
-                        <p>تعذر عرض الملف</p>
-                        <Button asChild size="sm">
-                          <a href={previewFile.file_url} download className="gap-2">
-                            <Download className="w-4 h-4" />
-                            تحميل الملف
-                          </a>
-                        </Button>
-                      </div>
-                    }
-                  >
-                    <Page 
-                      pageNumber={pageNumber} 
-                      scale={pdfScale}
-                      renderTextLayer={true}
-                      renderAnnotationLayer={true}
-                    />
-                  </Document>
                 </div>
               </div>
             ) : (
