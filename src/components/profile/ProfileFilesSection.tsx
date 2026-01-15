@@ -41,8 +41,6 @@ import {
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
 import { Document, Page, pdfjs } from "react-pdf";
-import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import "react-pdf/dist/esm/Page/TextLayer.css";
 
 // إعداد worker لـ PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
