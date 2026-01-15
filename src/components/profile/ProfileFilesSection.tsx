@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
+import { PdfJsViewer } from "./PdfJsViewer";
 
 interface ProfileFile {
   id: string;
@@ -514,19 +515,12 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
               />
             ) : inferFileKind(previewFile) === "pdf" ? (
               <div className="h-full flex flex-col">
-                {previewObjectUrl ? (
-                  <embed
-                    src={previewObjectUrl}
-                    type="application/pdf"
-                    className="w-full h-[65vh] rounded-lg border border-border"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-[65vh] gap-4 text-muted-foreground border border-border rounded-lg">
-                    <FileText className="w-16 h-16 opacity-40" />
-                    <p className="text-center">جاري تحميل الملف...</p>
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  </div>
-                )}
+                <PdfJsViewer
+                  fileUrl={previewFile.file_url}
+                  blobUrl={previewObjectUrl}
+                  fileName={previewFile.file_name}
+                  className="w-full h-[65vh]"
+                />
                 <div className="mt-3 flex items-center justify-center gap-3">
                   <Button 
                     onClick={() => handleDownload(previewFile.file_url, previewFile.file_name)}
