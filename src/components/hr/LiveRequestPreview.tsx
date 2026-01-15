@@ -70,14 +70,47 @@ export function LiveRequestPreview({
 
   const currentDate = format(new Date(), "yyyy/MM/dd", { locale: ar });
 
-  // تحديد عدد خانات التوقيع المعروضة
-  const signatureSlots = [
-    { show: true, label: "مقدم الطلب", name: employeeName, signature: signatureUrl, approved: true, bgColor: "", textColor: "text-foreground" },
-    { show: !!substituteEmployee, label: "الموظف البديل", name: substituteEmployee, signature: substituteSignatureUrl, approved: substituteApproved, bgColor: "bg-amber-50/50", textColor: "text-amber-700" },
-    { show: !!directManager, label: "المدير المباشر", name: directManager, signature: directManagerSignatureUrl, approved: managerApproved, bgColor: "bg-blue-50/50", textColor: "text-blue-700" },
-    { show: !!hrManager, label: "مدير HR", name: hrManager, signature: hrManagerSignatureUrl, approved: hrManagerApproved, bgColor: "bg-purple-50/50", textColor: "text-purple-700" },
-    { show: !!executiveManager, label: "المدير التنفيذي", name: executiveManager, signature: executiveManagerSignatureUrl, approved: executiveManagerApproved, bgColor: "bg-green-50/50", textColor: "text-green-800" },
-  ].filter(slot => slot.show);
+  // الصف الأول: مقدم الطلب والموظف البديل
+  const firstRowSlots = [
+    { label: "مقدم الطلب", name: employeeName, signature: signatureUrl, approved: true, bgColor: "", textColor: "text-foreground" },
+    { label: "الموظف البديل", name: substituteEmployee || "", signature: substituteSignatureUrl, approved: substituteApproved, bgColor: "bg-amber-50/50", textColor: "text-amber-700" },
+  ];
+
+  // الصف الثاني: المدراء
+  const secondRowSlots = [
+    { label: "المدير المباشر", name: directManager || "", signature: directManagerSignatureUrl, approved: managerApproved, bgColor: "bg-blue-50/50", textColor: "text-blue-700" },
+    { label: "مدير الموارد البشرية", name: hrManager || "", signature: hrManagerSignatureUrl, approved: hrManagerApproved, bgColor: "bg-purple-50/50", textColor: "text-purple-700" },
+    { label: "المدير التنفيذي", name: executiveManager || "", signature: executiveManagerSignatureUrl, approved: executiveManagerApproved, bgColor: "bg-green-50/50", textColor: "text-green-800" },
+  ];
+
+  // دالة لعرض خانة التوقيع
+  const renderSignatureSlot = (slot: typeof firstRowSlots[0], colSpan: number = 1) => (
+    <td 
+      key={slot.label}
+      colSpan={colSpan}
+      className={`py-2 px-1 border border-border/40 text-center align-top ${slot.bgColor} ${slot.approved ? 'bg-opacity-100' : ''}`}
+    >
+      <div className={`font-bold text-[8px] mb-1 ${slot.textColor}`}>{slot.label}</div>
+      <div className={`text-[8px] mb-1 ${slot.name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+        {slot.name || "..........."}
+      </div>
+      {slot.approved && slot.signature ? (
+        <img 
+          src={slot.signature} 
+          alt={`توقيع ${slot.label}`}
+          className="h-5 mx-auto object-contain"
+        />
+      ) : slot.name ? (
+        <div className="h-5 flex items-center justify-center">
+          <span className={`text-[7px] ${slot.textColor} ${slot.bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>
+            انتظار
+          </span>
+        </div>
+      ) : (
+        <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
+      )}
+    </td>
+  );
 
   return (
     <div className="relative group">
@@ -195,40 +228,75 @@ export function LiveRequestPreview({
                   </tr>
                 )}
 
-                {/* التوقيعات */}
+                {/* التوقيعات والاعتماد */}
                 <tr>
                   <td colSpan={4} className="bg-primary/10 font-bold text-[12px] py-2 px-3 border border-primary/20 text-center text-primary">
                     التوقيعات والاعتماد
                   </td>
                 </tr>
+                
+                {/* الصف الأول: مقدم الطلب والموظف البديل */}
                 <tr>
-                  {signatureSlots.map((slot, index) => (
-                    <td 
-                      key={index}
-                      className={`py-2 px-1 border border-border/40 text-center align-top ${slot.bgColor} ${slot.approved ? 'bg-opacity-100' : ''}`}
-                      style={{ width: `${100 / signatureSlots.length}%` }}
-                    >
-                      <div className={`font-bold text-[8px] mb-1 ${slot.textColor}`}>{slot.label}</div>
-                      <div className={`text-[8px] mb-1 ${slot.name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                        {slot.name || "..........."}
+                  {firstRowSlots.map((slot) => renderSignatureSlot(slot, 2))}
+                </tr>
+                
+                {/* الصف الثاني: المدراء (3 خانات) */}
+                <tr>
+                  <td 
+                    className={`py-2 px-1 border border-border/40 text-center align-top ${secondRowSlots[0].bgColor}`}
+                    style={{ width: '33.33%' }}
+                  >
+                    <div className={`font-bold text-[8px] mb-1 ${secondRowSlots[0].textColor}`}>{secondRowSlots[0].label}</div>
+                    <div className={`text-[8px] mb-1 ${secondRowSlots[0].name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {secondRowSlots[0].name || "..........."}
+                    </div>
+                    {secondRowSlots[0].approved && secondRowSlots[0].signature ? (
+                      <img src={secondRowSlots[0].signature} alt="توقيع" className="h-5 mx-auto object-contain" />
+                    ) : secondRowSlots[0].name ? (
+                      <div className="h-5 flex items-center justify-center">
+                        <span className={`text-[7px] ${secondRowSlots[0].textColor} ${secondRowSlots[0].bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>انتظار</span>
                       </div>
-                      {slot.approved && slot.signature ? (
-                        <img 
-                          src={slot.signature} 
-                          alt={`توقيع ${slot.label}`}
-                          className="h-5 mx-auto object-contain"
-                        />
-                      ) : slot.name ? (
-                        <div className="h-5 flex items-center justify-center">
-                          <span className={`text-[7px] ${slot.textColor} ${slot.bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>
-                            انتظار
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
-                      )}
-                    </td>
-                  ))}
+                    ) : (
+                      <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
+                    )}
+                  </td>
+                  <td 
+                    className={`py-2 px-1 border border-border/40 text-center align-top ${secondRowSlots[1].bgColor}`}
+                    style={{ width: '33.33%' }}
+                  >
+                    <div className={`font-bold text-[8px] mb-1 ${secondRowSlots[1].textColor}`}>{secondRowSlots[1].label}</div>
+                    <div className={`text-[8px] mb-1 ${secondRowSlots[1].name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {secondRowSlots[1].name || "..........."}
+                    </div>
+                    {secondRowSlots[1].approved && secondRowSlots[1].signature ? (
+                      <img src={secondRowSlots[1].signature} alt="توقيع" className="h-5 mx-auto object-contain" />
+                    ) : secondRowSlots[1].name ? (
+                      <div className="h-5 flex items-center justify-center">
+                        <span className={`text-[7px] ${secondRowSlots[1].textColor} ${secondRowSlots[1].bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>انتظار</span>
+                      </div>
+                    ) : (
+                      <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
+                    )}
+                  </td>
+                  <td 
+                    colSpan={2}
+                    className={`py-2 px-1 border border-border/40 text-center align-top ${secondRowSlots[2].bgColor}`}
+                    style={{ width: '33.33%' }}
+                  >
+                    <div className={`font-bold text-[8px] mb-1 ${secondRowSlots[2].textColor}`}>{secondRowSlots[2].label}</div>
+                    <div className={`text-[8px] mb-1 ${secondRowSlots[2].name ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                      {secondRowSlots[2].name || "..........."}
+                    </div>
+                    {secondRowSlots[2].approved && secondRowSlots[2].signature ? (
+                      <img src={secondRowSlots[2].signature} alt="توقيع" className="h-5 mx-auto object-contain" />
+                    ) : secondRowSlots[2].name ? (
+                      <div className="h-5 flex items-center justify-center">
+                        <span className={`text-[7px] ${secondRowSlots[2].textColor} ${secondRowSlots[2].bgColor || 'bg-gray-100'} px-1 py-0.5 rounded`}>انتظار</span>
+                      </div>
+                    ) : (
+                      <div className="h-5 border-b-2 border-dashed border-gray-300 mx-1 mt-1" />
+                    )}
+                  </td>
                 </tr>
               </tbody>
             </table>

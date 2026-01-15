@@ -352,82 +352,102 @@ export function OfficialRequestPDF({
               <p className="mt-4">آمل من سعادتكم التكرم بالموافقة على طلبي.</p>
               <p>وتقبلوا فائق الاحترام والتقدير،،،</p>
 
-              {/* التوقيعات */}
-              <div className="grid grid-cols-4 gap-2 mt-6 pt-4">
-                {/* مقدم الطلب */}
-                <div className="text-center">
-                  <p className="font-semibold mb-1 text-[9px]">مقدم الطلب</p>
-                  <p className="text-[9px]">{employee.full_name}</p>
-                  {employee.signature_url && (
-                    <img 
-                      src={employee.signature_url} 
-                      alt="توقيع الموظف" 
-                      className="h-8 mx-auto mt-1 object-contain"
-                    />
-                  )}
-                </div>
-
-                {/* الموظف البديل */}
-                <div className="text-center">
-                  <p className="font-semibold mb-1 text-[9px] text-amber-700">الموظف البديل</p>
-                  {substituteEmployee ? (
-                    <>
-                      <p className="text-[9px]">{substituteEmployee.full_name}</p>
-                      {substituteApproved && substituteEmployee.signature_url ? (
-                        <img 
-                          src={substituteEmployee.signature_url} 
-                          alt="توقيع البديل" 
-                          className="h-8 mx-auto mt-1 object-contain"
-                        />
-                      ) : (
-                        <p className="text-[8px] text-amber-600 mt-2">في الانتظار</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-[8px] text-muted-foreground mt-2">---</p>
-                  )}
-                </div>
-
-                {/* المدير المباشر */}
-                <div className="text-center">
-                  <p className="font-semibold mb-1 text-[9px] text-blue-700">المدير المباشر</p>
-                  {directManager ? (
-                    <>
-                      <p className="text-[9px]">{directManager.full_name}</p>
-                      {managerApproved && directManager.signature_url ? (
-                        <img 
-                          src={directManager.signature_url} 
-                          alt="توقيع المدير" 
-                          className="h-8 mx-auto mt-1 object-contain"
-                        />
-                      ) : (
-                        <p className="text-[8px] text-blue-600 mt-2">في الانتظار</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-[8px] text-muted-foreground mt-2">---</p>
-                  )}
-                </div>
-
-                {/* اعتماد الإدارة */}
-                {request.status === "approved" && approver ? (
-                  <div className="text-center border border-green-500 rounded-lg p-1 bg-green-50">
-                    <p className="font-semibold mb-1 text-[9px] text-green-700">تمت الموافقة</p>
-                    <p className="text-[9px]">{approver.full_name}</p>
-                    {approver.signature_url && (
+              {/* التوقيعات والاعتماد */}
+              <div className="mt-6 pt-4 space-y-3">
+                {/* الصف الأول: مقدم الطلب والموظف البديل */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* مقدم الطلب */}
+                  <div className="text-center border border-border/40 rounded-lg p-2">
+                    <p className="font-semibold mb-1 text-[9px]">مقدم الطلب</p>
+                    <p className="text-[9px]">{employee.full_name}</p>
+                    {employee.signature_url && (
                       <img 
-                        src={approver.signature_url} 
-                        alt="توقيع الموافق" 
+                        src={employee.signature_url} 
+                        alt="توقيع الموظف" 
                         className="h-8 mx-auto mt-1 object-contain"
                       />
                     )}
                   </div>
-                ) : (
-                  <div className="text-center border border-dashed border-muted-foreground/30 rounded-lg p-1">
-                    <p className="font-semibold mb-1 text-[9px] text-muted-foreground">اعتماد الإدارة</p>
-                    <p className="text-[8px] text-muted-foreground/60 mt-2">في الانتظار</p>
+
+                  {/* الموظف البديل */}
+                  <div className="text-center border border-amber-200 rounded-lg p-2 bg-amber-50/50">
+                    <p className="font-semibold mb-1 text-[9px] text-amber-700">الموظف البديل</p>
+                    {substituteEmployee ? (
+                      <>
+                        <p className="text-[9px]">{substituteEmployee.full_name}</p>
+                        {substituteApproved && substituteEmployee.signature_url ? (
+                          <img 
+                            src={substituteEmployee.signature_url} 
+                            alt="توقيع البديل" 
+                            className="h-8 mx-auto mt-1 object-contain"
+                          />
+                        ) : (
+                          <p className="text-[8px] text-amber-600 mt-2">في الانتظار</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-[8px] text-muted-foreground mt-2">---</p>
+                    )}
                   </div>
-                )}
+                </div>
+
+                {/* الصف الثاني: المدراء */}
+                <div className="grid grid-cols-3 gap-2">
+                  {/* المدير المباشر */}
+                  <div className="text-center border border-blue-200 rounded-lg p-2 bg-blue-50/50">
+                    <p className="font-semibold mb-1 text-[9px] text-blue-700">المدير المباشر</p>
+                    {directManager ? (
+                      <>
+                        <p className="text-[9px]">{directManager.full_name}</p>
+                        {managerApproved && directManager.signature_url ? (
+                          <img 
+                            src={directManager.signature_url} 
+                            alt="توقيع المدير" 
+                            className="h-8 mx-auto mt-1 object-contain"
+                          />
+                        ) : (
+                          <p className="text-[8px] text-blue-600 mt-2">في الانتظار</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-[8px] text-muted-foreground mt-2">---</p>
+                    )}
+                  </div>
+
+                  {/* مدير الموارد البشرية */}
+                  <div className="text-center border border-purple-200 rounded-lg p-2 bg-purple-50/50">
+                    <p className="font-semibold mb-1 text-[9px] text-purple-700">مدير الموارد البشرية</p>
+                    {request.status === "approved" && approver ? (
+                      <>
+                        <p className="text-[9px]">{approver.full_name}</p>
+                        {approver.signature_url && (
+                          <img 
+                            src={approver.signature_url} 
+                            alt="توقيع مدير HR" 
+                            className="h-8 mx-auto mt-1 object-contain"
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-[8px] text-purple-600 mt-2">في الانتظار</p>
+                    )}
+                  </div>
+
+                  {/* المدير التنفيذي */}
+                  <div className={`text-center rounded-lg p-2 ${request.status === "approved" ? 'border-2 border-green-500 bg-green-50' : 'border border-dashed border-muted-foreground/30'}`}>
+                    <p className={`font-semibold mb-1 text-[9px] ${request.status === "approved" ? 'text-green-700' : 'text-muted-foreground'}`}>
+                      المدير التنفيذي
+                    </p>
+                    {request.status === "approved" ? (
+                      <>
+                        <p className="text-[9px] text-green-800">تمت الموافقة</p>
+                        <p className="text-[7px] text-green-600 mt-1">✓ معتمد</p>
+                      </>
+                    ) : (
+                      <p className="text-[8px] text-muted-foreground/60 mt-2">في الانتظار</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
