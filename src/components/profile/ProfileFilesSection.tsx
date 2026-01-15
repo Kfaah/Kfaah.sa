@@ -481,13 +481,14 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
             ) : inferFileKind(previewFile) === "pdf" ? (
               <div className="h-full">
                 <iframe
-                  src={previewObjectUrl || previewFile.file_url}
+                  src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewFile.file_url)}&embedded=true`}
                   title={previewFile.file_name}
                   className="w-full h-[65vh] rounded-lg border border-border bg-background"
+                  sandbox="allow-scripts allow-same-origin"
                   loading="lazy"
                 />
                 <p className="mt-3 text-xs text-muted-foreground text-center">
-                  إذا لم يظهر ملف الـ PDF هنا، استخدم زر التحميل بالأعلى.
+                  إذا لم يظهر ملف الـ PDF، يمكنك تحميله مباشرة.
                 </p>
               </div>
             ) : (
