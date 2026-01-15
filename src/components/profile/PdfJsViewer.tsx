@@ -112,24 +112,33 @@ export function PdfJsViewer({ fileUrl, blobUrl, className }: PdfJsViewerProps) {
           if (cancelled) return;
           const page = await doc.getPage(i);
 
-          // Auto-scale to container width (measured) مع حد أعلى أقل لتسريع الرسم.
+          // Auto-scale to container width (measured).
           const viewport1 = page.getViewport({ scale: 1 });
           const containerWidth = Math.max(
             320,
             (containerRef.current?.clientWidth ?? 900) - 24
           );
-          const scale = Math.max(0.6, Math.min(1.35, containerWidth / viewport1.width));
-          const viewport = page.getViewport({ scale });
+
+          // scale للعرض (CSS) + dpr للوضوح بدون تكبير زائد.
+          const scale = Math.max(0.8, Math.min(1.6, containerWidth / viewport1.width));
+          const dpr = Math.min(2, (globalThis as any).devicePixelRatio || 1);
+
+          const cssViewport = page.getViewport({ scale });
+          const renderViewport = page.getViewport({ scale: scale * dpr });
 
           const canvas = canvasRefs.current[i - 1];
           if (!canvas) continue;
           const ctx = canvas.getContext("2d");
           if (!ctx) continue;
 
-          canvas.width = Math.ceil(viewport.width);
-          canvas.height = Math.ceil(viewport.height);
+          // اضبط حجم العرض بالـCSS، وحجم الرسم بدقة أعلى.
+          canvas.style.width = `${Math.ceil(cssViewport.width)}px`;
+          canvas.style.height = `${Math.ceil(cssViewport.height)}px`;
+          canvas.width = Math.ceil(renderViewport.width);
+          canvas.height = Math.ceil(renderViewport.height);
 
-          await page.render({ canvasContext: ctx, viewport }).promise;
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
           await new Promise<void>((r) => requestAnimationFrame(() => r()));
         }
       } catch {
