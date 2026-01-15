@@ -447,9 +447,9 @@ export function NewRequestDialog({
       }
     }
 
-    // التحقق من اختيار المدير التنفيذي
-    if (!executiveManagerId) {
-      toast.error("يرجى اختيار المدير التنفيذي");
+    // التحقق من المدير المباشر (يجب أن يكون معيناً تلقائياً)
+    if (!directManagerId) {
+      toast.error("لم يتم تعيين المدير المباشر لك. يرجى التواصل مع الإدارة");
       return;
     }
 
@@ -701,155 +701,47 @@ export function NewRequestDialog({
                       />
                     </div>
 
-                    {/* الموظف البديل والمديرين */}
+                    {/* الموظف البديل */}
                     <div className="border-t pt-4 mt-4">
-                      <h4 className="text-sm font-semibold text-muted-foreground mb-3">مسار الموافقات (بالترتيب)</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* 1. الموظف البديل */}
-                        <div className="space-y-2">
-                          <Label className="text-right font-semibold flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-xs flex items-center justify-center font-bold">1</span>
-                            الموظف البديل
-                          </Label>
-                          <Select value={substituteEmployeeId} onValueChange={setSubstituteEmployeeId} dir="rtl">
-                            <SelectTrigger className="bg-background text-right">
-                              <SelectValue placeholder="اختر الموظف البديل..." />
-                            </SelectTrigger>
-                            <SelectContent className="text-right" dir="rtl">
-                              {employees
-                                .filter((emp) => {
-                                  const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
-                                  return emp.user_id !== requestOwnerUserId;
-                                })
-                                .map((emp) => (
-                                <SelectItem key={emp.id} value={emp.user_id}>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden">
-                                      {emp.avatar_url ? (
-                                        <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
-                                      ) : (
-                                        <User className="w-3 h-3 text-amber-600" />
-                                      )}
-                                    </div>
-                                    <span>{emp.full_name}</span>
-                                    <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
+                      <div className="space-y-2">
+                        <Label className="text-right font-semibold flex items-center gap-2">
+                          <User className="w-4 h-4 text-amber-600" />
+                          الموظف البديل
+                        </Label>
+                        <Select value={substituteEmployeeId} onValueChange={setSubstituteEmployeeId} dir="rtl">
+                          <SelectTrigger className="bg-background text-right">
+                            <SelectValue placeholder="اختر الموظف البديل..." />
+                          </SelectTrigger>
+                          <SelectContent className="text-right" dir="rtl">
+                            {employees
+                              .filter((emp) => {
+                                const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
+                                return emp.user_id !== requestOwnerUserId;
+                              })
+                              .map((emp) => (
+                              <SelectItem key={emp.id} value={emp.user_id}>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden">
+                                    {emp.avatar_url ? (
+                                      <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <User className="w-3 h-3 text-amber-600" />
+                                    )}
                                   </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* 2. المدير المباشر */}
-                        <div className="space-y-2">
-                          <Label className="text-right font-semibold flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs flex items-center justify-center font-bold">2</span>
-                            المدير المباشر
-                          </Label>
-                          <Select value={directManagerId} onValueChange={setDirectManagerId} dir="rtl">
-                            <SelectTrigger className="bg-background text-right">
-                              <SelectValue placeholder="اختر المدير المباشر..." />
-                            </SelectTrigger>
-                            <SelectContent className="text-right" dir="rtl">
-                              {employees
-                                .filter((emp) => {
-                                  const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
-                                  return emp.user_id !== requestOwnerUserId;
-                                })
-                                .map((emp) => (
-                                <SelectItem key={emp.id} value={emp.user_id}>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                                      {emp.avatar_url ? (
-                                        <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
-                                      ) : (
-                                        <User className="w-3 h-3 text-blue-600" />
-                                      )}
-                                    </div>
-                                    <span>{emp.full_name}</span>
-                                    <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* 3. مدير الموارد البشرية */}
-                        <div className="space-y-2">
-                          <Label className="text-right font-semibold flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 text-xs flex items-center justify-center font-bold">3</span>
-                            مدير الموارد البشرية
-                          </Label>
-                          <Select value={hrManagerId} onValueChange={setHrManagerId} dir="rtl">
-                            <SelectTrigger className="bg-background text-right">
-                              <SelectValue placeholder="اختر مدير الموارد البشرية..." />
-                            </SelectTrigger>
-                            <SelectContent className="text-right" dir="rtl">
-                              {employees
-                                .filter((emp) => {
-                                  const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
-                                  return emp.user_id !== requestOwnerUserId;
-                                })
-                                .map((emp) => (
-                                <SelectItem key={emp.id} value={emp.user_id}>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center overflow-hidden">
-                                      {emp.avatar_url ? (
-                                        <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
-                                      ) : (
-                                        <User className="w-3 h-3 text-green-600" />
-                                      )}
-                                    </div>
-                                    <span>{emp.full_name}</span>
-                                    <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* 4. المدير التنفيذي */}
-                        <div className="space-y-2">
-                          <Label className="text-right font-semibold flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs flex items-center justify-center font-bold">4</span>
-                            المدير التنفيذي
-                          </Label>
-                          <Select value={executiveManagerId} onValueChange={setExecutiveManagerId} dir="rtl">
-                            <SelectTrigger className="bg-background text-right">
-                              <SelectValue placeholder="اختر المدير التنفيذي..." />
-                            </SelectTrigger>
-                            <SelectContent className="text-right" dir="rtl">
-                              {employees
-                                .filter((emp) => {
-                                  const requestOwnerUserId = isAdmin ? selectedEmployee : user?.id;
-                                  return emp.user_id !== requestOwnerUserId;
-                                })
-                                .map((emp) => (
-                                <SelectItem key={emp.id} value={emp.user_id}>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center overflow-hidden">
-                                      {emp.avatar_url ? (
-                                        <img src={emp.avatar_url} alt="" className="w-full h-full object-cover" />
-                                      ) : (
-                                        <User className="w-3 h-3 text-purple-600" />
-                                      )}
-                                    </div>
-                                    <span>{emp.full_name}</span>
-                                    <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                                  <span>{emp.full_name}</span>
+                                  <span className="text-xs text-muted-foreground">- {emp.job_role}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          سيتم تعيين المدير المباشر ومدير الموارد البشرية والمدير التنفيذي تلقائياً
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* القسم الرابع: المرفقات */}
                 <div className="bg-white rounded-xl p-5 border shadow-sm">
                   <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2 border-b pb-3">
                     <Upload className="w-5 h-5 text-primary" />
