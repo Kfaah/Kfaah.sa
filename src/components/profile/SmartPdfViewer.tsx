@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, ExternalLink } from "lucide-react";
-import { PdfJsViewer } from "./PdfJsViewer";
+import { ExternalLink, Download } from "lucide-react";
 
 interface SmartPdfViewerProps {
   fileUrl: string;
@@ -10,27 +9,29 @@ interface SmartPdfViewerProps {
   className?: string;
 }
 
+/**
+ * عارض PDF احترافي باستخدام Google Docs Viewer
+ * - يعرض أي PDF بشكل صحيح (عربي/إنجليزي)
+ * - سريع جداً
+ * - لا يحتاج مكتبات إضافية
+ */
 export function SmartPdfViewer({
   fileUrl,
   blobUrl,
   fileName,
   className,
 }: SmartPdfViewerProps) {
-  const src = useMemo(() => blobUrl || fileUrl, [blobUrl, fileUrl]);
+  // نستخدم الرابط الأصلي (ليس blob) لأن Google Docs يحتاج رابط عام
+  const publicUrl = fileUrl;
 
-  const [mode, setMode] = useState<"native" | "pdfjs">("native");
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [iframeTimedOut, setIframeTimedOut] = useState(false);
+  // Google Docs Viewer - أفضل طريقة لعرض PDF بشكل صحيح
+  const googleViewerUrl = useMemo(
+    () =>
+      `https://docs.google.com/viewer?url=${encodeURIComponent(publicUrl)}&embedded=true`,
+    [publicUrl]
+  );
 
-  useEffect(() => {
-    setIframeLoaded(false);
-    setIframeTimedOut(false);
-
-    if (mode !== "native") return;
-
-    const t = window.setTimeout(() => setIframeTimedOut(true), 2500);
-    return () => window.clearTimeout(t);
-  }, [src, mode]);
+  const [mode, setMode] = useState<"google" | "native">("google");
 
   return (
     <div className={className || "w-full h-[65vh]"}>
@@ -44,22 +45,32 @@ export function SmartPdfViewer({
 
           <div className="flex items-center gap-2 shrink-0">
             <Button
+              variant={mode === "google" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("google")}
+            >
+              عرض احترافي
+            </Button>
+            <Button
               variant={mode === "native" ? "default" : "outline"}
               size="sm"
               onClick={() => setMode("native")}
             >
-              سريع
-            </Button>
-            <Button
-              variant={mode === "pdfjs" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setMode("pdfjs")}
-            >
-              داخلي
+              عرض المتصفح
             </Button>
             <Button variant="outline" size="sm" asChild>
               <a
-                href={src}
+                href={publicUrl}
+                download={fileName || "document.pdf"}
+                className="inline-flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                تحميل
+              </a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href={publicUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2"
@@ -71,34 +82,21 @@ export function SmartPdfViewer({
           </div>
         </div>
 
-        <div className="relative flex-1">
-          {mode === "native" ? (
-            <>
-              {!iframeLoaded ? (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 text-muted-foreground bg-background/60">
-                  <Loader2 className="w-7 h-7 animate-spin" />
-                  <p className="text-sm">جاري عرض ملف الـ PDF…</p>
-                  {iframeTimedOut ? (
-                    <div className="text-xs text-muted-foreground text-center px-6">
-                      إذا استمر التأخير، اختر <span className="font-medium">داخلي</span>.
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
-              <iframe
-                title={fileName || "PDF Viewer"}
-                src={src}
-                className="w-full h-full"
-                onLoad={() => setIframeLoaded(true)}
-              />
-            </>
+        <div className="relative flex-1 bg-muted/20">
+          {mode === "google" ? (
+            <iframe
+              title={fileName || "PDF Viewer"}
+              src={googleViewerUrl}
+              className="w-full h-full border-0"
+              loading="eager"
+              allowFullScreen
+            />
           ) : (
-            <PdfJsViewer
-              fileUrl={fileUrl}
-              blobUrl={blobUrl}
-              fileName={fileName}
-              className="w-full h-full"
+            <iframe
+              title={fileName || "PDF Viewer"}
+              src={publicUrl}
+              className="w-full h-full border-0"
+              loading="eager"
             />
           )}
         </div>
