@@ -140,7 +140,7 @@ export function ApprovalsHistorySection({
 
   const categories = [
     {
-      title: "موافقاتي كموظف بديل",
+      title: "الموافقات كموظف بديل",
       icon: Users,
       requests: approvedAsSubstitute,
       color: {
@@ -152,7 +152,7 @@ export function ApprovalsHistorySection({
       dateField: "substitute_approved_at",
     },
     {
-      title: "موافقاتي كمدير مباشر",
+      title: "الموافقات كمدير مباشر",
       icon: UserCheck,
       requests: approvedAsManager,
       color: {
