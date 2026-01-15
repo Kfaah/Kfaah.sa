@@ -42,11 +42,8 @@ import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
 import { Document, Page, pdfjs } from "react-pdf";
 
-// إعداد worker لـ PDF.js
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
-).toString();
+// إعداد worker لـ PDF.js من CDN
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface ProfileFile {
   id: string;
