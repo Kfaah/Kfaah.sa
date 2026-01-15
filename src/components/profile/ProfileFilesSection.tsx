@@ -477,12 +477,35 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                 className="max-w-full h-auto mx-auto rounded-lg"
               />
             ) : inferFileKind(previewFile) === "pdf" ? (
-              <iframe
-                key={previewObjectUrl || previewFile.file_url}
-                src={previewObjectUrl || previewFile.file_url}
-                className="w-full h-full min-h-[70vh] rounded-lg border"
-                title={previewFile.file_name}
-              />
+              previewObjectUrl ? (
+                <object
+                  data={previewObjectUrl}
+                  type="application/pdf"
+                  className="w-full h-full min-h-[70vh] rounded-lg border"
+                >
+                  <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
+                    <FileText className="w-20 h-20 opacity-30" />
+                    <p>تعذر عرض الملف في المتصفح</p>
+                    <Button asChild>
+                      <a href={previewFile.file_url} download className="gap-2">
+                        <Download className="w-4 h-4" />
+                        تحميل الملف
+                      </a>
+                    </Button>
+                  </div>
+                </object>
+              ) : (
+                <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
+                  <FileText className="w-20 h-20 opacity-30" />
+                  <p>تعذر تحميل الملف للعرض</p>
+                  <Button asChild>
+                    <a href={previewFile.file_url} download className="gap-2">
+                      <Download className="w-4 h-4" />
+                      تحميل الملف
+                    </a>
+                  </Button>
+                </div>
+              )
             ) : (
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
                 <FileText className="w-20 h-20 opacity-30" />
