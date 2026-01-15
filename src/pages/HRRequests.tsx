@@ -850,8 +850,8 @@ export default function HRRequests() {
           />
         )}
 
-        {/* سجل الموافقات - للموظفين العاديين فقط */}
-        {activeSection === "my-approvals-history" && !hasAdminAccess && (
+        {/* سجل الموافقات - للجميع */}
+        {activeSection === "my-approvals-history" && (
           <ApprovalsHistorySection
             approvedAsSubstitute={approvedAsSubstitute}
             approvedAsManager={approvedAsManager}
