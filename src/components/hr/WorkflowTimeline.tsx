@@ -318,26 +318,28 @@ export function WorkflowTimeline({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-1 flex-wrap" dir="rtl">
+      <div className="flex items-center gap-2 flex-wrap justify-start" dir="rtl">
         {stages.map((stage, index) => {
           const config = stageConfig[stage.name as keyof typeof stageConfig] || stageConfig.applicant;
           const StatusIcon = statusConfig[stage.status].icon;
           
           return (
-            <div key={stage.id} className="flex items-center gap-1">
+            <div key={stage.id} className="flex items-center gap-1.5">
               <div
                 className={cn(
-                  "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold",
                   statusConfig[stage.status].bgColor,
                   statusConfig[stage.status].color
                 )}
                 title={`${stage.role}: ${stage.approverName} - ${statusConfig[stage.status].label}`}
               >
-                <StatusIcon className="w-3 h-3" />
-                <span className="hidden sm:inline">{stage.role}</span>
+                {/* الاسم أولاً */}
+                <span>{stage.approverName}</span>
+                {/* ثم علامة الحالة */}
+                <StatusIcon className="w-4 h-4" />
               </div>
               {index < stages.length - 1 && (
-                <ArrowLeft className="w-3 h-3 text-muted-foreground" />
+                <ArrowLeft className="w-4 h-4 text-muted-foreground" />
               )}
             </div>
           );
