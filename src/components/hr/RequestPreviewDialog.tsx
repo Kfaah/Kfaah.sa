@@ -31,6 +31,7 @@ import { ar } from "date-fns/locale";
 import { useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LiveRequestPreview } from "./LiveRequestPreview";
+import { WorkflowTimeline } from "./WorkflowTimeline";
 import jsPDF from "jspdf";
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string; borderColor: string; iconBg: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -86,7 +87,7 @@ export function RequestPreviewDialog({
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"official" | "details">("official");
+  const [showApprovalsDetails, setShowApprovalsDetails] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // جلب بيانات الموظف صاحب الطلب
@@ -596,150 +597,161 @@ export function RequestPreviewDialog({
 
                 {/* حالة الموافقات */}
                 <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-lg">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <h3 className="font-semibold text-sm text-foreground">حالة الموافقات</h3>
                     </div>
-                    <h3 className="font-semibold text-sm text-foreground">حالة الموافقات</h3>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg border-2"
+                      onClick={() => setShowApprovalsDetails((v) => !v)}
+                    >
+                      {showApprovalsDetails ? "إخفاء التفاصيل" : "عرض التفاصيل"}
+                    </Button>
                   </div>
 
-                  <div className="space-y-2">
-                    {request.substitute_employee_id && (
+                  {/* عرض المسار بشكل مضغوط دائماً (يظهر جميع المراحل بشكل أيقونات) */}
+                  <div className="bg-muted/20 rounded-xl p-3 border border-border/50" dir="rtl">
+                    <WorkflowTimeline request={request} compact />
+                  </div>
+
+                  {/* تفاصيل الموافقات (اختياري) */}
+                  {showApprovalsDetails && (
+                    <div className="space-y-2 mt-3">
+                      {request.substitute_employee_id && (
+                        <div
+                          className={`flex items-center justify-between p-3 rounded-xl border-2 ${
+                            request.substitute_approved
+                              ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200"
+                              : "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                request.substitute_approved
+                                  ? "bg-gradient-to-br from-emerald-400 to-green-500"
+                                  : "bg-gradient-to-br from-amber-400 to-orange-500"
+                              }`}
+                            >
+                              <UserCheck className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm text-foreground">الموظف البديل</p>
+                              <p className="text-xs text-muted-foreground">{substituteData?.full_name || "---"}</p>
+                            </div>
+                          </div>
+                          <div
+                            className={`px-3 py-1.5 rounded-lg font-semibold text-xs ${
+                              request.substitute_approved ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {request.substitute_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
+                          </div>
+                        </div>
+                      )}
+
+                      {request.direct_manager_id && (
+                        <div
+                          className={`flex items-center justify-between p-3 rounded-xl border-2 ${
+                            request.manager_approved
+                              ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200"
+                              : "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                request.manager_approved
+                                  ? "bg-gradient-to-br from-emerald-400 to-green-500"
+                                  : "bg-gradient-to-br from-blue-400 to-cyan-500"
+                              }`}
+                            >
+                              <Users className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm text-foreground">المدير المباشر</p>
+                              <p className="text-xs text-muted-foreground">{managerData?.full_name || "---"}</p>
+                            </div>
+                          </div>
+                          <div
+                            className={`px-3 py-1.5 rounded-lg font-semibold text-xs ${
+                              request.manager_approved ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {request.manager_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
+                          </div>
+                        </div>
+                      )}
+
                       <div
                         className={`flex items-center justify-between p-3 rounded-xl border-2 ${
-                          request.substitute_approved
+                          request.hr_manager_approved
                             ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200"
-                            : "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200"
+                            : "bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200"
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                              request.substitute_approved
+                              request.hr_manager_approved
                                 ? "bg-gradient-to-br from-emerald-400 to-green-500"
-                                : "bg-gradient-to-br from-amber-400 to-orange-500"
+                                : "bg-gradient-to-br from-purple-400 to-violet-500"
                             }`}
                           >
                             <UserCheck className="w-4 h-4 text-white" />
                           </div>
                           <div>
-                            <p className="font-semibold text-sm text-foreground">الموظف البديل</p>
-                            <p className="text-xs text-muted-foreground">{substituteData?.full_name || "---"}</p>
+                            <p className="font-semibold text-sm text-foreground">مدير الموارد البشرية</p>
+                            <p className="text-xs text-muted-foreground">{hrManagerData?.full_name || "---"}</p>
                           </div>
                         </div>
                         <div
                           className={`px-3 py-1.5 rounded-lg font-semibold text-xs ${
-                            request.substitute_approved
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-amber-100 text-amber-700"
+                            request.hr_manager_approved ? "bg-emerald-100 text-emerald-700" : "bg-purple-100 text-purple-700"
                           }`}
                         >
-                          {request.substitute_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
+                          {request.hr_manager_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
                         </div>
                       </div>
-                    )}
 
-                    {request.direct_manager_id && (
                       <div
                         className={`flex items-center justify-between p-3 rounded-xl border-2 ${
-                          request.manager_approved
+                          request.executive_manager_approved
                             ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200"
-                            : "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200"
+                            : "bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200"
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                              request.manager_approved
+                              request.executive_manager_approved
                                 ? "bg-gradient-to-br from-emerald-400 to-green-500"
-                                : "bg-gradient-to-br from-blue-400 to-cyan-500"
+                                : "bg-gradient-to-br from-slate-600 to-gray-700"
                             }`}
                           >
-                            <Users className="w-4 h-4 text-white" />
+                            <User className="w-4 h-4 text-white" />
                           </div>
                           <div>
-                            <p className="font-semibold text-sm text-foreground">المدير المباشر</p>
-                            <p className="text-xs text-muted-foreground">{managerData?.full_name || "---"}</p>
+                            <p className="font-semibold text-sm text-foreground">المدير التنفيذي</p>
+                            <p className="text-xs text-muted-foreground">{executiveManagerData?.full_name || "---"}</p>
                           </div>
                         </div>
                         <div
                           className={`px-3 py-1.5 rounded-lg font-semibold text-xs ${
-                            request.manager_approved
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-blue-100 text-blue-700"
+                            request.executive_manager_approved ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"
                           }`}
                         >
-                          {request.manager_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
+                          {request.executive_manager_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
                         </div>
-                      </div>
-                    )}
-
-                    <div
-                      className={`flex items-center justify-between p-3 rounded-xl border-2 ${
-                        request.hr_manager_approved
-                          ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200"
-                          : "bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            request.hr_manager_approved
-                              ? "bg-gradient-to-br from-emerald-400 to-green-500"
-                              : "bg-gradient-to-br from-purple-400 to-violet-500"
-                          }`}
-                        >
-                          <UserCheck className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-sm text-foreground">مدير الموارد البشرية</p>
-                          <p className="text-xs text-muted-foreground">{hrManagerData?.full_name || "---"}</p>
-                        </div>
-                      </div>
-                      <div
-                        className={`px-3 py-1.5 rounded-lg font-semibold text-xs ${
-                          request.hr_manager_approved
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-purple-100 text-purple-700"
-                        }`}
-                      >
-                        {request.hr_manager_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
                       </div>
                     </div>
-
-                    <div
-                      className={`flex items-center justify-between p-3 rounded-xl border-2 ${
-                        request.executive_manager_approved
-                          ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200"
-                          : "bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            request.executive_manager_approved
-                              ? "bg-gradient-to-br from-emerald-400 to-green-500"
-                              : "bg-gradient-to-br from-slate-600 to-gray-700"
-                          }`}
-                        >
-                          <User className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-sm text-foreground">المدير التنفيذي</p>
-                          <p className="text-xs text-muted-foreground">{executiveManagerData?.full_name || "---"}</p>
-                        </div>
-                      </div>
-                      <div
-                        className={`px-3 py-1.5 rounded-lg font-semibold text-xs ${
-                          request.executive_manager_approved
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {request.executive_manager_approved ? "✓ تمت الموافقة" : "⏳ في الانتظار"}
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* سبب الرفض */}
