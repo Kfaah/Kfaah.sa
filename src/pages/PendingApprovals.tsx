@@ -225,6 +225,17 @@ export default function PendingApprovals() {
         throw new Error("يجب إضافة توقيعك في الملف الشخصي أولاً");
       }
 
+      // التحقق من موافقة مدير الموارد البشرية أولاً
+      const { data: requestData } = await supabase
+        .from("hr_requests")
+        .select("hr_manager_approved")
+        .eq("id", requestId)
+        .single();
+
+      if (!requestData?.hr_manager_approved) {
+        throw new Error("لا يمكن الموافقة قبل موافقة مدير الموارد البشرية");
+      }
+
       const { error } = await supabase
         .from("hr_requests")
         .update({

@@ -616,12 +616,17 @@ export default function HRRequests() {
 
       const { data: requestData } = await supabase
         .from("hr_requests")
-        .select("user_id, request_number, hr_request_types(name_ar, deducts_from_balance), days_count, request_type_id, direct_manager_id, executive_manager_id")
+        .select("user_id, request_number, hr_request_types(name_ar, deducts_from_balance), days_count, request_type_id, direct_manager_id, executive_manager_id, hr_manager_approved")
         .eq("id", requestId)
         .single();
 
       // التحقق: إذا كان المدير المباشر = المدير التنفيذي، نسجل الموافقة على كلا الدورين
       const isDirectAndExecutive = requestData?.direct_manager_id === requestData?.executive_manager_id;
+
+      // التحقق من موافقة مدير الموارد البشرية أولاً
+      if (!requestData?.hr_manager_approved) {
+        throw new Error("لا يمكن الموافقة قبل موافقة مدير الموارد البشرية");
+      }
 
       const { error } = await supabase
         .from("hr_requests")
