@@ -121,36 +121,52 @@ export function RequestDetailsDialog({
     enabled: !!request?.direct_manager_id,
   });
 
-  // جلب بيانات مدير الموارد البشرية
+  // جلب بيانات مدير الموارد البشرية - دائماً نجلبه من الدالة
   const { data: hrManagerData } = useQuery({
-    queryKey: ["hr-manager-for-request", request?.hr_manager_id],
+    queryKey: ["hr-manager-global"],
     queryFn: async () => {
-      if (!request?.hr_manager_id) return null;
+      // أولاً نحصل على user_id مدير الموارد البشرية
+      const { data: hrManagerId, error: fnError } = await supabase
+        .rpc("get_hr_manager_id");
+      
+      if (fnError || !hrManagerId) return null;
+      
       const { data, error } = await supabase
         .from("employees")
-        .select("full_name, job_role, signature_url, avatar_url")
-        .eq("user_id", request.hr_manager_id)
-        .single();
+        .select("full_name, job_role, signature_url, avatar_url, user_id")
+        .eq("user_id", hrManagerId)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
-    enabled: !!request?.hr_manager_id,
+    enabled: !!request,
   });
 
-  // جلب بيانات المدير التنفيذي
+  // جلب بيانات المدير التنفيذي للموظف صاحب الطلب
   const { data: executiveManagerData } = useQuery({
-    queryKey: ["executive-manager-for-request", request?.executive_manager_id],
+    queryKey: ["executive-manager-for-employee", request?.user_id],
     queryFn: async () => {
-      if (!request?.executive_manager_id) return null;
+      if (!request?.user_id) return null;
+      
+      // أولاً نجلب executive_manager_id من جدول الموظفين
+      const { data: empData, error: empError } = await supabase
+        .from("employees")
+        .select("executive_manager_id")
+        .eq("user_id", request.user_id)
+        .maybeSingle();
+      
+      if (empError || !empData?.executive_manager_id) return null;
+      
+      // ثم نجلب بيانات المدير التنفيذي
       const { data, error } = await supabase
         .from("employees")
-        .select("full_name, job_role, signature_url, avatar_url")
-        .eq("user_id", request.executive_manager_id)
-        .single();
+        .select("full_name, job_role, signature_url, avatar_url, user_id")
+        .eq("id", empData.executive_manager_id)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
-    enabled: !!request?.executive_manager_id,
+    enabled: !!request?.user_id,
   });
 
   // التحقق إذا كان المستخدم الحالي هو البديل أو المدير
@@ -361,7 +377,7 @@ export function RequestDetailsDialog({
       name: hrManagerData?.full_name,
       avatar: hrManagerData?.avatar_url,
       approved: request.hr_manager_approved,
-      show: !!request.hr_manager_id,
+      show: !!hrManagerData, // يظهر دائماً إذا وجد مدير موارد بشرية
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200",
       textColor: "text-purple-600",
@@ -375,7 +391,7 @@ export function RequestDetailsDialog({
       name: executiveManagerData?.full_name,
       avatar: executiveManagerData?.avatar_url,
       approved: request.executive_manager_approved,
-      show: !!request.executive_manager_id,
+      show: !!executiveManagerData, // يظهر دائماً إذا وجد مدير تنفيذي للموظف
       bgColor: "bg-green-50",
       borderColor: "border-green-200",
       textColor: "text-green-600",
