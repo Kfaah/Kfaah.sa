@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Camera, Pencil } from "lucide-react";
+import { Camera, Pencil, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ProfileHeaderProps {
@@ -112,27 +112,32 @@ export function ProfileHeader({
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="relative"
+                className="relative flex items-center gap-3"
               >
-                {/* Decorative elements */}
-                <div className="absolute -inset-4 bg-white/10 rounded-2xl blur-lg" />
-                <div className="absolute -inset-2 border border-white/20 rounded-xl" />
+                {/* Right Star */}
+                <motion.div
+                  initial={{ rotate: -30, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                >
+                  <Sparkles className="w-6 h-6 text-amber-400 drop-shadow-lg" />
+                </motion.div>
                 
-                <div className="relative bg-white/15 backdrop-blur-md rounded-xl px-6 py-3 border border-white/30 shadow-xl">
-                  <div className="flex items-center gap-3">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                    <span className="text-lg md:text-xl font-bold text-white">
-                      {employeeTitle}
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                  </div>
+                {/* Title Box */}
+                <div className="relative bg-white/20 backdrop-blur-md rounded-2xl px-8 py-3 border-2 border-white/40 shadow-xl">
+                  <span className="text-lg md:text-xl font-bold text-white">
+                    {employeeTitle}
+                  </span>
                 </div>
                 
-                {/* Corner decorations */}
-                <div className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-white/40 rounded-tr-lg" />
-                <div className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-white/40 rounded-tl-lg" />
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-white/40 rounded-br-lg" />
-                <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-white/40 rounded-bl-lg" />
+                {/* Left Star */}
+                <motion.div
+                  initial={{ rotate: 30, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.7 }}
+                >
+                  <Sparkles className="w-6 h-6 text-amber-400 drop-shadow-lg" />
+                </motion.div>
               </motion.div>
             )}
           </div>
