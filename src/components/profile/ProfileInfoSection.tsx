@@ -52,18 +52,18 @@ export function ProfileInfoSection({ user }: ProfileInfoSectionProps) {
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                 >
-                  <p 
-                    className="font-medium text-foreground" 
-                    dir={item.dir || "rtl"}
-                  >
-                    {item.value}
-                  </p>
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">{item.label}</span>
                     <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
                       <Icon className="w-5 h-5 text-violet-600" />
                     </div>
                   </div>
+                  <p 
+                    className="font-medium text-foreground" 
+                    dir={item.dir || "rtl"}
+                  >
+                    {item.value}
+                  </p>
                 </motion.div>
               );
             })}
@@ -97,18 +97,18 @@ export function ProfileInfoSection({ user }: ProfileInfoSectionProps) {
                   transition={{ duration: 0.3, delay: 0.3 + index * 0.1 }}
                   className="flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                 >
-                  <p 
-                    className="font-medium text-foreground truncate text-sm" 
-                    dir={item.dir || "rtl"}
-                  >
-                    {item.value || "-"}
-                  </p>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-sm text-muted-foreground">{item.label}</span>
                     <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
                       <Icon className="w-5 h-5 text-accent" />
                     </div>
                   </div>
+                  <p 
+                    className="font-medium text-foreground truncate text-sm" 
+                    dir={item.dir || "rtl"}
+                  >
+                    {item.value || "-"}
+                  </p>
                 </motion.div>
               );
             })}
