@@ -596,7 +596,7 @@ export function RequestPreviewDialog({
                 </div>
 
                 {/* حالة الموافقات */}
-                <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-lg">
+                <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-lg relative">
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
@@ -620,9 +620,9 @@ export function RequestPreviewDialog({
                     <WorkflowTimeline request={request} compact />
                   </div>
 
-                  {/* تفاصيل الموافقات (اختياري) */}
+                  {/* تفاصيل الموافقات (قائمة منسدلة للأعلى) */}
                   {showApprovalsDetails && (
-                    <div className="space-y-2 mt-3">
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl border-2 border-gray-200 shadow-xl p-3 space-y-2 max-h-80 overflow-y-auto z-50">
                       {request.substitute_employee_id && (
                         <div
                           className={`flex items-center justify-between p-3 rounded-xl border-2 ${
