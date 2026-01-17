@@ -443,6 +443,9 @@ export function RequestPreviewDialog({
                     directManager={managerData?.full_name}
                     directManagerSignatureUrl={managerData?.signature_url}
                     managerApproved={request.manager_approved}
+                    hrManager={hrManagerData?.full_name}
+                    hrManagerSignatureUrl={hrManagerData?.signature_url}
+                    hrManagerApproved={request.hr_manager_approved}
                     executiveManager={executiveManagerData?.full_name}
                     executiveManagerSignatureUrl={executiveManagerData?.signature_url}
                     executiveManagerApproved={request.executive_manager_approved}
