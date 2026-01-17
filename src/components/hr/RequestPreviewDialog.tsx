@@ -391,7 +391,7 @@ export function RequestPreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0 border-0 shadow-2xl rounded-2xl">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0 border-0 shadow-2xl rounded-2xl" hideCloseButton>
         <div className="flex flex-col h-full">
           {/* Header - تصميم أنيق ومُحكم */}
           <div className={`relative ${statusInfo.bgColor} px-5 py-3 border-b ${statusInfo.borderColor}`}>
@@ -399,9 +399,9 @@ export function RequestPreviewDialog({
               {/* زر الإغلاق منفصل على اليسار */}
               <button
                 onClick={() => onOpenChange(false)}
-                className="w-8 h-8 rounded-lg bg-white/80 hover:bg-white border border-gray-200 flex items-center justify-center transition-colors shrink-0"
+                className="w-10 h-10 rounded-full bg-white/90 hover:bg-white border-2 border-gray-200 flex items-center justify-center transition-colors shrink-0 shadow-sm"
               >
-                <XCircle className="w-4 h-4 text-gray-500" />
+                <XCircle className="w-5 h-5 text-gray-600" />
               </button>
 
               {/* العنوان والتفاصيل في المنتصف */}
