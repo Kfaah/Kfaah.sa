@@ -117,8 +117,17 @@ export function ProfileHeader({
                 {/* Right Star */}
                 <motion.div
                   initial={{ rotate: -30, scale: 0 }}
-                  animate={{ rotate: 0, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.6 }}
+                  animate={{ 
+                    rotate: [0, 15, -15, 10, -10, 0],
+                    scale: [1, 1.2, 0.9, 1.1, 1],
+                  }}
+                  transition={{ 
+                    duration: 3,
+                    delay: 0.6,
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                    ease: "easeInOut"
+                  }}
                 >
                   <Sparkles className="w-6 h-6 text-amber-400 drop-shadow-lg" />
                 </motion.div>
@@ -133,8 +142,17 @@ export function ProfileHeader({
                 {/* Left Star */}
                 <motion.div
                   initial={{ rotate: 30, scale: 0 }}
-                  animate={{ rotate: 0, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.7 }}
+                  animate={{ 
+                    rotate: [0, -15, 15, -10, 10, 0],
+                    scale: [1, 0.9, 1.2, 1, 1.1, 1],
+                  }}
+                  transition={{ 
+                    duration: 3,
+                    delay: 0.8,
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                    ease: "easeInOut"
+                  }}
                 >
                   <Sparkles className="w-6 h-6 text-amber-400 drop-shadow-lg" />
                 </motion.div>
