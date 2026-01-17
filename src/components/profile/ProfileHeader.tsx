@@ -137,7 +137,7 @@ export function ProfileHeader({
             )}
           </div>
 
-          {/* Right Section - Name, Role, Status, Edit Button - All aligned right */}
+          {/* Right Section - Name and Edit Button - aligned right */}
           <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-2 shrink-0">
             {/* Name */}
             <motion.div
@@ -150,20 +150,22 @@ export function ProfileHeader({
               </h1>
             </motion.div>
 
-            {/* Role */}
+            {/* Role - Centered */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.35 }}
+              className="w-full flex justify-center"
             >
               <p className="text-lg md:text-xl text-white/90 font-medium">{user.role}</p>
             </motion.div>
 
-            {/* Online Badge */}
+            {/* Online Badge - Centered */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.45 }}
+              className="w-full flex justify-center"
             >
               <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm gap-1.5 px-3 py-1.5 text-sm">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
