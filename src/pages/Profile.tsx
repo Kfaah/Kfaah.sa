@@ -579,19 +579,19 @@ export default function Profile() {
 
 
             {/* Main Content */}
-            <div className="flex flex-col lg:flex-row-reverse gap-6">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Content - اليسار */}
+              <div className="flex-1 min-w-0 order-2 lg:order-1">
+                {renderSectionContent()}
+              </div>
+
               {/* Sidebar - اليمين */}
-              <div className="lg:w-80 shrink-0">
+              <div className="lg:w-80 shrink-0 order-1 lg:order-2">
                 <ProfileSidebar
                   sections={sections}
                   activeSection={activeSection}
                   onSectionChange={setActiveSection}
                 />
-              </div>
-
-              {/* Content - اليسار */}
-              <div className="flex-1 min-w-0">
-                {renderSectionContent()}
               </div>
             </div>
           </>
