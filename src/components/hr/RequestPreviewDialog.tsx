@@ -395,8 +395,17 @@ export function RequestPreviewDialog({
         <div className="flex flex-col h-full">
           {/* Header - تصميم أنيق ومُحكم */}
           <div className={`relative ${statusInfo.bgColor} px-5 py-3 border-b ${statusInfo.borderColor}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-4">
+              {/* زر الإغلاق منفصل على اليسار */}
+              <button
+                onClick={() => onOpenChange(false)}
+                className="w-8 h-8 rounded-lg bg-white/80 hover:bg-white border border-gray-200 flex items-center justify-center transition-colors shrink-0"
+              >
+                <XCircle className="w-4 h-4 text-gray-500" />
+              </button>
+
+              {/* العنوان والتفاصيل في المنتصف */}
+              <div className="flex items-center gap-3 flex-1">
                 <div className={`w-10 h-10 rounded-xl ${statusInfo.iconBg} flex items-center justify-center shadow-lg`}>
                   <FileText className="w-5 h-5 text-white" />
                 </div>
@@ -414,7 +423,9 @@ export function RequestPreviewDialog({
                   </div>
                 </div>
               </div>
-              <Badge className={`${statusInfo.bgColor} ${statusInfo.color} border ${statusInfo.borderColor} px-3 py-1`}>
+
+              {/* حالة الطلب على اليمين */}
+              <Badge className={`${statusInfo.bgColor} ${statusInfo.color} border ${statusInfo.borderColor} px-3 py-1 shrink-0`}>
                 <StatusIcon className="w-3.5 h-3.5 ml-1" />
                 {statusInfo.label}
               </Badge>
