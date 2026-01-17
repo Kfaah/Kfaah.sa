@@ -377,7 +377,8 @@ export function RequestDetailsDialog({
       name: hrManagerData?.full_name,
       avatar: hrManagerData?.avatar_url,
       approved: request.hr_manager_approved,
-      show: !!hrManagerData, // يظهر دائماً إذا وجد مدير موارد بشرية
+      // إظهار المرحلة حتى لو لم يكن لدينا id محفوظ داخل الطلب
+      show: request.hr_manager_approved !== null || !!request.hr_manager_id || !!hrManagerData,
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200",
       textColor: "text-purple-600",
@@ -391,7 +392,11 @@ export function RequestDetailsDialog({
       name: executiveManagerData?.full_name,
       avatar: executiveManagerData?.avatar_url,
       approved: request.executive_manager_approved,
-      show: !!executiveManagerData, // يظهر دائماً إذا وجد مدير تنفيذي للموظف
+      // إظهار المرحلة حتى لو لم يكن لدينا id محفوظ داخل الطلب
+      show:
+        request.executive_manager_approved !== null ||
+        !!request.executive_manager_id ||
+        !!executiveManagerData,
       bgColor: "bg-green-50",
       borderColor: "border-green-200",
       textColor: "text-green-600",
