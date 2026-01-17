@@ -579,9 +579,9 @@ export default function Profile() {
 
 
             {/* Main Content */}
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex flex-col lg:flex-row-reverse gap-6">
               {/* Sidebar - اليمين */}
-              <div className="lg:w-80 shrink-0">
+              <div className="lg:w-80 shrink-0 order-first lg:order-none">
                 <ProfileSidebar
                   sections={sections}
                   activeSection={activeSection}
