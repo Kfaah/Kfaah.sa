@@ -138,20 +138,21 @@ export function ProfileHeader({
           </div>
 
           {/* Right Section - Name, Role, Status, Edit Button */}
-          <div className="flex flex-col items-center md:items-end text-center md:text-right shrink-0 justify-between h-full">
-            {/* Name - Top */}
+          <div className="flex flex-col self-stretch shrink-0 items-center md:items-end text-center md:text-right">
+            {/* Name - Top (far right) */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
+              className="self-center md:self-end"
             >
               <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight">
                 {user.firstName} {user.lastName}
               </h1>
             </motion.div>
 
-            {/* Center - Role & Online Badge */}
-            <div className="flex flex-col items-center md:items-end space-y-2 my-auto">
+            {/* Middle (centered between name and edit) */}
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 w-full">
               {/* Role */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -174,13 +175,13 @@ export function ProfileHeader({
               </motion.div>
             </div>
 
-            {/* Edit Button */}
+            {/* Edit Button - Bottom */}
             {isAdmin && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.55 }}
-                className="pt-1"
+                className="pt-1 self-center md:self-end"
               >
                 <Button
                   onClick={onEditClick}
