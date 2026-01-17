@@ -51,7 +51,7 @@ export function ProfileHeader({
       </div>
 
       <div className="relative p-6 md:p-8">
-        <div className="flex flex-col md:flex-row-reverse items-center gap-6 md:gap-8">
+        <div className="flex flex-col md:flex-row-reverse items-stretch gap-6 md:gap-8">
           {/* Avatar Section - LEFT Side */}
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
@@ -62,7 +62,7 @@ export function ProfileHeader({
               damping: 20,
               delay: 0.2,
             }}
-            className="relative group shrink-0"
+            className="relative group shrink-0 flex items-center"
           >
             <div className="relative">
               {/* Glow Effect */}
@@ -77,7 +77,7 @@ export function ProfileHeader({
                 <AvatarImage
                   src={user.profileImage || undefined}
                   alt="صورة الملف الشخصي"
-                  className="object-cover"
+                  className="object-cover -scale-x-100"
                 />
                 <AvatarFallback className="text-4xl md:text-5xl bg-white/20 text-white font-bold">
                   {user.firstName.charAt(0)}
@@ -105,9 +105,41 @@ export function ProfileHeader({
             </div>
           </motion.div>
 
-          {/* Info Section - RIGHT Side with Name at far right */}
-          <div className="flex flex-1 flex-col items-center md:items-end text-center md:text-right">
-            {/* Name - Far Right */}
+          {/* Center Section - Employee Title with decorations */}
+          <div className="flex-1 flex items-center justify-center">
+            {employeeTitle && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="relative"
+              >
+                {/* Decorative elements */}
+                <div className="absolute -inset-4 bg-white/10 rounded-2xl blur-lg" />
+                <div className="absolute -inset-2 border border-white/20 rounded-xl" />
+                
+                <div className="relative bg-white/15 backdrop-blur-md rounded-xl px-6 py-3 border border-white/30 shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="text-lg md:text-xl font-bold text-white">
+                      {employeeTitle}
+                    </span>
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  </div>
+                </div>
+                
+                {/* Corner decorations */}
+                <div className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-white/40 rounded-tr-lg" />
+                <div className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-white/40 rounded-tl-lg" />
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-white/40 rounded-br-lg" />
+                <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-white/40 rounded-bl-lg" />
+              </motion.div>
+            )}
+          </div>
+
+          {/* Right Section - Name, Role, Status, Edit Button */}
+          <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-2 shrink-0">
+            {/* Name */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -118,62 +150,46 @@ export function ProfileHeader({
               </h1>
             </motion.div>
 
-            {/* Centered elements under the name */}
-            <div className="flex flex-col items-center space-y-3 mt-3 w-full">
-              {/* Role */}
+            {/* Role */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.35 }}
+            >
+              <p className="text-lg md:text-xl text-white/90 font-medium">{user.role}</p>
+            </motion.div>
+
+            {/* Online Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.45 }}
+            >
+              <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm gap-1.5 px-3 py-1.5 text-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                متصل الآن
+              </Badge>
+            </motion.div>
+
+            {/* Edit Button */}
+            {isAdmin && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.35 }}
+                transition={{ duration: 0.5, delay: 0.55 }}
+                className="pt-1"
               >
-                <p className="text-lg md:text-xl text-white/90 font-medium">{user.role}</p>
-              </motion.div>
-
-              {/* Employee Title */}
-              {employeeTitle && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
+                <Button
+                  onClick={onEditClick}
+                  variant="secondary"
+                  size="sm"
+                  className="gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105"
                 >
-                  <Badge className="bg-white/15 text-white border-white/25 hover:bg-white/20 backdrop-blur-sm px-3 py-1.5 text-sm">
-                    {employeeTitle}
-                  </Badge>
-                </motion.div>
-              )}
-
-              {/* Online Badge */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.45 }}
-              >
-                <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm gap-1.5 px-3 py-1.5 text-sm">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  متصل الآن
-                </Badge>
+                  <Pencil className="w-4 h-4" />
+                  تعديل الملف الشخصي
+                </Button>
               </motion.div>
-
-              {/* Edit Button */}
-              {isAdmin && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.55 }}
-                  className="pt-1"
-                >
-                  <Button
-                    onClick={onEditClick}
-                    variant="secondary"
-                    size="sm"
-                    className="gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105"
-                  >
-                    <Pencil className="w-4 h-4" />
-                    تعديل الملف الشخصي
-                  </Button>
-                </motion.div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
