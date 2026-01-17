@@ -256,9 +256,9 @@ export function WorkflowTimeline({
       });
     }
 
-    // 4. مدير الموارد البشرية (إذا تم تعيينه)
-    if (request.hr_manager_id) {
-      const hrManager = getEmployee(request.hr_manager_id);
+    // 4. مدير الموارد البشرية (يظهر دائماً حتى لو لم يكن محفوظاً في الطلب)
+    if (resolvedHrManagerId) {
+      const hrManager = getEmployee(resolvedHrManagerId);
       let status: WorkflowStage["status"] = "waiting";
 
       const prevStage = stages[stages.length - 1];
@@ -282,10 +282,9 @@ export function WorkflowTimeline({
       });
     }
 
-    // 5. المدير المالي/التنفيذي (إذا تم تعيينه)
-    const financeManagerId = request.finance_manager_id || request.executive_manager_id;
-    if (financeManagerId) {
-      const financeManager = getEmployee(financeManagerId);
+    // 5. المدير التنفيذي (يظهر دائماً حتى لو لم يكن محفوظاً في الطلب)
+    if (resolvedExecutiveId) {
+      const executiveManager = getEmployee(resolvedExecutiveId);
       let status: WorkflowStage["status"] = "waiting";
 
       const prevStage = stages[stages.length - 1];
@@ -301,14 +300,14 @@ export function WorkflowTimeline({
       }
 
       stages.push({
-        id: "finance_manager",
-        name: "finance_manager",
-        role: request.finance_manager_id ? stageConfig.finance_manager.label : "المدير التنفيذي",
+        id: "executive_manager",
+        name: "finance_manager", // keep using finance_manager for stageConfig compatibility
+        role: "المدير التنفيذي",
         status,
-        approverName: financeManager?.full_name || "---",
-        approverAvatar: financeManager?.avatar_url,
+        approverName: executiveManager?.full_name || "---",
+        approverAvatar: executiveManager?.avatar_url,
         approvedAt: approvedAt,
-        signatureUrl: financeManager?.signature_url,
+        signatureUrl: executiveManager?.signature_url,
       });
     }
 
