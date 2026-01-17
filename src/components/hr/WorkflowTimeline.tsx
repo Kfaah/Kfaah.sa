@@ -106,11 +106,46 @@ export function WorkflowTimeline({
   compact = false,
   showSignatures = false,
 }: WorkflowTimelineProps) {
-  // جلب بيانات الموظفين المعنيين
-  const { data: employees = [] } = useQuery({
+  // جلب بيانات الموظفين المعنيين + محاولة استنتاج HR/التنفيذي عند غيابها في الطلب (للطلبات القديمة)
+  const { data: workflowContext } = useQuery({
     queryKey: ["workflow-employees", request?.id],
     queryFn: async () => {
-      if (!request) return [];
+      if (!request) {
+        return {
+          employees: [],
+          hrManagerUserId: null as string | null,
+          executiveUserId: null as string | null,
+        };
+      }
+
+      let hrManagerUserId: string | null = request.hr_manager_id ?? null;
+      let executiveUserId: string | null = (request.finance_manager_id || request.executive_manager_id) ?? null;
+
+      // HR manager: إن لم يكن محفوظاً داخل الطلب، نجلبه من الدالة العامة
+      if (!hrManagerUserId) {
+        const { data: hrId } = await supabase.rpc("get_hr_manager_id");
+        hrManagerUserId = hrId ?? null;
+      }
+
+      // Executive manager: إن لم يكن محفوظاً داخل الطلب، نحاول جلبه من هيكل الموظف
+      // (employees.executive_manager_id => employees.id ثم نحول إلى employees.user_id)
+      if (!executiveUserId && request.user_id) {
+        const { data: emp } = await supabase
+          .from("employees")
+          .select("executive_manager_id")
+          .eq("user_id", request.user_id)
+          .maybeSingle();
+
+        if (emp?.executive_manager_id) {
+          const { data: execEmp } = await supabase
+            .from("employees")
+            .select("user_id")
+            .eq("id", emp.executive_manager_id)
+            .maybeSingle();
+
+          executiveUserId = execEmp?.user_id ?? null;
+        }
+      }
 
       const userIds = [
         request.user_id,
@@ -119,22 +154,33 @@ export function WorkflowTimeline({
         request.hr_manager_id,
         request.finance_manager_id,
         request.executive_manager_id,
-      ].filter(Boolean);
+        hrManagerUserId,
+        executiveUserId,
+      ].filter(Boolean) as string[];
 
-      if (userIds.length === 0) return [];
+      const uniqueUserIds = Array.from(new Set(userIds));
+      if (uniqueUserIds.length === 0) {
+        return { employees: [], hrManagerUserId, executiveUserId };
+      }
 
       const { data, error } = await supabase
         .from("employees")
         .select("user_id, full_name, avatar_url, signature_url, job_role")
-        .in("user_id", userIds);
+        .in("user_id", uniqueUserIds);
 
       if (error) throw error;
-      return data || [];
+      return { employees: data || [], hrManagerUserId, executiveUserId };
     },
     enabled: !!request,
   });
 
+  const employees = workflowContext?.employees ?? [];
+
   if (!request) return null;
+
+  const resolvedHrManagerId = workflowContext?.hrManagerUserId ?? request.hr_manager_id ?? null;
+  const resolvedExecutiveId =
+    workflowContext?.executiveUserId ?? (request.finance_manager_id || request.executive_manager_id) ?? null;
 
   const getEmployee = (userId: string | null) => {
     if (!userId) return null;
