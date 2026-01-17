@@ -187,10 +187,10 @@ export function RequestPreviewDialog({
           .eq("user_id", executiveUserId)
           .maybeSingle();
         if (error) throw error;
-        return data;
+        if (data) return data;
       }
 
-      // وإلا نحاول جلبه من الموظف صاحب الطلب
+      // وإلا نحاول جلبه من الموظف صاحب الطلب (executive_manager_id هو employees.id وليس user_id)
       const { data: emp, error: empError } = await supabase
         .from("employees")
         .select("executive_manager_id")
@@ -199,6 +199,7 @@ export function RequestPreviewDialog({
 
       if (empError || !emp?.executive_manager_id) return null;
 
+      // نجلب بيانات المدير التنفيذي عبر employees.id
       const { data, error } = await supabase
         .from("employees")
         .select("full_name, job_role, signature_url")
