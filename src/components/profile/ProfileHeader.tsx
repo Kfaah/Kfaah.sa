@@ -137,51 +137,47 @@ export function ProfileHeader({
             )}
           </div>
 
-          {/* Right Section - Name, Role, Status, Edit Button */}
-          <div className="flex flex-col self-stretch shrink-0 items-center md:items-end text-center md:text-right">
-            {/* Name - Top (far right) */}
+          {/* Right Section - Name, Role, Status, Edit Button - All aligned right */}
+          <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-2 shrink-0">
+            {/* Name */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="self-center md:self-end"
             >
               <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight">
                 {user.firstName} {user.lastName}
               </h1>
             </motion.div>
 
-            {/* Middle (centered between name and edit) */}
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 w-full">
-              {/* Role */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.35 }}
-              >
-                <p className="text-lg md:text-xl text-white/90 font-medium">{user.role}</p>
-              </motion.div>
+            {/* Role */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.35 }}
+            >
+              <p className="text-lg md:text-xl text-white/90 font-medium">{user.role}</p>
+            </motion.div>
 
-              {/* Online Badge */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.45 }}
-              >
-                <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm gap-1.5 px-3 py-1.5 text-sm">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  متصل الآن
-                </Badge>
-              </motion.div>
-            </div>
+            {/* Online Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.45 }}
+            >
+              <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm gap-1.5 px-3 py-1.5 text-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                متصل الآن
+              </Badge>
+            </motion.div>
 
-            {/* Edit Button - Bottom */}
+            {/* Edit Button */}
             {isAdmin && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.55 }}
-                className="pt-1 self-center md:self-end"
+                className="pt-1"
               >
                 <Button
                   onClick={onEditClick}
