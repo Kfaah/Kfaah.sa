@@ -51,7 +51,7 @@ export function ProfileHeader({
       </div>
 
       <div className="relative p-6 md:p-8">
-        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+        <div className="flex flex-col md:flex-row-reverse items-center gap-6 md:gap-8">
           
           {/* Avatar Section - LEFT Side */}
           <motion.div 
