@@ -35,10 +35,10 @@ export function ProfileInfoSection({ user }: ProfileInfoSectionProps) {
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center justify-end gap-2 text-lg">
-              معلومات العمل
               <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
                 <Briefcase className="w-4 h-4 text-violet-600" />
               </div>
+              معلومات العمل
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -80,10 +80,10 @@ export function ProfileInfoSection({ user }: ProfileInfoSectionProps) {
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center justify-end gap-2 text-lg">
-              معلومات التواصل
               <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
                 <Mail className="w-4 h-4 text-accent" />
               </div>
+              معلومات التواصل
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
