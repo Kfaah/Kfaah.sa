@@ -91,6 +91,8 @@ const Employees = () => {
     password: "",
     avatar: "",
     avatarFile: null as File | null,
+    directManagerId: "",
+    executiveManagerId: "",
   });
 
   type AddEmployeeField = "name" | "username" | "password" | "email" | "phone" | "department" | "role";
@@ -257,6 +259,8 @@ const Employees = () => {
           jobRole: newEmployee.role,
           roleColor: roleData?.color || "bg-primary",
           avatarUrl: avatarUrl,
+          directManagerId: newEmployee.directManagerId && newEmployee.directManagerId !== "none" ? newEmployee.directManagerId : null,
+          executiveManagerId: newEmployee.executiveManagerId && newEmployee.executiveManagerId !== "none" ? newEmployee.executiveManagerId : null,
         },
       });
 
@@ -280,7 +284,7 @@ const Employees = () => {
         setEmployees([response.data.employee, ...employees]);
       }
 
-      setNewEmployee({ name: "", username: "", email: "", phone: "", role: "", department: "", password: "", avatar: "", avatarFile: null });
+      setNewEmployee({ name: "", username: "", email: "", phone: "", role: "", department: "", password: "", avatar: "", avatarFile: null, directManagerId: "", executiveManagerId: "" });
       setAddErrors({});
       setIsDialogOpen(false);
       toast.success("تم إضافة الموظف بنجاح");
@@ -829,7 +833,57 @@ const Employees = () => {
                 {addErrors.role && <p className="text-sm text-destructive">{addErrors.role}</p>}
               </div>
 
-              <Button 
+              {/* المدير المباشر */}
+              <div className="space-y-2">
+                <Label>المدير المباشر</Label>
+                <Select
+                  value={newEmployee.directManagerId}
+                  onValueChange={(value) => setNewEmployee({ ...newEmployee, directManagerId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المدير المباشر" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">بدون مدير مباشر</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.full_name} - {emp.job_role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* المدير التنفيذي */}
+              <div className="space-y-2">
+                <Label>المدير التنفيذي</Label>
+                <Select
+                  value={newEmployee.executiveManagerId}
+                  onValueChange={(value) => setNewEmployee({ ...newEmployee, executiveManagerId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المدير التنفيذي" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">بدون مدير تنفيذي</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.full_name} - {emp.job_role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {newEmployee.directManagerId && newEmployee.executiveManagerId && 
+                 newEmployee.directManagerId === newEmployee.executiveManagerId && 
+                 newEmployee.directManagerId !== "none" && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>المدير المباشر والتنفيذي نفس الشخص</span>
+                  </p>
+                )}
+              </div>
+
+              <Button
                 onClick={handleAddEmployee} 
                 className="w-full bg-accent hover:bg-accent/90"
                 disabled={isLoading}

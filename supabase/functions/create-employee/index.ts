@@ -126,7 +126,7 @@ serve(async (req) => {
 
       return json({ success: true, message: "تم ربط بيانات الدخول بنجاح", loginEmail: internalEmail }, 200);
     }
-    const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl } = body;
+    const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl, directManagerId, executiveManagerId } = body;
 
     // Validate required fields
     const fieldErrors: Record<string, string> = {};
@@ -236,6 +236,8 @@ serve(async (req) => {
         role_color: roleColor || "bg-primary",
         avatar_url: avatarUrl || null,
         status: "active",
+        direct_manager_id: directManagerId || null,
+        executive_manager_id: executiveManagerId || null,
       })
       .select()
       .single();
