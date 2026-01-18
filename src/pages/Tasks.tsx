@@ -107,6 +107,7 @@ const Tasks = () => {
   const [activeTab, setActiveTab] = useState("all");
   
   // الفلاتر
+  const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
   const [filterMonth, setFilterMonth] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<string>("all");
   const [filterEmployee, setFilterEmployee] = useState<string>("all");
@@ -628,6 +629,7 @@ const Tasks = () => {
 
   // إعادة تعيين الفلاتر
   const resetFilters = () => {
+    setFilterYear(String(new Date().getFullYear()));
     setFilterMonth("all");
     setFilterDay("all");
     setFilterEmployee("all");
@@ -698,7 +700,12 @@ const Tasks = () => {
     return Object.values(grouped);
   };
 
-  // استخراج الشهر واليوم من تاريخ التنفيذ
+  // استخراج السنة والشهر واليوم من تاريخ التنفيذ
+  const getYearFromDate = (dateStr: string | null): number | null => {
+    if (!dateStr) return null;
+    return new Date(dateStr).getFullYear();
+  };
+
   const getMonthFromDate = (dateStr: string | null): number | null => {
     if (!dateStr) return null;
     return new Date(dateStr).getMonth() + 1;
@@ -708,6 +715,13 @@ const Tasks = () => {
     if (!dateStr) return null;
     return new Date(dateStr).getDate();
   };
+
+  // السنوات المتاحة
+  const availableYears = Array.from(new Set(
+    tasks
+      .map(t => getYearFromDate(t.due_date))
+      .filter(Boolean)
+  )).sort((a, b) => (b || 0) - (a || 0));
 
   // الأيام المتاحة حسب الشهر المختار
   const availableDays = filterMonth !== "all" 
@@ -729,6 +743,10 @@ const Tasks = () => {
 
     // فلتر الحالة
     const matchesStatus = activeTab === "all" || task.status === activeTab;
+
+    // فلتر السنة
+    const taskYear = getYearFromDate(task.due_date);
+    const matchesYear = filterYear === "all" || taskYear === Number(filterYear);
 
     // فلتر الشهر
     const taskMonth = getMonthFromDate(task.due_date);
@@ -761,7 +779,7 @@ const Tasks = () => {
       matchesActivity = task.executive_plan_id === filterActivity;
     }
 
-    return matchesSearch && matchesStatus && matchesMonth && matchesDay && matchesEmployee && matchesActivity;
+    return matchesSearch && matchesStatus && matchesYear && matchesMonth && matchesDay && matchesEmployee && matchesActivity;
   });
 
   const taskStats = {
@@ -772,7 +790,7 @@ const Tasks = () => {
     delayed: tasks.filter((t) => t.status === "delayed" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
   };
 
-  const hasActiveFilters = filterMonth !== "all" || filterDay !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
+  const hasActiveFilters = filterYear !== String(new Date().getFullYear()) || filterMonth !== "all" || filterDay !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
 
   // قائمة الأنشطة الفريدة للفلتر
   const uniqueActivities = Array.from(new Set(
@@ -886,13 +904,35 @@ const Tasks = () => {
                 </Button>
               )}
             </div>
-            <div className={cn("grid gap-5", isAdmin ? "grid-cols-1 md:grid-cols-5" : "grid-cols-1 md:grid-cols-4")}>
+            <div className={cn("grid gap-4", isAdmin ? "grid-cols-2 md:grid-cols-6" : "grid-cols-2 md:grid-cols-5")}>
+              {/* فلتر السنة */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#3d9aa8]">السنة</label>
+                <Select value={filterYear} onValueChange={(v) => {
+                  setFilterYear(v);
+                  setFilterMonth("all");
+                  setFilterDay("all");
+                }}>
+                  <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
+                    <SelectValue placeholder="السنة" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50 border-[#3d9aa8]/20">
+                    <SelectItem value="all">كل السنوات</SelectItem>
+                    {availableYears.map(year => (
+                      <SelectItem key={year} value={String(year)}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* فلتر الشهر */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-[#3d9aa8]">الشهر</label>
                 <Select value={filterMonth} onValueChange={(v) => {
                   setFilterMonth(v);
-                  setFilterDay("all"); // إعادة تعيين اليوم عند تغيير الشهر
+                  setFilterDay("all");
                 }}>
                   <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
                     <SelectValue placeholder="كل الشهور" />
