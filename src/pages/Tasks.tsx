@@ -1535,14 +1535,15 @@ const Tasks = () => {
                 />
               </div>
 
-              {/* الوصف */}
+              {/* التفاصيل */}
               <div className="space-y-2">
-                <Label className="font-semibold">الوصف</Label>
+                <Label className="font-semibold">التفاصيل</Label>
                 <Textarea
                   value={editForm.description}
                   onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="أدخل وصف المهمة"
-                  rows={3}
+                  placeholder="أدخل تفاصيل المهمة والملاحظات الإضافية"
+                  rows={6}
+                  className="resize-y min-h-[120px]"
                 />
               </div>
 
@@ -1799,14 +1800,15 @@ const Tasks = () => {
                 />
               </div>
 
-              {/* الوصف */}
+              {/* التفاصيل */}
               <div className="space-y-2">
-                <Label>الوصف</Label>
+                <Label>التفاصيل</Label>
                 <Textarea
                   value={addForm.description}
                   onChange={(e) => setAddForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="وصف المهمة (اختياري)"
-                  rows={3}
+                  placeholder="أدخل تفاصيل المهمة والملاحظات الإضافية (اختياري)"
+                  rows={5}
+                  className="resize-y min-h-[100px]"
                 />
               </div>
 
