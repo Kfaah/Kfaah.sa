@@ -28,6 +28,8 @@ import {
   BarChart3,
   Save,
   Columns,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -89,6 +91,7 @@ const AddOperationalPlan = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
+  const [isMonthlyExpanded, setIsMonthlyExpanded] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -288,6 +291,23 @@ const AddOperationalPlan = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Year Selector - Moved to header */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                <Calendar className="w-4 h-4 text-slate-500" />
+                <Select
+                  value={form.year.toString()}
+                  onValueChange={(v) => setForm(prev => ({ ...prev, year: parseInt(v), strategic_goal_id: "", initiative_id: "" }))}
+                >
+                  <SelectTrigger className="w-24 h-8 text-sm border-0 bg-transparent">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background">
+                    {getAvailableYears().map((y) => (
+                      <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button
                 variant="outline"
                 onClick={() => setIsManageColumnsOpen(true)}
@@ -319,13 +339,12 @@ const AddOperationalPlan = () => {
             </div>
           </div>
 
-          {/* Excel-like Table */}
+          {/* Main Form Card */}
           <Card className="border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
             <CardContent className="p-0">
               {/* Table Header Row */}
               <div className="bg-gradient-to-l from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-850 border-b border-slate-200 dark:border-slate-700">
-                <div className="grid grid-cols-12 lg:grid-cols-[200px_1fr_140px_140px_repeat(12,minmax(70px,1fr))_100px] gap-0">
-                  {/* Labels Row */}
+                <div className="grid grid-cols-12 lg:grid-cols-[200px_1fr_180px_180px_140px] gap-0">
                   <div className="col-span-12 lg:col-span-1 p-3 border-l border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
                     <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
                       <Target className="w-4 h-4 text-emerald-600" />
@@ -346,21 +365,15 @@ const AddOperationalPlan = () => {
                   </div>
                   <div className="hidden lg:block p-3 border-l border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
                     <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <UserCircle className="w-4 h-4 text-cyan-500" />
+                      مسؤول التنفيذ
+                    </div>
+                  </div>
+                  <div className="hidden lg:block p-3 bg-slate-100 dark:bg-slate-800">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
                       <TrendingUp className="w-4 h-4 text-purple-500" />
                       المستهدف السنوي
                     </div>
-                  </div>
-                  {/* Monthly Headers */}
-                  {MONTHS_AR.map((month, idx) => (
-                    <div 
-                      key={month} 
-                      className="hidden lg:flex p-2 border-l border-slate-200 dark:border-slate-700 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-850 items-center justify-center"
-                    >
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{month}</span>
-                    </div>
-                  ))}
-                  <div className="hidden lg:flex p-2 bg-emerald-50 dark:bg-emerald-950/30 items-center justify-center">
-                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">المجموع</span>
                   </div>
                 </div>
               </div>
@@ -584,7 +597,7 @@ const AddOperationalPlan = () => {
                 </div>
 
                 {/* Desktop Table View */}
-                <div className="hidden lg:grid grid-cols-[200px_1fr_140px_140px_repeat(12,minmax(70px,1fr))_100px] gap-0 items-stretch min-h-[120px]">
+                <div className="hidden lg:grid grid-cols-[200px_1fr_180px_180px_140px] gap-0 items-stretch min-h-[80px]">
                   {/* Strategic Goal Cell */}
                   <div className="p-2 border-l border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
                     <div className="h-full flex flex-col">
@@ -705,133 +718,147 @@ const AddOperationalPlan = () => {
                     )}
                   </div>
 
-                  {/* Annual Target Cell */}
-                  <div className="p-2 border-l border-b border-slate-200 dark:border-slate-700 bg-purple-50/50 dark:bg-purple-950/20">
-                    <div className="space-y-1">
-                      <Input
-                        type="number"
-                        value={form.annual_target}
-                        onChange={(e) => {
-                          setForm(prev => ({ ...prev, annual_target: e.target.value }));
-                          if (errors.annual_target) setErrors(prev => ({ ...prev, annual_target: "" }));
-                        }}
-                        placeholder="0"
-                        className={`text-center font-bold text-sm h-9 ${errors.annual_target ? "border-red-300" : ""}`}
-                        min={1}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={distributeEvenly}
-                        disabled={!form.annual_target || parseInt(form.annual_target) <= 0}
-                        className="w-full text-[10px] h-6 text-purple-600 hover:text-purple-700"
-                      >
-                        <Sparkles className="w-3 h-3 ml-1" />
-                        توزيع
-                      </Button>
-                    </div>
+                  {/* Responsible Employee Cell */}
+                  <div className="p-2 border-l border-b border-slate-200 dark:border-slate-700 bg-cyan-50/50 dark:bg-cyan-950/20">
+                    <Select
+                      value={form.responsible_employee_id}
+                      onValueChange={(v) => setForm(prev => ({ ...prev, responsible_employee_id: v === "none" ? "" : v }))}
+                    >
+                      <SelectTrigger className="text-xs h-9">
+                        <SelectValue placeholder="اختر مسؤول التنفيذ" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background">
+                        <SelectItem value="none">بدون</SelectItem>
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id} className="text-xs">{emp.full_name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  {/* Monthly Target Cells */}
-                  {MONTHS_AR.map((month, index) => (
-                    <div 
-                      key={month} 
-                      className={`p-1 border-l border-b border-slate-200 dark:border-slate-700 ${
-                        index % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-slate-50/50 dark:bg-slate-800/30"
-                      }`}
-                    >
-                      <Input
-                        type="number"
-                        value={form.monthlyTargets[index]}
-                        onChange={(e) => {
-                          const newTargets = [...form.monthlyTargets];
-                          newTargets[index] = parseInt(e.target.value) || 0;
-                          setForm(prev => ({ ...prev, monthlyTargets: newTargets }));
-                        }}
-                        min={0}
-                        className="text-center h-full w-full text-sm font-medium border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary"
-                      />
-                    </div>
-                  ))}
-
-                  {/* Sum Cell */}
-                  <div className={`p-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-center ${
-                    isBalanced 
-                      ? "bg-emerald-50 dark:bg-emerald-950/30" 
-                      : "bg-amber-50 dark:bg-amber-950/30"
-                  }`}>
-                    <div className="text-center">
-                      <div className={`text-lg font-bold ${isBalanced ? "text-emerald-600" : "text-amber-600"}`}>
-                        {monthlySum}
-                      </div>
-                      {!isBalanced && annualTargetNum > 0 && (
-                        <div className="text-[10px] text-amber-600">
-                          {monthlySum > annualTargetNum ? `+${monthlySum - annualTargetNum}` : `-${annualTargetNum - monthlySum}`}
-                        </div>
-                      )}
-                      {isBalanced && annualTargetNum > 0 && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" />
-                      )}
-                    </div>
+                  {/* Annual Target Cell */}
+                  <div className="p-2 border-b border-slate-200 dark:border-slate-700 bg-purple-50/50 dark:bg-purple-950/20">
+                    <Input
+                      type="number"
+                      value={form.annual_target}
+                      onChange={(e) => {
+                        setForm(prev => ({ ...prev, annual_target: e.target.value }));
+                        if (errors.annual_target) setErrors(prev => ({ ...prev, annual_target: "" }));
+                      }}
+                      placeholder="0"
+                      className={`text-center font-bold text-sm h-9 ${errors.annual_target ? "border-red-300" : ""}`}
+                      min={1}
+                    />
+                    {errors.annual_target && (
+                      <span className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        مطلوب
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Additional Info Row - Desktop */}
-                <div className="hidden lg:block p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-6">
+                {/* Monthly Targets Collapsible Section - Desktop */}
+                <div className="hidden lg:block border-t border-slate-200 dark:border-slate-700">
+                  <button
+                    onClick={() => setIsMonthlyExpanded(!isMonthlyExpanded)}
+                    className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
                     <div className="flex items-center gap-3">
-                      <Calendar className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm text-slate-600 dark:text-slate-400">السنة:</span>
-                      <Select
-                        value={form.year.toString()}
-                        onValueChange={(v) => setForm(prev => ({ ...prev, year: parseInt(v), strategic_goal_id: "", initiative_id: "" }))}
-                      >
-                        <SelectTrigger className="w-24 h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background">
-                          {getAvailableYears().map((y) => (
-                            <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <UserCircle className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm text-slate-600 dark:text-slate-400">مسؤول التنفيذ:</span>
-                      <Select
-                        value={form.responsible_employee_id}
-                        onValueChange={(v) => setForm(prev => ({ ...prev, responsible_employee_id: v === "none" ? "" : v }))}
-                      >
-                        <SelectTrigger className="w-48 h-8 text-sm">
-                          <SelectValue placeholder="اختر مسؤول التنفيذ" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background">
-                          <SelectItem value="none">بدون</SelectItem>
-                          {employees.map((emp) => (
-                            <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="mr-auto flex items-center gap-2">
-                      {annualTargetNum > 0 && (
-                        <Badge variant={isBalanced ? "default" : "secondary"} className={`${isBalanced ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"}`}>
-                          {isBalanced ? (
-                            <>
-                              <CheckCircle2 className="w-3 h-3 ml-1" />
-                              التوزيع متوازن
-                            </>
-                          ) : (
-                            <>
-                              <AlertTriangle className="w-3 h-3 ml-1" />
-                              التوزيع غير متوازن
-                            </>
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <Calendar className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="text-right">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">المستهدفات الشهرية</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-slate-500">المجموع:</span>
+                          <span className={`font-bold ${isBalanced ? "text-emerald-600" : "text-amber-600"}`}>{monthlySum}</span>
+                          <span className="text-slate-400">/</span>
+                          <span className="text-slate-600">{annualTargetNum}</span>
+                          {isBalanced && annualTargetNum > 0 && (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                           )}
-                        </Badge>
+                          {!isBalanced && annualTargetNum > 0 && (
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 text-xs">
+                              {monthlySum > annualTargetNum ? `+${monthlySum - annualTargetNum}` : `-${annualTargetNum - monthlySum}`}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          distributeEvenly();
+                        }}
+                        disabled={!form.annual_target || parseInt(form.annual_target) <= 0}
+                        className="gap-1 text-xs h-8"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        توزيع تلقائي
+                      </Button>
+                      {isMonthlyExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-slate-400" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-slate-400" />
                       )}
                     </div>
-                  </div>
+                  </button>
+
+                  {/* Expanded Monthly Targets */}
+                  {isMonthlyExpanded && (
+                    <div className="p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-700">
+                      <div className="grid grid-cols-12 gap-3">
+                        {MONTHS_AR.map((month, index) => (
+                          <div 
+                            key={month} 
+                            className={`p-3 rounded-lg border ${
+                              index % 2 === 0 
+                                ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700" 
+                                : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            <div className="text-xs text-slate-500 text-center mb-2 font-medium">{month}</div>
+                            <Input
+                              type="number"
+                              value={form.monthlyTargets[index]}
+                              onChange={(e) => {
+                                const newTargets = [...form.monthlyTargets];
+                                newTargets[index] = parseInt(e.target.value) || 0;
+                                setForm(prev => ({ ...prev, monthlyTargets: newTargets }));
+                              }}
+                              min={0}
+                              className="text-center h-10 text-sm font-semibold"
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Balance Status */}
+                      <div className={`mt-4 p-3 rounded-lg text-center ${
+                        isBalanced 
+                          ? "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800" 
+                          : "bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800"
+                      }`}>
+                        {isBalanced ? (
+                          <div className="flex items-center justify-center gap-2 text-emerald-700 dark:text-emerald-400">
+                            <CheckCircle2 className="w-5 h-5" />
+                            <span className="font-medium">التوزيع متوازن</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2 text-amber-700 dark:text-amber-400">
+                            <AlertTriangle className="w-5 h-5" />
+                            <span className="font-medium">
+                              التوزيع غير متوازن - الفرق: {Math.abs(monthlySum - annualTargetNum)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
