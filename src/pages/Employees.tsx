@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, Mail, Phone, Users, UserCheck, Clock, TrendingUp, Eye, EyeOff, Camera, Loader2, Upload, X, Pencil, LogIn, Building, Briefcase, ClipboardList } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { cn, formatNumber, formatPercent } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,6 +69,7 @@ const getPerformanceBarColor = (performance: number) => {
 };
 
 const Employees = () => {
+  const navigate = useNavigate();
   const { setPreviewingEmployee } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -644,262 +646,14 @@ const Employees = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Add Employee Dialog */}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 rounded-2xl bg-accent hover:bg-accent/90 text-accent-foreground shadow-md">
-                <Plus className="w-4 h-4" />
-                إضافة موظف
-              </Button>
-            </DialogTrigger>
-          <DialogContent className="sm:max-w-md" dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="text-right">إضافة موظف جديد</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
-              {/* صورة الموظف */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30 overflow-hidden">
-                    {isUploadingImage ? (
-                      <Loader2 className="w-8 h-8 text-muted-foreground/50 animate-spin" />
-                    ) : newEmployee.avatar ? (
-                      <img src={newEmployee.avatar} alt="صورة الموظف" className="w-full h-full object-cover" />
-                    ) : (
-                      <Camera className="w-8 h-8 text-muted-foreground/50" />
-                    )}
-                  </div>
-                  {newEmployee.avatar && (
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="absolute -top-1 -right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                <Label className="text-sm text-muted-foreground">صورة (شخصية/رمزية) - اختيارية</Label>
-                <div className="flex gap-2 w-full">
-                  <label className="flex-1 cursor-pointer">
-                    <div className="flex items-center justify-center gap-2 px-4 py-2 bg-accent/10 hover:bg-accent/20 text-accent rounded-lg transition-colors">
-                      <Upload className="w-4 h-4" />
-                      <span className="text-sm font-medium">رفع صورة</span>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file);
-                      }}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="name">الاسم الكامل *</Label>
-                <Input
-                  id="name"
-                  placeholder="أدخل اسم الموظف"
-                  value={newEmployee.name}
-                  onChange={(e) => {
-                    clearAddError("name");
-                    setNewEmployee({ ...newEmployee, name: e.target.value });
-                  }}
-                />
-                {addErrors.name && <p className="text-sm text-destructive">{addErrors.name}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="username">اسم المستخدم - رقم الهوية (ID) *</Label>
-                <Input
-                  id="username"
-                  placeholder="أدخل رقم الهوية الوطنية"
-                  value={newEmployee.username}
-                  onChange={(e) => {
-                    clearAddError("username");
-                    setNewEmployee({ ...newEmployee, username: e.target.value });
-                  }}
-                  dir="ltr"
-                />
-                {addErrors.username && <p className="text-sm text-destructive">{addErrors.username}</p>}
-                <p className="text-xs text-muted-foreground">يستخدم لتسجيل الدخول واسترجاع كلمة المرور</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">كلمة المرور *</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="أدخل كلمة المرور (6 أحرف على الأقل)"
-                    value={newEmployee.password}
-                    onChange={(e) => {
-                      clearAddError("password");
-                      setNewEmployee({ ...newEmployee, password: e.target.value });
-                    }}
-                    className="pl-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {addErrors.password && <p className="text-sm text-destructive">{addErrors.password}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@atef.org"
-                  value={newEmployee.email}
-                  onChange={(e) => {
-                    clearAddError("email");
-                    setNewEmployee({ ...newEmployee, email: e.target.value });
-                  }}
-                  dir="ltr"
-                  required
-                />
-                {addErrors.email && <p className="text-sm text-destructive">{addErrors.email}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">رقم الجوال *</Label>
-                <Input
-                  id="phone"
-                  placeholder="+966 5x xxx xxxx"
-                  value={newEmployee.phone}
-                  onChange={(e) => {
-                    clearAddError("phone");
-                    setNewEmployee({ ...newEmployee, phone: e.target.value });
-                  }}
-                  dir="ltr"
-                  required
-                />
-                {addErrors.phone && <p className="text-sm text-destructive">{addErrors.phone}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label>القسم *</Label>
-                <Select
-                  value={newEmployee.department || ""}
-                  onValueChange={(value) => {
-                    clearAddError("department");
-                    setNewEmployee({ ...newEmployee, department: value });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر القسم" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.name}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {addErrors.department && <p className="text-sm text-destructive">{addErrors.department}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label>الدور الوظيفي *</Label>
-                <Select
-                  value={newEmployee.role}
-                  onValueChange={(value) => {
-                    clearAddError("role");
-                    setNewEmployee({ ...newEmployee, role: value });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الدور الوظيفي" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {jobRoles.map((role) => (
-                      <SelectItem key={role.id} value={role.name}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {addErrors.role && <p className="text-sm text-destructive">{addErrors.role}</p>}
-              </div>
-
-              {/* المدير المباشر */}
-              <div className="space-y-2">
-                <Label>المدير المباشر</Label>
-                <Select
-                  value={newEmployee.directManagerId}
-                  onValueChange={(value) => setNewEmployee({ ...newEmployee, directManagerId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر المدير المباشر" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">بدون مدير مباشر</SelectItem>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.full_name} - {emp.job_role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* المدير التنفيذي */}
-              <div className="space-y-2">
-                <Label>المدير التنفيذي</Label>
-                <Select
-                  value={newEmployee.executiveManagerId}
-                  onValueChange={(value) => setNewEmployee({ ...newEmployee, executiveManagerId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر المدير التنفيذي" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">بدون مدير تنفيذي</SelectItem>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.full_name} - {emp.job_role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {newEmployee.directManagerId && newEmployee.executiveManagerId && 
-                 newEmployee.directManagerId === newEmployee.executiveManagerId && 
-                 newEmployee.directManagerId !== "none" && (
-                  <p className="text-xs text-amber-600 flex items-center gap-1">
-                    <span>⚠️</span>
-                    <span>المدير المباشر والتنفيذي نفس الشخص</span>
-                  </p>
-                )}
-              </div>
-
-              <Button
-                onClick={handleAddEmployee} 
-                className="w-full bg-accent hover:bg-accent/90"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                    جاري الإضافة...
-                  </>
-                ) : (
-                  "إضافة الموظف"
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+          {/* Add Employee Button - Navigate to new page */}
+          <Button 
+            className="gap-2 rounded-2xl bg-accent hover:bg-accent/90 text-accent-foreground shadow-md"
+            onClick={() => navigate("/employees/add")}
+          >
+            <Plus className="w-4 h-4" />
+            إضافة موظف
+          </Button>
         </div>
       </div>
 
