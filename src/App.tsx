@@ -18,6 +18,7 @@ import Plans from "./pages/Plans";
 import ExecutivePlans from "./pages/ExecutivePlans";
 import Profile from "./pages/Profile";
 import OperationalPlans from "./pages/OperationalPlans";
+import AddOperationalPlan from "./pages/AddOperationalPlan";
 import OperationalPlanDetails from "./pages/OperationalPlanDetails";
 import Attendance from "./pages/Attendance";
 import AttendanceManagement from "./pages/AttendanceManagement";
@@ -163,6 +164,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <OperationalPlans />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/operational-plans/add"
+        element={
+          <ProtectedRoute>
+            <AddOperationalPlan />
           </ProtectedRoute>
         }
       />

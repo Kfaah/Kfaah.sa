@@ -1447,7 +1447,7 @@ export default function OperationalPlans() {
             
             <Button 
               className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25 border-0" 
-              onClick={() => setIsAddDialogOpen(true)}
+              onClick={() => navigate("/operational-plans/add")}
             >
               <Plus className="w-4 h-4" />
               إضافة خطة
