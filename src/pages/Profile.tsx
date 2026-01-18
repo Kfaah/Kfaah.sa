@@ -193,9 +193,11 @@ export default function Profile() {
     }
     if (notification.related_task_id) {
       if (notification.type === "message" || notification.type === "task_message") {
-        navigate(`/tasks?task=${notification.related_task_id}&openChat=true`);
+        // إشعار رسالة/تواصل -> فتح صفحة التفاصيل مع نافذة المحادثة
+        navigate(`/tasks/${notification.related_task_id}?openChat=true`);
       } else {
-        navigate(`/tasks?task=${notification.related_task_id}`);
+        // إشعار تحديث حالة -> فتح صفحة التفاصيل
+        navigate(`/tasks/${notification.related_task_id}`);
       }
     }
   };

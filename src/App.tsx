@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Employees from "./pages/Employees";
 import Roles from "./pages/Roles";
 import Tasks from "./pages/Tasks";
+import TaskDetails from "./pages/TaskDetails";
 import Plans from "./pages/Plans";
 import ExecutivePlans from "./pages/ExecutivePlans";
 import Profile from "./pages/Profile";
@@ -103,6 +104,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Tasks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tasks/:taskId"
+        element={
+          <ProtectedRoute>
+            <TaskDetails />
           </ProtectedRoute>
         }
       />
