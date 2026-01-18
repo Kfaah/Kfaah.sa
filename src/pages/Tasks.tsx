@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +101,7 @@ const MONTHS_AR = [
 const Tasks = () => {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isAdmin, setIsAdmin] = useState(false);
   const [canEditTime, setCanEditTime] = useState(false);
@@ -1178,14 +1179,17 @@ const Tasks = () => {
                           
                           {/* المهمة */}
                           <TableCell className="border-l border-[#3d9aa8]/20">
-                            <div className="flex items-start gap-3">
+                            <div 
+                              className="flex items-start gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => navigate(`/tasks/${task.id}`)}
+                            >
                               {task.ai_generated && (
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center flex-shrink-0">
                                   <Brain className="w-4 h-4 text-white" />
                                 </div>
                               )}
                               <div>
-                                <p className="font-semibold text-foreground">{task.title}</p>
+                                <p className="font-semibold text-foreground hover:text-[#3d9aa8] transition-colors">{task.title}</p>
                                 {task.description && (
                                   <p className="text-sm text-muted-foreground line-clamp-1">{task.description}</p>
                                 )}
