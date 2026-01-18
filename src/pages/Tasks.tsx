@@ -49,7 +49,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatDate, formatNumberPlain, formatPercent, normalizeNumericInput } from "@/lib/utils";
+import { formatDate, formatDateWithHijri, formatNumberPlain, formatPercent, normalizeNumericInput } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { TaskCommunicationDialog } from "@/components/tasks/TaskCommunicationDialog";
@@ -1029,7 +1029,7 @@ const Tasks = () => {
                     <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">المرفقات والتواصل</TableHead>
                     <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
                     {/* التقييم يظهر للجميع */}
-                    <TableHead className="text-center font-bold text-white w-48 border-l border-white/20">التقييم</TableHead>
+                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">التقييم</TableHead>
                     <TableHead className="text-center font-bold text-white w-24">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1077,13 +1077,20 @@ const Tasks = () => {
                           </TableCell>
                           
                           {/* تاريخ التنفيذ */}
-                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex items-center justify-center gap-2 text-base font-bold">
-                              <Calendar className="w-5 h-5 text-[#3d9aa8]" />
-                              <span className="text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                {formatDate(task.due_date)}
-                              </span>
-                            </div>
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20 py-1">
+                            {(() => {
+                              const dates = formatDateWithHijri(task.due_date);
+                              return (
+                                <div className="flex flex-col items-center justify-center gap-0.5">
+                                  <span className="text-sm font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                    {dates.gregorian}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                    {dates.hijri}
+                                  </span>
+                                </div>
+                              );
+                            })()}
                           </TableCell>
 
                           {/* الأولوية */}
@@ -1190,102 +1197,58 @@ const Tasks = () => {
                           </TableCell>
                           
                           {/* التقييم - يظهر للجميع لكن التعديل للمدير فقط */}
-                          <TableCell className="text-center border-l border-[#3d9aa8]/20">
-                            <div className="flex flex-col items-center justify-center gap-2">
-                              {/* الإنجاز والجودة */}
-                              <div className="flex items-center justify-center gap-3">
-                                <div className="flex flex-col items-center">
-                                  <div className="text-xs font-semibold text-muted-foreground mb-1">الإنجاز</div>
-                                  {isAdmin ? (
-                                    <div className="flex items-center justify-center">
-                                      <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        pattern="[0-9]*"
-                                        defaultValue={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
-                                          Number(task.completion_percentage || 0)
-                                        )}
-                                        onBlur={(e) => {
-                                          const raw = normalizeNumericInput(e.currentTarget.value);
-                                          const value = parseInt(raw, 10) || 0;
-                                          if (value !== (task.completion_percentage || 0)) {
-                                            updateTaskRating(task.id, 'completion_percentage', value);
-                                          }
-                                        }}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') {
-                                            e.currentTarget.blur();
-                                          }
-                                        }}
-                                        className="w-12 h-7 text-center text-sm font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
-                                        style={{ fontFamily: 'Arial, sans-serif' }}
-                                        lang="en"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div
-                                      className="w-12 h-7 flex items-center justify-center bg-muted/50 rounded-lg text-sm font-semibold"
-                                      lang="en"
-                                      style={{ fontFamily: 'Arial, sans-serif' }}
-                                    >
-                                      {new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
-                                        Number(task.completion_percentage || 0)
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex flex-col items-center">
-                                  <div className="text-xs font-semibold text-muted-foreground mb-1">الجودة</div>
-                                  {isAdmin ? (
-                                    <div className="flex items-center justify-center">
-                                      <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        pattern="[0-9]*"
-                                        defaultValue={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
-                                          Number(task.quality_percentage || 0)
-                                        )}
-                                        onBlur={(e) => {
-                                          const raw = normalizeNumericInput(e.currentTarget.value);
-                                          const value = parseInt(raw, 10) || 0;
-                                          if (value !== (task.quality_percentage || 0)) {
-                                            updateTaskRating(task.id, 'quality_percentage', value);
-                                          }
-                                        }}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') {
-                                            e.currentTarget.blur();
-                                          }
-                                        }}
-                                        className="w-12 h-7 text-center text-sm font-semibold border-2 border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
-                                        style={{ fontFamily: 'Arial, sans-serif' }}
-                                        lang="en"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div
-                                      className="w-12 h-7 flex items-center justify-center bg-muted/50 rounded-lg text-sm font-semibold"
-                                      lang="en"
-                                      style={{ fontFamily: 'Arial, sans-serif' }}
-                                    >
-                                      {new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
-                                        Number(task.quality_percentage || 0)
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                          <TableCell className="text-center border-l border-[#3d9aa8]/20 py-1">
+                            <div className="flex items-center justify-center gap-2">
+                              {/* عمود الإنجاز */}
+                              <div className="flex flex-col items-center">
+                                <div className="text-[10px] font-semibold text-muted-foreground mb-0.5">الإنجاز</div>
+                                {isAdmin ? (
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    defaultValue={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                                      Number(task.completion_percentage || 0)
+                                    )}
+                                    onBlur={(e) => {
+                                      const raw = normalizeNumericInput(e.currentTarget.value);
+                                      const value = parseInt(raw, 10) || 0;
+                                      if (value !== (task.completion_percentage || 0)) {
+                                        updateTaskRating(task.id, 'completion_percentage', value);
+                                      }
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.currentTarget.blur();
+                                      }
+                                    }}
+                                    className="w-10 h-6 text-center text-xs font-semibold border border-input rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                                    style={{ fontFamily: 'Arial, sans-serif' }}
+                                    lang="en"
+                                  />
+                                ) : (
+                                  <div
+                                    className="w-10 h-6 flex items-center justify-center bg-muted/50 rounded text-xs font-semibold"
+                                    lang="en"
+                                    style={{ fontFamily: 'Arial, sans-serif' }}
+                                  >
+                                    {new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
+                                      Number(task.completion_percentage || 0)
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               
-                              {/* كفاءة استثمار الوقت - تحت الإنجاز والجودة */}
-                              <div className="flex flex-col items-center pt-1 border-t border-border/30 w-full">
-                                <div className="text-xs font-semibold text-muted-foreground mb-1">كفاءة استثمار الوقت</div>
+                              {/* عمود كفاءة الوقت */}
+                              <div className="flex flex-col items-center">
+                                <div className="text-[10px] font-semibold text-muted-foreground mb-0.5">الكفاءة</div>
                                 {(() => {
                                   const estimated = task.estimated_time_minutes;
                                   const actual = task.actual_time_minutes;
                                   if (!estimated || !actual || actual === 0) {
                                     return (
                                       <div
-                                        className="w-14 h-7 flex items-center justify-center bg-muted/50 rounded-lg text-sm font-semibold text-muted-foreground"
+                                        className="w-10 h-6 flex items-center justify-center bg-muted/50 rounded text-xs font-semibold text-muted-foreground"
                                         lang="en"
                                         style={{ fontFamily: 'Arial, sans-serif' }}
                                       >
@@ -1301,7 +1264,7 @@ const Tasks = () => {
                                       : "bg-rose-100 text-rose-700 border-rose-300";
                                   return (
                                     <div
-                                      className={cn("w-14 h-7 flex items-center justify-center rounded-lg text-sm font-semibold border", colorClass)}
+                                      className={cn("w-10 h-6 flex items-center justify-center rounded text-xs font-semibold border", colorClass)}
                                       lang="en"
                                       style={{ fontFamily: 'Arial, sans-serif' }}
                                     >
