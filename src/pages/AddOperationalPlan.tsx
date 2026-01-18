@@ -4,7 +4,6 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -27,6 +26,7 @@ import {
   Sparkles,
   CheckCircle2,
   BarChart3,
+  Save,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -55,18 +55,8 @@ interface Initiative {
 }
 
 const MONTHS_AR = [
-  { name: "يناير", short: "ين" },
-  { name: "فبراير", short: "فب" },
-  { name: "مارس", short: "مر" },
-  { name: "أبريل", short: "أب" },
-  { name: "مايو", short: "ما" },
-  { name: "يونيو", short: "يو" },
-  { name: "يوليو", short: "يل" },
-  { name: "أغسطس", short: "أغ" },
-  { name: "سبتمبر", short: "سب" },
-  { name: "أكتوبر", short: "أك" },
-  { name: "نوفمبر", short: "نو" },
-  { name: "ديسمبر", short: "دي" },
+  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
 
 const AddOperationalPlan = () => {
@@ -258,7 +248,7 @@ const AddOperationalPlan = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
             <p className="text-muted-foreground">جاري تحميل البيانات...</p>
@@ -270,179 +260,130 @@ const AddOperationalPlan = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20" dir="rtl">
-        <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" dir="rtl">
+        <div className="p-4 lg:p-6 max-w-[1600px] mx-auto space-y-6">
           
           {/* Header */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-l from-primary/5 via-transparent to-accent/5 rounded-3xl blur-3xl" />
-            <div className="relative bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 p-6 shadow-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => navigate("/operational-plans")}
-                    className="rounded-xl hover:bg-muted"
-                  >
-                    <ArrowRight className="w-5 h-5" />
-                  </Button>
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/25">
-                      <BarChart3 className="w-7 h-7 text-primary-foreground" />
-                    </div>
-                    <div>
-                      <h1 className="text-2xl font-bold text-foreground">إضافة خطة تشغيلية</h1>
-                      <p className="text-muted-foreground text-sm">أنشئ خطة تشغيلية جديدة مع توزيع الأهداف الشهرية</p>
-                    </div>
-                  </div>
+          <div className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/operational-plans")}
+                className="rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <BarChart3 className="w-6 h-6 text-white" />
                 </div>
-                <Badge variant="outline" className="gap-2 px-4 py-2 text-sm border-primary/30 text-primary">
-                  <Calendar className="w-4 h-4" />
-                  {form.year}
-                </Badge>
+                <div>
+                  <h1 className="text-xl font-bold text-foreground">إضافة خطة تشغيلية جديدة</h1>
+                  <p className="text-sm text-muted-foreground">أدخل بيانات الخطة والمستهدفات الشهرية</p>
+                </div>
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/operational-plans")}
+                disabled={isLoading}
+                className="h-10"
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="h-10 gap-2 bg-gradient-to-l from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/20"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                حفظ الخطة
+              </Button>
             </div>
           </div>
 
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Right Column - Main Form */}
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Activity Info Card */}
-              <Card className="border-border/50 shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-4 border-b border-border/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-primary" />
+          {/* Excel-like Table */}
+          <Card className="border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+            <CardContent className="p-0">
+              {/* Table Header Row */}
+              <div className="bg-gradient-to-l from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-850 border-b border-slate-200 dark:border-slate-700">
+                <div className="grid grid-cols-12 lg:grid-cols-[200px_1fr_140px_140px_repeat(12,minmax(70px,1fr))_100px] gap-0">
+                  {/* Labels Row */}
+                  <div className="col-span-12 lg:col-span-1 p-3 border-l border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <Target className="w-4 h-4 text-emerald-600" />
+                      الهدف الاستراتيجي
                     </div>
-                    <div>
-                      <h2 className="font-semibold text-foreground">معلومات النشاط</h2>
-                      <p className="text-xs text-muted-foreground">حدد تفاصيل النشاط التشغيلي</p>
+                  </div>
+                  <div className="hidden lg:block p-3 border-l border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <Lightbulb className="w-4 h-4 text-amber-500" />
+                      المبادرة
                     </div>
+                  </div>
+                  <div className="hidden lg:block p-3 border-l border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <Zap className="w-4 h-4 text-blue-500" />
+                      النشاط
+                    </div>
+                  </div>
+                  <div className="hidden lg:block p-3 border-l border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <TrendingUp className="w-4 h-4 text-purple-500" />
+                      المستهدف السنوي
+                    </div>
+                  </div>
+                  {/* Monthly Headers */}
+                  {MONTHS_AR.map((month, idx) => (
+                    <div 
+                      key={month} 
+                      className="hidden lg:flex p-2 border-l border-slate-200 dark:border-slate-700 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-850 items-center justify-center"
+                    >
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{month}</span>
+                    </div>
+                  ))}
+                  <div className="hidden lg:flex p-2 bg-emerald-50 dark:bg-emerald-950/30 items-center justify-center">
+                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">المجموع</span>
                   </div>
                 </div>
-                <CardContent className="p-6 space-y-5">
-                  <div className="space-y-2">
-                    <Label className="text-foreground font-medium flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      اسم النشاط <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      value={form.activity_name}
-                      onChange={(e) => {
-                        setForm(prev => ({ ...prev, activity_name: e.target.value }));
-                        if (errors.activity_name) setErrors(prev => ({ ...prev, activity_name: "" }));
-                      }}
-                      placeholder="مثال: تنفيذ حملات توعوية..."
-                      className={`h-12 text-base ${errors.activity_name ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    />
-                    {errors.activity_name && (
-                      <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        {errors.activity_name}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-foreground font-medium flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        المستهدف السنوي <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          value={form.annual_target}
-                          onChange={(e) => {
-                            setForm(prev => ({ ...prev, annual_target: e.target.value }));
-                            if (errors.annual_target) setErrors(prev => ({ ...prev, annual_target: "" }));
-                          }}
-                          placeholder="0"
-                          className={`h-12 text-lg font-semibold text-center ${errors.annual_target ? "border-destructive" : ""}`}
-                          min={1}
-                        />
-                        <TrendingUp className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      </div>
-                      {errors.annual_target && (
-                        <p className="text-sm text-destructive flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          {errors.annual_target}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="text-foreground font-medium flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-                        السنة
-                      </Label>
-                      <Select
-                        value={form.year.toString()}
-                        onValueChange={(v) => setForm(prev => ({ ...prev, year: parseInt(v), strategic_goal_id: "", initiative_id: "" }))}
-                      >
-                        <SelectTrigger className="h-12">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background z-50">
-                          {getAvailableYears().map((y) => (
-                            <SelectItem key={y} value={y.toString()}>
-                              {y}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              </div>
 
-              {/* Strategic Goal & Initiative Card */}
-              <Card className="border-border/50 shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-l from-accent/10 via-accent/5 to-transparent p-4 border-b border-border/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                      <Target className="w-5 h-5 text-accent-foreground" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold text-foreground">الارتباط الاستراتيجي</h2>
-                      <p className="text-xs text-muted-foreground">اربط النشاط بالأهداف والمبادرات</p>
-                    </div>
-                  </div>
-                </div>
-                <CardContent className="p-6 space-y-5">
+              {/* Data Row */}
+              <div className="bg-white dark:bg-slate-900">
+                {/* Mobile View */}
+                <div className="lg:hidden p-4 space-y-4">
                   {/* Strategic Goal */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-foreground font-medium flex items-center gap-2">
-                        <Target className="w-4 h-4 text-primary" />
-                        الهدف الاستراتيجي <span className="text-destructive">*</span>
-                      </Label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <Target className="w-4 h-4 text-emerald-600" />
+                        الهدف الاستراتيجي *
+                      </label>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
                           setIsAddingNewGoal(!isAddingNewGoal);
-                          if (!isAddingNewGoal) {
-                            setForm(prev => ({ ...prev, strategic_goal_id: "" }));
-                          }
+                          if (!isAddingNewGoal) setForm(prev => ({ ...prev, strategic_goal_id: "" }));
                         }}
-                        className="text-primary hover:text-primary/80 h-8 text-xs"
+                        className="text-emerald-600 text-xs h-7"
                       >
                         <Plus className="w-3 h-3 ml-1" />
-                        {isAddingNewGoal ? "اختيار موجود" : "هدف جديد"}
+                        {isAddingNewGoal ? "اختيار" : "جديد"}
                       </Button>
                     </div>
-                    
                     {isAddingNewGoal ? (
                       <Input
                         value={newGoalName}
                         onChange={(e) => setNewGoalName(e.target.value)}
-                        placeholder="أدخل اسم الهدف الاستراتيجي الجديد"
-                        className={`h-12 ${errors.strategic_goal_id ? "border-destructive" : ""}`}
+                        placeholder="اسم الهدف الجديد"
+                        className={errors.strategic_goal_id ? "border-red-300" : ""}
                       />
                     ) : (
                       <Select
@@ -452,60 +393,45 @@ const AddOperationalPlan = () => {
                           if (errors.strategic_goal_id) setErrors(prev => ({ ...prev, strategic_goal_id: "" }));
                         }}
                       >
-                        <SelectTrigger className={`h-12 ${errors.strategic_goal_id ? "border-destructive" : ""}`}>
-                          <SelectValue placeholder="اختر الهدف الاستراتيجي" />
+                        <SelectTrigger className={errors.strategic_goal_id ? "border-red-300" : ""}>
+                          <SelectValue placeholder="اختر الهدف" />
                         </SelectTrigger>
-                        <SelectContent className="bg-background z-50">
+                        <SelectContent className="bg-background">
                           {strategicGoals.map((goal) => (
-                            <SelectItem key={goal.id} value={goal.id}>
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: goal.color }} />
-                                {goal.name}
-                              </div>
-                            </SelectItem>
+                            <SelectItem key={goal.id} value={goal.id}>{goal.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    )}
-                    {errors.strategic_goal_id && (
-                      <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        {errors.strategic_goal_id}
-                      </p>
                     )}
                   </div>
 
                   {/* Initiative */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-foreground font-medium flex items-center gap-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
                         <Lightbulb className="w-4 h-4 text-amber-500" />
                         المبادرة
-                      </Label>
+                      </label>
                       {(form.strategic_goal_id || isAddingNewGoal) && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
                             setIsAddingNewInitiative(!isAddingNewInitiative);
-                            if (!isAddingNewInitiative) {
-                              setForm(prev => ({ ...prev, initiative_id: "" }));
-                            }
+                            if (!isAddingNewInitiative) setForm(prev => ({ ...prev, initiative_id: "" }));
                           }}
-                          className="text-amber-600 hover:text-amber-700 h-8 text-xs"
+                          className="text-amber-600 text-xs h-7"
                         >
                           <Plus className="w-3 h-3 ml-1" />
-                          {isAddingNewInitiative ? "اختيار موجودة" : "مبادرة جديدة"}
+                          {isAddingNewInitiative ? "اختيار" : "جديدة"}
                         </Button>
                       )}
                     </div>
-                    
                     {isAddingNewInitiative ? (
                       <Input
                         value={newInitiativeName}
                         onChange={(e) => setNewInitiativeName(e.target.value)}
-                        placeholder="أدخل اسم المبادرة الجديدة"
-                        className="h-12"
+                        placeholder="اسم المبادرة الجديدة"
                       />
                     ) : (
                       <Select
@@ -513,155 +439,392 @@ const AddOperationalPlan = () => {
                         onValueChange={(v) => setForm(prev => ({ ...prev, initiative_id: v }))}
                         disabled={!form.strategic_goal_id && !isAddingNewGoal}
                       >
-                        <SelectTrigger className="h-12">
-                          <SelectValue placeholder={form.strategic_goal_id || isAddingNewGoal ? "اختر المبادرة (اختياري)" : "اختر الهدف أولاً"} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر المبادرة" />
                         </SelectTrigger>
-                        <SelectContent className="bg-background z-50">
+                        <SelectContent className="bg-background">
                           {filteredInitiatives.map((init) => (
-                            <SelectItem key={init.id} value={init.id}>
-                              {init.name}
-                            </SelectItem>
+                            <SelectItem key={init.id} value={init.id}>{init.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     )}
                   </div>
 
+                  {/* Activity Name */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-blue-500" />
+                      اسم النشاط *
+                    </label>
+                    <Input
+                      value={form.activity_name}
+                      onChange={(e) => {
+                        setForm(prev => ({ ...prev, activity_name: e.target.value }));
+                        if (errors.activity_name) setErrors(prev => ({ ...prev, activity_name: "" }));
+                      }}
+                      placeholder="أدخل اسم النشاط"
+                      className={errors.activity_name ? "border-red-300" : ""}
+                    />
+                  </div>
+
+                  {/* Annual Target & Year */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-purple-500" />
+                        المستهدف السنوي *
+                      </label>
+                      <Input
+                        type="number"
+                        value={form.annual_target}
+                        onChange={(e) => {
+                          setForm(prev => ({ ...prev, annual_target: e.target.value }));
+                          if (errors.annual_target) setErrors(prev => ({ ...prev, annual_target: "" }));
+                        }}
+                        placeholder="0"
+                        className={`text-center font-semibold ${errors.annual_target ? "border-red-300" : ""}`}
+                        min={1}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-slate-500" />
+                        السنة
+                      </label>
+                      <Select
+                        value={form.year.toString()}
+                        onValueChange={(v) => setForm(prev => ({ ...prev, year: parseInt(v), strategic_goal_id: "", initiative_id: "" }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background">
+                          {getAvailableYears().map((y) => (
+                            <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   {/* Responsible Employee */}
                   <div className="space-y-2">
-                    <Label className="text-foreground font-medium flex items-center gap-2">
-                      <UserCircle className="w-4 h-4 text-primary" />
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                      <UserCircle className="w-4 h-4 text-slate-500" />
                       مسؤول التنفيذ
-                    </Label>
+                    </label>
                     <Select
                       value={form.responsible_employee_id}
                       onValueChange={(v) => setForm(prev => ({ ...prev, responsible_employee_id: v === "none" ? "" : v }))}
                     >
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="اختر مسؤول التنفيذ (اختياري)" />
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر مسؤول التنفيذ" />
                       </SelectTrigger>
-                      <SelectContent className="bg-background z-50">
-                        <SelectItem value="none">بدون مسؤول محدد</SelectItem>
+                      <SelectContent className="bg-background">
+                        <SelectItem value="none">بدون</SelectItem>
                         {employees.map((emp) => (
-                          <SelectItem key={emp.id} value={emp.id}>
-                            {emp.full_name} {emp.job_role && `- ${emp.job_role}`}
-                          </SelectItem>
+                          <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
 
-            {/* Left Column - Monthly Targets */}
-            <div className="space-y-6">
-              <Card className="border-border/50 shadow-lg overflow-hidden sticky top-6">
-                <div className="bg-gradient-to-l from-emerald-500/10 via-emerald-500/5 to-transparent p-4 border-b border-border/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-emerald-600" />
-                      </div>
-                      <div>
-                        <h2 className="font-semibold text-foreground">التوزيع الشهري</h2>
-                        <p className="text-xs text-muted-foreground">وزّع المستهدف على الأشهر</p>
-                      </div>
+                  {/* Monthly Targets */}
+                  <div className="space-y-3 pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">المستهدفات الشهرية</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={distributeEvenly}
+                        disabled={!form.annual_target || parseInt(form.annual_target) <= 0}
+                        className="gap-1 text-xs h-8"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        توزيع تلقائي
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {MONTHS_AR.map((month, index) => (
+                        <div key={month} className="space-y-1">
+                          <span className="text-[10px] text-slate-500 block text-center">{month}</span>
+                          <Input
+                            type="number"
+                            value={form.monthlyTargets[index]}
+                            onChange={(e) => {
+                              const newTargets = [...form.monthlyTargets];
+                              newTargets[index] = parseInt(e.target.value) || 0;
+                              setForm(prev => ({ ...prev, monthlyTargets: newTargets }));
+                            }}
+                            min={0}
+                            className="text-center h-9 text-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className={`p-3 rounded-lg text-center ${isBalanced ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-amber-50 dark:bg-amber-950/30"}`}>
+                      <span className="text-sm text-slate-600 dark:text-slate-400">المجموع: </span>
+                      <span className={`font-bold ${isBalanced ? "text-emerald-600" : "text-amber-600"}`}>{monthlySum}</span>
+                      <span className="text-slate-400"> / </span>
+                      <span className="font-medium text-slate-600">{annualTargetNum}</span>
                     </div>
                   </div>
                 </div>
-                <CardContent className="p-4 space-y-4">
-                  {/* Auto Distribute Button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={distributeEvenly}
-                    disabled={!form.annual_target || parseInt(form.annual_target) <= 0}
-                    className="w-full gap-2 h-10 border-dashed border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    توزيع تلقائي متساوي
-                  </Button>
 
-                  {/* Monthly Grid */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {MONTHS_AR.map((month, index) => (
-                      <div key={month.name} className="space-y-1">
-                        <Label className="text-[10px] text-muted-foreground text-center block">{month.name}</Label>
-                        <Input
-                          type="number"
-                          value={form.monthlyTargets[index]}
-                          onChange={(e) => {
-                            const newTargets = [...form.monthlyTargets];
-                            newTargets[index] = parseInt(e.target.value) || 0;
-                            setForm(prev => ({ ...prev, monthlyTargets: newTargets }));
+                {/* Desktop Table View */}
+                <div className="hidden lg:grid grid-cols-[200px_1fr_140px_140px_repeat(12,minmax(70px,1fr))_100px] gap-0 items-stretch min-h-[120px]">
+                  {/* Strategic Goal Cell */}
+                  <div className="p-2 border-l border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                    <div className="h-full flex flex-col">
+                      <div className="flex items-center justify-between mb-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setIsAddingNewGoal(!isAddingNewGoal);
+                            if (!isAddingNewGoal) setForm(prev => ({ ...prev, strategic_goal_id: "" }));
                           }}
-                          min={0}
-                          className="text-center h-10 text-sm font-medium"
-                        />
+                          className="text-emerald-600 text-[10px] h-6 px-2"
+                        >
+                          <Plus className="w-3 h-3" />
+                          {isAddingNewGoal ? "قائمة" : "جديد"}
+                        </Button>
                       </div>
-                    ))}
+                      {isAddingNewGoal ? (
+                        <Input
+                          value={newGoalName}
+                          onChange={(e) => setNewGoalName(e.target.value)}
+                          placeholder="هدف جديد..."
+                          className={`text-xs h-9 ${errors.strategic_goal_id ? "border-red-300" : ""}`}
+                        />
+                      ) : (
+                        <Select
+                          value={form.strategic_goal_id}
+                          onValueChange={(v) => {
+                            setForm(prev => ({ ...prev, strategic_goal_id: v, initiative_id: "" }));
+                            if (errors.strategic_goal_id) setErrors(prev => ({ ...prev, strategic_goal_id: "" }));
+                          }}
+                        >
+                          <SelectTrigger className={`text-xs h-9 ${errors.strategic_goal_id ? "border-red-300" : ""}`}>
+                            <SelectValue placeholder="اختر الهدف" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background">
+                            {strategicGoals.map((goal) => (
+                              <SelectItem key={goal.id} value={goal.id} className="text-xs">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: goal.color }} />
+                                  {goal.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {errors.strategic_goal_id && (
+                        <span className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          مطلوب
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Summary */}
-                  <div className={`p-3 rounded-xl border ${
-                    isBalanced 
-                      ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800" 
-                      : "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800"
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {isBalanced ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        ) : (
-                          <AlertTriangle className="w-4 h-4 text-amber-600" />
-                        )}
-                        <span className="text-sm text-muted-foreground">المجموع</span>
-                      </div>
-                      <div className="text-left">
-                        <span className={`font-bold ${isBalanced ? "text-emerald-600" : "text-amber-600"}`}>
-                          {monthlySum}
-                        </span>
-                        <span className="text-muted-foreground text-sm"> / {annualTargetNum}</span>
-                      </div>
+                  {/* Initiative Cell */}
+                  <div className="p-2 border-l border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                    <div className="h-full flex flex-col">
+                      {(form.strategic_goal_id || isAddingNewGoal) && (
+                        <div className="flex items-center justify-between mb-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setIsAddingNewInitiative(!isAddingNewInitiative);
+                              if (!isAddingNewInitiative) setForm(prev => ({ ...prev, initiative_id: "" }));
+                            }}
+                            className="text-amber-600 text-[10px] h-6 px-2"
+                          >
+                            <Plus className="w-3 h-3" />
+                            {isAddingNewInitiative ? "قائمة" : "جديدة"}
+                          </Button>
+                        </div>
+                      )}
+                      {isAddingNewInitiative ? (
+                        <Input
+                          value={newInitiativeName}
+                          onChange={(e) => setNewInitiativeName(e.target.value)}
+                          placeholder="مبادرة جديدة..."
+                          className="text-xs h-9"
+                        />
+                      ) : (
+                        <Select
+                          value={form.initiative_id}
+                          onValueChange={(v) => setForm(prev => ({ ...prev, initiative_id: v }))}
+                          disabled={!form.strategic_goal_id && !isAddingNewGoal}
+                        >
+                          <SelectTrigger className="text-xs h-9">
+                            <SelectValue placeholder={form.strategic_goal_id || isAddingNewGoal ? "اختر المبادرة" : "اختر الهدف أولاً"} />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background">
+                            {filteredInitiatives.map((init) => (
+                              <SelectItem key={init.id} value={init.id} className="text-xs">{init.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
-                    {!isBalanced && annualTargetNum > 0 && (
-                      <p className="text-xs text-amber-600 mt-2">
-                        {monthlySum > annualTargetNum 
-                          ? `زيادة بـ ${monthlySum - annualTargetNum}` 
-                          : `ينقص ${annualTargetNum - monthlySum}`
-                        }
-                      </p>
+                  </div>
+
+                  {/* Activity Name Cell */}
+                  <div className="p-2 border-l border-b border-slate-200 dark:border-slate-700">
+                    <Input
+                      value={form.activity_name}
+                      onChange={(e) => {
+                        setForm(prev => ({ ...prev, activity_name: e.target.value }));
+                        if (errors.activity_name) setErrors(prev => ({ ...prev, activity_name: "" }));
+                      }}
+                      placeholder="اسم النشاط *"
+                      className={`text-xs h-9 ${errors.activity_name ? "border-red-300" : ""}`}
+                    />
+                    {errors.activity_name && (
+                      <span className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        مطلوب
+                      </span>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/operational-plans")}
-              disabled={isLoading}
-              className="h-12 px-6"
-            >
-              إلغاء
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="h-12 px-8 gap-2 bg-gradient-to-l from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/25"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Plus className="w-5 h-5" />
-              )}
-              إضافة الخطة
-            </Button>
-          </div>
+                  {/* Annual Target Cell */}
+                  <div className="p-2 border-l border-b border-slate-200 dark:border-slate-700 bg-purple-50/50 dark:bg-purple-950/20">
+                    <div className="space-y-1">
+                      <Input
+                        type="number"
+                        value={form.annual_target}
+                        onChange={(e) => {
+                          setForm(prev => ({ ...prev, annual_target: e.target.value }));
+                          if (errors.annual_target) setErrors(prev => ({ ...prev, annual_target: "" }));
+                        }}
+                        placeholder="0"
+                        className={`text-center font-bold text-sm h-9 ${errors.annual_target ? "border-red-300" : ""}`}
+                        min={1}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={distributeEvenly}
+                        disabled={!form.annual_target || parseInt(form.annual_target) <= 0}
+                        className="w-full text-[10px] h-6 text-purple-600 hover:text-purple-700"
+                      >
+                        <Sparkles className="w-3 h-3 ml-1" />
+                        توزيع
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Monthly Target Cells */}
+                  {MONTHS_AR.map((month, index) => (
+                    <div 
+                      key={month} 
+                      className={`p-1 border-l border-b border-slate-200 dark:border-slate-700 ${
+                        index % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-slate-50/50 dark:bg-slate-800/30"
+                      }`}
+                    >
+                      <Input
+                        type="number"
+                        value={form.monthlyTargets[index]}
+                        onChange={(e) => {
+                          const newTargets = [...form.monthlyTargets];
+                          newTargets[index] = parseInt(e.target.value) || 0;
+                          setForm(prev => ({ ...prev, monthlyTargets: newTargets }));
+                        }}
+                        min={0}
+                        className="text-center h-full w-full text-sm font-medium border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary"
+                      />
+                    </div>
+                  ))}
+
+                  {/* Sum Cell */}
+                  <div className={`p-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-center ${
+                    isBalanced 
+                      ? "bg-emerald-50 dark:bg-emerald-950/30" 
+                      : "bg-amber-50 dark:bg-amber-950/30"
+                  }`}>
+                    <div className="text-center">
+                      <div className={`text-lg font-bold ${isBalanced ? "text-emerald-600" : "text-amber-600"}`}>
+                        {monthlySum}
+                      </div>
+                      {!isBalanced && annualTargetNum > 0 && (
+                        <div className="text-[10px] text-amber-600">
+                          {monthlySum > annualTargetNum ? `+${monthlySum - annualTargetNum}` : `-${annualTargetNum - monthlySum}`}
+                        </div>
+                      )}
+                      {isBalanced && annualTargetNum > 0 && (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Info Row - Desktop */}
+                <div className="hidden lg:block p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-4 h-4 text-slate-500" />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">السنة:</span>
+                      <Select
+                        value={form.year.toString()}
+                        onValueChange={(v) => setForm(prev => ({ ...prev, year: parseInt(v), strategic_goal_id: "", initiative_id: "" }))}
+                      >
+                        <SelectTrigger className="w-24 h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background">
+                          {getAvailableYears().map((y) => (
+                            <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <UserCircle className="w-4 h-4 text-slate-500" />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">مسؤول التنفيذ:</span>
+                      <Select
+                        value={form.responsible_employee_id}
+                        onValueChange={(v) => setForm(prev => ({ ...prev, responsible_employee_id: v === "none" ? "" : v }))}
+                      >
+                        <SelectTrigger className="w-48 h-8 text-sm">
+                          <SelectValue placeholder="اختر مسؤول التنفيذ" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background">
+                          <SelectItem value="none">بدون</SelectItem>
+                          {employees.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="mr-auto flex items-center gap-2">
+                      {annualTargetNum > 0 && (
+                        <Badge variant={isBalanced ? "default" : "secondary"} className={`${isBalanced ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"}`}>
+                          {isBalanced ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 ml-1" />
+                              التوزيع متوازن
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="w-3 h-3 ml-1" />
+                              التوزيع غير متوازن
+                            </>
+                          )}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>
