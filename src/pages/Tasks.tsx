@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -737,8 +737,8 @@ const Tasks = () => {
     return activity?.activity_name || "غير محدد";
   };
 
-  // تجميع المهام حسب النشاط
-  const groupTasksByActivity = (tasksToGroup: Task[]) => {
+  // تجميع المهام حسب النشاط - مع التخزين المؤقت
+  const groupTasksByActivity = useCallback((tasksToGroup: Task[]) => {
     const grouped: { [key: string]: { activityName: string; tasks: Task[] } } = {};
     
     tasksToGroup.forEach(task => {
@@ -752,7 +752,7 @@ const Tasks = () => {
     });
     
     return Object.values(grouped);
-  };
+  }, [activities]);
 
   // استخراج السنة والشهر واليوم من تاريخ التنفيذ
   const getYearFromDate = (dateStr: string | null): number | null => {
@@ -842,20 +842,24 @@ const Tasks = () => {
     return matchesSearch && matchesStatus && matchesYear && matchesMonth && matchesDay && matchesDepartment && matchesEmployee && matchesActivity;
   });
 
-  const taskStats = {
+  // حساب الإحصائيات - مع التخزين المؤقت
+  const taskStats = useMemo(() => ({
     all: tasks.filter(t => !isAdmin ? t.user_id === authUser?.id : true).length,
     upcoming: tasks.filter((t) => t.status === "upcoming" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
     in_progress: tasks.filter((t) => t.status === "in_progress" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
     completed: tasks.filter((t) => t.status === "completed" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
     delayed: tasks.filter((t) => t.status === "delayed" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
-  };
+  }), [tasks, isAdmin, authUser?.id]);
 
   const hasActiveFilters = filterYear !== String(new Date().getFullYear()) || filterMonth !== "all" || filterDay !== "all" || filterDepartment !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
 
-  // قائمة الأنشطة الفريدة للفلتر
-  const uniqueActivities = Array.from(new Set(
+  // قائمة الأنشطة الفريدة للفلتر - مع التخزين المؤقت
+  const uniqueActivities = useMemo(() => Array.from(new Set(
     activities.map(a => JSON.stringify({ id: a.executive_plan_id, name: a.activity_name }))
-  )).map(s => JSON.parse(s) as { id: string; name: string });
+  )).map(s => JSON.parse(s) as { id: string; name: string }), [activities]);
+
+  // تجميع المهام المفلترة - مع التخزين المؤقت
+  const groupedTasks = useMemo(() => groupTasksByActivity(filteredTasks), [filteredTasks, groupTasksByActivity]);
 
 
   // تحديث المهام عند إكمال المهمة
@@ -1159,7 +1163,7 @@ const Tasks = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {groupTasksByActivity(filteredTasks).map((group, groupIndex) => {
+                  {groupedTasks.map((group, groupIndex) => {
                     const isEven = groupIndex % 2 === 0;
                     const rowBgClass = isEven ? "bg-white" : "bg-[#3d9aa8]/10";
                     const activityColorClass = "text-[#3d9aa8]";
