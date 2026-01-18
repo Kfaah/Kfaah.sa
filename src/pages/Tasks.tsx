@@ -80,6 +80,12 @@ interface Employee {
   id: string;
   full_name: string;
   user_id: string | null;
+  department_id: string | null;
+}
+
+interface Department {
+  id: string;
+  name: string;
 }
 
 interface ActivityInfo {
@@ -101,7 +107,8 @@ const Tasks = () => {
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [activities, setActivities] = useState<ActivityInfo[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [activities, setActivities] = useState<ActivityInfo[]>();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -110,6 +117,7 @@ const Tasks = () => {
   const [filterYear, setFilterYear] = useState<string>(String(getCurrentYear()));
   const [filterMonth, setFilterMonth] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<string>("all");
+  const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterEmployee, setFilterEmployee] = useState<string>("all");
   const [filterActivity, setFilterActivity] = useState<string>("all");
   
@@ -228,6 +236,27 @@ const Tasks = () => {
     fetchTasks();
   }, [authUser]);
 
+  // جلب الأقسام
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      if (!authUser) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("departments")
+          .select("id, name")
+          .order("name");
+        
+        if (error) throw error;
+        setDepartments((data as Department[]) || []);
+      } catch (error: any) {
+        console.error("Error fetching departments:", error);
+      }
+    };
+    
+    fetchDepartments();
+  }, [authUser]);
+
   // جلب الموظفين
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -236,7 +265,7 @@ const Tasks = () => {
       try {
         const { data, error } = await supabase
           .from("employees")
-          .select("id, full_name, user_id")
+          .select("id, full_name, user_id, department_id")
           .order("full_name");
         
         if (error) throw error;
@@ -632,6 +661,7 @@ const Tasks = () => {
     setFilterYear(String(getCurrentYear()));
     setFilterMonth("all");
     setFilterDay("all");
+    setFilterDepartment("all");
     setFilterEmployee("all");
     setFilterActivity("all");
     setSearchQuery("");
@@ -755,6 +785,13 @@ const Tasks = () => {
     const taskDay = getDayFromDate(task.due_date);
     const matchesDay = filterDay === "all" || taskDay === Number(filterDay);
 
+    // فلتر القسم
+    let matchesDepartment = true;
+    if (isAdmin && filterDepartment !== "all") {
+      const taskEmployee = employees.find(e => e.user_id === task.user_id);
+      matchesDepartment = taskEmployee?.department_id === filterDepartment;
+    }
+
     // فلتر المنفذ - للمدير فقط
     let matchesEmployee = true;
     if (isAdmin && filterEmployee !== "all") {
@@ -778,7 +815,7 @@ const Tasks = () => {
       matchesActivity = task.executive_plan_id === filterActivity;
     }
 
-    return matchesSearch && matchesStatus && matchesYear && matchesMonth && matchesDay && matchesEmployee && matchesActivity;
+    return matchesSearch && matchesStatus && matchesYear && matchesMonth && matchesDay && matchesDepartment && matchesEmployee && matchesActivity;
   });
 
   const taskStats = {
@@ -789,7 +826,7 @@ const Tasks = () => {
     delayed: tasks.filter((t) => t.status === "delayed" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
   };
 
-  const hasActiveFilters = filterYear !== String(new Date().getFullYear()) || filterMonth !== "all" || filterDay !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
+  const hasActiveFilters = filterYear !== String(new Date().getFullYear()) || filterMonth !== "all" || filterDay !== "all" || filterDepartment !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
 
   // قائمة الأنشطة الفريدة للفلتر
   const uniqueActivities = Array.from(new Set(
@@ -903,7 +940,7 @@ const Tasks = () => {
                 </Button>
               )}
             </div>
-            <div className={cn("grid gap-4", isAdmin ? "grid-cols-2 md:grid-cols-6" : "grid-cols-2 md:grid-cols-5")}>
+            <div className={cn("grid gap-4", isAdmin ? "grid-cols-2 md:grid-cols-4 lg:grid-cols-8" : "grid-cols-2 md:grid-cols-5")}>
               {/* فلتر السنة */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-[#3d9aa8]">السنة</label>
@@ -969,7 +1006,52 @@ const Tasks = () => {
                 </Select>
               </div>
 
-              {/* فلتر النشاط - للجميع */}
+              {/* فلتر القسم - للمدير فقط */}
+              {isAdmin && (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-[#3d9aa8]">القسم</label>
+                  <Select value={filterDepartment} onValueChange={(v) => {
+                    setFilterDepartment(v);
+                    setFilterEmployee("all"); // إعادة تعيين الموظف عند تغيير القسم
+                  }}>
+                    <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
+                      <SelectValue placeholder="كل الأقسام" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50 border-[#3d9aa8]/20">
+                      <SelectItem value="all">كل الأقسام</SelectItem>
+                      {departments.map(dept => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* فلتر المنفذ - للمدير فقط */}
+              {isAdmin && (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-[#3d9aa8]">الموظف</label>
+                  <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                    <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
+                      <SelectValue placeholder="كل الموظفين" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50 border-[#3d9aa8]/20">
+                      <SelectItem value="all">كل الموظفين</SelectItem>
+                      {employees
+                        .filter(emp => filterDepartment === "all" || emp.department_id === filterDepartment)
+                        .map(emp => (
+                          <SelectItem key={emp.id} value={emp.user_id || emp.id}>
+                            {emp.full_name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* فلتر النشاط */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-[#3d9aa8]">النشاط</label>
                 <Select value={filterActivity} onValueChange={setFilterActivity}>
@@ -986,26 +1068,6 @@ const Tasks = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* فلتر المنفذ - للمدير فقط */}
-              {isAdmin && (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[#3d9aa8]">المنفذ</label>
-                  <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                    <SelectTrigger className="bg-white border-[#3d9aa8]/30 focus:ring-[#3d9aa8]/20">
-                      <SelectValue placeholder="كل الموظفين" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white z-50 border-[#3d9aa8]/20">
-                      <SelectItem value="all">كل الموظفين</SelectItem>
-                      {employees.map(emp => (
-                        <SelectItem key={emp.id} value={emp.user_id || emp.id}>
-                          {emp.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
               {/* البحث */}
               <div className="space-y-2">
