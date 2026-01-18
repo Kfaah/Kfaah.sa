@@ -124,20 +124,24 @@ export function normalizeNumericInput(value: string): string {
 }
 
 /**
- * Get available years for filters - always includes current year + 2 years ahead + 2 years back
- * This ensures new years are automatically available when the calendar year changes
+ * Get available years for filters - includes current year and past years only
+ * New years are automatically added when the calendar year changes
+ * Years are sorted in descending order (newest first)
  */
 export function getAvailableYears(existingYears: number[] = []): number[] {
   const currentYear = new Date().getFullYear();
+  // السنة الحالية + 4 سنوات سابقة
   const baseYears = [
-    currentYear - 2,
-    currentYear - 1,
     currentYear,
-    currentYear + 1,
-    currentYear + 2,
+    currentYear - 1,
+    currentYear - 2,
+    currentYear - 3,
+    currentYear - 4,
   ];
   
+  // دمج السنوات الأساسية مع السنوات الموجودة في البيانات (بدون السنوات المستقبلية)
   return Array.from(new Set([...baseYears, ...existingYears]))
+    .filter(year => year <= currentYear)
     .sort((a, b) => b - a);
 }
 
