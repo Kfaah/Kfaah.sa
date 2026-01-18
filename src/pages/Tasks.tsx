@@ -160,13 +160,16 @@ const Tasks = () => {
   });
   const [isAdding, setIsAdding] = useState(false);
 
-  // فتح نافذة التواصل عند الانتقال من إشعار رسالة
+  // فتح نافذة التواصل أو التعديل عند الانتقال من رابط
   useEffect(() => {
     const taskIdFromUrl = searchParams.get("task");
+    const editTaskId = searchParams.get("edit");
     const openChat = searchParams.get("openChat");
     
-    if (taskIdFromUrl && tasks.length > 0 && !loading) {
-      const taskToOpen = tasks.find(t => t.id === taskIdFromUrl);
+    const targetTaskId = taskIdFromUrl || editTaskId;
+    
+    if (targetTaskId && tasks.length > 0 && !loading) {
+      const taskToOpen = tasks.find(t => t.id === targetTaskId);
       if (taskToOpen) {
         // ضبط الفلاتر لتتناسب مع تاريخ المهمة حتى تظهر
         if (taskToOpen.due_date) {
@@ -184,8 +187,12 @@ const Tasks = () => {
           setActiveTab("all");
         }
         
-        // فتح نافذة التواصل فقط إذا كان openChat=true (إشعار رسالة)
-        if (openChat === "true") {
+        // فتح نافذة التعديل إذا كان edit موجود
+        if (editTaskId) {
+          openEditDialog(taskToOpen);
+        }
+        // فتح نافذة التواصل إذا كان openChat=true (إشعار رسالة)
+        else if (openChat === "true") {
           setSelectedTaskForCommunication(taskToOpen);
           setIsCommunicationDialogOpen(true);
         }
