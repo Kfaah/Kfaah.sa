@@ -716,12 +716,14 @@ const Tasks = () => {
     return new Date(dateStr).getDate();
   };
 
-  // السنوات المتاحة
-  const availableYears = Array.from(new Set(
-    tasks
+  // السنوات المتاحة (تشمل السنة الحالية دائماً)
+  const currentYear = new Date().getFullYear();
+  const availableYears = Array.from(new Set([
+    currentYear,
+    ...tasks
       .map(t => getYearFromDate(t.due_date))
-      .filter(Boolean)
-  )).sort((a, b) => (b || 0) - (a || 0));
+      .filter(Boolean) as number[]
+  ])).sort((a, b) => b - a);
 
   // الأيام المتاحة حسب الشهر المختار
   const availableDays = filterMonth !== "all" 
