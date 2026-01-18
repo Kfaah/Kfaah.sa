@@ -122,3 +122,28 @@ export function normalizeNumericInput(value: string): string {
     .replace(/[۰-۹]/g, (d) => String(easternArabicIndic.indexOf(d)))
     .replace(/[^0-9.-]/g, "");
 }
+
+/**
+ * Get available years for filters - always includes current year + 2 years ahead + 2 years back
+ * This ensures new years are automatically available when the calendar year changes
+ */
+export function getAvailableYears(existingYears: number[] = []): number[] {
+  const currentYear = new Date().getFullYear();
+  const baseYears = [
+    currentYear - 2,
+    currentYear - 1,
+    currentYear,
+    currentYear + 1,
+    currentYear + 2,
+  ];
+  
+  return Array.from(new Set([...baseYears, ...existingYears]))
+    .sort((a, b) => b - a);
+}
+
+/**
+ * Get current year
+ */
+export function getCurrentYear(): number {
+  return new Date().getFullYear();
+}

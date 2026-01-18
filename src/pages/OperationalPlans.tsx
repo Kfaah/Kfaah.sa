@@ -30,7 +30,7 @@ import { AddOperationalPlanDialog } from "@/components/operational-plans/AddOper
 import { EditPlanDialog } from "@/components/operational-plans/EditPlanDialog";
 import { AddItemDialog } from "@/components/operational-plans/AddItemDialog";
 import { ManageCustomColumnsDialog } from "@/components/operational-plans/ManageCustomColumnsDialog";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, getAvailableYears } from "@/lib/utils";
 
 interface Employee {
   id: string;
@@ -1584,8 +1584,8 @@ export default function OperationalPlans() {
                 <SelectTrigger className="w-[120px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="اختر السنة" />
                 </SelectTrigger>
-                <SelectContent>
-                  {[2024, 2025, 2026, 2027, 2028].map((yr) => (
+                <SelectContent className="bg-white z-50">
+                  {getAvailableYears().map((yr) => (
                     <SelectItem key={yr} value={yr.toString()}>
                       {yr}
                     </SelectItem>
