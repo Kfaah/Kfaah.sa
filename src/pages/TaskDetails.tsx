@@ -4,6 +4,9 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -69,7 +72,7 @@ interface ActivityInfo {
 const TaskDetails = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { user: authUser } = useAuth();
 
@@ -79,6 +82,17 @@ const TaskDetails = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [canEditTime, setCanEditTime] = useState(false);
+
+  // وضع التعديل داخل صفحة التفاصيل (بدون نافذة منبثقة)
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    due_date: "",
+    priority: "medium" as Task["priority"],
+    estimated_time_minutes: "",
+  });
   
   // حالة نافذة التواصل
   const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
@@ -233,6 +247,87 @@ const TaskDetails = () => {
     }
   };
 
+  const startEdit = () => {
+    if (!task || !isAdmin) return;
+    setEditForm({
+      title: task.title || "",
+      description: task.description || "",
+      due_date: task.due_date || "",
+      priority: task.priority || "medium",
+      estimated_time_minutes:
+        task.estimated_time_minutes === null || task.estimated_time_minutes === undefined
+          ? ""
+          : String(task.estimated_time_minutes),
+    });
+    setIsEditMode(true);
+  };
+
+  const cancelEdit = () => {
+    setIsEditMode(false);
+  };
+
+  const saveEdits = async () => {
+    if (!task || !isAdmin) return;
+
+    if (!editForm.title.trim()) {
+      toast({
+        title: "تنبيه",
+        description: "عنوان المهمة مطلوب",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const estimated = editForm.estimated_time_minutes.trim();
+      const estimatedNumber = estimated === "" ? null : Number(estimated);
+
+      const updates: Partial<Task> & {
+        description: string | null;
+        due_date: string | null;
+        estimated_time_minutes: number | null;
+      } = {
+        title: editForm.title.trim(),
+        description: editForm.description.trim() ? editForm.description : null,
+        due_date: editForm.due_date || null,
+        priority: editForm.priority,
+        estimated_time_minutes:
+          estimatedNumber !== null && Number.isFinite(estimatedNumber) ? estimatedNumber : null,
+      };
+
+      const { error } = await supabase
+        .from("tasks")
+        .update(updates)
+        .eq("id", task.id);
+
+      if (error) throw error;
+
+      setTask({ ...task, ...updates });
+      setIsEditMode(false);
+      toast({ title: "تم حفظ التعديلات" });
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // فتح وضع التعديل تلقائياً عند دخول الرابط ?edit=true
+  useEffect(() => {
+    const edit = searchParams.get("edit");
+    if (edit === "true" && task && isAdmin && !isEditMode) {
+      startEdit();
+      const next = new URLSearchParams(searchParams);
+      next.delete("edit");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, task, isAdmin, isEditMode]);
+
   // إعدادات الحالات
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { label: string; class: string; icon: React.ReactNode }> = {
@@ -313,15 +408,28 @@ const TaskDetails = () => {
               <MessageSquare className="w-4 h-4" />
               التواصل والمرفقات
             </Button>
-            {isAdmin && (
+
+            {isAdmin && !isEditMode && (
               <Button
                 variant="default"
                 className="gap-2 bg-[#3d9aa8] hover:bg-[#3d9aa8]/90"
-                onClick={() => navigate(`/tasks?edit=${task.id}`)}
+                onClick={startEdit}
               >
                 <Edit className="w-4 h-4" />
                 تعديل
               </Button>
+            )}
+
+            {isAdmin && isEditMode && (
+              <>
+                <Button variant="outline" onClick={cancelEdit} disabled={isSaving}>
+                  إلغاء
+                </Button>
+                <Button onClick={saveEdits} disabled={isSaving} className="gap-2">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  حفظ
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -383,7 +491,79 @@ const TaskDetails = () => {
                 <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
                 <h3 className="font-semibold text-foreground">التفاصيل</h3>
               </div>
-              {task.description ? (
+
+              {isEditMode ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="font-semibold">عنوان المهمة</Label>
+                    <Input
+                      value={editForm.title}
+                      onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))}
+                      placeholder="أدخل عنوان المهمة"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="font-semibold">التفاصيل</Label>
+                    <Textarea
+                      value={editForm.description}
+                      onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))}
+                      placeholder="اكتب تفاصيل المهمة هنا"
+                      rows={8}
+                      className="resize-y min-h-[180px]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="font-semibold">تاريخ الاستحقاق</Label>
+                      <Input
+                        type="date"
+                        value={editForm.due_date}
+                        onChange={(e) => setEditForm((p) => ({ ...p, due_date: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="font-semibold">الأولوية</Label>
+                      <Select
+                        value={editForm.priority}
+                        onValueChange={(v: Task["priority"]) => setEditForm((p) => ({ ...p, priority: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white z-50">
+                          <SelectItem value="high">عالية</SelectItem>
+                          <SelectItem value="medium">متوسطة</SelectItem>
+                          <SelectItem value="low">منخفضة</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="font-semibold">الوقت المقدر (دقيقة)</Label>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        value={editForm.estimated_time_minutes}
+                        onChange={(e) => setEditForm((p) => ({ ...p, estimated_time_minutes: e.target.value }))}
+                        placeholder="مثال: 30"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <Button variant="outline" onClick={cancelEdit} disabled={isSaving}>
+                      إلغاء
+                    </Button>
+                    <Button onClick={saveEdits} disabled={isSaving} className="gap-2">
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      حفظ
+                    </Button>
+                  </div>
+                </div>
+              ) : task.description ? (
                 <div className="p-5 bg-muted/30 rounded-xl border border-border/50 text-foreground whitespace-pre-wrap leading-relaxed text-[15px]">
                   {task.description}
                 </div>
@@ -394,8 +574,10 @@ const TaskDetails = () => {
               )}
             </div>
 
-            {/* معلومات المهمة */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {!isEditMode && (
+              <>
+                {/* معلومات المهمة */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* المنفذ */}
               <div className="p-4 bg-[#3d9aa8]/5 rounded-lg border border-[#3d9aa8]/10">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
@@ -510,6 +692,8 @@ const TaskDetails = () => {
                 </div>
               </div>
             </div>
+          </>
+        )}
           </CardContent>
         </Card>
 
