@@ -8,8 +8,10 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { UserProvider } from "@/contexts/UserContext";
 import Index from "./pages/Index";
 import Employees from "./pages/Employees";
+import AddEmployee from "./pages/AddEmployee";
 import Roles from "./pages/Roles";
 import Tasks from "./pages/Tasks";
+import AddTask from "./pages/AddTask";
 import TaskDetails from "./pages/TaskDetails";
 import Plans from "./pages/Plans";
 import ExecutivePlans from "./pages/ExecutivePlans";
@@ -92,6 +94,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/employees/add"
+        element={
+          <ProtectedRoute>
+            <AddEmployee />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/roles"
         element={
           <ProtectedRoute>
@@ -104,6 +114,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Tasks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tasks/add"
+        element={
+          <ProtectedRoute>
+            <AddTask />
           </ProtectedRoute>
         }
       />

@@ -903,7 +903,7 @@ const Tasks = () => {
               توليد بالذكاء الاصطناعي
             </Button>
             <Button 
-              onClick={() => setIsAddDialogOpen(true)}
+              onClick={() => navigate("/tasks/add")}
               className="gap-2 bg-primary hover:bg-primary/90"
             >
               <Plus className="w-4 h-4" />
