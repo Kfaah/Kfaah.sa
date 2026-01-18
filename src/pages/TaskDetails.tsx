@@ -377,15 +377,22 @@ const TaskDetails = () => {
             </div>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
-            {/* الوصف */}
-            {task.description && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-muted-foreground">الوصف</h3>
-                <div className="p-4 bg-muted/30 rounded-lg text-foreground whitespace-pre-wrap leading-relaxed">
+            {/* التفاصيل */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
+                <h3 className="font-semibold text-foreground">التفاصيل</h3>
+              </div>
+              {task.description ? (
+                <div className="p-5 bg-muted/30 rounded-xl border border-border/50 text-foreground whitespace-pre-wrap leading-relaxed text-[15px]">
                   {task.description}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="p-5 bg-muted/20 rounded-xl border border-dashed border-border/50 text-muted-foreground text-center">
+                  <p className="text-sm">لا توجد تفاصيل مضافة لهذه المهمة</p>
+                </div>
+              )}
+            </div>
 
             {/* معلومات المهمة */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
