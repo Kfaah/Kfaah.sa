@@ -27,11 +27,13 @@ import {
   CheckCircle2,
   BarChart3,
   Save,
+  Columns,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { getAvailableYears } from "@/lib/utils";
+import { ManageCustomColumnsDialog } from "@/components/operational-plans/ManageCustomColumnsDialog";
 
 interface Employee {
   id: string;
@@ -86,6 +88,7 @@ const AddOperationalPlan = () => {
   const [newInitiativeName, setNewInitiativeName] = useState("");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -285,6 +288,14 @@ const AddOperationalPlan = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsManageColumnsOpen(true)}
+                className="h-10 gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                <Columns className="w-4 h-4" />
+                إدارة الأعمدة
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => navigate("/operational-plans")}
@@ -827,6 +838,13 @@ const AddOperationalPlan = () => {
           </Card>
         </div>
       </div>
+
+      {/* Manage Columns Dialog */}
+      <ManageCustomColumnsDialog
+        open={isManageColumnsOpen}
+        onOpenChange={setIsManageColumnsOpen}
+        onColumnsChange={() => {}}
+      />
     </DashboardLayout>
   );
 };
