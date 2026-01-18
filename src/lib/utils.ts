@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { toHijri as convertToHijri } from "hijri-converter";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -47,19 +48,11 @@ export function formatPercent(
 }
 
 /**
- * Convert Gregorian date to Hijri date
+ * Convert Gregorian date to Hijri date using hijri-converter library
  */
 export function toHijri(date: Date): { year: number; month: number; day: number } {
-  const jd = Math.floor((date.getTime() - new Date(1970, 0, 1).getTime()) / 86400000) + 2440588;
-  const l = jd - 1948440 + 10632;
-  const n = Math.floor((l - 1) / 10631);
-  const l2 = l - 10631 * n + 354;
-  const j = Math.floor((10985 - l2) / 5316) * Math.floor((50 * l2) / 17719) + Math.floor(l2 / 5670) * Math.floor((43 * l2) / 15238);
-  const l3 = l2 - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) - Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
-  const month = Math.floor((24 * l3) / 709);
-  const day = l3 - Math.floor((709 * month) / 24);
-  const year = 30 * n + j - 30;
-  return { year, month, day };
+  const hijri = convertToHijri(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  return { year: hijri.hy, month: hijri.hm, day: hijri.hd };
 }
 
 /**
