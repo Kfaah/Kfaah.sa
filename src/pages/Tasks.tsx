@@ -49,7 +49,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatDate, formatDateWithHijri, formatNumberPlain, formatPercent, normalizeNumericInput } from "@/lib/utils";
+import { formatDate, formatDateWithHijri, formatNumberPlain, formatPercent, normalizeNumericInput, getAvailableYears, getCurrentYear } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { TaskCommunicationDialog } from "@/components/tasks/TaskCommunicationDialog";
@@ -107,7 +107,7 @@ const Tasks = () => {
   const [activeTab, setActiveTab] = useState("all");
   
   // الفلاتر
-  const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
+  const [filterYear, setFilterYear] = useState<string>(String(getCurrentYear()));
   const [filterMonth, setFilterMonth] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<string>("all");
   const [filterEmployee, setFilterEmployee] = useState<string>("all");
@@ -629,7 +629,7 @@ const Tasks = () => {
 
   // إعادة تعيين الفلاتر
   const resetFilters = () => {
-    setFilterYear(String(new Date().getFullYear()));
+    setFilterYear(String(getCurrentYear()));
     setFilterMonth("all");
     setFilterDay("all");
     setFilterEmployee("all");
@@ -716,14 +716,11 @@ const Tasks = () => {
     return new Date(dateStr).getDate();
   };
 
-  // السنوات المتاحة (تشمل السنة الحالية دائماً)
-  const currentYear = new Date().getFullYear();
-  const availableYears = Array.from(new Set([
-    currentYear,
-    ...tasks
-      .map(t => getYearFromDate(t.due_date))
-      .filter(Boolean) as number[]
-  ])).sort((a, b) => b - a);
+  // السنوات المتاحة (تشمل السنة الحالية وسنتين للأمام والخلف تلقائياً)
+  const taskYears = tasks
+    .map(t => getYearFromDate(t.due_date))
+    .filter(Boolean) as number[];
+  const availableYears = getAvailableYears(taskYears);
 
   // الأيام المتاحة حسب الشهر المختار
   const availableDays = filterMonth !== "all" 

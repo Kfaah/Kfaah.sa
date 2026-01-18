@@ -63,8 +63,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { formatNumberPlain, rtlIsolate } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
 
 interface Employee {
   id: string;
@@ -934,8 +933,8 @@ export default function ExecutivePlans() {
                 <SelectTrigger className="w-[100px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="السنة" />
                 </SelectTrigger>
-                <SelectContent>
-                  {[2024, 2025, 2026, 2027].map((year) => (
+                <SelectContent className="bg-white z-50">
+                  {getAvailableYears().map((year) => (
                     <SelectItem key={year} value={String(year)}>
                       {year}
                     </SelectItem>
