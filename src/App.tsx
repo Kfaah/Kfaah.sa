@@ -9,6 +9,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import Index from "./pages/Index";
 import Employees from "./pages/Employees";
 import AddEmployee from "./pages/AddEmployee";
+import EditEmployee from "./pages/EditEmployee";
 import Roles from "./pages/Roles";
 import Tasks from "./pages/Tasks";
 import AddTask from "./pages/AddTask";
@@ -98,6 +99,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AddEmployee />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/employees/:employeeId/edit"
+        element={
+          <ProtectedRoute>
+            <EditEmployee />
           </ProtectedRoute>
         }
       />

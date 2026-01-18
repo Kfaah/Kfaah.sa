@@ -774,18 +774,7 @@ const Employees = () => {
                     variant="outline"
                     size="sm"
                     className="gap-1"
-                    onClick={() => {
-                      setEditingEmployee(employee);
-                      // تعيين القسم المختار بناءً على الدور الوظيفي الحالي
-                      const currentRole = jobRoles.find(r => r.name === employee.job_role);
-                      setEditSelectedDepartment(currentRole?.department_id || "");
-                      // تعيين المدير المباشر والتنفيذي
-                      setEditDirectManagerId(employee.direct_manager_id || "");
-                      setEditExecutiveManagerId(employee.executive_manager_id || "");
-                      // تعيين اللقب
-                      setEditTitle(employee.title || "");
-                      setIsEditDialogOpen(true);
-                    }}
+                    onClick={() => navigate(`/employees/${employee.id}/edit`)}
                   >
                     <Pencil className="w-3 h-3" />
                     تعديل
