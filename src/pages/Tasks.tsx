@@ -160,23 +160,20 @@ const Tasks = () => {
   });
   const [isAdding, setIsAdding] = useState(false);
 
-  // فتح نافذة التواصل أو التعديل عند الانتقال من رابط
+  // فتح نافذة التواصل عند الانتقال من إشعار رسالة
   useEffect(() => {
     const taskIdFromUrl = searchParams.get("task");
-    const editTaskId = searchParams.get("edit");
     const openChat = searchParams.get("openChat");
-    
-    const targetTaskId = taskIdFromUrl || editTaskId;
-    
-    if (targetTaskId && tasks.length > 0 && !loading) {
-      const taskToOpen = tasks.find(t => t.id === targetTaskId);
+
+    if (taskIdFromUrl && tasks.length > 0 && !loading) {
+      const taskToOpen = tasks.find(t => t.id === taskIdFromUrl);
       if (taskToOpen) {
         // ضبط الفلاتر لتتناسب مع تاريخ المهمة حتى تظهر
         if (taskToOpen.due_date) {
           const taskDate = new Date(taskToOpen.due_date);
           const taskYear = taskDate.getFullYear();
           const taskMonth = taskDate.getMonth() + 1;
-          
+
           // تحديث الفلاتر لإظهار المهمة
           setFilterYear(String(taskYear));
           setFilterMonth(String(taskMonth));
@@ -186,16 +183,13 @@ const Tasks = () => {
           setFilterActivity("all");
           setActiveTab("all");
         }
-        
-        // فتح نافذة التعديل إذا كان edit موجود
-        if (editTaskId) {
-          openEditDialog(taskToOpen);
-        }
-        // فتح نافذة التواصل إذا كان openChat=true (إشعار رسالة)
-        else if (openChat === "true") {
+
+        // فتح نافذة التواصل فقط إذا كان openChat=true (إشعار رسالة)
+        if (openChat === "true") {
           setSelectedTaskForCommunication(taskToOpen);
           setIsCommunicationDialogOpen(true);
         }
+
         // إزالة المعامل من URL بعد المعالجة
         setSearchParams({}, { replace: true });
       }
@@ -1417,7 +1411,7 @@ const Tasks = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-[#3d9aa8] hover:text-[#3d9aa8] hover:bg-[#3d9aa8]/10"
-                                  onClick={() => openEditDialog(task)}
+                                  onClick={() => navigate(`/tasks/${task.id}?edit=true`)}
                                   title="تعديل"
                                 >
                                   <Edit className="w-4 h-4" />
