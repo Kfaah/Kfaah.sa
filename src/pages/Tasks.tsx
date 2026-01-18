@@ -167,6 +167,22 @@ const Tasks = () => {
     if (taskIdFromUrl && tasks.length > 0 && !loading) {
       const taskToOpen = tasks.find(t => t.id === taskIdFromUrl);
       if (taskToOpen) {
+        // ضبط الفلاتر لتتناسب مع تاريخ المهمة حتى تظهر
+        if (taskToOpen.due_date) {
+          const taskDate = new Date(taskToOpen.due_date);
+          const taskYear = taskDate.getFullYear();
+          const taskMonth = taskDate.getMonth() + 1;
+          
+          // تحديث الفلاتر لإظهار المهمة
+          setFilterYear(String(taskYear));
+          setFilterMonth(String(taskMonth));
+          setFilterDay("all");
+          setFilterDepartment("all");
+          setFilterEmployee("all");
+          setFilterActivity("all");
+          setActiveTab("all");
+        }
+        
         // فتح نافذة التواصل فقط إذا كان openChat=true (إشعار رسالة)
         if (openChat === "true") {
           setSelectedTaskForCommunication(taskToOpen);
