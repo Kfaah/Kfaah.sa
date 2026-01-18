@@ -108,7 +108,7 @@ const Tasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [activities, setActivities] = useState<ActivityInfo[]>();
+  const [activities, setActivities] = useState<ActivityInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
