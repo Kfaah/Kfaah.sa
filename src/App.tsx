@@ -3,9 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { UserProvider } from "@/contexts/UserContext";
+import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeContext";
+import { PreviewModeBanner } from "@/components/preview/PreviewModeBanner";
 import Index from "./pages/Index";
 import Employees from "./pages/Employees";
 import AddEmployee from "./pages/AddEmployee";
@@ -34,6 +36,17 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const { isPreviewMode } = usePreviewMode();
+
+  // في وضع المعاينة، نسمح بالوصول مباشرة
+  if (isPreviewMode) {
+    return (
+      <>
+        <PreviewModeBanner />
+        <div className="pt-12">{children}</div>
+      </>
+    );
+  }
 
   if (loading) {
     return (
@@ -52,6 +65,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const { isPreviewMode } = usePreviewMode();
+
+  // في وضع المعاينة، نعرض صفحة المصادقة بشكل عادي
+  if (isPreviewMode) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (
@@ -252,9 +271,9 @@ function AppRoutes() {
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+function AppContent() {
+  return (
+    <PreviewModeProvider>
       <UserProvider>
         <TooltipProvider>
           <Toaster />
@@ -262,6 +281,14 @@ const App = () => (
           <AppRoutes />
         </TooltipProvider>
       </UserProvider>
+    </PreviewModeProvider>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   </QueryClientProvider>
 );
