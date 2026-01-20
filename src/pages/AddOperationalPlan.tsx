@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -18,23 +20,34 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   ArrowRight,
   Plus,
   Calendar,
   Loader2,
   Save,
-  Columns,
   Trash2,
-  FileSpreadsheet,
-  Grid3X3,
   Target,
   Lightbulb,
+  ChevronDown,
+  ChevronUp,
+  Activity,
+  Users,
+  Building2,
+  BarChart3,
+  Sparkles,
+  GripVertical,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { getAvailableYears } from "@/lib/utils";
-import { ManageCustomColumnsDialog } from "@/components/operational-plans/ManageCustomColumnsDialog";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Department {
   id: string;
@@ -71,6 +84,7 @@ interface ActivityRow {
   responsible_employee_id: string;
   annual_target: string;
   monthlyTargets: number[];
+  isMonthlyOpen: boolean;
 }
 
 const MONTHS_AR = [
@@ -87,6 +101,7 @@ const createEmptyActivity = (): ActivityRow => ({
   responsible_employee_id: "",
   annual_target: "",
   monthlyTargets: Array(12).fill(0),
+  isMonthlyOpen: false,
 });
 
 const AddOperationalPlan = () => {
@@ -105,7 +120,6 @@ const AddOperationalPlan = () => {
   const [activities, setActivities] = useState<ActivityRow[]>([createEmptyActivity()]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
 
   // Dialog states for adding new goal/initiative
   const [showNewGoalDialog, setShowNewGoalDialog] = useState(false);
@@ -157,7 +171,7 @@ const AddOperationalPlan = () => {
   };
 
   const getFilteredEmployees = (departmentId: string) => {
-    if (!departmentId) return [];
+    if (!departmentId) return employees;
     return employees.filter(emp => emp.department_id === departmentId);
   };
 
@@ -191,6 +205,10 @@ const AddOperationalPlan = () => {
     }
     
     updateActivity(activityId, { monthlyTargets: newTargets });
+  };
+
+  const toggleMonthlySection = (id: string) => {
+    updateActivity(id, { isMonthlyOpen: !activities.find(a => a.id === id)?.isMonthlyOpen });
   };
 
   const handleAddNewGoal = async () => {
@@ -342,6 +360,8 @@ const AddOperationalPlan = () => {
     }
   };
 
+  const getMonthlySum = (targets: number[]) => targets.reduce((a, b) => a + b, 0);
+
   if (loadingData) {
     return (
       <DashboardLayout>
@@ -359,519 +379,495 @@ const AddOperationalPlan = () => {
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-80px)] flex flex-col bg-slate-100 dark:bg-slate-950" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" dir="rtl">
         
-        {/* Excel-style Toolbar */}
-        <div className="bg-white dark:bg-slate-900 border-b border-slate-300 dark:border-slate-700 px-3 py-2 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/operational-plans")}
-              className="h-8 w-8"
-            >
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-              <span className="font-semibold text-sm">إضافة خطة تشغيلية</span>
-            </div>
-            <div className="h-4 w-px bg-slate-300 dark:bg-slate-700" />
-            
-            {/* Year Selector */}
-            <div className="flex items-center gap-1 text-xs">
-              <Calendar className="w-3.5 h-3.5 text-slate-500" />
-              <Select
-                value={year.toString()}
-                onValueChange={(v) => {
-                  setYear(parseInt(v));
-                  setActivities([createEmptyActivity()]);
-                }}
-              >
-                <SelectTrigger className="h-7 w-20 text-xs border-slate-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background">
-                  {getAvailableYears().map((y) => (
-                    <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        {/* Header */}
+        <div className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/operational-plans")}
+                  className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <BarChart3 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">إضافة خطة تشغيلية</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">أضف أنشطة جديدة للخطة التشغيلية</p>
+                  </div>
+                </div>
+              </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsManageColumnsOpen(true)}
-              className="h-7 text-xs gap-1"
-            >
-              <Columns className="w-3.5 h-3.5" />
-              الأعمدة
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/operational-plans")}
-              disabled={isLoading}
-              className="h-7 text-xs"
-            >
-              إلغاء
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700"
-            >
-              {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              حفظ
-            </Button>
+              <div className="flex items-center gap-3">
+                {/* Year Selector */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                  <Calendar className="w-4 h-4 text-slate-500" />
+                  <Select
+                    value={year.toString()}
+                    onValueChange={(v) => {
+                      setYear(parseInt(v));
+                      setActivities([createEmptyActivity()]);
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-24 border-0 bg-transparent text-sm font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background">
+                      {getAvailableYears().map((y) => (
+                        <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/operational-plans")}
+                  disabled={isLoading}
+                  className="rounded-xl"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isLoading}
+                  className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/20 gap-2"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  حفظ الخطة
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Excel Spreadsheet Area */}
-        <div className="flex-1 overflow-auto p-2">
-          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded shadow-sm min-w-[1800px]">
-            
-            {/* Column Headers */}
-            <div className="flex bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600 sticky top-0 z-10">
-              <div className="w-[40px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-1 flex items-center justify-center bg-slate-200 dark:bg-slate-700">
-                <Grid3X3 className="w-3.5 h-3.5 text-slate-500" />
-              </div>
-              <div className="w-[50px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-1 text-center text-[11px] font-medium text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700">
-                #
-              </div>
-              <div className="w-[200px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30">
-                الهدف الاستراتيجي *
-              </div>
-              <div className="w-[180px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30">
-                المبادرة
-              </div>
-              <div className="flex-1 min-w-[150px] border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                النشاط *
-              </div>
-              <div className="w-[150px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                القسم
-              </div>
-              <div className="w-[180px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                مسؤول التنفيذ
-              </div>
-              <div className="w-[100px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 text-center">
-                السنوي *
-              </div>
-              {MONTHS_AR.map((month, idx) => (
-                <div 
-                  key={month}
-                  className={`w-[70px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-1 text-[10px] font-medium text-center ${
-                    idx % 2 === 0 ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400" : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  {month}
+        {/* Content */}
+        <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+          
+          {/* Stats Bar */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-              ))}
-            </div>
-
-            {/* Data Rows */}
-            {activities.map((activity, rowIndex) => {
-              const filteredInits = getFilteredInitiatives(activity.strategic_goal_id);
-              const filteredEmps = getFilteredEmployees(activity.department_id);
-              const hasError = errors[`goal_${rowIndex}`] || errors[`activity_${rowIndex}`] || errors[`annual_target_${rowIndex}`];
-
-              return (
-                <div 
-                  key={activity.id}
-                  className={`flex border-b border-slate-200 dark:border-slate-700 hover:bg-blue-50/30 dark:hover:bg-blue-950/10 ${
-                    hasError ? "bg-red-50/30 dark:bg-red-950/10" : ""
-                  }`}
-                  style={{ minHeight: '40px' }}
-                >
-                  {/* Row Controls */}
-                  <div className="w-[40px] flex-shrink-0 border-l border-slate-200 dark:border-slate-700 p-1 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50">
-                    {activities.length > 1 && (
-                      <button
-                        onClick={() => removeActivity(activity.id)}
-                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Row Number */}
-                  <div className="w-[50px] flex-shrink-0 border-l border-slate-200 dark:border-slate-700 p-1 text-center text-xs text-slate-500 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center">
-                    {rowIndex + 1}
-                  </div>
-
-                  {/* Strategic Goal */}
-                  <div 
-                    className={`w-[200px] flex-shrink-0 border-l border-slate-200 dark:border-slate-700 p-1 bg-emerald-50/50 dark:bg-emerald-950/20 ${
-                      errors[`goal_${rowIndex}`] ? "bg-red-50 dark:bg-red-950/30" : ""
-                    }`}
-                  >
-                    <Select
-                      value={activity.strategic_goal_id}
-                      onValueChange={(v) => {
-                        if (v === "__new__") {
-                          setPendingActivityId(activity.id);
-                          setShowNewGoalDialog(true);
-                          return;
-                        }
-                        updateActivity(activity.id, { 
-                          strategic_goal_id: v === "none" ? "" : v,
-                          initiative_id: ""
-                        });
-                        if (errors[`goal_${rowIndex}`]) {
-                          setErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors[`goal_${rowIndex}`];
-                            return newErrors;
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger className={`h-8 text-xs border-transparent hover:border-emerald-300 focus:border-emerald-400 bg-transparent ${errors[`goal_${rowIndex}`] ? "border-red-300" : ""}`}>
-                        <SelectValue placeholder="اختر الهدف" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background">
-                        <SelectItem value="__new__" className="text-emerald-600 font-medium">
-                          <div className="flex items-center gap-2">
-                            <Plus className="w-3 h-3" />
-                            <span className="text-xs">إضافة هدف جديد</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="none">-</SelectItem>
-                        {strategicGoals.map((goal) => (
-                          <SelectItem key={goal.id} value={goal.id}>
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: goal.color }} />
-                              <span className="text-xs">{goal.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Initiative */}
-                  <div className="w-[180px] flex-shrink-0 border-l border-slate-200 dark:border-slate-700 p-1 bg-amber-50/50 dark:bg-amber-950/20">
-                    <Select
-                      value={activity.initiative_id}
-                      onValueChange={(v) => {
-                        if (v === "__new__") {
-                          setPendingActivityId(activity.id);
-                          setPendingGoalId(activity.strategic_goal_id);
-                          setShowNewInitiativeDialog(true);
-                          return;
-                        }
-                        updateActivity(activity.id, { initiative_id: v === "none" ? "" : v });
-                      }}
-                      disabled={!activity.strategic_goal_id}
-                    >
-                      <SelectTrigger className="h-8 text-xs border-transparent hover:border-amber-300 focus:border-amber-400 bg-transparent">
-                        <SelectValue placeholder={activity.strategic_goal_id ? "اختر" : "-"} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background">
-                        {activity.strategic_goal_id && (
-                          <SelectItem value="__new__" className="text-amber-600 font-medium">
-                            <div className="flex items-center gap-2">
-                              <Plus className="w-3 h-3" />
-                              <span className="text-xs">إضافة مبادرة جديدة</span>
-                            </div>
-                          </SelectItem>
-                        )}
-                        <SelectItem value="none">-</SelectItem>
-                        {filteredInits.map((init) => (
-                          <SelectItem key={init.id} value={init.id}>
-                            <span className="text-xs">{init.name}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Activity Name */}
-                  <div className="flex-1 min-w-[150px] border-l border-slate-200 dark:border-slate-700 p-1">
-                    <Input
-                      value={activity.activity_name}
-                      onChange={(e) => {
-                        updateActivity(activity.id, { activity_name: e.target.value });
-                        if (errors[`activity_${rowIndex}`]) {
-                          setErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors[`activity_${rowIndex}`];
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      placeholder="اسم النشاط"
-                      className={`h-8 text-xs border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent ${
-                        errors[`activity_${rowIndex}`] ? "border-red-300 bg-red-50 dark:bg-red-950/30" : ""
-                      }`}
-                    />
-                  </div>
-
-                  {/* Department */}
-                  <div className="w-[150px] flex-shrink-0 border-l border-slate-200 dark:border-slate-700 p-1">
-                    <Select
-                      value={activity.department_id}
-                      onValueChange={(v) => {
-                        updateActivity(activity.id, { 
-                          department_id: v === "none" ? "" : v,
-                          responsible_employee_id: ""
-                        });
-                      }}
-                    >
-                      <SelectTrigger className="h-8 text-xs border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent">
-                        <SelectValue placeholder="-" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background">
-                        <SelectItem value="none">-</SelectItem>
-                        {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
-                            <span className="text-xs">{dept.name}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Responsible Employee */}
-                  <div className="w-[180px] flex-shrink-0 border-l border-slate-200 dark:border-slate-700 p-1">
-                    <Select
-                      value={activity.responsible_employee_id}
-                      onValueChange={(v) => updateActivity(activity.id, { responsible_employee_id: v === "none" ? "" : v })}
-                      disabled={!activity.department_id}
-                    >
-                      <SelectTrigger className="h-8 text-xs border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent">
-                        <SelectValue placeholder={activity.department_id ? "-" : "اختر القسم"} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background">
-                        <SelectItem value="none">-</SelectItem>
-                        {filteredEmps.map((emp) => (
-                          <SelectItem key={emp.id} value={emp.id}>
-                            <span className="text-xs">{emp.full_name}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Annual Target */}
-                  <div className="w-[100px] flex-shrink-0 border-l border-slate-200 dark:border-slate-700 p-1 relative group bg-purple-50/50 dark:bg-purple-950/20">
-                    <Input
-                      type="number"
-                      value={activity.annual_target}
-                      onChange={(e) => {
-                        updateActivity(activity.id, { annual_target: e.target.value });
-                        if (errors[`annual_target_${rowIndex}`]) {
-                          setErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors[`annual_target_${rowIndex}`];
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      placeholder="0"
-                      min={1}
-                      className={`h-8 text-xs text-center font-semibold border-transparent hover:border-purple-300 focus:border-purple-400 bg-transparent ${
-                        errors[`annual_target_${rowIndex}`] ? "border-red-300 bg-red-50 dark:bg-red-950/30" : ""
-                      }`}
-                    />
-                    {activity.annual_target && parseInt(activity.annual_target) > 0 && (
-                      <button
-                        onClick={() => distributeEvenly(activity.id)}
-                        className="absolute left-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-purple-500 text-white px-1 py-0.5 rounded text-[8px]"
-                        title="توزيع تلقائي"
-                      >
-                        توزيع
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Monthly Targets */}
-                  {activity.monthlyTargets.map((monthTarget, monthIdx) => (
-                    <div 
-                      key={monthIdx}
-                      className={`w-[70px] flex-shrink-0 border-l border-slate-200 dark:border-slate-700 p-0.5 ${
-                        monthIdx % 2 === 0 ? "bg-blue-50/30 dark:bg-blue-950/10" : ""
-                      }`}
-                    >
-                      <Input
-                        type="number"
-                        value={monthTarget || ""}
-                        onChange={(e) => {
-                          const newTargets = [...activity.monthlyTargets];
-                          newTargets[monthIdx] = parseInt(e.target.value) || 0;
-                          updateActivity(activity.id, { monthlyTargets: newTargets });
-                        }}
-                        min={0}
-                        placeholder="0"
-                        className="h-8 text-[10px] text-center border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent font-medium"
-                      />
-                    </div>
-                  ))}
+                <div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{activities.length}</p>
+                  <p className="text-sm text-slate-500">نشاط</p>
                 </div>
-              );
-            })}
-
-            {/* Add Row Button */}
-            <div className="flex border-b border-slate-200 dark:border-slate-700">
-              <div className="w-[90px] flex-shrink-0 bg-slate-50 dark:bg-slate-800/50 border-l border-slate-200 dark:border-slate-700" />
-              <div className="flex-1 p-1">
-                <button
-                  onClick={addActivity}
-                  className="w-full h-8 flex items-center justify-center gap-2 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded border border-dashed border-blue-300 dark:border-blue-700 transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  إضافة صف جديد
-                </button>
               </div>
             </div>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                  <Target className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {activities.reduce((sum, a) => sum + (parseInt(a.annual_target) || 0), 0)}
+                  </p>
+                  <p className="text-sm text-slate-500">إجمالي المستهدف</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {new Set(activities.filter(a => a.initiative_id).map(a => a.initiative_id)).size}
+                  </p>
+                  <p className="text-sm text-slate-500">مبادرة</p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-            {/* Summary Row */}
-            <div className="flex bg-slate-100 dark:bg-slate-800/80">
-              <div className="w-[40px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600" />
-              <div className="w-[50px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600" />
-              <div className="w-[200px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600" />
-              <div className="w-[180px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600" />
-              <div className="flex-1 min-w-[150px] border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-600 dark:text-slate-400 text-left">
-                المجموع
-              </div>
-              <div className="w-[150px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600" />
-              <div className="w-[180px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600" />
-              <div className="w-[100px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-2 text-center text-xs font-bold text-purple-700 dark:text-purple-400 bg-purple-100/50 dark:bg-purple-950/40">
-                {activities.reduce((sum, act) => sum + (parseInt(act.annual_target) || 0), 0)}
-              </div>
-              {MONTHS_AR.map((_, monthIdx) => {
-                const monthTotal = activities.reduce((sum, act) => sum + act.monthlyTargets[monthIdx], 0);
+          {/* Activities List */}
+          <div className="space-y-4">
+            <AnimatePresence mode="popLayout">
+              {activities.map((activity, index) => {
+                const filteredInits = getFilteredInitiatives(activity.strategic_goal_id);
+                const filteredEmps = getFilteredEmployees(activity.department_id);
+                const selectedGoal = strategicGoals.find(g => g.id === activity.strategic_goal_id);
+                const hasError = errors[`goal_${index}`] || errors[`activity_${index}`] || errors[`annual_target_${index}`];
+                const monthlySum = getMonthlySum(activity.monthlyTargets);
+                const annualTarget = parseInt(activity.annual_target) || 0;
+
                 return (
-                  <div 
-                    key={monthIdx}
-                    className={`w-[70px] flex-shrink-0 border-l border-slate-300 dark:border-slate-600 p-2 text-center text-[10px] font-bold ${
-                      monthIdx % 2 === 0 ? "bg-blue-100/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"
-                    }`}
+                  <motion.div
+                    key={activity.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.2 }}
+                    className={cn(
+                      "bg-white dark:bg-slate-900 rounded-2xl border shadow-sm overflow-hidden",
+                      hasError 
+                        ? "border-red-300 dark:border-red-800" 
+                        : "border-slate-200 dark:border-slate-800"
+                    )}
                   >
-                    {monthTotal}
-                  </div>
+                    {/* Activity Header */}
+                    <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                          <GripVertical className="w-4 h-4 text-slate-400" />
+                        </div>
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                          {activity.activity_name || "نشاط جديد"}
+                        </span>
+                        {selectedGoal && (
+                          <Badge 
+                            variant="secondary" 
+                            className="text-xs"
+                            style={{ backgroundColor: `${selectedGoal.color}20`, color: selectedGoal.color }}
+                          >
+                            {selectedGoal.name}
+                          </Badge>
+                        )}
+                      </div>
+                      {activities.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeActivity(activity.id)}
+                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Activity Content */}
+                    <div className="p-5 space-y-5">
+                      {/* Row 1: Goal & Initiative */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Target className="w-4 h-4 text-emerald-500" />
+                            الهدف الاستراتيجي
+                            <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={activity.strategic_goal_id}
+                            onValueChange={(value) => {
+                              if (value === "__new__") {
+                                setPendingActivityId(activity.id);
+                                setShowNewGoalDialog(true);
+                              } else {
+                                updateActivity(activity.id, { strategic_goal_id: value, initiative_id: "" });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className={cn(
+                              "h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700",
+                              errors[`goal_${index}`] && "border-red-500"
+                            )}>
+                              <SelectValue placeholder="اختر الهدف الاستراتيجي" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background">
+                              {strategicGoals.map((goal) => (
+                                <SelectItem key={goal.id} value={goal.id}>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: goal.color }} />
+                                    {goal.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="__new__" className="text-emerald-600">
+                                <div className="flex items-center gap-2">
+                                  <Plus className="w-4 h-4" />
+                                  إضافة هدف جديد
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Lightbulb className="w-4 h-4 text-amber-500" />
+                            المبادرة
+                          </Label>
+                          <Select
+                            value={activity.initiative_id}
+                            onValueChange={(value) => {
+                              if (value === "__new__") {
+                                setPendingActivityId(activity.id);
+                                setPendingGoalId(activity.strategic_goal_id);
+                                setShowNewInitiativeDialog(true);
+                              } else {
+                                updateActivity(activity.id, { initiative_id: value });
+                              }
+                            }}
+                            disabled={!activity.strategic_goal_id}
+                          >
+                            <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
+                              <SelectValue placeholder={activity.strategic_goal_id ? "اختر المبادرة" : "اختر الهدف أولاً"} />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background">
+                              {filteredInits.map((init) => (
+                                <SelectItem key={init.id} value={init.id}>{init.name}</SelectItem>
+                              ))}
+                              {activity.strategic_goal_id && (
+                                <SelectItem value="__new__" className="text-amber-600">
+                                  <div className="flex items-center gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    إضافة مبادرة جديدة
+                                  </div>
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Row 2: Activity Name & Annual Target */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="col-span-2 space-y-2">
+                          <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Activity className="w-4 h-4 text-blue-500" />
+                            اسم النشاط
+                            <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            value={activity.activity_name}
+                            onChange={(e) => updateActivity(activity.id, { activity_name: e.target.value })}
+                            placeholder="أدخل اسم النشاط"
+                            className={cn(
+                              "h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700",
+                              errors[`activity_${index}`] && "border-red-500"
+                            )}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm font-medium">
+                            <BarChart3 className="w-4 h-4 text-purple-500" />
+                            المستهدف السنوي
+                            <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={activity.annual_target}
+                            onChange={(e) => updateActivity(activity.id, { annual_target: e.target.value })}
+                            placeholder="0"
+                            className={cn(
+                              "h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-center font-bold text-lg",
+                              errors[`annual_target_${index}`] && "border-red-500"
+                            )}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 3: Department & Employee */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Building2 className="w-4 h-4 text-slate-500" />
+                            القسم
+                          </Label>
+                          <Select
+                            value={activity.department_id}
+                            onValueChange={(value) => updateActivity(activity.id, { department_id: value, responsible_employee_id: "" })}
+                          >
+                            <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
+                              <SelectValue placeholder="اختر القسم" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background">
+                              {departments.map((dept) => (
+                                <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Users className="w-4 h-4 text-slate-500" />
+                            مسؤول التنفيذ
+                          </Label>
+                          <Select
+                            value={activity.responsible_employee_id}
+                            onValueChange={(value) => updateActivity(activity.id, { responsible_employee_id: value })}
+                          >
+                            <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
+                              <SelectValue placeholder="اختر الموظف المسؤول" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background">
+                              {filteredEmps.map((emp) => (
+                                <SelectItem key={emp.id} value={emp.id}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{emp.full_name}</span>
+                                    {emp.job_role && (
+                                      <span className="text-xs text-slate-400">({emp.job_role})</span>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Monthly Targets (Collapsible) */}
+                      <Collapsible open={activity.isMonthlyOpen} onOpenChange={() => toggleMonthlySection(activity.id)}>
+                        <CollapsibleTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-between h-12 px-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Calendar className="w-4 h-4 text-blue-500" />
+                              <span className="font-medium">المستهدفات الشهرية</span>
+                              {monthlySum > 0 && (
+                                <Badge variant={monthlySum === annualTarget ? "default" : "destructive"} className="text-xs">
+                                  {monthlySum === annualTarget ? `✓ متطابق (${monthlySum})` : `غير متطابق: ${monthlySum} / ${annualTarget}`}
+                                </Badge>
+                              )}
+                            </div>
+                            {activity.isMonthlyOpen ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pt-4">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-slate-500">توزيع المستهدف على الأشهر</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => distributeEvenly(activity.id)}
+                                disabled={!activity.annual_target}
+                                className="gap-2 rounded-lg text-xs"
+                              >
+                                <Sparkles className="w-3 h-3" />
+                                توزيع تلقائي
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-6 gap-3">
+                              {MONTHS_AR.map((month, idx) => (
+                                <div key={month} className="space-y-1">
+                                  <Label className="text-xs text-slate-500 text-center block">{month}</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={activity.monthlyTargets[idx] || ""}
+                                    onChange={(e) => {
+                                      const newTargets = [...activity.monthlyTargets];
+                                      newTargets[idx] = parseInt(e.target.value) || 0;
+                                      updateActivity(activity.id, { monthlyTargets: newTargets });
+                                    }}
+                                    className="h-9 rounded-lg text-center text-sm bg-slate-50 dark:bg-slate-800/50"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
+                  </motion.div>
                 );
               })}
+            </AnimatePresence>
+
+            {/* Add Activity Button */}
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={addActivity}
+              className="w-full py-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all duration-200 flex items-center justify-center gap-3 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30 flex items-center justify-center transition-colors">
+                <Plus className="w-5 h-5 text-slate-400 group-hover:text-emerald-600" />
+              </div>
+              <span className="font-medium text-slate-500 group-hover:text-emerald-600">إضافة نشاط جديد</span>
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Add Goal Dialog */}
+        <Dialog open={showNewGoalDialog} onOpenChange={setShowNewGoalDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-emerald-500" />
+                إضافة هدف استراتيجي جديد
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Label>اسم الهدف</Label>
+              <Input
+                value={newGoalName}
+                onChange={(e) => setNewGoalName(e.target.value)}
+                placeholder="أدخل اسم الهدف الاستراتيجي"
+                className="mt-2"
+                onKeyDown={(e) => e.key === "Enter" && handleAddNewGoal()}
+              />
             </div>
-          </div>
-        </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowNewGoalDialog(false)}>إلغاء</Button>
+              <Button 
+                onClick={handleAddNewGoal} 
+                disabled={isAddingGoal || !newGoalName.trim()}
+                className="bg-emerald-500 hover:bg-emerald-600"
+              >
+                {isAddingGoal ? <Loader2 className="w-4 h-4 animate-spin" /> : "إضافة"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-        {/* Status Bar */}
-        <div className="bg-slate-200 dark:bg-slate-800 border-t border-slate-300 dark:border-slate-700 px-3 py-1.5 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400 shrink-0">
-          <div className="flex items-center gap-4">
-            <span>الأنشطة: {activities.length}</span>
-            <span>إجمالي المستهدف: {activities.reduce((sum, act) => sum + (parseInt(act.annual_target) || 0), 0)}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            {(() => {
-              const totalAnnual = activities.reduce((sum, act) => sum + (parseInt(act.annual_target) || 0), 0);
-              const totalMonthly = activities.reduce((sum, act) => sum + act.monthlyTargets.reduce((a, b) => a + b, 0), 0);
-              const isBalanced = totalAnnual === totalMonthly && totalAnnual > 0;
-              return (
-                <span className={isBalanced ? "text-emerald-600" : "text-amber-600"}>
-                  {isBalanced ? "✓ التوزيع متوازن" : `⚠ الفرق: ${Math.abs(totalAnnual - totalMonthly)}`}
-                </span>
-              );
-            })()}
-          </div>
-        </div>
+        {/* Add Initiative Dialog */}
+        <Dialog open={showNewInitiativeDialog} onOpenChange={setShowNewInitiativeDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-amber-500" />
+                إضافة مبادرة جديدة
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Label>اسم المبادرة</Label>
+              <Input
+                value={newInitiativeName}
+                onChange={(e) => setNewInitiativeName(e.target.value)}
+                placeholder="أدخل اسم المبادرة"
+                className="mt-2"
+                onKeyDown={(e) => e.key === "Enter" && handleAddNewInitiative()}
+              />
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowNewInitiativeDialog(false)}>إلغاء</Button>
+              <Button 
+                onClick={handleAddNewInitiative} 
+                disabled={isAddingInitiative || !newInitiativeName.trim()}
+                className="bg-amber-500 hover:bg-amber-600"
+              >
+                {isAddingInitiative ? <Loader2 className="w-4 h-4 animate-spin" /> : "إضافة"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-
-      {/* New Goal Dialog */}
-      <Dialog open={showNewGoalDialog} onOpenChange={setShowNewGoalDialog}>
-        <DialogContent className="sm:max-w-md" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-emerald-600" />
-              إضافة هدف استراتيجي جديد
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              value={newGoalName}
-              onChange={(e) => setNewGoalName(e.target.value)}
-              placeholder="اسم الهدف الاستراتيجي"
-              className="text-right"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAddNewGoal();
-              }}
-            />
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowNewGoalDialog(false);
-                setNewGoalName("");
-                setPendingActivityId(null);
-              }}
-            >
-              إلغاء
-            </Button>
-            <Button
-              onClick={handleAddNewGoal}
-              disabled={!newGoalName.trim() || isAddingGoal}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              {isAddingGoal ? <Loader2 className="w-4 h-4 animate-spin" /> : "إضافة"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* New Initiative Dialog */}
-      <Dialog open={showNewInitiativeDialog} onOpenChange={setShowNewInitiativeDialog}>
-        <DialogContent className="sm:max-w-md" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-amber-500" />
-              إضافة مبادرة جديدة
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              value={newInitiativeName}
-              onChange={(e) => setNewInitiativeName(e.target.value)}
-              placeholder="اسم المبادرة"
-              className="text-right"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAddNewInitiative();
-              }}
-            />
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowNewInitiativeDialog(false);
-                setNewInitiativeName("");
-                setPendingActivityId(null);
-                setPendingGoalId(null);
-              }}
-            >
-              إلغاء
-            </Button>
-            <Button
-              onClick={handleAddNewInitiative}
-              disabled={!newInitiativeName.trim() || isAddingInitiative}
-              className="bg-amber-500 hover:bg-amber-600"
-            >
-              {isAddingInitiative ? <Loader2 className="w-4 h-4 animate-spin" /> : "إضافة"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <ManageCustomColumnsDialog
-        open={isManageColumnsOpen}
-        onOpenChange={setIsManageColumnsOpen}
-        onColumnsChange={() => {}}
-      />
     </DashboardLayout>
   );
 };
