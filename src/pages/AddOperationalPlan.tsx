@@ -11,6 +11,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   ArrowRight,
   Plus,
   Calendar,
@@ -20,6 +27,8 @@ import {
   Trash2,
   FileSpreadsheet,
   Grid3X3,
+  Target,
+  Lightbulb,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -98,6 +107,16 @@ const AddOperationalPlan = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
 
+  // Dialog states for adding new goal/initiative
+  const [showNewGoalDialog, setShowNewGoalDialog] = useState(false);
+  const [showNewInitiativeDialog, setShowNewInitiativeDialog] = useState(false);
+  const [newGoalName, setNewGoalName] = useState("");
+  const [newInitiativeName, setNewInitiativeName] = useState("");
+  const [pendingActivityId, setPendingActivityId] = useState<string | null>(null);
+  const [pendingGoalId, setPendingGoalId] = useState<string | null>(null);
+  const [isAddingGoal, setIsAddingGoal] = useState(false);
+  const [isAddingInitiative, setIsAddingInitiative] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -172,6 +191,82 @@ const AddOperationalPlan = () => {
     }
     
     updateActivity(activityId, { monthlyTargets: newTargets });
+  };
+
+  const handleAddNewGoal = async () => {
+    if (!newGoalName.trim()) return;
+    
+    setIsAddingGoal(true);
+    try {
+      const { data: newGoal, error } = await supabase
+        .from("strategic_goals")
+        .insert({
+          name: newGoalName.trim(),
+          color: "#3d9aa8",
+          year: year,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setStrategicGoals(prev => [...prev, newGoal]);
+      
+      if (pendingActivityId) {
+        updateActivity(pendingActivityId, { strategic_goal_id: newGoal.id, initiative_id: "" });
+      }
+
+      toast({ title: "تم إضافة الهدف الاستراتيجي بنجاح" });
+      setShowNewGoalDialog(false);
+      setNewGoalName("");
+      setPendingActivityId(null);
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message || "حدث خطأ أثناء إضافة الهدف",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingGoal(false);
+    }
+  };
+
+  const handleAddNewInitiative = async () => {
+    if (!newInitiativeName.trim() || !pendingGoalId) return;
+    
+    setIsAddingInitiative(true);
+    try {
+      const { data: newInit, error } = await supabase
+        .from("initiatives")
+        .insert({
+          strategic_goal_id: pendingGoalId,
+          name: newInitiativeName.trim(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setInitiatives(prev => [...prev, newInit]);
+      
+      if (pendingActivityId) {
+        updateActivity(pendingActivityId, { initiative_id: newInit.id });
+      }
+
+      toast({ title: "تم إضافة المبادرة بنجاح" });
+      setShowNewInitiativeDialog(false);
+      setNewInitiativeName("");
+      setPendingActivityId(null);
+      setPendingGoalId(null);
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message || "حدث خطأ أثناء إضافة المبادرة",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingInitiative(false);
+    }
   };
 
   const validateForm = () => {
@@ -342,39 +437,30 @@ const AddOperationalPlan = () => {
             
             {/* Column Headers */}
             <div className="grid grid-cols-[40px_50px_200px_180px_minmax(150px,1fr)_150px_180px_100px_repeat(12,70px)] bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600 sticky top-0 z-10">
-              {/* Row Controls */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-1 flex items-center justify-center bg-slate-200 dark:bg-slate-700">
                 <Grid3X3 className="w-3.5 h-3.5 text-slate-500" />
               </div>
-              {/* Row Number */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-1 text-center text-[11px] font-medium text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700">
                 #
               </div>
-              {/* Strategic Goal */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30">
                 الهدف الاستراتيجي *
               </div>
-              {/* Initiative */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30">
                 المبادرة
               </div>
-              {/* Activity Name */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                 النشاط *
               </div>
-              {/* Department */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                 القسم
               </div>
-              {/* Responsible */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                 مسؤول التنفيذ
               </div>
-              {/* Annual Target */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 text-center">
                 السنوي *
               </div>
-              {/* Months */}
               {MONTHS_AR.map((month, idx) => (
                 <div 
                   key={month}
@@ -391,8 +477,6 @@ const AddOperationalPlan = () => {
             {activities.map((activity, rowIndex) => {
               const filteredInits = getFilteredInitiatives(activity.strategic_goal_id);
               const filteredEmps = getFilteredEmployees(activity.department_id);
-              const monthlySum = activity.monthlyTargets.reduce((a, b) => a + b, 0);
-              const annualTargetNum = parseInt(activity.annual_target || "0");
               const hasError = errors[`goal_${rowIndex}`] || errors[`activity_${rowIndex}`] || errors[`annual_target_${rowIndex}`];
 
               return (
@@ -424,9 +508,14 @@ const AddOperationalPlan = () => {
                     <Select
                       value={activity.strategic_goal_id}
                       onValueChange={(v) => {
+                        if (v === "__new__") {
+                          setPendingActivityId(activity.id);
+                          setShowNewGoalDialog(true);
+                          return;
+                        }
                         updateActivity(activity.id, { 
                           strategic_goal_id: v === "none" ? "" : v,
-                          initiative_id: "" // Reset initiative when goal changes
+                          initiative_id: ""
                         });
                         if (errors[`goal_${rowIndex}`]) {
                           setErrors(prev => {
@@ -441,6 +530,12 @@ const AddOperationalPlan = () => {
                         <SelectValue placeholder="اختر الهدف" />
                       </SelectTrigger>
                       <SelectContent className="bg-background">
+                        <SelectItem value="__new__" className="text-emerald-600 font-medium">
+                          <div className="flex items-center gap-2">
+                            <Plus className="w-3 h-3" />
+                            <span className="text-xs">إضافة هدف جديد</span>
+                          </div>
+                        </SelectItem>
                         <SelectItem value="none">-</SelectItem>
                         {strategicGoals.map((goal) => (
                           <SelectItem key={goal.id} value={goal.id}>
@@ -458,13 +553,29 @@ const AddOperationalPlan = () => {
                   <div className="border-l border-slate-200 dark:border-slate-700 p-1 bg-amber-50/50 dark:bg-amber-950/20">
                     <Select
                       value={activity.initiative_id}
-                      onValueChange={(v) => updateActivity(activity.id, { initiative_id: v === "none" ? "" : v })}
+                      onValueChange={(v) => {
+                        if (v === "__new__") {
+                          setPendingActivityId(activity.id);
+                          setPendingGoalId(activity.strategic_goal_id);
+                          setShowNewInitiativeDialog(true);
+                          return;
+                        }
+                        updateActivity(activity.id, { initiative_id: v === "none" ? "" : v });
+                      }}
                       disabled={!activity.strategic_goal_id}
                     >
                       <SelectTrigger className="h-8 text-xs border-transparent hover:border-amber-300 focus:border-amber-400 bg-transparent">
                         <SelectValue placeholder={activity.strategic_goal_id ? "اختر" : "-"} />
                       </SelectTrigger>
                       <SelectContent className="bg-background">
+                        {activity.strategic_goal_id && (
+                          <SelectItem value="__new__" className="text-amber-600 font-medium">
+                            <div className="flex items-center gap-2">
+                              <Plus className="w-3 h-3" />
+                              <span className="text-xs">إضافة مبادرة جديدة</span>
+                            </div>
+                          </SelectItem>
+                        )}
                         <SelectItem value="none">-</SelectItem>
                         {filteredInits.map((init) => (
                           <SelectItem key={init.id} value={init.id}>
@@ -659,6 +770,91 @@ const AddOperationalPlan = () => {
           </div>
         </div>
       </div>
+
+      {/* New Goal Dialog */}
+      <Dialog open={showNewGoalDialog} onOpenChange={setShowNewGoalDialog}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-emerald-600" />
+              إضافة هدف استراتيجي جديد
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              value={newGoalName}
+              onChange={(e) => setNewGoalName(e.target.value)}
+              placeholder="اسم الهدف الاستراتيجي"
+              className="text-right"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAddNewGoal();
+              }}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNewGoalDialog(false);
+                setNewGoalName("");
+                setPendingActivityId(null);
+              }}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleAddNewGoal}
+              disabled={!newGoalName.trim() || isAddingGoal}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isAddingGoal ? <Loader2 className="w-4 h-4 animate-spin" /> : "إضافة"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Initiative Dialog */}
+      <Dialog open={showNewInitiativeDialog} onOpenChange={setShowNewInitiativeDialog}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-amber-500" />
+              إضافة مبادرة جديدة
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              value={newInitiativeName}
+              onChange={(e) => setNewInitiativeName(e.target.value)}
+              placeholder="اسم المبادرة"
+              className="text-right"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAddNewInitiative();
+              }}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNewInitiativeDialog(false);
+                setNewInitiativeName("");
+                setPendingActivityId(null);
+                setPendingGoalId(null);
+              }}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleAddNewInitiative}
+              disabled={!newInitiativeName.trim() || isAddingInitiative}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              {isAddingInitiative ? <Loader2 className="w-4 h-4 animate-spin" /> : "إضافة"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ManageCustomColumnsDialog
         open={isManageColumnsOpen}
