@@ -13,14 +13,10 @@ import {
 import {
   ArrowRight,
   Plus,
-  Target,
-  Lightbulb,
   Calendar,
   Loader2,
   Save,
   Columns,
-  ChevronDown,
-  ChevronUp,
   Trash2,
   FileSpreadsheet,
   Grid3X3,
@@ -59,12 +55,13 @@ interface Initiative {
 
 interface ActivityRow {
   id: string;
+  strategic_goal_id: string;
+  initiative_id: string;
   activity_name: string;
   department_id: string;
   responsible_employee_id: string;
   annual_target: string;
   monthlyTargets: number[];
-  isMonthlyExpanded: boolean;
 }
 
 const MONTHS_AR = [
@@ -74,12 +71,13 @@ const MONTHS_AR = [
 
 const createEmptyActivity = (): ActivityRow => ({
   id: crypto.randomUUID(),
+  strategic_goal_id: "",
+  initiative_id: "",
   activity_name: "",
   department_id: "",
   responsible_employee_id: "",
   annual_target: "",
   monthlyTargets: Array(12).fill(0),
-  isMonthlyExpanded: false,
 });
 
 const AddOperationalPlan = () => {
@@ -95,14 +93,7 @@ const AddOperationalPlan = () => {
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
 
   const [year, setYear] = useState(new Date().getFullYear());
-  const [strategicGoalId, setStrategicGoalId] = useState("");
-  const [initiativeId, setInitiativeId] = useState("");
   const [activities, setActivities] = useState<ActivityRow[]>([createEmptyActivity()]);
-
-  const [isAddingNewGoal, setIsAddingNewGoal] = useState(false);
-  const [isAddingNewInitiative, setIsAddingNewInitiative] = useState(false);
-  const [newGoalName, setNewGoalName] = useState("");
-  const [newInitiativeName, setNewInitiativeName] = useState("");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
@@ -141,9 +132,10 @@ const AddOperationalPlan = () => {
     fetchData();
   }, [year]);
 
-  const filteredInitiatives = initiatives.filter(
-    (init) => init.strategic_goal_id === strategicGoalId
-  );
+  const getFilteredInitiatives = (goalId: string) => {
+    if (!goalId) return [];
+    return initiatives.filter(init => init.strategic_goal_id === goalId);
+  };
 
   const getFilteredEmployees = (departmentId: string) => {
     if (!departmentId) return [];
@@ -185,16 +177,15 @@ const AddOperationalPlan = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!strategicGoalId && !newGoalName.trim()) {
-      newErrors.strategic_goal_id = "الهدف الاستراتيجي مطلوب";
-    }
-
     activities.forEach((activity, index) => {
+      if (!activity.strategic_goal_id) {
+        newErrors[`goal_${index}`] = "مطلوب";
+      }
       if (!activity.activity_name.trim()) {
-        newErrors[`activity_${index}`] = "اسم النشاط مطلوب";
+        newErrors[`activity_${index}`] = "مطلوب";
       }
       if (!activity.annual_target || parseInt(activity.annual_target) <= 0) {
-        newErrors[`annual_target_${index}`] = "المستهدف السنوي مطلوب";
+        newErrors[`annual_target_${index}`] = "مطلوب";
       }
     });
 
@@ -207,52 +198,19 @@ const AddOperationalPlan = () => {
 
     setIsLoading(true);
     try {
-      let goalId = strategicGoalId;
-      let goalName = strategicGoals.find(g => g.id === goalId)?.name || "";
-      let initId = initiativeId;
-      let initName = initiatives.find(i => i.id === initId)?.name || "";
-
-      if (isAddingNewGoal && newGoalName.trim()) {
-        const { data: newGoal, error: goalError } = await supabase
-          .from("strategic_goals")
-          .insert({
-            name: newGoalName.trim(),
-            color: "#3d9aa8",
-            year: year,
-          })
-          .select()
-          .single();
-
-        if (goalError) throw goalError;
-        goalId = newGoal.id;
-        goalName = newGoal.name;
-      }
-
-      if (isAddingNewInitiative && newInitiativeName.trim() && goalId) {
-        const { data: newInit, error: initError } = await supabase
-          .from("initiatives")
-          .insert({
-            strategic_goal_id: goalId,
-            name: newInitiativeName.trim(),
-          })
-          .select()
-          .single();
-
-        if (initError) throw initError;
-        initId = newInit.id;
-        initName = newInit.name;
-      }
-
       for (const activity of activities) {
+        const goal = strategicGoals.find(g => g.id === activity.strategic_goal_id);
+        const init = initiatives.find(i => i.id === activity.initiative_id);
+
         const { data: plan, error: planError } = await supabase
           .from("operational_plans")
           .insert({
             user_id: authUser.id,
             activity_name: activity.activity_name.trim(),
-            strategic_goal: goalName,
-            strategic_goal_id: goalId || null,
-            initiative: initName || null,
-            initiative_id: initId || null,
+            strategic_goal: goal?.name || "",
+            strategic_goal_id: activity.strategic_goal_id || null,
+            initiative: init?.name || null,
+            initiative_id: activity.initiative_id || null,
             annual_target: parseInt(activity.annual_target),
             year: year,
             responsible_employee_id: activity.responsible_employee_id || null,
@@ -332,8 +290,7 @@ const AddOperationalPlan = () => {
                 value={year.toString()}
                 onValueChange={(v) => {
                   setYear(parseInt(v));
-                  setStrategicGoalId("");
-                  setInitiativeId("");
+                  setActivities([createEmptyActivity()]);
                 }}
               >
                 <SelectTrigger className="h-7 w-20 text-xs border-slate-300">
@@ -379,113 +336,12 @@ const AddOperationalPlan = () => {
           </div>
         </div>
 
-        {/* Formula Bar - Strategic Goal & Initiative */}
-        <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-300 dark:border-slate-700 px-3 py-2 flex items-center gap-4 shrink-0">
-          <div className="flex items-center gap-2 flex-1">
-            <div className="flex items-center gap-1.5 min-w-[120px]">
-              <Target className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-medium text-slate-600">الهدف:</span>
-            </div>
-            {isAddingNewGoal ? (
-              <Input
-                value={newGoalName}
-                onChange={(e) => setNewGoalName(e.target.value)}
-                placeholder="اسم الهدف الجديد..."
-                className={`h-7 text-xs flex-1 max-w-xs ${errors.strategic_goal_id ? "border-red-400" : ""}`}
-              />
-            ) : (
-              <Select
-                value={strategicGoalId}
-                onValueChange={(v) => {
-                  setStrategicGoalId(v);
-                  setInitiativeId("");
-                  if (errors.strategic_goal_id) setErrors(prev => ({ ...prev, strategic_goal_id: "" }));
-                }}
-              >
-                <SelectTrigger className={`h-7 text-xs w-64 ${errors.strategic_goal_id ? "border-red-400" : ""}`}>
-                  <SelectValue placeholder="اختر الهدف الاستراتيجي *" />
-                </SelectTrigger>
-                <SelectContent className="bg-background">
-                  {strategicGoals.map((goal) => (
-                    <SelectItem key={goal.id} value={goal.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: goal.color }} />
-                        <span className="text-xs">{goal.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setIsAddingNewGoal(!isAddingNewGoal);
-                if (!isAddingNewGoal) setStrategicGoalId("");
-              }}
-              className="h-7 text-xs text-emerald-600 px-2"
-            >
-              <Plus className="w-3 h-3 ml-1" />
-              {isAddingNewGoal ? "قائمة" : "جديد"}
-            </Button>
-          </div>
-
-          <div className="h-4 w-px bg-slate-300 dark:bg-slate-700" />
-
-          <div className="flex items-center gap-2 flex-1">
-            <div className="flex items-center gap-1.5 min-w-[120px]">
-              <Lightbulb className="w-4 h-4 text-amber-500" />
-              <span className="text-xs font-medium text-slate-600">المبادرة:</span>
-            </div>
-            {isAddingNewInitiative ? (
-              <Input
-                value={newInitiativeName}
-                onChange={(e) => setNewInitiativeName(e.target.value)}
-                placeholder="اسم المبادرة الجديدة..."
-                className="h-7 text-xs flex-1 max-w-xs"
-              />
-            ) : (
-              <Select
-                value={initiativeId}
-                onValueChange={(v) => setInitiativeId(v)}
-                disabled={!strategicGoalId && !isAddingNewGoal}
-              >
-                <SelectTrigger className="h-7 text-xs w-64">
-                  <SelectValue placeholder={strategicGoalId || isAddingNewGoal ? "اختر المبادرة" : "اختر الهدف أولاً"} />
-                </SelectTrigger>
-                <SelectContent className="bg-background">
-                  {filteredInitiatives.map((init) => (
-                    <SelectItem key={init.id} value={init.id}>
-                      <span className="text-xs">{init.name}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {(strategicGoalId || isAddingNewGoal) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setIsAddingNewInitiative(!isAddingNewInitiative);
-                  if (!isAddingNewInitiative) setInitiativeId("");
-                }}
-                className="h-7 text-xs text-amber-600 px-2"
-              >
-                <Plus className="w-3 h-3 ml-1" />
-                {isAddingNewInitiative ? "قائمة" : "جديدة"}
-              </Button>
-            )}
-          </div>
-        </div>
-
         {/* Excel Spreadsheet Area */}
         <div className="flex-1 overflow-auto p-2">
-          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded shadow-sm min-w-[1200px]">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded shadow-sm min-w-[1800px]">
             
             {/* Column Headers */}
-            <div className="grid grid-cols-[40px_50px_1fr_180px_200px_120px_repeat(12,80px)] bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600 sticky top-0 z-10">
+            <div className="grid grid-cols-[40px_50px_200px_180px_minmax(150px,1fr)_150px_180px_100px_repeat(12,70px)] bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600 sticky top-0 z-10">
               {/* Row Controls */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-1 flex items-center justify-center bg-slate-200 dark:bg-slate-700">
                 <Grid3X3 className="w-3.5 h-3.5 text-slate-500" />
@@ -493,6 +349,14 @@ const AddOperationalPlan = () => {
               {/* Row Number */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-1 text-center text-[11px] font-medium text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700">
                 #
+              </div>
+              {/* Strategic Goal */}
+              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30">
+                الهدف الاستراتيجي *
+              </div>
+              {/* Initiative */}
+              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30">
+                المبادرة
               </div>
               {/* Activity Name */}
               <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
@@ -507,14 +371,14 @@ const AddOperationalPlan = () => {
                 مسؤول التنفيذ
               </div>
               {/* Annual Target */}
-              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300 text-center">
+              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 text-center">
                 السنوي *
               </div>
               {/* Months */}
               {MONTHS_AR.map((month, idx) => (
                 <div 
                   key={month}
-                  className={`border-l border-slate-300 dark:border-slate-600 p-1.5 text-[10px] font-medium text-center ${
+                  className={`border-l border-slate-300 dark:border-slate-600 p-1 text-[10px] font-medium text-center ${
                     idx % 2 === 0 ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400" : "text-slate-600 dark:text-slate-400"
                   }`}
                 >
@@ -525,17 +389,17 @@ const AddOperationalPlan = () => {
 
             {/* Data Rows */}
             {activities.map((activity, rowIndex) => {
+              const filteredInits = getFilteredInitiatives(activity.strategic_goal_id);
               const filteredEmps = getFilteredEmployees(activity.department_id);
               const monthlySum = activity.monthlyTargets.reduce((a, b) => a + b, 0);
               const annualTargetNum = parseInt(activity.annual_target || "0");
-              const isBalanced = monthlySum === annualTargetNum && annualTargetNum > 0;
-              const hasError = errors[`activity_${rowIndex}`] || errors[`annual_target_${rowIndex}`];
+              const hasError = errors[`goal_${rowIndex}`] || errors[`activity_${rowIndex}`] || errors[`annual_target_${rowIndex}`];
 
               return (
                 <div 
                   key={activity.id}
-                  className={`grid grid-cols-[40px_50px_1fr_180px_200px_120px_repeat(12,80px)] border-b border-slate-200 dark:border-slate-700 hover:bg-blue-50/30 dark:hover:bg-blue-950/10 ${
-                    hasError ? "bg-red-50/50 dark:bg-red-950/20" : ""
+                  className={`grid grid-cols-[40px_50px_200px_180px_minmax(150px,1fr)_150px_180px_100px_repeat(12,70px)] border-b border-slate-200 dark:border-slate-700 hover:bg-blue-50/30 dark:hover:bg-blue-950/10 ${
+                    hasError ? "bg-red-50/30 dark:bg-red-950/10" : ""
                   }`}
                 >
                   {/* Row Controls */}
@@ -553,6 +417,62 @@ const AddOperationalPlan = () => {
                   {/* Row Number */}
                   <div className="border-l border-slate-200 dark:border-slate-700 p-1 text-center text-xs text-slate-500 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center">
                     {rowIndex + 1}
+                  </div>
+
+                  {/* Strategic Goal */}
+                  <div className={`border-l border-slate-200 dark:border-slate-700 p-1 bg-emerald-50/50 dark:bg-emerald-950/20 ${errors[`goal_${rowIndex}`] ? "bg-red-50 dark:bg-red-950/30" : ""}`}>
+                    <Select
+                      value={activity.strategic_goal_id}
+                      onValueChange={(v) => {
+                        updateActivity(activity.id, { 
+                          strategic_goal_id: v === "none" ? "" : v,
+                          initiative_id: "" // Reset initiative when goal changes
+                        });
+                        if (errors[`goal_${rowIndex}`]) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors[`goal_${rowIndex}`];
+                            return newErrors;
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className={`h-8 text-xs border-transparent hover:border-emerald-300 focus:border-emerald-400 bg-transparent ${errors[`goal_${rowIndex}`] ? "border-red-300" : ""}`}>
+                        <SelectValue placeholder="اختر الهدف" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background">
+                        <SelectItem value="none">-</SelectItem>
+                        {strategicGoals.map((goal) => (
+                          <SelectItem key={goal.id} value={goal.id}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: goal.color }} />
+                              <span className="text-xs">{goal.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Initiative */}
+                  <div className="border-l border-slate-200 dark:border-slate-700 p-1 bg-amber-50/50 dark:bg-amber-950/20">
+                    <Select
+                      value={activity.initiative_id}
+                      onValueChange={(v) => updateActivity(activity.id, { initiative_id: v === "none" ? "" : v })}
+                      disabled={!activity.strategic_goal_id}
+                    >
+                      <SelectTrigger className="h-8 text-xs border-transparent hover:border-amber-300 focus:border-amber-400 bg-transparent">
+                        <SelectValue placeholder={activity.strategic_goal_id ? "اختر" : "-"} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background">
+                        <SelectItem value="none">-</SelectItem>
+                        {filteredInits.map((init) => (
+                          <SelectItem key={init.id} value={init.id}>
+                            <span className="text-xs">{init.name}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Activity Name */}
@@ -623,7 +543,7 @@ const AddOperationalPlan = () => {
                   </div>
 
                   {/* Annual Target */}
-                  <div className="border-l border-slate-200 dark:border-slate-700 p-1 relative group">
+                  <div className="border-l border-slate-200 dark:border-slate-700 p-1 relative group bg-purple-50/50 dark:bg-purple-950/20">
                     <Input
                       type="number"
                       value={activity.annual_target}
@@ -639,15 +559,14 @@ const AddOperationalPlan = () => {
                       }}
                       placeholder="0"
                       min={1}
-                      className={`h-8 text-xs text-center font-semibold border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent ${
+                      className={`h-8 text-xs text-center font-semibold border-transparent hover:border-purple-300 focus:border-purple-400 bg-transparent ${
                         errors[`annual_target_${rowIndex}`] ? "border-red-300 bg-red-50 dark:bg-red-950/30" : ""
                       }`}
                     />
-                    {/* Auto-distribute button on hover */}
                     {activity.annual_target && parseInt(activity.annual_target) > 0 && (
                       <button
                         onClick={() => distributeEvenly(activity.id)}
-                        className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500 text-white px-1.5 py-0.5 rounded text-[9px]"
+                        className="absolute left-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-purple-500 text-white px-1 py-0.5 rounded text-[8px]"
                         title="توزيع تلقائي"
                       >
                         توزيع
@@ -673,7 +592,7 @@ const AddOperationalPlan = () => {
                         }}
                         min={0}
                         placeholder="0"
-                        className="h-8 text-[11px] text-center border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent font-medium"
+                        className="h-8 text-[10px] text-center border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent font-medium"
                       />
                     </div>
                   ))}
@@ -682,9 +601,9 @@ const AddOperationalPlan = () => {
             })}
 
             {/* Add Row Button */}
-            <div className="grid grid-cols-[40px_50px_1fr_180px_200px_120px_repeat(12,80px)] border-b border-slate-200 dark:border-slate-700">
+            <div className="grid grid-cols-[40px_50px_200px_180px_minmax(150px,1fr)_150px_180px_100px_repeat(12,70px)] border-b border-slate-200 dark:border-slate-700">
               <div className="col-span-2 bg-slate-50 dark:bg-slate-800/50 border-l border-slate-200 dark:border-slate-700" />
-              <div className="col-span-16 p-1">
+              <div className="col-span-18 p-1">
                 <button
                   onClick={addActivity}
                   className="w-full h-8 flex items-center justify-center gap-2 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded border border-dashed border-blue-300 dark:border-blue-700 transition-colors"
@@ -696,11 +615,11 @@ const AddOperationalPlan = () => {
             </div>
 
             {/* Summary Row */}
-            <div className="grid grid-cols-[40px_50px_1fr_180px_200px_120px_repeat(12,80px)] bg-slate-100 dark:bg-slate-800/80">
-              <div className="col-span-5 border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-600 dark:text-slate-400 text-left">
+            <div className="grid grid-cols-[40px_50px_200px_180px_minmax(150px,1fr)_150px_180px_100px_repeat(12,70px)] bg-slate-100 dark:bg-slate-800/80">
+              <div className="col-span-7 border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-600 dark:text-slate-400 text-left">
                 المجموع
               </div>
-              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-center text-xs font-bold text-slate-700 dark:text-slate-300">
+              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-center text-xs font-bold text-purple-700 dark:text-purple-400 bg-purple-100/50 dark:bg-purple-950/40">
                 {activities.reduce((sum, act) => sum + (parseInt(act.annual_target) || 0), 0)}
               </div>
               {MONTHS_AR.map((_, monthIdx) => {
@@ -708,7 +627,7 @@ const AddOperationalPlan = () => {
                 return (
                   <div 
                     key={monthIdx}
-                    className={`border-l border-slate-300 dark:border-slate-600 p-2 text-center text-[11px] font-bold ${
+                    className={`border-l border-slate-300 dark:border-slate-600 p-2 text-center text-[10px] font-bold ${
                       monthIdx % 2 === 0 ? "bg-blue-100/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"
                     }`}
                   >
