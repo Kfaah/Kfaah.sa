@@ -106,16 +106,16 @@ interface ColumnDef {
 }
 
 const createDefaultColumns = (): ColumnDef[] => [
-  { id: 'action', label: 'إجراء', width: '60px', editable: false, removable: false, isCustom: false },
-  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '7%', editable: true, removable: true, isCustom: false },
-  { id: 'annualTarget', label: 'المستهدف السنوي', width: '7%', editable: true, removable: true, isCustom: false },
-  { id: 'responsibleEmployee', label: 'منفذ النشاط', width: '11%', editable: false, removable: false, isCustom: false },
-  { id: 'activity', label: 'النشاط', width: '14%', editable: true, removable: true, isCustom: false },
-  { id: 'initiativeOwner', label: 'مالك المبادرة', width: '11%', editable: false, removable: false, isCustom: false },
-  { id: 'initiative', label: 'المبادرة', width: '14%', editable: true, removable: true, isCustom: false },
-  { id: 'goalOwner', label: 'مالك الهدف', width: '11%', editable: false, removable: false, isCustom: false },
-  { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '14%', editable: true, removable: true, isCustom: false },
   { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
+  { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '14%', editable: true, removable: true, isCustom: false },
+  { id: 'goalOwner', label: 'مالك الهدف', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'initiative', label: 'المبادرة', width: '14%', editable: true, removable: true, isCustom: false },
+  { id: 'initiativeOwner', label: 'مالك المبادرة', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'activity', label: 'النشاط', width: '14%', editable: true, removable: true, isCustom: false },
+  { id: 'responsibleEmployee', label: 'منفذ النشاط', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'annualTarget', label: 'المستهدف السنوي', width: '7%', editable: true, removable: true, isCustom: false },
+  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '7%', editable: true, removable: true, isCustom: false },
+  { id: 'action', label: 'إجراء', width: '60px', editable: false, removable: false, isCustom: false },
 ];
 
 interface MergedHeader {
