@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -17,21 +15,15 @@ import {
   Plus,
   Target,
   Lightbulb,
-  Zap,
   Calendar,
-  UserCircle,
-  AlertTriangle,
   Loader2,
-  TrendingUp,
-  Sparkles,
-  CheckCircle2,
-  BarChart3,
   Save,
   Columns,
   ChevronDown,
   ChevronUp,
-  Building2,
   Trash2,
+  FileSpreadsheet,
+  Grid3X3,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -251,7 +243,6 @@ const AddOperationalPlan = () => {
         initName = newInit.name;
       }
 
-      // Insert all activities
       for (const activity of activities) {
         const { data: plan, error: planError } = await supabase
           .from("operational_plans")
@@ -315,466 +306,441 @@ const AddOperationalPlan = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" dir="rtl">
-        <div className="p-4 lg:p-6 max-w-[1600px] mx-auto space-y-6">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/operational-plans")}
-                className="rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <BarChart3 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-foreground">إضافة خطة تشغيلية جديدة</h1>
-                  <p className="text-sm text-muted-foreground">أدخل بيانات الخطة والمستهدفات الشهرية</p>
-                </div>
-              </div>
+      <div className="h-[calc(100vh-80px)] flex flex-col bg-slate-100 dark:bg-slate-950" dir="rtl">
+        
+        {/* Excel-style Toolbar */}
+        <div className="bg-white dark:bg-slate-900 border-b border-slate-300 dark:border-slate-700 px-3 py-2 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/operational-plans")}
+              className="h-8 w-8"
+            >
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+              <span className="font-semibold text-sm">إضافة خطة تشغيلية</span>
             </div>
-            <div className="flex items-center gap-3">
-              {/* Year Selector */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                <Calendar className="w-4 h-4 text-slate-500" />
-                <Select
-                  value={year.toString()}
-                  onValueChange={(v) => {
-                    setYear(parseInt(v));
-                    setStrategicGoalId("");
-                    setInitiativeId("");
-                  }}
-                >
-                  <SelectTrigger className="w-24 h-8 text-sm border-0 bg-transparent">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background">
-                    {getAvailableYears().map((y) => (
-                      <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setIsManageColumnsOpen(true)}
-                className="h-10 gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+            <div className="h-4 w-px bg-slate-300 dark:bg-slate-700" />
+            
+            {/* Year Selector */}
+            <div className="flex items-center gap-1 text-xs">
+              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <Select
+                value={year.toString()}
+                onValueChange={(v) => {
+                  setYear(parseInt(v));
+                  setStrategicGoalId("");
+                  setInitiativeId("");
+                }}
               >
-                <Columns className="w-4 h-4" />
-                إدارة الأعمدة
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/operational-plans")}
-                disabled={isLoading}
-                className="h-10"
-              >
-                إلغاء
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={isLoading}
-                className="h-10 gap-2 bg-gradient-to-l from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/20"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                حفظ الخطة
-              </Button>
+                <SelectTrigger className="h-7 w-20 text-xs border-slate-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  {getAvailableYears().map((y) => (
+                    <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Strategic Goal & Initiative Selection */}
-          <Card className="border-slate-200 dark:border-slate-800 shadow-lg">
-            <CardContent className="p-5">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Strategic Goal */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                        <Target className="w-4 h-4 text-emerald-600" />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsManageColumnsOpen(true)}
+              className="h-7 text-xs gap-1"
+            >
+              <Columns className="w-3.5 h-3.5" />
+              الأعمدة
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/operational-plans")}
+              disabled={isLoading}
+              className="h-7 text-xs"
+            >
+              إلغاء
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              حفظ
+            </Button>
+          </div>
+        </div>
+
+        {/* Formula Bar - Strategic Goal & Initiative */}
+        <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-300 dark:border-slate-700 px-3 py-2 flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-1.5 min-w-[120px]">
+              <Target className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-medium text-slate-600">الهدف:</span>
+            </div>
+            {isAddingNewGoal ? (
+              <Input
+                value={newGoalName}
+                onChange={(e) => setNewGoalName(e.target.value)}
+                placeholder="اسم الهدف الجديد..."
+                className={`h-7 text-xs flex-1 max-w-xs ${errors.strategic_goal_id ? "border-red-400" : ""}`}
+              />
+            ) : (
+              <Select
+                value={strategicGoalId}
+                onValueChange={(v) => {
+                  setStrategicGoalId(v);
+                  setInitiativeId("");
+                  if (errors.strategic_goal_id) setErrors(prev => ({ ...prev, strategic_goal_id: "" }));
+                }}
+              >
+                <SelectTrigger className={`h-7 text-xs w-64 ${errors.strategic_goal_id ? "border-red-400" : ""}`}>
+                  <SelectValue placeholder="اختر الهدف الاستراتيجي *" />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  {strategicGoals.map((goal) => (
+                    <SelectItem key={goal.id} value={goal.id}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: goal.color }} />
+                        <span className="text-xs">{goal.name}</span>
                       </div>
-                      الهدف الاستراتيجي *
-                    </label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setIsAddingNewGoal(!isAddingNewGoal);
-                        if (!isAddingNewGoal) setStrategicGoalId("");
-                      }}
-                      className="text-emerald-600 text-xs h-7"
-                    >
-                      <Plus className="w-3 h-3 ml-1" />
-                      {isAddingNewGoal ? "اختيار من القائمة" : "إضافة جديد"}
-                    </Button>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsAddingNewGoal(!isAddingNewGoal);
+                if (!isAddingNewGoal) setStrategicGoalId("");
+              }}
+              className="h-7 text-xs text-emerald-600 px-2"
+            >
+              <Plus className="w-3 h-3 ml-1" />
+              {isAddingNewGoal ? "قائمة" : "جديد"}
+            </Button>
+          </div>
+
+          <div className="h-4 w-px bg-slate-300 dark:bg-slate-700" />
+
+          <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-1.5 min-w-[120px]">
+              <Lightbulb className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-medium text-slate-600">المبادرة:</span>
+            </div>
+            {isAddingNewInitiative ? (
+              <Input
+                value={newInitiativeName}
+                onChange={(e) => setNewInitiativeName(e.target.value)}
+                placeholder="اسم المبادرة الجديدة..."
+                className="h-7 text-xs flex-1 max-w-xs"
+              />
+            ) : (
+              <Select
+                value={initiativeId}
+                onValueChange={(v) => setInitiativeId(v)}
+                disabled={!strategicGoalId && !isAddingNewGoal}
+              >
+                <SelectTrigger className="h-7 text-xs w-64">
+                  <SelectValue placeholder={strategicGoalId || isAddingNewGoal ? "اختر المبادرة" : "اختر الهدف أولاً"} />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  {filteredInitiatives.map((init) => (
+                    <SelectItem key={init.id} value={init.id}>
+                      <span className="text-xs">{init.name}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {(strategicGoalId || isAddingNewGoal) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsAddingNewInitiative(!isAddingNewInitiative);
+                  if (!isAddingNewInitiative) setInitiativeId("");
+                }}
+                className="h-7 text-xs text-amber-600 px-2"
+              >
+                <Plus className="w-3 h-3 ml-1" />
+                {isAddingNewInitiative ? "قائمة" : "جديدة"}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Excel Spreadsheet Area */}
+        <div className="flex-1 overflow-auto p-2">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded shadow-sm min-w-[1200px]">
+            
+            {/* Column Headers */}
+            <div className="grid grid-cols-[40px_50px_1fr_180px_200px_120px_repeat(12,80px)] bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600 sticky top-0 z-10">
+              {/* Row Controls */}
+              <div className="border-l border-slate-300 dark:border-slate-600 p-1 flex items-center justify-center bg-slate-200 dark:bg-slate-700">
+                <Grid3X3 className="w-3.5 h-3.5 text-slate-500" />
+              </div>
+              {/* Row Number */}
+              <div className="border-l border-slate-300 dark:border-slate-600 p-1 text-center text-[11px] font-medium text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700">
+                #
+              </div>
+              {/* Activity Name */}
+              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                النشاط *
+              </div>
+              {/* Department */}
+              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                القسم
+              </div>
+              {/* Responsible */}
+              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                مسؤول التنفيذ
+              </div>
+              {/* Annual Target */}
+              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-700 dark:text-slate-300 text-center">
+                السنوي *
+              </div>
+              {/* Months */}
+              {MONTHS_AR.map((month, idx) => (
+                <div 
+                  key={month}
+                  className={`border-l border-slate-300 dark:border-slate-600 p-1.5 text-[10px] font-medium text-center ${
+                    idx % 2 === 0 ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400" : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  {month}
+                </div>
+              ))}
+            </div>
+
+            {/* Data Rows */}
+            {activities.map((activity, rowIndex) => {
+              const filteredEmps = getFilteredEmployees(activity.department_id);
+              const monthlySum = activity.monthlyTargets.reduce((a, b) => a + b, 0);
+              const annualTargetNum = parseInt(activity.annual_target || "0");
+              const isBalanced = monthlySum === annualTargetNum && annualTargetNum > 0;
+              const hasError = errors[`activity_${rowIndex}`] || errors[`annual_target_${rowIndex}`];
+
+              return (
+                <div 
+                  key={activity.id}
+                  className={`grid grid-cols-[40px_50px_1fr_180px_200px_120px_repeat(12,80px)] border-b border-slate-200 dark:border-slate-700 hover:bg-blue-50/30 dark:hover:bg-blue-950/10 ${
+                    hasError ? "bg-red-50/50 dark:bg-red-950/20" : ""
+                  }`}
+                >
+                  {/* Row Controls */}
+                  <div className="border-l border-slate-200 dark:border-slate-700 p-1 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50">
+                    {activities.length > 1 && (
+                      <button
+                        onClick={() => removeActivity(activity.id)}
+                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
-                  {isAddingNewGoal ? (
+
+                  {/* Row Number */}
+                  <div className="border-l border-slate-200 dark:border-slate-700 p-1 text-center text-xs text-slate-500 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center">
+                    {rowIndex + 1}
+                  </div>
+
+                  {/* Activity Name */}
+                  <div className="border-l border-slate-200 dark:border-slate-700 p-1">
                     <Input
-                      value={newGoalName}
-                      onChange={(e) => setNewGoalName(e.target.value)}
-                      placeholder="اسم الهدف الاستراتيجي الجديد"
-                      className={`h-11 ${errors.strategic_goal_id ? "border-red-300" : ""}`}
+                      value={activity.activity_name}
+                      onChange={(e) => {
+                        updateActivity(activity.id, { activity_name: e.target.value });
+                        if (errors[`activity_${rowIndex}`]) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors[`activity_${rowIndex}`];
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      placeholder="اسم النشاط"
+                      className={`h-8 text-xs border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent ${
+                        errors[`activity_${rowIndex}`] ? "border-red-300 bg-red-50 dark:bg-red-950/30" : ""
+                      }`}
                     />
-                  ) : (
+                  </div>
+
+                  {/* Department */}
+                  <div className="border-l border-slate-200 dark:border-slate-700 p-1">
                     <Select
-                      value={strategicGoalId}
+                      value={activity.department_id}
                       onValueChange={(v) => {
-                        setStrategicGoalId(v);
-                        setInitiativeId("");
-                        if (errors.strategic_goal_id) setErrors(prev => ({ ...prev, strategic_goal_id: "" }));
+                        updateActivity(activity.id, { 
+                          department_id: v === "none" ? "" : v,
+                          responsible_employee_id: ""
+                        });
                       }}
                     >
-                      <SelectTrigger className={`h-11 ${errors.strategic_goal_id ? "border-red-300" : ""}`}>
-                        <SelectValue placeholder="اختر الهدف الاستراتيجي" />
+                      <SelectTrigger className="h-8 text-xs border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent">
+                        <SelectValue placeholder="-" />
                       </SelectTrigger>
                       <SelectContent className="bg-background">
-                        {strategicGoals.map((goal) => (
-                          <SelectItem key={goal.id} value={goal.id}>
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: goal.color }} />
-                              {goal.name}
-                            </div>
+                        <SelectItem value="none">-</SelectItem>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>
+                            <span className="text-xs">{dept.name}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  )}
-                  {errors.strategic_goal_id && (
-                    <span className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" />
-                      {errors.strategic_goal_id}
-                    </span>
-                  )}
-                </div>
-
-                {/* Initiative */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                        <Lightbulb className="w-4 h-4 text-amber-600" />
-                      </div>
-                      المبادرة
-                    </label>
-                    {(strategicGoalId || isAddingNewGoal) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setIsAddingNewInitiative(!isAddingNewInitiative);
-                          if (!isAddingNewInitiative) setInitiativeId("");
-                        }}
-                        className="text-amber-600 text-xs h-7"
-                      >
-                        <Plus className="w-3 h-3 ml-1" />
-                        {isAddingNewInitiative ? "اختيار من القائمة" : "إضافة جديدة"}
-                      </Button>
-                    )}
                   </div>
-                  {isAddingNewInitiative ? (
-                    <Input
-                      value={newInitiativeName}
-                      onChange={(e) => setNewInitiativeName(e.target.value)}
-                      placeholder="اسم المبادرة الجديدة"
-                      className="h-11"
-                    />
-                  ) : (
+
+                  {/* Responsible Employee */}
+                  <div className="border-l border-slate-200 dark:border-slate-700 p-1">
                     <Select
-                      value={initiativeId}
-                      onValueChange={(v) => setInitiativeId(v)}
-                      disabled={!strategicGoalId && !isAddingNewGoal}
+                      value={activity.responsible_employee_id}
+                      onValueChange={(v) => updateActivity(activity.id, { responsible_employee_id: v === "none" ? "" : v })}
+                      disabled={!activity.department_id}
                     >
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder={strategicGoalId || isAddingNewGoal ? "اختر المبادرة" : "اختر الهدف أولاً"} />
+                      <SelectTrigger className="h-8 text-xs border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent">
+                        <SelectValue placeholder={activity.department_id ? "-" : "اختر القسم"} />
                       </SelectTrigger>
                       <SelectContent className="bg-background">
-                        {filteredInitiatives.map((init) => (
-                          <SelectItem key={init.id} value={init.id}>{init.name}</SelectItem>
+                        <SelectItem value="none">-</SelectItem>
+                        {filteredEmps.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id}>
+                            <span className="text-xs">{emp.full_name}</span>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Activities Table */}
-          <Card className="border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
-            <CardContent className="p-0">
-              {/* Table Header */}
-              <div className="bg-gradient-to-l from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-850 border-b border-slate-200 dark:border-slate-700">
-                <div className="grid grid-cols-12 gap-0 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  <div className="col-span-3 p-3 border-l border-slate-200 dark:border-slate-700 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-blue-500" />
-                    النشاط
                   </div>
-                  <div className="col-span-2 p-3 border-l border-slate-200 dark:border-slate-700 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-orange-500" />
-                    القسم
-                  </div>
-                  <div className="col-span-3 p-3 border-l border-slate-200 dark:border-slate-700 flex items-center gap-2">
-                    <UserCircle className="w-4 h-4 text-cyan-500" />
-                    مسؤول التنفيذ
-                  </div>
-                  <div className="col-span-2 p-3 border-l border-slate-200 dark:border-slate-700 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-purple-500" />
-                    المستهدف السنوي
-                  </div>
-                  <div className="col-span-2 p-3 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-indigo-500" />
-                    الشهور
-                  </div>
-                </div>
-              </div>
 
-              {/* Activity Rows */}
-              {activities.map((activity, index) => {
-                const filteredEmps = getFilteredEmployees(activity.department_id);
-                const monthlySum = activity.monthlyTargets.reduce((a, b) => a + b, 0);
-                const annualTargetNum = parseInt(activity.annual_target || "0");
-                const isBalanced = monthlySum === annualTargetNum;
-
-                return (
-                  <div key={activity.id} className="border-b border-slate-200 dark:border-slate-700 last:border-b-0">
-                    {/* Main Row */}
-                    <div className="grid grid-cols-12 gap-0 bg-white dark:bg-slate-900">
-                      {/* Activity Name */}
-                      <div className="col-span-3 p-2 border-l border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center gap-2">
-                          {activities.length > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeActivity(activity.id)}
-                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Input
-                            value={activity.activity_name}
-                            onChange={(e) => {
-                              updateActivity(activity.id, { activity_name: e.target.value });
-                              if (errors[`activity_${index}`]) {
-                                setErrors(prev => {
-                                  const newErrors = { ...prev };
-                                  delete newErrors[`activity_${index}`];
-                                  return newErrors;
-                                });
-                              }
-                            }}
-                            placeholder="اسم النشاط *"
-                            className={`text-sm h-10 ${errors[`activity_${index}`] ? "border-red-300" : ""}`}
-                          />
-                        </div>
-                        {errors[`activity_${index}`] && (
-                          <span className="text-[10px] text-red-500 mt-1 flex items-center gap-1 mr-10">
-                            <AlertTriangle className="w-3 h-3" />
-                            مطلوب
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Department */}
-                      <div className="col-span-2 p-2 border-l border-slate-200 dark:border-slate-700 bg-orange-50/30 dark:bg-orange-950/10">
-                        <Select
-                          value={activity.department_id}
-                          onValueChange={(v) => {
-                            updateActivity(activity.id, { 
-                              department_id: v === "none" ? "" : v,
-                              responsible_employee_id: "" // Reset employee when department changes
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="text-sm h-10">
-                            <SelectValue placeholder="اختر القسم" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-background">
-                            <SelectItem value="none">بدون</SelectItem>
-                            {departments.map((dept) => (
-                              <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Responsible Employee */}
-                      <div className="col-span-3 p-2 border-l border-slate-200 dark:border-slate-700 bg-cyan-50/30 dark:bg-cyan-950/10">
-                        <Select
-                          value={activity.responsible_employee_id}
-                          onValueChange={(v) => updateActivity(activity.id, { responsible_employee_id: v === "none" ? "" : v })}
-                          disabled={!activity.department_id}
-                        >
-                          <SelectTrigger className="text-sm h-10">
-                            <SelectValue placeholder={activity.department_id ? "اختر مسؤول التنفيذ" : "اختر القسم أولاً"} />
-                          </SelectTrigger>
-                          <SelectContent className="bg-background">
-                            <SelectItem value="none">بدون</SelectItem>
-                            {filteredEmps.map((emp) => (
-                              <SelectItem key={emp.id} value={emp.id}>
-                                <div className="flex flex-col">
-                                  <span>{emp.full_name}</span>
-                                  {emp.job_role && (
-                                    <span className="text-[10px] text-slate-400">{emp.job_role}</span>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {activity.department_id && filteredEmps.length === 0 && (
-                          <span className="text-[10px] text-amber-600 mt-1 block">لا يوجد موظفون في هذا القسم</span>
-                        )}
-                      </div>
-
-                      {/* Annual Target */}
-                      <div className="col-span-2 p-2 border-l border-slate-200 dark:border-slate-700 bg-purple-50/30 dark:bg-purple-950/10">
-                        <Input
-                          type="number"
-                          value={activity.annual_target}
-                          onChange={(e) => {
-                            updateActivity(activity.id, { annual_target: e.target.value });
-                            if (errors[`annual_target_${index}`]) {
-                              setErrors(prev => {
-                                const newErrors = { ...prev };
-                                delete newErrors[`annual_target_${index}`];
-                                return newErrors;
-                              });
-                            }
-                          }}
-                          placeholder="0"
-                          className={`text-center font-bold text-sm h-10 ${errors[`annual_target_${index}`] ? "border-red-300" : ""}`}
-                          min={1}
-                        />
-                        {errors[`annual_target_${index}`] && (
-                          <span className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" />
-                            مطلوب
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Monthly Toggle */}
-                      <div className="col-span-2 p-2">
-                        <button
-                          onClick={() => updateActivity(activity.id, { isMonthlyExpanded: !activity.isMonthlyExpanded })}
-                          className="w-full h-10 flex items-center justify-between px-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                        >
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className={`font-bold ${isBalanced ? "text-emerald-600" : "text-amber-600"}`}>
-                              {monthlySum}
-                            </span>
-                            <span className="text-slate-400">/</span>
-                            <span className="text-slate-600">{annualTargetNum}</span>
-                            {isBalanced && annualTargetNum > 0 && (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                            )}
-                          </div>
-                          {activity.isMonthlyExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-slate-400" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-slate-400" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Expanded Monthly Targets */}
-                    {activity.isMonthlyExpanded && (
-                      <div className="p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-sm font-medium text-slate-600 dark:text-slate-400">المستهدفات الشهرية</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => distributeEvenly(activity.id)}
-                            disabled={!activity.annual_target || parseInt(activity.annual_target) <= 0}
-                            className="gap-1 text-xs h-8"
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            توزيع تلقائي
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-12 gap-3">
-                          {MONTHS_AR.map((month, idx) => (
-                            <div 
-                              key={month} 
-                              className={`p-3 rounded-lg border ${
-                                idx % 2 === 0 
-                                  ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700" 
-                                  : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
-                              }`}
-                            >
-                              <div className="text-xs text-slate-500 text-center mb-2 font-medium">{month}</div>
-                              <Input
-                                type="number"
-                                value={activity.monthlyTargets[idx]}
-                                onChange={(e) => {
-                                  const newTargets = [...activity.monthlyTargets];
-                                  newTargets[idx] = parseInt(e.target.value) || 0;
-                                  updateActivity(activity.id, { monthlyTargets: newTargets });
-                                }}
-                                min={0}
-                                className="text-center h-10 text-sm font-semibold"
-                              />
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Balance Status */}
-                        <div className={`mt-4 p-3 rounded-lg text-center ${
-                          isBalanced 
-                            ? "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800" 
-                            : "bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800"
-                        }`}>
-                          {isBalanced ? (
-                            <div className="flex items-center justify-center gap-2 text-emerald-700 dark:text-emerald-400">
-                              <CheckCircle2 className="w-5 h-5" />
-                              <span className="font-medium">التوزيع متوازن</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center gap-2 text-amber-700 dark:text-amber-400">
-                              <AlertTriangle className="w-5 h-5" />
-                              <span className="font-medium">
-                                التوزيع غير متوازن - الفرق: {Math.abs(monthlySum - annualTargetNum)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                  {/* Annual Target */}
+                  <div className="border-l border-slate-200 dark:border-slate-700 p-1 relative group">
+                    <Input
+                      type="number"
+                      value={activity.annual_target}
+                      onChange={(e) => {
+                        updateActivity(activity.id, { annual_target: e.target.value });
+                        if (errors[`annual_target_${rowIndex}`]) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors[`annual_target_${rowIndex}`];
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      placeholder="0"
+                      min={1}
+                      className={`h-8 text-xs text-center font-semibold border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent ${
+                        errors[`annual_target_${rowIndex}`] ? "border-red-300 bg-red-50 dark:bg-red-950/30" : ""
+                      }`}
+                    />
+                    {/* Auto-distribute button on hover */}
+                    {activity.annual_target && parseInt(activity.annual_target) > 0 && (
+                      <button
+                        onClick={() => distributeEvenly(activity.id)}
+                        className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500 text-white px-1.5 py-0.5 rounded text-[9px]"
+                        title="توزيع تلقائي"
+                      >
+                        توزيع
+                      </button>
                     )}
+                  </div>
+
+                  {/* Monthly Targets */}
+                  {activity.monthlyTargets.map((monthTarget, monthIdx) => (
+                    <div 
+                      key={monthIdx}
+                      className={`border-l border-slate-200 dark:border-slate-700 p-0.5 ${
+                        monthIdx % 2 === 0 ? "bg-blue-50/30 dark:bg-blue-950/10" : ""
+                      }`}
+                    >
+                      <Input
+                        type="number"
+                        value={monthTarget || ""}
+                        onChange={(e) => {
+                          const newTargets = [...activity.monthlyTargets];
+                          newTargets[monthIdx] = parseInt(e.target.value) || 0;
+                          updateActivity(activity.id, { monthlyTargets: newTargets });
+                        }}
+                        min={0}
+                        placeholder="0"
+                        className="h-8 text-[11px] text-center border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent font-medium"
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+
+            {/* Add Row Button */}
+            <div className="grid grid-cols-[40px_50px_1fr_180px_200px_120px_repeat(12,80px)] border-b border-slate-200 dark:border-slate-700">
+              <div className="col-span-2 bg-slate-50 dark:bg-slate-800/50 border-l border-slate-200 dark:border-slate-700" />
+              <div className="col-span-16 p-1">
+                <button
+                  onClick={addActivity}
+                  className="w-full h-8 flex items-center justify-center gap-2 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded border border-dashed border-blue-300 dark:border-blue-700 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  إضافة صف جديد
+                </button>
+              </div>
+            </div>
+
+            {/* Summary Row */}
+            <div className="grid grid-cols-[40px_50px_1fr_180px_200px_120px_repeat(12,80px)] bg-slate-100 dark:bg-slate-800/80">
+              <div className="col-span-5 border-l border-slate-300 dark:border-slate-600 p-2 text-[11px] font-semibold text-slate-600 dark:text-slate-400 text-left">
+                المجموع
+              </div>
+              <div className="border-l border-slate-300 dark:border-slate-600 p-2 text-center text-xs font-bold text-slate-700 dark:text-slate-300">
+                {activities.reduce((sum, act) => sum + (parseInt(act.annual_target) || 0), 0)}
+              </div>
+              {MONTHS_AR.map((_, monthIdx) => {
+                const monthTotal = activities.reduce((sum, act) => sum + act.monthlyTargets[monthIdx], 0);
+                return (
+                  <div 
+                    key={monthIdx}
+                    className={`border-l border-slate-300 dark:border-slate-600 p-2 text-center text-[11px] font-bold ${
+                      monthIdx % 2 === 0 ? "bg-blue-100/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {monthTotal}
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
 
-              {/* Add Activity Button */}
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
-                <Button
-                  variant="outline"
-                  onClick={addActivity}
-                  className="w-full h-12 border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  إضافة نشاط جديد للمبادرة
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Status Bar */}
+        <div className="bg-slate-200 dark:bg-slate-800 border-t border-slate-300 dark:border-slate-700 px-3 py-1.5 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400 shrink-0">
+          <div className="flex items-center gap-4">
+            <span>الأنشطة: {activities.length}</span>
+            <span>إجمالي المستهدف: {activities.reduce((sum, act) => sum + (parseInt(act.annual_target) || 0), 0)}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            {(() => {
+              const totalAnnual = activities.reduce((sum, act) => sum + (parseInt(act.annual_target) || 0), 0);
+              const totalMonthly = activities.reduce((sum, act) => sum + act.monthlyTargets.reduce((a, b) => a + b, 0), 0);
+              const isBalanced = totalAnnual === totalMonthly && totalAnnual > 0;
+              return (
+                <span className={isBalanced ? "text-emerald-600" : "text-amber-600"}>
+                  {isBalanced ? "✓ التوزيع متوازن" : `⚠ الفرق: ${Math.abs(totalAnnual - totalMonthly)}`}
+                </span>
+              );
+            })()}
+          </div>
         </div>
       </div>
 
-      {/* Manage Columns Dialog */}
       <ManageCustomColumnsDialog
         open={isManageColumnsOpen}
         onOpenChange={setIsManageColumnsOpen}
