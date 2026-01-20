@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -12,54 +11,74 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  ArrowRight,
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
   Plus,
+  Trash2,
+  Users,
+  Save,
+  Merge,
+  SplitSquareHorizontal,
+  FileSpreadsheet,
+  Columns,
+  X,
+  GripVertical,
+  Undo2,
+  Grip,
+  Palette,
+  ArrowRight,
   Calendar,
   Loader2,
-  Save,
-  Trash2,
-  Target,
-  Lightbulb,
-  ChevronDown,
-  ChevronUp,
-  Activity,
-  Users,
-  Building2,
-  BarChart3,
-  Sparkles,
-  GripVertical,
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { getAvailableYears } from "@/lib/utils";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
-
-interface Department {
-  id: string;
-  name: string;
-}
 
 interface Employee {
   id: string;
   user_id: string;
   full_name: string;
-  department_id: string | null;
-  job_role?: string;
+  department_id?: string | null;
+}
+
+interface Department {
+  id: string;
+  name: string;
+  color?: string;
 }
 
 interface StrategicGoal {
@@ -67,42 +86,877 @@ interface StrategicGoal {
   name: string;
   color: string;
   year: number;
+  departments?: Department[];
 }
 
 interface Initiative {
   id: string;
   strategic_goal_id: string;
   name: string;
+  departments?: Department[];
 }
 
-interface ActivityRow {
+interface ColumnDef {
   id: string;
-  strategic_goal_id: string;
-  initiative_id: string;
-  activity_name: string;
-  department_id: string;
-  responsible_employee_id: string;
-  annual_target: string;
-  monthlyTargets: number[];
-  isMonthlyOpen: boolean;
+  label: string;
+  width: string;
+  editable: boolean;
+  removable: boolean;
+  isCustom: boolean;
 }
 
-const MONTHS_AR = [
-  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+const createDefaultColumns = (): ColumnDef[] => [
+  { id: 'action', label: 'إجراء', width: '60px', editable: false, removable: false, isCustom: false },
+  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '7%', editable: true, removable: true, isCustom: false },
+  { id: 'annualTarget', label: 'المستهدف السنوي', width: '7%', editable: true, removable: true, isCustom: false },
+  { id: 'responsibleEmployee', label: 'منفذ النشاط', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'activity', label: 'النشاط', width: '14%', editable: true, removable: true, isCustom: false },
+  { id: 'initiativeOwner', label: 'مالك المبادرة', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'initiative', label: 'المبادرة', width: '14%', editable: true, removable: true, isCustom: false },
+  { id: 'goalOwner', label: 'مالك الهدف', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '14%', editable: true, removable: true, isCustom: false },
+  { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
 ];
 
-const createEmptyActivity = (): ActivityRow => ({
-  id: crypto.randomUUID(),
-  strategic_goal_id: "",
-  initiative_id: "",
-  activity_name: "",
-  department_id: "",
-  responsible_employee_id: "",
-  annual_target: "",
-  monthlyTargets: Array(12).fill(0),
-  isMonthlyOpen: false,
-});
+interface MergedHeader {
+  startCol: number;
+  endCol: number;
+  label: string;
+}
+
+interface MergedCell {
+  startRow: number;
+  endRow: number;
+  startCol: number;
+  endCol: number;
+  value: string;
+}
+
+interface TableRowData {
+  id: string;
+  strategicGoal: string;
+  strategicGoalId?: string;
+  goalOwnerDepartmentIds: string[];
+  initiative: string;
+  initiativeId?: string;
+  initiativeOwnerDepartmentIds: string[];
+  activity: string;
+  responsibleEmployeeId?: string;
+  responsibleEmployeeName?: string;
+  annualTarget: number;
+  monthlyAverage: number;
+  goalRowSpan: number;
+  initiativeRowSpan: number;
+  isGoalMerged: boolean;
+  isInitiativeMerged: boolean;
+  showGoalCell: boolean;
+  showInitiativeCell: boolean;
+  customColumns: Record<string, string>;
+  bgColor?: string;
+}
+
+const PRESET_COLORS = [
+  '#ffffff', '#f8fafc', '#f1f5f9', '#e2e8f0',
+  '#fef2f2', '#fef7c3', '#dcfce7', '#dbeafe',
+  '#f3e8ff', '#fce7f3', '#fed7aa', '#a5f3fc',
+  '#ef4444', '#f59e0b', '#22c55e', '#3b82f6',
+  '#8b5cf6', '#ec4899', '#f97316', '#06b6d4',
+];
+
+interface LocalActivity {
+  id: string;
+  name: string;
+  annualTarget: number;
+  responsibleEmployeeId?: string;
+}
+
+interface LocalInitiative {
+  id: string;
+  name: string;
+  isNew: boolean;
+  existingId?: string;
+  departmentIds: string[];
+  activities: LocalActivity[];
+}
+
+interface LocalGoal {
+  id: string;
+  name: string;
+  isNew: boolean;
+  existingId?: string;
+  departmentIds: string[];
+  initiatives: LocalInitiative[];
+}
+
+// مكون العمود القابل للسحب
+function SortableColumnHeader({ 
+  column, 
+  editingColumn, 
+  setEditingColumn, 
+  updateColumnLabel, 
+  removeColumn,
+  isSelected,
+  toggleHeaderSelection,
+  mergeInfo,
+  onBeforeEdit,
+  onResizeStart,
+  isResizing,
+}: {
+  column: ColumnDef;
+  editingColumn: string | null;
+  setEditingColumn: (id: string | null) => void;
+  updateColumnLabel: (id: string, label: string) => void;
+  removeColumn: (id: string) => void;
+  isSelected: boolean;
+  toggleHeaderSelection: (colId: string) => void;
+  mergeInfo: { isMerged: boolean; isFirst: boolean; colSpan: number; label: string };
+  onBeforeEdit: () => void;
+  onResizeStart: (columnId: string, startX: number) => void;
+  isResizing: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: column.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    width: column.width,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  if (mergeInfo.isMerged && !mergeInfo.isFirst) {
+    return null;
+  }
+
+  return (
+    <TableHead
+      ref={setNodeRef}
+      style={style}
+      colSpan={mergeInfo.isMerged ? mergeInfo.colSpan : 1}
+      className={cn(
+        "text-center border-l font-bold relative group",
+        column.editable && "cursor-pointer hover:bg-muted",
+        isDragging && "bg-primary/20",
+        isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+      )}
+      onDoubleClick={() => column.editable && setEditingColumn(column.id)}
+    >
+      <div className="flex items-center justify-center gap-1">
+        {column.id !== 'action' && column.id !== 'rowNumber' && (
+          <>
+            <div
+              role="button"
+              aria-label="تحديد العمود"
+              tabIndex={-1}
+              className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/30"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleHeaderSelection(column.id);
+              }}
+            />
+            <div
+              role="button"
+              aria-label="تحديد العمود"
+              tabIndex={-1}
+              className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/30"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleHeaderSelection(column.id);
+              }}
+            />
+          </>
+        )}
+
+        {column.id !== 'action' && column.id !== 'rowNumber' && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <GripVertical className="w-3 h-3 text-muted-foreground" />
+          </div>
+        )}
+        
+        {editingColumn === column.id ? (
+          <Input
+            value={mergeInfo.isMerged ? mergeInfo.label : column.label}
+            onChange={(e) => updateColumnLabel(column.id, e.target.value)}
+            onBlur={() => setEditingColumn(null)}
+            onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onFocus={onBeforeEdit}
+            className="h-7 text-center text-sm font-bold border-primary"
+            autoFocus
+          />
+        ) : (
+          <>
+            <span>{mergeInfo.isMerged ? mergeInfo.label : column.label}</span>
+            {column.removable && !mergeInfo.isMerged && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeColumn(column.id);
+                }}
+                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+      
+      {column.id !== 'action' && column.id !== 'rowNumber' && (
+        <div
+          className={cn(
+            "absolute inset-y-0 start-0 w-1 cursor-col-resize hover:bg-primary z-30 transition-colors",
+            isResizing && "bg-primary"
+          )}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onResizeStart(column.id, e.clientX);
+          }}
+        />
+      )}
+    </TableHead>
+  );
+}
+
+// مكون الصف القابل للسحب
+function SortableRow({ 
+  row, 
+  index,
+  columns,
+  selectedRows,
+  selectedCells,
+  toggleRowSelection,
+  toggleCellSelection,
+  getMergeInfo,
+  removeRow,
+  updateCell,
+  updateCustomColumn,
+  onBeforeEdit,
+  draggedCell,
+  startCellDrag,
+  dropCellOnCell,
+  employees,
+  departments,
+  updateResponsibleEmployee,
+  updateGoalDepartments,
+  updateInitiativeDepartments,
+}: {
+  row: TableRowData;
+  index: number;
+  columns: ColumnDef[];
+  selectedRows: Set<string>;
+  selectedCells: Set<string>;
+  toggleRowSelection: (id: string) => void;
+  toggleCellSelection: (rowId: string, colId: string) => void;
+  getMergeInfo: (rowIndex: number, colIndex: number) => {
+    isMerged: boolean;
+    isFirst: boolean;
+    rowSpan: number;
+    colSpan: number;
+    value: string;
+  };
+  removeRow: (id: string) => void;
+  updateCell: (rowId: string, field: keyof TableRowData, value: string | number) => void;
+  updateCustomColumn: (rowId: string, columnId: string, value: string) => void;
+  onBeforeEdit: () => void;
+  draggedCell: { rowId: string; colId: string } | null;
+  startCellDrag: (rowId: string, colId: string) => void;
+  dropCellOnCell: (targetRowId: string, targetColId: string) => void;
+  employees: Employee[];
+  departments: Department[];
+  updateResponsibleEmployee: (rowId: string, employeeId: string, employeeName: string) => void;
+  updateGoalDepartments: (rowId: string, deptIds: string[]) => void;
+  updateInitiativeDepartments: (rowId: string, deptIds: string[]) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: row.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={{
+        ...style,
+        backgroundColor: row.bgColor || undefined,
+      }}
+      className={cn(
+        "hover:bg-muted/30",
+        selectedRows.has(row.id) && "bg-primary/10 hover:bg-primary/15",
+        isDragging && "bg-primary/20",
+        !row.bgColor && "bg-background"
+      )}
+    >
+      {columns.map((col, colIndex) => {
+        const mergeInfo = getMergeInfo(index, colIndex);
+
+        if (mergeInfo.isMerged) {
+          if (!mergeInfo.isFirst) return null;
+
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          return (
+            <TableCell
+              key={`${col.id}-merged-${index}`}
+              rowSpan={mergeInfo.rowSpan}
+              colSpan={mergeInfo.colSpan}
+              className={cn(
+                "border-l text-center text-sm font-medium align-middle relative p-0",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+              )}
+            >
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+
+              <div className="px-2 py-2">
+                {mergeInfo.value || ""}
+              </div>
+            </TableCell>
+          );
+        }
+
+        // عمود رقم الصف
+        if (col.id === 'rowNumber') {
+          return (
+            <TableCell
+              key={col.id}
+              className="text-center border-l text-sm text-muted-foreground font-medium w-10 relative"
+            >
+              <div
+                role="button"
+                aria-label="تحديد الصف"
+                tabIndex={-1}
+                className="absolute inset-0 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleRowSelection(row.id);
+                }}
+              />
+              {index + 1}
+            </TableCell>
+          );
+        }
+
+        // عمود الإجراءات
+        if (col.id === 'action') {
+          return (
+            <TableCell key={col.id} className="text-center p-1 border-l">
+              <div className="flex items-center justify-center gap-1">
+                <div
+                  {...attributes}
+                  {...listeners}
+                  className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-muted rounded"
+                >
+                  <GripVertical className="w-3 h-3 text-muted-foreground" />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeRow(row.id);
+                  }}
+                  className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </TableCell>
+          );
+        }
+
+        // عمود المتوسط الشهري
+        if (col.id === 'monthlyAverage') {
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          return (
+            <TableCell 
+              key={col.id} 
+              className={cn(
+                "border-l bg-muted/30 text-sm font-medium relative p-0",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+              )}
+            >
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-muted/50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCellSelection(row.id, col.id);
+                }}
+              />
+
+              <div className="px-2 py-2 text-center">
+                {row.monthlyAverage.toLocaleString('ar-SA', { maximumFractionDigits: 2 })}
+              </div>
+            </TableCell>
+          );
+        }
+
+        // عمود المستهدف السنوي
+        if (col.id === 'annualTarget') {
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
+          return (
+            <TableCell
+              key={col.id}
+              className={cn(
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+              )}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
+            >
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+
+              <Input
+                type="number"
+                value={row.annualTarget || ""}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCell(row.id, 'annualTarget', parseFloat(e.target.value) || 0);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
+                placeholder="0"
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-center text-sm"
+              />
+            </TableCell>
+          );
+        }
+
+        // عمود النشاط
+        if (col.id === 'activity') {
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
+          return (
+            <TableCell
+              key={col.id}
+              className={cn(
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+              )}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
+            >
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+
+              <Input
+                value={row.activity}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCell(row.id, 'activity', e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
+                placeholder="النشاط..."
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+              />
+            </TableCell>
+          );
+        }
+
+        // عمود الموظف المنفذ
+        if (col.id === 'responsibleEmployee') {
+          return (
+            <TableCell key={col.id} className="border-l p-1">
+              <Select
+                value={row.responsibleEmployeeId || ""}
+                onValueChange={(value) => {
+                  const emp = employees.find(e => e.id === value);
+                  if (emp) {
+                    updateResponsibleEmployee(row.id, emp.id, emp.full_name);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs border-0 bg-transparent hover:bg-muted/50">
+                  <SelectValue placeholder="اختر المنفذ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id} className="text-xs">
+                      {emp.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TableCell>
+          );
+        }
+
+        // عمود مالك المبادرة
+        if (col.id === 'initiativeOwner') {
+          if (!row.showInitiativeCell) return null;
+          return (
+            <TableCell key={col.id} className="border-l p-1" rowSpan={row.initiativeRowSpan}>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-full text-xs justify-start gap-1 hover:bg-muted/50">
+                    {row.initiativeOwnerDepartmentIds.length > 0 ? (
+                      <span className="truncate">{row.initiativeOwnerDepartmentIds.length} قسم</span>
+                    ) : (
+                      <span className="text-muted-foreground">اختر...</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="start">
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {departments.map((dept) => (
+                      <label key={dept.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 p-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={row.initiativeOwnerDepartmentIds.includes(dept.id)}
+                          onChange={() => {
+                            const newIds = row.initiativeOwnerDepartmentIds.includes(dept.id)
+                              ? row.initiativeOwnerDepartmentIds.filter(id => id !== dept.id)
+                              : [...row.initiativeOwnerDepartmentIds, dept.id];
+                            updateInitiativeDepartments(row.id, newIds);
+                          }}
+                          className="rounded"
+                        />
+                        {dept.name}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </TableCell>
+          );
+        }
+
+        // عمود مالك الهدف
+        if (col.id === 'goalOwner') {
+          if (!row.showGoalCell) return null;
+          return (
+            <TableCell key={col.id} className="border-l p-1" rowSpan={row.goalRowSpan}>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-full text-xs justify-start gap-1 hover:bg-muted/50">
+                    {row.goalOwnerDepartmentIds.length > 0 ? (
+                      <span className="truncate">{row.goalOwnerDepartmentIds.length} قسم</span>
+                    ) : (
+                      <span className="text-muted-foreground">اختر...</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="start">
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {departments.map((dept) => (
+                      <label key={dept.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 p-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={row.goalOwnerDepartmentIds.includes(dept.id)}
+                          onChange={() => {
+                            const newIds = row.goalOwnerDepartmentIds.includes(dept.id)
+                              ? row.goalOwnerDepartmentIds.filter(id => id !== dept.id)
+                              : [...row.goalOwnerDepartmentIds, dept.id];
+                            updateGoalDepartments(row.id, newIds);
+                          }}
+                          className="rounded"
+                        />
+                        {dept.name}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </TableCell>
+          );
+        }
+
+        // عمود المبادرة
+        if (col.id === 'initiative') {
+          if (!row.showInitiativeCell) return null;
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
+          return (
+            <TableCell
+              key={col.id}
+              className={cn(
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+              )}
+              rowSpan={row.initiativeRowSpan}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
+            >
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+
+              <Input
+                value={row.initiative}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCell(row.id, 'initiative', e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
+                placeholder="المبادرة..."
+                list="initiatives-list"
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+              />
+            </TableCell>
+          );
+        }
+
+        // عمود الهدف الاستراتيجي
+        if (col.id === 'strategicGoal') {
+          if (!row.showGoalCell) return null;
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
+          return (
+            <TableCell
+              key={col.id}
+              className={cn(
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+              )}
+              rowSpan={row.goalRowSpan}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
+            >
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+
+              <Input
+                value={row.strategicGoal}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCell(row.id, 'strategicGoal', e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
+                placeholder="الهدف الاستراتيجي..."
+                list="goals-list"
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+              />
+            </TableCell>
+          );
+        }
+
+        // الأعمدة المخصصة
+        if (col.isCustom) {
+          const isSelected = selectedCells.has(`${row.id}:${col.id}`);
+          const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
+          const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
+          return (
+            <TableCell
+              key={col.id}
+              className={cn(
+                "border-l p-0 relative group/cell",
+                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
+                isDragSource && "opacity-50 bg-primary/30",
+                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+              )}
+              onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
+            >
+              <div
+                className="absolute top-0 end-0 w-5 h-5 z-20 cursor-grab active:cursor-grabbing opacity-0 group-hover/cell:opacity-100 transition-opacity bg-muted/80 rounded-bl flex items-center justify-center"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  startCellDrag(row.id, col.id);
+                }}
+              >
+                <Grip className="w-3 h-3 text-muted-foreground" />
+              </div>
+              
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+              <div
+                role="button"
+                aria-label="تحديد الخلية"
+                tabIndex={-1}
+                className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/20"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
+              />
+
+              <Input
+                value={row.customColumns[col.id] || ""}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  updateCustomColumn(row.id, col.id, e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
+                placeholder={col.label}
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+              />
+            </TableCell>
+          );
+        }
+
+        return null;
+      })}
+    </TableRow>
+  );
+}
 
 const AddOperationalPlan = () => {
   const navigate = useNavigate();
@@ -111,32 +965,81 @@ const AddOperationalPlan = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [strategicGoals, setStrategicGoals] = useState<StrategicGoal[]>([]);
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
 
   const [year, setYear] = useState(new Date().getFullYear());
-  const [activities, setActivities] = useState<ActivityRow[]>([createEmptyActivity()]);
+  const [rows, setRows] = useState<TableRowData[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [columns, setColumns] = useState<ColumnDef[]>(createDefaultColumns);
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
+  const [mergedCells, setMergedCells] = useState<MergedCell[]>([]);
+  const [selectedHeaders, setSelectedHeaders] = useState<Set<string>>(new Set());
+  const [mergedHeaders, setMergedHeaders] = useState<MergedHeader[]>([]);
+  const [editingColumn, setEditingColumn] = useState<string | null>(null);
+  const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
+  const [draggedCell, setDraggedCell] = useState<{ rowId: string; colId: string } | null>(null);
+  const [resizingColumn, setResizingColumn] = useState<{ columnId: string; startX: number; startWidth: number } | null>(null);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  // نظام التراجع
+  interface UndoState {
+    rows: TableRowData[];
+    mergedCells: MergedCell[];
+    mergedHeaders: MergedHeader[];
+    columns: ColumnDef[];
+  }
+  const [undoStack, setUndoStack] = useState<UndoState[]>([]);
+  const MAX_UNDO = 10;
 
-  // Dialog states for adding new goal/initiative
-  const [showNewGoalDialog, setShowNewGoalDialog] = useState(false);
-  const [showNewInitiativeDialog, setShowNewInitiativeDialog] = useState(false);
-  const [newGoalName, setNewGoalName] = useState("");
-  const [newInitiativeName, setNewInitiativeName] = useState("");
-  const [pendingActivityId, setPendingActivityId] = useState<string | null>(null);
-  const [pendingGoalId, setPendingGoalId] = useState<string | null>(null);
-  const [isAddingGoal, setIsAddingGoal] = useState(false);
-  const [isAddingInitiative, setIsAddingInitiative] = useState(false);
+  const saveToUndo = useCallback(() => {
+    setUndoStack(prev => {
+      const newStack = [...prev, {
+        rows: JSON.parse(JSON.stringify(rows)),
+        mergedCells: JSON.parse(JSON.stringify(mergedCells)),
+        mergedHeaders: JSON.parse(JSON.stringify(mergedHeaders)),
+        columns: JSON.parse(JSON.stringify(columns)),
+      }];
+      if (newStack.length > MAX_UNDO) {
+        return newStack.slice(-MAX_UNDO);
+      }
+      return newStack;
+    });
+  }, [rows, mergedCells, mergedHeaders, columns]);
+
+  const undo = useCallback(() => {
+    if (undoStack.length === 0) return;
+    
+    const lastState = undoStack[undoStack.length - 1];
+    setRows(lastState.rows);
+    setMergedCells(lastState.mergedCells);
+    setMergedHeaders(lastState.mergedHeaders);
+    setColumns(lastState.columns);
+    setUndoStack(prev => prev.slice(0, -1));
+    setSelectedCells(new Set());
+    setSelectedHeaders(new Set());
+    setSelectedRows(new Set());
+  }, [undoStack]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [departmentsRes, employeesRes, goalsRes, initiativesRes] = await Promise.all([
-          supabase.from("departments").select("id, name").order("name"),
-          supabase.from("employees").select("id, user_id, full_name, department_id, job_role").eq("status", "active").order("full_name"),
+          supabase.from("departments").select("id, name, color").order("name"),
+          supabase.from("employees").select("id, user_id, full_name, department_id").eq("status", "active").order("full_name"),
           supabase.from("strategic_goals").select("id, name, color, year").eq("year", year).order("display_order"),
           supabase.from("initiatives").select("id, strategic_goal_id, name").order("display_order"),
         ]);
@@ -165,194 +1068,677 @@ const AddOperationalPlan = () => {
     fetchData();
   }, [year]);
 
-  const getFilteredInitiatives = (goalId: string) => {
-    if (!goalId) return [];
-    return initiatives.filter(init => init.strategic_goal_id === goalId);
-  };
+  const generateId = () => Math.random().toString(36).substr(2, 9);
 
-  const getFilteredEmployees = (departmentId: string) => {
-    if (!departmentId) return employees;
-    return employees.filter(emp => emp.department_id === departmentId);
-  };
-
-  const updateActivity = (id: string, updates: Partial<ActivityRow>) => {
-    setActivities(prev => prev.map(act => 
-      act.id === id ? { ...act, ...updates } : act
+  const updateColumnLabel = useCallback((columnId: string, newLabel: string) => {
+    setColumns(prev => prev.map(col => 
+      col.id === columnId ? { ...col, label: newLabel } : col
     ));
-  };
+  }, []);
 
-  const addActivity = () => {
-    setActivities(prev => [...prev, createEmptyActivity()]);
-  };
+  const addColumn = useCallback(() => {
+    const newColumnId = `custom_${generateId()}`;
+    const newColumn: ColumnDef = {
+      id: newColumnId,
+      label: 'عمود جديد',
+      width: '15%',
+      editable: true,
+      removable: true,
+      isCustom: true,
+    };
+    setColumns(prev => {
+      const strategicGoalIndex = prev.findIndex(c => c.id === 'strategicGoal');
+      const newColumns = [...prev];
+      newColumns.splice(strategicGoalIndex, 0, newColumn);
+      return newColumns;
+    });
+    setRows(prev => prev.map(row => ({
+      ...row,
+      customColumns: { ...row.customColumns, [newColumnId]: '' }
+    })));
+  }, []);
 
-  const removeActivity = (id: string) => {
-    if (activities.length > 1) {
-      setActivities(prev => prev.filter(act => act.id !== id));
+  const removeColumn = useCallback((columnId: string) => {
+    saveToUndo();
+    setColumns(prev => prev.filter(col => col.id !== columnId));
+    setRows(prev => prev.map(row => {
+      const newCustomColumns = { ...row.customColumns };
+      delete newCustomColumns[columnId];
+      return { ...row, customColumns: newCustomColumns };
+    }));
+  }, [saveToUndo]);
+
+  const updateCustomColumn = useCallback((rowId: string, columnId: string, value: string) => {
+    setRows(prev => prev.map(row => 
+      row.id === rowId 
+        ? { ...row, customColumns: { ...row.customColumns, [columnId]: value } }
+        : row
+    ));
+  }, []);
+
+  const handleResizeStart = useCallback((columnId: string, startX: number) => {
+    const column = columns.find(c => c.id === columnId);
+    if (!column) return;
+    
+    let startWidth = 100;
+    if (column.width.endsWith('px')) {
+      startWidth = parseInt(column.width);
+    } else if (column.width.endsWith('%')) {
+      startWidth = (parseInt(column.width) / 100) * 1000;
     }
-  };
+    
+    saveToUndo();
+    setResizingColumn({ columnId, startX, startWidth });
+  }, [columns, saveToUndo]);
 
-  const distributeEvenly = (activityId: string) => {
-    const activity = activities.find(a => a.id === activityId);
-    if (!activity) return;
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!resizingColumn) return;
     
-    const target = parseInt(activity.annual_target) || 0;
-    const perMonth = Math.floor(target / 12);
-    const remainder = target % 12;
+    const diff = resizingColumn.startX - e.clientX;
+    const newWidth = Math.max(50, resizingColumn.startWidth + diff);
     
-    const newTargets = Array(12).fill(perMonth);
-    for (let i = 0; i < remainder; i++) {
-      newTargets[i]++;
+    setColumns(prev => prev.map(col => 
+      col.id === resizingColumn.columnId 
+        ? { ...col, width: `${newWidth}px` }
+        : col
+    ));
+  }, [resizingColumn]);
+
+  const handleResizeEnd = useCallback(() => {
+    setResizingColumn(null);
+  }, []);
+
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove);
+      window.addEventListener('mouseup', handleResizeEnd);
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove);
+        window.removeEventListener('mouseup', handleResizeEnd);
+      };
     }
-    
-    updateActivity(activityId, { monthlyTargets: newTargets });
-  };
+  }, [resizingColumn, handleResizeMove, handleResizeEnd]);
 
-  const toggleMonthlySection = (id: string) => {
-    updateActivity(id, { isMonthlyOpen: !activities.find(a => a.id === id)?.isMonthlyOpen });
-  };
+  const applyColorToSelectedRows = useCallback((color: string) => {
+    if (selectedRows.size === 0) return;
+    saveToUndo();
+    setRows(prev => prev.map(row => 
+      selectedRows.has(row.id) ? { ...row, bgColor: color } : row
+    ));
+  }, [selectedRows, saveToUndo]);
 
-  const handleAddNewGoal = async () => {
-    if (!newGoalName.trim()) return;
-    
-    setIsAddingGoal(true);
-    try {
-      const { data: newGoal, error } = await supabase
-        .from("strategic_goals")
-        .insert({
-          name: newGoalName.trim(),
-          color: "#3d9aa8",
-          year: year,
-        })
-        .select()
-        .single();
+  const hasSelection = selectedRows.size > 0 || selectedCells.size > 0 || selectedHeaders.size > 0;
 
-      if (error) throw error;
-
-      setStrategicGoals(prev => [...prev, newGoal]);
-      
-      if (pendingActivityId) {
-        updateActivity(pendingActivityId, { strategic_goal_id: newGoal.id, initiative_id: "" });
-      }
-
-      toast({ title: "تم إضافة الهدف الاستراتيجي بنجاح" });
-      setShowNewGoalDialog(false);
-      setNewGoalName("");
-      setPendingActivityId(null);
-    } catch (error: any) {
-      toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ أثناء إضافة الهدف",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAddingGoal(false);
-    }
-  };
-
-  const handleAddNewInitiative = async () => {
-    if (!newInitiativeName.trim() || !pendingGoalId) return;
-    
-    setIsAddingInitiative(true);
-    try {
-      const { data: newInit, error } = await supabase
-        .from("initiatives")
-        .insert({
-          strategic_goal_id: pendingGoalId,
-          name: newInitiativeName.trim(),
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setInitiatives(prev => [...prev, newInit]);
-      
-      if (pendingActivityId) {
-        updateActivity(pendingActivityId, { initiative_id: newInit.id });
-      }
-
-      toast({ title: "تم إضافة المبادرة بنجاح" });
-      setShowNewInitiativeDialog(false);
-      setNewInitiativeName("");
-      setPendingActivityId(null);
-      setPendingGoalId(null);
-    } catch (error: any) {
-      toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ أثناء إضافة المبادرة",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAddingInitiative(false);
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    activities.forEach((activity, index) => {
-      if (!activity.strategic_goal_id) {
-        newErrors[`goal_${index}`] = "مطلوب";
-      }
-      if (!activity.activity_name.trim()) {
-        newErrors[`activity_${index}`] = "مطلوب";
-      }
-      if (!activity.annual_target || parseInt(activity.annual_target) <= 0) {
-        newErrors[`annual_target_${index}`] = "مطلوب";
-      }
+  const addRow = useCallback(() => {
+    const customColumnsInit: Record<string, string> = {};
+    columns.filter(c => c.isCustom).forEach(c => {
+      customColumnsInit[c.id] = '';
     });
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const newRow: TableRowData = {
+      id: generateId(),
+      strategicGoal: "",
+      goalOwnerDepartmentIds: [],
+      initiative: "",
+      initiativeOwnerDepartmentIds: [],
+      activity: "",
+      responsibleEmployeeId: undefined,
+      responsibleEmployeeName: undefined,
+      annualTarget: 0,
+      monthlyAverage: 0,
+      goalRowSpan: 1,
+      initiativeRowSpan: 1,
+      isGoalMerged: false,
+      isInitiativeMerged: false,
+      showGoalCell: true,
+      showInitiativeCell: true,
+      customColumns: customColumnsInit,
+    };
+    setRows(prev => [...prev, newRow]);
+  }, [columns]);
+
+  const removeRow = useCallback((rowId: string) => {
+    saveToUndo();
+    setRows(prev => {
+      const rowToRemove = prev.find(r => r.id === rowId);
+      if (!rowToRemove) return prev;
+      return recalculateMerges(prev.filter(r => r.id !== rowId));
+    });
+    setSelectedRows(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(rowId);
+      return newSet;
+    });
+  }, [saveToUndo]);
+
+  const updateCell = useCallback((rowId: string, field: keyof TableRowData, value: string | number) => {
+    setRows(prev => prev.map(row => {
+      if (row.id === rowId) {
+        const updatedRow = { ...row, [field]: value };
+        if (field === 'annualTarget') {
+          updatedRow.monthlyAverage = Math.round((value as number) / 12 * 100) / 100;
+        }
+        return updatedRow;
+      }
+      return row;
+    }));
+  }, []);
+
+  const updateResponsibleEmployee = useCallback((rowId: string, employeeId: string, employeeName: string) => {
+    setRows(prev => prev.map(row => 
+      row.id === rowId 
+        ? { ...row, responsibleEmployeeId: employeeId, responsibleEmployeeName: employeeName }
+        : row
+    ));
+  }, []);
+
+  const updateGoalDepartments = useCallback((rowId: string, deptIds: string[]) => {
+    setRows(prev => prev.map(row => 
+      row.id === rowId ? { ...row, goalOwnerDepartmentIds: deptIds } : row
+    ));
+  }, []);
+
+  const updateInitiativeDepartments = useCallback((rowId: string, deptIds: string[]) => {
+    setRows(prev => prev.map(row => 
+      row.id === rowId ? { ...row, initiativeOwnerDepartmentIds: deptIds } : row
+    ));
+  }, []);
+
+  const saveBeforeEdit = useCallback(() => {
+    saveToUndo();
+  }, [saveToUndo]);
+
+  const startCellDrag = useCallback((rowId: string, colId: string) => {
+    setDraggedCell({ rowId, colId });
+  }, []);
+
+  const dropCellOnCell = useCallback((targetRowId: string, targetColId: string) => {
+    if (!draggedCell || (draggedCell.rowId === targetRowId && draggedCell.colId === targetColId)) {
+      setDraggedCell(null);
+      return;
+    }
+
+    saveToUndo();
+
+    setRows(prev => {
+      const newRows = [...prev];
+      const sourceRow = newRows.find(r => r.id === draggedCell.rowId);
+      const targetRow = newRows.find(r => r.id === targetRowId);
+
+      if (!sourceRow || !targetRow) return prev;
+
+      const sourceColId = draggedCell.colId;
+      
+      const getFieldValue = (row: TableRowData, colId: string): string | number => {
+        if (colId === 'annualTarget') return row.annualTarget;
+        if (colId === 'activity') return row.activity;
+        if (colId === 'initiative') return row.initiative;
+        if (colId === 'strategicGoal') return row.strategicGoal;
+        if (row.customColumns[colId] !== undefined) return row.customColumns[colId];
+        return '';
+      };
+
+      const setFieldValue = (row: TableRowData, colId: string, value: string | number) => {
+        if (colId === 'annualTarget') row.annualTarget = typeof value === 'number' ? value : parseFloat(value) || 0;
+        else if (colId === 'activity') row.activity = String(value);
+        else if (colId === 'initiative') row.initiative = String(value);
+        else if (colId === 'strategicGoal') row.strategicGoal = String(value);
+        else if (row.customColumns[colId] !== undefined || columns.find(c => c.id === colId)?.isCustom) {
+          row.customColumns[colId] = String(value);
+        }
+      };
+
+      const sourceValue = getFieldValue(sourceRow, sourceColId);
+      const targetValue = getFieldValue(targetRow, targetColId);
+
+      setFieldValue(sourceRow, sourceColId, targetValue);
+      setFieldValue(targetRow, targetColId, sourceValue);
+
+      if (sourceColId === 'annualTarget') {
+        sourceRow.monthlyAverage = Math.round(sourceRow.annualTarget / 12 * 100) / 100;
+      }
+      if (targetColId === 'annualTarget') {
+        targetRow.monthlyAverage = Math.round(targetRow.annualTarget / 12 * 100) / 100;
+      }
+
+      return newRows;
+    });
+
+    setDraggedCell(null);
+  }, [draggedCell, columns, saveToUndo]);
+
+  const toggleRowSelection = useCallback((rowId: string) => {
+    setSelectedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowId)) {
+        newSet.delete(rowId);
+      } else {
+        newSet.add(rowId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleCellSelection = useCallback((rowId: string, colId: string) => {
+    const key = `${rowId}:${colId}`;
+    setSelectedCells(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleHeaderSelection = useCallback((colId: string) => {
+    setSelectedHeaders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(colId)) {
+        newSet.delete(colId);
+      } else {
+        newSet.add(colId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const mergeSelectedHeaders = useCallback(() => {
+    if (selectedHeaders.size < 2) return;
+
+    const selectedIndices = Array.from(selectedHeaders)
+      .map(id => columns.findIndex(c => c.id === id))
+      .filter(i => i !== -1)
+      .sort((a, b) => a - b);
+
+    if (selectedIndices.length < 2) return;
+
+    for (let i = 1; i < selectedIndices.length; i++) {
+      if (selectedIndices[i] !== selectedIndices[i - 1] + 1) {
+        return;
+      }
+    }
+
+    const startCol = selectedIndices[0];
+    const endCol = selectedIndices[selectedIndices.length - 1];
+    const label = columns[startCol].label;
+
+    const newMerge: MergedHeader = {
+      startCol,
+      endCol,
+      label,
+    };
+
+    setMergedHeaders(prev => [...prev, newMerge]);
+    setSelectedHeaders(new Set());
+  }, [selectedHeaders, columns]);
+
+  const unmergeSelectedHeaders = useCallback(() => {
+    if (selectedHeaders.size === 0) return;
+
+    const selectedIndices = Array.from(selectedHeaders)
+      .map(id => columns.findIndex(c => c.id === id))
+      .filter(i => i !== -1);
+
+    setMergedHeaders(prev => prev.filter(merge => {
+      return !selectedIndices.some(idx => 
+        idx >= merge.startCol && idx <= merge.endCol
+      );
+    }));
+    setSelectedHeaders(new Set());
+  }, [selectedHeaders, columns]);
+
+  const getHeaderMergeInfo = useCallback((colIndex: number) => {
+    for (const merge of mergedHeaders) {
+      if (colIndex >= merge.startCol && colIndex <= merge.endCol) {
+        const isFirst = colIndex === merge.startCol;
+        return {
+          isMerged: true,
+          isFirst,
+          colSpan: merge.endCol - merge.startCol + 1,
+          label: merge.label,
+        };
+      }
+    }
+    return { isMerged: false, isFirst: false, colSpan: 1, label: '' };
+  }, [mergedHeaders]);
+
+  const mergeSelectedCells = useCallback(() => {
+    if (selectedCells.size < 2) return;
+
+    const cells = Array.from(selectedCells).map(key => {
+      const [rowId, colId] = key.split(':');
+      const rowIndex = rows.findIndex(r => r.id === rowId);
+      const colIndex = columns.findIndex(c => c.id === colId);
+      return { rowId, colId, rowIndex, colIndex };
+    }).filter(c => c.rowIndex !== -1 && c.colIndex !== -1);
+
+    if (cells.length < 2) return;
+
+    const minRow = Math.min(...cells.map(c => c.rowIndex));
+    const maxRow = Math.max(...cells.map(c => c.rowIndex));
+    const minCol = Math.min(...cells.map(c => c.colIndex));
+    const maxCol = Math.max(...cells.map(c => c.colIndex));
+
+    const expectedCount = (maxRow - minRow + 1) * (maxCol - minCol + 1);
+    if (cells.length !== expectedCount) {
+      return;
+    }
+
+    const firstCell = cells[0];
+    const firstRow = rows[firstCell.rowIndex];
+    const firstColId = columns[firstCell.colIndex].id;
+    let value = '';
+    
+    if (firstColId === 'strategicGoal') value = firstRow.strategicGoal;
+    else if (firstColId === 'initiative') value = firstRow.initiative;
+    else if (firstColId === 'activity') value = firstRow.activity;
+    else if (firstColId === 'annualTarget') value = firstRow.annualTarget.toString();
+    else if (firstRow.customColumns[firstColId]) value = firstRow.customColumns[firstColId];
+
+    const newMerge: MergedCell = {
+      startRow: minRow,
+      endRow: maxRow,
+      startCol: minCol,
+      endCol: maxCol,
+      value,
+    };
+
+    saveToUndo();
+    setMergedCells(prev => [...prev, newMerge]);
+    setSelectedCells(new Set());
+  }, [selectedCells, rows, columns, saveToUndo]);
+
+  const unmergeSelectedCells = useCallback(() => {
+    if (selectedCells.size === 0) return;
+
+    const cells = Array.from(selectedCells).map(key => {
+      const [rowId, colId] = key.split(':');
+      const rowIndex = rows.findIndex(r => r.id === rowId);
+      const colIndex = columns.findIndex(c => c.id === colId);
+      return { rowIndex, colIndex };
+    });
+
+    saveToUndo();
+    setMergedCells(prev => prev.filter(merge => {
+      return !cells.some(cell => 
+        cell.rowIndex >= merge.startRow && 
+        cell.rowIndex <= merge.endRow &&
+        cell.colIndex >= merge.startCol && 
+        cell.colIndex <= merge.endCol
+      );
+    }));
+    setSelectedCells(new Set());
+  }, [selectedCells, rows, columns, saveToUndo]);
+
+  const getMergeInfo = useCallback((rowIndex: number, colIndex: number) => {
+    for (const merge of mergedCells) {
+      if (rowIndex >= merge.startRow && rowIndex <= merge.endRow &&
+          colIndex >= merge.startCol && colIndex <= merge.endCol) {
+        const isFirst = rowIndex === merge.startRow && colIndex === merge.startCol;
+        return {
+          isMerged: true,
+          isFirst,
+          rowSpan: merge.endRow - merge.startRow + 1,
+          colSpan: merge.endCol - merge.startCol + 1,
+          value: merge.value,
+        };
+      }
+    }
+    return { isMerged: false, isFirst: false, rowSpan: 1, colSpan: 1, value: '' };
+  }, [mergedCells]);
+
+  const recalculateMerges = (currentRows: TableRowData[]): TableRowData[] => {
+    if (currentRows.length === 0) return currentRows;
+
+    const result = [...currentRows];
+    
+    result.forEach(row => {
+      row.goalRowSpan = 1;
+      row.initiativeRowSpan = 1;
+      row.showGoalCell = true;
+      row.showInitiativeCell = true;
+    });
+
+    let i = 0;
+    while (i < result.length) {
+      if (result[i].isGoalMerged && result[i].strategicGoal) {
+        let span = 1;
+        let j = i + 1;
+        while (j < result.length && result[j].isGoalMerged && result[j].strategicGoal === result[i].strategicGoal) {
+          result[j].showGoalCell = false;
+          span++;
+          j++;
+        }
+        result[i].goalRowSpan = span;
+        i = j;
+      } else {
+        i++;
+      }
+    }
+
+    i = 0;
+    while (i < result.length) {
+      if (result[i].isInitiativeMerged && result[i].initiative) {
+        let span = 1;
+        let j = i + 1;
+        while (j < result.length && 
+               result[j].isInitiativeMerged && 
+               result[j].initiative === result[i].initiative &&
+               result[j].strategicGoal === result[i].strategicGoal) {
+          result[j].showInitiativeCell = false;
+          span++;
+          j++;
+        }
+        result[i].initiativeRowSpan = span;
+        i = j;
+      } else {
+        i++;
+      }
+    }
+
+    return result;
+  };
+
+  const handleColumnDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveColumnId(null);
+
+    if (over && active.id !== over.id) {
+      saveToUndo();
+      setColumns((items) => {
+        const oldIndex = items.findIndex(i => i.id === active.id);
+        const newIndex = items.findIndex(i => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const handleRowDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveRowId(null);
+
+    if (over && active.id !== over.id) {
+      saveToUndo();
+      setRows((items) => {
+        const oldIndex = items.findIndex(i => i.id === active.id);
+        const newIndex = items.findIndex(i => i.id === over.id);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        return recalculateMerges(newItems);
+      });
+    }
+  };
+
+  const convertRowsToGoals = (): LocalGoal[] => {
+    const goalsMap = new Map<string, LocalGoal>();
+
+    rows.forEach(row => {
+      if (!row.strategicGoal || !row.initiative || !row.activity) return;
+
+      const goalKey = row.strategicGoal;
+      
+      if (!goalsMap.has(goalKey)) {
+        const existingGoal = strategicGoals.find(g => g.name === row.strategicGoal);
+        goalsMap.set(goalKey, {
+          id: generateId(),
+          name: row.strategicGoal,
+          isNew: !existingGoal,
+          existingId: existingGoal?.id,
+          departmentIds: row.goalOwnerDepartmentIds || [],
+          initiatives: [],
+        });
+      }
+
+      const goal = goalsMap.get(goalKey)!;
+      
+      if (goal.departmentIds.length === 0 && row.goalOwnerDepartmentIds.length > 0) {
+        goal.departmentIds = row.goalOwnerDepartmentIds;
+      }
+      
+      let initiative = goal.initiatives.find(i => i.name === row.initiative);
+      if (!initiative) {
+        const existingInitiative = initiatives.find(i => 
+          i.name === row.initiative && 
+          (goal.existingId ? i.strategic_goal_id === goal.existingId : true)
+        );
+        initiative = {
+          id: generateId(),
+          name: row.initiative,
+          isNew: !existingInitiative,
+          existingId: existingInitiative?.id,
+          departmentIds: row.initiativeOwnerDepartmentIds || [],
+          activities: [],
+        };
+        goal.initiatives.push(initiative);
+      }
+      
+      if (initiative.departmentIds.length === 0 && row.initiativeOwnerDepartmentIds.length > 0) {
+        initiative.departmentIds = row.initiativeOwnerDepartmentIds;
+      }
+
+      initiative.activities.push({
+        id: generateId(),
+        name: row.activity,
+        annualTarget: row.annualTarget,
+        responsibleEmployeeId: row.responsibleEmployeeId,
+      });
+    });
+
+    return Array.from(goalsMap.values());
+  };
+
+  const canSubmit = () => {
+    if (rows.length === 0) return false;
+    
+    return rows.some(row => 
+      row.strategicGoal.trim() && 
+      row.initiative.trim() && 
+      row.activity.trim() && 
+      row.annualTarget > 0
+    );
   };
 
   const handleSubmit = async () => {
-    if (!validateForm() || !authUser) return;
+    if (!canSubmit() || !authUser) return;
 
     setIsLoading(true);
     try {
-      for (const activity of activities) {
-        const goal = strategicGoals.find(g => g.id === activity.strategic_goal_id);
-        const init = initiatives.find(i => i.id === activity.initiative_id);
+      const goals = convertRowsToGoals();
 
-        const { data: plan, error: planError } = await supabase
-          .from("operational_plans")
-          .insert({
-            user_id: authUser.id,
-            activity_name: activity.activity_name.trim(),
-            strategic_goal: goal?.name || "",
-            strategic_goal_id: activity.strategic_goal_id || null,
-            initiative: init?.name || null,
-            initiative_id: activity.initiative_id || null,
-            annual_target: parseInt(activity.annual_target),
-            year: year,
-            responsible_employee_id: activity.responsible_employee_id || null,
-            status: "active",
-          })
-          .select()
-          .single();
+      for (const goal of goals) {
+        let goalId = goal.existingId;
 
-        if (planError) throw planError;
+        // إنشاء الهدف الاستراتيجي إذا كان جديداً
+        if (goal.isNew) {
+          const { data: newGoal, error: goalError } = await supabase
+            .from("strategic_goals")
+            .insert({ name: goal.name, year, color: "#3d9aa8" })
+            .select()
+            .single();
 
-        const monthlyData = activity.monthlyTargets.map((target, index) => ({
-          operational_plan_id: plan.id,
-          month: index + 1,
-          monthly_target: target,
-        }));
+          if (goalError) throw goalError;
+          goalId = newGoal.id;
 
-        const { error: monthsError } = await supabase
-          .from("operational_plan_months")
-          .insert(monthlyData);
+          // إضافة الأقسام المالكة
+          if (goal.departmentIds.length > 0) {
+            await supabase
+              .from("strategic_goal_departments")
+              .insert(goal.departmentIds.map(deptId => ({
+                strategic_goal_id: goalId,
+                department_id: deptId,
+              })));
+          }
+        }
 
-        if (monthsError) throw monthsError;
+        for (const init of goal.initiatives) {
+          let initId = init.existingId;
+
+          // إنشاء المبادرة إذا كانت جديدة
+          if (init.isNew) {
+            const { data: newInit, error: initError } = await supabase
+              .from("initiatives")
+              .insert({ name: init.name, strategic_goal_id: goalId })
+              .select()
+              .single();
+
+            if (initError) throw initError;
+            initId = newInit.id;
+
+            // إضافة الأقسام المالكة
+            if (init.departmentIds.length > 0) {
+              await supabase
+                .from("initiative_departments")
+                .insert(init.departmentIds.map(deptId => ({
+                  initiative_id: initId,
+                  department_id: deptId,
+                })));
+            }
+          }
+
+          // إنشاء الأنشطة
+          for (const activity of init.activities) {
+            const { data: plan, error: planError } = await supabase
+              .from("operational_plans")
+              .insert({
+                user_id: authUser.id,
+                activity_name: activity.name,
+                strategic_goal: goal.name,
+                strategic_goal_id: goalId,
+                initiative: init.name,
+                initiative_id: initId,
+                annual_target: activity.annualTarget,
+                year,
+                responsible_employee_id: activity.responsibleEmployeeId || null,
+                status: "active",
+              })
+              .select()
+              .single();
+
+            if (planError) throw planError;
+
+            // إنشاء المستهدفات الشهرية
+            const monthlyData = Array.from({ length: 12 }, (_, index) => ({
+              operational_plan_id: plan.id,
+              month: index + 1,
+              monthly_target: Math.round(activity.annualTarget / 12),
+            }));
+
+            const { error: monthsError } = await supabase
+              .from("operational_plan_months")
+              .insert(monthlyData);
+
+            if (monthsError) throw monthsError;
+          }
+        }
       }
 
-      toast({ title: "تم إضافة الخطة التشغيلية بنجاح" });
+      toast({ title: "تم إضافة الخطط التشغيلية بنجاح" });
       navigate("/operational-plans");
     } catch (error: any) {
       toast({
         title: "خطأ",
-        description: error.message || "حدث خطأ أثناء إضافة الخطة",
+        description: error.message || "حدث خطأ أثناء إضافة الخطط",
         variant: "destructive",
       });
     } finally {
@@ -360,7 +1746,36 @@ const AddOperationalPlan = () => {
     }
   };
 
-  const getMonthlySum = (targets: number[]) => targets.reduce((a, b) => a + b, 0);
+  const addMultipleRows = (count: number) => {
+    const customColumnsInit: Record<string, string> = {};
+    columns.filter(c => c.isCustom).forEach(c => {
+      customColumnsInit[c.id] = '';
+    });
+
+    const newRows: TableRowData[] = Array.from({ length: count }, () => ({
+      id: generateId(),
+      strategicGoal: "",
+      goalOwnerDepartmentIds: [],
+      initiative: "",
+      initiativeOwnerDepartmentIds: [],
+      activity: "",
+      responsibleEmployeeId: undefined,
+      responsibleEmployeeName: undefined,
+      annualTarget: 0,
+      monthlyAverage: 0,
+      goalRowSpan: 1,
+      initiativeRowSpan: 1,
+      isGoalMerged: false,
+      isInitiativeMerged: false,
+      showGoalCell: true,
+      showInitiativeCell: true,
+      customColumns: { ...customColumnsInit },
+    }));
+    setRows(prev => [...prev, ...newRows]);
+  };
+
+  const columnIds = columns.map(c => c.id);
+  const rowIds = rows.map(r => r.id);
 
   if (loadingData) {
     return (
@@ -379,47 +1794,42 @@ const AddOperationalPlan = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" dir="rtl">
-        
+      <div className="min-h-screen bg-background" dir="rtl">
         {/* Header */}
-        <div className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
-          <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b">
+          <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => navigate("/operational-plans")}
-                  className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="rounded-xl hover:bg-muted"
                 >
                   <ArrowRight className="w-5 h-5" />
                 </Button>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                    <BarChart3 className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <FileSpreadsheet className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">إضافة خطة تشغيلية</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">أضف أنشطة جديدة للخطة التشغيلية</p>
+                    <h1 className="text-xl font-bold">إضافة خطط تشغيلية</h1>
+                    <p className="text-sm text-muted-foreground">اسحب الأعمدة والصفوف لإعادة ترتيبها - انقر مزدوج على العناوين لتعديلها</p>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                {/* Year Selector */}
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                  <Calendar className="w-4 h-4 text-slate-500" />
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-xl">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
                   <Select
                     value={year.toString()}
-                    onValueChange={(v) => {
-                      setYear(parseInt(v));
-                      setActivities([createEmptyActivity()]);
-                    }}
+                    onValueChange={(v) => setYear(parseInt(v))}
                   >
                     <SelectTrigger className="h-8 w-24 border-0 bg-transparent text-sm font-medium">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-background">
+                    <SelectContent>
                       {getAvailableYears().map((y) => (
                         <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
                       ))}
@@ -431,442 +1841,316 @@ const AddOperationalPlan = () => {
                   variant="outline"
                   onClick={() => navigate("/operational-plans")}
                   disabled={isLoading}
-                  className="rounded-xl"
                 >
                   إلغاء
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={isLoading}
-                  className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/20 gap-2"
+                  disabled={isLoading || !canSubmit()}
+                  className="gap-2"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  حفظ الخطة
+                  حفظ الخطط
                 </Button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        {/* Toolbar */}
+        <div className="px-6 py-3 border-b bg-muted/20 flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addRow}
+            className="h-7 text-xs gap-1"
+          >
+            <Plus className="w-3 h-3" />
+            صف جديد
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addMultipleRows(5)}
+            className="h-7 text-xs gap-1"
+          >
+            <Plus className="w-3 h-3" />
+            5 صفوف
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addMultipleRows(10)}
+            className="h-7 text-xs gap-1"
+          >
+            <Plus className="w-3 h-3" />
+            10 صفوف
+          </Button>
           
-          {/* Stats Bar */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="h-4 w-px bg-border mx-2" />
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addColumn}
+            className="h-7 text-xs gap-1"
+          >
+            <Columns className="w-3 h-3" />
+            عمود جديد
+          </Button>
+          
+          <div className="h-4 w-px bg-border mx-2" />
+          
+          <Button
+            variant="default"
+            size="sm"
+            onClick={mergeSelectedCells}
+            disabled={selectedCells.size < 2}
+            className="h-7 text-xs gap-1"
+          >
+            <Merge className="w-3 h-3" />
+            دمج الخلايا المحددة
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={unmergeSelectedCells}
+            disabled={selectedCells.size === 0}
+            className="h-7 text-xs gap-1"
+          >
+            <SplitSquareHorizontal className="w-3 h-3" />
+            إلغاء دمج الخلايا
+          </Button>
+          
+          <div className="h-4 w-px bg-border mx-2" />
+          
+          <Button
+            variant="default"
+            size="sm"
+            onClick={mergeSelectedHeaders}
+            disabled={selectedHeaders.size < 2}
+            className="h-7 text-xs gap-1"
+          >
+            <Merge className="w-3 h-3" />
+            دمج العناوين المحددة
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={unmergeSelectedHeaders}
+            disabled={selectedHeaders.size === 0}
+            className="h-7 text-xs gap-1"
+          >
+            <SplitSquareHorizontal className="w-3 h-3" />
+            إلغاء دمج العناوين
+          </Button>
+
+          <div className="h-4 w-px bg-border mx-2" />
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!hasSelection}
+                className="h-7 text-xs gap-1"
+              >
+                <Palette className="w-3 h-3" />
+                لون الخلفية
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-3" align="start">
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">اختر لون الخلفية:</p>
+                <div className="grid grid-cols-5 gap-1">
+                  {PRESET_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform"
+                      style={{ backgroundColor: color }}
+                      onClick={() => applyColorToSelectedRows(color)}
+                    />
+                  ))}
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{activities.length}</p>
-                  <p className="text-sm text-slate-500">نشاط</p>
+                <div className="flex items-center gap-2 pt-2 border-t">
+                  <Label className="text-xs">مخصص:</Label>
+                  <input
+                    type="color"
+                    className="w-8 h-6 rounded cursor-pointer"
+                    onChange={(e) => applyColorToSelectedRows(e.target.value)}
+                  />
                 </div>
               </div>
-            </div>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <Target className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {activities.reduce((sum, a) => sum + (parseInt(a.annual_target) || 0), 0)}
-                  </p>
-                  <p className="text-sm text-slate-500">إجمالي المستهدف</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                  <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {new Set(activities.filter(a => a.initiative_id).map(a => a.initiative_id)).size}
-                  </p>
-                  <p className="text-sm text-slate-500">مبادرة</p>
-                </div>
-              </div>
-            </div>
-          </div>
+            </PopoverContent>
+          </Popover>
 
-          {/* Activities List */}
-          <div className="space-y-4">
-            <AnimatePresence mode="popLayout">
-              {activities.map((activity, index) => {
-                const filteredInits = getFilteredInitiatives(activity.strategic_goal_id);
-                const filteredEmps = getFilteredEmployees(activity.department_id);
-                const selectedGoal = strategicGoals.find(g => g.id === activity.strategic_goal_id);
-                const hasError = errors[`goal_${index}`] || errors[`activity_${index}`] || errors[`annual_target_${index}`];
-                const monthlySum = getMonthlySum(activity.monthlyTargets);
-                const annualTarget = parseInt(activity.annual_target) || 0;
+          <div className="h-4 w-px bg-border mx-2" />
 
-                return (
-                  <motion.div
-                    key={activity.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.2 }}
-                    className={cn(
-                      "bg-white dark:bg-slate-900 rounded-2xl border shadow-sm overflow-hidden",
-                      hasError 
-                        ? "border-red-300 dark:border-red-800" 
-                        : "border-slate-200 dark:border-slate-800"
-                    )}
-                  >
-                    {/* Activity Header */}
-                    <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                          <GripVertical className="w-4 h-4 text-slate-400" />
-                        </div>
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm">
-                          {index + 1}
-                        </div>
-                        <span className="font-medium text-slate-700 dark:text-slate-300">
-                          {activity.activity_name || "نشاط جديد"}
-                        </span>
-                        {selectedGoal && (
-                          <Badge 
-                            variant="secondary" 
-                            className="text-xs"
-                            style={{ backgroundColor: `${selectedGoal.color}20`, color: selectedGoal.color }}
-                          >
-                            {selectedGoal.name}
-                          </Badge>
-                        )}
-                      </div>
-                      {activities.length > 1 && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeActivity(activity.id)}
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={undo}
+            disabled={undoStack.length === 0}
+            className="h-7 text-xs gap-1"
+          >
+            <Undo2 className="w-3 h-3" />
+            تراجع ({undoStack.length})
+          </Button>
 
-                    {/* Activity Content */}
-                    <div className="p-5 space-y-5">
-                      {/* Row 1: Goal & Initiative */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2 text-sm font-medium">
-                            <Target className="w-4 h-4 text-emerald-500" />
-                            الهدف الاستراتيجي
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={activity.strategic_goal_id}
-                            onValueChange={(value) => {
-                              if (value === "__new__") {
-                                setPendingActivityId(activity.id);
-                                setShowNewGoalDialog(true);
-                              } else {
-                                updateActivity(activity.id, { strategic_goal_id: value, initiative_id: "" });
-                              }
-                            }}
-                          >
-                            <SelectTrigger className={cn(
-                              "h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700",
-                              errors[`goal_${index}`] && "border-red-500"
-                            )}>
-                              <SelectValue placeholder="اختر الهدف الاستراتيجي" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background">
-                              {strategicGoals.map((goal) => (
-                                <SelectItem key={goal.id} value={goal.id}>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: goal.color }} />
-                                    {goal.name}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                              <SelectItem value="__new__" className="text-emerald-600">
-                                <div className="flex items-center gap-2">
-                                  <Plus className="w-4 h-4" />
-                                  إضافة هدف جديد
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+          {selectedRows.size > 0 && (
+            <span className="text-xs text-muted-foreground mr-auto">
+              {selectedRows.size} صف محدد
+            </span>
+          )}
+          {selectedCells.size > 0 && (
+            <span className="text-xs text-primary mr-2">
+              {selectedCells.size} خلية محددة
+            </span>
+          )}
+          {selectedHeaders.size > 0 && (
+            <span className="text-xs text-accent-foreground mr-2">
+              {selectedHeaders.size} عمود محدد
+            </span>
+          )}
+        </div>
 
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2 text-sm font-medium">
-                            <Lightbulb className="w-4 h-4 text-amber-500" />
-                            المبادرة
-                          </Label>
-                          <Select
-                            value={activity.initiative_id}
-                            onValueChange={(value) => {
-                              if (value === "__new__") {
-                                setPendingActivityId(activity.id);
-                                setPendingGoalId(activity.strategic_goal_id);
-                                setShowNewInitiativeDialog(true);
-                              } else {
-                                updateActivity(activity.id, { initiative_id: value });
-                              }
-                            }}
-                            disabled={!activity.strategic_goal_id}
-                          >
-                            <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
-                              <SelectValue placeholder={activity.strategic_goal_id ? "اختر المبادرة" : "اختر الهدف أولاً"} />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background">
-                              {filteredInits.map((init) => (
-                                <SelectItem key={init.id} value={init.id}>{init.name}</SelectItem>
-                              ))}
-                              {activity.strategic_goal_id && (
-                                <SelectItem value="__new__" className="text-amber-600">
-                                  <div className="flex items-center gap-2">
-                                    <Plus className="w-4 h-4" />
-                                    إضافة مبادرة جديدة
-                                  </div>
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Row 2: Activity Name & Annual Target */}
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="col-span-2 space-y-2">
-                          <Label className="flex items-center gap-2 text-sm font-medium">
-                            <Activity className="w-4 h-4 text-blue-500" />
-                            اسم النشاط
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            value={activity.activity_name}
-                            onChange={(e) => updateActivity(activity.id, { activity_name: e.target.value })}
-                            placeholder="أدخل اسم النشاط"
-                            className={cn(
-                              "h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700",
-                              errors[`activity_${index}`] && "border-red-500"
-                            )}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2 text-sm font-medium">
-                            <BarChart3 className="w-4 h-4 text-purple-500" />
-                            المستهدف السنوي
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={activity.annual_target}
-                            onChange={(e) => updateActivity(activity.id, { annual_target: e.target.value })}
-                            placeholder="0"
-                            className={cn(
-                              "h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-center font-bold text-lg",
-                              errors[`annual_target_${index}`] && "border-red-500"
-                            )}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Row 3: Department & Employee */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2 text-sm font-medium">
-                            <Building2 className="w-4 h-4 text-slate-500" />
-                            القسم
-                          </Label>
-                          <Select
-                            value={activity.department_id}
-                            onValueChange={(value) => updateActivity(activity.id, { department_id: value, responsible_employee_id: "" })}
-                          >
-                            <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
-                              <SelectValue placeholder="اختر القسم" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background">
-                              {departments.map((dept) => (
-                                <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2 text-sm font-medium">
-                            <Users className="w-4 h-4 text-slate-500" />
-                            مسؤول التنفيذ
-                          </Label>
-                          <Select
-                            value={activity.responsible_employee_id}
-                            onValueChange={(value) => updateActivity(activity.id, { responsible_employee_id: value })}
-                          >
-                            <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
-                              <SelectValue placeholder="اختر الموظف المسؤول" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background">
-                              {filteredEmps.map((emp) => (
-                                <SelectItem key={emp.id} value={emp.id}>
-                                  <div className="flex items-center gap-2">
-                                    <span>{emp.full_name}</span>
-                                    {emp.job_role && (
-                                      <span className="text-xs text-slate-400">({emp.job_role})</span>
-                                    )}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Monthly Targets (Collapsible) */}
-                      <Collapsible open={activity.isMonthlyOpen} onOpenChange={() => toggleMonthlySection(activity.id)}>
-                        <CollapsibleTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            className="w-full justify-between h-12 px-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800"
-                          >
-                            <div className="flex items-center gap-3">
-                              <Calendar className="w-4 h-4 text-blue-500" />
-                              <span className="font-medium">المستهدفات الشهرية</span>
-                              {monthlySum > 0 && (
-                                <Badge variant={monthlySum === annualTarget ? "default" : "destructive"} className="text-xs">
-                                  {monthlySum === annualTarget ? `✓ متطابق (${monthlySum})` : `غير متطابق: ${monthlySum} / ${annualTarget}`}
-                                </Badge>
-                              )}
-                            </div>
-                            {activity.isMonthlyOpen ? (
-                              <ChevronUp className="w-4 h-4" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="pt-4">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-slate-500">توزيع المستهدف على الأشهر</span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => distributeEvenly(activity.id)}
-                                disabled={!activity.annual_target}
-                                className="gap-2 rounded-lg text-xs"
-                              >
-                                <Sparkles className="w-3 h-3" />
-                                توزيع تلقائي
-                              </Button>
-                            </div>
-                            <div className="grid grid-cols-6 gap-3">
-                              {MONTHS_AR.map((month, idx) => (
-                                <div key={month} className="space-y-1">
-                                  <Label className="text-xs text-slate-500 text-center block">{month}</Label>
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={activity.monthlyTargets[idx] || ""}
-                                    onChange={(e) => {
-                                      const newTargets = [...activity.monthlyTargets];
-                                      newTargets[idx] = parseInt(e.target.value) || 0;
-                                      updateActivity(activity.id, { monthlyTargets: newTargets });
-                                    }}
-                                    className="h-9 rounded-lg text-center text-sm bg-slate-50 dark:bg-slate-800/50"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-
-            {/* Add Activity Button */}
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              onClick={addActivity}
-              className="w-full py-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all duration-200 flex items-center justify-center gap-3 group"
+        {/* مؤشر السحب */}
+        {draggedCell && (
+          <div className="bg-primary/20 text-primary text-xs px-4 py-2 flex items-center gap-2">
+            <Grip className="w-3 h-3" />
+            جاري سحب خلية - أفلتها على خلية أخرى للتبديل
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDraggedCell(null)}
+              className="h-5 px-2 text-xs"
             >
-              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30 flex items-center justify-center transition-colors">
-                <Plus className="w-5 h-5 text-slate-400 group-hover:text-emerald-600" />
-              </div>
-              <span className="font-medium text-slate-500 group-hover:text-emerald-600">إضافة نشاط جديد</span>
-            </motion.button>
+              إلغاء
+            </Button>
+          </div>
+        )}
+
+        {/* Excel-like Table */}
+        <div className="flex-1 overflow-auto">
+          <div 
+            className="p-6"
+            onMouseUp={() => draggedCell && setDraggedCell(null)}
+          >
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={(event: DragStartEvent) => setActiveColumnId(event.active.id as string)}
+                  onDragEnd={handleColumnDragEnd}
+                >
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+                        {columns.map((col, colIndex) => (
+                          <SortableColumnHeader
+                            key={col.id}
+                            column={col}
+                            editingColumn={editingColumn}
+                            setEditingColumn={setEditingColumn}
+                            updateColumnLabel={updateColumnLabel}
+                            removeColumn={removeColumn}
+                            isSelected={selectedHeaders.has(col.id)}
+                            toggleHeaderSelection={toggleHeaderSelection}
+                            mergeInfo={getHeaderMergeInfo(colIndex)}
+                            onBeforeEdit={saveBeforeEdit}
+                            onResizeStart={handleResizeStart}
+                            isResizing={resizingColumn?.columnId === col.id}
+                          />
+                        ))}
+                      </SortableContext>
+                    </TableRow>
+                  </TableHeader>
+                </DndContext>
+
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={(event: DragStartEvent) => setActiveRowId(event.active.id as string)}
+                  onDragEnd={handleRowDragEnd}
+                >
+                  <TableBody>
+                    {rows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
+                          <div className="flex flex-col items-center gap-2">
+                            <FileSpreadsheet className="w-8 h-8 opacity-50" />
+                            <p>لا توجد صفوف - اضغط "صف جديد" للبدء</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <SortableContext items={rowIds} strategy={verticalListSortingStrategy}>
+                        {rows.map((row, index) => (
+                          <SortableRow
+                            key={row.id}
+                            row={row}
+                            index={index}
+                            columns={columns}
+                            selectedRows={selectedRows}
+                            selectedCells={selectedCells}
+                            toggleRowSelection={toggleRowSelection}
+                            toggleCellSelection={toggleCellSelection}
+                            getMergeInfo={getMergeInfo}
+                            removeRow={removeRow}
+                            updateCell={updateCell}
+                            updateCustomColumn={updateCustomColumn}
+                            onBeforeEdit={saveBeforeEdit}
+                            draggedCell={draggedCell}
+                            startCellDrag={startCellDrag}
+                            dropCellOnCell={dropCellOnCell}
+                            employees={employees}
+                            departments={departments}
+                            updateResponsibleEmployee={updateResponsibleEmployee}
+                            updateGoalDepartments={updateGoalDepartments}
+                            updateInitiativeDepartments={updateInitiativeDepartments}
+                          />
+                        ))}
+                      </SortableContext>
+                    )}
+                  </TableBody>
+                </DndContext>
+              </Table>
+            </div>
+
+            {/* Datalists for autocomplete */}
+            <datalist id="goals-list">
+              {strategicGoals.map(goal => (
+                <option key={goal.id} value={goal.name} />
+              ))}
+            </datalist>
+            <datalist id="initiatives-list">
+              {initiatives.map(init => (
+                <option key={init.id} value={init.name} />
+              ))}
+            </datalist>
           </div>
         </div>
 
-        {/* Add Goal Dialog */}
-        <Dialog open={showNewGoalDialog} onOpenChange={setShowNewGoalDialog}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-emerald-500" />
-                إضافة هدف استراتيجي جديد
-              </DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <Label>اسم الهدف</Label>
-              <Input
-                value={newGoalName}
-                onChange={(e) => setNewGoalName(e.target.value)}
-                placeholder="أدخل اسم الهدف الاستراتيجي"
-                className="mt-2"
-                onKeyDown={(e) => e.key === "Enter" && handleAddNewGoal()}
-              />
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setShowNewGoalDialog(false)}>إلغاء</Button>
-              <Button 
-                onClick={handleAddNewGoal} 
-                disabled={isAddingGoal || !newGoalName.trim()}
-                className="bg-emerald-500 hover:bg-emerald-600"
-              >
-                {isAddingGoal ? <Loader2 className="w-4 h-4 animate-spin" /> : "إضافة"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Add Initiative Dialog */}
-        <Dialog open={showNewInitiativeDialog} onOpenChange={setShowNewInitiativeDialog}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Lightbulb className="w-5 h-5 text-amber-500" />
-                إضافة مبادرة جديدة
-              </DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <Label>اسم المبادرة</Label>
-              <Input
-                value={newInitiativeName}
-                onChange={(e) => setNewInitiativeName(e.target.value)}
-                placeholder="أدخل اسم المبادرة"
-                className="mt-2"
-                onKeyDown={(e) => e.key === "Enter" && handleAddNewInitiative()}
-              />
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setShowNewInitiativeDialog(false)}>إلغاء</Button>
-              <Button 
-                onClick={handleAddNewInitiative} 
-                disabled={isAddingInitiative || !newInitiativeName.trim()}
-                className="bg-amber-500 hover:bg-amber-600"
-              >
-                {isAddingInitiative ? <Loader2 className="w-4 h-4 animate-spin" /> : "إضافة"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Footer */}
+        <div className="sticky bottom-0 px-6 py-4 border-t bg-background/95 backdrop-blur-sm flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            {rows.length} صف | {rows.filter(r => r.strategicGoal && r.initiative && r.activity).length} نشاط مكتمل
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate("/operational-plans")}>
+              إلغاء
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={!canSubmit() || isLoading}
+              className="gap-2"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              حفظ الخطط
+            </Button>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
