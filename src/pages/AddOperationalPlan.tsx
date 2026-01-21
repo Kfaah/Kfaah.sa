@@ -240,10 +240,10 @@ function SortableColumnHeader({
       style={style}
       colSpan={mergeInfo.isMerged ? mergeInfo.colSpan : 1}
       className={cn(
-        "text-center border-l font-bold relative group",
-        column.editable && "cursor-pointer hover:bg-muted",
-        isDragging && "bg-primary/20",
-        isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+        "text-center border-l border-primary/20 font-bold relative group text-primary-foreground py-3",
+        column.editable && "cursor-pointer hover:bg-primary/80",
+        isDragging && "bg-primary/60",
+        isSelected && "bg-accent ring-2 ring-accent ring-inset text-accent-foreground"
       )}
       onDoubleClick={() => column.editable && setEditingColumn(column.id)}
     >
@@ -399,6 +399,8 @@ function SortableRow({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const isEvenRow = index % 2 === 0;
+  
   return (
     <TableRow
       ref={setNodeRef}
@@ -407,10 +409,12 @@ function SortableRow({
         backgroundColor: row.bgColor || undefined,
       }}
       className={cn(
-        "hover:bg-muted/30",
-        selectedRows.has(row.id) && "bg-primary/10 hover:bg-primary/15",
-        isDragging && "bg-primary/20",
-        !row.bgColor && "bg-background"
+        "transition-colors duration-150",
+        !row.bgColor && isEvenRow && "bg-background",
+        !row.bgColor && !isEvenRow && "bg-muted/40",
+        "hover:bg-accent/10",
+        selectedRows.has(row.id) && "bg-accent/20 hover:bg-accent/25",
+        isDragging && "bg-primary/20 shadow-lg"
       )}
     >
       {columns.map((col, colIndex) => {
@@ -426,8 +430,8 @@ function SortableRow({
               rowSpan={mergeInfo.rowSpan}
               colSpan={mergeInfo.colSpan}
               className={cn(
-                "border-l text-center text-sm font-medium align-middle relative p-0",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+                "border-l border-primary/10 text-center text-sm font-medium align-middle relative p-0 bg-gradient-to-b from-accent/10 to-transparent",
+                isSelected && "bg-accent/25 ring-2 ring-accent ring-inset"
               )}
             >
               <div
@@ -465,7 +469,7 @@ function SortableRow({
           return (
             <TableCell
               key={col.id}
-              className="text-center border-l text-sm text-muted-foreground font-medium w-10 relative"
+              className="text-center border-l border-primary/10 text-sm text-primary font-bold w-10 relative bg-primary/5"
             >
               <div
                 role="button"
@@ -486,7 +490,7 @@ function SortableRow({
         // عمود الإجراءات
         if (col.id === 'action') {
           return (
-            <TableCell key={col.id} className="text-center p-1 border-l">
+            <TableCell key={col.id} className="text-center p-1 border-l border-primary/10 bg-muted/20">
               <div className="flex items-center justify-center gap-1">
                 <div
                   {...attributes}
@@ -518,8 +522,8 @@ function SortableRow({
             <TableCell 
               key={col.id} 
               className={cn(
-                "border-l bg-muted/30 text-sm font-medium relative p-0",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset"
+                "border-l border-primary/10 bg-accent/10 text-sm font-medium relative p-0",
+                isSelected && "bg-accent/30 ring-2 ring-accent ring-inset"
               )}
             >
               <div
@@ -561,10 +565,10 @@ function SortableRow({
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative group/cell",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
-                isDragSource && "opacity-50 bg-primary/30",
-                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+                "border-l border-primary/10 p-0 relative group/cell",
+                isSelected && "bg-accent/20 ring-2 ring-accent ring-inset",
+                isDragSource && "opacity-50 bg-accent/30",
+                isDragTarget && "hover:bg-accent/20"
               )}
               onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
             >
@@ -619,10 +623,10 @@ function SortableRow({
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative group/cell",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
-                isDragSource && "opacity-50 bg-primary/30",
-                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+                "border-l border-primary/10 p-0 relative group/cell",
+                isSelected && "bg-accent/20 ring-2 ring-accent ring-inset",
+                isDragSource && "opacity-50 bg-accent/30",
+                isDragTarget && "hover:bg-accent/20"
               )}
               onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
             >
@@ -670,7 +674,7 @@ function SortableRow({
         // عمود الموظف المنفذ
         if (col.id === 'responsibleEmployee') {
           return (
-            <TableCell key={col.id} className="border-l p-1">
+            <TableCell key={col.id} className="border-l border-primary/10 p-1 bg-primary/5">
               <Select
                 value={row.responsibleEmployeeId || ""}
                 onValueChange={(value) => {
@@ -699,7 +703,7 @@ function SortableRow({
         if (col.id === 'initiativeOwner') {
           if (!row.showInitiativeCell) return null;
           return (
-            <TableCell key={col.id} className="border-l p-1" rowSpan={row.initiativeRowSpan}>
+            <TableCell key={col.id} className="border-l border-primary/10 p-1 bg-accent/5" rowSpan={row.initiativeRowSpan}>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-full text-xs justify-start gap-1 hover:bg-muted/50">
@@ -739,7 +743,7 @@ function SortableRow({
         if (col.id === 'goalOwner') {
           if (!row.showGoalCell) return null;
           return (
-            <TableCell key={col.id} className="border-l p-1" rowSpan={row.goalRowSpan}>
+            <TableCell key={col.id} className="border-l border-primary/10 p-1 bg-primary/5" rowSpan={row.goalRowSpan}>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-full text-xs justify-start gap-1 hover:bg-muted/50">
@@ -785,10 +789,10 @@ function SortableRow({
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative group/cell",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
-                isDragSource && "opacity-50 bg-primary/30",
-                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+                "border-l border-primary/10 p-0 relative group/cell bg-accent/5",
+                isSelected && "bg-accent/20 ring-2 ring-accent ring-inset",
+                isDragSource && "opacity-50 bg-accent/30",
+                isDragTarget && "hover:bg-accent/20"
               )}
               rowSpan={row.initiativeRowSpan}
               onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
@@ -845,10 +849,10 @@ function SortableRow({
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative group/cell",
+                "border-l border-primary/10 p-0 relative group/cell bg-primary/5",
                 isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
                 isDragSource && "opacity-50 bg-primary/30",
-                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+                isDragTarget && "hover:bg-primary/15"
               )}
               rowSpan={row.goalRowSpan}
               onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
@@ -904,10 +908,10 @@ function SortableRow({
             <TableCell
               key={col.id}
               className={cn(
-                "border-l p-0 relative group/cell",
-                isSelected && "bg-primary/20 ring-2 ring-primary ring-inset",
-                isDragSource && "opacity-50 bg-primary/30",
-                isDragTarget && "hover:bg-green-100 dark:hover:bg-green-900/30"
+                "border-l border-primary/10 p-0 relative group/cell",
+                isSelected && "bg-accent/20 ring-2 ring-accent ring-inset",
+                isDragSource && "opacity-50 bg-accent/30",
+                isDragTarget && "hover:bg-accent/20"
               )}
               onMouseUp={() => isDragTarget && dropCellOnCell(row.id, col.id)}
             >
@@ -1858,7 +1862,7 @@ const AddOperationalPlan = () => {
         </div>
 
         {/* Toolbar */}
-        <div className="px-6 py-3 border-b bg-muted/20 flex items-center gap-2 flex-wrap">
+        <div className="px-6 py-3 border-b bg-gradient-to-l from-primary/5 via-accent/5 to-transparent flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -2036,7 +2040,7 @@ const AddOperationalPlan = () => {
             className="p-6"
             onMouseUp={() => draggedCell && setDraggedCell(null)}
           >
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border-2 border-primary/20 rounded-xl overflow-hidden shadow-lg bg-card">
               <Table>
                 <DndContext
                   sensors={sensors}
@@ -2045,7 +2049,7 @@ const AddOperationalPlan = () => {
                   onDragEnd={handleColumnDragEnd}
                 >
                   <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableRow className="bg-gradient-to-l from-primary via-primary/90 to-primary/80 hover:from-primary hover:via-primary/90 hover:to-primary/80">
                       <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
                         {columns.map((col, colIndex) => (
                           <SortableColumnHeader
@@ -2133,7 +2137,7 @@ const AddOperationalPlan = () => {
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 px-6 py-4 border-t bg-background/95 backdrop-blur-sm flex items-center justify-between">
+        <div className="sticky bottom-0 px-6 py-4 border-t-2 border-primary/20 bg-gradient-to-l from-primary/5 via-accent/5 to-background backdrop-blur-sm flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
             {rows.length} صف | {rows.filter(r => r.strategicGoal && r.initiative && r.activity).length} نشاط مكتمل
           </div>
