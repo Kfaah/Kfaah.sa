@@ -29,6 +29,8 @@ import {
   ArrowRight,
   Calendar,
   Loader2,
+  Pencil,
+  Settings2,
 } from "lucide-react";
 import {
   Popover,
@@ -67,6 +69,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { getAvailableYears } from "@/lib/utils";
+import { AddColumnDialog, ColumnConfig, ColumnContentType } from "@/components/operational-plans/AddColumnDialog";
+import { EditColumnDialog } from "@/components/operational-plans/EditColumnDialog";
 
 interface Employee {
   id: string;
@@ -103,18 +107,39 @@ interface ColumnDef {
   editable: boolean;
   removable: boolean;
   isCustom: boolean;
+  contentType?: ColumnContentType;
+  departmentId?: string;
+  formulaConfig?: {
+    operation: "sum" | "subtract" | "multiply" | "divide" | "average";
+    sourceColumns: string[];
+  };
+  dropdownConfig?: {
+    options: string[];
+  };
 }
+
+// ألوان للتمييز بين الأهداف الاستراتيجية المختلفة
+const GOAL_COLORS = [
+  { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700' },
+  { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
+  { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' },
+  { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700' },
+  { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700' },
+  { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700' },
+  { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' },
+  { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700' },
+];
 
 const createDefaultColumns = (): ColumnDef[] => [
   { id: 'rowNumber', label: '#', width: '40px', editable: false, removable: false, isCustom: false },
   { id: 'strategicGoal', label: 'الهدف الاستراتيجي', width: '14%', editable: true, removable: true, isCustom: false },
-  { id: 'goalOwner', label: 'مالك الهدف', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'goalOwner', label: 'مالك الهدف', width: '11%', editable: true, removable: true, isCustom: false },
   { id: 'initiative', label: 'المبادرة', width: '14%', editable: true, removable: true, isCustom: false },
-  { id: 'initiativeOwner', label: 'مالك المبادرة', width: '11%', editable: false, removable: false, isCustom: false },
+  { id: 'initiativeOwner', label: 'مالك المبادرة', width: '11%', editable: true, removable: true, isCustom: false },
   { id: 'activity', label: 'النشاط', width: '14%', editable: true, removable: true, isCustom: false },
-  { id: 'responsibleEmployee', label: 'منفذ النشاط', width: '11%', editable: false, removable: false, isCustom: false },
-  { id: 'annualTarget', label: 'المستهدف السنوي', width: '7%', editable: true, removable: true, isCustom: false },
-  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '7%', editable: true, removable: true, isCustom: false },
+  { id: 'responsibleEmployee', label: 'منفذ النشاط', width: '11%', editable: true, removable: true, isCustom: false },
+  { id: 'annualTarget', label: 'المستهدف السنوي', width: '7%', editable: true, removable: true, isCustom: false, contentType: 'number' },
+  { id: 'monthlyAverage', label: 'المتوسط الشهري', width: '7%', editable: false, removable: true, isCustom: false, contentType: 'number' },
   { id: 'action', label: 'إجراء', width: '60px', editable: false, removable: false, isCustom: false },
 ];
 
@@ -201,6 +226,7 @@ function SortableColumnHeader({
   onBeforeEdit,
   onResizeStart,
   isResizing,
+  onEditColumn,
 }: {
   column: ColumnDef;
   editingColumn: string | null;
@@ -213,6 +239,7 @@ function SortableColumnHeader({
   onBeforeEdit: () => void;
   onResizeStart: (columnId: string, startX: number) => void;
   isResizing: boolean;
+  onEditColumn: (column: ColumnDef) => void;
 }) {
   const {
     attributes,
@@ -240,12 +267,12 @@ function SortableColumnHeader({
       style={style}
       colSpan={mergeInfo.isMerged ? mergeInfo.colSpan : 1}
       className={cn(
-        "text-center border-l border-primary/20 font-bold relative group text-primary-foreground py-3",
-        column.editable && "cursor-pointer hover:bg-primary/80",
-        isDragging && "bg-primary/60",
+        "text-center border-l border-white/20 font-bold relative group text-white py-3",
+        column.editable && "cursor-pointer hover:bg-white/10",
+        isDragging && "bg-white/20",
         isSelected && "bg-accent ring-2 ring-accent ring-inset text-accent-foreground"
       )}
-      onDoubleClick={() => column.editable && setEditingColumn(column.id)}
+      onDoubleClick={() => column.editable && onEditColumn(column)}
     >
       <div className="flex items-center justify-center gap-1">
         {column.id !== 'action' && column.id !== 'rowNumber' && (
@@ -254,7 +281,7 @@ function SortableColumnHeader({
               role="button"
               aria-label="تحديد العمود"
               tabIndex={-1}
-              className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-primary/30"
+              className="absolute inset-y-0 start-0 w-2 z-10 cursor-pointer hover:bg-white/20"
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -265,7 +292,7 @@ function SortableColumnHeader({
               role="button"
               aria-label="تحديد العمود"
               tabIndex={-1}
-              className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-primary/30"
+              className="absolute inset-y-0 end-0 w-2 z-10 cursor-pointer hover:bg-white/20"
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -279,9 +306,9 @@ function SortableColumnHeader({
           <div
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
+            className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-white/20 rounded opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <GripVertical className="w-3 h-3 text-muted-foreground" />
+            <GripVertical className="w-3 h-3 text-white/70" />
           </div>
         )}
         
@@ -294,12 +321,27 @@ function SortableColumnHeader({
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             onFocus={onBeforeEdit}
-            className="h-7 text-center text-sm font-bold border-primary"
+            className="h-7 text-center text-sm font-bold border-white bg-white text-foreground"
             autoFocus
           />
         ) : (
           <>
             <span>{mergeInfo.isMerged ? mergeInfo.label : column.label}</span>
+            {/* زر تعديل العمود */}
+            {column.editable && !mergeInfo.isMerged && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditColumn(column);
+                }}
+                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-white/70 hover:text-white hover:bg-white/20"
+              >
+                <Pencil className="w-3 h-3" />
+              </Button>
+            )}
+            {/* زر حذف العمود */}
             {column.removable && !mergeInfo.isMerged && (
               <Button
                 variant="ghost"
@@ -308,9 +350,9 @@ function SortableColumnHeader({
                   e.stopPropagation();
                   removeColumn(column.id);
                 }}
-                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-200 hover:bg-red-500/20"
               >
-                <X className="w-3 h-3" />
+                <Trash2 className="w-3 h-3" />
               </Button>
             )}
           </>
@@ -356,6 +398,9 @@ function SortableRow({
   updateResponsibleEmployee,
   updateGoalDepartments,
   updateInitiativeDepartments,
+  goalColorIndex,
+  isFirstOfGoal,
+  isFirstOfInitiative,
 }: {
   row: TableRowData;
   index: number;
@@ -383,6 +428,9 @@ function SortableRow({
   updateResponsibleEmployee: (rowId: string, employeeId: string, employeeName: string) => void;
   updateGoalDepartments: (rowId: string, deptIds: string[]) => void;
   updateInitiativeDepartments: (rowId: string, deptIds: string[]) => void;
+  goalColorIndex: number;
+  isFirstOfGoal: boolean;
+  isFirstOfInitiative: boolean;
 }) {
   const {
     attributes,
@@ -399,6 +447,8 @@ function SortableRow({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // ألوان متناوبة بناءً على الهدف الاستراتيجي
+  const colorScheme = GOAL_COLORS[goalColorIndex % GOAL_COLORS.length];
   const isEvenRow = index % 2 === 0;
   
   return (
@@ -410,11 +460,16 @@ function SortableRow({
       }}
       className={cn(
         "transition-colors duration-150",
-        !row.bgColor && isEvenRow && "bg-background",
-        !row.bgColor && !isEvenRow && "bg-muted/40",
-        "hover:bg-accent/10",
-        selectedRows.has(row.id) && "bg-accent/20 hover:bg-accent/25",
-        isDragging && "bg-primary/20 shadow-lg"
+        // الألوان حسب الهدف الاستراتيجي
+        !row.bgColor && row.strategicGoal && colorScheme.bg,
+        !row.bgColor && row.strategicGoal && (isEvenRow ? "opacity-100" : "opacity-90"),
+        // خط فاصل عند بداية هدف جديد
+        isFirstOfGoal && "border-t-2 border-t-primary/30",
+        // خط فاصل أخف عند بداية مبادرة جديدة
+        !isFirstOfGoal && isFirstOfInitiative && "border-t border-t-primary/15",
+        "hover:brightness-95",
+        selectedRows.has(row.id) && "!bg-accent/30 hover:!bg-accent/35",
+        isDragging && "!bg-primary/20 shadow-lg"
       )}
     >
       {columns.map((col, colIndex) => {
@@ -987,6 +1042,11 @@ const AddOperationalPlan = () => {
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
   const [draggedCell, setDraggedCell] = useState<{ rowId: string; colId: string } | null>(null);
   const [resizingColumn, setResizingColumn] = useState<{ columnId: string; startX: number; startWidth: number } | null>(null);
+  
+  // نوافذ الأعمدة
+  const [showAddColumnDialog, setShowAddColumnDialog] = useState(false);
+  const [showEditColumnDialog, setShowEditColumnDialog] = useState(false);
+  const [editingColumnData, setEditingColumnData] = useState<ColumnDef | null>(null);
 
   // نظام التراجع
   interface UndoState {
@@ -1081,26 +1141,46 @@ const AddOperationalPlan = () => {
   }, []);
 
   const addColumn = useCallback(() => {
-    const newColumnId = `custom_${generateId()}`;
+    setShowAddColumnDialog(true);
+  }, []);
+
+  const handleAddColumn = useCallback((config: ColumnConfig) => {
+    saveToUndo();
     const newColumn: ColumnDef = {
-      id: newColumnId,
-      label: 'عمود جديد',
-      width: '15%',
-      editable: true,
-      removable: true,
-      isCustom: true,
+      id: config.id,
+      label: config.label,
+      width: config.width,
+      editable: config.editable,
+      removable: config.removable,
+      isCustom: config.isCustom,
+      contentType: config.contentType,
+      departmentId: config.departmentId,
+      formulaConfig: config.formulaConfig,
+      dropdownConfig: config.dropdownConfig,
     };
     setColumns(prev => {
-      const strategicGoalIndex = prev.findIndex(c => c.id === 'strategicGoal');
+      const actionIndex = prev.findIndex(c => c.id === 'action');
       const newColumns = [...prev];
-      newColumns.splice(strategicGoalIndex, 0, newColumn);
+      newColumns.splice(actionIndex, 0, newColumn);
       return newColumns;
     });
     setRows(prev => prev.map(row => ({
       ...row,
-      customColumns: { ...row.customColumns, [newColumnId]: '' }
+      customColumns: { ...row.customColumns, [config.id]: '' }
     })));
+  }, [saveToUndo]);
+
+  const handleEditColumn = useCallback((column: ColumnDef) => {
+    setEditingColumnData(column);
+    setShowEditColumnDialog(true);
   }, []);
+
+  const handleSaveColumnEdit = useCallback((columnId: string, newLabel: string) => {
+    saveToUndo();
+    setColumns(prev => prev.map(col => 
+      col.id === columnId ? { ...col, label: newLabel } : col
+    ));
+  }, [saveToUndo]);
 
   const removeColumn = useCallback((columnId: string) => {
     saveToUndo();
@@ -2065,6 +2145,7 @@ const AddOperationalPlan = () => {
                             onBeforeEdit={saveBeforeEdit}
                             onResizeStart={handleResizeStart}
                             isResizing={resizingColumn?.columnId === col.id}
+                            onEditColumn={handleEditColumn}
                           />
                         ))}
                       </SortableContext>
@@ -2090,31 +2171,48 @@ const AddOperationalPlan = () => {
                       </TableRow>
                     ) : (
                       <SortableContext items={rowIds} strategy={verticalListSortingStrategy}>
-                        {rows.map((row, index) => (
-                          <SortableRow
-                            key={row.id}
-                            row={row}
-                            index={index}
-                            columns={columns}
-                            selectedRows={selectedRows}
-                            selectedCells={selectedCells}
-                            toggleRowSelection={toggleRowSelection}
-                            toggleCellSelection={toggleCellSelection}
-                            getMergeInfo={getMergeInfo}
-                            removeRow={removeRow}
-                            updateCell={updateCell}
-                            updateCustomColumn={updateCustomColumn}
-                            onBeforeEdit={saveBeforeEdit}
-                            draggedCell={draggedCell}
-                            startCellDrag={startCellDrag}
-                            dropCellOnCell={dropCellOnCell}
-                            employees={employees}
-                            departments={departments}
-                            updateResponsibleEmployee={updateResponsibleEmployee}
-                            updateGoalDepartments={updateGoalDepartments}
-                            updateInitiativeDepartments={updateInitiativeDepartments}
-                          />
-                        ))}
+                        {rows.map((row, index) => {
+                          // حساب فهرس لون الهدف
+                          const uniqueGoals = [...new Set(rows.slice(0, index + 1).map(r => r.strategicGoal).filter(Boolean))];
+                          const goalColorIndex = uniqueGoals.indexOf(row.strategicGoal);
+                          
+                          // هل هذا أول صف لهدف جديد؟
+                          const isFirstOfGoal = index === 0 || rows[index - 1].strategicGoal !== row.strategicGoal;
+                          
+                          // هل هذا أول صف لمبادرة جديدة؟
+                          const isFirstOfInitiative = index === 0 || 
+                            rows[index - 1].initiative !== row.initiative || 
+                            rows[index - 1].strategicGoal !== row.strategicGoal;
+                          
+                          return (
+                            <SortableRow
+                              key={row.id}
+                              row={row}
+                              index={index}
+                              columns={columns}
+                              selectedRows={selectedRows}
+                              selectedCells={selectedCells}
+                              toggleRowSelection={toggleRowSelection}
+                              toggleCellSelection={toggleCellSelection}
+                              getMergeInfo={getMergeInfo}
+                              removeRow={removeRow}
+                              updateCell={updateCell}
+                              updateCustomColumn={updateCustomColumn}
+                              onBeforeEdit={saveBeforeEdit}
+                              draggedCell={draggedCell}
+                              startCellDrag={startCellDrag}
+                              dropCellOnCell={dropCellOnCell}
+                              employees={employees}
+                              departments={departments}
+                              updateResponsibleEmployee={updateResponsibleEmployee}
+                              updateGoalDepartments={updateGoalDepartments}
+                              updateInitiativeDepartments={updateInitiativeDepartments}
+                              goalColorIndex={goalColorIndex >= 0 ? goalColorIndex : 0}
+                              isFirstOfGoal={isFirstOfGoal}
+                              isFirstOfInitiative={isFirstOfInitiative}
+                            />
+                          );
+                        })}
                       </SortableContext>
                     )}
                   </TableBody>
@@ -2156,6 +2254,23 @@ const AddOperationalPlan = () => {
           </div>
         </div>
       </div>
+
+      {/* نوافذ إضافة وتعديل الأعمدة */}
+      <AddColumnDialog
+        open={showAddColumnDialog}
+        onOpenChange={setShowAddColumnDialog}
+        onAdd={handleAddColumn}
+        departments={departments}
+        existingColumns={columns.map(c => ({ id: c.id, label: c.label }))}
+      />
+
+      <EditColumnDialog
+        open={showEditColumnDialog}
+        onOpenChange={setShowEditColumnDialog}
+        column={editingColumnData}
+        onSave={handleSaveColumnEdit}
+        onDelete={removeColumn}
+      />
     </DashboardLayout>
   );
 };
