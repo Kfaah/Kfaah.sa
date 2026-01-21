@@ -1794,7 +1794,7 @@ const AddOperationalPlan = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-background" dir="ltr">
+      <div className="min-h-screen bg-background" dir="rtl">
         {/* Header */}
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b">
           <div className="px-6 py-4">
