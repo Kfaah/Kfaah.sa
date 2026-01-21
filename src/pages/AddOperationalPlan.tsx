@@ -2049,7 +2049,7 @@ const AddOperationalPlan = () => {
                   onDragEnd={handleColumnDragEnd}
                 >
                   <TableHeader>
-                    <TableRow className="bg-gradient-to-l from-primary via-primary/90 to-primary/80 hover:from-primary hover:via-primary/90 hover:to-primary/80">
+                    <TableRow className="bg-[hsl(160,50%,25%)] hover:bg-[hsl(160,50%,28%)]">
                       <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
                         {columns.map((col, colIndex) => (
                           <SortableColumnHeader
