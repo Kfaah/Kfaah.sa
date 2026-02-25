@@ -1,10 +1,13 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings as SettingsIcon, Palette, Bell, Shield, Database } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Settings as SettingsIcon, Palette, Bell, Shield, Database, FileDown } from "lucide-react";
 import { WelcomeContentManager } from "@/components/welcome/WelcomeContentManager";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { exportGrantProposal } from "@/utils/exportGrantProposal";
+import { toast } from "sonner";
 
 export default function Settings() {
   const { user: authUser } = useAuth();
@@ -54,6 +57,39 @@ export default function Settings() {
                   إدارة خلفيات وعبارات شاشة الترحيب للموظفين
                 </p>
                 <WelcomeContentManager />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* تصدير ملف المانح */}
+          {isAdmin && (
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+                    <FileDown className="w-5 h-5 text-white" />
+                  </div>
+                  ملف تقديم المشروع
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm mb-4">
+                  تصدير ملف تقديم المشروع للمانحين بصيغة Word
+                </p>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await exportGrantProposal();
+                      toast.success("تم تصدير الملف بنجاح");
+                    } catch (e) {
+                      toast.error("حدث خطأ أثناء التصدير");
+                    }
+                  }}
+                  className="w-full"
+                >
+                  <FileDown className="w-4 h-4 ml-2" />
+                  تحميل ملف Word
+                </Button>
               </CardContent>
             </Card>
           )}
