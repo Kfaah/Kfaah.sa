@@ -7,6 +7,7 @@ import { Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { UserProvider } from "@/contexts/UserContext";
 import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeContext";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { PreviewModeBanner } from "@/components/preview/PreviewModeBanner";
 import Index from "./pages/Index";
 import Employees from "./pages/Employees";
@@ -25,6 +26,7 @@ import OperationalPlanDetails from "./pages/OperationalPlanDetails";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import Uploads from "./pages/Uploads";
+import Organizations from "./pages/Organizations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -221,6 +223,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/organizations"
+        element={
+          <ProtectedRoute>
+            <Organizations />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -229,13 +239,15 @@ function AppRoutes() {
 function AppContent() {
   return (
     <PreviewModeProvider>
-      <UserProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes />
-        </TooltipProvider>
-      </UserProvider>
+      <OrganizationProvider>
+        <UserProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <AppRoutes />
+          </TooltipProvider>
+        </UserProvider>
+      </OrganizationProvider>
     </PreviewModeProvider>
   );
 }
