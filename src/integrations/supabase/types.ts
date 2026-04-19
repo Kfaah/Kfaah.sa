@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      abandoned_carts: {
+        Row: {
+          abandoned_at: string
+          amount: number | null
+          created_at: string
+          donor_id: string | null
+          donor_name: string | null
+          donor_phone: string | null
+          external_id: string | null
+          follow_up_status: string
+          followed_up_at: string | null
+          followed_up_by: string | null
+          id: string
+          organization_id: string | null
+          project_name: string | null
+          raw_data: Json | null
+          recovered: boolean
+          recovery_notes: string | null
+          updated_at: string
+          upload_id: string | null
+        }
+        Insert: {
+          abandoned_at: string
+          amount?: number | null
+          created_at?: string
+          donor_id?: string | null
+          donor_name?: string | null
+          donor_phone?: string | null
+          external_id?: string | null
+          follow_up_status?: string
+          followed_up_at?: string | null
+          followed_up_by?: string | null
+          id?: string
+          organization_id?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          recovered?: boolean
+          recovery_notes?: string | null
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Update: {
+          abandoned_at?: string
+          amount?: number | null
+          created_at?: string
+          donor_id?: string | null
+          donor_name?: string | null
+          donor_phone?: string | null
+          external_id?: string | null
+          follow_up_status?: string
+          followed_up_at?: string | null
+          followed_up_by?: string | null
+          id?: string
+          organization_id?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          recovered?: boolean
+          recovery_notes?: string | null
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abandoned_carts_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abandoned_carts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       active_task: {
         Row: {
           created_at: string
@@ -52,6 +130,137 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_transfers: {
+        Row: {
+          amount: number
+          bank_name: string | null
+          created_at: string
+          id: string
+          matched_donation_id: string | null
+          notes: string | null
+          organization_id: string | null
+          raw_data: Json | null
+          reconciliation_status: string
+          sender_name: string | null
+          sender_phone: string | null
+          transfer_date: string
+          transfer_number: string | null
+          updated_at: string
+          upload_id: string | null
+        }
+        Insert: {
+          amount: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          matched_donation_id?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          raw_data?: Json | null
+          reconciliation_status?: string
+          sender_name?: string | null
+          sender_phone?: string | null
+          transfer_date: string
+          transfer_number?: string | null
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Update: {
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          matched_donation_id?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          raw_data?: Json | null
+          reconciliation_status?: string
+          sender_name?: string | null
+          sender_phone?: string | null
+          transfer_date?: string
+          transfer_number?: string | null
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transfers_matched_donation_id_fkey"
+            columns: ["matched_donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transfers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          collected_amount: number
+          created_at: string
+          description: string | null
+          donations_count: number
+          end_date: string | null
+          external_id: string | null
+          goal_amount: number | null
+          id: string
+          name: string
+          organization_id: string | null
+          raw_data: Json | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          upload_id: string | null
+        }
+        Insert: {
+          collected_amount?: number
+          created_at?: string
+          description?: string | null
+          donations_count?: number
+          end_date?: string | null
+          external_id?: string | null
+          goal_amount?: number | null
+          id?: string
+          name: string
+          organization_id?: string | null
+          raw_data?: Json | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Update: {
+          collected_amount?: number
+          created_at?: string
+          description?: string | null
+          donations_count?: number
+          end_date?: string | null
+          external_id?: string | null
+          goal_amount?: number | null
+          id?: string
+          name?: string
+          organization_id?: string | null
+          raw_data?: Json | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -106,6 +315,68 @@ export type Database = {
         }
         Relationships: []
       }
+      data_uploads_log: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          detected_schema: string | null
+          duplicate_rows: number
+          error_log: Json | null
+          failed_rows: number
+          file_name: string
+          file_type: string
+          for_date: string | null
+          id: string
+          inserted_rows: number
+          organization_id: string | null
+          status: string
+          total_rows: number
+          uploaded_by: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          detected_schema?: string | null
+          duplicate_rows?: number
+          error_log?: Json | null
+          failed_rows?: number
+          file_name: string
+          file_type: string
+          for_date?: string | null
+          id?: string
+          inserted_rows?: number
+          organization_id?: string | null
+          status?: string
+          total_rows?: number
+          uploaded_by: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          detected_schema?: string | null
+          duplicate_rows?: number
+          error_log?: Json | null
+          failed_rows?: number
+          file_name?: string
+          file_type?: string
+          for_date?: string | null
+          id?: string
+          inserted_rows?: number
+          organization_id?: string | null
+          status?: string
+          total_rows?: number
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_uploads_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           color: string | null
@@ -134,6 +405,156 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "departments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donations: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          donation_date: string
+          donation_number: string
+          donor_id: string | null
+          donor_name: string | null
+          donor_phone: string | null
+          id: string
+          organization_id: string | null
+          payment_method: string | null
+          project_id: string | null
+          project_name: string | null
+          raw_data: Json | null
+          source: string | null
+          status: string
+          updated_at: string
+          upload_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          donation_date: string
+          donation_number: string
+          donor_id?: string | null
+          donor_name?: string | null
+          donor_phone?: string | null
+          id?: string
+          organization_id?: string | null
+          payment_method?: string | null
+          project_id?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          donation_date?: string
+          donation_number?: string
+          donor_id?: string | null
+          donor_name?: string | null
+          donor_phone?: string | null
+          id?: string
+          organization_id?: string | null
+          payment_method?: string | null
+          project_id?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donors: {
+        Row: {
+          city: string | null
+          created_at: string
+          donations_count: number
+          email: string | null
+          external_id: string | null
+          first_donation_at: string | null
+          full_name: string
+          gender: string | null
+          id: string
+          last_donation_at: string | null
+          notes: string | null
+          organization_id: string | null
+          phone: string | null
+          segment: string
+          total_donated: number
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          donations_count?: number
+          email?: string | null
+          external_id?: string | null
+          first_donation_at?: string | null
+          full_name: string
+          gender?: string | null
+          id?: string
+          last_donation_at?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          segment?: string
+          total_donated?: number
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          donations_count?: number
+          email?: string | null
+          external_id?: string | null
+          first_donation_at?: string | null
+          full_name?: string
+          gender?: string | null
+          id?: string
+          last_donation_at?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          segment?: string
+          total_donated?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donors_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -349,6 +770,78 @@ export type Database = {
           },
         ]
       }
+      failed_donations: {
+        Row: {
+          amount: number | null
+          attempted_at: string
+          created_at: string
+          donor_id: string | null
+          donor_name: string | null
+          donor_phone: string | null
+          external_id: string | null
+          failure_reason: string | null
+          id: string
+          organization_id: string | null
+          payment_method: string | null
+          project_name: string | null
+          raw_data: Json | null
+          retry_status: string
+          updated_at: string
+          upload_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          attempted_at: string
+          created_at?: string
+          donor_id?: string | null
+          donor_name?: string | null
+          donor_phone?: string | null
+          external_id?: string | null
+          failure_reason?: string | null
+          id?: string
+          organization_id?: string | null
+          payment_method?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          retry_status?: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          attempted_at?: string
+          created_at?: string
+          donor_id?: string | null
+          donor_name?: string | null
+          donor_phone?: string | null
+          external_id?: string | null
+          failure_reason?: string | null
+          id?: string
+          organization_id?: string | null
+          payment_method?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          retry_status?: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "failed_donations_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "failed_donations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_categories: {
         Row: {
           created_at: string
@@ -383,6 +876,84 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "file_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gifts: {
+        Row: {
+          amount: number
+          created_at: string
+          delivery_status: string
+          external_id: string | null
+          gift_date: string | null
+          giver_donor_id: string | null
+          giver_name: string | null
+          giver_phone: string | null
+          id: string
+          message: string | null
+          occasion: string | null
+          organization_id: string | null
+          project_name: string | null
+          raw_data: Json | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          updated_at: string
+          upload_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          delivery_status?: string
+          external_id?: string | null
+          gift_date?: string | null
+          giver_donor_id?: string | null
+          giver_name?: string | null
+          giver_phone?: string | null
+          id?: string
+          message?: string | null
+          occasion?: string | null
+          organization_id?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          delivery_status?: string
+          external_id?: string | null
+          gift_date?: string | null
+          giver_donor_id?: string | null
+          giver_name?: string | null
+          giver_phone?: string | null
+          id?: string
+          message?: string | null
+          occasion?: string | null
+          organization_id?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gifts_giver_donor_id_fkey"
+            columns: ["giver_donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gifts_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1003,6 +1574,47 @@ export type Database = {
         }
         Relationships: []
       }
+      projects_catalog: {
+        Row: {
+          category: string | null
+          created_at: string
+          external_code: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          external_code?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          external_code?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_catalog_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategic_goal_departments: {
         Row: {
           created_at: string
@@ -1096,6 +1708,81 @@ export type Database = {
           },
           {
             foreignKeyName: "strategic_goals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          cancellation_reason: string | null
+          created_at: string
+          donor_id: string | null
+          donor_name: string | null
+          donor_phone: string | null
+          end_date: string | null
+          external_id: string | null
+          id: string
+          next_charge_date: string | null
+          organization_id: string | null
+          project_name: string | null
+          raw_data: Json | null
+          start_date: string
+          status: string
+          updated_at: string
+          upload_id: string | null
+        }
+        Insert: {
+          amount: number
+          cancellation_reason?: string | null
+          created_at?: string
+          donor_id?: string | null
+          donor_name?: string | null
+          donor_phone?: string | null
+          end_date?: string | null
+          external_id?: string | null
+          id?: string
+          next_charge_date?: string | null
+          organization_id?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          start_date: string
+          status?: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Update: {
+          amount?: number
+          cancellation_reason?: string | null
+          created_at?: string
+          donor_id?: string | null
+          donor_name?: string | null
+          donor_phone?: string | null
+          end_date?: string | null
+          external_id?: string | null
+          id?: string
+          next_charge_date?: string | null
+          organization_id?: string | null
+          project_name?: string | null
+          raw_data?: Json | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
