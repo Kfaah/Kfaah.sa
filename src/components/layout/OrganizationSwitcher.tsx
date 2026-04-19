@@ -53,7 +53,7 @@ export function OrganizationSwitcher({ collapsed }: Props) {
           </button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" side="left" className="w-72" dir="rtl">
+        <DropdownMenuContent align="start" side="left" className="w-72">
           <DropdownMenuLabel className="text-xs text-muted-foreground">
             تبديل الجمعية ({availableOrgs.length})
           </DropdownMenuLabel>
