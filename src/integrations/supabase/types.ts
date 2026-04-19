@@ -622,6 +622,7 @@ export type Database = {
           performance: number | null
           phone: string | null
           role_color: string | null
+          role_level: Database["public"]["Enums"]["employee_role_level"]
           signature_url: string | null
           status: string | null
           tasks_completed: number | null
@@ -648,6 +649,7 @@ export type Database = {
           performance?: number | null
           phone?: string | null
           role_color?: string | null
+          role_level?: Database["public"]["Enums"]["employee_role_level"]
           signature_url?: string | null
           status?: string | null
           tasks_completed?: number | null
@@ -674,6 +676,7 @@ export type Database = {
           performance?: number | null
           phone?: string | null
           role_color?: string | null
+          role_level?: Database["public"]["Enums"]["employee_role_level"]
           signature_url?: string | null
           status?: string | null
           tasks_completed?: number | null
@@ -2070,6 +2073,18 @@ export type Database = {
           slug: string
         }[]
       }
+      get_subordinate_employee_ids: {
+        Args: { _manager_employee_id: string }
+        Returns: {
+          employee_id: string
+        }[]
+      }
+      get_subordinate_user_ids: {
+        Args: { _manager_user_id: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
       get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
@@ -2093,6 +2108,7 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      is_manager: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       join_organization_by_slug: { Args: { _slug: string }; Returns: string }
       user_belongs_to_org: {
@@ -2111,6 +2127,7 @@ export type Database = {
         | "accountant"
         | "super_admin"
       custom_column_type: "text" | "number" | "date" | "department" | "employee"
+      employee_role_level: "employee" | "manager" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2249,6 +2266,7 @@ export const Constants = {
         "super_admin",
       ],
       custom_column_type: ["text", "number", "date", "department", "employee"],
+      employee_role_level: ["employee", "manager", "admin"],
     },
   },
 } as const
