@@ -18,7 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          organization_id: string
+          organization_id: string | null
           started_at: string
           task_id: string
           user_id: string
@@ -26,7 +26,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           started_at?: string
           task_id: string
           user_id: string
@@ -34,7 +34,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           started_at?: string
           task_id?: string
           user_id?: string
@@ -113,7 +113,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          organization_id: string
+          organization_id: string | null
         }
         Insert: {
           color?: string | null
@@ -121,7 +121,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
-          organization_id: string
+          organization_id?: string | null
         }
         Update: {
           color?: string | null
@@ -129,7 +129,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          organization_id?: string
+          organization_id?: string | null
         }
         Relationships: [
           {
@@ -149,7 +149,7 @@ export type Database = {
           file_type: string | null
           file_url: string
           id: string
-          organization_id: string
+          organization_id: string | null
           updated_at: string
           user_id: string
         }
@@ -160,7 +160,7 @@ export type Database = {
           file_type?: string | null
           file_url: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -171,7 +171,7 @@ export type Database = {
           file_type?: string | null
           file_url?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -197,7 +197,7 @@ export type Database = {
           id: string
           job_role: string
           join_date: string | null
-          organization_id: string
+          organization_id: string | null
           performance: number | null
           phone: string | null
           role_color: string | null
@@ -223,7 +223,7 @@ export type Database = {
           id?: string
           job_role: string
           join_date?: string | null
-          organization_id: string
+          organization_id?: string | null
           performance?: number | null
           phone?: string | null
           role_color?: string | null
@@ -249,7 +249,7 @@ export type Database = {
           id?: string
           job_role?: string
           join_date?: string | null
-          organization_id?: string
+          organization_id?: string | null
           performance?: number | null
           phone?: string | null
           role_color?: string | null
@@ -304,7 +304,7 @@ export type Database = {
           id: string
           notes: string | null
           operational_plan_month_id: string
-          organization_id: string
+          organization_id: string | null
           status: string
           updated_at: string
         }
@@ -316,7 +316,7 @@ export type Database = {
           id?: string
           notes?: string | null
           operational_plan_month_id: string
-          organization_id: string
+          organization_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -328,7 +328,7 @@ export type Database = {
           id?: string
           notes?: string | null
           operational_plan_month_id?: string
-          organization_id?: string
+          organization_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -356,7 +356,7 @@ export type Database = {
           icon: string | null
           id: string
           name: string
-          organization_id: string
+          organization_id: string | null
           updated_at: string
           user_id: string
         }
@@ -366,7 +366,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name: string
-          organization_id: string
+          organization_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -376,7 +376,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name?: string
-          organization_id?: string
+          organization_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -396,21 +396,21 @@ export type Database = {
           department_id: string
           id: string
           initiative_id: string
-          organization_id: string
+          organization_id: string | null
         }
         Insert: {
           created_at?: string
           department_id: string
           id?: string
           initiative_id: string
-          organization_id: string
+          organization_id?: string | null
         }
         Update: {
           created_at?: string
           department_id?: string
           id?: string
           initiative_id?: string
-          organization_id?: string
+          organization_id?: string | null
         }
         Relationships: [
           {
@@ -444,7 +444,7 @@ export type Database = {
           display_order: number | null
           id: string
           name: string
-          organization_id: string
+          organization_id: string | null
           strategic_goal_id: string
           updated_at: string
         }
@@ -455,7 +455,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           name: string
-          organization_id: string
+          organization_id?: string | null
           strategic_goal_id: string
           updated_at?: string
         }
@@ -466,7 +466,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           name?: string
-          organization_id?: string
+          organization_id?: string | null
           strategic_goal_id?: string
           updated_at?: string
         }
@@ -501,7 +501,7 @@ export type Database = {
           department_id: string | null
           id: string
           name: string
-          organization_id: string
+          organization_id: string | null
         }
         Insert: {
           color?: string | null
@@ -509,7 +509,7 @@ export type Database = {
           department_id?: string | null
           id?: string
           name: string
-          organization_id: string
+          organization_id?: string | null
         }
         Update: {
           color?: string | null
@@ -517,7 +517,7 @@ export type Database = {
           department_id?: string | null
           id?: string
           name?: string
-          organization_id?: string
+          organization_id?: string | null
         }
         Relationships: [
           {
@@ -586,7 +586,7 @@ export type Database = {
           id: string
           is_read: boolean
           message: string
-          organization_id: string
+          organization_id: string | null
           related_task_id: string | null
           title: string
           type: string
@@ -597,7 +597,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           message: string
-          organization_id: string
+          organization_id?: string | null
           related_task_id?: string | null
           title: string
           type?: string
@@ -608,7 +608,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           message?: string
-          organization_id?: string
+          organization_id?: string | null
           related_task_id?: string | null
           title?: string
           type?: string
@@ -640,7 +640,7 @@ export type Database = {
           id: string
           is_standard: boolean
           is_visible: boolean
-          organization_id: string
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -651,7 +651,7 @@ export type Database = {
           id?: string
           is_standard?: boolean
           is_visible?: boolean
-          organization_id: string
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -662,7 +662,7 @@ export type Database = {
           id?: string
           is_standard?: boolean
           is_visible?: boolean
-          organization_id?: string
+          organization_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -684,7 +684,7 @@ export type Database = {
           is_active: boolean | null
           is_required: boolean | null
           name: string
-          organization_id: string
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -695,7 +695,7 @@ export type Database = {
           is_active?: boolean | null
           is_required?: boolean | null
           name: string
-          organization_id: string
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -706,7 +706,7 @@ export type Database = {
           is_active?: boolean | null
           is_required?: boolean | null
           name?: string
-          organization_id?: string
+          organization_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -729,7 +729,7 @@ export type Database = {
           id: string
           number_value: number | null
           operational_plan_id: string
-          organization_id: string
+          organization_id: string | null
           text_value: string | null
           updated_at: string
         }
@@ -742,7 +742,7 @@ export type Database = {
           id?: string
           number_value?: number | null
           operational_plan_id: string
-          organization_id: string
+          organization_id?: string | null
           text_value?: string | null
           updated_at?: string
         }
@@ -755,7 +755,7 @@ export type Database = {
           id?: string
           number_value?: number | null
           operational_plan_id?: string
-          organization_id?: string
+          organization_id?: string | null
           text_value?: string | null
           updated_at?: string
         }
@@ -804,7 +804,7 @@ export type Database = {
           month: number
           monthly_target: number
           operational_plan_id: string
-          organization_id: string
+          organization_id: string | null
         }
         Insert: {
           created_at?: string
@@ -812,7 +812,7 @@ export type Database = {
           month: number
           monthly_target?: number
           operational_plan_id: string
-          organization_id: string
+          organization_id?: string | null
         }
         Update: {
           created_at?: string
@@ -820,7 +820,7 @@ export type Database = {
           month?: number
           monthly_target?: number
           operational_plan_id?: string
-          organization_id?: string
+          organization_id?: string | null
         }
         Relationships: [
           {
@@ -848,7 +848,7 @@ export type Database = {
           id: string
           initiative: string | null
           initiative_id: string | null
-          organization_id: string
+          organization_id: string | null
           responsible_employee_id: string | null
           status: string
           strategic_goal: string | null
@@ -865,7 +865,7 @@ export type Database = {
           id?: string
           initiative?: string | null
           initiative_id?: string | null
-          organization_id: string
+          organization_id?: string | null
           responsible_employee_id?: string | null
           status?: string
           strategic_goal?: string | null
@@ -882,7 +882,7 @@ export type Database = {
           id?: string
           initiative?: string | null
           initiative_id?: string | null
-          organization_id?: string
+          organization_id?: string | null
           responsible_employee_id?: string | null
           status?: string
           strategic_goal?: string | null
@@ -1008,21 +1008,21 @@ export type Database = {
           created_at: string
           department_id: string
           id: string
-          organization_id: string
+          organization_id: string | null
           strategic_goal_id: string
         }
         Insert: {
           created_at?: string
           department_id: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           strategic_goal_id: string
         }
         Update: {
           created_at?: string
           department_id?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           strategic_goal_id?: string
         }
         Relationships: [
@@ -1058,7 +1058,7 @@ export type Database = {
           display_order: number | null
           id: string
           name: string
-          organization_id: string
+          organization_id: string | null
           updated_at: string
           year: number
         }
@@ -1070,7 +1070,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           name: string
-          organization_id: string
+          organization_id?: string | null
           updated_at?: string
           year?: number
         }
@@ -1082,7 +1082,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           name?: string
-          organization_id?: string
+          organization_id?: string | null
           updated_at?: string
           year?: number
         }
@@ -1111,7 +1111,7 @@ export type Database = {
           created_at: string
           id: string
           message: string | null
-          organization_id: string
+          organization_id: string | null
           task_id: string
           user_id: string
         }
@@ -1122,7 +1122,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string | null
-          organization_id: string
+          organization_id?: string | null
           task_id: string
           user_id: string
         }
@@ -1133,7 +1133,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string | null
-          organization_id?: string
+          organization_id?: string | null
           task_id?: string
           user_id?: string
         }
@@ -1166,7 +1166,7 @@ export type Database = {
           estimated_time_minutes: number | null
           executive_plan_id: string | null
           id: string
-          organization_id: string
+          organization_id: string | null
           priority: string
           quality_percentage: number | null
           started_at: string | null
@@ -1186,7 +1186,7 @@ export type Database = {
           estimated_time_minutes?: number | null
           executive_plan_id?: string | null
           id?: string
-          organization_id: string
+          organization_id?: string | null
           priority?: string
           quality_percentage?: number | null
           started_at?: string | null
@@ -1206,7 +1206,7 @@ export type Database = {
           estimated_time_minutes?: number | null
           executive_plan_id?: string | null
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           priority?: string
           quality_percentage?: number | null
           started_at?: string | null
