@@ -460,8 +460,8 @@ const Index = () => {
                     <Timer className="w-6 h-6 text-violet-500" />
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>{employeeStats.totalWorkHours}</p>
-                    <p className="text-sm text-muted-foreground">ساعات العمل الكلية</p>
+                    <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>{employeeStats.inProgressTasks}</p>
+                    <p className="text-sm text-muted-foreground">قيد التنفيذ</p>
                   </div>
                 </CardContent>
               </Card>
@@ -472,8 +472,8 @@ const Index = () => {
                     <Calendar className="w-6 h-6 text-rose-500" />
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>{employeeStats.attendanceDays}</p>
-                    <p className="text-sm text-muted-foreground">أيام الحضور</p>
+                    <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>{employeeStats.pendingTasks}</p>
+                    <p className="text-sm text-muted-foreground">مهام معلقة</p>
                   </div>
                 </CardContent>
               </Card>
@@ -552,8 +552,8 @@ const Index = () => {
                         <p className="text-sm text-emerald-700">مكتملة</p>
                       </div>
                       <div className="p-4 rounded-2xl bg-violet-50 border border-violet-100">
-                        <p className="text-2xl font-bold text-violet-600" style={{ fontFamily: 'Arial, sans-serif' }}>{employeeStats.todayWorkHours}h</p>
-                        <p className="text-sm text-violet-700">ساعات اليوم</p>
+                        <p className="text-2xl font-bold text-violet-600" style={{ fontFamily: 'Arial, sans-serif' }}>{employeeStats.totalTasks}</p>
+                        <p className="text-sm text-violet-700">إجمالي المهام</p>
                       </div>
                     </div>
                   </div>
