@@ -22,12 +22,6 @@ import Profile from "./pages/Profile";
 import OperationalPlans from "./pages/OperationalPlans";
 import AddOperationalPlan from "./pages/AddOperationalPlan";
 import OperationalPlanDetails from "./pages/OperationalPlanDetails";
-import Attendance from "./pages/Attendance";
-import AttendanceManagement from "./pages/AttendanceManagement";
-import HR from "./pages/HR";
-import HRRequests from "./pages/HRRequests";
-import HRTemplates from "./pages/HRTemplates";
-import PendingApprovals from "./pages/PendingApprovals";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -207,54 +201,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/attendance"
-        element={
-          <ProtectedRoute>
-            <Attendance />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/attendance-management"
-        element={
-          <ProtectedRoute>
-            <AttendanceManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hr"
-        element={
-          <ProtectedRoute>
-            <HR />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hr-requests"
-        element={
-          <ProtectedRoute>
-            <HRRequests />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hr-templates"
-        element={
-          <ProtectedRoute>
-            <HRTemplates />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/pending-approvals"
-        element={
-          <ProtectedRoute>
-            <PendingApprovals />
           </ProtectedRoute>
         }
       />

@@ -39,25 +39,20 @@ interface NavItem {
 // قائمة المدير (Admin)
 const adminNavItems: NavItem[] = [
   { title: "نظرة عامة", href: "/", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الموارد البشرية", href: "/hr", icon: Briefcase, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
+  { title: "الموظفين", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
   { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
   { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "المهام", href: "/tasks", icon: ClipboardList, badge: 18, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "التقارير", href: "/reports", icon: BarChart3, iconBg: "bg-gradient-to-br from-rose-400 to-rose-500" },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
   { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
-  { title: "المراسلات", href: "/messages", icon: MessageSquare, badge: 5, iconBg: "bg-gradient-to-br from-teal-400 to-emerald-500" },
 ];
 
 // قائمة الموظف العادي
 const employeeNavItems: NavItem[] = [
   { title: "نظرة عامة", href: "/", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الموارد البشرية", href: "/hr-requests", icon: Briefcase, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
   { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
   { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "المهام", href: "/tasks", icon: ClipboardList, badge: 18, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "التقارير", href: "/reports", icon: BarChart3, iconBg: "bg-gradient-to-br from-rose-400 to-rose-500" },
-  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
-  { title: "المراسلات", href: "/messages", icon: MessageSquare, badge: 5, iconBg: "bg-gradient-to-br from-teal-400 to-emerald-500" },
+  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
+  { title: "تقييم أدائي", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
 ];
 
 const settingsNavItem: NavItem = { 
@@ -434,24 +429,6 @@ export function Sidebar() {
               <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 transition-colors" />
             </Link>
 
-            {/* زر الحضور والانصراف */}
-            <Link 
-              to="/attendance"
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl p-3 shadow-md flex items-center gap-3 group transition-all"
-            >
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <Clock className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1 text-right">
-                <span className="text-sm font-semibold text-white">
-                  {isActuallyAdmin ? "الحضور والانصراف" : "تسجيل الحضور والانصراف"}
-                </span>
-                <p className="text-xs text-white/80">
-                  {isActuallyAdmin ? "تقارير الحضور" : "إدارة أوقات الحضور"}
-                </p>
-              </div>
-              <ChevronLeft className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
-            </Link>
           </div>
         )}
 

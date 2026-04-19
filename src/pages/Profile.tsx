@@ -19,7 +19,6 @@ import { formatDateTime } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { SignatureUpload } from "@/components/hr/SignatureUpload";
 import { useQuery } from "@tanstack/react-query";
 
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
@@ -304,16 +303,9 @@ export default function Profile() {
         return <ProfileInfoSection user={user} />;
       
       case "signature":
-        return authUser && employeeData ? (
-          <SignatureUpload
-            currentSignature={employeeData.signature_url}
-            userId={authUser.id}
-            onSignatureUpdate={() => refetchEmployee()}
-            isEmployee={true}
-          />
-        ) : (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
+        return (
+          <div className="text-center py-12 text-muted-foreground">
+            قسم التوقيع غير متاح حالياً.
           </div>
         );
       

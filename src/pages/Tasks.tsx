@@ -221,9 +221,8 @@ const Tasks = () => {
       const { data: adminData } = await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" });
       setIsAdmin(adminData === true);
       
-      // التحقق من صلاحية تعديل الوقت
-      const { data: timeEditorData } = await supabase.rpc("can_edit_time", { _user_id: authUser.id });
-      setCanEditTime(timeEditorData === true);
+      // الأدمن فقط يستطيع تعديل الوقت (نظام التقييم لاحقًا)
+      setCanEditTime(adminData === true);
     };
     checkPermissions();
   }, [authUser]);
