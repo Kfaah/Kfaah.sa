@@ -1568,7 +1568,7 @@ export default function OperationalPlans() {
                 {isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
               </p>
             </div>
-            <ScopeToggleWrapper />
+            <OperationalPlansScopeToggle />
           </div>
         </div>
         
