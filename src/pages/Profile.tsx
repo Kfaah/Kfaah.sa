@@ -19,7 +19,6 @@ import { formatDateTime } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { SignatureUpload } from "@/components/hr/SignatureUpload";
 import { useQuery } from "@tanstack/react-query";
 
 import { ProfileHeader } from "@/components/profile/ProfileHeader";

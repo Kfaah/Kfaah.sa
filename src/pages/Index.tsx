@@ -22,9 +22,6 @@ interface EmployeeStats {
   completedTasks: number;
   pendingTasks: number;
   inProgressTasks: number;
-  totalWorkHours: number;
-  todayWorkHours: number;
-  attendanceDays: number;
 }
 
 interface AdminStats {
@@ -47,9 +44,6 @@ const Index = () => {
     completedTasks: 0,
     pendingTasks: 0,
     inProgressTasks: 0,
-    totalWorkHours: 0,
-    todayWorkHours: 0,
-    attendanceDays: 0,
   });
   const [adminStats, setAdminStats] = useState<AdminStats>({
     totalEmployees: 0,
@@ -173,37 +167,11 @@ const Index = () => {
 
       setRecentTasks(recentTasksData || []);
 
-      // Get attendance records
-      const { data: attendance } = await supabase
-        .from("attendance")
-        .select("*")
-        .eq("user_id", userId);
-
-      let totalWorkMinutes = 0;
-      let todayWorkMinutes = 0;
-      const today = new Date().toISOString().split("T")[0];
-
-      attendance?.forEach(record => {
-        if (record.check_in_at && record.check_out_at) {
-          const checkIn = new Date(record.check_in_at);
-          const checkOut = new Date(record.check_out_at);
-          const minutes = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60);
-          totalWorkMinutes += minutes;
-
-          if (record.date === today) {
-            todayWorkMinutes += minutes;
-          }
-        }
-      });
-
       setEmployeeStats({
         totalTasks,
         completedTasks,
         pendingTasks,
         inProgressTasks,
-        totalWorkHours: Math.round(totalWorkMinutes / 60 * 10) / 10,
-        todayWorkHours: Math.round(todayWorkMinutes / 60 * 10) / 10,
-        attendanceDays: attendance?.filter(a => a.check_out_at).length || 0,
       });
     } catch (error) {
       console.error("Error fetching employee stats:", error);
