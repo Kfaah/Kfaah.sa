@@ -126,7 +126,7 @@ serve(async (req) => {
 
       return json({ success: true, message: "تم ربط بيانات الدخول بنجاح", loginEmail: internalEmail }, 200);
     }
-    const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl, directManagerId, executiveManagerId } = body;
+    const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl, directManagerId, executiveManagerId, roleLevel } = body;
 
     // Validate required fields
     const fieldErrors: Record<string, string> = {};
