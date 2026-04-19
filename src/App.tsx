@@ -24,6 +24,8 @@ import OperationalPlans from "./pages/OperationalPlans";
 import AddOperationalPlan from "./pages/AddOperationalPlan";
 import OperationalPlanDetails from "./pages/OperationalPlanDetails";
 import Auth from "./pages/Auth";
+import PublicLanding from "./pages/PublicLanding";
+import OrgAuth from "./pages/OrgAuth";
 import Settings from "./pages/Settings";
 import Uploads from "./pages/Uploads";
 import Organizations from "./pages/Organizations";
