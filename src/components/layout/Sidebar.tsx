@@ -37,9 +37,9 @@ interface NavItem {
   iconBg: string;
 }
 
-// قائمة المدير (Admin)
+// قائمة مدير النظام (Admin) — يرى بيانات الجمعية فقط، بدون "خططي" الشخصية
 const adminNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
+  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
   { title: "الموظفين", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
   { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
   { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
@@ -48,9 +48,18 @@ const adminNavItems: NavItem[] = [
   { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
 ];
 
+// قائمة المدير المتوسط (Manager) — له خططه الشخصية + يرى فريقه عبر Toggle داخل كل صفحة
+const managerNavItems: NavItem[] = [
+  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
+  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
+  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
+  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
+];
+
 // قائمة الموظف العادي
 const employeeNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
+  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
   { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
   { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
@@ -72,9 +81,30 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { user, previewAsEmployee, setPreviewAsEmployee, previewingEmployee } = useUser();
   const { signOut, user: authUser } = useAuth();
+  const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
 
   // Check if user is actually an admin (not in preview mode)
   const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
+
+  // Resolve role_level from employees table to know which menu to show
+  useEffect(() => {
+    const fetchRoleLevel = async () => {
+      if (!authUser) return;
+      const { data } = await supabase
+        .from("employees")
+        .select("role_level")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+      if (data?.role_level) {
+        setRoleLevel(data.role_level as any);
+      } else if (isActuallyAdmin) {
+        setRoleLevel("admin");
+      } else {
+        setRoleLevel("employee");
+      }
+    };
+    fetchRoleLevel();
+  }, [authUser, isActuallyAdmin]);
 
   // جلب عدد الإشعارات غير المقروءة
   useEffect(() => {
@@ -444,9 +474,15 @@ export function Sidebar() {
           }}
         >
           <div className="space-y-2.5" dir="rtl">
-            {/* عرض القائمة حسب نوع المستخدم أو وضع المعاينة */}
-            {/* المدير يرى قائمة المدير حتى لو كان موظفاً، إلا في وضع المعاينة */}
-            {(previewAsEmployee ? employeeNavItems : (isActuallyAdmin ? adminNavItems : employeeNavItems)).map((item) => (
+            {/* عرض القائمة حسب مستوى الصلاحية (admin/manager/employee) أو وضع المعاينة */}
+            {(previewAsEmployee
+              ? employeeNavItems
+              : roleLevel === "admin"
+                ? adminNavItems
+                : roleLevel === "manager"
+                  ? managerNavItems
+                  : employeeNavItems
+            ).map((item) => (
               <div key={item.href}>
                 <NavLink item={item} />
               </div>

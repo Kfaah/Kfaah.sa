@@ -64,6 +64,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
+import { useScopedView } from "@/hooks/useScopedView";
+import { ScopeToggle } from "@/components/scope/ScopeToggle";
 
 interface Employee {
   id: string;
@@ -886,6 +888,14 @@ export default function ExecutivePlans() {
             <p className="text-muted-foreground mt-2">
               توزيع المستهدفات الشهرية على أيام محددة
             </p>
+            <div className="mt-3">
+              <ScopeToggle
+                scope={scopedView.scope}
+                onChange={scopedView.setScope}
+                roleLevel={scopedView.roleLevel}
+                teamCount={scopedView.subordinateEmployeeIds.length}
+              />
+            </div>
           </div>
           
           <div className="flex gap-2">

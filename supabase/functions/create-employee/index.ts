@@ -126,7 +126,7 @@ serve(async (req) => {
 
       return json({ success: true, message: "تم ربط بيانات الدخول بنجاح", loginEmail: internalEmail }, 200);
     }
-    const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl, directManagerId, executiveManagerId } = body;
+    const { fullName, username, password, email, phone, jobRole, roleColor, avatarUrl, directManagerId, executiveManagerId, roleLevel } = body;
 
     // Validate required fields
     const fieldErrors: Record<string, string> = {};
@@ -223,6 +223,8 @@ serve(async (req) => {
       return json({ success: false, error: "حدث خطأ أثناء إنشاء الحساب" }, 500);
     }
 
+    const validRoleLevel = ["employee", "manager", "admin"].includes(roleLevel) ? roleLevel : "employee";
+
     // Create employee record
     const { data: employee, error: employeeError } = await supabaseAdmin
       .from("employees")
@@ -238,6 +240,7 @@ serve(async (req) => {
         status: "active",
         direct_manager_id: directManagerId || null,
         executive_manager_id: executiveManagerId || null,
+        role_level: validRoleLevel,
       })
       .select()
       .single();
@@ -253,12 +256,13 @@ serve(async (req) => {
       );
     }
 
-    // Assign 'user' role to the new employee
+    // Assign role: 'admin' if role_level is admin, otherwise 'user'
+    const assignedRole = validRoleLevel === "admin" ? "admin" : "user";
     const { error: roleError } = await supabaseAdmin
       .from("user_roles")
       .insert({
         user_id: authData.user.id,
-        role: "user",
+        role: assignedRole,
       });
 
     if (roleError) {

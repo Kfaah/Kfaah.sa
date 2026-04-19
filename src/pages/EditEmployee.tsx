@@ -63,6 +63,7 @@ interface Employee {
   direct_manager_id: string | null;
   executive_manager_id: string | null;
   title: string | null;
+  role_level: "employee" | "manager" | "admin" | null;
 }
 
 interface EmployeeBasic {
@@ -99,6 +100,7 @@ const EditEmployee = () => {
     title: "",
     password: "",
     user_id: null as string | null,
+    roleLevel: "employee" as "employee" | "manager" | "admin",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -144,6 +146,7 @@ const EditEmployee = () => {
           title: emp.title || "",
           password: "",
           user_id: emp.user_id,
+          roleLevel: (emp.role_level as any) || "employee",
         });
 
         setDepartments(deptsRes.data || []);
@@ -269,10 +272,28 @@ const EditEmployee = () => {
           direct_manager_id: form.directManagerId && form.directManagerId !== "none" ? form.directManagerId : null,
           executive_manager_id: form.executiveManagerId && form.executiveManagerId !== "none" ? form.executiveManagerId : null,
           title: form.title.trim() || null,
+          role_level: form.roleLevel,
         })
         .eq("id", employeeId);
 
       if (error) throw error;
+
+      // Sync user_roles based on roleLevel (admin vs user)
+      if (form.user_id) {
+        const targetRole = form.roleLevel === "admin" ? "admin" : "user";
+        // Remove other roles, set the right one
+        await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", form.user_id)
+          .neq("role", targetRole);
+        await supabase
+          .from("user_roles")
+          .upsert(
+            { user_id: form.user_id, role: targetRole as any },
+            { onConflict: "user_id,role" }
+          );
+      }
 
       // ربط بيانات الدخول (رقم الهوية) مع حساب الدخول
       if (form.user_id) {
@@ -741,6 +762,43 @@ const EditEmployee = () => {
                   </p>
                 )}
               </div>
+            </div>
+
+            <Separator />
+
+            {/* مستوى الصلاحية الإدارية */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
+                <Label className="font-semibold text-foreground flex items-center gap-2">
+                  <BadgeCheck className="w-4 h-4 text-[#3d9aa8]" />
+                  مستوى الصلاحية الإدارية *
+                </Label>
+              </div>
+              <Select
+                value={form.roleLevel}
+                onValueChange={(v) =>
+                  setForm((prev) => ({ ...prev, roleLevel: v as any }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="employee">
+                    👤 موظف عادي — يرى بياناته فقط
+                  </SelectItem>
+                  <SelectItem value="manager">
+                    👥 مدير قسم — يرى بياناته + بيانات فريقه
+                  </SelectItem>
+                  <SelectItem value="admin">
+                    🛡️ مدير نظام — يرى كل بيانات الجمعية
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                يحدد ما يستطيع الموظف رؤيته في الخطط والمهام والتقييم.
+              </p>
             </div>
 
             <Separator />
