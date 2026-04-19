@@ -1,0 +1,20 @@
+
+ALTER TABLE public.employees ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.tasks ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.departments ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.job_roles ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.operational_plans ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.strategic_goals ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.initiatives ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.notifications ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.task_messages ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.active_task ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.executive_plans ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.operational_plan_months ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.operational_plan_custom_columns ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.operational_plan_custom_values ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.operational_plan_column_order ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.file_categories ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.employee_files ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.strategic_goal_departments ALTER COLUMN organization_id DROP NOT NULL;
+ALTER TABLE public.initiative_departments ALTER COLUMN organization_id DROP NOT NULL;
