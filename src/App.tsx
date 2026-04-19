@@ -89,6 +89,13 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
+      {/* Public marketing/landing + system-admin login */}
+      <Route path="/" element={<PublicLanding />} />
+
+      {/* Per-organization auth via short link */}
+      <Route path="/j/:slug" element={<OrgAuth />} />
+
+      {/* Legacy direct auth (kept for compatibility) */}
       <Route
         path="/auth"
         element={
@@ -97,142 +104,46 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+
+      {/* Super-admin organizations management */}
       <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Index />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/employees"
-        element={
-          <ProtectedRoute>
-            <Employees />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/employees/add"
-        element={
-          <ProtectedRoute>
-            <AddEmployee />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/employees/:employeeId/edit"
-        element={
-          <ProtectedRoute>
-            <EditEmployee />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roles"
-        element={
-          <ProtectedRoute>
-            <Roles />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tasks"
-        element={
-          <ProtectedRoute>
-            <Tasks />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tasks/add"
-        element={
-          <ProtectedRoute>
-            <AddTask />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tasks/:taskId"
-        element={
-          <ProtectedRoute>
-            <TaskDetails />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/plans"
-        element={
-          <ProtectedRoute>
-            <Plans />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/executive-plans"
-        element={
-          <ProtectedRoute>
-            <ExecutivePlans />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/operational-plans"
-        element={
-          <ProtectedRoute>
-            <OperationalPlans />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/operational-plans/add"
-        element={
-          <ProtectedRoute>
-            <AddOperationalPlan />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/operational-plans/:id"
-        element={
-          <ProtectedRoute>
-            <OperationalPlanDetails />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/uploads"
-        element={
-          <ProtectedRoute>
-            <Uploads />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/organizations"
+        path="/admin"
         element={
           <ProtectedRoute>
             <Organizations />
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/organizations"
+        element={<Navigate to="/admin" replace />}
+      />
+
+      {/* Application (per-org workspace) */}
+      <Route
+        path="/app"
+        element={
+          <ProtectedRoute>
+            <Index />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+      <Route path="/employees/add" element={<ProtectedRoute><AddEmployee /></ProtectedRoute>} />
+      <Route path="/employees/:employeeId/edit" element={<ProtectedRoute><EditEmployee /></ProtectedRoute>} />
+      <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
+      <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+      <Route path="/tasks/add" element={<ProtectedRoute><AddTask /></ProtectedRoute>} />
+      <Route path="/tasks/:taskId" element={<ProtectedRoute><TaskDetails /></ProtectedRoute>} />
+      <Route path="/plans" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
+      <Route path="/executive-plans" element={<ProtectedRoute><ExecutivePlans /></ProtectedRoute>} />
+      <Route path="/operational-plans" element={<ProtectedRoute><OperationalPlans /></ProtectedRoute>} />
+      <Route path="/operational-plans/add" element={<ProtectedRoute><AddOperationalPlan /></ProtectedRoute>} />
+      <Route path="/operational-plans/:id" element={<ProtectedRoute><OperationalPlanDetails /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
