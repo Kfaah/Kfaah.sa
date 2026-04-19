@@ -105,18 +105,23 @@ function AppRoutes() {
         }
       />
 
-      {/* Super-admin organizations management */}
+      {/* Super-admin hub: independent page, lists all orgs as cards */}
       <Route
         path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminHub />
+          </ProtectedRoute>
+        }
+      />
+      {/* Org management (edit form etc) — kept inside an org's dashboard */}
+      <Route
+        path="/organizations"
         element={
           <ProtectedRoute>
             <Organizations />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/organizations"
-        element={<Navigate to="/admin" replace />}
       />
 
       {/* Application (per-org workspace) */}
