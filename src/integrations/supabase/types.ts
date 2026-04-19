@@ -1495,6 +1495,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          allow_self_signup: boolean
           contact_email: string | null
           contact_phone: string | null
           created_at: string
@@ -1507,6 +1508,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_self_signup?: boolean
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -1519,6 +1521,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_self_signup?: boolean
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -2056,6 +2059,17 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_organization_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          allow_self_signup: boolean
+          id: string
+          is_active: boolean
+          logo_url: string
+          name: string
+          slug: string
+        }[]
+      }
       get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
@@ -2080,6 +2094,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      join_organization_by_slug: { Args: { _slug: string }; Returns: string }
       user_belongs_to_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
