@@ -28,6 +28,7 @@ import OrgAuth from "./pages/OrgAuth";
 import Settings from "./pages/Settings";
 import Uploads from "./pages/Uploads";
 import Organizations from "./pages/Organizations";
+import AdminHub from "./pages/AdminHub";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
