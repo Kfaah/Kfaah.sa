@@ -148,6 +148,7 @@ export default function OperationalPlans() {
   const { user: authUser } = useAuth();
   const { user, previewAsEmployee } = useUser();
   const { toast } = useToast();
+  const scopedView = useScopedView("scope:operational-plans");
   const [plans, setPlans] = useState<OperationalPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -1568,7 +1569,12 @@ export default function OperationalPlans() {
                 {isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
               </p>
             </div>
-            <OperationalPlansScopeToggle />
+            <ScopeToggle
+              scope={scopedView.scope}
+              onChange={scopedView.setScope}
+              roleLevel={scopedView.roleLevel}
+              teamCount={scopedView.subordinateEmployeeIds.length}
+            />
           </div>
         </div>
         
