@@ -31,6 +31,8 @@ import { EditPlanDialog } from "@/components/operational-plans/EditPlanDialog";
 import { AddItemDialog } from "@/components/operational-plans/AddItemDialog";
 import { ManageCustomColumnsDialog } from "@/components/operational-plans/ManageCustomColumnsDialog";
 import { formatNumber, getAvailableYears } from "@/lib/utils";
+import { useScopedView } from "@/hooks/useScopedView";
+import { ScopeToggle } from "@/components/scope/ScopeToggle";
 
 interface Employee {
   id: string;
@@ -1557,13 +1559,16 @@ export default function OperationalPlans() {
             </div>
           )}
           
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {isAdmin ? "الخطط التشغيلية" : "الخطة التشغيلية"}
-            </h1>
-            <p className="text-muted-foreground">
-              {isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
-            </p>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                {isAdmin ? "الخطط التشغيلية" : "الخطة التشغيلية"}
+              </h1>
+              <p className="text-muted-foreground">
+                {isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
+              </p>
+            </div>
+            <ScopeToggleWrapper />
           </div>
         </div>
         
