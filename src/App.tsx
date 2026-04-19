@@ -24,6 +24,7 @@ import AddOperationalPlan from "./pages/AddOperationalPlan";
 import OperationalPlanDetails from "./pages/OperationalPlanDetails";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
+import Uploads from "./pages/Uploads";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -209,6 +210,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/uploads"
+        element={
+          <ProtectedRoute>
+            <Uploads />
           </ProtectedRoute>
         }
       />
