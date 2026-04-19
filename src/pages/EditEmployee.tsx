@@ -766,6 +766,43 @@ const EditEmployee = () => {
 
             <Separator />
 
+            {/* مستوى الصلاحية الإدارية */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
+                <Label className="font-semibold text-foreground flex items-center gap-2">
+                  <BadgeCheck className="w-4 h-4 text-[#3d9aa8]" />
+                  مستوى الصلاحية الإدارية *
+                </Label>
+              </div>
+              <Select
+                value={form.roleLevel}
+                onValueChange={(v) =>
+                  setForm((prev) => ({ ...prev, roleLevel: v as any }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="employee">
+                    👤 موظف عادي — يرى بياناته فقط
+                  </SelectItem>
+                  <SelectItem value="manager">
+                    👥 مدير قسم — يرى بياناته + بيانات فريقه
+                  </SelectItem>
+                  <SelectItem value="admin">
+                    🛡️ مدير نظام — يرى كل بيانات الجمعية
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                يحدد ما يستطيع الموظف رؤيته في الخطط والمهام والتقييم.
+              </p>
+            </div>
+
+            <Separator />
+
             {/* أزرار الإجراءات */}
             <div className="flex items-center justify-end gap-3 pt-4">
               <Button
