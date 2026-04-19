@@ -1132,6 +1132,7 @@ export type Database = {
         | "hr_manager"
         | "finance_manager"
         | "accountant"
+        | "super_admin"
       custom_column_type: "text" | "number" | "date" | "department" | "employee"
     }
     CompositeTypes: {
@@ -1268,6 +1269,7 @@ export const Constants = {
         "hr_manager",
         "finance_manager",
         "accountant",
+        "super_admin",
       ],
       custom_column_type: ["text", "number", "date", "department", "employee"],
     },
