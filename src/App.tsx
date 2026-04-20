@@ -151,6 +151,25 @@ function AppRoutes() {
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
 
+      {/* Org-scoped aliases: charity-crm.org/atff/app, /atff/tasks ... */}
+      <Route path="/:slug/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+      <Route path="/:slug/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+      <Route path="/:slug/employees/add" element={<ProtectedRoute><AddEmployee /></ProtectedRoute>} />
+      <Route path="/:slug/employees/:employeeId/edit" element={<ProtectedRoute><EditEmployee /></ProtectedRoute>} />
+      <Route path="/:slug/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
+      <Route path="/:slug/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+      <Route path="/:slug/tasks/add" element={<ProtectedRoute><AddTask /></ProtectedRoute>} />
+      <Route path="/:slug/tasks/:taskId" element={<ProtectedRoute><TaskDetails /></ProtectedRoute>} />
+      <Route path="/:slug/plans" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
+      <Route path="/:slug/executive-plans" element={<ProtectedRoute><ExecutivePlans /></ProtectedRoute>} />
+      <Route path="/:slug/operational-plans" element={<ProtectedRoute><OperationalPlans /></ProtectedRoute>} />
+      <Route path="/:slug/operational-plans/add" element={<ProtectedRoute><AddOperationalPlan /></ProtectedRoute>} />
+      <Route path="/:slug/operational-plans/:id" element={<ProtectedRoute><OperationalPlanDetails /></ProtectedRoute>} />
+      <Route path="/:slug/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/:slug/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/:slug/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
+      <Route path="/:slug/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
+
       {/* Short org slug: charity-crm.org/atff → نفس صفحة /j/atff */}
       <Route path="/:slug" element={<OrgAuth />} />
 
