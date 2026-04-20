@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import adminLandscape from "@/assets/admin-landscape.jpg";
 
 const navItems = [
   { to: "/admin", label: "نظرة عامة موحّدة", icon: LayoutDashboard, end: true,
@@ -119,8 +120,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content - خلفية هادئة بهوية عطف */}
-      <main className="mr-72 relative min-h-screen admin-soft-surface">
+      {/* Main content - منظر فكتور: سماء وسحب وأرض خضراء */}
+      <main
+        className="mr-72 relative min-h-screen admin-soft-surface"
+        style={{ backgroundImage: `url(${adminLandscape})` }}
+      >
         <div className="relative z-10">{children}</div>
       </main>
     </div>
