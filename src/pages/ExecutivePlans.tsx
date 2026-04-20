@@ -235,6 +235,7 @@ function wrapTextByChars(text: string, maxChars = 30): string {
 export default function ExecutivePlans() {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
+  const scopedView = useScopedView("scope:executive-plans");
   const [isAdmin, setIsAdmin] = useState(false);
   
   const [employees, setEmployees] = useState<Employee[]>([]);
