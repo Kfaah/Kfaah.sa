@@ -151,6 +151,9 @@ function AppRoutes() {
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
 
+      {/* Short org slug: charity-crm.org/atff → نفس صفحة /j/atff */}
+      <Route path="/:slug" element={<OrgAuth />} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
