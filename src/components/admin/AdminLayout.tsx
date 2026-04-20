@@ -98,21 +98,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Footer actions */}
-        <div className="p-3 border-t border-sidebar-border space-y-1">
-          <Button
-            onClick={() => navigate("/app")}
-            variant="ghost"
-            className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent"
-            size="sm"
-          >
-            <ArrowLeftCircle className="w-4 h-4" />
-            الانتقال إلى نظام جمعية
-          </Button>
+        <div className="p-3 border-t border-sidebar-border">
           <Button
             onClick={handleSignOut}
-            variant="ghost"
-            className="w-full justify-start gap-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            size="sm"
+            className="w-full justify-center gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold shadow-md"
+            size="default"
           >
             <LogOut className="w-4 h-4" />
             تسجيل الخروج
