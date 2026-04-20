@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import {
-  Building2, Users, HandCoins, TrendingUp, Sparkles, AlertTriangle,
-  ShoppingCart, Banknote, Target, Trophy,
+  Building2, Users, HandCoins, TrendingUp, Sparkles,
+  ShoppingCart, Target, Trophy,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,14 @@ const fmt = (n: number) =>
 const fmtSAR = (n: number) =>
   new Intl.NumberFormat("ar-SA", { style: "currency", currency: "SAR", maximumFractionDigits: 0 }).format(n);
 
-const PIE_COLORS = ["#06b6d4", "#8b5cf6", "#10b981", "#f59e0b", "#ec4899", "#3b82f6", "#f43f5e", "#84cc16"];
+// ألوان مستمدّة من هوية عطف (HSL من index.css)
+const PRIMARY = "hsl(210, 60%, 28%)";   // أزرق داكن
+const ACCENT  = "hsl(174, 52%, 52%)";   // تركوازي
+const PIE_COLORS = [
+  "hsl(174, 52%, 52%)", "hsl(210, 60%, 28%)", "hsl(174, 60%, 45%)",
+  "hsl(210, 50%, 45%)", "hsl(195, 55%, 55%)", "hsl(160, 50%, 45%)",
+  "hsl(220, 55%, 50%)", "hsl(190, 50%, 60%)",
+];
 
 export default function AdminOverview() {
   const { metrics, loading } = useAdminAggregates();
@@ -63,19 +70,19 @@ export default function AdminOverview() {
       {/* Hero */}
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">نظرة عامة موحّدة</h1>
-          <p className="text-slate-400 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">نظرة عامة موحّدة</h1>
+          <p className="text-muted-foreground mt-1">
             مجموع البيانات من جميع الجمعيات في مكان واحد · لحظة بلحظة
           </p>
         </div>
         {topOrg && (
-          <Card className="bg-gradient-to-l from-amber-500/20 to-orange-500/20 border-amber-500/30 px-4 py-3 flex items-center gap-3">
-            <Trophy className="w-6 h-6 text-amber-400" />
+          <Card className="bg-accent/10 border-accent/30 px-4 py-3 flex items-center gap-3 shadow-sm">
+            <Trophy className="w-6 h-6 text-accent" />
             <div>
-              <div className="text-[11px] text-amber-300">الجمعية الأعلى أداءً</div>
-              <div className="text-white font-bold">{topOrg.org_name}</div>
+              <div className="text-[11px] text-muted-foreground">الجمعية الأعلى أداءً</div>
+              <div className="text-foreground font-bold">{topOrg.org_name}</div>
             </div>
-            <Badge className="bg-amber-500 text-amber-950 mr-2">
+            <Badge className="bg-accent text-accent-foreground mr-2">
               {topOrg.overall_score.toFixed(0)}/100
             </Badge>
           </Card>
@@ -84,18 +91,12 @@ export default function AdminOverview() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <KpiCard icon={Building2} label="الجمعيات" value={fmt(totals.orgs)}
-          sub={`${totals.active} نشطة`} grad="from-cyan-400 to-blue-600" />
-        <KpiCard icon={Users} label="المتبرعون" value={fmt(totals.donors)}
-          sub="إجمالي" grad="from-violet-500 to-purple-600" />
-        <KpiCard icon={HandCoins} label="التبرعات" value={fmt(totals.donations)}
-          sub="عملية" grad="from-emerald-400 to-teal-600" />
-        <KpiCard icon={TrendingUp} label="الإيرادات" value={fmtSAR(totals.revenue)}
-          sub="إجمالي" grad="from-amber-400 to-orange-500" />
-        <KpiCard icon={Users} label="الموظفون" value={fmt(totals.employees)}
-          sub="عبر كل الجمعيات" grad="from-pink-400 to-rose-600" />
-        <KpiCard icon={Sparkles} label="رؤى ذكية" value={fmt(totals.insights)}
-          sub={`${totals.ideas} فكرة تسويق`} grad="from-fuchsia-500 to-pink-600" />
+        <KpiCard icon={Building2} label="الجمعيات" value={fmt(totals.orgs)} sub={`${totals.active} نشطة`} />
+        <KpiCard icon={Users} label="المتبرعون" value={fmt(totals.donors)} sub="إجمالي" />
+        <KpiCard icon={HandCoins} label="التبرعات" value={fmt(totals.donations)} sub="عملية" />
+        <KpiCard icon={TrendingUp} label="الإيرادات" value={fmtSAR(totals.revenue)} sub="إجمالي" />
+        <KpiCard icon={Users} label="الموظفون" value={fmt(totals.employees)} sub="عبر كل الجمعيات" />
+        <KpiCard icon={Sparkles} label="رؤى ذكية" value={fmt(totals.insights)} sub={`${totals.ideas} فكرة تسويق`} />
       </div>
 
       {/* Health bars */}
@@ -103,48 +104,50 @@ export default function AdminOverview() {
         <HealthCard
           icon={ShoppingCart} title="استرجاع السلال المتروكة"
           rate={recoveryRate} detail={`${fmt(totals.recovered)} مسترجعة من ${fmt(totals.abandoned)}`}
-          color="emerald"
         />
         <HealthCard
           icon={Target} title="إنجاز المهام"
           rate={completionRate} detail={`${fmt(totals.done)} مكتملة من ${fmt(totals.tasks)}`}
-          color="cyan"
         />
       </div>
 
       {/* Charts */}
       <div className="grid lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2 bg-slate-900/60 border-slate-700/50 p-5">
+        <Card className="lg:col-span-2 bg-card border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-white font-bold">إيرادات الجمعيات</h3>
-              <p className="text-slate-400 text-xs">أعلى 8 جمعيات</p>
+              <h3 className="text-foreground font-bold">إيرادات الجمعيات</h3>
+              <p className="text-muted-foreground text-xs">أعلى 8 جمعيات</p>
             </div>
-            <Badge variant="outline" className="border-cyan-500/30 text-cyan-300">SAR</Badge>
+            <Badge variant="outline" className="border-accent/40 text-accent">SAR</Badge>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={revenueByOrg}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-              <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 11 }} />
-              <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
+              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
               <Tooltip
-                contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8 }}
-                labelStyle={{ color: "#e2e8f0" }}
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 8,
+                  color: "hsl(var(--foreground))",
+                }}
               />
-              <Bar dataKey="revenue" fill="url(#grad1)" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="revenue" fill="url(#revGrad)" radius={[8, 8, 0, 0]} />
               <defs>
-                <linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06b6d4" />
-                  <stop offset="100%" stopColor="#3b82f6" />
+                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={ACCENT} />
+                  <stop offset="100%" stopColor={PRIMARY} />
                 </linearGradient>
               </defs>
             </BarChart>
           </ResponsiveContainer>
         </Card>
 
-        <Card className="bg-slate-900/60 border-slate-700/50 p-5">
-          <h3 className="text-white font-bold mb-1">توزيع المتبرعين</h3>
-          <p className="text-slate-400 text-xs mb-4">حصة كل جمعية</p>
+        <Card className="bg-card border-border p-5 shadow-sm">
+          <h3 className="text-foreground font-bold mb-1">توزيع المتبرعين</h3>
+          <p className="text-muted-foreground text-xs mb-4">حصة كل جمعية</p>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={donorsDist} dataKey="value" nameKey="name" cx="50%" cy="50%"
@@ -152,63 +155,61 @@ export default function AdminOverview() {
                 {donorsDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
               <Tooltip
-                contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8 }}
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 8,
+                  color: "hsl(var(--foreground))",
+                }}
               />
-              <Legend wrapperStyle={{ fontSize: 10, color: "#cbd5e1" }} />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
             </PieChart>
           </ResponsiveContainer>
         </Card>
       </div>
 
       {loading && (
-        <div className="text-center py-8 text-slate-400">جاري تجميع البيانات…</div>
+        <div className="text-center py-8 text-muted-foreground">جاري تجميع البيانات…</div>
       )}
     </div>
   );
 }
 
-function KpiCard({ icon: Icon, label, value, sub, grad }: {
-  icon: any; label: string; value: string; sub: string; grad: string;
+function KpiCard({ icon: Icon, label, value, sub }: {
+  icon: any; label: string; value: string; sub: string;
 }) {
   return (
-    <Card className="bg-slate-900/60 border-slate-700/50 p-4 relative overflow-hidden group hover:border-slate-500/50 transition-colors">
-      <div className={`absolute -top-4 -left-4 w-20 h-20 rounded-full bg-gradient-to-br ${grad} opacity-20 blur-2xl group-hover:opacity-40 transition-opacity`} />
-      <div className="relative">
-        <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center mb-2 shadow-lg`}>
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-        <div className="text-[11px] text-slate-400">{label}</div>
-        <div className="text-xl font-bold text-white mt-0.5 leading-tight">{value}</div>
-        <div className="text-[10px] text-slate-500 mt-0.5">{sub}</div>
+    <Card className="bg-card border-border p-4 hover:shadow-card transition-shadow">
+      <div className="w-9 h-9 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-2">
+        <Icon className="w-5 h-5" />
       </div>
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className="text-xl font-bold text-foreground mt-0.5 leading-tight">{value}</div>
+      <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>
     </Card>
   );
 }
 
-function HealthCard({ icon: Icon, title, rate, detail, color }: {
-  icon: any; title: string; rate: number; detail: string; color: "emerald" | "cyan";
+function HealthCard({ icon: Icon, title, rate, detail }: {
+  icon: any; title: string; rate: number; detail: string;
 }) {
-  const colorMap = {
-    emerald: "from-emerald-400 to-teal-600 text-emerald-300",
-    cyan: "from-cyan-400 to-blue-600 text-cyan-300",
-  };
   return (
-    <Card className="bg-slate-900/60 border-slate-700/50 p-5">
+    <Card className="bg-card border-border p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorMap[color].split(" text-")[0]} flex items-center justify-center`}>
-            <Icon className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <Icon className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-white font-bold text-sm">{title}</h4>
-            <p className="text-slate-400 text-xs">{detail}</p>
+            <h4 className="text-foreground font-bold text-sm">{title}</h4>
+            <p className="text-muted-foreground text-xs">{detail}</p>
           </div>
         </div>
-        <div className={`text-2xl font-bold ${colorMap[color].split("text-")[1] ? "text-" + colorMap[color].split("text-")[1] : ""}`}>
+        <div className="text-2xl font-bold text-accent">
           {rate.toFixed(1)}%
         </div>
       </div>
-      <Progress value={rate} className="h-2 bg-slate-800" />
+      <Progress value={rate} className="h-2" />
     </Card>
   );
 }

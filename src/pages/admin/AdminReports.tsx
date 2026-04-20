@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,23 +6,19 @@ import { FileBarChart2, Download, Users, HandCoins, ShoppingCart, Briefcase, Tro
 import { useAdminAggregates, type OrgMetrics } from "@/hooks/useAdminAggregates";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const fmt = (n: number) => new Intl.NumberFormat("ar-SA").format(Math.round(n));
 const pct = (n: number) => `${n.toFixed(1)}%`;
 
 type ReportKey = "fundraising" | "donors" | "service" | "team" | "ranking";
 
-const reports: { key: ReportKey; title: string; desc: string; icon: any; grad: string }[] = [
-  { key: "fundraising", title: "تقرير جمع التبرعات", desc: "إيرادات · عدد العمليات · متوسط التبرع · حملات",
-    icon: HandCoins, grad: "from-emerald-400 to-teal-600" },
-  { key: "donors", title: "تقرير المتبرعين", desc: "إجمالي · منتظمون · معدل الاحتفاظ",
-    icon: Users, grad: "from-violet-500 to-purple-600" },
-  { key: "service", title: "تقرير خدمة المتبرع", desc: "سلال متروكة · تحويلات بنكية · مطابقة",
-    icon: ShoppingCart, grad: "from-cyan-400 to-blue-600" },
-  { key: "team", title: "تقرير أداء الفِرق", desc: "موظفون · مهام · معدل الإنجاز",
-    icon: Briefcase, grad: "from-amber-400 to-orange-500" },
-  { key: "ranking", title: "ترتيب الجمعيات الشامل", desc: "مؤشر تقييم متعدد المعايير",
-    icon: Trophy, grad: "from-fuchsia-500 to-pink-600" },
+const reports: { key: ReportKey; title: string; desc: string; icon: any }[] = [
+  { key: "fundraising", title: "تقرير جمع التبرعات", desc: "إيرادات · عدد العمليات · متوسط التبرع · حملات", icon: HandCoins },
+  { key: "donors", title: "تقرير المتبرعين", desc: "إجمالي · منتظمون · معدل الاحتفاظ", icon: Users },
+  { key: "service", title: "تقرير خدمة المتبرع", desc: "سلال متروكة · تحويلات بنكية · مطابقة", icon: ShoppingCart },
+  { key: "team", title: "تقرير أداء الفِرق", desc: "موظفون · مهام · معدل الإنجاز", icon: Briefcase },
+  { key: "ranking", title: "ترتيب الجمعيات الشامل", desc: "مؤشر تقييم متعدد المعايير", icon: Trophy },
 ];
 
 export default function AdminReports() {
@@ -41,8 +37,7 @@ export default function AdminReports() {
     }
   }, [metrics, active]);
 
-  // Load top employees across all orgs when team report is active
-  useMemo(() => {
+  useEffect(() => {
     if (active !== "team") return;
     (async () => {
       const { data } = await supabase
@@ -75,13 +70,13 @@ export default function AdminReports() {
     <div className="p-8 space-y-6">
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <FileBarChart2 className="w-8 h-8 text-amber-400" />
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <FileBarChart2 className="w-8 h-8 text-accent" />
             التقارير
           </h1>
-          <p className="text-slate-400 mt-1">تقارير دقيقة وعميقة لكل المحاور · قابلة للتصدير</p>
+          <p className="text-muted-foreground mt-1">تقارير دقيقة وعميقة لكل المحاور · قابلة للتصدير</p>
         </div>
-        <Button onClick={exportCSV} className="gap-2 bg-gradient-to-l from-amber-400 to-orange-500 hover:opacity-90">
+        <Button onClick={exportCSV} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
           <Download className="w-4 h-4" /> تصدير CSV
         </Button>
       </div>
@@ -95,47 +90,50 @@ export default function AdminReports() {
             <button
               key={r.key}
               onClick={() => setActive(r.key)}
-              className={`text-right p-4 rounded-xl border transition-all ${
+              className={cn(
+                "text-right p-4 rounded-xl border transition-all",
                 isActive
-                  ? `bg-gradient-to-br ${r.grad} border-transparent shadow-xl scale-[1.02]`
-                  : "bg-slate-900/60 border-slate-700/50 hover:border-slate-500/60"
-              }`}
+                  ? "bg-accent text-accent-foreground border-accent shadow-card"
+                  : "bg-card border-border text-foreground hover:border-accent/50 hover:shadow-sm"
+              )}
             >
-              <Icon className={`w-6 h-6 mb-2 ${isActive ? "text-white" : "text-slate-400"}`} />
-              <div className={`font-bold text-sm ${isActive ? "text-white" : "text-slate-200"}`}>{r.title}</div>
-              <div className={`text-[11px] mt-1 ${isActive ? "text-white/80" : "text-slate-500"}`}>{r.desc}</div>
+              <Icon className={cn("w-6 h-6 mb-2", isActive ? "text-accent-foreground" : "text-muted-foreground")} />
+              <div className="font-bold text-sm">{r.title}</div>
+              <div className={cn("text-[11px] mt-1", isActive ? "text-accent-foreground/85" : "text-muted-foreground")}>
+                {r.desc}
+              </div>
             </button>
           );
         })}
       </div>
 
       {/* Table */}
-      <Card className="bg-slate-900/60 border-slate-700/50 overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-800/60">
+            <thead className="bg-muted/60">
               <tr>
-                <th className="px-3 py-3 text-right text-slate-300 w-12">#</th>
-                <th className="px-3 py-3 text-right text-slate-300">الجمعية</th>
+                <th className="px-3 py-3 text-right text-foreground w-12">#</th>
+                <th className="px-3 py-3 text-right text-foreground">الجمعية</th>
                 {columns[active].map(c => (
-                  <th key={c.key} className="px-3 py-3 text-center text-slate-300">{c.label}</th>
+                  <th key={c.key} className="px-3 py-3 text-center text-foreground">{c.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {sorted.map((m, i) => (
-                <tr key={m.org_id} className="border-t border-slate-700/40 hover:bg-slate-800/40">
+                <tr key={m.org_id} className="border-t border-border hover:bg-muted/40">
                   <td className="px-3 py-3 text-center">
-                    <Badge variant="outline" className="border-slate-600 text-slate-300">{i + 1}</Badge>
+                    <Badge variant="outline" className="border-border">{i + 1}</Badge>
                   </td>
-                  <td className="px-3 py-3 text-right text-white font-medium">{m.org_name}</td>
+                  <td className="px-3 py-3 text-right text-foreground font-medium">{m.org_name}</td>
                   {columns[active].map(c => (
-                    <td key={c.key} className="px-3 py-3 text-center text-slate-200">{c.get(m)}</td>
+                    <td key={c.key} className="px-3 py-3 text-center text-foreground">{c.get(m)}</td>
                   ))}
                 </tr>
               ))}
               {!loading && sorted.length === 0 && (
-                <tr><td colSpan={columns[active].length + 2} className="text-center text-slate-400 py-8">لا توجد بيانات</td></tr>
+                <tr><td colSpan={columns[active].length + 2} className="text-center text-muted-foreground py-8">لا توجد بيانات</td></tr>
               )}
             </tbody>
           </table>
@@ -143,26 +141,26 @@ export default function AdminReports() {
       </Card>
 
       {active === "team" && employees.length > 0 && (
-        <Card className="bg-slate-900/60 border-slate-700/50 p-5">
-          <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-400" />
+        <Card className="bg-card border-border p-5 shadow-sm">
+          <h3 className="text-foreground font-bold mb-3 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-accent" />
             ترتيب أفضل الموظفين عبر كل الجمعيات
           </h3>
           <div className="space-y-2">
             {employees.map((e, i) => (
-              <div key={e.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/40 hover:bg-slate-800/60 transition">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-white font-bold text-xs">
+              <div key={e.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 hover:bg-muted/70 transition">
+                <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-xs">
                   {i + 1}
                 </div>
                 <div className="flex-1">
-                  <div className="text-white font-medium">{e.full_name}</div>
-                  <div className="text-xs text-slate-400">
+                  <div className="text-foreground font-medium">{e.full_name}</div>
+                  <div className="text-xs text-muted-foreground">
                     {e.job_role} · {e.organizations?.name || "—"}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-emerald-400 font-bold">{e.performance || 0}%</div>
-                  <div className="text-[10px] text-slate-400">
+                  <div className="text-success font-bold">{e.performance || 0}%</div>
+                  <div className="text-[10px] text-muted-foreground">
                     {e.tasks_completed || 0}/{e.tasks_total || 0} مهام
                   </div>
                 </div>

@@ -10,15 +10,15 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/admin", label: "نظرة عامة موحّدة", icon: LayoutDashboard, end: true,
-    grad: "from-violet-500 to-purple-600", desc: "ملخّص شامل لكل الجمعيات" },
+    desc: "ملخّص شامل لكل الجمعيات" },
   { to: "/admin/organizations", label: "الجمعيات", icon: Building2, end: false,
-    grad: "from-cyan-400 to-blue-600", desc: "إدارة وتفاصيل الجمعيات" },
+    desc: "إدارة وتفاصيل الجمعيات" },
   { to: "/admin/compare", label: "المقارنة بين الجمعيات", icon: GitCompareArrows, end: false,
-    grad: "from-emerald-400 to-teal-600", desc: "رادار · ترتيب · معايير متعددة" },
+    desc: "رادار · ترتيب · معايير متعددة" },
   { to: "/admin/analytics", label: "التحليل العميق", icon: Sparkles, end: false,
-    grad: "from-fuchsia-500 to-pink-600", desc: "تحليل AI لكل جمعية" },
+    desc: "تحليل AI لكل جمعية" },
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
-    grad: "from-amber-400 to-orange-500", desc: "تقارير دقيقة قابلة للتصدير" },
+    desc: "تقارير دقيقة قابلة للتصدير" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
@@ -29,31 +29,24 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
   return (
-    <div className="min-h-screen bg-white" dir="rtl">
-      <div
-        className="fixed inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-
+    <div className="min-h-screen bg-background" dir="rtl">
       {/* Sidebar — يمين الشاشة (RTL) */}
-      <aside className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-white/10 bg-slate-900/80 backdrop-blur-xl flex flex-col">
+      <aside className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-sidebar-border bg-sidebar flex flex-col shadow-card">
         {/* Brand */}
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <Crown className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-md">
+              <Crown className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-white font-bold text-base leading-tight">مدير النظام</h1>
-              <p className="text-slate-400 text-[11px]">CharityCRM Command Center</p>
+              <h1 className="text-sidebar-foreground font-bold text-base leading-tight">مدير النظام</h1>
+              <p className="text-muted-foreground text-[11px]">مركز قيادة عطف</p>
             </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = item.end
@@ -67,30 +60,29 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 className={cn(
                   "group relative flex items-start gap-3 rounded-xl p-3 transition-all",
                   active
-                    ? "bg-white/10 shadow-lg"
-                    : "hover:bg-white/5"
+                    ? "bg-sidebar-accent"
+                    : "hover:bg-sidebar-accent/60"
                 )}
               >
                 {active && (
-                  <span className={cn(
-                    "absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-l-full bg-gradient-to-b",
-                    item.grad
-                  )} />
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-l-full bg-accent" />
                 )}
                 <div className={cn(
-                  "w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-md flex-shrink-0",
-                  item.grad
+                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
+                  active
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground group-hover:bg-accent/10 group-hover:text-accent"
                 )}>
-                  <Icon className="w-5 h-5 text-white" />
+                  <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={cn(
                     "text-sm font-semibold leading-tight",
-                    active ? "text-white" : "text-slate-200"
+                    active ? "text-sidebar-accent-foreground" : "text-sidebar-foreground"
                   )}>
                     {item.label}
                   </div>
-                  <div className="text-[11px] text-slate-400 leading-tight mt-0.5 truncate">
+                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5 truncate">
                     {item.desc}
                   </div>
                 </div>
@@ -100,11 +92,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Footer actions */}
-        <div className="p-3 border-t border-white/10 space-y-2">
+        <div className="p-3 border-t border-sidebar-border space-y-1">
           <Button
             onClick={() => navigate("/app")}
             variant="ghost"
-            className="w-full justify-start gap-2 text-slate-200 hover:bg-white/10 hover:text-white"
+            className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent"
             size="sm"
           >
             <ArrowLeftCircle className="w-4 h-4" />
@@ -113,7 +105,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <Button
             onClick={handleSignOut}
             variant="ghost"
-            className="w-full justify-start gap-2 text-slate-300 hover:bg-rose-500/20 hover:text-rose-200"
+            className="w-full justify-start gap-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             size="sm"
           >
             <LogOut className="w-4 h-4" />
@@ -123,7 +115,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="mr-72 relative z-10 min-h-screen">
+      <main className="mr-72 relative z-10 min-h-screen bg-background">
         {children}
       </main>
     </div>
