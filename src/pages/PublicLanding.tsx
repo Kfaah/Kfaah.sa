@@ -69,7 +69,14 @@ export default function PublicLanding() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" dir="rtl">
+    <div
+      className="min-h-screen flex flex-col"
+      dir="rtl"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+      }}
+    >
       {/* Background pattern */}
       <div
         className="absolute inset-0 opacity-[0.04]"
