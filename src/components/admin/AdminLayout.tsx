@@ -10,15 +10,20 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/admin", label: "نظرة عامة موحّدة", icon: LayoutDashboard, end: true,
-    desc: "ملخّص شامل لكل الجمعيات" },
+    desc: "ملخّص شامل لكل الجمعيات",
+    color: "text-sky-600", bg: "bg-sky-100", activeBg: "bg-sky-500", activeText: "text-white" },
   { to: "/admin/organizations", label: "الجمعيات", icon: Building2, end: false,
-    desc: "إدارة وتفاصيل الجمعيات" },
+    desc: "إدارة وتفاصيل الجمعيات",
+    color: "text-emerald-600", bg: "bg-emerald-100", activeBg: "bg-emerald-500", activeText: "text-white" },
   { to: "/admin/compare", label: "المقارنة بين الجمعيات", icon: GitCompareArrows, end: false,
-    desc: "رادار · ترتيب · معايير متعددة" },
+    desc: "رادار · ترتيب · معايير متعددة",
+    color: "text-violet-600", bg: "bg-violet-100", activeBg: "bg-violet-500", activeText: "text-white" },
   { to: "/admin/analytics", label: "التحليل العميق", icon: Sparkles, end: false,
-    desc: "تحليل AI لكل جمعية" },
+    desc: "تحليل AI لكل جمعية",
+    color: "text-amber-600", bg: "bg-amber-100", activeBg: "bg-amber-500", activeText: "text-white" },
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
-    desc: "تقارير دقيقة قابلة للتصدير" },
+    desc: "تقارير دقيقة قابلة للتصدير",
+    color: "text-rose-600", bg: "bg-rose-100", activeBg: "bg-rose-500", activeText: "text-white" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
@@ -68,10 +73,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-l-full bg-accent" />
                 )}
                 <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
+                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors shadow-sm",
                   active
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-muted text-muted-foreground group-hover:bg-accent/10 group-hover:text-accent"
+                    ? `${item.activeBg} ${item.activeText}`
+                    : `${item.bg} ${item.color} group-hover:scale-105`
                 )}>
                   <Icon className="w-5 h-5" />
                 </div>
