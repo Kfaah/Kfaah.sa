@@ -259,45 +259,16 @@
   }
 }
 
-/* Admin surface — سماء ممطرة داكنة بسحب بيضاء ضبابية */
+/* Admin surface — منظر فكتور: سماء زرقاء + سحب بيضاء + أرض خضراء */
 .admin-soft-surface {
-  position: relative;
-  background:
-    /* سحب بيضاء ضبابية كبيرة وناعمة */
-    radial-gradient(ellipse 600px 200px at 15% 20%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 35%, transparent 70%),
-    radial-gradient(ellipse 700px 180px at 75% 15%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.10) 40%, transparent 75%),
-    radial-gradient(ellipse 500px 160px at 45% 45%, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.06) 40%, transparent 70%),
-    radial-gradient(ellipse 650px 200px at 90% 60%, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.08) 40%, transparent 75%),
-    radial-gradient(ellipse 550px 170px at 20% 75%, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.07) 40%, transparent 70%),
-    radial-gradient(ellipse 600px 180px at 60% 90%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 40%, transparent 70%),
-    /* تدرّج السماء الداكنة */
-    linear-gradient(180deg, hsl(215 45% 22%) 0%, hsl(218 50% 16%) 50%, hsl(220 55% 12%) 100%);
+  background-color: hsl(200 80% 75%);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center top;
   background-attachment: fixed;
-}
-/* خطوط مطر خفيفة قطرية */
-.admin-soft-surface::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: repeating-linear-gradient(
-    105deg,
-    transparent 0px,
-    transparent 8px,
-    rgba(255,255,255,0.025) 8px,
-    rgba(255,255,255,0.025) 9px
-  );
-  z-index: 0;
-}
-.admin-soft-surface > * {
-  position: relative;
-  z-index: 1;
 }
 .admin-soft-surface h1,
 .admin-soft-surface h2 {
-  color: #ffffff;
+  color: hsl(210 60% 18%);
 }
-.admin-soft-surface > main p,
-.admin-soft-surface > div > div > p {
-  color: rgba(255,255,255,0.78);
-}
+
