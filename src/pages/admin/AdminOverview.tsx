@@ -70,14 +70,16 @@ export default function AdminOverview() {
       {/* Hero */}
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">نظرة عامة موحّدة</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold text-white">نظرة عامة موحّدة</h1>
+          <p className="text-white/80 mt-1">
             مجموع البيانات من جميع الجمعيات في مكان واحد · لحظة بلحظة
           </p>
         </div>
         {topOrg && (
-          <Card className="bg-accent/10 border-accent/30 px-4 py-3 flex items-center gap-3 shadow-sm">
-            <Trophy className="w-6 h-6 text-accent" />
+          <Card className="bg-white border-0 px-4 py-3 flex items-center gap-3 shadow-xl">
+            <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center">
+              <Trophy className="w-5 h-5 text-accent" />
+            </div>
             <div>
               <div className="text-[11px] text-muted-foreground">الجمعية الأعلى أداءً</div>
               <div className="text-foreground font-bold">{topOrg.org_name}</div>

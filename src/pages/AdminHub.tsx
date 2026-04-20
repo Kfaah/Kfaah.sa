@@ -175,12 +175,12 @@ export default function AdminHub() {
         {/* Hero */}
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-foreground">الجمعيات المسجّلة</h2>
-            <p className="text-muted-foreground mt-1">
+            <h2 className="text-3xl font-bold text-white">الجمعيات المسجّلة</h2>
+            <p className="text-white/80 mt-1">
               اختر جمعية للدخول إلى نظامها · {orgs.length} جمعية
             </p>
           </div>
-          <Button onClick={openCreate} className="gap-2 shadow-sm">
+          <Button onClick={openCreate} className="gap-2 shadow-sm bg-white text-primary hover:bg-white/90">
             <Plus className="w-4 h-4" /> إضافة جمعية جديدة
           </Button>
         </div>
