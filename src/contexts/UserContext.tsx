@@ -156,7 +156,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             department: data.department || "",
             location: data.location || "",
             profileImage: data.avatar_url,
-            role: userRole === "admin" ? "مدير النظام" : "مستخدم",
+            role: (userRole === "admin" || userRole === "super_admin") ? "مدير النظام" : "مستخدم",
             jobRole: (data as any).job_role || "",
             username: authUser.user_metadata?.username || "",
             isEmployee: false,
