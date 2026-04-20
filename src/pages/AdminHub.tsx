@@ -153,19 +153,19 @@ export default function AdminHub() {
 
   return (
     <div className="min-h-screen" dir="rtl">
-      {/* Top bar */}
-      <header className="relative z-10 border-b border-border/60 bg-white/70 backdrop-blur-sm">
+      {/* Top bar — متناسق مع الخلفية التركوازية الداكنة */}
+      <header className="relative z-10 border-b border-white/10 bg-white/5 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-              <Crown className="w-6 h-6 text-primary-foreground" />
+            <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shadow-sm backdrop-blur-sm">
+              <Crown className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-foreground font-bold text-lg leading-tight">لوحة مدير النظام</h1>
-              <p className="text-muted-foreground text-xs">نظام إدارة التسويق الإلكتروني للجمعيات</p>
+              <h1 className="text-white font-bold text-lg leading-tight">لوحة مدير النظام</h1>
+              <p className="text-white/70 text-xs">نظام إدارة التسويق الإلكتروني للجمعيات</p>
             </div>
           </div>
-          <Button onClick={handleSignOut} variant="ghost" size="sm" className="gap-2">
+          <Button onClick={handleSignOut} variant="ghost" size="sm" className="gap-2 text-white hover:bg-white/10">
             <LogOut className="w-4 h-4" /> خروج
           </Button>
         </div>

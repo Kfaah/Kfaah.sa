@@ -46,7 +46,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             </div>
             <div>
               <h1 className="text-sidebar-foreground font-bold text-base leading-tight">مدير النظام</h1>
-              <p className="text-muted-foreground text-[11px]">مركز قيادة عطف</p>
+              <p className="text-muted-foreground text-[11px]">مركز قيادة التسويق</p>
             </div>
           </div>
         </div>
