@@ -65,14 +65,14 @@ export default function OrgAuth() {
     })();
   }, [slug]);
 
-  // If already logged in, redirect to the org workspace (or admin hub for super admins)
+  // If a regular (non-super-admin) user is already logged in, send them straight
+  // into this org's workspace. Super admins should still see the org login page
+  // so they can sign in as a member of that specific organization if needed.
   useEffect(() => {
     if (authLoading || !user || !slug) return;
     (async () => {
       const { data: superCheck } = await supabase.rpc("is_super_admin", { _user_id: user.id });
-      if (superCheck) {
-        navigate("/admin", { replace: true });
-      } else {
+      if (!superCheck) {
         navigate(`/${slug}/app`, { replace: true });
       }
     })();
