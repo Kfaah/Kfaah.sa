@@ -29,6 +29,7 @@ import Settings from "./pages/Settings";
 import Uploads from "./pages/Uploads";
 import Organizations from "./pages/Organizations";
 import AdminHub from "./pages/AdminHub";
+import Intelligence from "./pages/Intelligence";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -148,6 +149,7 @@ function AppRoutes() {
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
+      <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

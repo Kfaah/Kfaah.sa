@@ -134,6 +134,74 @@ export type Database = {
           },
         ]
       }
+      analysis_runs: {
+        Row: {
+          ai_model: string | null
+          completed_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          events_detected: number
+          id: string
+          ideas_generated: number
+          insights_generated: number
+          organization_id: string | null
+          scope: Json | null
+          started_at: string
+          status: string
+          summary: string | null
+          tasks_generated: number
+          trigger_source: string
+          triggered_by: string | null
+          upload_id: string | null
+        }
+        Insert: {
+          ai_model?: string | null
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          events_detected?: number
+          id?: string
+          ideas_generated?: number
+          insights_generated?: number
+          organization_id?: string | null
+          scope?: Json | null
+          started_at?: string
+          status?: string
+          summary?: string | null
+          tasks_generated?: number
+          trigger_source?: string
+          triggered_by?: string | null
+          upload_id?: string | null
+        }
+        Update: {
+          ai_model?: string | null
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          events_detected?: number
+          id?: string
+          ideas_generated?: number
+          insights_generated?: number
+          organization_id?: string | null
+          scope?: Json | null
+          started_at?: string
+          status?: string
+          summary?: string | null
+          tasks_generated?: number
+          trigger_source?: string
+          triggered_by?: string | null
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_transfers: {
         Row: {
           amount: number
@@ -493,6 +561,128 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donor_insights: {
+        Row: {
+          affected_entities: Json | null
+          ai_model: string | null
+          category: string
+          created_at: string
+          details: Json | null
+          expires_at: string | null
+          generated_at: string
+          id: string
+          insight_type: string
+          is_active: boolean
+          is_pinned: boolean
+          metrics: Json | null
+          organization_id: string | null
+          recommended_actions: Json | null
+          severity: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affected_entities?: Json | null
+          ai_model?: string | null
+          category: string
+          created_at?: string
+          details?: Json | null
+          expires_at?: string | null
+          generated_at?: string
+          id?: string
+          insight_type: string
+          is_active?: boolean
+          is_pinned?: boolean
+          metrics?: Json | null
+          organization_id?: string | null
+          recommended_actions?: Json | null
+          severity?: string
+          summary: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affected_entities?: Json | null
+          ai_model?: string | null
+          category?: string
+          created_at?: string
+          details?: Json | null
+          expires_at?: string | null
+          generated_at?: string
+          id?: string
+          insight_type?: string
+          is_active?: boolean
+          is_pinned?: boolean
+          metrics?: Json | null
+          organization_id?: string | null
+          recommended_actions?: Json | null
+          severity?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_insights_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donor_lifecycle_events: {
+        Row: {
+          amount: number | null
+          created_at: string
+          donor_id: string | null
+          event_date: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          organization_id: string | null
+          task_generated: boolean
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          donor_id?: string | null
+          event_date: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          task_generated?: boolean
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          donor_id?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          task_generated?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_lifecycle_events_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_lifecycle_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1110,6 +1300,77 @@ export type Database = {
           },
         ]
       }
+      marketing_ideas: {
+        Row: {
+          ai_generated: boolean
+          ai_model: string | null
+          channels: Json | null
+          content_draft: string | null
+          created_at: string
+          data_basis: Json | null
+          description: string
+          effort_level: string | null
+          expected_impact: string | null
+          hashtags: Json | null
+          id: string
+          idea_type: string
+          organization_id: string | null
+          status: string
+          target_segment: string | null
+          title: string
+          updated_at: string
+          visuals_suggestion: string | null
+        }
+        Insert: {
+          ai_generated?: boolean
+          ai_model?: string | null
+          channels?: Json | null
+          content_draft?: string | null
+          created_at?: string
+          data_basis?: Json | null
+          description: string
+          effort_level?: string | null
+          expected_impact?: string | null
+          hashtags?: Json | null
+          id?: string
+          idea_type: string
+          organization_id?: string | null
+          status?: string
+          target_segment?: string | null
+          title: string
+          updated_at?: string
+          visuals_suggestion?: string | null
+        }
+        Update: {
+          ai_generated?: boolean
+          ai_model?: string | null
+          channels?: Json | null
+          content_draft?: string | null
+          created_at?: string
+          data_basis?: Json | null
+          description?: string
+          effort_level?: string | null
+          expected_impact?: string | null
+          hashtags?: Json | null
+          id?: string
+          idea_type?: string
+          organization_id?: string | null
+          status?: string
+          target_segment?: string | null
+          title?: string
+          updated_at?: string
+          visuals_suggestion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_ideas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_name: string | null
@@ -1617,6 +1878,116 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smart_tasks: {
+        Row: {
+          ai_generated: boolean
+          ai_model: string | null
+          assigned_to: string | null
+          category: string
+          completed_at: string | null
+          completed_by: string | null
+          context: Json | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          organization_id: string | null
+          outcome_notes: string | null
+          priority: string
+          related_campaign_id: string | null
+          related_donor_id: string | null
+          source_event_id: string | null
+          source_insight_id: string | null
+          status: string
+          suggested_channel: string | null
+          suggested_message: string | null
+          task_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_generated?: boolean
+          ai_model?: string | null
+          assigned_to?: string | null
+          category: string
+          completed_at?: string | null
+          completed_by?: string | null
+          context?: Json | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          organization_id?: string | null
+          outcome_notes?: string | null
+          priority?: string
+          related_campaign_id?: string | null
+          related_donor_id?: string | null
+          source_event_id?: string | null
+          source_insight_id?: string | null
+          status?: string
+          suggested_channel?: string | null
+          suggested_message?: string | null
+          task_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_generated?: boolean
+          ai_model?: string | null
+          assigned_to?: string | null
+          category?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          context?: Json | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          organization_id?: string | null
+          outcome_notes?: string | null
+          priority?: string
+          related_campaign_id?: string | null
+          related_donor_id?: string | null
+          source_event_id?: string | null
+          source_insight_id?: string | null
+          status?: string
+          suggested_channel?: string | null
+          suggested_message?: string | null
+          task_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_tasks_related_campaign_id_fkey"
+            columns: ["related_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_tasks_related_donor_id_fkey"
+            columns: ["related_donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_tasks_source_insight_id_fkey"
+            columns: ["source_insight_id"]
+            isOneToOne: false
+            referencedRelation: "donor_insights"
             referencedColumns: ["id"]
           },
         ]

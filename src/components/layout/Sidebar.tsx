@@ -22,6 +22,7 @@ import {
   Clock,
   Briefcase,
   Upload,
+  Brain,
 } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -45,6 +46,7 @@ const adminNavItems: NavItem[] = [
   { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
   { title: "رفع البيانات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
+  { title: "التحليل الذكي", href: "/intelligence", icon: Brain, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
   { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
 ];
 
