@@ -133,7 +133,12 @@ export default function AdminHub() {
     if (!o.is_active) { toast.error("هذه الجمعية موقوفة حالياً"); return; }
     switchOrg(o.id);
     toast.success(`الدخول إلى ${o.name}`);
-    navigate("/app");
+    // وجّه إلى رابط الجمعية القصير إن وُجد، وإلا fallback إلى /app
+    if (o.slug) {
+      navigate(`/${o.slug}/app`);
+    } else {
+      navigate("/app");
+    }
   };
 
   const copyOrgLink = async (slug: string) => {
