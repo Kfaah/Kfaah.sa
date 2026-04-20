@@ -93,7 +93,7 @@ function AppRoutes() {
       {/* Public marketing/landing + system-admin login */}
       <Route path="/" element={<PublicLanding />} />
 
-      {/* Per-organization auth via short link */}
+      {/* Per-organization auth via short link (legacy /j/:slug + new short /:slug) */}
       <Route path="/j/:slug" element={<OrgAuth />} />
 
       {/* Legacy direct auth (kept for compatibility) */}
