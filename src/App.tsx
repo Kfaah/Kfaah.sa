@@ -93,7 +93,7 @@ function AppRoutes() {
       {/* Public marketing/landing + system-admin login */}
       <Route path="/" element={<PublicLanding />} />
 
-      {/* Per-organization auth via short link */}
+      {/* Per-organization auth via short link (legacy /j/:slug + new short /:slug) */}
       <Route path="/j/:slug" element={<OrgAuth />} />
 
       {/* Legacy direct auth (kept for compatibility) */}
@@ -150,6 +150,9 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
+
+      {/* Short org slug: charity-crm.org/atff → نفس صفحة /j/atff */}
+      <Route path="/:slug" element={<OrgAuth />} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
