@@ -259,10 +259,32 @@
   }
 }
 
-/* Admin surface — Stripe/Vercel inspired, soft Atf gradient */
+/* Admin surface — سماء ممطرة داكنة مع نجمات بيضاء */
 .admin-soft-surface {
   background:
-    radial-gradient(1200px 600px at 90% -10%, hsl(174 60% 92%) 0%, transparent 60%),
-    radial-gradient(900px 500px at 0% 100%, hsl(210 60% 94%) 0%, transparent 55%),
-    linear-gradient(180deg, hsl(195 40% 98%) 0%, hsl(0 0% 100%) 100%);
+    radial-gradient(2px 2px at 12% 18%, #ffffff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 28% 42%, rgba(255,255,255,0.9) 50%, transparent 51%),
+    radial-gradient(2px 2px at 47% 12%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 33%, rgba(255,255,255,0.85) 50%, transparent 51%),
+    radial-gradient(2.5px 2.5px at 78% 22%, #ffffff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 88% 55%, rgba(255,255,255,0.9) 50%, transparent 51%),
+    radial-gradient(1px 1px at 18% 68%, rgba(255,255,255,0.8) 50%, transparent 51%),
+    radial-gradient(2px 2px at 36% 80%, #ffffff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 55% 72%, rgba(255,255,255,0.9) 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 88%, rgba(255,255,255,0.85) 50%, transparent 51%),
+    radial-gradient(2px 2px at 92% 78%, #ffffff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 8% 92%, rgba(255,255,255,0.9) 50%, transparent 51%),
+    radial-gradient(1200px 700px at 80% 0%, hsl(215 45% 22%) 0%, transparent 60%),
+    radial-gradient(900px 600px at 10% 100%, hsl(210 50% 14%) 0%, transparent 55%),
+    linear-gradient(180deg, hsl(215 50% 16%) 0%, hsl(220 55% 11%) 100%);
+  background-size: 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, 600px 600px, auto, auto, auto;
+  background-attachment: fixed;
+}
+.admin-soft-surface h1,
+.admin-soft-surface h2 {
+  color: #ffffff;
+}
+.admin-soft-surface > main p,
+.admin-soft-surface > div > div > p {
+  color: rgba(255,255,255,0.75);
 }
