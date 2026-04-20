@@ -35,18 +35,25 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      {/* Sidebar — يمين الشاشة (RTL) */}
-      <aside className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-sidebar-border bg-sidebar flex flex-col shadow-card">
+    <div
+      className="min-h-screen"
+      dir="rtl"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+      }}
+    >
+      {/* Sidebar — يمين الشاشة (RTL) — شفاف فوق نفس خلفية الجمعية */}
+      <aside className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-white/10 bg-white/5 backdrop-blur-md flex flex-col shadow-card">
         {/* Brand */}
-        <div className="p-6 border-b border-sidebar-border">
+        <div className="p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-md">
-              <Crown className="w-6 h-6 text-primary-foreground" />
+            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-md backdrop-blur-sm">
+              <Crown className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-sidebar-foreground font-bold text-base leading-tight">مدير النظام</h1>
-              <p className="text-muted-foreground text-[11px]">مركز قيادة التسويق</p>
+              <h1 className="text-white font-bold text-base leading-tight">مدير النظام</h1>
+              <p className="text-white/70 text-[11px]">مركز قيادة التسويق</p>
             </div>
           </div>
         </div>
@@ -66,12 +73,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 className={cn(
                   "group relative flex items-start gap-3 rounded-xl p-3 transition-all",
                   active
-                    ? "bg-sidebar-accent"
-                    : "hover:bg-sidebar-accent/60"
+                    ? "bg-white/15 backdrop-blur-sm"
+                    : "hover:bg-white/10"
                 )}
               >
                 {active && (
-                  <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-l-full bg-accent" />
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-l-full bg-white" />
                 )}
                 <div className={cn(
                   "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors shadow-sm",
@@ -82,13 +89,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={cn(
-                    "text-sm font-semibold leading-tight",
-                    active ? "text-sidebar-accent-foreground" : "text-sidebar-foreground"
-                  )}>
+                  <div className="text-sm font-semibold leading-tight text-white">
                     {item.label}
                   </div>
-                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5 truncate">
+                  <div className="text-[11px] text-white/65 leading-tight mt-0.5 truncate">
                     {item.desc}
                   </div>
                 </div>
@@ -98,7 +102,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Footer actions */}
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-white/10">
           <Button
             onClick={handleSignOut}
             className="w-full justify-center gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold shadow-md"
