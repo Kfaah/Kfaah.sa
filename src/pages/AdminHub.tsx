@@ -152,27 +152,20 @@ export default function AdminHub() {
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" dir="rtl">
-      <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-
+    <div className="min-h-screen" dir="rtl">
       {/* Top bar */}
-      <header className="relative z-10 border-b border-white/10 bg-white/5 backdrop-blur-sm">
+      <header className="relative z-10 border-b border-border/60 bg-white/70 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg">
-              <Crown className="w-6 h-6 text-white" />
+            <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+              <Crown className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-white font-bold text-lg leading-tight">لوحة مدير النظام</h1>
-              <p className="text-slate-400 text-xs">نظام إدارة التسويق الإلكتروني للجمعيات</p>
+              <h1 className="text-foreground font-bold text-lg leading-tight">لوحة مدير النظام</h1>
+              <p className="text-muted-foreground text-xs">نظام إدارة التسويق الإلكتروني للجمعيات</p>
             </div>
           </div>
-          <Button onClick={handleSignOut} variant="ghost" size="sm" className="gap-2 text-white hover:bg-white/10">
+          <Button onClick={handleSignOut} variant="ghost" size="sm" className="gap-2">
             <LogOut className="w-4 h-4" /> خروج
           </Button>
         </div>
@@ -181,24 +174,24 @@ export default function AdminHub() {
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-8 space-y-6">
         {/* Hero */}
         <div className="flex items-end justify-between flex-wrap gap-4">
-          <div className="text-white">
-            <h2 className="text-3xl font-bold">الجمعيات المسجّلة</h2>
-            <p className="text-slate-300 mt-1">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">الجمعيات المسجّلة</h2>
+            <p className="text-muted-foreground mt-1">
               اختر جمعية للدخول إلى نظامها · {orgs.length} جمعية
             </p>
           </div>
-          <Button onClick={openCreate} className="gap-2 bg-gradient-to-l from-cyan-400 to-blue-600 hover:opacity-90 text-white shadow-lg">
+          <Button onClick={openCreate} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> إضافة جمعية جديدة
           </Button>
         </div>
 
         {/* Grid */}
         {loading ? (
-          <div className="text-center py-20 text-slate-400">جاري التحميل...</div>
+          <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
         ) : orgs.length === 0 ? (
-          <Card className="p-16 text-center bg-white/5 border-white/10 backdrop-blur-sm">
-            <Building2 className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-            <p className="text-slate-300 mb-4">لا توجد جمعيات بعد. ابدأ بإضافة أول جمعية.</p>
+          <Card className="p-16 text-center bg-white border-border">
+            <Building2 className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">لا توجد جمعيات بعد. ابدأ بإضافة أول جمعية.</p>
             <Button onClick={openCreate} className="gap-2">
               <Plus className="w-4 h-4" /> إضافة جمعية
             </Button>
@@ -213,12 +206,12 @@ export default function AdminHub() {
                 }`}
               >
                 {/* Decorative top */}
-                <div className="h-2 bg-gradient-to-l from-cyan-400 via-blue-500 to-purple-600" />
+                <div className="h-1 bg-gradient-to-l from-accent to-primary" />
 
                 <div className="p-6">
                   {/* Logo + name */}
                   <div className="flex items-start gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0">
+                    <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
                       {o.logo_url ? (
                         <img src={o.logo_url} alt={o.name} className="w-full h-full object-cover" />
                       ) : (
