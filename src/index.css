@@ -259,16 +259,13 @@
   }
 }
 
-/* Admin surface — منظر فكتور: سماء زرقاء + سحب بيضاء + أرض خضراء */
-.admin-soft-surface {
-  background-color: hsl(200 80% 75%);
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center top;
-  background-attachment: fixed;
-}
+/* Admin surface — نصوص بيضاء على الخلفية الرسمية الداكنة */
 .admin-soft-surface h1,
 .admin-soft-surface h2 {
-  color: hsl(210 60% 18%);
+  color: #ffffff;
+}
+.admin-soft-surface > div > div > p,
+.admin-soft-surface > main p {
+  color: rgba(255,255,255,0.78);
 }
 
