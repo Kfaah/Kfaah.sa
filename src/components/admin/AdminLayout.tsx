@@ -10,15 +10,20 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/admin", label: "نظرة عامة موحّدة", icon: LayoutDashboard, end: true,
-    desc: "ملخّص شامل لكل الجمعيات" },
+    desc: "ملخّص شامل لكل الجمعيات",
+    color: "text-sky-600", bg: "bg-sky-100", activeBg: "bg-sky-500", activeText: "text-white" },
   { to: "/admin/organizations", label: "الجمعيات", icon: Building2, end: false,
-    desc: "إدارة وتفاصيل الجمعيات" },
+    desc: "إدارة وتفاصيل الجمعيات",
+    color: "text-emerald-600", bg: "bg-emerald-100", activeBg: "bg-emerald-500", activeText: "text-white" },
   { to: "/admin/compare", label: "المقارنة بين الجمعيات", icon: GitCompareArrows, end: false,
-    desc: "رادار · ترتيب · معايير متعددة" },
+    desc: "رادار · ترتيب · معايير متعددة",
+    color: "text-violet-600", bg: "bg-violet-100", activeBg: "bg-violet-500", activeText: "text-white" },
   { to: "/admin/analytics", label: "التحليل العميق", icon: Sparkles, end: false,
-    desc: "تحليل AI لكل جمعية" },
+    desc: "تحليل AI لكل جمعية",
+    color: "text-amber-600", bg: "bg-amber-100", activeBg: "bg-amber-500", activeText: "text-white" },
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
-    desc: "تقارير دقيقة قابلة للتصدير" },
+    desc: "تقارير دقيقة قابلة للتصدير",
+    color: "text-rose-600", bg: "bg-rose-100", activeBg: "bg-rose-500", activeText: "text-white" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
