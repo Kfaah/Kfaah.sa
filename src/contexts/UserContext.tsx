@@ -182,7 +182,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             firstName,
             lastName,
             email: authUser.email || "",
-            role: userRole === "admin" ? "مدير النظام" : "مستخدم",
+            role: (userRole === "admin" || userRole === "super_admin") ? "مدير النظام" : "مستخدم",
           });
         }
       }
