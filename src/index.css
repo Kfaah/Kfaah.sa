@@ -258,3 +258,21 @@
     transform: translateY(-10px);
   }
 }
+
+/* Admin dark surface — make all heading/body text appear bright white over the dark gradient */
+.admin-dark-surface h1,
+.admin-dark-surface h2,
+.admin-dark-surface h3,
+.admin-dark-surface h4,
+.admin-dark-surface > p,
+.admin-dark-surface > div > p,
+.admin-dark-surface > div > div > p:not(.text-muted-foreground):not(.text-foreground) {
+  color: #ffffff;
+}
+.admin-dark-surface .admin-hero-title {
+  color: #ffffff !important;
+  font-weight: 800;
+}
+.admin-dark-surface .admin-hero-subtitle {
+  color: rgba(255,255,255,0.85) !important;
+}
