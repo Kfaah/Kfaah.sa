@@ -65,14 +65,18 @@ export default function OrgAuth() {
     })();
   }, [slug]);
 
-  // If already logged in, route by role (super admin → /admin, otherwise → /app)
+  // If already logged in, redirect to the org workspace (or admin hub for super admins)
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || !slug) return;
     (async () => {
       const { data: superCheck } = await supabase.rpc("is_super_admin", { _user_id: user.id });
-      navigate(superCheck ? "/admin" : "/app", { replace: true });
+      if (superCheck) {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate(`/${slug}/app`, { replace: true });
+      }
     })();
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
