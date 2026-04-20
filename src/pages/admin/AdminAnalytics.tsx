@@ -6,13 +6,13 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Sparkles, Loader2, TrendingUp, TrendingDown, Lightbulb,
+  Sparkles, Loader2, TrendingUp, Lightbulb,
   AlertTriangle, CheckCircle2, Building2, Users, HandCoins, Target,
 } from "lucide-react";
-import { useAdminAggregates, type OrgMetrics } from "@/hooks/useAdminAggregates";
+import { useAdminAggregates } from "@/hooks/useAdminAggregates";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
+  ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
   LineChart, Line,
 } from "recharts";
 import { toast } from "sonner";
@@ -43,7 +43,6 @@ export default function AdminAnalytics() {
 
   const selected = useMemo(() => metrics.find(m => m.org_id === selectedId), [metrics, selectedId]);
 
-  // Load heatmap (donations per day-of-week last 90 days) + monthly trend
   useEffect(() => {
     if (!selectedId) return;
     setInsight(null);
@@ -99,16 +98,16 @@ export default function AdminAnalytics() {
     <div className="p-8 space-y-6">
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-fuchsia-400" />
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <Sparkles className="w-8 h-8 text-accent" />
             التحليل العميق
           </h1>
-          <p className="text-slate-400 mt-1">اختر جمعية لرؤية تحليل تفصيلي وتوصيات ذكية</p>
+          <p className="text-muted-foreground mt-1">اختر جمعية لرؤية تحليل تفصيلي وتوصيات ذكية</p>
         </div>
 
         <div className="flex items-center gap-3">
           <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger className="w-[280px] bg-slate-800 border-slate-700 text-white">
+            <SelectTrigger className="w-[280px]">
               <SelectValue placeholder="اختر جمعية..." />
             </SelectTrigger>
             <SelectContent>
@@ -122,7 +121,7 @@ export default function AdminAnalytics() {
           <Button
             onClick={runAI}
             disabled={!selected || aiLoading}
-            className="gap-2 bg-gradient-to-l from-fuchsia-500 to-pink-600 hover:opacity-90"
+            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
           >
             {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             تحليل ذكي بالـ AI
@@ -131,7 +130,7 @@ export default function AdminAnalytics() {
       </div>
 
       {!selected && !loading && (
-        <Card className="bg-slate-900/60 border-slate-700/50 p-12 text-center text-slate-400">
+        <Card className="bg-card border-border p-12 text-center text-muted-foreground">
           اختر جمعية للبدء
         </Card>
       )}
@@ -140,37 +139,42 @@ export default function AdminAnalytics() {
         <>
           {/* Quick stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatBox icon={HandCoins} label="الإيرادات" value={fmtSAR(selected.total_donated)}
-              grad="from-emerald-400 to-teal-600" />
+            <StatBox icon={HandCoins} label="الإيرادات" value={fmtSAR(selected.total_donated)} />
             <StatBox icon={Users} label="المتبرعون" value={fmt(selected.donors)}
-              sub={`${fmt(selected.recurring_donors)} منتظم`} grad="from-violet-500 to-purple-600" />
+              sub={`${fmt(selected.recurring_donors)} منتظم`} />
             <StatBox icon={Target} label="إنجاز المهام" value={`${selected.task_completion_rate.toFixed(1)}%`}
-              sub={`${fmt(selected.tasks_completed)}/${fmt(selected.tasks_total)}`} grad="from-cyan-400 to-blue-600" />
+              sub={`${fmt(selected.tasks_completed)}/${fmt(selected.tasks_total)}`} />
             <StatBox icon={Building2} label="الموظفون" value={fmt(selected.employees_count)}
-              sub={`${fmt(selected.campaigns)} حملة`} grad="from-amber-400 to-orange-500" />
+              sub={`${fmt(selected.campaigns)} حملة`} />
           </div>
 
           {/* Charts */}
           <div className="grid lg:grid-cols-2 gap-4">
-            <Card className="bg-slate-900/60 border-slate-700/50 p-5">
-              <h3 className="text-white font-bold mb-1">الإيرادات الشهرية (آخر فترة)</h3>
-              <p className="text-slate-400 text-xs mb-3">
+            <Card className="bg-card border-border p-5 shadow-sm">
+              <h3 className="text-foreground font-bold mb-1">الإيرادات الشهرية (آخر فترة)</h3>
+              <p className="text-muted-foreground text-xs mb-3">
                 {monthly.length > 0 ? `${monthly.length} شهر` : "لا توجد بيانات بعد"}
               </p>
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={monthly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-                  <XAxis dataKey="m" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                  <YAxis stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8 }} />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} dot={{ fill: "#10b981" }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="m" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+                  <Tooltip contentStyle={{
+                    background: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: 8,
+                    color: "hsl(var(--foreground))",
+                  }} />
+                  <Line type="monotone" dataKey="revenue" stroke="hsl(var(--accent))" strokeWidth={3}
+                        dot={{ fill: "hsl(var(--accent))" }} />
                 </LineChart>
               </ResponsiveContainer>
             </Card>
 
-            <Card className="bg-slate-900/60 border-slate-700/50 p-5">
-              <h3 className="text-white font-bold mb-1">خريطة حرارة الأيام</h3>
-              <p className="text-slate-400 text-xs mb-3">عدد التبرعات بحسب يوم الأسبوع — آخر 90 يومًا</p>
+            <Card className="bg-card border-border p-5 shadow-sm">
+              <h3 className="text-foreground font-bold mb-1">خريطة حرارة الأيام</h3>
+              <p className="text-muted-foreground text-xs mb-3">عدد التبرعات بحسب يوم الأسبوع — آخر 90 يومًا</p>
               <Heatmap data={heatmap} />
             </Card>
           </div>
@@ -183,15 +187,15 @@ export default function AdminAnalytics() {
   );
 }
 
-function StatBox({ icon: Icon, label, value, sub, grad }: any) {
+function StatBox({ icon: Icon, label, value, sub }: any) {
   return (
-    <Card className="bg-slate-900/60 border-slate-700/50 p-4">
-      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center mb-2 shadow-lg`}>
-        <Icon className="w-5 h-5 text-white" />
+    <Card className="bg-card border-border p-4 shadow-sm">
+      <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-2">
+        <Icon className="w-5 h-5" />
       </div>
-      <div className="text-xs text-slate-400">{label}</div>
-      <div className="text-2xl font-bold text-white leading-tight">{value}</div>
-      {sub && <div className="text-[11px] text-slate-500 mt-0.5">{sub}</div>}
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-2xl font-bold text-foreground leading-tight">{value}</div>
+      {sub && <div className="text-[11px] text-muted-foreground mt-0.5">{sub}</div>}
     </Card>
   );
 }
@@ -206,16 +210,16 @@ function Heatmap({ data }: { data: { day: number; value: number }[] }) {
         return (
           <div key={d.day} className="flex flex-col items-center gap-1">
             <div
-              className="w-full aspect-square rounded-lg flex items-center justify-center text-white font-bold text-sm transition-transform hover:scale-105"
+              className="w-full aspect-square rounded-lg flex items-center justify-center font-bold text-sm transition-transform hover:scale-105 border border-border"
               style={{
-                background: `hsl(${280 - intensity * 80}, 70%, ${20 + intensity * 35}%)`,
-                opacity: 0.4 + intensity * 0.6,
+                background: `hsl(174, 52%, ${92 - intensity * 45}%)`,
+                color: intensity > 0.5 ? "white" : "hsl(var(--foreground))",
               }}
               title={`${labels[d.day]}: ${d.value} تبرع`}
             >
               {d.value}
             </div>
-            <span className="text-[10px] text-slate-400">{labels[d.day]}</span>
+            <span className="text-[10px] text-muted-foreground">{labels[d.day]}</span>
           </div>
         );
       })}
@@ -225,41 +229,41 @@ function Heatmap({ data }: { data: { day: number; value: number }[] }) {
 
 function AIInsightView({ insight }: { insight: AIInsight }) {
   const impactColor = (i: string) =>
-    i === "high" ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
-    : i === "medium" ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-    : "bg-slate-500/20 text-slate-300 border-slate-500/40";
+    i === "high" ? "bg-destructive/15 text-destructive border-destructive/40"
+    : i === "medium" ? "bg-warning/15 text-warning border-warning/40"
+    : "bg-muted text-muted-foreground border-border";
 
   return (
-    <Card className="bg-gradient-to-br from-fuchsia-500/10 via-slate-900/60 to-pink-500/10 border-fuchsia-500/30 p-6 space-y-5">
+    <Card className="bg-accent/5 border-accent/30 p-6 space-y-5 shadow-sm">
       <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="w-5 h-5 text-fuchsia-400" />
-        <h3 className="text-white font-bold text-lg">التحليل الذكي</h3>
-        <Badge className="bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40 mr-auto">Gemini</Badge>
+        <Sparkles className="w-5 h-5 text-accent" />
+        <h3 className="text-foreground font-bold text-lg">التحليل الذكي</h3>
+        <Badge className="bg-accent/15 text-accent border-accent/40 mr-auto">Gemini</Badge>
       </div>
 
-      <div className="bg-slate-900/40 rounded-xl p-4 border border-slate-700/50">
-        <p className="text-slate-100 leading-relaxed">{insight.summary}</p>
+      <div className="bg-card rounded-xl p-4 border border-border">
+        <p className="text-foreground leading-relaxed">{insight.summary}</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-3">
-        <InsightList icon={CheckCircle2} title="نقاط القوة" items={insight.strengths} color="emerald" />
-        <InsightList icon={AlertTriangle} title="نقاط الضعف" items={insight.weaknesses} color="rose" />
-        <InsightList icon={Lightbulb} title="فرص" items={insight.opportunities} color="amber" />
+        <InsightList icon={CheckCircle2} title="نقاط القوة" items={insight.strengths} variant="success" />
+        <InsightList icon={AlertTriangle} title="نقاط الضعف" items={insight.weaknesses} variant="destructive" />
+        <InsightList icon={Lightbulb} title="فرص" items={insight.opportunities} variant="warning" />
       </div>
 
       <div>
-        <div className="text-white font-bold mb-2 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-cyan-400" />
+        <div className="text-foreground font-bold mb-2 flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-accent" />
           توصيات قابلة للتنفيذ
         </div>
         <div className="space-y-2">
           {insight.recommendations.map((r, i) => (
-            <div key={i} className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-3">
+            <div key={i} className="bg-card border border-border rounded-xl p-3">
               <div className="flex items-start justify-between gap-3 mb-1">
-                <h5 className="font-bold text-white">{r.title}</h5>
+                <h5 className="font-bold text-foreground">{r.title}</h5>
                 <Badge className={impactColor(r.impact)}>تأثير {r.impact === "high" ? "عالٍ" : r.impact === "medium" ? "متوسط" : "منخفض"}</Badge>
               </div>
-              <p className="text-sm text-slate-300">{r.action}</p>
+              <p className="text-sm text-muted-foreground">{r.action}</p>
             </div>
           ))}
         </div>
@@ -268,22 +272,22 @@ function AIInsightView({ insight }: { insight: AIInsight }) {
   );
 }
 
-function InsightList({ icon: Icon, title, items, color }: any) {
-  const colorMap: Record<string, string> = {
-    emerald: "text-emerald-300 border-emerald-500/40 bg-emerald-500/10",
-    rose: "text-rose-300 border-rose-500/40 bg-rose-500/10",
-    amber: "text-amber-300 border-amber-500/40 bg-amber-500/10",
+function InsightList({ icon: Icon, title, items, variant }: any) {
+  const variantMap: Record<string, string> = {
+    success: "text-success border-success/40 bg-success/5",
+    destructive: "text-destructive border-destructive/40 bg-destructive/5",
+    warning: "text-warning border-warning/40 bg-warning/5",
   };
   return (
-    <div className={`rounded-xl border p-3 ${colorMap[color]}`}>
+    <div className={`rounded-xl border p-3 ${variantMap[variant]}`}>
       <div className="flex items-center gap-2 mb-2 font-bold">
         <Icon className="w-4 h-4" />
         {title}
       </div>
-      <ul className="space-y-1.5 text-sm text-slate-200">
+      <ul className="space-y-1.5 text-sm text-foreground">
         {items.map((it: string, i: number) => (
           <li key={i} className="flex gap-2">
-            <span className="text-slate-500">•</span>
+            <span className="text-muted-foreground">•</span>
             <span>{it}</span>
           </li>
         ))}
