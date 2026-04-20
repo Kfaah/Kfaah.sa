@@ -206,12 +206,12 @@ export default function AdminHub() {
                 }`}
               >
                 {/* Decorative top */}
-                <div className="h-2 bg-gradient-to-l from-cyan-400 via-blue-500 to-purple-600" />
+                <div className="h-1 bg-gradient-to-l from-accent to-primary" />
 
                 <div className="p-6">
                   {/* Logo + name */}
                   <div className="flex items-start gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0">
+                    <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
                       {o.logo_url ? (
                         <img src={o.logo_url} alt={o.name} className="w-full h-full object-cover" />
                       ) : (
