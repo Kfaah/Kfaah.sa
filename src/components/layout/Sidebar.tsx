@@ -4,10 +4,13 @@ import {
   LayoutDashboard,
   Users,
   ClipboardList,
+  BarChart3,
   Settings,
   ChevronLeft,
   ChevronRight,
+  UserCog,
   CalendarCheck,
+  MessageSquare,
   FileText,
   User,
   LogOut,
@@ -16,6 +19,8 @@ import {
   Eye,
   EyeOff,
   Bell,
+  Clock,
+  Briefcase,
   Upload,
   Brain,
 } from "lucide-react";
@@ -23,7 +28,6 @@ import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 interface NavItem {
@@ -31,69 +35,44 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
-  desc?: string;
-  // ألوان مستوحاة من نمط الـ Admin
-  color: string;       // لون الأيقونة في الحالة العادية
-  bg: string;          // خلفية الأيقونة في الحالة العادية
-  activeBg: string;    // خلفية الأيقونة عند التفعيل
-  activeText: string;  // لون الأيقونة عند التفعيل
+  iconBg: string;
 }
 
-// ===== قوائم التنقل بهوية Admin (ألوان pastel + activeBg مشبع) =====
+// قائمة مدير النظام (Admin) — يرى بيانات الجمعية فقط، بدون "خططي" الشخصية
 const adminNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, desc: "ملخّص الأداء العام",
-    color: "text-sky-600", bg: "bg-sky-100", activeBg: "bg-sky-500", activeText: "text-white" },
-  { title: "الموظفين", href: "/employees", icon: Users, desc: "إدارة فريق العمل",
-    color: "text-indigo-600", bg: "bg-indigo-100", activeBg: "bg-indigo-500", activeText: "text-white" },
-  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, desc: "أهداف ومبادرات سنوية",
-    color: "text-cyan-600", bg: "bg-cyan-100", activeBg: "bg-cyan-500", activeText: "text-white" },
-  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, desc: "متابعة شهرية ويومية",
-    color: "text-emerald-600", bg: "bg-emerald-100", activeBg: "bg-emerald-500", activeText: "text-white" },
-  { title: "المهام", href: "/tasks", icon: ClipboardList, desc: "المهام والتسليمات",
-    color: "text-amber-600", bg: "bg-amber-100", activeBg: "bg-amber-500", activeText: "text-white" },
-  { title: "رفع البيانات", href: "/uploads", icon: Upload, desc: "استيراد ملفات الجمعية",
-    color: "text-rose-600", bg: "bg-rose-100", activeBg: "bg-rose-500", activeText: "text-white" },
-  { title: "التحليل الذكي", href: "/intelligence", icon: Brain, desc: "رؤى وتوصيات ذكية",
-    color: "text-fuchsia-600", bg: "bg-fuchsia-100", activeBg: "bg-fuchsia-500", activeText: "text-white" },
-  { title: "تقييم الأداء", href: "/performance", icon: FileText, desc: "تقارير الأداء",
-    color: "text-yellow-600", bg: "bg-yellow-100", activeBg: "bg-yellow-500", activeText: "text-white" },
+  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
+  { title: "الموظفين", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
+  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
+  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
+  { title: "رفع البيانات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
+  { title: "التحليل الذكي", href: "/intelligence", icon: Brain, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
+  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
 ];
 
+// قائمة المدير المتوسط (Manager) — له خططه الشخصية + يرى فريقه عبر Toggle داخل كل صفحة
 const managerNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, desc: "ملخّص الأداء العام",
-    color: "text-sky-600", bg: "bg-sky-100", activeBg: "bg-sky-500", activeText: "text-white" },
-  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, desc: "أهداف ومبادرات",
-    color: "text-cyan-600", bg: "bg-cyan-100", activeBg: "bg-cyan-500", activeText: "text-white" },
-  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, desc: "متابعة شهرية",
-    color: "text-emerald-600", bg: "bg-emerald-100", activeBg: "bg-emerald-500", activeText: "text-white" },
-  { title: "المهام", href: "/tasks", icon: ClipboardList, desc: "مهامك ومهام الفريق",
-    color: "text-amber-600", bg: "bg-amber-100", activeBg: "bg-amber-500", activeText: "text-white" },
-  { title: "تقييم الأداء", href: "/performance", icon: FileText, desc: "تقارير أدائك",
-    color: "text-yellow-600", bg: "bg-yellow-100", activeBg: "bg-yellow-500", activeText: "text-white" },
+  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
+  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
+  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
+  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
 ];
 
+// قائمة الموظف العادي
 const employeeNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/app", icon: TrendingUp, desc: "ملخّص يومك",
-    color: "text-sky-600", bg: "bg-sky-100", activeBg: "bg-sky-500", activeText: "text-white" },
-  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, desc: "أهدافك السنوية",
-    color: "text-cyan-600", bg: "bg-cyan-100", activeBg: "bg-cyan-500", activeText: "text-white" },
-  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, desc: "متابعة شهرية",
-    color: "text-emerald-600", bg: "bg-emerald-100", activeBg: "bg-emerald-500", activeText: "text-white" },
-  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, desc: "ما يجب إنجازه اليوم",
-    color: "text-amber-600", bg: "bg-amber-100", activeBg: "bg-amber-500", activeText: "text-white" },
-  { title: "تقييم أدائي", href: "/performance", icon: FileText, desc: "تقاريرك الشخصية",
-    color: "text-yellow-600", bg: "bg-yellow-100", activeBg: "bg-yellow-500", activeText: "text-white" },
+  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
+  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
+  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
+  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
+  { title: "تقييم أدائي", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
 ];
 
 const settingsNavItem: NavItem = {
   title: "الإعدادات",
   href: "/settings",
   icon: Settings,
-  desc: "تفضيلات الحساب",
-  color: "text-slate-600",
-  bg: "bg-slate-100",
-  activeBg: "bg-slate-600",
-  activeText: "text-white",
+  iconBg: "bg-gradient-to-br from-slate-400 to-slate-500"
 };
 
 export function Sidebar() {
@@ -106,87 +85,166 @@ export function Sidebar() {
   const { signOut, user: authUser } = useAuth();
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
 
+  // Check if user is actually an admin (not in preview mode)
   const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
 
+  // Resolve role_level from employees table to know which menu to show
   useEffect(() => {
     const fetchRoleLevel = async () => {
       if (!authUser) return;
-      const { data: userRole } = await supabase.rpc("get_user_role", { _user_id: authUser.id });
+
+      // 1) Check global user_roles first — admin/super_admin always wins
+      const { data: userRole } = await supabase.rpc("get_user_role", {
+        _user_id: authUser.id,
+      });
       if (userRole === "admin" || userRole === "super_admin") {
         setRoleLevel("admin");
         return;
       }
+
+      // 2) Otherwise read role_level from employees
       const { data } = await supabase
         .from("employees")
         .select("role_level")
         .eq("user_id", authUser.id)
         .maybeSingle();
-      setRoleLevel((data?.role_level as any) || "employee");
+      if (data?.role_level) {
+        setRoleLevel(data.role_level as any);
+      } else {
+        setRoleLevel("employee");
+      }
     };
     fetchRoleLevel();
   }, [authUser, isActuallyAdmin]);
 
-  // Notifications
+  // جلب عدد الإشعارات غير المقروءة
   useEffect(() => {
     const fetchUnreadCount = async () => {
       if (!authUser) return;
-      const { count } = await supabase
+
+      const { count, error } = await supabase
         .from("notifications")
         .select("*", { count: "exact", head: true })
         .eq("is_read", false);
-      if (count !== null) setUnreadCount(count);
+
+      if (!error && count !== null) {
+        setUnreadCount(count);
+      }
     };
+
     fetchUnreadCount();
+
+    // الاستماع للإشعارات الجديدة
     const channel = supabase
-      .channel("sidebar-notifications")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, fetchUnreadCount)
+      .channel('sidebar-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [authUser]);
 
-  // Unread messages
+  // جلب عدد الرسائل غير المقروءة
   useEffect(() => {
     const fetchUnreadMessages = async () => {
       if (!authUser) return;
+
       try {
-        const { data: convRows } = await supabase.rpc("get_conversations_for_user", { _user_id: authUser.id });
-        if (!convRows || convRows.length === 0) { setUnreadMessagesCount(0); return; }
+        // جلب المحادثات الخاصة بالمستخدم
+        const { data: convRows } = await supabase.rpc(
+          "get_conversations_for_user",
+          { _user_id: authUser.id }
+        );
+
+        if (!convRows || convRows.length === 0) {
+          setUnreadMessagesCount(0);
+          return;
+        }
+
         const conversationIds = (convRows as any[]).map((row) => row.conversation_id);
+
+        // جلب آخر وقت قراءة للمستخدم
         const { data: myParticipations } = await supabase
           .from("conversation_participants")
           .select("conversation_id, last_read_at")
           .eq("user_id", authUser.id)
           .in("conversation_id", conversationIds);
-        const lastReadMap = new Map((myParticipations || []).map((p) => [p.conversation_id, p.last_read_at]));
+
+        const lastReadMap = new Map(
+          (myParticipations || []).map((p) => [p.conversation_id, p.last_read_at])
+        );
+
+        // جلب الرسائل غير المقروءة
         let totalUnread = 0;
         for (const convId of conversationIds) {
           const lastRead = lastReadMap.get(convId);
+
           let query = supabase
             .from("messages")
             .select("*", { count: "exact", head: true })
             .eq("conversation_id", convId)
             .eq("is_deleted", false)
             .neq("sender_id", authUser.id);
-          if (lastRead) query = query.gt("created_at", lastRead);
+
+          if (lastRead) {
+            query = query.gt("created_at", lastRead);
+          }
+
           const { count } = await query;
           if (count) totalUnread += count;
         }
+
         setUnreadMessagesCount(totalUnread);
       } catch (error) {
         console.error("Error fetching unread messages:", error);
       }
     };
+
     fetchUnreadMessages();
+
+    // الاستماع للرسائل الجديدة + تحديثات last_read_at (عند قراءة المحادثة)
     const messagesChannel = supabase
-      .channel("sidebar-messages")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchUnreadMessages)
+      .channel('sidebar-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+        },
+        () => {
+          fetchUnreadMessages();
+        }
+      )
       .subscribe();
+
     const participantsChannel = supabase
-      .channel("sidebar-conversation-participants")
-      .on("postgres_changes",
-        { event: "UPDATE", schema: "public", table: "conversation_participants", filter: `user_id=eq.${authUser.id}` },
-        fetchUnreadMessages)
+      .channel('sidebar-conversation-participants')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conversation_participants',
+          filter: `user_id=eq.${authUser.id}`,
+        },
+        () => {
+          fetchUnreadMessages();
+        }
+      )
       .subscribe();
+
     return () => {
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(participantsChannel);
@@ -200,209 +258,313 @@ export function Sidebar() {
   };
 
   const NavLink = ({ item }: { item: NavItem }) => {
-    const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + "/");
+    const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
     const badgeCount = item.badge;
+
+    // جميع الروابط تضيف state لإخفاء شاشة الترحيب
+    const linkState = { fromNavigation: true };
+
     return (
       <Link
         to={item.href}
-        state={{ fromNavigation: true }}
+        state={linkState}
         className={cn(
-          "group relative flex items-start gap-3 rounded-xl p-3 transition-all",
-          isActive ? "bg-muted" : "hover:bg-muted/60"
+          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none",
+          isActive
+            ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg ring-2 ring-white"
+            : "bg-white text-slate-700"
         )}
       >
-        {isActive && (
-          <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-l-full bg-primary" />
-        )}
         <div className={cn(
-          "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors shadow-sm",
-          isActive
-            ? `${item.activeBg} ${item.activeText}`
-            : `${item.bg} ${item.color} group-hover:scale-105`
+          "w-10 h-10 rounded-lg flex items-center justify-center shadow-md",
+          isActive ? "bg-white/20" : item.iconBg
         )}>
-          <item.icon className="w-5 h-5" />
+          <item.icon className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold leading-tight text-foreground flex-1">
-                {item.title}
+          <>
+            <span className={cn(
+              "font-bold text-base flex-1 text-right",
+              isActive ? "text-white" : "text-slate-700"
+            )}>
+              {item.title}
+            </span>
+            {badgeCount && badgeCount > 0 && (
+              <span className={cn(
+                "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
+                isActive ? "bg-white/25 text-white" : "bg-amber-400 text-white"
+              )} style={{ fontFamily: 'Arial, sans-serif' }}>
+                {badgeCount > 9 ? '9+' : formatNumberPlain(badgeCount)}
               </span>
-              {badgeCount && badgeCount > 0 && (
-                <span
-                  className="text-[10px] font-bold min-w-5 h-5 px-1 rounded-full flex items-center justify-center bg-amber-500 text-white"
-                  style={{ fontFamily: "Arial, sans-serif" }}
-                >
-                  {badgeCount > 9 ? "9+" : formatNumberPlain(badgeCount)}
-                </span>
-              )}
-            </div>
-            {item.desc && (
-              <div className="text-[11px] text-muted-foreground leading-tight mt-0.5 truncate">
-                {item.desc}
-              </div>
             )}
-          </div>
+          </>
         )}
       </Link>
     );
   };
 
-  const navItems = previewAsEmployee
-    ? employeeNavItems
-    : roleLevel === "admin"
-      ? adminNavItems
-      : roleLevel === "manager"
-        ? managerNavItems
-        : employeeNavItems;
-
-  const totalUnread = unreadCount + unreadMessagesCount;
-
   return (
     <aside
       className={cn(
-        "fixed top-0 right-0 h-screen z-40 border-l border-border bg-white flex flex-col shadow-card transition-all duration-300",
+        "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 overflow-hidden",
         collapsed ? "w-20" : "w-72"
       )}
     >
-      {/* Brand — شعار الجمعية */}
-      <div className="px-4 pt-5 pb-3 border-b border-border">
-        <Link to="/" className="flex flex-col items-center gap-2" title="العودة للصفحة الرئيسية">
-          <div className="relative">
-            <div
-              className="absolute inset-[-6px] rounded-full border-2 border-dashed border-accent/40 animate-spin"
-              style={{ animationDuration: "12s" }}
-            />
-            <div className={cn(
-              "relative rounded-full bg-white border-2 border-border flex items-center justify-center shadow-md overflow-hidden",
-              collapsed ? "w-12 h-12" : "w-20 h-20"
-            )}>
-              <img src={atefLogoIcon} alt="جمعية عطف" className="w-3/4 h-3/4 object-contain" />
-            </div>
+      {/* Modern 3D Gradient Background with Geometric Pattern */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#3d9aa8] via-[#4A9BA8] to-[#2d7a85]" />
+
+      {/* Animated Gradient Overlay */}
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20"
+        style={{ animation: 'gradientShift 8s ease-in-out infinite alternate' }}
+      />
+
+      {/* Geometric Pattern Overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.08]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* 3D Light Effect - Top Highlight */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/15 to-transparent" />
+
+      {/* 3D Depth Effect - Bottom Shadow */}
+      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/20 to-transparent" />
+
+      {/* Floating Orbs for Modern Effect */}
+      <div
+        className="absolute top-1/4 right-4 w-32 h-32 rounded-full bg-white/5 blur-2xl"
+        style={{ animation: 'float 6s ease-in-out infinite' }}
+      />
+      <div
+        className="absolute bottom-1/3 left-4 w-24 h-24 rounded-full bg-cyan-300/10 blur-xl"
+        style={{ animation: 'float 8s ease-in-out infinite reverse' }}
+      />
+
+      {/* Shimmer Line Effect */}
+      <div
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full"
+        style={{ animation: 'shimmer 4s ease-in-out infinite' }}
+      />
+
+      {/* White Header Section with Logo */}
+      <div className="relative z-10">
+        {/* Circular border around logo area */}
+        <div className="absolute inset-4 border-4 border-dashed border-cyan-300/50 rounded-full pointer-events-none" style={{ top: '10px', left: '10%', right: '10%', height: '200px' }} />
+
+        {/* White curved background for logo */}
+        <div className="bg-white rounded-b-[3rem] relative mx-4 shadow-lg">
+          <div className="p-4 pb-6 flex flex-col items-center relative z-10">
+            {/* Logo with zoom animation - قابل للنقر للعودة للصفحة الرئيسية */}
+            <Link
+              to="/"
+              className="relative mb-3 group cursor-pointer"
+              title="العودة للصفحة الرئيسية"
+            >
+              {/* Outer rotating ring */}
+              <div
+                className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-4 border-accent/30 border-t-accent animate-spin"
+                style={{ animationDuration: '8s' }}
+              />
+
+              {/* Inner glow circle */}
+              <div
+                className="absolute inset-2 w-[136px] h-[136px] rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse"
+                style={{ animationDuration: '3s' }}
+              />
+
+              {/* Logo container with zoom animation and shimmer */}
+              <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform">
+                <img
+                  src={atefLogoIcon}
+                  alt="جمعية عطف"
+                  className="w-28 h-28 object-contain"
+                  style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
+                />
+                {/* Shimmer/Glow effect */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full"
+                  style={{ animation: 'shimmer 3s ease-in-out infinite' }}
+                />
+              </div>
+
+              {/* Decorative dot */}
+              <div
+                className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce"
+                style={{ animationDuration: '2s' }}
+              />
+            </Link>
+
+            {/* Text under logo */}
+            {!collapsed && (
+              <div className="text-center space-y-1">
+                <h1 className="text-xl font-bold text-slate-800 whitespace-nowrap tracking-wide">
+                  جمعية عطف للأيتام
+                </h1>
+                <div className="relative">
+                  <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600">
+                    نظام إدارة التسويق الإلكتروني
+                  </p>
+                  <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full" />
+                </div>
+              </div>
+            )}
           </div>
-          {!collapsed && (
-            <div className="text-center">
-              <h1 className="text-sm font-bold text-foreground leading-tight">جمعية عطف</h1>
-              <p className="text-[10px] text-muted-foreground mt-0.5">نظام إدارة التسويق</p>
-            </div>
-          )}
-        </Link>
+        </div>
       </div>
 
-      {/* Profile Card — بنفس الحجم تقريبًا */}
-      {!collapsed && (
-        <div className="p-4 border-b border-border">
-          <div className="rounded-2xl bg-muted/40 p-3 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-[3px] border-accent shadow-sm flex-shrink-0">
-                {user.profileImage ? (
-                  <img src={user.profileImage} alt="صورة المستخدم" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
-                    {user.firstName.charAt(0)}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-foreground text-sm truncate">
-                  {user.firstName} {user.lastName}
-                </h3>
-                <span className="inline-block mt-1 text-[10px] text-accent font-semibold bg-accent/10 rounded-full px-2 py-0.5 border border-accent/20">
-                  {user.role}
-                </span>
-              </div>
-            </div>
+      {/* Cyan Navigation Section */}
+      <div className="flex-1 flex flex-col min-h-0 relative z-10 pt-6">
+        {/* User Profile Card - SEPARATED from logo */}
+        {!collapsed && (
+          <div className="mx-4 mb-4 flex-shrink-0 space-y-2">
+            {/* Main Profile Card - Matching design */}
+            <div className="bg-white rounded-2xl p-3 shadow-lg relative z-20">
+              <div className="flex items-center gap-3">
+                {/* Avatar - Left side, larger with cyan border */}
+                <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0">
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt="صورة المستخدم"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
+                      {user.firstName.charAt(0)}
+                    </div>
+                  )}
+                </div>
 
+                {/* Name and Role - Right side, centered vertically */}
+                <div className="flex-1 flex flex-col items-center justify-center gap-2">
+                  <h3 className="font-bold text-slate-800 text-base">{user.firstName} {user.lastName}</h3>
+                  <span className="text-xs text-cyan-600 font-semibold bg-cyan-50 rounded-full px-3 py-1 border border-cyan-200">
+                    {user.role}
+                  </span>
+                </div>
+              </div>
+              </div>
+
+            {/* Profile Icon Button */}
             <Link
               to="/profile"
-              className="mt-2 flex items-center gap-2 rounded-lg bg-white hover:bg-muted px-2.5 py-2 transition-colors group"
+              className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 group relative"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-sm">
-                <User className="w-4 h-4 text-white" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform relative">
+                <User className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xs font-semibold text-foreground flex-1">الملف الشخصي</span>
+              <div className="flex-1 text-right">
+                <span className="text-sm font-semibold text-slate-700">الملف الشخصي</span>
+                <p className="text-xs text-slate-500">إدارة معلوماتك وصورتك</p>
+              </div>
+              {/* أيقونة الإشعارات مع العداد (إشعارات + رسائل) */}
               <div className="relative">
-                <Bell className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors" />
-                {totalUnread > 0 && (
-                  <span
-                    className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center"
-                    style={{ fontFamily: "Arial, sans-serif" }}
-                  >
-                    {totalUnread > 9 ? "9+" : formatNumberPlain(totalUnread)}
+                <Bell className="w-5 h-5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
+                {(unreadCount + unreadMessagesCount) > 0 && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    {(unreadCount + unreadMessagesCount) > 9 ? '9+' : formatNumberPlain(unreadCount + unreadMessagesCount)}
                   </span>
                 )}
               </div>
-              <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground" />
+              <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 transition-colors" />
             </Link>
-          </div>
-        </div>
-      )}
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {navItems.map((item) => (
-          <NavLink key={item.href} item={item} />
-        ))}
-
-        <div className="pt-3 mt-3 border-t border-border">
-          <NavLink item={settingsNavItem} />
-        </div>
-
-        {(isActuallyAdmin || previewAsEmployee) && (
-          <div className="pt-3 mt-3 border-t border-border">
-            {previewAsEmployee ? (
-              <>
-                <button
-                  onClick={() => setPreviewAsEmployee(false)}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors text-sm font-medium"
-                >
-                  <EyeOff className="w-4 h-4" />
-                  {!collapsed && <span>إلغاء المعاينة</span>}
-                </button>
-                {!collapsed && (
-                  <p className="text-[11px] text-amber-600 text-center mt-1">
-                    {previewingEmployee ? `معاينة: ${previewingEmployee.full_name}` : "أنت في وضع المعاينة"}
-                  </p>
-                )}
-              </>
-            ) : (
-              <button
-                onClick={() => setPreviewAsEmployee(true)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-muted text-foreground hover:bg-muted/70 transition-colors text-sm font-medium"
-              >
-                <Eye className="w-4 h-4" />
-                {!collapsed && <span>معاينة كموظف</span>}
-              </button>
-            )}
           </div>
         )}
-      </nav>
 
-      {/* Footer actions */}
-      <div className="p-3 border-t border-border space-y-2">
-        <Button
-          onClick={handleSignOut}
-          variant="outline"
-          className="w-full justify-center gap-2 font-semibold hover:bg-muted"
-          size="default"
+        {/* Navigation Items - Scrollable with Settings inside */}
+        <nav
+          className="flex-1 pr-4 pl-4 space-y-2.5 py-3 min-h-0 overflow-y-auto scrollbar-none"
+          dir="ltr"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
         >
-          <LogOut className="w-4 h-4" />
-          {!collapsed && <span>تسجيل الخروج</span>}
-        </Button>
+          <div className="space-y-2.5" dir="rtl">
+            {/* عرض القائمة حسب مستوى الصلاحية (admin/manager/employee) أو وضع المعاينة */}
+            {(previewAsEmployee
+              ? employeeNavItems
+              : roleLevel === "admin"
+                ? adminNavItems
+                : roleLevel === "manager"
+                  ? managerNavItems
+                  : employeeNavItems
+            ).map((item) => (
+              <div key={item.href}>
+                <NavLink item={item} />
+              </div>
+            ))}
 
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-muted/50 text-muted-foreground hover:bg-muted transition-colors text-xs"
-        >
-          {collapsed ? (
-            <ChevronLeft className="w-4 h-4" />
-          ) : (
-            <>
-              <ChevronRight className="w-4 h-4" />
-              <span className="font-medium">طي القائمة</span>
-            </>
-          )}
-        </button>
+            {/* Settings inside scroll */}
+            <div className="pt-3 mt-3 border-t border-white/20">
+              <NavLink item={settingsNavItem} />
+            </div>
+
+            {/* زر معاينة كموظف - يظهر فقط للمدير أو عند المعاينة */}
+            {(isActuallyAdmin || previewAsEmployee) && (
+              <div className="pt-3 mt-3 border-t border-white/20">
+                {previewAsEmployee ? (
+                  <>
+                    <button
+                      onClick={() => setPreviewAsEmployee(false)}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none transition-colors text-sm bg-amber-500 text-white hover:bg-amber-600"
+                    >
+                      <EyeOff className="w-4 h-4" />
+                      {!collapsed && <span className="font-medium">إلغاء المعاينة</span>}
+                    </button>
+                    {!collapsed && (
+                      <p className="text-xs text-amber-200 text-center mt-1">
+                        {previewingEmployee
+                          ? `معاينة: ${previewingEmployee.full_name}`
+                          : "أنت في وضع المعاينة"
+                        }
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setPreviewAsEmployee(true)}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none transition-colors text-sm bg-white/20 text-white hover:bg-white/30"
+                  >
+                    <Eye className="w-4 h-4" />
+                    {!collapsed && <span className="font-medium">معاينة كموظف</span>}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Logout and Collapse Buttons - داخل التمرير */}
+            <div className="pt-6 mt-6 border-t border-white/20 space-y-2">
+              {/* Logout Button */}
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none bg-red-500/80 text-white hover:bg-red-500 transition-colors text-sm"
+              >
+                <LogOut className="w-4 h-4" />
+                {!collapsed && <span className="font-medium">تسجيل الخروج</span>}
+              </button>
+
+              {/* Collapse Button */}
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none bg-white/20 text-white hover:bg-white/30 transition-colors text-sm backdrop-blur-sm"
+              >
+                {collapsed ? (
+                  <ChevronLeft className="w-4 h-4" />
+                ) : (
+                  <>
+                    <ChevronRight className="w-4 h-4" />
+                    <span className="font-medium">طي القائمة</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </nav>
       </div>
     </aside>
   );
