@@ -65,11 +65,13 @@ export default function OrgAuth() {
     })();
   }, [slug]);
 
-  // If already logged in, send to app
+  // If already logged in, route by role (super admin → /admin, otherwise → /app)
   useEffect(() => {
-    if (!authLoading && user) {
-      navigate("/app", { replace: true });
-    }
+    if (authLoading || !user) return;
+    (async () => {
+      const { data: superCheck } = await supabase.rpc("is_super_admin", { _user_id: user.id });
+      navigate(superCheck ? "/admin" : "/app", { replace: true });
+    })();
   }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,13 +90,16 @@ export default function OrgAuth() {
       const normalizedPassword = normalizeDigits(password, true);
 
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({
           email: loginEmail,
           password: normalizedPassword,
         });
         if (error) throw error;
+        const { data: superCheck } = await supabase.rpc("is_super_admin", {
+          _user_id: signInData.user.id,
+        });
         toast.success("تم تسجيل الدخول بنجاح");
-        navigate("/app", { replace: true });
+        navigate(superCheck ? "/admin" : "/app", { replace: true });
       } else {
         if (!org.allow_self_signup) {
           toast.error("التسجيل الذاتي معطّل لهذه الجمعية. يرجى التواصل مع المسؤول");

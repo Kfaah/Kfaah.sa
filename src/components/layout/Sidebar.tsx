@@ -252,7 +252,7 @@ export function Sidebar() {
   const handleSignOut = async () => {
     setPreviewAsEmployee(false);
     await signOut();
-    navigate("/auth");
+    navigate("/", { replace: true });
   };
 
   const NavLink = ({ item }: { item: NavItem }) => {
