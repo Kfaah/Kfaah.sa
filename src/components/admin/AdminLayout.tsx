@@ -73,10 +73,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-l-full bg-accent" />
                 )}
                 <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
+                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors shadow-sm",
                   active
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-muted text-muted-foreground group-hover:bg-accent/10 group-hover:text-accent"
+                    ? `${item.activeBg} ${item.activeText}`
+                    : `${item.bg} ${item.color} group-hover:scale-105`
                 )}>
                   <Icon className="w-5 h-5" />
                 </div>
