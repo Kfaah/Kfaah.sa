@@ -90,6 +90,17 @@ export function Sidebar() {
   useEffect(() => {
     const fetchRoleLevel = async () => {
       if (!authUser) return;
+
+      // 1) Check global user_roles first — admin/super_admin always wins
+      const { data: userRole } = await supabase.rpc("get_user_role", {
+        _user_id: authUser.id,
+      });
+      if (userRole === "admin" || userRole === "super_admin") {
+        setRoleLevel("admin");
+        return;
+      }
+
+      // 2) Otherwise read role_level from employees
       const { data } = await supabase
         .from("employees")
         .select("role_level")
@@ -97,8 +108,6 @@ export function Sidebar() {
         .maybeSingle();
       if (data?.role_level) {
         setRoleLevel(data.role_level as any);
-      } else if (isActuallyAdmin) {
-        setRoleLevel("admin");
       } else {
         setRoleLevel("employee");
       }

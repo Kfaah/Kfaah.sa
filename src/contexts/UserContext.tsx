@@ -118,8 +118,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
           }
         }
         
-        // استخدام الدور في النظام (admin/user) وليس job_role
-        const displayRole = userRole === "admin" ? "مدير النظام" : (employeeData.job_role || "موظف");
+        // استخدام الدور في النظام (admin/super_admin/user) وليس job_role
+        const isAdminRole = userRole === "admin" || userRole === "super_admin";
+        const displayRole = isAdminRole ? "مدير النظام" : (employeeData.job_role || "موظف");
         
         setUser({
           firstName,
@@ -155,7 +156,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             department: data.department || "",
             location: data.location || "",
             profileImage: data.avatar_url,
-            role: userRole === "admin" ? "مدير النظام" : "مستخدم",
+            role: (userRole === "admin" || userRole === "super_admin") ? "مدير النظام" : "مستخدم",
             jobRole: (data as any).job_role || "",
             username: authUser.user_metadata?.username || "",
             isEmployee: false,
@@ -181,7 +182,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             firstName,
             lastName,
             email: authUser.email || "",
-            role: userRole === "admin" ? "مدير النظام" : "مستخدم",
+            role: (userRole === "admin" || userRole === "super_admin") ? "مدير النظام" : "مستخدم",
           });
         }
       }
