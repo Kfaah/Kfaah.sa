@@ -35,9 +35,16 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      {/* Sidebar — يمين الشاشة (RTL) */}
-      <aside className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-sidebar-border bg-sidebar flex flex-col shadow-card">
+    <div
+      className="min-h-screen"
+      dir="rtl"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+      }}
+    >
+      {/* Sidebar — يمين الشاشة (RTL) — شفاف فوق نفس خلفية الجمعية */}
+      <aside className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-white/10 bg-white/5 backdrop-blur-md flex flex-col shadow-card">
         {/* Brand */}
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
