@@ -118,7 +118,13 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#3d9aa8] via-[#4A9BA8] to-[#2d7a85] p-4">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-4"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+      }}
+    >
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20" />
       <div
