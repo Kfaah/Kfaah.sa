@@ -47,13 +47,13 @@ serve(async (req) => {
 
     const requestingUserId = claimsData.claims.sub as string;
 
-    // Check if requesting user is admin
-    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
-      _user_id: requestingUserId,
-      _role: "admin",
-    });
+    // Check if requesting user is admin or super_admin
+    const [{ data: isAdmin }, { data: isSuperAdmin }] = await Promise.all([
+      supabaseAdmin.rpc("has_role", { _user_id: requestingUserId, _role: "admin" }),
+      supabaseAdmin.rpc("is_super_admin", { _user_id: requestingUserId }),
+    ]);
 
-    if (!isAdmin) {
+    if (!isAdmin && !isSuperAdmin) {
       return new Response(
         JSON.stringify({ error: "ليس لديك صلاحية للدخول على حسابات الموظفين" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
