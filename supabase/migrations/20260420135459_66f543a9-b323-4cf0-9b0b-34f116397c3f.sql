@@ -1,0 +1,1 @@
+DELETE FROM public.organizations WHERE id = '03b12bc8-f027-4c09-a885-d2135a8c6f31';
