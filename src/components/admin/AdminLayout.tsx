@@ -29,7 +29,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" dir="rtl">
+    <div className="min-h-screen bg-white" dir="rtl">
       <div
         className="fixed inset-0 opacity-[0.03] pointer-events-none"
         style={{
