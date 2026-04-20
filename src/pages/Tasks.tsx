@@ -217,12 +217,13 @@ const Tasks = () => {
     const checkPermissions = async () => {
       if (!authUser) return;
       
-      // التحقق من صلاحية المدير
-      const { data: adminData } = await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" });
-      setIsAdmin(adminData === true);
+      // التحقق من صلاحية المدير أو مدير النظام
+      const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: authUser.id });
+      const hasAdminAccess = roleData === "admin" || roleData === "super_admin";
+      setIsAdmin(hasAdminAccess);
       
       // الأدمن فقط يستطيع تعديل الوقت (نظام التقييم لاحقًا)
-      setCanEditTime(adminData === true);
+      setCanEditTime(hasAdminAccess);
     };
     checkPermissions();
   }, [authUser]);
