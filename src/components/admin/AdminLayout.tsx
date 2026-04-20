@@ -119,9 +119,15 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="mr-72 relative z-10 min-h-screen bg-background">
-        {children}
+      {/* Main content - خلفية داكنة موحّدة لكل صفحات الـ Admin */}
+      <main className="mr-72 relative z-10 min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
+        <div className="relative z-10">{children}</div>
       </main>
     </div>
   );
