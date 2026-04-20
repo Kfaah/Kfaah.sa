@@ -30,6 +30,12 @@ import Uploads from "./pages/Uploads";
 import Organizations from "./pages/Organizations";
 import AdminHub from "./pages/AdminHub";
 import Intelligence from "./pages/Intelligence";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminCompare from "./pages/admin/AdminCompare";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminReports from "./pages/admin/AdminReports";
+import AdminOrganizations from "./pages/admin/AdminOrganizations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -106,15 +112,12 @@ function AppRoutes() {
         }
       />
 
-      {/* Super-admin hub: independent page, lists all orgs as cards */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <AdminHub />
-          </ProtectedRoute>
-        }
-      />
+      {/* Super-admin hub: لوحة تحكم متكاملة بـ sidebar */}
+      <Route path="/admin" element={<ProtectedRoute><AdminLayout><AdminOverview /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/organizations" element={<ProtectedRoute><AdminLayout><AdminOrganizations /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/compare" element={<ProtectedRoute><AdminLayout><AdminCompare /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/analytics" element={<ProtectedRoute><AdminLayout><AdminAnalytics /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/reports" element={<ProtectedRoute><AdminLayout><AdminReports /></AdminLayout></ProtectedRoute>} />
       {/* Org management (edit form etc) — kept inside an org's dashboard */}
       <Route
         path="/organizations"
