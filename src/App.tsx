@@ -149,6 +149,7 @@ function AppRoutes() {
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
+      <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
