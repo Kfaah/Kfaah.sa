@@ -271,8 +271,8 @@ export default function ExecutivePlans() {
   useEffect(() => {
     const checkAdmin = async () => {
       if (!authUser) return;
-      const { data } = await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" });
-      setIsAdmin(data === true);
+      const { data } = await supabase.rpc("get_user_role", { _user_id: authUser.id });
+      setIsAdmin(data === "admin" || data === "super_admin");
     };
     checkAdmin();
   }, [authUser]);
