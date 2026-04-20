@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import adminLandscape from "@/assets/admin-landscape.jpg";
+
 
 const navItems = [
   { to: "/admin", label: "نظرة عامة موحّدة", icon: LayoutDashboard, end: true,
