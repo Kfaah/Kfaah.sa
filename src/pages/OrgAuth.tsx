@@ -94,16 +94,14 @@ export default function OrgAuth() {
       const normalizedPassword = normalizeDigits(password, true);
 
       if (isLogin) {
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email: loginEmail,
           password: normalizedPassword,
         });
         if (error) throw error;
-        const { data: superCheck } = await supabase.rpc("is_super_admin", {
-          _user_id: signInData.user.id,
-        });
+
         toast.success("تم تسجيل الدخول بنجاح");
-        navigate(superCheck ? "/admin" : "/app", { replace: true });
+        navigate(`/${slug}/app`, { replace: true });
       } else {
         if (!org.allow_self_signup) {
           toast.error("التسجيل الذاتي معطّل لهذه الجمعية. يرجى التواصل مع المسؤول");
@@ -115,7 +113,7 @@ export default function OrgAuth() {
           setLoading(false);
           return;
         }
-        const redirectUrl = `${window.location.origin}/app`;
+        const redirectUrl = `${window.location.origin}/${slug}/app`;
         const { error: signUpError } = await supabase.auth.signUp({
           email: loginEmail,
           password: normalizedPassword,
@@ -145,7 +143,7 @@ export default function OrgAuth() {
         if (joinError) throw joinError;
 
         toast.success(`تم إنشاء حسابك في ${org.name}`);
-        navigate("/app", { replace: true });
+        navigate(`/${slug}/app`, { replace: true });
       }
     } catch (error: any) {
       toast.error(getArabicErrorMessage(error, "حدث خطأ"));
