@@ -151,7 +151,7 @@ export default function AdminOverview() {
           <h3 className="text-foreground font-bold mb-1">توزيع المتبرعين</h3>
           <p className="text-muted-foreground text-xs mb-4">حصة كل جمعية</p>
           <ResponsiveContainer width="100%" height={340}>
-            <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+            <PieChart margin={{ top: 20, right: 120, bottom: 20, left: 120 }}>
               <Pie
                 data={donorsDist}
                 dataKey="value"
@@ -164,9 +164,12 @@ export default function AdminOverview() {
                 labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }}
                 label={({ cx, cy, midAngle, outerRadius, name, fill }: any) => {
                   const RAD = Math.PI / 180;
-                  const r = outerRadius + 18;
+                  // Position label at same vertical level as slice
+                  const r = outerRadius + 25;
                   const x = cx + r * Math.cos(-midAngle * RAD);
                   const y = cy + r * Math.sin(-midAngle * RAD);
+                  const isRightSide = x > cx;
+                  
                   return (
                     <text
                       x={x}
@@ -174,7 +177,7 @@ export default function AdminOverview() {
                       fill={fill}
                       fontSize={12}
                       fontWeight={700}
-                      textAnchor={x > cx ? "start" : "end"}
+                      textAnchor={isRightSide ? "start" : "end"}
                       dominantBaseline="central"
                     >
                       {name}
