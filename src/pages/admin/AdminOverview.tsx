@@ -199,3 +199,213 @@ function HealthCard({ icon: Icon, title, rate, detail }: {
     </Card>
   );
 }
+
+/**
+ * Donut chart مع خطوط leader منحنية تربط كل شريحة باسم الجمعية
+ * - الدائرة في المنتصف
+ * - الأسماء موزّعة على اليمين واليسار حسب موقع الشريحة
+ */
+function DonorsDonutWithLeaders({
+  data,
+  colors,
+}: {
+  data: { name: string; value: number }[];
+  colors: string[];
+}) {
+  const W = 560;
+  const H = 340;
+  const cx = W / 2;
+  const cy = H / 2;
+  const innerR = 58;
+  const outerR = 95;
+
+  const total = data.reduce((s, d) => s + d.value, 0) || 1;
+
+  // حساب زوايا كل شريحة
+  let acc = -Math.PI / 2; // البداية من الأعلى
+  const slices = data.map((d, i) => {
+    const angle = (d.value / total) * Math.PI * 2;
+    const start = acc;
+    const end = acc + angle;
+    const mid = start + angle / 2;
+    acc = end;
+
+    const large = angle > Math.PI ? 1 : 0;
+    const x1 = cx + outerR * Math.cos(start);
+    const y1 = cy + outerR * Math.sin(start);
+    const x2 = cx + outerR * Math.cos(end);
+    const y2 = cy + outerR * Math.sin(end);
+    const x3 = cx + innerR * Math.cos(end);
+    const y3 = cy + innerR * Math.sin(end);
+    const x4 = cx + innerR * Math.cos(start);
+    const y4 = cy + innerR * Math.sin(start);
+
+    const path = [
+      `M ${x1} ${y1}`,
+      `A ${outerR} ${outerR} 0 ${large} 1 ${x2} ${y2}`,
+      `L ${x3} ${y3}`,
+      `A ${innerR} ${innerR} 0 ${large} 0 ${x4} ${y4}`,
+      "Z",
+    ].join(" ");
+
+    // نقطة الانطلاق على حافة الشريحة
+    const startX = cx + (outerR + 2) * Math.cos(mid);
+    const startY = cy + (outerR + 2) * Math.sin(mid);
+
+    // الجانب: يمين أو يسار
+    const isRight = Math.cos(mid) >= 0;
+
+    return {
+      path,
+      color: colors[i % colors.length],
+      name: d.name,
+      value: d.value,
+      pct: (d.value / total) * 100,
+      mid,
+      startX,
+      startY,
+      isRight,
+    };
+  });
+
+  // ترتيب التسميات على كل جانب من الأعلى للأسفل لتفادي التداخل
+  const rightSlices = slices
+    .filter((s) => s.isRight)
+    .sort((a, b) => a.startY - b.startY);
+  const leftSlices = slices
+    .filter((s) => !s.isRight)
+    .sort((a, b) => a.startY - b.startY);
+
+  const labelGap = 28; // أدنى مسافة عمودية بين التسميات
+  const labelTop = 20;
+  const labelBottom = H - 20;
+
+  // حساب مواقع التسميات النهائية على كل جانب
+  function distributeLabels(group: typeof slices) {
+    const n = group.length;
+    if (n === 0) return [];
+    // ابدأ بالموقع الطبيعي (startY) ثم وزّع لتفادي التداخل
+    const positions = group.map((s) => s.startY);
+    // مرّر للأمام
+    for (let i = 1; i < n; i++) {
+      if (positions[i] < positions[i - 1] + labelGap) {
+        positions[i] = positions[i - 1] + labelGap;
+      }
+    }
+    // إذا تجاوزنا الحد السفلي، مرّر للخلف
+    if (positions[n - 1] > labelBottom) {
+      positions[n - 1] = labelBottom;
+      for (let i = n - 2; i >= 0; i--) {
+        if (positions[i] > positions[i + 1] - labelGap) {
+          positions[i] = positions[i + 1] - labelGap;
+        }
+      }
+    }
+    // تأكد من عدم تجاوز الحد العلوي
+    if (positions[0] < labelTop) {
+      positions[0] = labelTop;
+      for (let i = 1; i < n; i++) {
+        if (positions[i] < positions[i - 1] + labelGap) {
+          positions[i] = positions[i - 1] + labelGap;
+        }
+      }
+    }
+    return positions;
+  }
+
+  const rightYs = distributeLabels(rightSlices);
+  const leftYs = distributeLabels(leftSlices);
+
+  const rightLabelX = W - 12;
+  const leftLabelX = 12;
+  const rightAnchorX = cx + outerR + 90;
+  const leftAnchorX = cx - outerR - 90;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" style={{ direction: "ltr" }}>
+      {/* الشرائح */}
+      {slices.map((s, i) => (
+        <path
+          key={`slice-${i}`}
+          d={s.path}
+          fill={s.color}
+          stroke="hsl(var(--card))"
+          strokeWidth={2}
+        />
+      ))}
+
+      {/* خطوط leader + تسميات اليمين */}
+      {rightSlices.map((s, i) => {
+        const ly = rightYs[i];
+        const lx = rightAnchorX;
+        // مسار منحني Bezier من حافة الشريحة إلى نقطة قرب التسمية ثم خط أفقي قصير
+        const c1x = s.startX + 30;
+        const c1y = s.startY;
+        const c2x = lx - 30;
+        const c2y = ly;
+        const path = `M ${s.startX} ${s.startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${lx} ${ly} L ${rightLabelX - 4} ${ly}`;
+        return (
+          <g key={`r-${i}`}>
+            <path d={path} fill="none" stroke={s.color} strokeWidth={1.5} opacity={0.7} />
+            <circle cx={s.startX} cy={s.startY} r={3} fill={s.color} />
+            <text
+              x={rightLabelX}
+              y={ly - 6}
+              textAnchor="end"
+              fontSize={12}
+              fontWeight={700}
+              fill={s.color}
+            >
+              {s.name}
+            </text>
+            <text
+              x={rightLabelX}
+              y={ly + 9}
+              textAnchor="end"
+              fontSize={10}
+              fill="hsl(var(--muted-foreground))"
+            >
+              {s.value.toLocaleString("ar-SA")} متبرع · {s.pct.toFixed(1)}%
+            </text>
+          </g>
+        );
+      })}
+
+      {/* خطوط leader + تسميات اليسار */}
+      {leftSlices.map((s, i) => {
+        const ly = leftYs[i];
+        const lx = leftAnchorX;
+        const c1x = s.startX - 30;
+        const c1y = s.startY;
+        const c2x = lx + 30;
+        const c2y = ly;
+        const path = `M ${s.startX} ${s.startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${lx} ${ly} L ${leftLabelX + 4} ${ly}`;
+        return (
+          <g key={`l-${i}`}>
+            <path d={path} fill="none" stroke={s.color} strokeWidth={1.5} opacity={0.7} />
+            <circle cx={s.startX} cy={s.startY} r={3} fill={s.color} />
+            <text
+              x={leftLabelX}
+              y={ly - 6}
+              textAnchor="start"
+              fontSize={12}
+              fontWeight={700}
+              fill={s.color}
+            >
+              {s.name}
+            </text>
+            <text
+              x={leftLabelX}
+              y={ly + 9}
+              textAnchor="start"
+              fontSize={10}
+              fill="hsl(var(--muted-foreground))"
+            >
+              {s.value.toLocaleString("ar-SA")} متبرع · {s.pct.toFixed(1)}%
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
