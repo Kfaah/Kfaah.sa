@@ -53,7 +53,6 @@ const PRESETS = [
   ["last_week", "الأسبوع الماضي"],
   ["this_month", "هذا الشهر"],
   ["last_month", "الشهر الماضي"],
-  ["this_year", "هذه السنة"],
   ["last_year", "السنة الماضية"],
 ] as const;
 

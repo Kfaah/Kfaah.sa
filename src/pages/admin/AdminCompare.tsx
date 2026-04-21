@@ -86,7 +86,7 @@ export default function AdminCompare() {
             <GitCompareArrows className="w-8 h-8 text-accent" />
             المقارنة بين الجمعيات
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-white mt-1">
             ترتيب جميع الجمعيات في كل محور تقييم — حسب الفترة الزمنية المختارة
           </p>
         </div>
@@ -99,36 +99,36 @@ export default function AdminCompare() {
 
       {/* Formula explanation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Card className="p-4 bg-card border-2 border-amber-500/50 shadow-sm">
+        <Card className="p-4 bg-emerald-600 border-emerald-500 shadow-lg text-white">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/50 flex items-center justify-center shrink-0">
-              <TrendingUp className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <div className="w-10 h-10 rounded-lg bg-white/20 border border-white/30 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-5 h-5 text-white" />
             </div>
-            <div className="text-sm text-foreground leading-relaxed flex-1">
-              <div className="font-bold text-foreground mb-1.5 text-base">جمع التبرعات (حجم خام)</div>
-              <div className="text-sm text-foreground/80">
+            <div className="text-sm leading-relaxed flex-1">
+              <div className="font-bold mb-1.5 text-base text-white">جمع التبرعات (حجم خام)</div>
+              <div className="text-sm text-white">
                 إجمالي التبرعات في الفترة المختارة، بمقياس لوغاريتمي للمقارنة العادلة بين الجمعيات.
-                <span className="font-mono bg-muted text-foreground border border-border rounded px-2 py-0.5 mx-1 inline-block font-semibold">
+                <span className="font-mono bg-white/20 text-white border border-white/30 rounded px-2 py-0.5 mx-1 inline-block font-semibold">
                   log10(الإجمالي) × 15
                 </span>
-                <span className="block mt-1 text-xs font-semibold text-amber-700 dark:text-amber-400">⏱ يتأثر بالفلتر الزمني</span>
+                <span className="block mt-1 text-xs font-semibold text-white">⏱ يتأثر بالفلتر الزمني</span>
               </div>
             </div>
           </div>
         </Card>
-        <Card className="p-4 bg-card border-2 border-violet-500/50 shadow-sm">
+        <Card className="p-4 bg-emerald-600 border-emerald-500 shadow-lg text-white">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-violet-500/20 border border-violet-500/50 flex items-center justify-center shrink-0">
-              <Gauge className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+            <div className="w-10 h-10 rounded-lg bg-white/20 border border-white/30 flex items-center justify-center shrink-0">
+              <Gauge className="w-5 h-5 text-white" />
             </div>
-            <div className="text-sm text-foreground leading-relaxed flex-1">
-              <div className="font-bold text-foreground mb-1.5 text-base">كفاءة المتبرع الشهرية</div>
-              <div className="text-sm text-foreground/80">
-                <span className="font-mono bg-muted text-foreground border border-border rounded px-2 py-0.5 mx-1 inline-block font-semibold">
+            <div className="text-sm leading-relaxed flex-1">
+              <div className="font-bold mb-1.5 text-base text-white">كفاءة المتبرع الشهرية</div>
+              <div className="text-sm text-white">
+                <span className="font-mono bg-white/20 text-white border border-white/30 rounded px-2 py-0.5 mx-1 inline-block font-semibold">
                   (تبرعات الشهر السابق ÷ إجمالي المتبرعين) ÷ 10 × 100
                 </span>
                 — مقياس الإنتاجية الحقيقي: 100 متبرع بـ 1000 ر.س تتفوّق على 1000 متبرع بـ 5000 ر.س.
-                <span className="block mt-1 text-xs font-semibold text-violet-700 dark:text-violet-400">🔒 لا يتأثر بالفلتر</span>
+                <span className="block mt-1 text-xs font-semibold text-white">🔒 لا يتأثر بالفلتر</span>
               </div>
             </div>
           </div>
