@@ -150,10 +150,38 @@ export default function AdminOverview() {
         <Card className="bg-card border-border p-5 shadow-sm">
           <h3 className="text-foreground font-bold mb-1">توزيع المتبرعين</h3>
           <p className="text-muted-foreground text-xs mb-4">حصة كل جمعية</p>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie data={donorsDist} dataKey="value" nameKey="name" cx="50%" cy="50%"
-                   innerRadius={50} outerRadius={90} paddingAngle={2}>
+          <ResponsiveContainer width="100%" height={340}>
+            <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+              <Pie
+                data={donorsDist}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={90}
+                paddingAngle={2}
+                labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }}
+                label={({ cx, cy, midAngle, outerRadius, name, fill }: any) => {
+                  const RAD = Math.PI / 180;
+                  const r = outerRadius + 18;
+                  const x = cx + r * Math.cos(-midAngle * RAD);
+                  const y = cy + r * Math.sin(-midAngle * RAD);
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      fill={fill}
+                      fontSize={12}
+                      fontWeight={700}
+                      textAnchor={x > cx ? "start" : "end"}
+                      dominantBaseline="central"
+                    >
+                      {name}
+                    </text>
+                  );
+                }}
+              >
                 {donorsDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
               <Tooltip
@@ -164,7 +192,6 @@ export default function AdminOverview() {
                   color: "hsl(var(--foreground))",
                 }}
               />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
             </PieChart>
           </ResponsiveContainer>
         </Card>
