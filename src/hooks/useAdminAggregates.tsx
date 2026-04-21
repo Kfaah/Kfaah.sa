@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+
+export type DateRange = { from: Date | null; to: Date | null; label: string };
 
 export interface OrgMetrics {
   org_id: string;
@@ -7,7 +9,8 @@ export interface OrgMetrics {
   org_slug: string | null;
   is_active: boolean;
   members: number;
-  donors: number;
+  donors: number;             // active donors in period (or all-time when no filter)
+  donors_total: number;       // all-time donors count for the org
   donations_count: number;
   total_donated: number;
   avg_donation: number;
@@ -25,6 +28,9 @@ export interface OrgMetrics {
   tasks_completed: number;
   task_completion_rate: number;
   employees_count: number;
+  // contextual
+  expected_target: number;    // active_donors × 10 × months_in_period
+  period_months: number;
   // composite scores (0..100)
   fundraising_score: number;
   donor_engagement_score: number;
@@ -35,10 +41,18 @@ export interface OrgMetrics {
 
 const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
 
-export function useAdminAggregates() {
+function monthsBetween(from: Date, to: Date) {
+  const ms = to.getTime() - from.getTime();
+  return Math.max(ms / (1000 * 60 * 60 * 24 * 30.4375), 1 / 30); // min 1 day
+}
+
+export function useAdminAggregates(range?: DateRange) {
   const [metrics, setMetrics] = useState<OrgMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const fromIso = range?.from ? range.from.toISOString() : null;
+  const toIso = range?.to ? range.to.toISOString() : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -55,8 +69,15 @@ export function useAdminAggregates() {
         const orgId = o.id;
         const head = { count: "exact" as const, head: true };
 
+        // Helper to apply date range to a query on a date column
+        const withRange = (q: any, col: string) => {
+          if (fromIso) q = q.gte(col, fromIso);
+          if (toIso) q = q.lte(col, toIso);
+          return q;
+        };
+
         const [
-          membersRes, donorsRes, donCountRes, donSumRes,
+          membersRes, donorsTotalRes, donCountRes, donSumRes, activeDonorsRes,
           abCartsRes, abRecoveredRes, failedRes,
           transfersRes, matchedRes,
           campaignsRes, ideasRes, insightsRes,
@@ -64,18 +85,20 @@ export function useAdminAggregates() {
         ] = await Promise.all([
           supabase.from("user_organizations").select("*", head).eq("organization_id", orgId),
           supabase.from("donors").select("*", head).eq("organization_id", orgId),
-          supabase.from("donations").select("*", head).eq("organization_id", orgId),
-          supabase.from("donations").select("amount").eq("organization_id", orgId).limit(10000),
-          supabase.from("abandoned_carts").select("*", head).eq("organization_id", orgId),
-          supabase.from("abandoned_carts").select("*", head).eq("organization_id", orgId).eq("recovered", true),
-          supabase.from("failed_donations").select("*", head).eq("organization_id", orgId),
-          supabase.from("bank_transfers").select("*", head).eq("organization_id", orgId),
-          supabase.from("bank_transfers").select("*", head).eq("organization_id", orgId).eq("reconciliation_status", "matched"),
+          withRange(supabase.from("donations").select("*", head).eq("organization_id", orgId), "donation_date"),
+          withRange(supabase.from("donations").select("amount, donor_id, donor_phone").eq("organization_id", orgId), "donation_date").limit(20000),
+          // active donors derived from donations result; placeholder
+          Promise.resolve({ data: null, count: null } as any),
+          withRange(supabase.from("abandoned_carts").select("*", head).eq("organization_id", orgId), "abandoned_at"),
+          withRange(supabase.from("abandoned_carts").select("*", head).eq("organization_id", orgId).eq("recovered", true), "abandoned_at"),
+          withRange(supabase.from("failed_donations").select("*", head).eq("organization_id", orgId), "attempted_at"),
+          withRange(supabase.from("bank_transfers").select("*", head).eq("organization_id", orgId), "transfer_date"),
+          withRange(supabase.from("bank_transfers").select("*", head).eq("organization_id", orgId).eq("reconciliation_status", "matched"), "transfer_date"),
           supabase.from("campaigns").select("*", head).eq("organization_id", orgId),
           supabase.from("marketing_ideas").select("*", head).eq("organization_id", orgId),
           supabase.from("donor_insights").select("*", head).eq("organization_id", orgId),
-          supabase.from("tasks").select("*", head).eq("organization_id", orgId),
-          supabase.from("tasks").select("*", head).eq("organization_id", orgId).eq("status", "completed"),
+          withRange(supabase.from("tasks").select("*", head).eq("organization_id", orgId), "created_at"),
+          withRange(supabase.from("tasks").select("*", head).eq("organization_id", orgId).eq("status", "completed"), "created_at"),
           supabase.from("employees").select("*", head).eq("organization_id", orgId),
         ]);
 
@@ -83,9 +106,18 @@ export function useAdminAggregates() {
           .from("donors").select("*", head)
           .eq("organization_id", orgId).gte("donations_count", 2);
 
-        const total_donated = (donSumRes.data || []).reduce((s, r: any) => s + Number(r.amount || 0), 0);
+        const donRows = (donSumRes.data || []) as any[];
+        const total_donated = donRows.reduce((s, r) => s + Number(r.amount || 0), 0);
+        // active donors in period: distinct donor_id (or phone fallback)
+        const activeSet = new Set<string>();
+        donRows.forEach(r => {
+          const k = r.donor_id || r.donor_phone;
+          if (k) activeSet.add(String(k));
+        });
+        const active_donors = activeSet.size;
         const donations_count = donCountRes.count || 0;
-        const donors = donorsRes.count || 0;
+        const donors_total = donorsTotalRes.count || 0;
+        const donors = active_donors > 0 ? active_donors : (fromIso || toIso ? 0 : donors_total);
         const recurring = recurringRes.count || 0;
         const abandoned = abCartsRes.count || 0;
         const recovered = abRecoveredRes.count || 0;
@@ -99,13 +131,24 @@ export function useAdminAggregates() {
         const recovery_rate = abandoned ? (recovered / abandoned) * 100 : 0;
         const match_rate = transfers ? (matched / transfers) * 100 : 0;
         const completion = tasksTotal ? (tasksDone / tasksTotal) * 100 : 0;
-        const recurring_pct = donors ? (recurring / donors) * 100 : 0;
+        const recurring_pct = donors_total ? (recurring / donors_total) * 100 : 0;
 
-        // Composite scores (relative-friendly, will be normalized by caller if needed)
-        const fundraising_score = clamp(
-          Math.log10(total_donated + 1) * 12 + Math.log10(donations_count + 1) * 8
-        );
-        const donor_engagement_score = clamp(recurring_pct * 1.2 + Math.log10(donors + 1) * 8);
+        // Period in months
+        const now = new Date();
+        const fromD = range?.from || new Date(2000, 0, 1);
+        const toD = range?.to || now;
+        const period_months = monthsBetween(fromD, toD);
+
+        // === New Fundraising Score ===
+        // expected = active_donors × 10 SAR × months
+        // score = (collected / expected) × 100, capped 0..100
+        const benchmarkPerDonorPerMonth = 10;
+        const expected_target = donors * benchmarkPerDonorPerMonth * period_months;
+        const fundraising_score = expected_target > 0
+          ? clamp((total_donated / expected_target) * 100)
+          : 0;
+
+        const donor_engagement_score = clamp(recurring_pct * 1.5 + (donors > 0 ? Math.min(40, Math.log10(donors + 1) * 12) : 0));
         const service_score = clamp(recovery_rate * 0.6 + match_rate * 0.4);
         const team_score = clamp(completion * 0.7 + Math.log10((employeesRes.count || 0) + 1) * 10);
         const overall_score = clamp(
@@ -120,6 +163,7 @@ export function useAdminAggregates() {
           is_active: o.is_active,
           members: membersRes.count || 0,
           donors,
+          donors_total,
           donations_count,
           total_donated,
           avg_donation,
@@ -137,6 +181,8 @@ export function useAdminAggregates() {
           tasks_completed: tasksDone,
           task_completion_rate: completion,
           employees_count: employeesRes.count || 0,
+          expected_target,
+          period_months,
           fundraising_score,
           donor_engagement_score,
           service_score,
@@ -152,7 +198,7 @@ export function useAdminAggregates() {
       }
     })();
     return () => { cancelled = true; };
-  }, [refreshKey]);
+  }, [refreshKey, fromIso, toIso]);
 
   return { metrics, loading, refresh: () => setRefreshKey((k) => k + 1) };
 }
