@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import {
   Sparkles, Loader2, TrendingUp, Lightbulb,
   AlertTriangle, CheckCircle2, Building2, Users, HandCoins, Target, CalendarDays,
@@ -58,11 +61,15 @@ const PERIOD_OPTIONS: [string, string][] = [
   ["last_month", "الشهر الماضي"],
   ["this_year", "هذه السنة"],
   ["last_year", "السنة الماضية"],
+  ["custom", "فترة مخصصة..."],
 ];
 
 export default function AdminAnalytics() {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
   const [periodKey, setPeriodKey] = useState<string>("all");
+  const [customOpen, setCustomOpen] = useState(false);
+  const [tempFrom, setTempFrom] = useState<Date | undefined>();
+  const [tempTo, setTempTo] = useState<Date | undefined>();
   const { metrics, loading } = useAdminAggregates(range);
   const [selectedId, setSelectedId] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -156,11 +163,18 @@ export default function AdminAnalytics() {
           </Select>
           <Select
             value={periodKey}
-            onValueChange={(k) => { setPeriodKey(k); setRange(buildPreset(k)); setInsight(null); }}
+            onValueChange={(k) => {
+              setPeriodKey(k);
+              setInsight(null);
+              if (k === "custom") { setCustomOpen(true); }
+              else { setRange(buildPreset(k)); }
+            }}
           >
             <SelectTrigger className="w-[200px] bg-accent text-accent-foreground border-accent hover:bg-accent/90 font-semibold gap-2">
               <CalendarDays className="w-4 h-4" />
-              <SelectValue placeholder="الفترة" />
+              <SelectValue placeholder="الفترة">
+                {periodKey === "custom" ? range.label : undefined}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {PERIOD_OPTIONS.map(([k, label]) => (
@@ -168,6 +182,33 @@ export default function AdminAnalytics() {
               ))}
             </SelectContent>
           </Select>
+          <Popover open={customOpen} onOpenChange={setCustomOpen}>
+            <PopoverTrigger asChild><span /></PopoverTrigger>
+            <PopoverContent className="w-auto p-3 bg-popover" align="end">
+              <div className="flex gap-3 flex-wrap">
+                <div>
+                  <div className="text-xs font-semibold mb-1 text-muted-foreground">من</div>
+                  <Calendar mode="single" selected={tempFrom} onSelect={setTempFrom} className={cn("p-0 pointer-events-auto")} />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold mb-1 text-muted-foreground">إلى</div>
+                  <Calendar mode="single" selected={tempTo} onSelect={setTempTo} className={cn("p-0 pointer-events-auto")} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-3">
+                <Button size="sm" variant="ghost" onClick={() => setCustomOpen(false)}>إلغاء</Button>
+                <Button size="sm" disabled={!tempFrom || !tempTo} onClick={() => {
+                  if (!tempFrom || !tempTo) return;
+                  setRange({
+                    from: startOfDay(tempFrom),
+                    to: endOfDay(tempTo),
+                    label: `من ${tempFrom.toLocaleDateString("ar-SA")} إلى ${tempTo.toLocaleDateString("ar-SA")}`,
+                  });
+                  setCustomOpen(false);
+                }}>تطبيق</Button>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             onClick={runAI}
             disabled={!selected || aiLoading}
