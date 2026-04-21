@@ -27,6 +27,8 @@ const SCORE_AXES: { key: keyof OrgMetrics; label: string; icon: any; gradient: s
 
 const sortable: { key: SortKey; label: string; format?: (n: any) => string }[] = [
   { key: "overall_score", label: "الترتيب العام" },
+  { key: "donor_efficiency_score", label: "كفاءة المتبرع الشهرية", format: (n) => n.toFixed(0) },
+  { key: "donor_efficiency", label: "ر.س / متبرع (شهري)", format: (n) => n.toFixed(2) },
   { key: "total_donated", label: "الإيرادات", format: (n) => new Intl.NumberFormat("ar-SA").format(Math.round(n)) },
   { key: "donations_count", label: "عدد التبرعات" },
   { key: "donors", label: "المتبرعون" },
