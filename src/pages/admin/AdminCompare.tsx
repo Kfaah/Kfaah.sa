@@ -1,20 +1,26 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows } from "lucide-react";
+import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star } from "lucide-react";
 import { useAdminAggregates, type OrgMetrics } from "@/hooks/useAdminAggregates";
-import {
-  ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  Tooltip, Legend,
-} from "recharts";
 import { cn } from "@/lib/utils";
 
 type SortKey = keyof OrgMetrics;
 
-// ألوان الرادار من هوية عطف + ألوان متناغمة
-const RADAR_COLORS = [
+// لوحة ألوان متناغمة مع هوية عطف
+const ORG_COLORS = [
   "hsl(174, 52%, 52%)", "hsl(210, 60%, 28%)", "hsl(38, 92%, 50%)",
   "hsl(160, 70%, 40%)", "hsl(220, 55%, 50%)", "hsl(195, 55%, 55%)",
+  "hsl(280, 50%, 55%)", "hsl(340, 65%, 55%)", "hsl(20, 80%, 55%)",
+  "hsl(140, 50%, 45%)", "hsl(250, 55%, 60%)", "hsl(45, 85%, 50%)",
+];
+
+const SCORE_AXES: { key: keyof OrgMetrics; label: string; icon: any; gradient: string }[] = [
+  { key: "fundraising_score",      label: "جمع التبرعات",  icon: TrendingUp, gradient: "from-amber-500/15 to-amber-500/5" },
+  { key: "donor_engagement_score", label: "تفاعل المتبرعين", icon: Heart,     gradient: "from-rose-500/15 to-rose-500/5" },
+  { key: "service_score",          label: "خدمة المتبرع",  icon: HandHeart,  gradient: "from-emerald-500/15 to-emerald-500/5" },
+  { key: "team_score",             label: "أداء الفريق",   icon: Users,      gradient: "from-sky-500/15 to-sky-500/5" },
+  { key: "overall_score",          label: "التقييم العام",  icon: Star,       gradient: "from-primary/20 to-primary/5" },
 ];
 
 const sortable: { key: SortKey; label: string; format?: (n: any) => string }[] = [
@@ -36,7 +42,6 @@ export default function AdminCompare() {
   const { metrics, loading } = useAdminAggregates();
   const [sortKey, setSortKey] = useState<SortKey>("overall_score");
   const [sortDesc, setSortDesc] = useState(true);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const sorted = useMemo(() => {
     const list = [...metrics];
@@ -48,39 +53,25 @@ export default function AdminCompare() {
     return list;
   }, [metrics, sortKey, sortDesc]);
 
-  const effectiveSelected = useMemo(() => {
-    if (selected.size > 0) return selected;
-    return new Set(sorted.slice(0, Math.min(4, sorted.length)).map(m => m.org_id));
-  }, [selected, sorted]);
+  // خرائط لون ثابتة لكل جمعية + رتبة افتراضية حسب الترتيب العام
+  const orgColor = useMemo(() => {
+    const map = new Map<string, string>();
+    [...metrics]
+      .sort((a, b) => b.overall_score - a.overall_score)
+      .forEach((m, i) => map.set(m.org_id, ORG_COLORS[i % ORG_COLORS.length]));
+    return map;
+  }, [metrics]);
 
-  const radarData = useMemo(() => {
-    const axes = [
-      { key: "fundraising_score", label: "جمع التبرعات" },
-      { key: "donor_engagement_score", label: "تفاعل المتبرعين" },
-      { key: "service_score", label: "خدمة المتبرع" },
-      { key: "team_score", label: "أداء الفريق" },
-      { key: "overall_score", label: "التقييم العام" },
-    ];
-    return axes.map(axis => {
-      const point: any = { axis: axis.label };
-      metrics.filter(m => effectiveSelected.has(m.org_id)).forEach(m => {
-        point[m.org_name] = Math.round((m as any)[axis.key]);
-      });
-      return point;
+  // ترتيب الجمعيات داخل كل عمود حسب نقاط ذلك المحور تنازلياً
+  const rankedByAxis = useMemo(() => {
+    const map: Record<string, OrgMetrics[]> = {};
+    SCORE_AXES.forEach(axis => {
+      map[axis.key as string] = [...metrics].sort(
+        (a, b) => (b[axis.key] as number) - (a[axis.key] as number)
+      );
     });
-  }, [metrics, effectiveSelected]);
-
-  const selectedOrgs = metrics.filter(m => effectiveSelected.has(m.org_id));
-
-  const toggleSelect = (id: string) => {
-    setSelected(prev => {
-      const next = new Set(prev.size === 0
-        ? sorted.slice(0, Math.min(4, sorted.length)).map(m => m.org_id)
-        : prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
+    return map;
+  }, [metrics]);
 
   return (
     <div className="p-8 space-y-6">
@@ -90,63 +81,76 @@ export default function AdminCompare() {
           المقارنة بين الجمعيات
         </h1>
         <p className="text-muted-foreground mt-1">
-          ترتيب متعدد المعايير + رادار للجمعيات المختارة
+          ترتيب جميع الجمعيات في كل محور تقييم — عمود لكل محور
         </p>
       </div>
 
-      {/* Radar */}
-      <Card className="bg-card border-border p-5 shadow-sm">
-        <div className="flex items-start justify-between mb-3 flex-wrap gap-3">
-          <div>
-            <h3 className="text-foreground font-bold">رادار المقارنة الذكية</h3>
-            <p className="text-muted-foreground text-xs">
-              {selectedOrgs.length} جمعية مختارة · انقر صفًا في الجدول لإضافته/إزالته
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {selectedOrgs.map((m, i) => (
-              <Badge key={m.org_id} className="gap-2" style={{
-                backgroundColor: RADAR_COLORS[i % RADAR_COLORS.length] + "22",
-                color: RADAR_COLORS[i % RADAR_COLORS.length],
-                border: `1px solid ${RADAR_COLORS[i % RADAR_COLORS.length]}55`,
-              }}>
-                <span className="w-2 h-2 rounded-full" style={{ background: RADAR_COLORS[i % RADAR_COLORS.length] }} />
-                {m.org_name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        <ResponsiveContainer width="100%" height={380}>
-          <RadarChart data={radarData}>
-            <PolarGrid stroke="hsl(var(--border))" />
-            <PolarAngleAxis dataKey="axis" tick={{ fill: "hsl(var(--foreground))", fontSize: 12 }} />
-            <PolarRadiusAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} angle={90} domain={[0, 100]} />
-            {selectedOrgs.map((m, i) => (
-              <Radar
-                key={m.org_id}
-                name={m.org_name}
-                dataKey={m.org_name}
-                stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
-                fill={RADAR_COLORS[i % RADAR_COLORS.length]}
-                fillOpacity={0.18}
-                strokeWidth={2}
-              />
-            ))}
-            <Tooltip
-              contentStyle={{
-                background: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: 8,
-                color: "hsl(var(--foreground))",
-              }}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: 14, fontWeight: 700, paddingTop: 12 }}
-              iconSize={14}
-            />
-          </RadarChart>
-        </ResponsiveContainer>
-      </Card>
+      {/* Columns: عمود لكل محور تقييم */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        {SCORE_AXES.map(axis => {
+          const Icon = axis.icon;
+          const list = rankedByAxis[axis.key as string] || [];
+          const max = list.length ? Math.max(...list.map(m => Number(m[axis.key]) || 0), 1) : 1;
+          return (
+            <Card key={axis.key as string}
+                  className="bg-card border-border overflow-hidden shadow-sm flex flex-col">
+              <div className={cn(
+                "p-4 border-b border-border bg-gradient-to-b",
+                axis.gradient
+              )}>
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-lg bg-background/60 border border-border flex items-center justify-center">
+                    <Icon className="w-5 h-5 text-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-foreground font-bold text-sm leading-tight">{axis.label}</h3>
+                    <p className="text-muted-foreground text-[11px]">{list.length} جمعية</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-2 space-y-1.5 flex-1">
+                {list.map((m, idx) => {
+                  const v = Number(m[axis.key]) || 0;
+                  const pct = (v / max) * 100;
+                  const color = orgColor.get(m.org_id) || ORG_COLORS[0];
+                  const isTop = idx === 0;
+                  return (
+                    <div key={m.org_id}
+                         className={cn(
+                           "relative rounded-md overflow-hidden border transition-all",
+                           isTop ? "border-accent/40" : "border-border/60 hover:border-border"
+                         )}>
+                      {/* fill bar */}
+                      <div className="absolute inset-y-0 right-0 transition-all"
+                           style={{ width: `${pct}%`, background: `${color}22` }} />
+                      <div className="relative flex items-center gap-2 px-2 py-1.5">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                              style={{ background: color }}>
+                          {idx + 1}
+                        </span>
+                        <span className="text-foreground text-xs font-semibold truncate flex-1" title={m.org_name}>
+                          {m.org_name}
+                        </span>
+                        <span className={cn(
+                          "text-xs font-bold tabular-nums shrink-0",
+                          isTop ? "text-accent" : "text-foreground/80"
+                        )}>
+                          {Math.round(v)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {!loading && list.length === 0 && (
+                  <div className="text-center text-muted-foreground text-xs py-6">
+                    لا توجد بيانات
+                  </div>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
 
       {/* Leaderboard */}
       <Card className="bg-card border-border overflow-hidden shadow-sm">
@@ -189,17 +193,12 @@ export default function AdminCompare() {
             </thead>
             <tbody>
               {sorted.map((m, idx) => {
-                const isSel = effectiveSelected.has(m.org_id);
                 const medalIcon = idx === 0 ? Trophy : idx === 1 ? Medal : idx === 2 ? Award : null;
                 const medalColor = idx === 0 ? "text-amber-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-orange-500" : "";
                 const M = medalIcon;
                 return (
                   <tr key={m.org_id}
-                      onClick={() => toggleSelect(m.org_id)}
-                      className={cn(
-                        "border-t border-border cursor-pointer transition-colors",
-                        isSel ? "bg-accent/10 hover:bg-accent/15" : "hover:bg-muted/40"
-                      )}>
+                      className="border-t border-border transition-colors hover:bg-muted/40">
                     <td className="px-3 py-3 text-center">
                       <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-foreground font-bold text-xs">
                         {M ? <M className={cn("w-4 h-4", medalColor)} /> : idx + 1}
