@@ -162,14 +162,20 @@ export function useAdminAggregates(range?: DateRange) {
         const toD = range?.to || now;
         const period_months = monthsBetween(fromD, toD);
 
-        // === New Fundraising Score ===
-        // expected = active_donors × 10 SAR × months
-        // score = (collected / expected) × 100, capped 0..100
-        const benchmarkPerDonorPerMonth = 10;
+        // === Fundraising score (RAW magnitude in selected period) ===
+        // Pure volume-based: total collected amount, no benchmark.
+        // Score = relative log scale so big & small orgs both visible (0..100).
+        const benchmarkPerDonorPerMonth = 10; // kept for reference (unused now)
         const expected_target = donors * benchmarkPerDonorPerMonth * period_months;
-        const fundraising_score = expected_target > 0
-          ? clamp((total_donated / expected_target) * 100)
+        // Log-scaled raw collection score: 1k=~30, 100k=~60, 10M=~90, 1B+=100
+        const fundraising_score = total_donated > 0
+          ? clamp(Math.log10(total_donated + 1) * 15)
           : 0;
+
+        // === Donor Efficiency (PREVIOUS FULL MONTH, ignores filter) ===
+        // SAR per donor in last completed calendar month vs benchmark (10 SAR/donor).
+        const donor_efficiency = donors_total > 0 ? prev_month_donations / donors_total : 0;
+        const donor_efficiency_score = clamp((donor_efficiency / 10) * 100);
 
         const donor_engagement_score = clamp(recurring_pct * 1.5 + (donors > 0 ? Math.min(40, Math.log10(donors + 1) * 12) : 0));
         const service_score = clamp(recovery_rate * 0.6 + match_rate * 0.4);
