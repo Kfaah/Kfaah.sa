@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star } from "lucide-react";
-import { useAdminAggregates, type OrgMetrics } from "@/hooks/useAdminAggregates";
+import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info } from "lucide-react";
+import { useAdminAggregates, type OrgMetrics, type DateRange } from "@/hooks/useAdminAggregates";
+import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import { cn } from "@/lib/utils";
 
 type SortKey = keyof OrgMetrics;
@@ -39,7 +40,8 @@ const sortable: { key: SortKey; label: string; format?: (n: any) => string }[] =
 ];
 
 export default function AdminCompare() {
-  const { metrics, loading } = useAdminAggregates();
+  const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
+  const { metrics, loading } = useAdminAggregates(range);
   const [sortKey, setSortKey] = useState<SortKey>("overall_score");
   const [sortDesc, setSortDesc] = useState(true);
 
@@ -75,15 +77,40 @@ export default function AdminCompare() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <GitCompareArrows className="w-8 h-8 text-accent" />
-          المقارنة بين الجمعيات
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          ترتيب جميع الجمعيات في كل محور تقييم — عمود لكل محور
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <GitCompareArrows className="w-8 h-8 text-accent" />
+            المقارنة بين الجمعيات
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            ترتيب جميع الجمعيات في كل محور تقييم — حسب الفترة الزمنية المختارة
+          </p>
+        </div>
       </div>
+
+      {/* Date filter bar */}
+      <Card className="p-3 bg-card border-border">
+        <DateRangeFilter value={range} onChange={setRange} />
+      </Card>
+
+      {/* Formula explanation */}
+      <Card className="p-4 bg-accent/5 border-accent/30">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-accent/15 border border-accent/40 flex items-center justify-center shrink-0">
+            <Info className="w-5 h-5 text-accent" />
+          </div>
+          <div className="text-sm text-foreground/90 leading-relaxed">
+            <div className="font-bold text-accent mb-1">معادلة نقاط جمع التبرعات</div>
+            <div className="text-xs text-muted-foreground">
+              <span className="font-mono bg-background border border-border rounded px-2 py-0.5 mx-1">
+                النقاط = (المُحصّل ÷ (المتبرعون النشطون × 10 ر.س × أشهر الفترة)) × 100
+              </span>
+              — الافتراض المعياري: كل متبرع نشط يساهم بـ <b className="text-accent">10 ر.س شهرياً</b>. الجمعية التي تتجاوز هذا المعدل تحصل على <b>100/100</b>.
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Columns: عمود لكل محور تقييم */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
