@@ -126,8 +126,8 @@ export default function AdminOverview() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={revenueByOrg}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
-              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 14, fontWeight: 600 }} interval={0} />
+              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
               <Tooltip
                 contentStyle={{
                   background: "hsl(var(--card))",
