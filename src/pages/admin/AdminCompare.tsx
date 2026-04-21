@@ -140,7 +140,10 @@ export default function AdminCompare() {
                 color: "hsl(var(--foreground))",
               }}
             />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend
+              wrapperStyle={{ fontSize: 14, fontWeight: 700, paddingTop: 12 }}
+              iconSize={14}
+            />
           </RadarChart>
         </ResponsiveContainer>
       </Card>
