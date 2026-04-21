@@ -117,6 +117,18 @@ export function useAdminAggregates(range?: DateRange) {
           .from("donors").select("*", head)
           .eq("organization_id", orgId).gte("donations_count", 2);
 
+        // Previous full month donations (independent of selected filter)
+        const prevMonthRes = await supabase
+          .from("donations")
+          .select("amount")
+          .eq("organization_id", orgId)
+          .gte("donation_date", prevMonthStart.toISOString())
+          .lte("donation_date", prevMonthEnd.toISOString())
+          .limit(20000);
+        const prev_month_donations = (prevMonthRes.data || []).reduce(
+          (s: number, r: any) => s + Number(r.amount || 0), 0
+        );
+
         const donRows = (donSumRes.data || []) as any[];
         const total_donated = donRows.reduce((s, r) => s + Number(r.amount || 0), 0);
         // active donors in period: distinct donor_id (or phone fallback)
