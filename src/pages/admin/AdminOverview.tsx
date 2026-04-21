@@ -150,68 +150,7 @@ export default function AdminOverview() {
         <Card className="bg-card border-border p-5 shadow-sm">
           <h3 className="text-foreground font-bold mb-1">توزيع المتبرعين</h3>
           <p className="text-muted-foreground text-xs mb-4">حصة كل جمعية</p>
-          
-          <div className="flex items-center gap-4">
-            {/* Donut chart */}
-            <div className="flex-shrink-0" style={{ width: 180, height: 180 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={donorsDist}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={85}
-                    paddingAngle={2}
-                  >
-                    {donorsDist.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: 8,
-                      color: "hsl(var(--foreground))",
-                      fontSize: 12,
-                    }}
-                    formatter={(value: any) => [`${fmt(value)} متبرع`, ""]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Custom legend */}
-            <div className="flex-1 min-w-0 space-y-2">
-              {donorsDist.map((item, i) => {
-                const total = donorsDist.reduce((s, d) => s + d.value, 0);
-                const pct = total ? (item.value / total) * 100 : 0;
-                return (
-                  <div key={i} className="flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span
-                        className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
-                        style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
-                      />
-                      <span className="text-foreground font-medium truncate">{item.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-muted-foreground tabular-nums">{fmt(item.value)}</span>
-                      <span
-                        className="font-bold tabular-nums w-10 text-left"
-                        style={{ color: PIE_COLORS[i % PIE_COLORS.length] }}
-                      >
-                        {pct.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <DonorsDonutWithLeaders data={donorsDist} colors={PIE_COLORS} />
         </Card>
       </div>
 
