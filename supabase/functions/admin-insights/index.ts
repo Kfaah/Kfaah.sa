@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { metrics, all } = await req.json();
+    const { metrics, all, period_label } = await req.json();
     if (!metrics) {
       return new Response(JSON.stringify({ error: "metrics required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     const systemPrompt = `أنت محلل بيانات خبير في إدارة الجمعيات الخيرية والتبرعات. مهمتك تحليل أداء جمعية محددة ومقارنتها بمتوسط الجمعيات الأخرى وتقديم توصيات عملية واضحة باللغة العربية. كن دقيقًا، تحليليًا، وعمليًا. لا تخترع أرقامًا.`;
 
-    const userPrompt = `حلّل أداء هذه الجمعية:
+    const userPrompt = `حلّل أداء هذه الجمعية للفترة: ${period_label || "منذ البداية"}
 الاسم: ${metrics.org_name}
 - الإيرادات: ${metrics.total_donated.toFixed(0)} ر.س (متوسط الأخريات: ${avgRev.toFixed(0)})
 - عدد التبرعات: ${metrics.donations_count}
@@ -49,6 +49,9 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
+        temperature: 0,
+        top_p: 0.1,
+        seed: 42,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },

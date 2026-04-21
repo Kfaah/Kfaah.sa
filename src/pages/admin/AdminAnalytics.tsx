@@ -10,6 +10,8 @@ import {
   AlertTriangle, CheckCircle2, Building2, Users, HandCoins, Target,
 } from "lucide-react";
 import { useAdminAggregates } from "@/hooks/useAdminAggregates";
+import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
+import type { DateRange } from "@/hooks/useAdminAggregates";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -30,7 +32,8 @@ const fmtSAR = (n: number) =>
   new Intl.NumberFormat("ar-SA", { style: "currency", currency: "SAR", maximumFractionDigits: 0 }).format(n);
 
 export default function AdminAnalytics() {
-  const { metrics, loading } = useAdminAggregates();
+  const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
+  const { metrics, loading } = useAdminAggregates(range);
   const [selectedId, setSelectedId] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
   const [insight, setInsight] = useState<AIInsight | null>(null);
@@ -47,14 +50,17 @@ export default function AdminAnalytics() {
     if (!selectedId) return;
     setInsight(null);
     (async () => {
-      const since = new Date();
-      since.setDate(since.getDate() - 90);
-      const { data } = await supabase
+      let q = supabase
         .from("donations")
         .select("donation_date, amount")
-        .eq("organization_id", selectedId)
-        .gte("donation_date", since.toISOString())
-        .limit(5000);
+        .eq("organization_id", selectedId);
+      if (range.from) q = q.gte("donation_date", range.from.toISOString());
+      if (range.to) q = q.lte("donation_date", range.to.toISOString());
+      else {
+        const since = new Date(); since.setDate(since.getDate() - 90);
+        q = q.gte("donation_date", since.toISOString());
+      }
+      const { data } = await q.limit(20000);
 
       const days = [0, 0, 0, 0, 0, 0, 0];
       const months: Record<string, { donations: number; revenue: number }> = {};
@@ -73,7 +79,7 @@ export default function AdminAnalytics() {
           .map(([m, v]) => ({ m, ...v }))
       );
     })();
-  }, [selectedId]);
+  }, [selectedId, range.from, range.to]);
 
   const runAI = async () => {
     if (!selected) return;
@@ -81,7 +87,7 @@ export default function AdminAnalytics() {
     setInsight(null);
     try {
       const { data, error } = await supabase.functions.invoke("admin-insights", {
-        body: { metrics: selected, all: metrics },
+        body: { metrics: selected, all: metrics, period_label: range.label },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -102,7 +108,7 @@ export default function AdminAnalytics() {
             <Sparkles className="w-8 h-8 text-accent" />
             التحليل العميق
           </h1>
-          <p className="text-white mt-1">اختر جمعية لرؤية تحليل تفصيلي وتوصيات ذكية</p>
+          <p className="text-white mt-1">اختر فترة وجمعية لرؤية تحليل تفصيلي وتوصيات ذكية ثابتة لنفس البيانات</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -128,6 +134,10 @@ export default function AdminAnalytics() {
           </Button>
         </div>
       </div>
+
+      <Card className="bg-card/60 border-border p-3">
+        <DateRangeFilter value={range} onChange={(r) => { setRange(r); setInsight(null); }} />
+      </Card>
 
       {!selected && !loading && (
         <Card className="bg-card border-border p-12 text-center text-muted-foreground">
