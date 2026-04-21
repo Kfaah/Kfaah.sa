@@ -31,6 +31,11 @@ export interface OrgMetrics {
   // contextual
   expected_target: number;    // active_donors × 10 × months_in_period
   period_months: number;
+  // Monthly donor efficiency (previous full calendar month, NOT affected by filter)
+  prev_month_donations: number;     // SAR collected last full month
+  prev_month_label: string;         // e.g. "2025-03"
+  donor_efficiency: number;         // prev_month_donations / donors_total (SAR per donor)
+  donor_efficiency_score: number;   // 0..100, benchmark = 10 SAR/donor/month
   // composite scores (0..100)
   fundraising_score: number;
   donor_engagement_score: number;
