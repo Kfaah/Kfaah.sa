@@ -181,8 +181,7 @@ export function useAdminAggregates(range?: DateRange) {
         const service_score = clamp(recovery_rate * 0.6 + match_rate * 0.4);
         const team_score = clamp(completion * 0.7 + Math.log10((employeesRes.count || 0) + 1) * 10);
         const overall_score = clamp(
-          fundraising_score * 0.35 + donor_engagement_score * 0.25 +
-          service_score * 0.2 + team_score * 0.2
+          (fundraising_score + donor_engagement_score + service_score + team_score) / 4
         );
 
         const m: OrgMetrics = {
