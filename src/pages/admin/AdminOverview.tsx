@@ -150,7 +150,48 @@ export default function AdminOverview() {
         <Card className="bg-card border-border p-5 shadow-sm">
           <h3 className="text-foreground font-bold mb-1">توزيع المتبرعين</h3>
           <p className="text-muted-foreground text-xs mb-4">حصة كل جمعية</p>
-          <DonorsDonutWithLeaders data={donorsDist} colors={PIE_COLORS} />
+
+          <div className="flex items-center gap-5" style={{ direction: "ltr" }}>
+            {/* قائمة الجمعيات على اليسار */}
+            <div className="flex-1 min-w-0 space-y-2 order-1">
+              {donorsDist.map((item, i) => {
+                const total = donorsDist.reduce((s, d) => s + d.value, 0);
+                const pct = total ? (item.value / total) * 100 : 0;
+                const color = PIE_COLORS[i % PIE_COLORS.length];
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-2 text-xs"
+                    style={{ direction: "rtl" }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0"
+                        style={{ background: color }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="text-foreground font-medium truncate">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-muted-foreground tabular-nums">{fmt(item.value)}</span>
+                      <span
+                        className="font-bold tabular-nums w-12 text-left"
+                        style={{ color }}
+                      >
+                        {pct.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* الدائرة على اليمين مع الأرقام داخل كل شريحة */}
+            <div className="flex-shrink-0 order-2" style={{ width: 200, height: 200 }}>
+              <NumberedDonut data={donorsDist} colors={PIE_COLORS} />
+            </div>
+          </div>
         </Card>
       </div>
 
