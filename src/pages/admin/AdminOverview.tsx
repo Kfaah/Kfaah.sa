@@ -150,7 +150,48 @@ export default function AdminOverview() {
         <Card className="bg-card border-border p-5 shadow-sm">
           <h3 className="text-foreground font-bold mb-1">توزيع المتبرعين</h3>
           <p className="text-muted-foreground text-xs mb-4">حصة كل جمعية</p>
-          <DonorsDonutWithLeaders data={donorsDist} colors={PIE_COLORS} />
+
+          <div className="flex items-center gap-5" style={{ direction: "ltr" }}>
+            {/* قائمة الجمعيات على اليسار */}
+            <div className="flex-1 min-w-0 space-y-2 order-1">
+              {donorsDist.map((item, i) => {
+                const total = donorsDist.reduce((s, d) => s + d.value, 0);
+                const pct = total ? (item.value / total) * 100 : 0;
+                const color = PIE_COLORS[i % PIE_COLORS.length];
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-2 text-xs"
+                    style={{ direction: "rtl" }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0"
+                        style={{ background: color }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="text-foreground font-medium truncate">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-muted-foreground tabular-nums">{fmt(item.value)}</span>
+                      <span
+                        className="font-bold tabular-nums w-12 text-left"
+                        style={{ color }}
+                      >
+                        {pct.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* الدائرة على اليمين مع الأرقام داخل كل شريحة */}
+            <div className="flex-shrink-0 order-2" style={{ width: 200, height: 200 }}>
+              <NumberedDonut data={donorsDist} colors={PIE_COLORS} />
+            </div>
+          </div>
         </Card>
       </div>
 
@@ -201,28 +242,26 @@ function HealthCard({ icon: Icon, title, rate, detail }: {
 }
 
 /**
- * Donut chart مع خطوط leader منحنية تربط كل شريحة باسم الجمعية
- * - الدائرة في المنتصف
- * - الأسماء موزّعة على اليمين واليسار حسب موقع الشريحة
+ * Donut chart مع رقم داخل كل شريحة يطابق رقم الجمعية في القائمة الجانبية
  */
-function DonorsDonutWithLeaders({
+function NumberedDonut({
   data,
   colors,
 }: {
   data: { name: string; value: number }[];
   colors: string[];
 }) {
-  const W = 560;
-  const H = 340;
+  const W = 200;
+  const H = 200;
   const cx = W / 2;
   const cy = H / 2;
-  const innerR = 58;
-  const outerR = 95;
+  const innerR = 50;
+  const outerR = 92;
+  const labelR = (innerR + outerR) / 2;
 
   const total = data.reduce((s, d) => s + d.value, 0) || 1;
 
-  // حساب زوايا كل شريحة
-  let acc = -Math.PI / 2; // البداية من الأعلى
+  let acc = -Math.PI / 2;
   const slices = data.map((d, i) => {
     const angle = (d.value / total) * Math.PI * 2;
     const start = acc;
@@ -248,164 +287,45 @@ function DonorsDonutWithLeaders({
       "Z",
     ].join(" ");
 
-    // نقطة الانطلاق على حافة الشريحة
-    const startX = cx + (outerR + 2) * Math.cos(mid);
-    const startY = cy + (outerR + 2) * Math.sin(mid);
-
-    // الجانب: يمين أو يسار
-    const isRight = Math.cos(mid) >= 0;
+    const lx = cx + labelR * Math.cos(mid);
+    const ly = cy + labelR * Math.sin(mid);
 
     return {
       path,
       color: colors[i % colors.length],
-      name: d.name,
-      value: d.value,
-      pct: (d.value / total) * 100,
-      mid,
-      startX,
-      startY,
-      isRight,
+      number: i + 1,
+      lx,
+      ly,
+      angle,
     };
   });
 
-  // ترتيب التسميات على كل جانب من الأعلى للأسفل لتفادي التداخل
-  const rightSlices = slices
-    .filter((s) => s.isRight)
-    .sort((a, b) => a.startY - b.startY);
-  const leftSlices = slices
-    .filter((s) => !s.isRight)
-    .sort((a, b) => a.startY - b.startY);
-
-  const labelGap = 28; // أدنى مسافة عمودية بين التسميات
-  const labelTop = 20;
-  const labelBottom = H - 20;
-
-  // حساب مواقع التسميات النهائية على كل جانب
-  function distributeLabels(group: typeof slices) {
-    const n = group.length;
-    if (n === 0) return [];
-    // ابدأ بالموقع الطبيعي (startY) ثم وزّع لتفادي التداخل
-    const positions = group.map((s) => s.startY);
-    // مرّر للأمام
-    for (let i = 1; i < n; i++) {
-      if (positions[i] < positions[i - 1] + labelGap) {
-        positions[i] = positions[i - 1] + labelGap;
-      }
-    }
-    // إذا تجاوزنا الحد السفلي، مرّر للخلف
-    if (positions[n - 1] > labelBottom) {
-      positions[n - 1] = labelBottom;
-      for (let i = n - 2; i >= 0; i--) {
-        if (positions[i] > positions[i + 1] - labelGap) {
-          positions[i] = positions[i + 1] - labelGap;
-        }
-      }
-    }
-    // تأكد من عدم تجاوز الحد العلوي
-    if (positions[0] < labelTop) {
-      positions[0] = labelTop;
-      for (let i = 1; i < n; i++) {
-        if (positions[i] < positions[i - 1] + labelGap) {
-          positions[i] = positions[i - 1] + labelGap;
-        }
-      }
-    }
-    return positions;
-  }
-
-  const rightYs = distributeLabels(rightSlices);
-  const leftYs = distributeLabels(leftSlices);
-
-  const rightLabelX = W - 12;
-  const leftLabelX = 12;
-  const rightAnchorX = cx + outerR + 90;
-  const leftAnchorX = cx - outerR - 90;
-
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" style={{ direction: "ltr" }}>
-      {/* الشرائح */}
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
       {slices.map((s, i) => (
-        <path
-          key={`slice-${i}`}
-          d={s.path}
-          fill={s.color}
-          stroke="hsl(var(--card))"
-          strokeWidth={2}
-        />
+        <g key={i}>
+          <path
+            d={s.path}
+            fill={s.color}
+            stroke="hsl(var(--card))"
+            strokeWidth={2}
+          />
+          {s.angle > 0.18 && (
+            <text
+              x={s.lx}
+              y={s.ly}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={13}
+              fontWeight={800}
+              fill="white"
+              style={{ pointerEvents: "none" }}
+            >
+              {s.number}
+            </text>
+          )}
+        </g>
       ))}
-
-      {/* خطوط leader + تسميات اليمين */}
-      {rightSlices.map((s, i) => {
-        const ly = rightYs[i];
-        const lx = rightAnchorX;
-        // مسار منحني Bezier من حافة الشريحة إلى نقطة قرب التسمية ثم خط أفقي قصير
-        const c1x = s.startX + 30;
-        const c1y = s.startY;
-        const c2x = lx - 30;
-        const c2y = ly;
-        const path = `M ${s.startX} ${s.startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${lx} ${ly} L ${rightLabelX - 4} ${ly}`;
-        return (
-          <g key={`r-${i}`}>
-            <path d={path} fill="none" stroke={s.color} strokeWidth={1.5} opacity={0.7} />
-            <circle cx={s.startX} cy={s.startY} r={3} fill={s.color} />
-            <text
-              x={rightLabelX}
-              y={ly - 6}
-              textAnchor="end"
-              fontSize={12}
-              fontWeight={700}
-              fill={s.color}
-            >
-              {s.name}
-            </text>
-            <text
-              x={rightLabelX}
-              y={ly + 9}
-              textAnchor="end"
-              fontSize={10}
-              fill="hsl(var(--muted-foreground))"
-            >
-              {s.value.toLocaleString("ar-SA")} متبرع · {s.pct.toFixed(1)}%
-            </text>
-          </g>
-        );
-      })}
-
-      {/* خطوط leader + تسميات اليسار */}
-      {leftSlices.map((s, i) => {
-        const ly = leftYs[i];
-        const lx = leftAnchorX;
-        const c1x = s.startX - 30;
-        const c1y = s.startY;
-        const c2x = lx + 30;
-        const c2y = ly;
-        const path = `M ${s.startX} ${s.startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${lx} ${ly} L ${leftLabelX + 4} ${ly}`;
-        return (
-          <g key={`l-${i}`}>
-            <path d={path} fill="none" stroke={s.color} strokeWidth={1.5} opacity={0.7} />
-            <circle cx={s.startX} cy={s.startY} r={3} fill={s.color} />
-            <text
-              x={leftLabelX}
-              y={ly - 6}
-              textAnchor="start"
-              fontSize={12}
-              fontWeight={700}
-              fill={s.color}
-            >
-              {s.name}
-            </text>
-            <text
-              x={leftLabelX}
-              y={ly + 9}
-              textAnchor="start"
-              fontSize={10}
-              fill="hsl(var(--muted-foreground))"
-            >
-              {s.value.toLocaleString("ar-SA")} متبرع · {s.pct.toFixed(1)}%
-            </text>
-          </g>
-        );
-      })}
     </svg>
   );
 }
