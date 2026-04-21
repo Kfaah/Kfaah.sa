@@ -7,10 +7,9 @@ import {
 } from "@/components/ui/select";
 import {
   Sparkles, Loader2, TrendingUp, Lightbulb,
-  AlertTriangle, CheckCircle2, Building2, Users, HandCoins, Target,
+  AlertTriangle, CheckCircle2, Building2, Users, HandCoins, Target, CalendarDays,
 } from "lucide-react";
 import { useAdminAggregates } from "@/hooks/useAdminAggregates";
-import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import type { DateRange } from "@/hooks/useAdminAggregates";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -31,8 +30,39 @@ const fmt = (n: number) => new Intl.NumberFormat("ar-SA", { maximumFractionDigit
 const fmtSAR = (n: number) =>
   new Intl.NumberFormat("ar-SA", { style: "currency", currency: "SAR", maximumFractionDigits: 0 }).format(n);
 
+const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+const endOfDay   = (d: Date) => { const x = new Date(d); x.setHours(23,59,59,999); return x; };
+function buildPreset(key: string): DateRange {
+  const now = new Date();
+  const today = startOfDay(now);
+  const dow = now.getDay();
+  switch (key) {
+    case "today": return { from: today, to: endOfDay(now), label: "اليوم" };
+    case "yesterday": { const y = new Date(today); y.setDate(y.getDate()-1); return { from: y, to: endOfDay(y), label: "الأمس" }; }
+    case "this_week": { const f = new Date(today); f.setDate(f.getDate()-dow); return { from: f, to: endOfDay(now), label: "هذا الأسبوع" }; }
+    case "last_week": { const f = new Date(today); f.setDate(f.getDate()-dow-7); const t = new Date(f); t.setDate(t.getDate()+6); return { from: f, to: endOfDay(t), label: "الأسبوع الماضي" }; }
+    case "this_month": return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: endOfDay(now), label: "هذا الشهر" };
+    case "last_month": { const f = new Date(now.getFullYear(), now.getMonth()-1, 1); const t = endOfDay(new Date(now.getFullYear(), now.getMonth(), 0)); return { from: f, to: t, label: "الشهر الماضي" }; }
+    case "this_year": return { from: new Date(now.getFullYear(), 0, 1), to: endOfDay(now), label: "هذه السنة" };
+    case "last_year": { const f = new Date(now.getFullYear()-1, 0, 1); const t = endOfDay(new Date(now.getFullYear()-1, 11, 31)); return { from: f, to: t, label: "السنة الماضية" }; }
+    default: return { from: null, to: null, label: "منذ البداية" };
+  }
+}
+const PERIOD_OPTIONS: [string, string][] = [
+  ["all", "منذ البداية"],
+  ["today", "اليوم"],
+  ["yesterday", "الأمس"],
+  ["this_week", "هذا الأسبوع"],
+  ["last_week", "الأسبوع الماضي"],
+  ["this_month", "هذا الشهر"],
+  ["last_month", "الشهر الماضي"],
+  ["this_year", "هذه السنة"],
+  ["last_year", "السنة الماضية"],
+];
+
 export default function AdminAnalytics() {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
+  const [periodKey, setPeriodKey] = useState<string>("all");
   const { metrics, loading } = useAdminAggregates(range);
   const [selectedId, setSelectedId] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -124,6 +154,20 @@ export default function AdminAnalytics() {
               ))}
             </SelectContent>
           </Select>
+          <Select
+            value={periodKey}
+            onValueChange={(k) => { setPeriodKey(k); setRange(buildPreset(k)); setInsight(null); }}
+          >
+            <SelectTrigger className="w-[200px] bg-accent text-accent-foreground border-accent hover:bg-accent/90 font-semibold gap-2">
+              <CalendarDays className="w-4 h-4" />
+              <SelectValue placeholder="الفترة" />
+            </SelectTrigger>
+            <SelectContent>
+              {PERIOD_OPTIONS.map(([k, label]) => (
+                <SelectItem key={k} value={k}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button
             onClick={runAI}
             disabled={!selected || aiLoading}
@@ -134,10 +178,6 @@ export default function AdminAnalytics() {
           </Button>
         </div>
       </div>
-
-      <Card className="bg-card/60 border-border p-3">
-        <DateRangeFilter value={range} onChange={(r) => { setRange(r); setInsight(null); }} />
-      </Card>
 
       {!selected && !loading && (
         <Card className="bg-card border-border p-12 text-center text-muted-foreground">
