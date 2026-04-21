@@ -99,52 +99,46 @@ export default function AdminCompare() {
 
       {/* Formula explanation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-0 bg-accent border-accent shadow-xl text-white overflow-hidden relative">
-          <div className="absolute inset-0 bg-black/55 pointer-events-none" />
-          <div className="relative">
+        <Card className="p-0 bg-accent/30 border-accent/40 shadow-sm text-foreground overflow-hidden">
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-white/15 bg-white/5">
-              <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/30 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-accent/30 bg-accent/20">
+              <div className="w-11 h-11 rounded-xl bg-background/60 border border-accent/30 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-5 h-5 text-accent" />
               </div>
               <div className="flex-1">
-                <div className="font-bold text-base text-white leading-tight">جمع التبرعات (حجم خام)</div>
-                <div className="text-[11px] text-white/80 mt-0.5">⏱ يتأثر بالفلتر الزمني</div>
+                <div className="font-bold text-base text-foreground leading-tight">جمع التبرعات (حجم خام)</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">⏱ يتأثر بالفلتر الزمني</div>
               </div>
             </div>
             <div className="px-5 py-4 space-y-3 flex-1">
-              <p className="text-sm text-white/95 leading-relaxed">
+              <p className="text-sm text-foreground/90 leading-relaxed">
                 إجمالي التبرعات في الفترة المختارة، بمقياس لوغاريتمي للمقارنة العادلة بين الجمعيات.
               </p>
-              <div className="font-mono text-sm bg-white/15 text-white border border-white/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
+              <div className="font-mono text-sm bg-background/60 text-foreground border border-accent/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
                 log10(الإجمالي) × 15
               </div>
             </div>
           </div>
-          </div>
         </Card>
-        <Card className="p-0 bg-accent border-accent shadow-xl text-white overflow-hidden relative">
-          <div className="absolute inset-0 bg-black/55 pointer-events-none" />
-          <div className="relative">
+        <Card className="p-0 bg-accent/30 border-accent/40 shadow-sm text-foreground overflow-hidden">
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-white/15 bg-white/5">
-              <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/30 flex items-center justify-center shrink-0">
-                <Gauge className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-accent/30 bg-accent/20">
+              <div className="w-11 h-11 rounded-xl bg-background/60 border border-accent/30 flex items-center justify-center shrink-0">
+                <Gauge className="w-5 h-5 text-accent" />
               </div>
               <div className="flex-1">
-                <div className="font-bold text-base text-white leading-tight">كفاءة المتبرع الشهرية</div>
-                <div className="text-[11px] text-white/80 mt-0.5">🔒 لا يتأثر بالفلتر</div>
+                <div className="font-bold text-base text-foreground leading-tight">كفاءة المتبرع الشهرية</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">🔒 لا يتأثر بالفلتر</div>
               </div>
             </div>
             <div className="px-5 py-4 space-y-3 flex-1">
-              <p className="text-sm text-white/95 leading-relaxed">
+              <p className="text-sm text-foreground/90 leading-relaxed">
                 مقياس الإنتاجية الحقيقي: 100 متبرع بـ 1000 ر.س تتفوّق على 1000 متبرع بـ 5000 ر.س.
               </p>
-              <div className="font-mono text-sm bg-white/15 text-white border border-white/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
+              <div className="font-mono text-sm bg-background/60 text-foreground border border-accent/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
                 (تبرعات الشهر السابق ÷ المتبرعين) ÷ 10 × 100
               </div>
             </div>
-          </div>
           </div>
         </Card>
       </div>
