@@ -162,15 +162,12 @@ export function useAdminAggregates(range?: DateRange) {
         const toD = range?.to || now;
         const period_months = monthsBetween(fromD, toD);
 
-        // === Fundraising score (RAW magnitude in selected period) ===
-        // Pure volume-based: total collected amount, no benchmark.
-        // Score = relative log scale so big & small orgs both visible (0..100).
-        const benchmarkPerDonorPerMonth = 10; // kept for reference (unused now)
+        // === Fundraising score ===
+        // Computed AFTER all orgs are aggregated as relative percentage
+        // of the top-collecting org. Placeholder here = 0.
+        const benchmarkPerDonorPerMonth = 10; // kept for reference (unused)
         const expected_target = donors * benchmarkPerDonorPerMonth * period_months;
-        // Log-scaled raw collection score: 1k=~30, 100k=~60, 10M=~90, 1B+=100
-        const fundraising_score = total_donated > 0
-          ? clamp(Math.log10(total_donated + 1) * 15)
-          : 0;
+        const fundraising_score = 0; // recomputed below post-aggregation
 
         // === Donor Efficiency (PREVIOUS FULL MONTH, ignores filter) ===
         // SAR per donor in last completed calendar month vs benchmark (10 SAR/donor).
@@ -224,8 +221,20 @@ export function useAdminAggregates(range?: DateRange) {
         return m;
       }));
 
+      // Post-process: fundraising_score = (org_total / max_total) * 100
+      const maxTotal = results.reduce((m, r) => Math.max(m, r.total_donated || 0), 0);
+      const finalized = results.map((r) => {
+        const fundraising_score = maxTotal > 0
+          ? clamp((r.total_donated / maxTotal) * 100)
+          : 0;
+        const overall_score = clamp(
+          (fundraising_score + r.donor_engagement_score + r.service_score + r.team_score) / 4
+        );
+        return { ...r, fundraising_score, overall_score };
+      });
+
       if (!cancelled) {
-        setMetrics(results);
+        setMetrics(finalized);
         setLoading(false);
       }
     })();
