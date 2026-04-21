@@ -108,7 +108,7 @@ export default function AdminAnalytics() {
             <Sparkles className="w-8 h-8 text-accent" />
             التحليل العميق
           </h1>
-          <p className="text-white mt-1">اختر جمعية لرؤية تحليل تفصيلي وتوصيات ذكية</p>
+          <p className="text-white mt-1">اختر فترة وجمعية لرؤية تحليل تفصيلي وتوصيات ذكية ثابتة لنفس البيانات</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -134,6 +134,10 @@ export default function AdminAnalytics() {
           </Button>
         </div>
       </div>
+
+      <Card className="bg-card/60 border-border p-3">
+        <DateRangeFilter value={range} onChange={(r) => { setRange(r); setInsight(null); }} />
+      </Card>
 
       {!selected && !loading && (
         <Card className="bg-card border-border p-12 text-center text-muted-foreground">
