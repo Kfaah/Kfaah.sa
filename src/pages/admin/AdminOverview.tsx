@@ -126,8 +126,8 @@ export default function AdminOverview() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={revenueByOrg}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
-              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 14, fontWeight: 600 }} interval={0} />
+              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
               <Tooltip
                 contentStyle={{
                   background: "hsl(var(--card))",
@@ -210,9 +210,9 @@ function KpiCard({ icon: Icon, label, value, sub }: {
       <div className="w-9 h-9 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-2">
         <Icon className="w-5 h-5" />
       </div>
-      <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className="text-xl font-bold text-foreground mt-0.5 leading-tight">{value}</div>
-      <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>
+      <div className="text-[13px] text-muted-foreground font-medium">{label}</div>
+      <div className="text-2xl font-bold text-foreground mt-1 leading-tight">{value}</div>
+      <div className="text-[12px] text-muted-foreground mt-1">{sub}</div>
     </Card>
   );
 }
@@ -228,8 +228,8 @@ function HealthCard({ icon: Icon, title, rate, detail }: {
             <Icon className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-foreground font-bold text-sm">{title}</h4>
-            <p className="text-muted-foreground text-xs">{detail}</p>
+            <h4 className="text-foreground font-bold text-base">{title}</h4>
+            <p className="text-muted-foreground text-sm font-medium mt-0.5">{detail}</p>
           </div>
         </div>
         <div className="text-2xl font-bold text-accent">
