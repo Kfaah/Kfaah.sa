@@ -319,10 +319,7 @@ function Heatmap({ data }: { data: { day: number; value: number }[] }) {
 }
 
 function AIInsightView({ insight }: { insight: AIInsight }) {
-  const impactColor = (i: string) =>
-    i === "high" ? "bg-destructive/15 text-destructive border-destructive/40"
-    : i === "medium" ? "bg-warning/15 text-warning border-warning/40"
-    : "bg-muted text-muted-foreground border-border";
+  const impactColor = (_: string) => "bg-transparent text-white border-white/60";
 
   return (
     <Card className="bg-transparent border-accent/30 p-6 space-y-5 shadow-sm">
