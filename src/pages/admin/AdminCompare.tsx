@@ -99,7 +99,7 @@ export default function AdminCompare() {
 
       {/* Formula explanation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-white overflow-hidden">
+        <Card className="p-0 bg-[hsl(160,55%,18%)] border-[hsl(160,55%,12%)] shadow-xl text-white overflow-hidden">
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-3 px-5 py-3 border-b border-white/15 bg-white/5">
               <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/30 flex items-center justify-center shrink-0">
@@ -120,7 +120,7 @@ export default function AdminCompare() {
             </div>
           </div>
         </Card>
-        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-white overflow-hidden">
+        <Card className="p-0 bg-[hsl(160,55%,18%)] border-[hsl(160,55%,12%)] shadow-xl text-white overflow-hidden">
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-3 px-5 py-3 border-b border-white/15 bg-white/5">
               <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/30 flex items-center justify-center shrink-0">
