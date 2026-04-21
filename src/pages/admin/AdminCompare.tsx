@@ -193,17 +193,12 @@ export default function AdminCompare() {
             </thead>
             <tbody>
               {sorted.map((m, idx) => {
-                const isSel = effectiveSelected.has(m.org_id);
                 const medalIcon = idx === 0 ? Trophy : idx === 1 ? Medal : idx === 2 ? Award : null;
                 const medalColor = idx === 0 ? "text-amber-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-orange-500" : "";
                 const M = medalIcon;
                 return (
                   <tr key={m.org_id}
-                      onClick={() => toggleSelect(m.org_id)}
-                      className={cn(
-                        "border-t border-border cursor-pointer transition-colors",
-                        isSel ? "bg-accent/10 hover:bg-accent/15" : "hover:bg-muted/40"
-                      )}>
+                      className="border-t border-border transition-colors hover:bg-muted/40">
                     <td className="px-3 py-3 text-center">
                       <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-foreground font-bold text-xs">
                         {M ? <M className={cn("w-4 h-4", medalColor)} /> : idx + 1}
