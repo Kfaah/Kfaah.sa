@@ -226,24 +226,24 @@ export default function AdminCompare() {
         </div>
 
         <div className="w-full overflow-hidden">
-          <table className="w-full text-sm table-fixed">
+          <table className="w-full text-base table-fixed">
             <thead className="bg-muted/60">
               <tr>
-                <th className="px-1 py-2 text-center text-foreground font-bold text-xs w-8">#</th>
-                <th className="px-1.5 py-2 text-right text-foreground font-bold text-xs w-[110px]">الجمعية</th>
+                <th className="px-2 py-4 text-center text-foreground font-bold text-sm w-12">#</th>
+                <th className="px-3 py-4 text-right text-foreground font-bold text-sm w-[180px]">الجمعية</th>
                 {sortable.map(s => (
                   <th key={s.key as string}
                       className={cn(
-                        "px-0.5 py-2 text-center text-foreground font-bold text-[10px] leading-tight cursor-pointer hover:bg-muted select-none align-middle",
+                        "px-1.5 py-4 text-center text-foreground font-bold text-[13px] leading-snug cursor-pointer hover:bg-muted select-none align-middle",
                         sortKey === s.key && "text-accent bg-accent/10"
                       )}
                       onClick={() => {
                         if (sortKey === s.key) setSortDesc(!sortDesc);
                         else { setSortKey(s.key); setSortDesc(true); }
                       }}>
-                    <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex flex-col items-center gap-1">
                       <span className="break-words hyphens-auto">{s.label}</span>
-                      <ArrowUpDown className="w-2.5 h-2.5 opacity-60 shrink-0" />
+                      <ArrowUpDown className="w-3.5 h-3.5 opacity-60 shrink-0" />
                     </div>
                   </th>
                 ))}
