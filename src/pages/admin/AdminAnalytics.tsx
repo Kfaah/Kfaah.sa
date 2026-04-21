@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import {
   Sparkles, Loader2, TrendingUp, Lightbulb,
   AlertTriangle, CheckCircle2, Building2, Users, HandCoins, Target, CalendarDays,
@@ -58,11 +61,15 @@ const PERIOD_OPTIONS: [string, string][] = [
   ["last_month", "الشهر الماضي"],
   ["this_year", "هذه السنة"],
   ["last_year", "السنة الماضية"],
+  ["custom", "فترة مخصصة..."],
 ];
 
 export default function AdminAnalytics() {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
   const [periodKey, setPeriodKey] = useState<string>("all");
+  const [customOpen, setCustomOpen] = useState(false);
+  const [tempFrom, setTempFrom] = useState<Date | undefined>();
+  const [tempTo, setTempTo] = useState<Date | undefined>();
   const { metrics, loading } = useAdminAggregates(range);
   const [selectedId, setSelectedId] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
