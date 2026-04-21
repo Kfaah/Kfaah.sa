@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info } from "lucide-react";
+import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info, Gauge } from "lucide-react";
 import { useAdminAggregates, type OrgMetrics, type DateRange } from "@/hooks/useAdminAggregates";
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ const SCORE_AXES: { key: keyof OrgMetrics; label: string; icon: any; gradient: s
   { key: "donor_engagement_score", label: "تفاعل المتبرعين", icon: Heart,     gradient: "from-rose-500/15 to-rose-500/5" },
   { key: "service_score",          label: "خدمة المتبرع",  icon: HandHeart,  gradient: "from-emerald-500/15 to-emerald-500/5" },
   { key: "team_score",             label: "أداء الفريق",   icon: Users,      gradient: "from-sky-500/15 to-sky-500/5" },
+  { key: "donor_efficiency_score", label: "كفاءة المتبرع الشهرية", icon: Gauge, gradient: "from-violet-500/15 to-violet-500/5" },
 ];
 
 const sortable: { key: SortKey; label: string; format?: (n: any) => string }[] = [
