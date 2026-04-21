@@ -99,35 +99,36 @@ export default function AdminCompare() {
 
       {/* Formula explanation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Card className="p-4 bg-amber-500/5 border-amber-500/30">
+        <Card className="p-4 bg-card border-2 border-amber-500/50 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/40 flex items-center justify-center shrink-0">
-              <TrendingUp className="w-5 h-5 text-amber-600" />
+            <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/50 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
-            <div className="text-sm text-foreground/90 leading-relaxed">
-              <div className="font-bold text-amber-600 mb-1">جمع التبرعات (حجم خام)</div>
-              <div className="text-xs text-muted-foreground">
+            <div className="text-sm text-foreground leading-relaxed flex-1">
+              <div className="font-bold text-foreground mb-1.5 text-base">جمع التبرعات (حجم خام)</div>
+              <div className="text-sm text-foreground/80">
                 إجمالي التبرعات في الفترة المختارة، بمقياس لوغاريتمي للمقارنة العادلة بين الجمعيات.
-                <span className="font-mono bg-background border border-border rounded px-2 py-0.5 mx-1">
+                <span className="font-mono bg-muted text-foreground border border-border rounded px-2 py-0.5 mx-1 inline-block font-semibold">
                   log10(الإجمالي) × 15
                 </span>
-                — يتأثر بالفلتر الزمني.
+                <span className="block mt-1 text-xs font-semibold text-amber-700 dark:text-amber-400">⏱ يتأثر بالفلتر الزمني</span>
               </div>
             </div>
           </div>
         </Card>
-        <Card className="p-4 bg-violet-500/5 border-violet-500/30">
+        <Card className="p-4 bg-card border-2 border-violet-500/50 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-violet-500/15 border border-violet-500/40 flex items-center justify-center shrink-0">
-              <Gauge className="w-5 h-5 text-violet-600" />
+            <div className="w-10 h-10 rounded-lg bg-violet-500/20 border border-violet-500/50 flex items-center justify-center shrink-0">
+              <Gauge className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </div>
-            <div className="text-sm text-foreground/90 leading-relaxed">
-              <div className="font-bold text-violet-600 mb-1">كفاءة المتبرع الشهرية</div>
-              <div className="text-xs text-muted-foreground">
-                <span className="font-mono bg-background border border-border rounded px-2 py-0.5 mx-1">
+            <div className="text-sm text-foreground leading-relaxed flex-1">
+              <div className="font-bold text-foreground mb-1.5 text-base">كفاءة المتبرع الشهرية</div>
+              <div className="text-sm text-foreground/80">
+                <span className="font-mono bg-muted text-foreground border border-border rounded px-2 py-0.5 mx-1 inline-block font-semibold">
                   (تبرعات الشهر السابق ÷ إجمالي المتبرعين) ÷ 10 × 100
                 </span>
-                — مقياس الإنتاجية الحقيقي. <b className="text-violet-600">لا يتأثر بالفلتر</b>. 100 جمعية بـ 1000 ر.س تتفوّق على 1000 جمعية بـ 5000 ر.س.
+                — مقياس الإنتاجية الحقيقي: 100 متبرع بـ 1000 ر.س تتفوّق على 1000 متبرع بـ 5000 ر.س.
+                <span className="block mt-1 text-xs font-semibold text-violet-700 dark:text-violet-400">🔒 لا يتأثر بالفلتر</span>
               </div>
             </div>
           </div>
