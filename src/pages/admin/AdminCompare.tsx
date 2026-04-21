@@ -86,7 +86,7 @@ export default function AdminCompare() {
             <GitCompareArrows className="w-8 h-8 text-accent" />
             المقارنة بين الجمعيات
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-white mt-1">
             ترتيب جميع الجمعيات في كل محور تقييم — حسب الفترة الزمنية المختارة
           </p>
         </div>
