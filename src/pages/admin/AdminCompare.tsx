@@ -99,7 +99,7 @@ export default function AdminCompare() {
 
       {/* Formula explanation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Card className="p-4 bg-accent border-accent shadow-lg text-accent-foreground">
+        <Card className="p-4 bg-accent border-accent shadow-lg text-accent-foreground brightness-75">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-lg bg-accent-foreground/15 border border-accent-foreground/25 flex items-center justify-center shrink-0">
               <TrendingUp className="w-5 h-5 text-accent-foreground" />
@@ -116,7 +116,7 @@ export default function AdminCompare() {
             </div>
           </div>
         </Card>
-        <Card className="p-4 bg-accent border-accent shadow-lg text-accent-foreground">
+        <Card className="p-4 bg-accent border-accent shadow-lg text-accent-foreground brightness-75">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-lg bg-accent-foreground/15 border border-accent-foreground/25 flex items-center justify-center shrink-0">
               <Gauge className="w-5 h-5 text-accent-foreground" />
