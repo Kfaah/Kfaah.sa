@@ -102,7 +102,7 @@ export default function AdminAnalytics() {
             <Sparkles className="w-8 h-8 text-accent" />
             التحليل العميق
           </h1>
-          <p className="text-muted-foreground mt-1">اختر جمعية لرؤية تحليل تفصيلي وتوصيات ذكية</p>
+          <p className="text-white mt-1">اختر جمعية لرؤية تحليل تفصيلي وتوصيات ذكية</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -234,7 +234,7 @@ function AIInsightView({ insight }: { insight: AIInsight }) {
     : "bg-muted text-muted-foreground border-border";
 
   return (
-    <Card className="bg-primary border-accent/30 p-6 space-y-5 shadow-sm">
+    <Card className="bg-transparent border-accent/30 p-6 space-y-5 shadow-sm">
       <div className="flex items-center gap-2 mb-2">
         <Sparkles className="w-5 h-5 text-white" />
         <h3 className="text-white font-bold text-lg">التحليل الذكي</h3>
