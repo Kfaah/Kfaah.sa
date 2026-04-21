@@ -234,15 +234,15 @@ function AIInsightView({ insight }: { insight: AIInsight }) {
     : "bg-muted text-muted-foreground border-border";
 
   return (
-    <Card className="bg-accent/5 border-accent/30 p-6 space-y-5 shadow-sm">
+    <Card className="bg-primary border-accent/30 p-6 space-y-5 shadow-sm">
       <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="w-5 h-5 text-accent" />
-        <h3 className="text-foreground font-bold text-lg">التحليل الذكي</h3>
-        <Badge className="bg-accent/15 text-accent border-accent/40 mr-auto">Gemini</Badge>
+        <Sparkles className="w-5 h-5 text-white" />
+        <h3 className="text-white font-bold text-lg">التحليل الذكي</h3>
+        <Badge className="bg-white/15 text-white border-white/40 mr-auto">Gemini</Badge>
       </div>
 
-      <div className="bg-card rounded-xl p-4 border border-border">
-        <p className="text-foreground leading-relaxed">{insight.summary}</p>
+      <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+        <p className="text-white leading-relaxed">{insight.summary}</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-3">
@@ -252,18 +252,18 @@ function AIInsightView({ insight }: { insight: AIInsight }) {
       </div>
 
       <div>
-        <div className="text-foreground font-bold mb-2 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-accent" />
+        <div className="text-white font-bold mb-2 flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-white" />
           توصيات قابلة للتنفيذ
         </div>
         <div className="space-y-2">
           {insight.recommendations.map((r, i) => (
-            <div key={i} className="bg-card border border-border rounded-xl p-3">
+            <div key={i} className="bg-white/10 border border-white/20 rounded-xl p-3">
               <div className="flex items-start justify-between gap-3 mb-1">
-                <h5 className="font-bold text-foreground">{r.title}</h5>
+                <h5 className="font-bold text-white">{r.title}</h5>
                 <Badge className={impactColor(r.impact)}>تأثير {r.impact === "high" ? "عالٍ" : r.impact === "medium" ? "متوسط" : "منخفض"}</Badge>
               </div>
-              <p className="text-sm text-muted-foreground">{r.action}</p>
+              <p className="text-sm text-white/85">{r.action}</p>
             </div>
           ))}
         </div>
@@ -274,20 +274,20 @@ function AIInsightView({ insight }: { insight: AIInsight }) {
 
 function InsightList({ icon: Icon, title, items, variant }: any) {
   const variantMap: Record<string, string> = {
-    success: "text-success border-success/40 bg-success/5",
-    destructive: "text-destructive border-destructive/40 bg-destructive/5",
-    warning: "text-warning border-warning/40 bg-warning/5",
+    success: "border-success/50 bg-success/25",
+    destructive: "border-destructive/50 bg-destructive/25",
+    warning: "border-warning/50 bg-warning/25",
   };
   return (
-    <div className={`rounded-xl border p-3 ${variantMap[variant]}`}>
-      <div className="flex items-center gap-2 mb-2 font-bold">
-        <Icon className="w-4 h-4" />
+    <div className={`rounded-xl border p-3 text-white ${variantMap[variant]}`}>
+      <div className="flex items-center gap-2 mb-2 font-bold text-white">
+        <Icon className="w-4 h-4 text-white" />
         {title}
       </div>
-      <ul className="space-y-1.5 text-sm text-foreground">
+      <ul className="space-y-1.5 text-sm text-white">
         {items.map((it: string, i: number) => (
           <li key={i} className="flex gap-2">
-            <span className="text-muted-foreground">•</span>
+            <span className="text-white/70">•</span>
             <span>{it}</span>
           </li>
         ))}
