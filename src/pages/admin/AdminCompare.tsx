@@ -103,7 +103,7 @@ export default function AdminCompare() {
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-3 px-5 py-3 border-b border-accent/30 bg-accent/20">
               <div className="w-11 h-11 rounded-xl bg-white/90 border border-accent/30 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-5 h-5 text-black" />
+                <TrendingUp className="w-5 h-5 text-orange-500" />
               </div>
               <div className="flex-1">
                 <div className="font-bold text-base text-white leading-tight">جمع التبرعات (حجم خام)</div>
@@ -124,7 +124,7 @@ export default function AdminCompare() {
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-3 px-5 py-3 border-b border-accent/30 bg-accent/20">
               <div className="w-11 h-11 rounded-xl bg-white/90 border border-accent/30 flex items-center justify-center shrink-0">
-                <Gauge className="w-5 h-5 text-black" />
+                <Gauge className="w-5 h-5 text-orange-500" />
               </div>
               <div className="flex-1">
                 <div className="font-bold text-base text-white leading-tight">كفاءة المتبرع الشهرية</div>
