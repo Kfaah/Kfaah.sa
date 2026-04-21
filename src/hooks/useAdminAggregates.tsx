@@ -31,6 +31,11 @@ export interface OrgMetrics {
   // contextual
   expected_target: number;    // active_donors × 10 × months_in_period
   period_months: number;
+  // Monthly donor efficiency (previous full calendar month, NOT affected by filter)
+  prev_month_donations: number;     // SAR collected last full month
+  prev_month_label: string;         // e.g. "2025-03"
+  donor_efficiency: number;         // prev_month_donations / donors_total (SAR per donor)
+  donor_efficiency_score: number;   // 0..100, benchmark = 10 SAR/donor/month
   // composite scores (0..100)
   fundraising_score: number;
   donor_engagement_score: number;
@@ -76,6 +81,12 @@ export function useAdminAggregates(range?: DateRange) {
           return q;
         };
 
+        // Previous full calendar month bounds (independent of filter)
+        const _now = new Date();
+        const prevMonthEnd = new Date(_now.getFullYear(), _now.getMonth(), 0, 23, 59, 59, 999);
+        const prevMonthStart = new Date(prevMonthEnd.getFullYear(), prevMonthEnd.getMonth(), 1, 0, 0, 0, 0);
+        const prevMonthLabel = `${prevMonthStart.getFullYear()}-${String(prevMonthStart.getMonth() + 1).padStart(2, "0")}`;
+
         const [
           membersRes, donorsTotalRes, donCountRes, donSumRes, activeDonorsRes,
           abCartsRes, abRecoveredRes, failedRes,
@@ -105,6 +116,18 @@ export function useAdminAggregates(range?: DateRange) {
         const recurringRes = await supabase
           .from("donors").select("*", head)
           .eq("organization_id", orgId).gte("donations_count", 2);
+
+        // Previous full month donations (independent of selected filter)
+        const prevMonthRes = await supabase
+          .from("donations")
+          .select("amount")
+          .eq("organization_id", orgId)
+          .gte("donation_date", prevMonthStart.toISOString())
+          .lte("donation_date", prevMonthEnd.toISOString())
+          .limit(20000);
+        const prev_month_donations = (prevMonthRes.data || []).reduce(
+          (s: number, r: any) => s + Number(r.amount || 0), 0
+        );
 
         const donRows = (donSumRes.data || []) as any[];
         const total_donated = donRows.reduce((s, r) => s + Number(r.amount || 0), 0);
@@ -139,14 +162,20 @@ export function useAdminAggregates(range?: DateRange) {
         const toD = range?.to || now;
         const period_months = monthsBetween(fromD, toD);
 
-        // === New Fundraising Score ===
-        // expected = active_donors × 10 SAR × months
-        // score = (collected / expected) × 100, capped 0..100
-        const benchmarkPerDonorPerMonth = 10;
+        // === Fundraising score (RAW magnitude in selected period) ===
+        // Pure volume-based: total collected amount, no benchmark.
+        // Score = relative log scale so big & small orgs both visible (0..100).
+        const benchmarkPerDonorPerMonth = 10; // kept for reference (unused now)
         const expected_target = donors * benchmarkPerDonorPerMonth * period_months;
-        const fundraising_score = expected_target > 0
-          ? clamp((total_donated / expected_target) * 100)
+        // Log-scaled raw collection score: 1k=~30, 100k=~60, 10M=~90, 1B+=100
+        const fundraising_score = total_donated > 0
+          ? clamp(Math.log10(total_donated + 1) * 15)
           : 0;
+
+        // === Donor Efficiency (PREVIOUS FULL MONTH, ignores filter) ===
+        // SAR per donor in last completed calendar month vs benchmark (10 SAR/donor).
+        const donor_efficiency = donors_total > 0 ? prev_month_donations / donors_total : 0;
+        const donor_efficiency_score = clamp((donor_efficiency / 10) * 100);
 
         const donor_engagement_score = clamp(recurring_pct * 1.5 + (donors > 0 ? Math.min(40, Math.log10(donors + 1) * 12) : 0));
         const service_score = clamp(recovery_rate * 0.6 + match_rate * 0.4);
@@ -183,6 +212,10 @@ export function useAdminAggregates(range?: DateRange) {
           employees_count: employeesRes.count || 0,
           expected_target,
           period_months,
+          prev_month_donations,
+          prev_month_label: prevMonthLabel,
+          donor_efficiency,
+          donor_efficiency_score,
           fundraising_score,
           donor_engagement_score,
           service_score,

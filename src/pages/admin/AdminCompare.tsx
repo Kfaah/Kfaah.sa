@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info } from "lucide-react";
+import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info, Gauge } from "lucide-react";
 import { useAdminAggregates, type OrgMetrics, type DateRange } from "@/hooks/useAdminAggregates";
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import { cn } from "@/lib/utils";
@@ -22,10 +22,13 @@ const SCORE_AXES: { key: keyof OrgMetrics; label: string; icon: any; gradient: s
   { key: "donor_engagement_score", label: "تفاعل المتبرعين", icon: Heart,     gradient: "from-rose-500/15 to-rose-500/5" },
   { key: "service_score",          label: "خدمة المتبرع",  icon: HandHeart,  gradient: "from-emerald-500/15 to-emerald-500/5" },
   { key: "team_score",             label: "أداء الفريق",   icon: Users,      gradient: "from-sky-500/15 to-sky-500/5" },
+  { key: "donor_efficiency_score", label: "كفاءة المتبرع الشهرية", icon: Gauge, gradient: "from-violet-500/15 to-violet-500/5" },
 ];
 
 const sortable: { key: SortKey; label: string; format?: (n: any) => string }[] = [
   { key: "overall_score", label: "الترتيب العام" },
+  { key: "donor_efficiency_score", label: "كفاءة المتبرع الشهرية", format: (n) => n.toFixed(0) },
+  { key: "donor_efficiency", label: "ر.س / متبرع (شهري)", format: (n) => n.toFixed(2) },
   { key: "total_donated", label: "الإيرادات", format: (n) => new Intl.NumberFormat("ar-SA").format(Math.round(n)) },
   { key: "donations_count", label: "عدد التبرعات" },
   { key: "donors", label: "المتبرعون" },
@@ -95,25 +98,44 @@ export default function AdminCompare() {
       </Card>
 
       {/* Formula explanation */}
-      <Card className="p-4 bg-accent/5 border-accent/30">
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent/15 border border-accent/40 flex items-center justify-center shrink-0">
-            <Info className="w-5 h-5 text-accent" />
-          </div>
-          <div className="text-sm text-foreground/90 leading-relaxed">
-            <div className="font-bold text-accent mb-1">معادلة نقاط جمع التبرعات</div>
-            <div className="text-xs text-muted-foreground">
-              <span className="font-mono bg-background border border-border rounded px-2 py-0.5 mx-1">
-                النقاط = (المُحصّل ÷ (المتبرعون النشطون × 10 ر.س × أشهر الفترة)) × 100
-              </span>
-              — الافتراض المعياري: كل متبرع نشط يساهم بـ <b className="text-accent">10 ر.س شهرياً</b>. الجمعية التي تتجاوز هذا المعدل تحصل على <b>100/100</b>.
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Card className="p-4 bg-amber-500/5 border-amber-500/30">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/40 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="text-sm text-foreground/90 leading-relaxed">
+              <div className="font-bold text-amber-600 mb-1">جمع التبرعات (حجم خام)</div>
+              <div className="text-xs text-muted-foreground">
+                إجمالي التبرعات في الفترة المختارة، بمقياس لوغاريتمي للمقارنة العادلة بين الجمعيات.
+                <span className="font-mono bg-background border border-border rounded px-2 py-0.5 mx-1">
+                  log10(الإجمالي) × 15
+                </span>
+                — يتأثر بالفلتر الزمني.
+              </div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+        <Card className="p-4 bg-violet-500/5 border-violet-500/30">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-violet-500/15 border border-violet-500/40 flex items-center justify-center shrink-0">
+              <Gauge className="w-5 h-5 text-violet-600" />
+            </div>
+            <div className="text-sm text-foreground/90 leading-relaxed">
+              <div className="font-bold text-violet-600 mb-1">كفاءة المتبرع الشهرية</div>
+              <div className="text-xs text-muted-foreground">
+                <span className="font-mono bg-background border border-border rounded px-2 py-0.5 mx-1">
+                  (تبرعات الشهر السابق ÷ إجمالي المتبرعين) ÷ 10 × 100
+                </span>
+                — مقياس الإنتاجية الحقيقي. <b className="text-violet-600">لا يتأثر بالفلتر</b>. 100 جمعية بـ 1000 ر.س تتفوّق على 1000 جمعية بـ 5000 ر.س.
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* Columns: عمود لكل محور تقييم */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
         {SCORE_AXES.map(axis => {
           const Icon = axis.icon;
           const list = rankedByAxis[axis.key as string] || [];
