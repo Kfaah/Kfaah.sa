@@ -29,10 +29,10 @@ const sortable: { key: SortKey; label: string; format?: (n: any) => string }[] =
   { key: "overall_score", label: "الترتيب العام" },
   { key: "donor_efficiency_score", label: "كفاءة المتبرع الشهرية", format: (n) => n.toFixed(0) },
   { key: "donor_efficiency", label: "ر.س / متبرع (شهري)", format: (n) => n.toFixed(2) },
-  { key: "total_donated", label: "الإيرادات", format: (n) => new Intl.NumberFormat("ar-SA").format(Math.round(n)) },
+  { key: "total_donated", label: "الإيرادات", format: (n) => new Intl.NumberFormat("en-US").format(Math.round(n)) },
   { key: "donations_count", label: "عدد التبرعات" },
   { key: "donors", label: "المتبرعون" },
-  { key: "avg_donation", label: "متوسط التبرع", format: (n) => Math.round(n).toLocaleString("ar-SA") },
+  { key: "avg_donation", label: "متوسط التبرع", format: (n) => Math.round(n).toLocaleString("en-US") },
   { key: "recurring_donors", label: "متبرعون منتظمون" },
   { key: "recovery_rate", label: "% استرجاع السلال", format: (n) => `${n.toFixed(1)}%` },
   { key: "task_completion_rate", label: "% إنجاز المهام", format: (n) => `${n.toFixed(1)}%` },
@@ -99,7 +99,7 @@ export default function AdminCompare() {
 
       {/* Formula explanation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-white overflow-hidden">
+        <Card className="p-0 bg-[hsl(160,55%,18%)] border-[hsl(160,55%,12%)] shadow-xl text-white overflow-hidden">
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-3 px-5 py-3 border-b border-white/15 bg-white/5">
               <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/30 flex items-center justify-center shrink-0">
@@ -120,7 +120,7 @@ export default function AdminCompare() {
             </div>
           </div>
         </Card>
-        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-white overflow-hidden">
+        <Card className="p-0 bg-[hsl(160,55%,18%)] border-[hsl(160,55%,12%)] shadow-xl text-white overflow-hidden">
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-3 px-5 py-3 border-b border-white/15 bg-white/5">
               <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/30 flex items-center justify-center shrink-0">
@@ -258,7 +258,7 @@ export default function AdminCompare() {
                   <tr key={m.org_id}
                       className="border-t border-border transition-colors hover:bg-muted/40">
                     <td className="px-2 py-4 text-center">
-                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted text-foreground font-bold text-sm">
+                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted text-foreground font-bold text-base" dir="ltr">
                         {M ? <M className={cn("w-5 h-5", medalColor)} /> : idx + 1}
                       </div>
                     </td>
@@ -268,14 +268,14 @@ export default function AdminCompare() {
                     </td>
                     {sortable.map(s => {
                       const v = m[s.key] as number;
-                      const display = s.format ? s.format(v) : new Intl.NumberFormat("ar-SA").format(Math.round(v));
+                      const display = s.format ? s.format(v) : new Intl.NumberFormat("en-US").format(Math.round(v));
                       const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
                       return (
                         <td key={s.key as string} className="px-1.5 py-4 text-center text-foreground">
                           {isScore ? (
                             <ScoreBadge value={v} display={display} />
                           ) : (
-                            <span className={cn("text-sm font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
+                            <span dir="ltr" className={cn("inline-block text-base font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
                           )}
                         </td>
                       );
@@ -303,7 +303,7 @@ function ScoreBadge({ value, display }: { value: number; display: string }) {
               : v >= 25 ? "bg-warning/15 text-warning border-warning/40"
               : "bg-destructive/15 text-destructive border-destructive/40";
   return (
-    <span className={cn("inline-block px-2 py-1 rounded-md text-sm font-bold border tabular-nums", color)}>
+    <span dir="ltr" className={cn("inline-block px-2 py-1 rounded-md text-base font-bold border tabular-nums", color)}>
       {display}
     </span>
   );
