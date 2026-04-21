@@ -98,37 +98,45 @@ export default function AdminCompare() {
       </Card>
 
       {/* Formula explanation */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Card className="p-4 bg-accent border-accent shadow-lg text-accent-foreground brightness-75">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-accent-foreground/15 border border-accent-foreground/25 flex items-center justify-center shrink-0">
-              <TrendingUp className="w-5 h-5 text-accent-foreground" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-accent-foreground brightness-50 overflow-hidden">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-accent-foreground/15 bg-accent-foreground/5">
+              <div className="w-11 h-11 rounded-xl bg-accent-foreground/15 border border-accent-foreground/30 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-base text-accent-foreground leading-tight">جمع التبرعات (حجم خام)</div>
+                <div className="text-[11px] text-accent-foreground/80 mt-0.5">⏱ يتأثر بالفلتر الزمني</div>
+              </div>
             </div>
-            <div className="text-sm leading-relaxed flex-1">
-              <div className="font-bold mb-1.5 text-base text-accent-foreground">جمع التبرعات (حجم خام)</div>
-              <div className="text-sm text-accent-foreground">
+            <div className="px-5 py-4 space-y-3 flex-1">
+              <p className="text-sm text-accent-foreground/95 leading-relaxed">
                 إجمالي التبرعات في الفترة المختارة، بمقياس لوغاريتمي للمقارنة العادلة بين الجمعيات.
-                <span className="font-mono bg-accent-foreground/15 text-accent-foreground border border-accent-foreground/25 rounded px-2 py-0.5 mx-1 inline-block font-semibold">
-                  log10(الإجمالي) × 15
-                </span>
-                <span className="block mt-1 text-xs font-semibold text-accent-foreground">⏱ يتأثر بالفلتر الزمني</span>
+              </p>
+              <div className="font-mono text-sm bg-accent-foreground/15 text-accent-foreground border border-accent-foreground/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
+                log10(الإجمالي) × 15
               </div>
             </div>
           </div>
         </Card>
-        <Card className="p-4 bg-accent border-accent shadow-lg text-accent-foreground brightness-75">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-accent-foreground/15 border border-accent-foreground/25 flex items-center justify-center shrink-0">
-              <Gauge className="w-5 h-5 text-accent-foreground" />
+        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-accent-foreground brightness-50 overflow-hidden">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-accent-foreground/15 bg-accent-foreground/5">
+              <div className="w-11 h-11 rounded-xl bg-accent-foreground/15 border border-accent-foreground/30 flex items-center justify-center shrink-0">
+                <Gauge className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-base text-accent-foreground leading-tight">كفاءة المتبرع الشهرية</div>
+                <div className="text-[11px] text-accent-foreground/80 mt-0.5">🔒 لا يتأثر بالفلتر</div>
+              </div>
             </div>
-            <div className="text-sm leading-relaxed flex-1">
-              <div className="font-bold mb-1.5 text-base text-accent-foreground">كفاءة المتبرع الشهرية</div>
-              <div className="text-sm text-accent-foreground">
-                <span className="font-mono bg-accent-foreground/15 text-accent-foreground border border-accent-foreground/25 rounded px-2 py-0.5 mx-1 inline-block font-semibold">
-                  (تبرعات الشهر السابق ÷ إجمالي المتبرعين) ÷ 10 × 100
-                </span>
-                — مقياس الإنتاجية الحقيقي: 100 متبرع بـ 1000 ر.س تتفوّق على 1000 متبرع بـ 5000 ر.س.
-                <span className="block mt-1 text-xs font-semibold text-accent-foreground">🔒 لا يتأثر بالفلتر</span>
+            <div className="px-5 py-4 space-y-3 flex-1">
+              <p className="text-sm text-accent-foreground/95 leading-relaxed">
+                مقياس الإنتاجية الحقيقي: 100 متبرع بـ 1000 ر.س تتفوّق على 1000 متبرع بـ 5000 ر.س.
+              </p>
+              <div className="font-mono text-sm bg-accent-foreground/15 text-accent-foreground border border-accent-foreground/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
+                (تبرعات الشهر السابق ÷ المتبرعين) ÷ 10 × 100
               </div>
             </div>
           </div>
