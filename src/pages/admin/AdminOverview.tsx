@@ -161,7 +161,7 @@ export default function AdminOverview() {
                 innerRadius={50}
                 outerRadius={90}
                 paddingAngle={2}
-                labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1, length: 15, length2: 30 }}
+                labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }}
                 label={({ cx, cy, midAngle, outerRadius, name, fill }: any) => {
                   const RAD = Math.PI / 180;
                   // Position label at same vertical level as slice
