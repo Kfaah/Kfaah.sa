@@ -210,9 +210,9 @@ function KpiCard({ icon: Icon, label, value, sub }: {
       <div className="w-9 h-9 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-2">
         <Icon className="w-5 h-5" />
       </div>
-      <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className="text-xl font-bold text-foreground mt-0.5 leading-tight">{value}</div>
-      <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>
+      <div className="text-[13px] text-muted-foreground font-medium">{label}</div>
+      <div className="text-2xl font-bold text-foreground mt-1 leading-tight">{value}</div>
+      <div className="text-[12px] text-muted-foreground mt-1">{sub}</div>
     </Card>
   );
 }
