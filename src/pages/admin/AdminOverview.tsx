@@ -228,8 +228,8 @@ function HealthCard({ icon: Icon, title, rate, detail }: {
             <Icon className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-foreground font-bold text-sm">{title}</h4>
-            <p className="text-muted-foreground text-xs">{detail}</p>
+            <h4 className="text-foreground font-bold text-base">{title}</h4>
+            <p className="text-muted-foreground text-sm font-medium mt-0.5">{detail}</p>
           </div>
         </div>
         <div className="text-2xl font-bold text-accent">
