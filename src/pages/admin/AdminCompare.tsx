@@ -99,43 +99,43 @@ export default function AdminCompare() {
 
       {/* Formula explanation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-accent-foreground brightness-50 overflow-hidden">
+        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-white overflow-hidden">
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-accent-foreground/15 bg-accent-foreground/5">
-              <div className="w-11 h-11 rounded-xl bg-accent-foreground/15 border border-accent-foreground/30 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-5 h-5 text-accent-foreground" />
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-white/15 bg-white/5">
+              <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/30 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
-                <div className="font-bold text-base text-accent-foreground leading-tight">جمع التبرعات (حجم خام)</div>
-                <div className="text-[11px] text-accent-foreground/80 mt-0.5">⏱ يتأثر بالفلتر الزمني</div>
+                <div className="font-bold text-base text-white leading-tight">جمع التبرعات (حجم خام)</div>
+                <div className="text-[11px] text-white/80 mt-0.5">⏱ يتأثر بالفلتر الزمني</div>
               </div>
             </div>
             <div className="px-5 py-4 space-y-3 flex-1">
-              <p className="text-sm text-accent-foreground/95 leading-relaxed">
+              <p className="text-sm text-white/95 leading-relaxed">
                 إجمالي التبرعات في الفترة المختارة، بمقياس لوغاريتمي للمقارنة العادلة بين الجمعيات.
               </p>
-              <div className="font-mono text-sm bg-accent-foreground/15 text-accent-foreground border border-accent-foreground/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
+              <div className="font-mono text-sm bg-white/15 text-white border border-white/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
                 log10(الإجمالي) × 15
               </div>
             </div>
           </div>
         </Card>
-        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-accent-foreground brightness-50 overflow-hidden">
+        <Card className="p-0 bg-accent border-accent/60 shadow-xl text-white overflow-hidden">
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-accent-foreground/15 bg-accent-foreground/5">
-              <div className="w-11 h-11 rounded-xl bg-accent-foreground/15 border border-accent-foreground/30 flex items-center justify-center shrink-0">
-                <Gauge className="w-5 h-5 text-accent-foreground" />
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-white/15 bg-white/5">
+              <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/30 flex items-center justify-center shrink-0">
+                <Gauge className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
-                <div className="font-bold text-base text-accent-foreground leading-tight">كفاءة المتبرع الشهرية</div>
-                <div className="text-[11px] text-accent-foreground/80 mt-0.5">🔒 لا يتأثر بالفلتر</div>
+                <div className="font-bold text-base text-white leading-tight">كفاءة المتبرع الشهرية</div>
+                <div className="text-[11px] text-white/80 mt-0.5">🔒 لا يتأثر بالفلتر</div>
               </div>
             </div>
             <div className="px-5 py-4 space-y-3 flex-1">
-              <p className="text-sm text-accent-foreground/95 leading-relaxed">
+              <p className="text-sm text-white/95 leading-relaxed">
                 مقياس الإنتاجية الحقيقي: 100 متبرع بـ 1000 ر.س تتفوّق على 1000 متبرع بـ 5000 ر.س.
               </p>
-              <div className="font-mono text-sm bg-accent-foreground/15 text-accent-foreground border border-accent-foreground/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
+              <div className="font-mono text-sm bg-white/15 text-white border border-white/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
                 (تبرعات الشهر السابق ÷ المتبرعين) ÷ 10 × 100
               </div>
             </div>
@@ -226,24 +226,24 @@ export default function AdminCompare() {
         </div>
 
         <div className="w-full overflow-hidden">
-          <table className="w-full text-sm table-fixed">
+          <table className="w-full text-base table-fixed">
             <thead className="bg-muted/60">
               <tr>
-                <th className="px-1 py-2 text-center text-foreground font-bold text-xs w-8">#</th>
-                <th className="px-1.5 py-2 text-right text-foreground font-bold text-xs w-[110px]">الجمعية</th>
+                <th className="px-2 py-4 text-center text-foreground font-bold text-sm w-12">#</th>
+                <th className="px-3 py-4 text-right text-foreground font-bold text-sm w-[180px]">الجمعية</th>
                 {sortable.map(s => (
                   <th key={s.key as string}
                       className={cn(
-                        "px-0.5 py-2 text-center text-foreground font-bold text-[10px] leading-tight cursor-pointer hover:bg-muted select-none align-middle",
+                        "px-1.5 py-4 text-center text-foreground font-bold text-[13px] leading-snug cursor-pointer hover:bg-muted select-none align-middle",
                         sortKey === s.key && "text-accent bg-accent/10"
                       )}
                       onClick={() => {
                         if (sortKey === s.key) setSortDesc(!sortDesc);
                         else { setSortKey(s.key); setSortDesc(true); }
                       }}>
-                    <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex flex-col items-center gap-1">
                       <span className="break-words hyphens-auto">{s.label}</span>
-                      <ArrowUpDown className="w-2.5 h-2.5 opacity-60 shrink-0" />
+                      <ArrowUpDown className="w-3.5 h-3.5 opacity-60 shrink-0" />
                     </div>
                   </th>
                 ))}
@@ -257,25 +257,25 @@ export default function AdminCompare() {
                 return (
                   <tr key={m.org_id}
                       className="border-t border-border transition-colors hover:bg-muted/40">
-                    <td className="px-1 py-2 text-center">
-                      <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-muted text-foreground font-bold text-xs">
-                        {M ? <M className={cn("w-3.5 h-3.5", medalColor)} /> : idx + 1}
+                    <td className="px-2 py-4 text-center">
+                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted text-foreground font-bold text-sm">
+                        {M ? <M className={cn("w-5 h-5", medalColor)} /> : idx + 1}
                       </div>
                     </td>
-                    <td className="px-1.5 py-2 text-right">
-                      <div className="font-bold text-foreground text-xs leading-tight truncate" title={m.org_name}>{m.org_name}</div>
-                      {m.org_slug && <div className="text-[9px] text-muted-foreground mt-0.5 truncate" dir="ltr">/{m.org_slug}</div>}
+                    <td className="px-3 py-4 text-right">
+                      <div className="font-bold text-foreground text-sm leading-tight truncate" title={m.org_name}>{m.org_name}</div>
+                      {m.org_slug && <div className="text-[11px] text-muted-foreground mt-1 truncate" dir="ltr">/{m.org_slug}</div>}
                     </td>
                     {sortable.map(s => {
                       const v = m[s.key] as number;
                       const display = s.format ? s.format(v) : new Intl.NumberFormat("ar-SA").format(Math.round(v));
                       const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
                       return (
-                        <td key={s.key as string} className="px-0.5 py-2 text-center text-foreground">
+                        <td key={s.key as string} className="px-1.5 py-4 text-center text-foreground">
                           {isScore ? (
                             <ScoreBadge value={v} display={display} />
                           ) : (
-                            <span className={cn("text-[11px] font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
+                            <span className={cn("text-sm font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
                           )}
                         </td>
                       );
@@ -303,7 +303,7 @@ function ScoreBadge({ value, display }: { value: number; display: string }) {
               : v >= 25 ? "bg-warning/15 text-warning border-warning/40"
               : "bg-destructive/15 text-destructive border-destructive/40";
   return (
-    <span className={cn("inline-block px-1.5 py-0.5 rounded-md text-[11px] font-bold border tabular-nums", color)}>
+    <span className={cn("inline-block px-2 py-1 rounded-md text-sm font-bold border tabular-nums", color)}>
       {display}
     </span>
   );
