@@ -106,12 +106,12 @@ export default function AdminCompare() {
             </div>
             <div className="text-sm leading-relaxed flex-1">
               <div className="font-bold mb-1.5 text-base text-white">جمع التبرعات (حجم خام)</div>
-              <div className="text-sm text-white/90">
+              <div className="text-sm text-white">
                 إجمالي التبرعات في الفترة المختارة، بمقياس لوغاريتمي للمقارنة العادلة بين الجمعيات.
                 <span className="font-mono bg-white/20 text-white border border-white/30 rounded px-2 py-0.5 mx-1 inline-block font-semibold">
                   log10(الإجمالي) × 15
                 </span>
-                <span className="block mt-1 text-xs font-semibold text-white/80">⏱ يتأثر بالفلتر الزمني</span>
+                <span className="block mt-1 text-xs font-semibold text-white">⏱ يتأثر بالفلتر الزمني</span>
               </div>
             </div>
           </div>
@@ -123,12 +123,12 @@ export default function AdminCompare() {
             </div>
             <div className="text-sm leading-relaxed flex-1">
               <div className="font-bold mb-1.5 text-base text-white">كفاءة المتبرع الشهرية</div>
-              <div className="text-sm text-white/90">
+              <div className="text-sm text-white">
                 <span className="font-mono bg-white/20 text-white border border-white/30 rounded px-2 py-0.5 mx-1 inline-block font-semibold">
                   (تبرعات الشهر السابق ÷ إجمالي المتبرعين) ÷ 10 × 100
                 </span>
                 — مقياس الإنتاجية الحقيقي: 100 متبرع بـ 1000 ر.س تتفوّق على 1000 متبرع بـ 5000 ر.س.
-                <span className="block mt-1 text-xs font-semibold text-white/80">🔒 لا يتأثر بالفلتر</span>
+                <span className="block mt-1 text-xs font-semibold text-white">🔒 لا يتأثر بالفلتر</span>
               </div>
             </div>
           </div>
