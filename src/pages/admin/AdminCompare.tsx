@@ -303,7 +303,7 @@ function ScoreBadge({ value, display }: { value: number; display: string }) {
               : v >= 25 ? "bg-warning/15 text-warning border-warning/40"
               : "bg-destructive/15 text-destructive border-destructive/40";
   return (
-    <span className={cn("inline-block px-2 py-1 rounded-md text-sm font-bold border tabular-nums", color)}>
+    <span dir="ltr" className={cn("inline-block px-2 py-1 rounded-md text-base font-bold border tabular-nums", color)}>
       {display}
     </span>
   );
