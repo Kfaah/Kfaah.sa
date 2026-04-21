@@ -225,25 +225,25 @@ export default function AdminCompare() {
           </div>
         </div>
 
-        <div className="w-full">
+        <div className="w-full overflow-hidden">
           <table className="w-full text-sm table-fixed">
             <thead className="bg-muted/60">
               <tr>
-                <th className="px-2 py-3 text-center text-foreground font-bold text-xs w-10">#</th>
-                <th className="px-2 py-3 text-right text-foreground font-bold text-xs w-[160px]">الجمعية</th>
+                <th className="px-1 py-2 text-center text-foreground font-bold text-xs w-8">#</th>
+                <th className="px-1.5 py-2 text-right text-foreground font-bold text-xs w-[110px]">الجمعية</th>
                 {sortable.map(s => (
                   <th key={s.key as string}
                       className={cn(
-                        "px-1.5 py-3 text-center text-foreground font-bold text-[11px] leading-tight cursor-pointer hover:bg-muted select-none align-middle",
+                        "px-0.5 py-2 text-center text-foreground font-bold text-[10px] leading-tight cursor-pointer hover:bg-muted select-none align-middle",
                         sortKey === s.key && "text-accent bg-accent/10"
                       )}
                       onClick={() => {
                         if (sortKey === s.key) setSortDesc(!sortDesc);
                         else { setSortKey(s.key); setSortDesc(true); }
                       }}>
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="break-words">{s.label}</span>
-                      <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="break-words hyphens-auto">{s.label}</span>
+                      <ArrowUpDown className="w-2.5 h-2.5 opacity-60 shrink-0" />
                     </div>
                   </th>
                 ))}
@@ -257,25 +257,25 @@ export default function AdminCompare() {
                 return (
                   <tr key={m.org_id}
                       className="border-t border-border transition-colors hover:bg-muted/40">
-                    <td className="px-2 py-3 text-center">
-                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-foreground font-bold text-sm">
-                        {M ? <M className={cn("w-4 h-4", medalColor)} /> : idx + 1}
+                    <td className="px-1 py-2 text-center">
+                      <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-muted text-foreground font-bold text-xs">
+                        {M ? <M className={cn("w-3.5 h-3.5", medalColor)} /> : idx + 1}
                       </div>
                     </td>
-                    <td className="px-2 py-3 text-right">
-                      <div className="font-bold text-foreground text-sm leading-tight truncate" title={m.org_name}>{m.org_name}</div>
-                      {m.org_slug && <div className="text-[10px] text-muted-foreground mt-0.5 truncate" dir="ltr">/{m.org_slug}</div>}
+                    <td className="px-1.5 py-2 text-right">
+                      <div className="font-bold text-foreground text-xs leading-tight truncate" title={m.org_name}>{m.org_name}</div>
+                      {m.org_slug && <div className="text-[9px] text-muted-foreground mt-0.5 truncate" dir="ltr">/{m.org_slug}</div>}
                     </td>
                     {sortable.map(s => {
                       const v = m[s.key] as number;
                       const display = s.format ? s.format(v) : new Intl.NumberFormat("ar-SA").format(Math.round(v));
                       const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
                       return (
-                        <td key={s.key as string} className="px-1.5 py-3 text-center text-foreground">
+                        <td key={s.key as string} className="px-0.5 py-2 text-center text-foreground">
                           {isScore ? (
                             <ScoreBadge value={v} display={display} />
                           ) : (
-                            <span className={cn("text-xs font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
+                            <span className={cn("text-[11px] font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
                           )}
                         </td>
                       );
@@ -303,7 +303,7 @@ function ScoreBadge({ value, display }: { value: number; display: string }) {
               : v >= 25 ? "bg-warning/15 text-warning border-warning/40"
               : "bg-destructive/15 text-destructive border-destructive/40";
   return (
-    <span className={cn("inline-block px-2 py-1 rounded-md text-xs font-bold border tabular-nums", color)}>
+    <span className={cn("inline-block px-1.5 py-0.5 rounded-md text-[11px] font-bold border tabular-nums", color)}>
       {display}
     </span>
   );
