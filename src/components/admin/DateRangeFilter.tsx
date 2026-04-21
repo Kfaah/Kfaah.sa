@@ -54,6 +54,7 @@ const PRESETS = [
   ["this_month", "هذا الشهر"],
   ["last_month", "الشهر الماضي"],
   ["last_year", "السنة الماضية"],
+  ["this_year", "السنة الحالية"],
 ] as const;
 
 export function DateRangeFilter({ value, onChange }: { value: DateRange; onChange: (r: DateRange) => void }) {
