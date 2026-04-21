@@ -168,15 +168,15 @@ export default function AdminCompare() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-base">
             <thead className="bg-muted/60">
               <tr>
-                <th className="px-3 py-3 text-right text-foreground font-semibold w-12">#</th>
-                <th className="px-3 py-3 text-right text-foreground font-semibold">الجمعية</th>
+                <th className="px-4 py-4 text-right text-foreground font-bold text-sm w-14">#</th>
+                <th className="px-4 py-4 text-right text-foreground font-bold text-sm">الجمعية</th>
                 {sortable.map(s => (
                   <th key={s.key as string}
                       className={cn(
-                        "px-3 py-3 text-center text-foreground font-semibold cursor-pointer hover:bg-muted select-none",
+                        "px-4 py-4 text-center text-foreground font-bold text-sm cursor-pointer hover:bg-muted select-none whitespace-nowrap",
                         sortKey === s.key && "text-accent bg-accent/10"
                       )}
                       onClick={() => {
@@ -199,25 +199,25 @@ export default function AdminCompare() {
                 return (
                   <tr key={m.org_id}
                       className="border-t border-border transition-colors hover:bg-muted/40">
-                    <td className="px-3 py-3 text-center">
-                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-foreground font-bold text-xs">
-                        {M ? <M className={cn("w-4 h-4", medalColor)} /> : idx + 1}
+                    <td className="px-4 py-4 text-center">
+                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted text-foreground font-bold text-base">
+                        {M ? <M className={cn("w-5 h-5", medalColor)} /> : idx + 1}
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-right">
-                      <div className="font-semibold text-foreground">{m.org_name}</div>
-                      {m.org_slug && <div className="text-[10px] text-muted-foreground" dir="ltr">/{m.org_slug}</div>}
+                    <td className="px-4 py-4 text-right">
+                      <div className="font-bold text-foreground text-base">{m.org_name}</div>
+                      {m.org_slug && <div className="text-xs text-muted-foreground mt-0.5" dir="ltr">/{m.org_slug}</div>}
                     </td>
                     {sortable.map(s => {
                       const v = m[s.key] as number;
                       const display = s.format ? s.format(v) : new Intl.NumberFormat("ar-SA").format(Math.round(v));
                       const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
                       return (
-                        <td key={s.key as string} className="px-3 py-3 text-center text-foreground">
+                        <td key={s.key as string} className="px-4 py-4 text-center text-foreground">
                           {isScore ? (
                             <ScoreBadge value={v} display={display} />
                           ) : (
-                            <span className={sortKey === s.key ? "text-accent font-bold" : ""}>{display}</span>
+                            <span className={cn("text-base font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
                           )}
                         </td>
                       );
