@@ -81,6 +81,12 @@ export function useAdminAggregates(range?: DateRange) {
           return q;
         };
 
+        // Previous full calendar month bounds (independent of filter)
+        const _now = new Date();
+        const prevMonthEnd = new Date(_now.getFullYear(), _now.getMonth(), 0, 23, 59, 59, 999);
+        const prevMonthStart = new Date(prevMonthEnd.getFullYear(), prevMonthEnd.getMonth(), 1, 0, 0, 0, 0);
+        const prevMonthLabel = `${prevMonthStart.getFullYear()}-${String(prevMonthStart.getMonth() + 1).padStart(2, "0")}`;
+
         const [
           membersRes, donorsTotalRes, donCountRes, donSumRes, activeDonorsRes,
           abCartsRes, abRecoveredRes, failedRes,
