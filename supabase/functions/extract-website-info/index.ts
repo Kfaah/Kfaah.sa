@@ -7,6 +7,25 @@ function absolutize(href: string, base: string): string {
   try { return new URL(href, base).toString(); } catch { return href; }
 }
 
+async function fetchHtml(url: string, timeoutMs = 10000): Promise<string | null> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "ar,en;q=0.9",
+      },
+      redirect: "follow",
+    });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    return await res.text();
+  } catch { return null; }
+}
+
 function extract(html: string, baseUrl: string) {
   const result: Record<string, string | null> = {
     logo_url: null, primary_color: null, secondary_color: null, accent_color: null,
@@ -35,24 +54,40 @@ function extract(html: string, baseUrl: string) {
     if (icon) result.logo_url = absolutize(icon[1], baseUrl);
   }
 
-  // social links
+  // Collect ALL hrefs and absolute URLs from the HTML for robust matching
+  const hrefs = Array.from(html.matchAll(/href=["']([^"']+)["']/gi)).map((m) => absolutize(m[1], baseUrl));
+  const allUrls = Array.from(html.matchAll(/https?:\/\/[^\s"'<>]+/gi)).map((m) => m[0]);
+  const candidates = Array.from(new Set([...hrefs, ...allUrls]));
+
+  // social link patterns — match against the candidate list (covers footer, JSON-LD, scripts)
   const linkPatterns: [keyof typeof result, RegExp][] = [
-    ["twitter_url", /https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[A-Za-z0-9_]+/i],
-    ["instagram_url", /https?:\/\/(?:www\.)?instagram\.com\/[A-Za-z0-9_.]+/i],
-    ["tiktok_url", /https?:\/\/(?:www\.)?tiktok\.com\/@[A-Za-z0-9_.]+/i],
-    ["snapchat_url", /https?:\/\/(?:www\.)?snapchat\.com\/(?:add|t)\/[A-Za-z0-9_.-]+/i],
-    ["youtube_url", /https?:\/\/(?:www\.)?youtube\.com\/(?:@|channel\/|user\/|c\/)[A-Za-z0-9_-]+/i],
-    ["facebook_url", /https?:\/\/(?:www\.)?facebook\.com\/[A-Za-z0-9_.-]+/i],
-    ["linkedin_url", /https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in)\/[A-Za-z0-9_-]+/i],
+    ["twitter_url", /^https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[A-Za-z0-9_]+\/?$/i],
+    ["instagram_url", /^https?:\/\/(?:www\.)?instagram\.com\/[A-Za-z0-9_.]+\/?/i],
+    ["tiktok_url", /^https?:\/\/(?:www\.)?tiktok\.com\/@?[A-Za-z0-9_.]+\/?/i],
+    ["snapchat_url", /^https?:\/\/(?:www\.)?snapchat\.com\/(?:add|t|@)?\/?[A-Za-z0-9_.-]+/i],
+    ["youtube_url", /^https?:\/\/(?:www\.)?youtube\.com\/(?:@|channel\/|user\/|c\/)?[A-Za-z0-9_-]+/i],
+    ["facebook_url", /^https?:\/\/(?:www\.)?(?:facebook\.com|fb\.com)\/[A-Za-z0-9_.-]+/i],
+    ["linkedin_url", /^https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in|school)\/[A-Za-z0-9_-]+/i],
   ];
   for (const [key, pat] of linkPatterns) {
-    const m = html.match(pat);
-    if (m) result[key] = m[0];
+    const found = candidates.find((u) => pat.test(u));
+    if (found) result[key] = found.split("?")[0];
   }
 
-  // store: ehsan / tabby / common store paths
-  const store = html.match(/https?:\/\/[^"'\s<>]*(?:ehsan\.sa|tabby|store|shop|متجر)[^"'\s<>]*/i);
-  if (store) result.store_url = store[0];
+  // store: ehsan, tabby, donate, shop, store, متجر, تبرع
+  const storePatterns = [
+    /ehsan\.sa/i,
+    /donate\./i,
+    /\/donate/i,
+    /\/shop/i,
+    /\/store/i,
+    /shop\./i,
+    /store\./i,
+    /متجر/i,
+    /تبرع/i,
+  ];
+  const store = candidates.find((u) => storePatterns.some((p) => p.test(u)));
+  if (store) result.store_url = store;
 
   // colors from inline styles / CSS vars
   const colorMatches = Array.from(html.matchAll(/#([0-9a-fA-F]{6})\b/g)).map((m) => `#${m[1]}`);
@@ -70,6 +105,12 @@ function extract(html: string, baseUrl: string) {
   return result;
 }
 
+function mergeResults(target: Record<string, string | null>, source: Record<string, string | null>) {
+  for (const k of Object.keys(source)) {
+    if (!target[k] && source[k]) target[k] = source[k];
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -79,20 +120,30 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 10000);
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; LovableBot/1.0)" },
-    });
-    clearTimeout(t);
-    if (!res.ok) {
-      return new Response(JSON.stringify({ error: `fetch_failed_${res.status}` }), {
+    const mainHtml = await fetchHtml(url);
+    if (!mainHtml) {
+      return new Response(JSON.stringify({ error: "fetch_failed" }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const html = await res.text();
-    const data = extract(html, url);
+    const data = extract(mainHtml, url);
+
+    // Crawl additional likely pages to find footer/social/store links missing on home
+    const subpaths = ["/contact", "/contact-us", "/about", "/about-us", "/footer", "/تواصل", "/عن", "/donate", "/تبرع"];
+    const subUrls: string[] = [];
+    try {
+      const u = new URL(url);
+      for (const p of subpaths) subUrls.push(new URL(p, u.origin).toString());
+    } catch { /* ignore */ }
+
+    const subResults = await Promise.all(
+      subUrls.slice(0, 6).map(async (su) => {
+        const h = await fetchHtml(su, 6000);
+        return h ? extract(h, su) : null;
+      })
+    );
+    for (const r of subResults) if (r) mergeResults(data, r);
+
     return new Response(JSON.stringify({ success: true, data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
