@@ -147,8 +147,8 @@ export default function AdminSettings() {
         </div>
       </div>
 
-      <Tabs defaultValue="identity" className="bg-white rounded-2xl shadow-card p-4">
-        <TabsList className="grid grid-cols-4 w-full">
+      <Tabs defaultValue="identity" dir="rtl" className="bg-white rounded-2xl shadow-card p-4">
+        <TabsList className="grid grid-cols-4 w-full" dir="rtl">
           <TabsTrigger value="identity" className="gap-2"><UserCog className="w-4 h-4" /> الهوية الشخصية</TabsTrigger>
           <TabsTrigger value="brand" className="gap-2"><Palette className="w-4 h-4" /> الهوية المرئية</TabsTrigger>
           <TabsTrigger value="welcome" className="gap-2"><Sparkles className="w-4 h-4" /> شاشة الترحيب</TabsTrigger>
@@ -192,23 +192,23 @@ export default function AdminSettings() {
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>الاسم الأول</Label>
-                <Input value={profile.first_name} onChange={(e) => setProfile({ ...profile, first_name: e.target.value })} />
+                <Input dir="rtl" className="text-right" value={profile.first_name} onChange={(e) => setProfile({ ...profile, first_name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>الاسم الأخير</Label>
-                <Input value={profile.last_name} onChange={(e) => setProfile({ ...profile, last_name: e.target.value })} />
+                <Input dir="rtl" className="text-right" value={profile.last_name} onChange={(e) => setProfile({ ...profile, last_name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>البريد الإلكتروني</Label>
-                <Input value={profile.email} disabled />
+                <Input dir="ltr" className="text-left" value={profile.email} disabled />
               </div>
               <div className="space-y-2">
                 <Label>الجوال</Label>
-                <Input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
+                <Input dir="ltr" className="text-left" value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label>الصفة / المسمى</Label>
-                <Input value={profile.job_role} onChange={(e) => setProfile({ ...profile, job_role: e.target.value })} placeholder="مدير النظام" />
+                <Input dir="rtl" className="text-right" value={profile.job_role} onChange={(e) => setProfile({ ...profile, job_role: e.target.value })} placeholder="مدير النظام" />
               </div>
               <div className="md:col-span-2 flex justify-end">
                 <Button onClick={handleSaveProfile} disabled={savingProfile} className="gap-2">
