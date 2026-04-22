@@ -302,7 +302,15 @@ const DELIVERABLE_LABEL: Record<string, string> = {
   instructions: "تعليمات تنفيذية",
 };
 
-function DeliverableBlock({ deliverable }: { deliverable: NonNullable<ActionPlanSubTask["deliverable"]> }) {
+function DeliverableBlock({
+  deliverable,
+  attachmentUrl,
+  attachmentName,
+}: {
+  deliverable: NonNullable<ActionPlanSubTask["deliverable"]>;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+}) {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(deliverable.content);
@@ -322,16 +330,33 @@ function DeliverableBlock({ deliverable }: { deliverable: NonNullable<ActionPlan
           </span>
           <span className="text-base font-semibold text-foreground">— {deliverable.title}</span>
         </div>
-        <button
-          onClick={handleCopy}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-        >
-          <Copy className="h-3.5 w-3.5" /> نسخ
-        </button>
+        <div className="flex items-center gap-2">
+          {attachmentUrl && (
+            <a
+              href={attachmentUrl}
+              download={attachmentName || undefined}
+              className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent text-accent-foreground px-3 py-1.5 text-xs font-bold transition hover:bg-accent/90"
+            >
+              <Download className="h-3.5 w-3.5" /> تحميل الملف الجاهز
+            </a>
+          )}
+          <button
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+          >
+            <Copy className="h-3.5 w-3.5" /> نسخ
+          </button>
+        </div>
       </div>
       <pre className="whitespace-pre-wrap break-words rounded-md bg-background/80 border border-border p-3 text-base leading-8 text-foreground font-sans">
         {deliverable.content}
       </pre>
+      {attachmentUrl && (
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+          <Paperclip className="h-3.5 w-3.5" />
+          <span>{attachmentName || "ملف مرفق جاهز للتنزيل"}</span>
+        </div>
+      )}
       {deliverable.fields && deliverable.fields.length > 0 && (
         <div className="mt-3">
           <div className="text-xs font-bold text-muted-foreground mb-2">حقول التقرير المطلوبة:</div>
