@@ -14,25 +14,25 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { to: "/admin", label: "نظرة عامة موحّدة", icon: LayoutDashboard, end: true,
     desc: "ملخّص شامل لكل الجمعيات",
-    color: "text-sky-600", bg: "bg-sky-50", ring: "ring-sky-200" },
+    color: "text-sky-600", bg: "bg-sky-100", ring: "ring-sky-200" },
   { to: "/admin/organizations", label: "الجمعيات", icon: Building2, end: false,
     desc: "إدارة وتفاصيل الجمعيات",
-    color: "text-emerald-600", bg: "bg-emerald-50", ring: "ring-emerald-200" },
+    color: "text-emerald-600", bg: "bg-emerald-100", ring: "ring-emerald-200" },
   { to: "/admin/compare", label: "المقارنة بين الجمعيات", icon: GitCompareArrows, end: false,
     desc: "رادار · ترتيب · معايير متعددة",
-    color: "text-violet-600", bg: "bg-violet-50", ring: "ring-violet-200" },
+    color: "text-violet-600", bg: "bg-violet-100", ring: "ring-violet-200" },
   { to: "/admin/analytics", label: "التحليل العميق", icon: Sparkles, end: false,
     desc: "تحليل AI لكل جمعية",
-    color: "text-amber-600", bg: "bg-amber-50", ring: "ring-amber-200" },
+    color: "text-amber-600", bg: "bg-amber-100", ring: "ring-amber-200" },
   { to: "/admin/action-plans", label: "الخطط من التوصيات", icon: ListChecks, end: false,
     desc: "تحويل التحليل إلى خطة وتكليف",
-    color: "text-fuchsia-600", bg: "bg-fuchsia-50", ring: "ring-fuchsia-200" },
+    color: "text-fuchsia-600", bg: "bg-fuchsia-100", ring: "ring-fuchsia-200" },
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
     desc: "تقارير موضوعية وتنفيذية سردية",
-    color: "text-rose-600", bg: "bg-rose-50", ring: "ring-rose-200" },
+    color: "text-rose-600", bg: "bg-rose-100", ring: "ring-rose-200" },
   { to: "/admin/innovation", label: "الابتكار والتحديث", icon: Lightbulb, end: false,
     desc: "أفكار AI ابتكارية ونقاش تفاعلي",
-    color: "text-orange-600", bg: "bg-orange-50", ring: "ring-orange-200" },
+    color: "text-amber-600", bg: "bg-amber-100", ring: "ring-amber-200" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
@@ -203,18 +203,18 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 )}
                 <div
                   className={cn(
-                    "relative w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-300",
+                    "relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 border-2 border-white",
                     active
                       ? "bg-white/15 text-white ring-1 ring-white/40 backdrop-blur-sm shadow-[0_4px_12px_-2px_rgba(0,0,0,0.25)]"
-                      : `${item.bg} ${item.color} ring-1 ${item.ring} group-hover:scale-105 shadow-sm`
+                      : `${item.bg} ${item.color} ring-1 ${item.ring} group-hover:shadow-md group-hover:scale-105`
                   )}
                 >
-                  <Icon className="w-[18px] h-[18px]" strokeWidth={2.2} />
+                  <Icon className="w-[18px] h-[18px]" strokeWidth={2.4} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={cn(
                     "text-[13.5px] font-bold leading-tight truncate tracking-tight transition-colors",
-                    active ? "text-white" : cn(item.color, "group-hover:opacity-90")
+                    active ? "text-white" : "text-slate-800 group-hover:text-slate-900"
                   )}>
                     {item.label}
                   </div>
