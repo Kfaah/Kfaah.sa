@@ -235,37 +235,16 @@ export default function AdminReports() {
 
       {/* Executive mode */}
       {mode === "executive" && (
-        <Card className="bg-card border-border p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border pb-4">
-            <div>
-              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                <FileText className="w-5 h-5 text-accent" /> تقرير تنفيذي سردي
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">{selected?.org_name || "—"} · {range.label}</p>
-            </div>
-            <Button onClick={generateExecutive} disabled={!selected || execLoading} className="gap-2">
-              {execLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              توليد التقرير
-            </Button>
-          </div>
-          {execText ? (
-            <article
-              className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-loose"
-              dir="rtl"
-              dangerouslySetInnerHTML={{
-                __html: execText
-                  .replace(/\*\*(.+?)\*\*/g, '<h3 class="text-base font-bold text-foreground mt-4 mb-2">$1</h3>')
-                  .replace(/\n\n/g, "</p><p class='mb-3 text-foreground'>")
-                  .replace(/^/, "<p class='mb-3 text-foreground'>")
-                  .concat("</p>"),
-              }}
-            />
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              اضغط "توليد التقرير" لإنشاء تقرير تنفيذي بصياغة سردية احترافية.
-            </div>
-          )}
-        </Card>
+        <ExecutiveReportView
+          orgName={selected?.org_name}
+          periodLabel={range.label}
+          report={execReport}
+          loading={execLoading}
+          exporting={exportingPpt}
+          onGenerate={generateExecutive}
+          onExportPpt={exportExecPpt}
+          disabled={!selected}
+        />
       )}
 
       {loading && <div className="text-center text-muted-foreground">جاري التحميل...</div>}
