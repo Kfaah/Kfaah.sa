@@ -343,6 +343,67 @@ Deno.serve(async (req) => {
       })
       .eq("id", uploadId);
 
+    // Fire-and-forget: trigger innovation suggestions based on this fresh data.
+    // We don't await it so the upload response stays fast.
+    if (inserted > 0) {
+      try {
+        const minimalMetrics = {
+          org_name: "الجمعية",
+          total_donated: 0, donations_count: inserted, avg_donation: 0,
+          donors: 0, donors_total: 0, recurring_donors: 0,
+          abandoned_carts: 0, recovered_carts: 0, recovery_rate: 0,
+          bank_transfers: 0, matched_transfers: 0, match_rate: 0,
+          failed_donations: 0, failure_rate: 0,
+          gifts_count: 0, gifts_amount: 0, gifts_delivery_rate: 0,
+          projects_count: 0, top_project_name: "—", top_project_share: 0,
+          employees_count: 0, tasks_total: 0, task_completion_rate: 0,
+          campaigns: 0, marketing_ideas: 0, insights: 0,
+          fundraising_score: 0, donor_engagement_score: 0,
+          service_score: 0, team_score: 0, store_health_score: 0,
+        };
+        fetch(`${supabaseUrl}/functions/v1/innovation-suggestions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({
+            metrics: minimalMetrics,
+            period_label: `بيانات جديدة من ${file.name}`,
+            focus: `ملف ${detected} تم رفعه للتو يحوي ${inserted} سجلًا. اقترح كيف نستفيد منها في المنصة.`,
+          }),
+        })
+          .then(async (r) => {
+            if (!r.ok) return;
+            const j = await r.json();
+            const items = (j?.suggestions || []) as any[];
+            if (!items.length) return;
+            const rows = items.map((s) => ({
+              organization_id: organizationId,
+              title: s.title,
+              summary: s.summary,
+              category: s.category || "feature",
+              area: s.area || null,
+              priority: s.priority || "medium",
+              impact: s.impact || null,
+              effort: s.effort || null,
+              data_basis: {
+                source: "upload",
+                upload_id: uploadId,
+                file_name: file.name,
+                detected,
+                note: typeof s.data_basis === "string" ? s.data_basis : (s.data_basis?.note || ""),
+              },
+              ai_model: j?.model || "google/gemini-3-flash-preview",
+            }));
+            await admin.from("innovation_suggestions").insert(rows);
+          })
+          .catch((err) => console.error("innovation trigger failed:", err));
+      } catch (err) {
+        console.error("innovation trigger setup failed:", err);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         uploadId,

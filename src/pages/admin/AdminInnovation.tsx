@@ -14,6 +14,8 @@ import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { exportInnovationPpt } from "@/utils/exportInnovationPpt";
+import { Download } from "lucide-react";
 
 type Category = "content" | "analytics" | "feature" | "ux" | "automation" | "growth" | "data";
 type Status = "new" | "discussing" | "accepted" | "dismissed" | "implemented";
@@ -188,6 +190,26 @@ export default function AdminInnovation() {
           توليد أفكار ابتكارية
         </Button>
       </div>
+
+      {/* Export accepted ideas */}
+      {stats.accepted > 0 && selected && (
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => {
+              const accepted = suggestions.filter(
+                (s) => s.status === "accepted" || s.status === "implemented"
+              );
+              exportInnovationPpt(accepted, selected.org_name);
+              toast.success(`تم تصدير ${accepted.length} فكرة كخطة ابتكار`);
+            }}
+          >
+            <Download className="w-4 h-4" />
+            تصدير الأفكار المقبولة كخطة PowerPoint ({stats.accepted})
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <Card className="p-3 bg-card border-border">
