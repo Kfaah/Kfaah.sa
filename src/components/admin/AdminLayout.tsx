@@ -185,14 +185,22 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Footer actions */}
-        <div className="p-3 border-t border-border">
+        <div
+          className="p-3 border-t border-border relative overflow-hidden"
+          style={{
+            background:
+              "linear-gradient(160deg, hsl(190 55% 22%) 0%, hsl(195 65% 16%) 60%, hsl(200 70% 12%) 100%)",
+          }}
+        >
+          {/* Gold corner accents to match brand header */}
+          <div className="absolute top-1.5 left-1.5 w-5 h-5 border-t-2 border-l-2 border-amber-300/60 rounded-tl-md pointer-events-none" />
+          <div className="absolute bottom-1.5 right-1.5 w-5 h-5 border-b-2 border-r-2 border-amber-300/60 rounded-br-md pointer-events-none" />
           <Button
             onClick={handleSignOut}
-            variant="outline"
-            className="w-full justify-center gap-2 font-semibold hover:bg-muted"
+            className="relative w-full justify-center gap-2 font-semibold text-white bg-white/5 hover:bg-white/15 border border-amber-300/40 hover:border-amber-300/70 ring-1 ring-amber-300/20 shadow-lg backdrop-blur-sm transition-all"
             size="default"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4 text-amber-200" />
             تسجيل الخروج
           </Button>
         </div>
