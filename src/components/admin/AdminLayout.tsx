@@ -146,10 +146,19 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             {/* Avatar with double ring */}
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 blur-sm opacity-60" />
-              <Avatar className="relative w-20 h-20 ring-2 ring-amber-300/80 ring-offset-2 ring-offset-transparent shadow-2xl">
-                {profile.avatar && <AvatarImage src={profile.avatar} alt={profile.name} className="object-cover" />}
+              <Avatar className="relative w-28 h-28 ring-2 ring-amber-300/80 ring-offset-2 ring-offset-transparent shadow-2xl">
+                {profile.avatar && (
+                  <AvatarImage
+                    src={profile.avatar}
+                    alt={profile.name}
+                    className="object-cover"
+                    style={{ imageRendering: "auto" as React.CSSProperties["imageRendering"] }}
+                    loading="eager"
+                    decoding="sync"
+                  />
+                )}
                 <AvatarFallback
-                  className="text-white font-bold text-xl"
+                  className="text-white font-bold text-2xl"
                   style={{
                     background:
                       "linear-gradient(135deg, hsl(190 50% 35%) 0%, hsl(195 60% 25%) 100%)",
