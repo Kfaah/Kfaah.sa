@@ -3,7 +3,6 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CheckCircle2, ChevronDown, Clock, Sparkles, User } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -185,9 +184,8 @@ function SubtaskRow({
   const assignedName = employees.find((e) => e.id === subtask.assigned_employee_id)?.full_name;
 
   return (
-    <Collapsible asChild open={open} onOpenChange={setOpen}>
-      <>
-        <TableRow className={cn("align-top", status === "completed" && "bg-success/5")}>
+    <>
+      <TableRow className={cn("align-top", status === "completed" && "bg-success/5")}>
           <TableCell className="text-right font-bold text-accent text-base pt-4">{idx + 1}</TableCell>
           <TableCell className="text-right">
             <div className={cn("text-base font-semibold text-foreground leading-7", status === "completed" && "line-through opacity-70")}>
@@ -239,31 +237,29 @@ function SubtaskRow({
           </TableCell>
           <TableCell className="pt-3">
             {subtask.details && (
-              <CollapsibleTrigger asChild>
-                <button
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition"
-                  aria-label="تفاصيل"
-                >
-                  <ChevronDown className={cn("h-5 w-5 transition-transform", open && "rotate-180")} />
-                </button>
-              </CollapsibleTrigger>
+              <button
+                onClick={() => setOpen((v) => !v)}
+                className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition"
+                aria-label="تفاصيل"
+              >
+                <ChevronDown className={cn("h-5 w-5 transition-transform", open && "rotate-180")} />
+              </button>
             )}
           </TableCell>
         </TableRow>
-        <CollapsibleContent asChild>
-          <TableRow className="bg-muted/30 hover:bg-muted/30">
-            <TableCell></TableCell>
-            <TableCell colSpan={5} className="py-4">
-              <div className="rounded-md border border-border bg-background/60 p-4">
-                <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
-                  تفاصيل التنفيذ
-                </div>
-                <p className="text-base leading-8 text-foreground whitespace-pre-line">{subtask.details}</p>
+      {open && subtask.details && (
+        <TableRow className="bg-muted/30 hover:bg-muted/30">
+          <TableCell></TableCell>
+          <TableCell colSpan={5} className="py-4">
+            <div className="rounded-md border border-border bg-background/60 p-4">
+              <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
+                تفاصيل التنفيذ
               </div>
-            </TableCell>
-          </TableRow>
-        </CollapsibleContent>
-      </>
-    </Collapsible>
+              <p className="text-base leading-8 text-foreground whitespace-pre-line">{subtask.details}</p>
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
   );
 }
