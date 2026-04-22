@@ -273,21 +273,37 @@ export function Sidebar() {
     // جميع الروابط تضيف state لإخفاء شاشة الترحيب
     const linkState = { fromNavigation: true };
 
+    const brandPrimary = branding.primary;
+    const brandAccent = branding.accent || branding.primary;
+
     return (
       <Link
         to={item.href}
         state={linkState}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none",
+          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none transition-colors",
           isActive
-            ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg ring-2 ring-white"
-            : "bg-white text-slate-700"
+            ? "text-white shadow-lg ring-2 ring-white"
+            : "bg-white text-slate-700 hover:bg-white/90"
         )}
+        style={
+          isActive && brandPrimary
+            ? { backgroundImage: `linear-gradient(to right, ${brandPrimary}, ${brandAccent})` }
+            : isActive
+              ? undefined
+              : undefined
+        }
       >
         <div className={cn(
           "w-10 h-10 rounded-lg flex items-center justify-center shadow-md",
-          isActive ? "bg-white/20" : item.iconBg
-        )}>
+          isActive ? "bg-white/20" : (brandPrimary ? "" : item.iconBg)
+        )}
+        style={
+          !isActive && brandPrimary
+            ? { backgroundImage: `linear-gradient(135deg, ${brandPrimary}, ${brandAccent})` }
+            : undefined
+        }
+        >
           <item.icon className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
