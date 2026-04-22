@@ -48,21 +48,21 @@ const CATEGORY_META: Record<Category, { label: string; icon: any; tone: string }
   analytics:  { label: "تحليل عميق",     icon: BarChart3,   tone: "bg-violet-500/10 text-violet-600 border-violet-500/30" },
   feature:    { label: "ميزة جديدة",     icon: Wand2,       tone: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
   ux:         { label: "تجربة استخدام",  icon: Wrench,      tone: "bg-sky-500/10 text-sky-600 border-sky-500/30" },
-  automation: { label: "أتمتة وعمليات",   icon: Cog,         tone: "bg-teal-500/10 text-teal-600 border-teal-500/30" },
-  growth:     { label: "نمو وشراكات",    icon: TrendingUp,  tone: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
+  automation: { label: "أتمتة وعمليات",   icon: Cog,         tone: "bg-primary/10 text-primary border-primary/30" },
+  growth:     { label: "نمو وشراكات",    icon: TrendingUp,  tone: "bg-accent/10 text-accent border-accent/30" },
   data:       { label: "بيانات وحوكمة",  icon: Database,    tone: "bg-indigo-500/10 text-indigo-600 border-indigo-500/30" },
 };
 
 const PRIORITY_TONE: Record<string, string> = {
   high: "bg-red-500/10 text-red-600 border-red-500/30",
   medium: "bg-amber-500/10 text-amber-600 border-amber-500/30",
-  low: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+  low: "bg-primary/10 text-primary border-primary/30",
 };
 
 const STATUS_TONE: Record<Status, string> = {
   new: "bg-sky-500/10 text-sky-600 border-sky-500/30",
   discussing: "bg-violet-500/10 text-violet-600 border-violet-500/30",
-  accepted: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+  accepted: "bg-primary/10 text-primary border-primary/30",
   dismissed: "bg-muted text-muted-foreground border-border",
   implemented: "bg-amber-500/10 text-amber-600 border-amber-500/30",
 };
@@ -232,7 +232,7 @@ export default function AdminInnovation() {
         <StatTile label="إجمالي الأفكار" value={stats.total} icon={Lightbulb} tone="bg-amber-500/10 text-amber-600" />
         <StatTile label="عالية الأولوية" value={stats.high} icon={Zap} tone="bg-red-500/10 text-red-600" />
         <StatTile label="قيد النقاش" value={stats.discussing} icon={MessageSquare} tone="bg-violet-500/10 text-violet-600" />
-        <StatTile label="مقبولة/مُنفذة" value={stats.accepted} icon={CheckCircle2} tone="bg-emerald-500/10 text-emerald-600" />
+        <StatTile label="مقبولة/مُنفذة" value={stats.accepted} icon={CheckCircle2} tone="bg-primary/10 text-primary" />
       </div>
 
       {/* Filter chips */}
@@ -351,7 +351,7 @@ function SuggestionCard({ s, onOpen, onStatus, onDelete }: {
         <Button size="sm" variant="default" onClick={onOpen} className="gap-1.5 flex-1">
           <MessageSquare className="w-3.5 h-3.5" /> ناقش
         </Button>
-        <Button size="sm" variant="outline" onClick={() => onStatus("accepted")} title="قبول" className="gap-1 text-emerald-600 hover:text-emerald-700">
+        <Button size="sm" variant="outline" onClick={() => onStatus("accepted")} title="قبول" className="gap-1 text-primary hover:text-primary/80">
           <CheckCircle2 className="w-4 h-4" />
         </Button>
         <Button size="sm" variant="outline" onClick={() => onStatus("dismissed")} title="رفض" className="gap-1 text-muted-foreground">
@@ -463,7 +463,7 @@ function DiscussionDrawer({ suggestion, onClose, onStatus }: {
             </div>
           )}
           <div className="flex items-center gap-1.5 mt-3">
-            <Button size="sm" variant="outline" className="gap-1.5 text-emerald-600" onClick={() => onStatus("accepted")}>
+            <Button size="sm" variant="outline" className="gap-1.5 text-primary" onClick={() => onStatus("accepted")}>
               <CheckCircle2 className="w-3.5 h-3.5" /> قبول
             </Button>
             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onStatus("implemented")}>
