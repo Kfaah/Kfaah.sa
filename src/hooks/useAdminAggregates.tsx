@@ -28,6 +28,22 @@ export interface OrgMetrics {
   tasks_completed: number;
   task_completion_rate: number;
   employees_count: number;
+  // ===== gifts (الإهداءات) =====
+  gifts_count: number;
+  gifts_amount: number;
+  gifts_delivered: number;
+  gifts_delivery_rate: number;
+  unique_gift_givers: number;
+  // ===== donor service =====
+  failure_rate: number;       // failed_donations / (donations_count + failed_donations) * 100
+  match_rate: number;         // matched_transfers / bank_transfers * 100
+  // ===== store health =====
+  store_health_score: number; // composite of recovery + match + low-failure
+  // ===== projects/campaigns =====
+  projects_count: number;       // distinct project_name in donations
+  top_project_name: string | null;
+  top_project_amount: number;
+  top_project_share: number;    // % of total donations
   // contextual
   expected_target: number;    // active_donors × 10 × months_in_period
   period_months: number;
@@ -93,11 +109,12 @@ export function useAdminAggregates(range?: DateRange) {
           transfersRes, matchedRes,
           campaignsRes, ideasRes, insightsRes,
           tasksTotalRes, tasksDoneRes, employeesRes,
+          giftsCountRes, giftsRowsRes, giftsDeliveredRes,
         ] = await Promise.all([
           supabase.from("user_organizations").select("*", head).eq("organization_id", orgId),
           supabase.from("donors").select("*", head).eq("organization_id", orgId),
           withRange(supabase.from("donations").select("*", head).eq("organization_id", orgId), "donation_date"),
-          withRange(supabase.from("donations").select("amount, donor_id, donor_phone").eq("organization_id", orgId), "donation_date").limit(20000),
+          withRange(supabase.from("donations").select("amount, donor_id, donor_phone, project_name").eq("organization_id", orgId), "donation_date").limit(20000),
           // active donors derived from donations result; placeholder
           Promise.resolve({ data: null, count: null } as any),
           withRange(supabase.from("abandoned_carts").select("*", head).eq("organization_id", orgId), "abandoned_at"),
@@ -111,6 +128,9 @@ export function useAdminAggregates(range?: DateRange) {
           withRange(supabase.from("tasks").select("*", head).eq("organization_id", orgId), "created_at"),
           withRange(supabase.from("tasks").select("*", head).eq("organization_id", orgId).eq("status", "completed"), "created_at"),
           supabase.from("employees").select("*", head).eq("organization_id", orgId),
+          withRange(supabase.from("gifts").select("*", head).eq("organization_id", orgId), "gift_date"),
+          withRange(supabase.from("gifts").select("amount, giver_donor_id, giver_phone, delivery_status").eq("organization_id", orgId), "gift_date").limit(20000),
+          withRange(supabase.from("gifts").select("*", head).eq("organization_id", orgId).eq("delivery_status", "delivered"), "gift_date"),
         ]);
 
         const recurringRes = await supabase
@@ -138,6 +158,35 @@ export function useAdminAggregates(range?: DateRange) {
           if (k) activeSet.add(String(k));
         });
         const active_donors = activeSet.size;
+
+        // === Projects breakdown from donations ===
+        const projectMap = new Map<string, number>();
+        donRows.forEach(r => {
+          const name = (r.project_name || "").toString().trim();
+          if (!name) return;
+          projectMap.set(name, (projectMap.get(name) || 0) + Number(r.amount || 0));
+        });
+        const projects_count = projectMap.size;
+        let top_project_name: string | null = null;
+        let top_project_amount = 0;
+        for (const [name, amt] of projectMap) {
+          if (amt > top_project_amount) { top_project_amount = amt; top_project_name = name; }
+        }
+        const top_project_share = total_donated > 0 ? (top_project_amount / total_donated) * 100 : 0;
+
+        // === Gifts ===
+        const giftRows = (giftsRowsRes.data || []) as any[];
+        const gifts_count = giftsCountRes.count || 0;
+        const gifts_amount = giftRows.reduce((s, r) => s + Number(r.amount || 0), 0);
+        const gifts_delivered = giftsDeliveredRes.count || 0;
+        const gifts_delivery_rate = gifts_count ? (gifts_delivered / gifts_count) * 100 : 0;
+        const giverSet = new Set<string>();
+        giftRows.forEach(r => {
+          const k = r.giver_donor_id || r.giver_phone;
+          if (k) giverSet.add(String(k));
+        });
+        const unique_gift_givers = giverSet.size;
+
         const donations_count = donCountRes.count || 0;
         const donors_total = donorsTotalRes.count || 0;
         const donors = active_donors > 0 ? active_donors : (fromIso || toIso ? 0 : donors_total);
@@ -155,6 +204,12 @@ export function useAdminAggregates(range?: DateRange) {
         const match_rate = transfers ? (matched / transfers) * 100 : 0;
         const completion = tasksTotal ? (tasksDone / tasksTotal) * 100 : 0;
         const recurring_pct = donors_total ? (recurring / donors_total) * 100 : 0;
+        const totalAttempts = donations_count + failed;
+        const failure_rate = totalAttempts ? (failed / totalAttempts) * 100 : 0;
+        // Store health = weighted: low failure + high recovery + high match
+        const store_health_score = clamp(
+          (100 - failure_rate) * 0.4 + recovery_rate * 0.3 + match_rate * 0.3
+        );
 
         // Period in months
         const now = new Date();
@@ -206,6 +261,18 @@ export function useAdminAggregates(range?: DateRange) {
           tasks_completed: tasksDone,
           task_completion_rate: completion,
           employees_count: employeesRes.count || 0,
+          gifts_count,
+          gifts_amount,
+          gifts_delivered,
+          gifts_delivery_rate,
+          unique_gift_givers,
+          failure_rate,
+          match_rate,
+          store_health_score,
+          projects_count,
+          top_project_name,
+          top_project_amount,
+          top_project_share,
           expected_target,
           period_months,
           prev_month_donations,

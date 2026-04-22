@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileBarChart2, Download, FileText, Users, HandCoins, ShoppingCart,
   Briefcase, Megaphone, Building2, Loader2, Sparkles, Calendar, Presentation, Award,
+  Gift, HeartHandshake, Activity, Target,
 } from "lucide-react";
 import { useAdminAggregates, type DateRange, type OrgMetrics } from "@/hooks/useAdminAggregates";
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
@@ -15,7 +16,9 @@ import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import { exportExecutiveReportPpt, type ExecReport } from "@/utils/exportExecutiveReportPpt";
 
-type ThemeKey = "donors" | "campaigns" | "abandoned" | "team" | "fundraising";
+type ThemeKey =
+  | "donors" | "campaigns" | "abandoned" | "team" | "fundraising"
+  | "gifts" | "service" | "store_health" | "projects";
 type Mode = "thematic" | "executive";
 
 const THEMES: { key: ThemeKey; title: string; subtitle: string; icon: any; color: string }[] = [
@@ -24,6 +27,10 @@ const THEMES: { key: ThemeKey; title: string; subtitle: string; icon: any; color
   { key: "campaigns", title: "تقرير الحملات", subtitle: "حملات نشطة، تحويل، إنتاجية", icon: Megaphone, color: "bg-violet-500/10 text-violet-600 border-violet-500/30" },
   { key: "abandoned", title: "تقرير السلال المتروكة", subtitle: "تسرّب، استرجاع، تحويلات بنكية", icon: ShoppingCart, color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
   { key: "team", title: "تقرير الموظفين والعمليات", subtitle: "إنجاز المهام، قدرة الفريق", icon: Briefcase, color: "bg-sky-500/10 text-sky-600 border-sky-500/30" },
+  { key: "gifts", title: "تقرير الإهداءات", subtitle: "حجم، تسليم، مهدون متكررون", icon: Gift, color: "bg-pink-500/10 text-pink-600 border-pink-500/30" },
+  { key: "service", title: "تقرير خدمة المتبرع", subtitle: "فشل الدفع، مطابقة، استجابة", icon: HeartHandshake, color: "bg-teal-500/10 text-teal-600 border-teal-500/30" },
+  { key: "store_health", title: "تقرير صحة المتجر", subtitle: "موثوقية، تجربة شراء، تشغيلية", icon: Activity, color: "bg-indigo-500/10 text-indigo-600 border-indigo-500/30" },
+  { key: "projects", title: "تقرير المشاريع", subtitle: "تنوّع المشاريع وتركّز الإيراد", icon: Target, color: "bg-orange-500/10 text-orange-600 border-orange-500/30" },
 ];
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
@@ -191,7 +198,7 @@ export default function AdminReports() {
       {/* Thematic mode */}
       {mode === "thematic" && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {THEMES.map(t => {
               const Icon = t.icon;
               const isActive = theme === t.key;
@@ -453,6 +460,38 @@ function themeRows(theme: ThemeKey, m: OrgMetrics): { label: string; value: stri
       { label: "المهام المكتملة", value: fmt(m.tasks_completed) },
       { label: "نسبة الإنجاز", value: pct(m.task_completion_rate) },
       { label: "نقاط الفريق", value: m.team_score.toFixed(0) + "/100" },
+    ];
+    case "gifts": return [
+      { label: "عدد الإهداءات", value: fmt(m.gifts_count) },
+      { label: "قيمة الإهداءات", value: fmtSAR(m.gifts_amount) },
+      { label: "متوسط قيمة الإهداء", value: m.gifts_count ? fmtSAR(m.gifts_amount / m.gifts_count) : "—" },
+      { label: "إهداءات مُسلَّمة", value: fmt(m.gifts_delivered) },
+      { label: "نسبة التسليم", value: pct(m.gifts_delivery_rate) },
+      { label: "عدد المُهدين الفريدين", value: fmt(m.unique_gift_givers) },
+    ];
+    case "service": return [
+      { label: "تبرعات فاشلة", value: fmt(m.failed_donations) },
+      { label: "نسبة الفشل", value: pct(m.failure_rate) },
+      { label: "تحويلات بنكية", value: fmt(m.bank_transfers) },
+      { label: "تحويلات مطابقة", value: fmt(m.matched_transfers) },
+      { label: "نسبة المطابقة", value: pct(m.match_rate) },
+      { label: "نقاط الخدمة", value: m.service_score.toFixed(0) + "/100" },
+    ];
+    case "store_health": return [
+      { label: "نقاط صحة المتجر", value: m.store_health_score.toFixed(0) + "/100" },
+      { label: "نسبة استرجاع السلال", value: pct(m.recovery_rate) },
+      { label: "نسبة مطابقة التحويلات", value: pct(m.match_rate) },
+      { label: "نسبة فشل الدفع", value: pct(m.failure_rate) },
+      { label: "إجمالي محاولات الدفع", value: fmt(m.donations_count + m.failed_donations) },
+      { label: "موثوقية القناة (1 - الفشل)", value: pct(100 - m.failure_rate) },
+    ];
+    case "projects": return [
+      { label: "عدد المشاريع المختلفة", value: fmt(m.projects_count) },
+      { label: "أعلى مشروع تبرعًا", value: m.top_project_name || "—" },
+      { label: "إيراد أعلى مشروع", value: fmtSAR(m.top_project_amount) },
+      { label: "حصة أعلى مشروع من الإجمالي", value: pct(m.top_project_share) },
+      { label: "إجمالي الإيرادات", value: fmtSAR(m.total_donated) },
+      { label: "متوسط التبرع", value: fmtSAR(m.avg_donation) },
     ];
   }
 }

@@ -35,6 +35,7 @@ import AdminOverview from "./pages/admin/AdminOverview";
 import AdminCompare from "./pages/admin/AdminCompare";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminReports from "./pages/admin/AdminReports";
+import AdminInnovation from "./pages/admin/AdminInnovation";
 import AdminActionPlans from "./pages/admin/AdminActionPlans";
 import AdminActionPlanDetails from "./pages/admin/AdminActionPlanDetails";
 import AdminOrganizations from "./pages/admin/AdminOrganizations";
@@ -122,6 +123,7 @@ function AppRoutes() {
       <Route path="/admin/action-plans" element={<ProtectedRoute><AdminLayout><AdminActionPlans /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/action-plans/:planId" element={<ProtectedRoute><AdminLayout><AdminActionPlanDetails /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/reports" element={<ProtectedRoute><AdminLayout><AdminReports /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/innovation" element={<ProtectedRoute><AdminLayout><AdminInnovation /></AdminLayout></ProtectedRoute>} />
       {/* Org management (edit form etc) — kept inside an org's dashboard */}
       <Route
         path="/organizations"
