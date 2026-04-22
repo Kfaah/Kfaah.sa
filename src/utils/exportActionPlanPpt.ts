@@ -343,12 +343,13 @@ export async function exportActionPlanPpt({
       ? employeeNameById.get(task.assigned_employee_id) || "—"
       : "غير مكلّف";
 
-    // Info pills row
-    const pills = [
+    // Info pills row — reversed so first pill (المكلف) sits on the right (RTL)
+    const pillsLTR = [
       { label: "المكلف", value: assignee, color: COLORS.primary },
       { label: "الفترة", value: `${fmtDate(task.start_date)} → ${fmtDate(task.due_date)}`, color: COLORS.accent },
       { label: "الحالة", value: STATUS_LABEL[task.status] || task.status, color: COLORS.success },
     ];
+    const pills = [...pillsLTR].reverse();
     const pillW = 4.05, pillH = 0.7;
     pills.forEach((p, i) => {
       const x = 0.5 + i * (pillW + 0.15);
