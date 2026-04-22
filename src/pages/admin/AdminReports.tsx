@@ -353,7 +353,7 @@ function ExecutiveReportView({
           </Card>
 
           {/* Sections — two-column tables */}
-          {report.sections.map((section, idx) => (
+          {(report.sections ?? []).map((section, idx) => (
             <Card key={idx} className="border-border overflow-hidden" dir="rtl">
               <div className="bg-muted/40 border-b border-border px-5 py-3 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold tabular-nums">
@@ -372,7 +372,7 @@ function ExecutiveReportView({
                     </tr>
                   </thead>
                   <tbody>
-                    {section.rows.map((r, i) => (
+                    {(section.rows ?? []).map((r, i) => (
                       <tr key={i} className={cn("border-t border-border", i % 2 === 0 ? "bg-background" : "bg-muted/20")}>
                         <td className="px-4 py-3 text-right font-bold text-foreground align-top">{r.metric}</td>
                         <td className="px-4 py-3 text-right text-foreground align-top">
