@@ -165,6 +165,73 @@ async function buildProspectListFile(
   return { url: pub.publicUrl, name: `قائمة 50 جهة محتملة جاهزة.csv`, count: 50 };
 }
 
+/**
+ * Build a generic downloadable supporting-material file for any deliverable.
+ * Ensures EVERY subtask has a ready file the employee can download and execute with.
+ * - message_template / social_post / instructions => .txt
+ * - report_form => CSV template with the requested field columns
+ */
+async function buildGenericDeliverableFile(
+  admin: any,
+  organization_id: string,
+  planId: string,
+  taskIdx: number,
+  subIdx: number,
+  deliverable: {
+    type: string;
+    title: string;
+    content: string;
+    fields?: { label: string; key: string }[];
+  },
+): Promise<{ url: string; name: string } | null> {
+  let body = "";
+  let ext = "txt";
+  let mime = "text/plain;charset=utf-8";
+  let label = "مادة داعمة جاهزة";
+
+  if (deliverable.type === "report_form") {
+    ext = "csv";
+    mime = "text/csv;charset=utf-8";
+    label = "نموذج تقرير قابل للتعبئة";
+    const headers = (deliverable.fields && deliverable.fields.length
+      ? deliverable.fields.map((f) => f.label)
+      : ["الحقل", "القيمة"]);
+    const headerLine = headers.map(csvEscape).join(",");
+    const emptyRow = headers.map(() => "").join(",");
+    body = "\uFEFF" + `# ${deliverable.title}\n# ${deliverable.content.replace(/\n/g, " ")}\n` + headerLine + "\n" + emptyRow + "\n" + emptyRow + "\n" + emptyRow + "\n";
+  } else if (deliverable.type === "message_template") {
+    label = "قالب رسالة جاهز";
+    body =
+      `# ${deliverable.title}\n` +
+      `# انسخ النص أدناه واستبدل المتغيرات بين {} ببيانات المتبرع قبل الإرسال.\n` +
+      `# يصلح للواتساب / SMS / البريد.\n\n` +
+      deliverable.content + "\n";
+  } else if (deliverable.type === "social_post") {
+    label = "منشور سوشيال جاهز";
+    body =
+      `# ${deliverable.title}\n` +
+      `# انسخ النص والهاشتاقات والصق في منصة النشر.\n\n` +
+      deliverable.content + "\n";
+  } else {
+    label = "تعليمات تنفيذية جاهزة";
+    body =
+      `# ${deliverable.title}\n\n` +
+      deliverable.content + "\n";
+  }
+
+  const safeTitle = (deliverable.title || "deliverable").replace(/[^\p{L}\p{N}\-_ ]+/gu, "").trim().slice(0, 60).replace(/\s+/g, "-");
+  const fileName = `${deliverable.type}-${safeTitle || "file"}-${planId}-${taskIdx}-${subIdx}.${ext}`;
+  const path = `${organization_id}/${planId}/${fileName}`;
+
+  const { error: upErr } = await admin.storage
+    .from("action-plan-files")
+    .upload(path, new Blob([body], { type: mime }), { upsert: true, contentType: mime });
+  if (upErr) { console.error("Generic deliverable upload failed:", upErr); return null; }
+
+  const { data: pub } = admin.storage.from("action-plan-files").getPublicUrl(path);
+  return { url: pub.publicUrl, name: `${label} — ${deliverable.title}.${ext}` };
+}
+
 async function buildOrgMetrics(admin: any): Promise<OrgMetrics[]> {
   const { data: orgs, error: orgsErr } = await admin
     .from("organizations")
