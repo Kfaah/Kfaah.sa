@@ -20,7 +20,7 @@ const SCORE_AXES: { key: keyof OrgMetrics; label: string; icon: any; gradient: s
   { key: "overall_score",          label: "التقييم العام",  icon: Star,       gradient: "from-primary/20 to-primary/5" },
   { key: "fundraising_score",      label: "جمع التبرعات",  icon: TrendingUp, gradient: "from-amber-500/15 to-amber-500/5" },
   { key: "donor_engagement_score", label: "تفاعل المتبرعين", icon: Heart,     gradient: "from-rose-500/15 to-rose-500/5" },
-  { key: "service_score",          label: "خدمة المتبرع",  icon: HandHeart,  gradient: "from-emerald-500/15 to-emerald-500/5" },
+  { key: "service_score",          label: "خدمة المتبرع",  icon: HandHeart,  gradient: "from-primary/15 to-primary/5" },
   { key: "team_score",             label: "أداء الفريق",   icon: Users,      gradient: "from-sky-500/15 to-sky-500/5" },
   { key: "donor_efficiency_score", label: "كفاءة المتبرع الشهرية", icon: Gauge, gradient: "from-violet-500/15 to-violet-500/5" },
 ];

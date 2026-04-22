@@ -153,16 +153,16 @@ export default function AdminSettings() {
 
       <Tabs defaultValue="identity" dir="rtl" className="bg-white rounded-2xl shadow-card p-4">
         <TabsList className="grid grid-cols-4 w-full h-12 bg-slate-100 p-1" dir="rtl">
-          <TabsTrigger value="identity" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow font-semibold text-slate-600">
+          <TabsTrigger value="identity" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow font-semibold text-slate-600">
             <UserCog className="w-4 h-4" /> الهوية الشخصية
           </TabsTrigger>
-          <TabsTrigger value="brand" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow font-semibold text-slate-600">
+          <TabsTrigger value="brand" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow font-semibold text-slate-600">
             <Palette className="w-4 h-4" /> الهوية المرئية
           </TabsTrigger>
-          <TabsTrigger value="welcome" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow font-semibold text-slate-600">
+          <TabsTrigger value="welcome" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow font-semibold text-slate-600">
             <Sparkles className="w-4 h-4" /> شاشة الترحيب
           </TabsTrigger>
-          <TabsTrigger value="general" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow font-semibold text-slate-600">
+          <TabsTrigger value="general" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow font-semibold text-slate-600">
             <LayoutGrid className="w-4 h-4" /> عام
           </TabsTrigger>
         </TabsList>
