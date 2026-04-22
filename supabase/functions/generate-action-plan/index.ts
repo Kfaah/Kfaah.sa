@@ -34,6 +34,75 @@ type OrgMetrics = {
 
 const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
 
+function csvEscape(v: any): string {
+  const s = v == null ? "" : String(v);
+  if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+/**
+ * Build a real donor-list CSV from the DB based on a textual segment description.
+ * The AI may suggest one of these segments; we map keywords to real queries.
+ * Returns { url, name, count } or null if nothing matched.
+ */
+async function buildDonorListFile(
+  admin: any,
+  organization_id: string,
+  segmentDescription: string,
+  planId: string,
+  taskIdx: number,
+  subIdx: number,
+): Promise<{ url: string; name: string; count: number } | null> {
+  const desc = (segmentDescription || "").toLowerCase();
+
+  // Build base query
+  let query = admin.from("donors").select("full_name, phone, email, city, total_donated, donations_count, last_donation_at, segment, notes").eq("organization_id", organization_id);
+
+  // Heuristics — choose ordering / filters based on keywords
+  if (/غير\s*نشط|متوقف|انقطع|lapsed|inactive/.test(desc)) {
+    const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    query = query.lt("last_donation_at", sixMonthsAgo.toISOString()).order("total_donated", { ascending: false });
+  } else if (/كبار|أعلى|top|major|كبير/.test(desc)) {
+    query = query.order("total_donated", { ascending: false });
+  } else if (/متكرر|recurring|منتظم/.test(desc)) {
+    query = query.gte("donations_count", 3).order("donations_count", { ascending: false });
+  } else if (/جديد|new|أول/.test(desc)) {
+    query = query.eq("donations_count", 1).order("first_donation_at", { ascending: false });
+  } else {
+    query = query.order("total_donated", { ascending: false });
+  }
+
+  const { data: donors, error } = await query.limit(50);
+  if (error || !donors || donors.length === 0) return null;
+
+  const headers = ["#","الاسم","الجوال","البريد","المدينة","إجمالي التبرعات","عدد المرات","آخر تبرع","الشريحة","ملاحظات"];
+  const rows = donors.map((d: any, i: number) => [
+    i + 1,
+    d.full_name,
+    d.phone || "",
+    d.email || "",
+    d.city || "",
+    Number(d.total_donated || 0).toFixed(2),
+    d.donations_count || 0,
+    d.last_donation_at ? String(d.last_donation_at).slice(0, 10) : "",
+    d.segment || "",
+    d.notes || "",
+  ].map(csvEscape).join(","));
+
+  // BOM for Excel Arabic support
+  const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
+  const fileName = `donor-list-${planId}-${taskIdx}-${subIdx}.csv`;
+  const path = `${organization_id}/${planId}/${fileName}`;
+
+  const { error: upErr } = await admin.storage
+    .from("action-plan-files")
+    .upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { upsert: true, contentType: "text/csv;charset=utf-8" });
+  if (upErr) { console.error("CSV upload failed:", upErr); return null; }
+
+  const { data: pub } = admin.storage.from("action-plan-files").getPublicUrl(path);
+  return { url: pub.publicUrl, name: `قائمة جاهزة (${donors.length} متبرع).csv`, count: donors.length };
+}
+
 async function buildOrgMetrics(admin: any): Promise<OrgMetrics[]> {
   const { data: orgs, error: orgsErr } = await admin
     .from("organizations")
@@ -476,7 +545,7 @@ Deno.serve(async (req) => {
       });
 
     const stepDays = Math.max(1, Math.floor(Number(duration_days) / Math.max(sorted.length, 1)));
-    const tasksPayload = sorted.map((r, i) => {
+    const tasksPayload = await Promise.all(sorted.map(async (r, i) => {
       const start = new Date(today);
       start.setDate(start.getDate() + i * stepDays);
       const due = new Date(start);
@@ -484,13 +553,33 @@ Deno.serve(async (req) => {
       const a = assignments.find(x => x.recommendation_index === r.idx);
       const validEmpId = a && empList.some(e => e.id === a.employee_id) ? a.employee_id : null;
       const empIds = new Set(empList.map((e) => e.id));
-      const cleanedSubtasks = (a?.subtasks || []).map((s) => ({
-        ...s,
-        assigned_employee_id:
-          s.assigned_employee_id && empIds.has(s.assigned_employee_id)
-            ? s.assigned_employee_id
-            : validEmpId,
-        status: "pending",
+      const cleanedSubtasks = await Promise.all((a?.subtasks || []).map(async (s, sIdx) => {
+        let deliverable = s.deliverable;
+        let attachment: { url: string; name: string } | null = null;
+        // For donor_list: build a real CSV from real DB data
+        if (deliverable?.type === "donor_list") {
+          const file = await buildDonorListFile(admin, organization_id, deliverable.content, plan.id, i, sIdx);
+          if (file) {
+            attachment = { url: file.url, name: file.name };
+            deliverable = {
+              ...deliverable,
+              content:
+                deliverable.content +
+                `\n\n📎 تم تجهيز ملف Excel يحتوي ${file.count} متبرع جاهز للتحميل (الاسم، الجوال، البريد، المدينة، إجمالي التبرعات، آخر تبرع).`,
+            };
+          }
+        }
+        return {
+          ...s,
+          deliverable,
+          attachment_url: attachment?.url || null,
+          attachment_name: attachment?.name || null,
+          assigned_employee_id:
+            s.assigned_employee_id && empIds.has(s.assigned_employee_id)
+              ? s.assigned_employee_id
+              : validEmpId,
+          status: "pending",
+        };
       }));
       return {
         action_plan_id: plan.id,
@@ -507,7 +596,7 @@ Deno.serve(async (req) => {
         ai_suggestion_reason: a?.reason || null,
         subtasks: cleanedSubtasks,
       };
-    });
+    }));
 
     const { error: tasksErr } = await admin.from("action_plan_tasks").insert(tasksPayload);
     if (tasksErr) throw tasksErr;
