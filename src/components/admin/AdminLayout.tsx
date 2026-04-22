@@ -47,7 +47,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
-    (async () => {
+    const load = async () => {
       const { data } = await supabase
         .from("profiles")
         .select("first_name, last_name, avatar_url")
@@ -59,8 +59,28 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         user.email ||
         "مدير النظام";
       setProfile({ name: fullName, avatar: data?.avatar_url ?? null });
-    })();
-    return () => { cancelled = true; };
+    };
+    load();
+
+    // Realtime: refresh sidebar identity when profile changes
+    const channel = supabase
+      .channel(`admin-profile-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+        () => load()
+      )
+      .subscribe();
+
+    // Cross-tab/page refresh signal (fired after avatar updates)
+    const onProfileUpdated = () => load();
+    window.addEventListener("admin-profile-updated", onProfileUpdated);
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+      window.removeEventListener("admin-profile-updated", onProfileUpdated);
+    };
   }, [user?.id, user?.email]);
 
   const initials = profile.name
@@ -144,42 +164,53 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {navItems.map((item) => {
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          {navItems.map((item, idx) => {
             const Icon = item.icon;
             const active = item.end
               ? location.pathname === item.to
               : location.pathname.startsWith(item.to);
             return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={cn(
-                  "group relative flex items-start gap-3 rounded-xl p-3 transition-all",
-                  active ? "bg-muted" : "hover:bg-muted/60"
-                )}
-              >
-                {active && (
-                  <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-l-full bg-primary" />
-                )}
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors shadow-sm",
-                  active
-                    ? `${item.activeBg} ${item.activeText}`
-                    : `${item.bg} ${item.color} group-hover:scale-105`
-                )}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold leading-tight text-foreground">
-                    {item.label}
+              <div key={item.to}>
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  className={cn(
+                    "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all",
+                    active
+                      ? "bg-gradient-to-l from-slate-50 to-white shadow-[inset_0_0_0_1px_hsl(190_30%_85%)]"
+                      : "hover:bg-slate-50/80"
+                  )}
+                >
+                  {active && (
+                    <span className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-l-full bg-gradient-to-b from-amber-400 to-amber-600" />
+                  )}
+                  <div
+                    className={cn(
+                      "w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 transition-all",
+                      active
+                        ? `${item.activeBg} ${item.activeText} shadow-md`
+                        : `${item.bg} ${item.color} group-hover:shadow-sm`
+                    )}
+                  >
+                    <Icon className="w-[18px] h-[18px]" />
                   </div>
-                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5 truncate">
-                    {item.desc}
+                  <div className="flex-1 min-w-0">
+                    <div className={cn(
+                      "text-[13px] font-semibold leading-tight truncate",
+                      active ? "text-slate-900" : "text-slate-700"
+                    )}>
+                      {item.label}
+                    </div>
+                    <div className="text-[10.5px] text-slate-500 leading-tight mt-0.5 truncate">
+                      {item.desc}
+                    </div>
                   </div>
-                </div>
-              </NavLink>
+                </NavLink>
+                {idx < navItems.length - 1 && (
+                  <div className="my-1 mx-3 h-px bg-gradient-to-l from-transparent via-slate-200 to-transparent" />
+                )}
+              </div>
             );
           })}
         </nav>

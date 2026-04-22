@@ -116,6 +116,8 @@ export default function AdminSettings() {
         .from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
       if (updErr) throw updErr;
       setProfile((p) => ({ ...p, avatar_url: url }));
+      // Notify sidebar/header to refresh immediately
+      window.dispatchEvent(new CustomEvent("admin-profile-updated"));
       toast.success("تم تحديث الصورة");
     } catch (e) {
       toast.error("تعذّر رفع الصورة");
@@ -148,11 +150,19 @@ export default function AdminSettings() {
       </div>
 
       <Tabs defaultValue="identity" dir="rtl" className="bg-white rounded-2xl shadow-card p-4">
-        <TabsList className="grid grid-cols-4 w-full" dir="rtl">
-          <TabsTrigger value="identity" className="gap-2"><UserCog className="w-4 h-4" /> الهوية الشخصية</TabsTrigger>
-          <TabsTrigger value="brand" className="gap-2"><Palette className="w-4 h-4" /> الهوية المرئية</TabsTrigger>
-          <TabsTrigger value="welcome" className="gap-2"><Sparkles className="w-4 h-4" /> شاشة الترحيب</TabsTrigger>
-          <TabsTrigger value="general" className="gap-2"><LayoutGrid className="w-4 h-4" /> عام</TabsTrigger>
+        <TabsList className="grid grid-cols-4 w-full h-12 bg-slate-100 p-1" dir="rtl">
+          <TabsTrigger value="identity" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow font-semibold text-slate-600">
+            <UserCog className="w-4 h-4" /> الهوية الشخصية
+          </TabsTrigger>
+          <TabsTrigger value="brand" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow font-semibold text-slate-600">
+            <Palette className="w-4 h-4" /> الهوية المرئية
+          </TabsTrigger>
+          <TabsTrigger value="welcome" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow font-semibold text-slate-600">
+            <Sparkles className="w-4 h-4" /> شاشة الترحيب
+          </TabsTrigger>
+          <TabsTrigger value="general" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow font-semibold text-slate-600">
+            <LayoutGrid className="w-4 h-4" /> عام
+          </TabsTrigger>
         </TabsList>
 
         {/* ===== Identity ===== */}
