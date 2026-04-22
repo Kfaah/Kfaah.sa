@@ -3,6 +3,8 @@ type SubTask = {
   details: string;
   duration_days: number;
   done?: boolean;
+  status?: string;
+  assigned_employee_id?: string | null;
 };
 
 type Plan = {
@@ -102,9 +104,11 @@ export async function exportActionPlanExcel({
         task.title,
         subtask.title,
         subtask.details,
-        assignee,
+        subtask.assigned_employee_id
+          ? employeeNameById.get(subtask.assigned_employee_id) || "—"
+          : assignee,
         period,
-        subtask.done ? "منجزة" : STATUS_LABEL[task.status] || task.status,
+        STATUS_LABEL[subtask.status || (subtask.done ? "completed" : task.status)] || task.status,
         subtask.duration_days,
       ]);
     }),
