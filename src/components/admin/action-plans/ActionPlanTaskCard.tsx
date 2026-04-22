@@ -95,13 +95,39 @@ export function ActionPlanTaskCard({
     await onUpdateTask(task.id, { subtasks: next });
   };
 
+  // Auto-assign any unassigned subtask using round-robin over employees (one-time, idempotent)
+  React.useEffect(() => {
+    if (!employees.length || !subtasks.length) return;
+    const needsAssign = subtasks.some((s) => !s.assigned_employee_id);
+    if (!needsAssign) return;
+    const next = subtasks.map((s, i) =>
+      s.assigned_employee_id ? s : { ...s, assigned_employee_id: employees[(index + i) % employees.length].id },
+    );
+    onUpdateTask(task.id, { subtasks: next });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task.id, employees.length]);
+
+  const accentGradient =
+    task.impact === "high"
+      ? "from-rose-500/15 via-amber-400/10 to-transparent"
+      : task.impact === "medium"
+      ? "from-sky-500/15 via-indigo-400/10 to-transparent"
+      : "from-emerald-500/15 via-teal-400/10 to-transparent";
+
+  const numberBg =
+    task.impact === "high"
+      ? "bg-gradient-to-br from-rose-500 to-amber-500 text-white"
+      : task.impact === "medium"
+      ? "bg-gradient-to-br from-sky-500 to-indigo-500 text-white"
+      : "bg-gradient-to-br from-emerald-500 to-teal-500 text-white";
+
   return (
-    <Card className="bg-card border-border shadow-sm overflow-hidden" dir="rtl">
+    <Card className="bg-card border-border shadow-md overflow-hidden ring-1 ring-border/50" dir="rtl">
       {/* Header: Goal */}
-      <div className="p-6 border-b border-border bg-gradient-to-l from-accent/5 to-transparent">
+      <div className={cn("p-6 border-b border-border bg-gradient-to-l", accentGradient)}>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-4 flex-1 min-w-0">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-lg font-bold text-accent">
+            <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xl font-bold shadow-md", numberBg)}>
               {index + 1}
             </div>
             <div className="flex-1 min-w-0 space-y-2">
@@ -110,7 +136,12 @@ export function ActionPlanTaskCard({
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge className="border border-border bg-transparent px-3 py-1.5 text-sm text-foreground">
+            <Badge className={cn(
+              "px-3 py-1.5 text-sm font-bold border-0 text-white shadow-sm",
+              task.impact === "high" && "bg-gradient-to-r from-rose-500 to-amber-500",
+              task.impact === "medium" && "bg-gradient-to-r from-sky-500 to-indigo-500",
+              task.impact === "low" && "bg-gradient-to-r from-emerald-500 to-teal-500",
+            )}>
               تأثير {IMPACT_LABEL[task.impact] || task.impact}
             </Badge>
             <Badge variant="secondary" className="px-3 py-1.5 text-sm">
