@@ -295,11 +295,12 @@ async function generateInsight(admin: any, apiKey: string, metrics: OrgMetrics, 
 - متوسط التبرع: ${metrics.avg_donation.toFixed(0)} ر.س
 - المتبرعون: ${metrics.donors} (منتظمون: ${metrics.recurring_donors})
 - السلال المتروكة: ${metrics.abandoned_carts} (مسترجعة: ${metrics.recovered_carts}, نسبة: ${metrics.recovery_rate.toFixed(1)}%)
-- التحويلات البنكية: ${metrics.bank_transfers} (مطابقة: ${metrics.matched_transfers})
 - الموظفون: ${metrics.employees_count}
 - المهام: ${metrics.tasks_total} (مكتمل: ${metrics.tasks_completed}, نسبة: ${metrics.task_completion_rate.toFixed(1)}%)
 - الحملات: ${metrics.campaigns}
 - نقاط (0-100): جمع التبرعات ${metrics.fundraising_score.toFixed(0)} / تفاعل ${metrics.donor_engagement_score.toFixed(0)} / خدمة ${metrics.service_score.toFixed(0)} / فريق ${metrics.team_score.toFixed(0)} / إجمالي ${metrics.overall_score.toFixed(0)} (متوسط الأخريات ${avgScore.toFixed(0)})
+
+ملاحظة مهمة: تجاهل تمامًا موضوع "التحويلات البنكية غير المطابقة/غير المعتمدة" — هذه ناتجة عن إيصالات خاطئة يرفعها المتبرعون أنفسهم في المتجر، وليست مسؤولية الفريق. لا تذكرها في نقاط الضعف، ولا في الفرص، ولا في التوصيات.
 
 قدّم تحليلاً شاملاً يتضمن:
 1) ملخّص تنفيذي يغطي أهم الاستنتاجات ولا يتجاوز 4 جمل.
