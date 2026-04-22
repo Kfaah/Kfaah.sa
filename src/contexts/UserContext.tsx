@@ -2,6 +2,24 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+type EmployeeUpdateData = {
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  username?: string;
+  job_role?: string;
+};
+
+type ProfileUpdateData = {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  location?: string;
+  job_role?: string;
+};
+
 interface UserData {
   firstName: string;
   lastName: string;
@@ -206,7 +224,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       if (employeeData) {
         // Update employee record
-        const employeeUpdateData: Record<string, any> = {};
+        const employeeUpdateData: EmployeeUpdateData = {};
         if (data.firstName !== undefined || data.lastName !== undefined) {
           const fullName = `${data.firstName || user.firstName} ${data.lastName || user.lastName}`.trim();
           employeeUpdateData.full_name = fullName;
@@ -229,7 +247,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
       } else {
         // Update profile record
-        const updateData: Record<string, any> = {};
+        const updateData: ProfileUpdateData = {};
         if (data.firstName !== undefined) updateData.first_name = data.firstName;
         if (data.lastName !== undefined) updateData.last_name = data.lastName;
         if (data.email !== undefined) updateData.email = data.email;
