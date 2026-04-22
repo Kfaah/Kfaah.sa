@@ -385,7 +385,9 @@ export async function exportActionPlanPpt({
 
     // Subtasks table
     const subtasks = task.subtasks || [];
-    const headerRow = [
+    // RTL: build columns in left→right visual order, then reverse so the first
+    // logical column (#) appears on the RIGHT side (Arabic reading direction).
+    const headerRowLTR = [
       { text: "#", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "center", valign: "middle", fontSize: 11, fontFace: "Calibri" } },
       { text: "المهمة التنفيذية", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "right", valign: "middle", fontSize: 11, fontFace: "Calibri", rtlMode: true } },
       { text: "المكلف", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "right", valign: "middle", fontSize: 11, fontFace: "Calibri", rtlMode: true } },
@@ -393,8 +395,9 @@ export async function exportActionPlanPpt({
       { text: "الحالة", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "center", valign: "middle", fontSize: 11, fontFace: "Calibri" } },
       { text: "المخرج / المادة الداعمة", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "right", valign: "middle", fontSize: 11, fontFace: "Calibri", rtlMode: true } },
     ];
+    const headerRow = [...headerRowLTR].reverse();
 
-    const bodyRows = subtasks.length
+    const bodyRowsLTR = subtasks.length
       ? subtasks.map((sub, si) => {
           const subAssignee = sub.assigned_employee_id
             ? employeeNameById.get(sub.assigned_employee_id) || assignee
@@ -418,12 +421,14 @@ export async function exportActionPlanPpt({
           { text: "—", options: { color: COLORS.muted, align: "center" as const, fontSize: 11, fontFace: "Calibri" } },
           { text: "لا توجد مهام تنفيذية مفصّلة", options: { color: COLORS.muted, align: "right" as const, fontSize: 11, fontFace: "Calibri", rtlMode: true, colspan: 5 } },
         ]];
+    const bodyRows = bodyRowsLTR.map((row) => [...row].reverse());
 
     s.addTable([headerRow as any, ...bodyRows as any], {
       x: 0.5,
       y: task.description ? 3.25 : 2.15,
       w: 12.333,
-      colW: [0.7, 4.0, 1.9, 0.9, 1.4, 3.433],
+      // Column widths must mirror the reversed visual order
+      colW: [3.433, 1.4, 0.9, 1.9, 4.0, 0.7],
       rowH: 0.42,
       border: { type: "solid", pt: 0.5, color: COLORS.cardBorder },
       fontSize: 10,
