@@ -165,6 +165,73 @@ async function buildProspectListFile(
   return { url: pub.publicUrl, name: `قائمة 50 جهة محتملة جاهزة.csv`, count: 50 };
 }
 
+/**
+ * Build a generic downloadable supporting-material file for any deliverable.
+ * Ensures EVERY subtask has a ready file the employee can download and execute with.
+ * - message_template / social_post / instructions => .txt
+ * - report_form => CSV template with the requested field columns
+ */
+async function buildGenericDeliverableFile(
+  admin: any,
+  organization_id: string,
+  planId: string,
+  taskIdx: number,
+  subIdx: number,
+  deliverable: {
+    type: string;
+    title: string;
+    content: string;
+    fields?: { label: string; key: string }[];
+  },
+): Promise<{ url: string; name: string } | null> {
+  let body = "";
+  let ext = "txt";
+  let mime = "text/plain;charset=utf-8";
+  let label = "مادة داعمة جاهزة";
+
+  if (deliverable.type === "report_form") {
+    ext = "csv";
+    mime = "text/csv;charset=utf-8";
+    label = "نموذج تقرير قابل للتعبئة";
+    const headers = (deliverable.fields && deliverable.fields.length
+      ? deliverable.fields.map((f) => f.label)
+      : ["الحقل", "القيمة"]);
+    const headerLine = headers.map(csvEscape).join(",");
+    const emptyRow = headers.map(() => "").join(",");
+    body = "\uFEFF" + `# ${deliverable.title}\n# ${deliverable.content.replace(/\n/g, " ")}\n` + headerLine + "\n" + emptyRow + "\n" + emptyRow + "\n" + emptyRow + "\n";
+  } else if (deliverable.type === "message_template") {
+    label = "قالب رسالة جاهز";
+    body =
+      `# ${deliverable.title}\n` +
+      `# انسخ النص أدناه واستبدل المتغيرات بين {} ببيانات المتبرع قبل الإرسال.\n` +
+      `# يصلح للواتساب / SMS / البريد.\n\n` +
+      deliverable.content + "\n";
+  } else if (deliverable.type === "social_post") {
+    label = "منشور سوشيال جاهز";
+    body =
+      `# ${deliverable.title}\n` +
+      `# انسخ النص والهاشتاقات والصق في منصة النشر.\n\n` +
+      deliverable.content + "\n";
+  } else {
+    label = "تعليمات تنفيذية جاهزة";
+    body =
+      `# ${deliverable.title}\n\n` +
+      deliverable.content + "\n";
+  }
+
+  const safeTitle = (deliverable.title || "deliverable").replace(/[^\p{L}\p{N}\-_ ]+/gu, "").trim().slice(0, 60).replace(/\s+/g, "-");
+  const fileName = `${deliverable.type}-${safeTitle || "file"}-${planId}-${taskIdx}-${subIdx}.${ext}`;
+  const path = `${organization_id}/${planId}/${fileName}`;
+
+  const { error: upErr } = await admin.storage
+    .from("action-plan-files")
+    .upload(path, new Blob([body], { type: mime }), { upsert: true, contentType: mime });
+  if (upErr) { console.error("Generic deliverable upload failed:", upErr); return null; }
+
+  const { data: pub } = admin.storage.from("action-plan-files").getPublicUrl(path);
+  return { url: pub.publicUrl, name: `${label} — ${deliverable.title}.${ext}` };
+}
+
 async function buildOrgMetrics(admin: any): Promise<OrgMetrics[]> {
   const { data: orgs, error: orgsErr } = await admin
     .from("organizations")
@@ -479,16 +546,23 @@ Deno.serve(async (req) => {
 - details: شرح موجز جدًا (سطر أو سطرين) لما سيقوم به الموظف فعليًا.
 - duration_days: 1-15.
 - assigned_employee_id: اختر الموظف الأنسب لهذه المهمة بالذات (حسب job_role/department؛ الاتصال للعلاقات العامة، التصميم/النشر للتسويق، التقارير المالية للمحاسبة...). لا تترك المهمة بدون موظف.
-- deliverable: مخرج جاهز يستخدمه الموظف مباشرة. اختر النوع المناسب:
-  * "donor_list": قائمة شريحة مانحين محددة من قاعدة البيانات (مثال: "المانحون غير النشطين منذ 6 أشهر، مرتبون حسب أعلى تبرع سابق"). content = وصف تشغيلي دقيق للشريحة (المعايير).
-  * "message_template": نص رسالة واتساب/SMS/بريد جاهز للنسخ مع متغيرات بين قوسين {الاسم} {آخر_تبرع}. content = الرسالة كاملة بدون أي مكان فارغ يحتاج تفكير.
-  * "social_post": منشور سوشيال ميديا جاهز (نص + هاشتاقات + اقتراح بصري). content = المنشور النهائي.
-  * "report_form": نموذج تقرير قابل للتعبئة. content = تعليمات مختصرة، fields = قائمة الحقول المطلوبة.
-  * "instructions": تعليمات تنفيذية واضحة عندما لا ينطبق ما سبق. content = خطوات مرقّمة.
+- deliverable: **إلزامي لكل مهمة بدون استثناء** — مادة داعمة كاملة جاهزة للتحميل والاستخدام مباشرة. اختر النوع الأنسب:
+  * "donor_list": عند الحاجة إلى قائمة مانحين/متبرعين من قاعدة البيانات (lapsed/major/recurring/new). content = وصف تشغيلي دقيق للشريحة.
+  * "donor_list" أيضًا للجهات/الشركات/الرعاة المحتملين — استخدم كلمات مثل "جهات محتملة" أو "شركات" أو "رعاة" في content حتى يتم بناء قائمة 50 جهة جاهزة تلقائيًا.
+  * "message_template": رسالة واتساب/SMS/بريد كاملة جاهزة للنسخ. content = نص الرسالة كاملة (حد أدنى 60 كلمة)، بمتغيرات بين {} مثل {الاسم} {آخر_تبرع} {المبلغ_السابق}. لا تكتب "صمم رسالة" — اكتب الرسالة نفسها.
+  * "social_post": منشور سوشيال جاهز. content = نص المنشور كاملًا + 5-10 هاشتاقات عربية ذات صلة + سطر "اقتراح بصري:". لا تكتب "صمم منشور" — اكتب المنشور النهائي.
+  * "report_form": نموذج تقرير قابل للتعبئة. content = تعليمات مختصرة لما يعبّئه الموظف، fields = قائمة 5-10 حقول مطلوبة.
+  * "instructions": سيناريو/سكربت/خطة عرض جاهز (مثل "سكربت اتصال هاتفي" أو "عرض تبرع مخصص للشريحة"). content = نص كامل قابل للقراءة والاستخدام مباشرة (سكربت المكالمة، أو عرض التبرع المقترح بكل تفاصيله: العنوان، الوعد، الفئة المستهدفة، المبلغ المقترح، المنفعة، نص الإقناع). الحد الأدنى 80 كلمة.
 - title (داخل deliverable): اسم المخرج (مثال: "رسالة استرجاع المانحين غير النشطين").
 
-قواعد:
-- لا تطلب من الموظف "بناء" أو "إعداد قائمة" — أنت من يحدد القائمة، هو ينفذ فقط.
+أمثلة على ما يجب أن تنتجه (وليس ما تطلبه من الموظف):
+- بدلًا من "صمم عرض تبرع مخصص للشريحة" → أنشئ deliverable type="instructions" content="عرض تبرع: [العنوان] ... [الوصف الكامل] ... [المبلغ المقترح] ... [الرسالة الترويجية] ..."
+- بدلًا من "أعد قائمة 50 جهة محتملة" → أنشئ deliverable type="donor_list" content="جهات محتملة من القطاع الخاص للرعاية" (سيُبنى ملف 50 جهة تلقائيًا).
+- بدلًا من "أطلق حملة تواصل" → أنشئ deliverable type="message_template" content="[نص الرسالة الفعلي للدفعة الأولى]" + قسّم لمهمتين كل واحدة برسالة مختلفة.
+
+قواعد صارمة:
+- لا تطلب من الموظف "بناء/إعداد/تصميم/كتابة" — أنت تنتج المادة الداعمة، هو ينفذ فقط.
+- كل مهمة يجب أن يكون لها deliverable بمحتوى حقيقي (لا تترك content فارغًا أو نصًا عامًا).
 - لا تخترع أرقامًا أو معلومات غير مذكورة في البيانات.
 - استخدم العربية الاحترافية المباشرة.`;
       const userPrompt = `الموظفون المتاحون:\n${JSON.stringify(empList, null, 2)}\n\nالتوصيات:\n${recs.map((r, i) => `${i}) [${r.impact}] ${r.title}\n   الإجراء: ${r.action}`).join("\n\n")}`;
@@ -620,17 +694,23 @@ Deno.serve(async (req) => {
       const cleanedSubtasks = await Promise.all((a?.subtasks || []).map(async (s, sIdx) => {
         let deliverable = s.deliverable;
         let attachment: { url: string; name: string } | null = null;
-        // For donor_list: build a real CSV from real DB data
-        if (deliverable?.type === "donor_list") {
-          const file = await buildDonorListFile(admin, organization_id, deliverable.content, plan.id, i, sIdx);
-          if (file) {
-            attachment = { url: file.url, name: file.name };
-            deliverable = {
-              ...deliverable,
-              content:
-                deliverable.content +
-                `\n\n📎 تم تجهيز ملف جاهز يحتوي ${file.count} سجلًا (الاسم، الجوال، البريد، المدينة، الاهتمام، السقف التقديري). الموظف ينفذ فقط.`,
-            };
+        if (deliverable) {
+          if (deliverable.type === "donor_list") {
+            // Build a real CSV from real DB data (or a 50-prospect template if it's a prospect list)
+            const file = await buildDonorListFile(admin, organization_id, deliverable.content, plan.id, i, sIdx);
+            if (file) {
+              attachment = { url: file.url, name: file.name };
+              deliverable = {
+                ...deliverable,
+                content:
+                  deliverable.content +
+                  `\n\n📎 ملف جاهز: ${file.count} سجلًا (الاسم، الجوال، البريد، الاهتمام، السقف التقديري). الموظف ينفذ فقط.`,
+              };
+            }
+          } else {
+            // For every other deliverable type — produce a downloadable supporting file
+            const file = await buildGenericDeliverableFile(admin, organization_id, plan.id, i, sIdx, deliverable);
+            if (file) attachment = { url: file.url, name: file.name };
           }
         }
         // Round-robin fallback: never leave a subtask without an assignee
