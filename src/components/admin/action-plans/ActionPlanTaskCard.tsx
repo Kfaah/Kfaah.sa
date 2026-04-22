@@ -358,13 +358,29 @@ function DeliverableBlock({
         </div>
         <div className="flex items-center gap-2">
           {attachmentUrl ? (
-            <a
-              href={attachmentUrl}
-              download={attachmentName || undefined}
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const res = await fetch(attachmentUrl);
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  const baseName = (attachmentName || `${deliverable.title}.pptx`).trim();
+                  a.download = baseName.endsWith(".pptx") ? baseName : `${baseName}.pptx`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch {
+                  window.open(attachmentUrl, "_blank");
+                }
+              }}
               className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent text-accent-foreground px-3 py-1.5 text-xs font-bold transition hover:bg-accent/90"
             >
               <Download className="h-3.5 w-3.5" /> تحميل عرض PowerPoint
-            </a>
+            </button>
           ) : (
             <span className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground">
               جارٍ تجهيز ملف PowerPoint
