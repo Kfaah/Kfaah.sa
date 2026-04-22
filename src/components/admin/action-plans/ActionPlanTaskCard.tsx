@@ -326,11 +326,11 @@ function SubtaskRow({
 }
 
 const DELIVERABLE_LABEL: Record<string, string> = {
-  donor_list: "قائمة مانحين جاهزة",
-  message_template: "قالب رسالة جاهز",
-  social_post: "منشور سوشيال ميديا جاهز",
-  report_form: "نموذج تقرير قابل للتعبئة",
-  instructions: "تعليمات تنفيذية",
+  donor_list: "عرض PowerPoint جاهز لقائمة الاستهداف",
+  message_template: "عرض PowerPoint جاهز للرسالة",
+  social_post: "عرض PowerPoint جاهز للحملة",
+  report_form: "عرض PowerPoint جاهز للتقرير",
+  instructions: "عرض PowerPoint جاهز للتنفيذ",
 };
 
 function DeliverableBlock({
@@ -362,13 +362,13 @@ function DeliverableBlock({
           <span className="text-base font-semibold text-foreground">— {deliverable.title}</span>
         </div>
         <div className="flex items-center gap-2">
-          {attachmentUrl && (
+            {attachmentUrl && (
             <a
               href={attachmentUrl}
               download={attachmentName || undefined}
               className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent text-accent-foreground px-3 py-1.5 text-xs font-bold transition hover:bg-accent/90"
             >
-              <Download className="h-3.5 w-3.5" /> تحميل الملف الجاهز
+                <Download className="h-3.5 w-3.5" /> تحميل عرض PowerPoint
             </a>
           )}
           <button
@@ -385,7 +385,7 @@ function DeliverableBlock({
       {attachmentUrl && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
           <Paperclip className="h-3.5 w-3.5" />
-          <span>{attachmentName || "ملف مرفق جاهز للتنزيل"}</span>
+          <span>{attachmentName || "عرض PowerPoint مرفق وجاهز للتنزيل"}</span>
         </div>
       )}
       {deliverable.fields && deliverable.fields.length > 0 && (
