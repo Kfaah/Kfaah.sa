@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
@@ -75,6 +76,7 @@ function applyBrandingToDocument(b: { primary: string | null; secondary: string 
 
 export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   const { currentOrg } = useOrganization();
+  const location = useLocation();
   const [branding, setBranding] = useState<Branding>({
     logoUrl: null, orgName: "", primary: null, secondary: null, accent: null,
   });
@@ -84,7 +86,6 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     (async () => {
       if (!currentOrg) {
         setBranding({ logoUrl: null, orgName: "", primary: null, secondary: null, accent: null });
-        applyBrandingToDocument({ primary: null, secondary: null, accent: null });
         return;
       }
       const { data } = await supabase
@@ -101,10 +102,14 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
         accent: (data as Record<string, string | null> | null)?.accent_color || null,
       };
       setBranding(next);
-      applyBrandingToDocument(next);
     })();
     return () => { cancelled = true; };
   }, [currentOrg]);
+
+  useEffect(() => {
+    const isAdminRoute = location.pathname.startsWith("/admin");
+    applyBrandingToDocument(isAdminRoute ? { primary: null, secondary: null, accent: null } : branding);
+  }, [branding, location.pathname]);
 
   const value = useMemo(() => branding, [branding]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
