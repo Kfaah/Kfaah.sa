@@ -60,6 +60,7 @@ export default function OrganizationProfile() {
       if (p) {
         setForm({
           about: p.about ?? "",
+          goals: (p as Record<string, string | null>).goals ?? "",
           website_url: p.website_url ?? "",
           store_url: p.store_url ?? "",
           twitter_url: p.twitter_url ?? "",
