@@ -165,23 +165,26 @@ export default function OrganizationProfile() {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
-        {/* Header — same style as Settings page */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/organizations")} className="gap-1">
-              <ArrowRight className="w-4 h-4" /> رجوع
-            </Button>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg overflow-hidden">
-              {form.logo_url ? (
-                <img src={form.logo_url} alt={orgName} className="w-full h-full object-contain p-1 bg-white/95" />
-              ) : (
-                <Building2 className="w-7 h-7 text-white" />
-              )}
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{orgName}</h1>
-              <p className="text-muted-foreground text-sm">التعرف على الجمعية وهويتها البصرية</p>
-            </div>
+        {/* Header — same style as Admin Settings page */}
+        <div
+          className="flex items-center gap-4 rounded-2xl p-5 shadow-card text-white relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, hsl(190 55% 26%) 0%, hsl(195 65% 18%) 60%, hsl(200 70% 14%) 100%)" }}
+        >
+          <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-amber-300/60 rounded-tl-md" />
+          <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-amber-300/60 rounded-br-md" />
+          <Button variant="ghost" size="sm" onClick={() => navigate("/admin/organizations")} className="gap-1 text-white hover:bg-white/10 relative z-10">
+            <ArrowRight className="w-4 h-4" /> رجوع
+          </Button>
+          <div className="w-14 h-14 rounded-2xl bg-white/10 ring-2 ring-amber-300/60 flex items-center justify-center shadow-lg overflow-hidden relative z-10">
+            {form.logo_url ? (
+              <img src={form.logo_url} alt={orgName} className="w-full h-full object-contain p-1 bg-white/90" />
+            ) : (
+              <Building2 className="w-7 h-7 text-amber-200" />
+            )}
+          </div>
+          <div className="relative z-10">
+            <h1 className="text-2xl font-bold text-white">{orgName}</h1>
+            <p className="text-amber-100/80 text-sm">التعرف على الجمعية وهويتها البصرية</p>
           </div>
         </div>
 
