@@ -240,14 +240,6 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   <span className="w-1.5 h-1.5 rotate-45 bg-amber-300/90 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex-shrink-0" />
                 )}
               </NavLink>
-              {/* Ornate divider between items */}
-              {idx < navItems.length - 1 && (
-                <div className="flex items-center justify-center gap-2 my-2 px-6 opacity-50">
-                  <span className="h-px flex-1 bg-gradient-to-l from-transparent via-amber-300/30 to-transparent" />
-                  <span className="w-1 h-1 rotate-45 bg-amber-300/40" />
-                  <span className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-300/30 to-transparent" />
-                </div>
-              )}
               </div>
             );
           })}
