@@ -315,11 +315,24 @@ Deno.serve(async (req) => {
       department: e.departments?.name || null,
     }));
 
-    // 3) Ask AI to assign + schedule
-    let assignments: { recommendation_index: number; employee_id: string | null; reason: string }[] = [];
+    // 3) Ask AI to assign + schedule + break down into executive subtasks
+    let assignments: {
+      recommendation_index: number;
+      employee_id: string | null;
+      reason: string;
+      subtasks: { title: string; details: string; duration_days: number }[];
+    }[] = [];
     if (empList.length > 0) {
-      const sysPrompt = `أنت مدير تنفيذي خبير في توزيع المهام على الموظفين بناءً على القسم والدور الوظيفي. اختر لكل توصية الموظف الأنسب من قائمة الموظفين المتاحين، واذكر سببًا موجزًا (جملة واحدة) يربط دور الموظف بطبيعة التوصية. إذا لم يوجد موظف مناسب فعلًا اختر الأقرب من حيث المسؤولية.`;
-      const userPrompt = `الموظفون المتاحون:\n${JSON.stringify(empList, null, 2)}\n\nالتوصيات:\n${recs.map((r, i) => `${i}) [${r.impact}] ${r.title} — ${r.action}`).join("\n")}`;
+      const sysPrompt = `أنت مدير تنفيذي خبير. مهمتك لكل توصية:
+1) اختر الموظف الأنسب من القائمة (حسب القسم/الدور) واذكر سببًا موجزًا.
+2) فكّك التوصية إلى 4-7 مهام تنفيذية دقيقة، عملية، قابلة للقياس، بترتيب زمني منطقي.
+كل مهمة تنفيذية يجب أن:
+- تبدأ بفعل أمر واضح (أنشئ، اتصل بـ، أعدّ تقريرًا، حدّد، صمّم...).
+- تكون محددة تمامًا لا عامة (مثال: "اتصل بأكبر 20 متبرعًا غير نشط لمدة 6 أشهر" بدلاً من "تواصل مع المتبرعين").
+- تحتوي على تفاصيل تنفيذية: الكمية، الجهة، الأداة، أو المخرج المتوقع.
+- مدة تنفيذ مقدّرة بالأيام (1-30).
+استخدم العربية الاحترافية. لا تخترع أرقامًا غير مذكورة.`;
+      const userPrompt = `الموظفون المتاحون:\n${JSON.stringify(empList, null, 2)}\n\nالتوصيات:\n${recs.map((r, i) => `${i}) [${r.impact}] ${r.title}\n   الإجراء: ${r.action}`).join("\n\n")}`;
 
       const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -336,7 +349,7 @@ Deno.serve(async (req) => {
             type: "function",
             function: {
               name: "submit_assignments",
-              description: "Assign each recommendation to the most suitable employee",
+              description: "Assign each recommendation to the most suitable employee and break it into executive subtasks",
               parameters: {
                 type: "object",
                 properties: {
@@ -348,8 +361,22 @@ Deno.serve(async (req) => {
                         recommendation_index: { type: "number" },
                         employee_id: { type: "string" },
                         reason: { type: "string" },
+                        subtasks: {
+                          type: "array",
+                          minItems: 4,
+                          maxItems: 7,
+                          items: {
+                            type: "object",
+                            properties: {
+                              title: { type: "string", description: "مهمة تنفيذية دقيقة تبدأ بفعل أمر" },
+                              details: { type: "string", description: "تفاصيل تنفيذية واضحة (الكمية/الأداة/المخرج)" },
+                              duration_days: { type: "number", description: "مدة التنفيذ بالأيام (1-30)" },
+                            },
+                            required: ["title", "details", "duration_days"],
+                          },
+                        },
                       },
-                      required: ["recommendation_index", "employee_id", "reason"],
+                      required: ["recommendation_index", "employee_id", "reason", "subtasks"],
                     },
                   },
                 },
@@ -422,6 +449,7 @@ Deno.serve(async (req) => {
         assigned_employee_id: validEmpId,
         ai_suggested_employee_id: validEmpId,
         ai_suggestion_reason: a?.reason || null,
+        subtasks: a?.subtasks || [],
       };
     });
 
