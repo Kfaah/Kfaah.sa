@@ -5,12 +5,18 @@ type SubTask = {
   done?: boolean;
   status?: string;
   assigned_employee_id?: string | null;
+  start_date?: string | null;
+  due_date?: string | null;
   deliverable?: {
     type: string;
     title: string;
     content: string;
   } | null;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
   employee_report?: string | null;
+  report_file_url?: string | null;
+  report_file_name?: string | null;
   rating?: number | null;
   rating_notes?: string | null;
 };
@@ -50,13 +56,25 @@ const IMPACT_LABEL: Record<string, string> = {
   low: "منخفض",
 };
 
-const formatDate = (value: string | null) => value || "—";
+const formatDate = (value: string | null | undefined) => value || "—";
 
-function buildSheet(XLSX: typeof import("xlsx"), rows: (string | number)[][]) {
+function buildSheet(
+  XLSX: typeof import("xlsx"),
+  rows: (string | number)[][],
+  widths: number[],
+) {
   const sheet = XLSX.utils.aoa_to_sheet(rows);
-  sheet["!cols"] = rows[0].map((_, index) => ({
-    wch: [26, 18, 18, 20, 22, 18, 18, 18, 16, 40][index] || 22,
-  }));
+  sheet["!cols"] = rows[0].map((_, index) => ({ wch: widths[index] || 22 }));
+  // RTL
+  (sheet as any)["!views"] = [{ RTL: true }];
+  // Style header row (bold) — best-effort, xlsx community edition has limited styling
+  const headerRange = XLSX.utils.decode_range(sheet["!ref"] || "A1");
+  for (let c = headerRange.s.c; c <= headerRange.e.c; c++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c });
+    if (sheet[addr]) {
+      sheet[addr].s = { font: { bold: true } };
+    }
+  }
   return sheet;
 }
 
@@ -84,13 +102,15 @@ export async function exportActionPlanExcel({
     ["عدد المهام التنفيذية", tasks.reduce((sum, task) => sum + (task.subtasks?.length || 0), 0)],
   ];
 
-  const taskRows = [
-    ["المهمة الرئيسية", "الشرح", "المكلف", "الفترة", "الحالة", "الأثر", "ملاحظات الإنجاز", "عدد المهام التنفيذية"],
-    ...tasks.map((task) => [
+  const taskRows: (string | number)[][] = [
+    ["#", "المهمة الرئيسية", "الشرح", "المكلف", "تاريخ البدء", "تاريخ الاستحقاق", "الحالة", "الأثر", "ملاحظات الإنجاز", "عدد المهام التنفيذية"],
+    ...tasks.map((task, i) => [
+      i + 1,
       task.title,
       task.description || "—",
       task.assigned_employee_id ? employeeNameById.get(task.assigned_employee_id) || "—" : "غير مكلّف",
-      `${formatDate(task.start_date)} → ${formatDate(task.due_date)}`,
+      formatDate(task.start_date),
+      formatDate(task.due_date),
       STATUS_LABEL[task.status] || task.status,
       IMPACT_LABEL[task.impact] || task.impact,
       task.completion_notes || "—",
@@ -98,28 +118,54 @@ export async function exportActionPlanExcel({
     ]),
   ];
 
-  const executiveRows = [
-    ["الهدف", "المهمة التنفيذية", "التفاصيل", "المكلف", "المدة (أيام)", "الحالة", "المخرج الجاهز", "تقرير الموظف", "التقييم", "ملاحظة الإدارة"],
-    ...tasks.flatMap((task) => {
+  const executiveRows: (string | number)[][] = [
+    [
+      "#",
+      "الهدف الرئيسي",
+      "المهمة التنفيذية",
+      "التفاصيل",
+      "المكلف",
+      "تاريخ البدء",
+      "تاريخ الاستحقاق",
+      "المدة (أيام)",
+      "الحالة",
+      "المخرج الجاهز",
+      "رابط المادة الداعمة",
+      "تقرير الموظف",
+      "ملف التقرير",
+      "التقييم",
+      "ملاحظة التقييم",
+    ],
+    ...tasks.flatMap((task, ti) => {
       const assignee = task.assigned_employee_id ? employeeNameById.get(task.assigned_employee_id) || "—" : "غير مكلّف";
-
       if (!task.subtasks?.length) {
-        return [[task.title, "—", "لا توجد مهام تنفيذية مولدة بعد", assignee, "—", STATUS_LABEL[task.status] || task.status, "—", "—", "—", "—"]];
+        return [[
+          `${ti + 1}`,
+          task.title,
+          "—",
+          "لا توجد مهام تنفيذية مولدة بعد",
+          assignee,
+          "—", "—", "—",
+          STATUS_LABEL[task.status] || task.status,
+          "—", "—", "—", "—", "—", "—",
+        ]];
       }
-
-      return task.subtasks.map((subtask) => [
+      return task.subtasks.map((subtask, si) => [
+        `${ti + 1}.${si + 1}`,
         task.title,
         subtask.title,
         subtask.details,
         subtask.assigned_employee_id
           ? employeeNameById.get(subtask.assigned_employee_id) || "—"
           : assignee,
+        formatDate(subtask.start_date),
+        formatDate(subtask.due_date),
         subtask.duration_days,
         STATUS_LABEL[subtask.status || (subtask.done ? "completed" : task.status)] || task.status,
-        subtask.deliverable
-          ? `[${subtask.deliverable.title}]\n${subtask.deliverable.content}`
-          : "—",
+        subtask.deliverable ? `[${subtask.deliverable.title}]\n${subtask.deliverable.content}` : "—",
+        subtask.attachment_url || "—",
         subtask.employee_report || "—",
+        subtask.report_file_url || "—",
         subtask.rating ? `${subtask.rating}/5` : "—",
         subtask.rating_notes || "—",
       ]);
@@ -127,9 +173,24 @@ export async function exportActionPlanExcel({
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, buildSheet(XLSX, summaryRows), "ملخص الخطة");
-  XLSX.utils.book_append_sheet(workbook, buildSheet(XLSX, taskRows), "المهام الرئيسية");
-  XLSX.utils.book_append_sheet(workbook, buildSheet(XLSX, executiveRows), "المهام التنفيذية");
+  XLSX.utils.book_append_sheet(
+    workbook,
+    buildSheet(XLSX, summaryRows, [22, 60]),
+    "ملخص الخطة",
+  );
+  XLSX.utils.book_append_sheet(
+    workbook,
+    buildSheet(XLSX, taskRows, [5, 32, 50, 22, 14, 14, 16, 12, 40, 14]),
+    "المهام الرئيسية",
+  );
+  XLSX.utils.book_append_sheet(
+    workbook,
+    buildSheet(XLSX, executiveRows, [7, 28, 28, 50, 22, 14, 14, 12, 16, 50, 40, 40, 40, 12, 30]),
+    "المهام التنفيذية",
+  );
+
+  // Set workbook to RTL by default
+  (workbook as any).Workbook = { Views: [{ RTL: true }] };
 
   const fileName = `${(plan.title || "action-plan").replace(/[\\/:*?"<>|]/g, "-")}.xlsx`;
   XLSX.writeFile(workbook, fileName, { compression: true });
