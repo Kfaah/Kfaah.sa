@@ -112,8 +112,18 @@ export default function AdminActionPlanDetails() {
   const pending = tasks.filter(t => t.status === "pending").length;
   const progress = tasks.length ? (done / tasks.length) * 100 : 0;
 
+  const toggleSubtask = async (task: Task, idx: number) => {
+    const next = (task.subtasks || []).map((s, i) => i === idx ? { ...s, done: !s.done } : s);
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, subtasks: next } : t));
+    const { error } = await supabase
+      .from("action_plan_tasks")
+      .update({ subtasks: next as any })
+      .eq("id", task.id);
+    if (error) toast.error("تعذّر حفظ المهمة الفرعية");
+  };
+
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-8 space-y-6" dir="rtl">
       <Button variant="ghost" onClick={() => navigate("/admin/action-plans")} className="text-white hover:bg-white/10 gap-2">
         <ArrowRightCircle className="w-4 h-4" />
         رجوع للخطط
@@ -122,20 +132,20 @@ export default function AdminActionPlanDetails() {
       <Card className="bg-card border-border p-6 shadow-sm">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <div className="text-xs text-muted-foreground mb-1">{plan.org_name}</div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <ListChecks className="w-6 h-6 text-accent" />
+            <div className="text-sm text-muted-foreground mb-1">{plan.org_name}</div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              <ListChecks className="w-7 h-7 text-accent" />
               {plan.title}
             </h1>
-            {plan.description && <p className="text-sm text-muted-foreground mt-2 max-w-3xl">{plan.description}</p>}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-3">
-              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {plan.start_date} → {plan.end_date}</span>
-              <Badge variant={plan.status === "active" ? "default" : "secondary"}>{plan.status === "active" ? "نشطة" : plan.status}</Badge>
+            {plan.description && <p className="text-base text-muted-foreground mt-3 max-w-3xl leading-relaxed">{plan.description}</p>}
+            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-3">
+              <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {plan.start_date} → {plan.end_date}</span>
+              <Badge variant={plan.status === "active" ? "default" : "secondary"} className="text-sm">{plan.status === "active" ? "نشطة" : plan.status}</Badge>
             </div>
           </div>
-          <div className="text-right min-w-[180px]">
-            <div className="text-3xl font-bold text-accent">{progress.toFixed(0)}%</div>
-            <div className="text-xs text-muted-foreground">{done}/{tasks.length} مكتملة</div>
+          <div className="text-center min-w-[200px]">
+            <div className="text-5xl font-bold text-accent">{progress.toFixed(0)}%</div>
+            <div className="text-sm text-muted-foreground mt-1">{done}/{tasks.length} مكتملة</div>
             <Progress value={progress} className="mt-2" />
           </div>
         </div>
@@ -149,34 +159,74 @@ export default function AdminActionPlanDetails() {
 
       <div className="space-y-3">
         {tasks.map((t, i) => (
-          <Card key={t.id} className="bg-card border-border p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+          <Card key={t.id} className="bg-card border-border p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
               <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center font-bold text-sm shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-accent/15 text-accent flex items-center justify-center font-bold text-base shrink-0">
                   {i + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-foreground">{t.title}</h3>
-                  {t.description && <p className="text-sm text-muted-foreground mt-1">{t.description}</p>}
+                  <h3 className="text-xl font-bold text-foreground leading-tight">{t.title}</h3>
+                  {t.description && <p className="text-base text-muted-foreground mt-2 leading-relaxed">{t.description}</p>}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Badge className="bg-transparent text-foreground border border-border">
+                <Badge className="bg-transparent text-foreground border border-border text-sm px-3 py-1">
                   تأثير {IMPACT_LABEL[t.impact] || t.impact}
                 </Badge>
               </div>
             </div>
 
+            {/* Executive subtasks */}
+            {t.subtasks && t.subtasks.length > 0 && (
+              <div className="mb-4 bg-muted/30 border border-border rounded-lg p-4">
+                <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-accent" />
+                  المهام التنفيذية الدقيقة ({t.subtasks.filter(s => s.done).length}/{t.subtasks.length})
+                </h4>
+                <ul className="space-y-2.5">
+                  {t.subtasks.map((sub, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <button
+                        onClick={() => toggleSubtask(t, idx)}
+                        className="mt-0.5 shrink-0 text-accent hover:text-accent/80 transition"
+                        aria-label={sub.done ? "إلغاء الإنجاز" : "وضع علامة منجز"}
+                      >
+                        {sub.done ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div className={cn(
+                          "text-base font-semibold text-foreground leading-snug",
+                          sub.done && "line-through opacity-60"
+                        )}>
+                          {sub.title}
+                        </div>
+                        <p className={cn(
+                          "text-sm text-muted-foreground mt-1 leading-relaxed",
+                          sub.done && "line-through opacity-60"
+                        )}>
+                          {sub.details}
+                        </p>
+                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-1.5">
+                          <Clock className="w-3 h-3" /> {sub.duration_days} يوم
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="grid md:grid-cols-3 gap-3 mb-3">
               <div className="space-y-1.5">
-                <label className="text-[11px] text-muted-foreground font-semibold flex items-center gap-1">
+                <label className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
                   <User className="w-3 h-3" /> الموظف المكلَّف
                 </label>
                 <Select
                   value={t.assigned_employee_id || "unassigned"}
                   onValueChange={(v) => updateTask(t.id, { assigned_employee_id: v === "unassigned" ? null : v })}
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-10 text-sm">
                     <SelectValue placeholder="اختر..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -187,24 +237,24 @@ export default function AdminActionPlanDetails() {
                   </SelectContent>
                 </Select>
                 {t.ai_suggestion_reason && t.assigned_employee_id === t.ai_suggested_employee_id && (
-                  <p className="text-[10px] text-accent flex items-start gap-1 mt-1">
+                  <p className="text-xs text-accent flex items-start gap-1 mt-1">
                     <Sparkles className="w-3 h-3 mt-0.5 shrink-0" />
                     <span className="line-clamp-2">{t.ai_suggestion_reason}</span>
                   </p>
                 )}
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] text-muted-foreground font-semibold flex items-center gap-1">
+                <label className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
                   <Calendar className="w-3 h-3" /> الفترة
                 </label>
-                <div className="text-sm text-foreground bg-muted/50 px-3 py-2 rounded-md border border-border">
+                <div className="text-sm text-foreground bg-muted/50 px-3 py-2.5 rounded-md border border-border">
                   {t.start_date} → {t.due_date}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] text-muted-foreground font-semibold">الحالة</label>
+                <label className="text-xs text-muted-foreground font-semibold">الحالة</label>
                 <Select value={t.status} onValueChange={(v) => updateTask(t.id, { status: v })}>
-                  <SelectTrigger className={cn("h-9",
+                  <SelectTrigger className={cn("h-10 text-sm",
                     t.status === "completed" && "border-success/50 text-success",
                     t.status === "in_progress" && "border-accent/50 text-accent",
                   )}>
