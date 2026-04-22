@@ -189,35 +189,46 @@ export default function OrganizationProfile() {
         </div>
 
         {/* 1) Website URL on top — triggers identity extraction */}
-        <Card className="p-6 border-primary/30 bg-gradient-to-bl from-primary/5 to-transparent">
-          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <Globe className="w-5 h-5 text-primary" /> الموقع الإلكتروني للجمعية
-            {extracting && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1 font-normal">
-                <Loader2 className="w-3 h-3 animate-spin" /> جاري قراءة الموقع...
-              </span>
-            )}
-          </h2>
-          <p className="text-xs text-muted-foreground mb-3">
-            بمجرد إدخال الموقع، تقوم المنصة تلقائياً بجلب الشعار، الألوان، المتجر، وحسابات التواصل.
-          </p>
-          <div className="flex gap-2">
-            <Input
-              dir="ltr" placeholder="https://..." value={form.website_url}
-              onChange={(e) => setForm({ ...form, website_url: e.target.value })}
-              onBlur={(e) => autoExtract(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              type="button" className="gap-1.5"
-              onClick={() => autoExtract(form.website_url)}
-              disabled={!form.website_url || extracting}
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-              {extracting ? "جاري الجلب..." : "جلب الهوية"}
-            </Button>
+        <div
+          className="rounded-2xl p-6 shadow-card text-white relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, hsl(190 55% 26%) 0%, hsl(195 65% 18%) 60%, hsl(200 70% 14%) 100%)" }}
+        >
+          <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-amber-300/60 rounded-tl-md" />
+          <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-amber-300/60 rounded-br-md" />
+          <div className="relative z-10">
+            <h2 className="font-bold text-lg mb-2 flex items-center gap-2 text-white">
+              <div className="w-9 h-9 rounded-lg bg-white/10 ring-1 ring-amber-300/50 flex items-center justify-center">
+                <Globe className="w-5 h-5 text-amber-200" />
+              </div>
+              الموقع الإلكتروني للجمعية
+              {extracting && (
+                <span className="text-xs text-amber-100/80 flex items-center gap-1 font-normal">
+                  <Loader2 className="w-3 h-3 animate-spin" /> جاري قراءة الموقع...
+                </span>
+              )}
+            </h2>
+            <p className="text-xs text-amber-100/70 mb-4">
+              بمجرد إدخال الموقع، تقوم المنصة تلقائياً بجلب الشعار، الألوان، المتجر، وحسابات التواصل.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                dir="ltr" placeholder="https://..." value={form.website_url}
+                onChange={(e) => setForm({ ...form, website_url: e.target.value })}
+                onBlur={(e) => autoExtract(e.target.value)}
+                className="flex-1 bg-white/95 text-foreground border-amber-300/40 placeholder:text-muted-foreground focus-visible:ring-amber-300"
+              />
+              <Button
+                type="button"
+                className="gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-semibold shadow-md"
+                onClick={() => autoExtract(form.website_url)}
+                disabled={!form.website_url || extracting}
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+                {extracting ? "جاري الجلب..." : "جلب الهوية"}
+              </Button>
+            </div>
           </div>
-        </Card>
+        </div>
 
         {/* 2) Identity: Logo + Colors */}
         {(form.logo_url || form.primary_color) && (
