@@ -106,10 +106,30 @@ export default function AdminReports() {
       const rows = themeRows(theme, selected);
       rows.forEach(r => line(r.label, r.value));
     } else {
-      // executive: just dump the text
-      const lines = doc.splitTextToSize(execText || "Generate executive report first.", 510);
-      doc.setFontSize(11);
-      doc.text(lines, 40, y);
+      // executive: render summary + sections (basic; PowerPoint export is the polished output)
+      if (!execReport) {
+        doc.setFontSize(11);
+        doc.text("Generate executive report first.", 40, y);
+      } else {
+        const sumLines = doc.splitTextToSize(execReport.executive_summary || "", 510);
+        doc.setFontSize(11);
+        doc.text(sumLines, 40, y);
+        y += sumLines.length * 14 + 10;
+        for (const s of execReport.sections || []) {
+          doc.setFontSize(13);
+          doc.text(s.title, 555, y, { align: "right" });
+          y += 18;
+          doc.setFontSize(10);
+          for (const r of s.rows) {
+            const txt = `${r.metric}: ${r.result}  —  ${r.analysis}`;
+            const wrapped = doc.splitTextToSize(txt, 510);
+            doc.text(wrapped, 555, y, { align: "right" });
+            y += wrapped.length * 12 + 4;
+            if (y > 780) { doc.addPage(); y = 50; }
+          }
+          y += 8;
+        }
+      }
     }
 
     doc.save(`${selected.org_name.replace(/\s+/g, "_")}_${mode}_${theme}.pdf`);
