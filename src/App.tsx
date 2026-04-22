@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { UserProvider } from "@/contexts/UserContext";
 import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeContext";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
+import { OrgBrandingProvider } from "@/contexts/OrgBrandingContext";
 import { PreviewModeBanner } from "@/components/preview/PreviewModeBanner";
 import Index from "./pages/Index";
 import Employees from "./pages/Employees";
@@ -195,13 +196,15 @@ function AppContent() {
   return (
     <PreviewModeProvider>
       <OrganizationProvider>
-        <UserProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <AppRoutes />
-          </TooltipProvider>
-        </UserProvider>
+        <OrgBrandingProvider>
+          <UserProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <AppRoutes />
+            </TooltipProvider>
+          </UserProvider>
+        </OrgBrandingProvider>
       </OrganizationProvider>
     </PreviewModeProvider>
   );

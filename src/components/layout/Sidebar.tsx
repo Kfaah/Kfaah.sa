@@ -27,6 +27,7 @@ import {
 import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
@@ -83,6 +84,7 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { user, previewAsEmployee, setPreviewAsEmployee, previewingEmployee } = useUser();
   const { signOut, user: authUser } = useAuth();
+  const branding = useOrgBranding();
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
 
   // Check if user is actually an admin (not in preview mode)
