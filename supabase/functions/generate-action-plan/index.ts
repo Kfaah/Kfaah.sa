@@ -694,17 +694,23 @@ Deno.serve(async (req) => {
       const cleanedSubtasks = await Promise.all((a?.subtasks || []).map(async (s, sIdx) => {
         let deliverable = s.deliverable;
         let attachment: { url: string; name: string } | null = null;
-        // For donor_list: build a real CSV from real DB data
-        if (deliverable?.type === "donor_list") {
-          const file = await buildDonorListFile(admin, organization_id, deliverable.content, plan.id, i, sIdx);
-          if (file) {
-            attachment = { url: file.url, name: file.name };
-            deliverable = {
-              ...deliverable,
-              content:
-                deliverable.content +
-                `\n\n📎 تم تجهيز ملف جاهز يحتوي ${file.count} سجلًا (الاسم، الجوال، البريد، المدينة، الاهتمام، السقف التقديري). الموظف ينفذ فقط.`,
-            };
+        if (deliverable) {
+          if (deliverable.type === "donor_list") {
+            // Build a real CSV from real DB data (or a 50-prospect template if it's a prospect list)
+            const file = await buildDonorListFile(admin, organization_id, deliverable.content, plan.id, i, sIdx);
+            if (file) {
+              attachment = { url: file.url, name: file.name };
+              deliverable = {
+                ...deliverable,
+                content:
+                  deliverable.content +
+                  `\n\n📎 ملف جاهز: ${file.count} سجلًا (الاسم، الجوال، البريد، الاهتمام، السقف التقديري). الموظف ينفذ فقط.`,
+              };
+            }
+          } else {
+            // For every other deliverable type — produce a downloadable supporting file
+            const file = await buildGenericDeliverableFile(admin, organization_id, plan.id, i, sIdx, deliverable);
+            if (file) attachment = { url: file.url, name: file.name };
           }
         }
         // Round-robin fallback: never leave a subtask without an assignee
