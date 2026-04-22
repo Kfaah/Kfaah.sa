@@ -149,7 +149,7 @@ export default function AdminAnalytics() {
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-primary" />
+            <Sparkles className="w-8 h-8 text-admin-hub" />
             التحليل العميق
           </h1>
           <p className="text-white mt-1">اختر فترة وجمعية لرؤية تحليل تفصيلي وتوصيات ذكية ثابتة لنفس البيانات</p>
@@ -177,7 +177,7 @@ export default function AdminAnalytics() {
               else { setRange(buildPreset(k)); }
             }}
           >
-            <SelectTrigger className="w-[200px] bg-primary text-primary-foreground border-primary hover:bg-primary/90 font-semibold gap-2">
+            <SelectTrigger className="w-[200px] bg-admin-hub text-white border-admin-hub hover:bg-admin-hub/90 font-semibold gap-2">
               <CalendarDays className="w-4 h-4" />
               <SelectValue placeholder="الفترة">
                 {periodKey === "custom" ? range.label : undefined}
@@ -219,7 +219,7 @@ export default function AdminAnalytics() {
           <Button
             onClick={() => runAI(false)}
             disabled={!selected || aiLoading}
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="gap-2 bg-admin-hub text-white hover:bg-admin-hub/90"
           >
             {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             تحليل ذكي بالـ AI

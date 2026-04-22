@@ -83,7 +83,7 @@ export default function AdminCompare() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <GitCompareArrows className="w-8 h-8 text-primary" />
+            <GitCompareArrows className="w-8 h-8 text-admin-hub" />
             المقارنة بين الجمعيات
           </h1>
           <p className="text-white mt-1">
@@ -99,10 +99,10 @@ export default function AdminCompare() {
 
       {/* Formula explanation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-0 bg-primary/10 border-primary/20 shadow-sm overflow-hidden">
+        <Card className="p-0 bg-admin-hub-soft border-admin-hub/20 shadow-sm overflow-hidden">
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-primary/20 bg-primary/5">
-              <div className="w-11 h-11 rounded-xl bg-white/90 border border-primary/20 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-admin-hub/20 bg-admin-hub/5">
+              <div className="w-11 h-11 rounded-xl bg-white/90 border border-admin-hub/20 flex items-center justify-center shrink-0">
                 <TrendingUp className="w-5 h-5 text-orange-500" />
               </div>
               <div className="flex-1">
@@ -120,10 +120,10 @@ export default function AdminCompare() {
             </div>
           </div>
         </Card>
-        <Card className="p-0 bg-primary/10 border-primary/20 shadow-sm overflow-hidden">
+        <Card className="p-0 bg-admin-hub-soft border-admin-hub/20 shadow-sm overflow-hidden">
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-primary/20 bg-primary/5">
-              <div className="w-11 h-11 rounded-xl bg-white/90 border border-primary/20 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-admin-hub/20 bg-admin-hub/5">
+              <div className="w-11 h-11 rounded-xl bg-white/90 border border-admin-hub/20 flex items-center justify-center shrink-0">
                 <Gauge className="w-5 h-5 text-orange-500" />
               </div>
               <div className="flex-1">
@@ -176,7 +176,7 @@ export default function AdminCompare() {
                     <div key={m.org_id}
                          className={cn(
                            "relative rounded-md overflow-hidden border transition-all",
-                            isTop ? "border-primary/40" : "border-border/60 hover:border-border"
+                            isTop ? "border-admin-hub/40" : "border-border/60 hover:border-border"
                          )}>
                       {/* fill bar */}
                       <div className="absolute inset-y-0 right-0 transition-all"
@@ -191,7 +191,7 @@ export default function AdminCompare() {
                         </span>
                         <span className={cn(
                           "text-xs font-bold tabular-nums shrink-0",
-                          isTop ? "text-primary" : "text-foreground/80"
+                          isTop ? "text-admin-hub" : "text-foreground/80"
                         )}>
                           {Math.round(v)}
                         </span>
@@ -219,7 +219,7 @@ export default function AdminCompare() {
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>الترتيب حسب:</span>
-            <Badge className="bg-primary/10 text-primary border-primary/30">
+            <Badge className="bg-admin-hub-soft text-admin-hub border-admin-hub/30">
               {sortable.find(s => s.key === sortKey)?.label}
             </Badge>
           </div>
@@ -235,7 +235,7 @@ export default function AdminCompare() {
                   <th key={s.key as string}
                       className={cn(
                         "px-1.5 py-4 text-center text-foreground font-bold text-[13px] leading-snug cursor-pointer hover:bg-muted select-none align-middle",
-                        sortKey === s.key && "text-primary bg-primary/10"
+                        sortKey === s.key && "text-admin-hub bg-admin-hub-soft"
                       )}
                       onClick={() => {
                         if (sortKey === s.key) setSortDesc(!sortDesc);
@@ -275,7 +275,7 @@ export default function AdminCompare() {
                           {isScore ? (
                             <ScoreBadge value={v} display={display} />
                           ) : (
-                            <span dir="ltr" className={cn("inline-block text-base font-semibold tabular-nums", sortKey === s.key && "text-primary font-bold")}>{display}</span>
+                            <span dir="ltr" className={cn("inline-block text-base font-semibold tabular-nums", sortKey === s.key && "text-admin-hub font-bold")}>{display}</span>
                           )}
                         </td>
                       );
@@ -298,8 +298,8 @@ export default function AdminCompare() {
 
 function ScoreBadge({ value, display }: { value: number; display: string }) {
   const v = Math.max(0, Math.min(100, value));
-  const color = v >= 75 ? "bg-primary/15 text-primary border-primary/40"
-              : v >= 50 ? "bg-primary/10 text-primary border-primary/30"
+  const color = v >= 75 ? "bg-admin-hub/15 text-admin-hub border-admin-hub/40"
+              : v >= 50 ? "bg-admin-hub-soft text-admin-hub border-admin-hub/30"
               : v >= 25 ? "bg-warning/15 text-warning border-warning/40"
               : "bg-destructive/15 text-destructive border-destructive/40";
   return (

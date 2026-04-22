@@ -123,12 +123,12 @@ export default function AdminActionPlans() {
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <ListChecks className="w-8 h-8 text-primary" />
+            <ListChecks className="w-8 h-8 text-admin-hub" />
             الخطط من التوصيات
           </h1>
           <p className="text-white/85 mt-1">حوّل توصيات التحليل الذكي إلى خطة عمل مزمنة، مكلَّفة، وقابلة للمتابعة</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={() => setDialogOpen(true)} className="gap-2 bg-admin-hub text-white hover:bg-admin-hub/90">
           <Sparkles className="w-4 h-4" />
           توليد خطة جديدة من آخر تحليل
         </Button>
@@ -154,7 +154,7 @@ export default function AdminActionPlans() {
             return (
               <div key={orgId} className="space-y-3">
                 <div className="flex items-center gap-2 text-white">
-                  <Building2 className="w-5 h-5 text-primary" />
+                  <Building2 className="w-5 h-5 text-admin-hub" />
                   <h2 className="font-bold text-lg">{orgName}</h2>
                   <Badge className="bg-white/15 text-white border-white/30">{orgPlans.length} خطة</Badge>
                 </div>
@@ -186,7 +186,7 @@ export default function AdminActionPlans() {
                         </div>
                         <Progress value={p.tasks_count ? (p.tasks_done! / p.tasks_count!) * 100 : 0} />
                       </div>
-                      <Button variant="ghost" size="sm" className="w-full mt-3 gap-1 text-primary hover:text-primary">
+                      <Button variant="ghost" size="sm" className="w-full mt-3 gap-1 text-admin-hub hover:text-admin-hub">
                         فتح الخطة <ArrowLeftCircle className="w-3.5 h-3.5" />
                       </Button>
                     </Card>
@@ -202,7 +202,7 @@ export default function AdminActionPlans() {
         <DialogContent dir="rtl" className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
+              <Sparkles className="w-5 h-5 text-admin-hub" />
               توليد خطة من التحليل الذكي
             </DialogTitle>
             <DialogDescription>
