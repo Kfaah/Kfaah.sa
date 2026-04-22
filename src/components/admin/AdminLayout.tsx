@@ -213,13 +213,13 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 />
                 <div
                   className={cn(
-                    "relative w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 border border-white shadow-sm",
+                    "relative w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 border border-white shadow-sm",
                     active
                       ? `${item.bg} ${item.color} ring-2 ring-amber-300/70`
                       : `${item.bg} ${item.color} ring-1 ${item.ring} group-hover:shadow-md group-hover:scale-110 group-hover:rotate-3`
                   )}
                 >
-                  <Icon className="w-[20px] h-[20px]" strokeWidth={2.4} />
+                  <Icon className="w-[22px] h-[22px]" strokeWidth={2.4} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={cn(
