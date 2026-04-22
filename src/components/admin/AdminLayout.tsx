@@ -29,7 +29,7 @@ const navItems = [
     color: ICON_COLOR, bg: "bg-gradient-to-br from-fuchsia-500 to-pink-600", ring: "ring-fuchsia-400/40" },
   { to: "/admin/action-plans", label: "الخطط من التوصيات", icon: ListChecks, end: false,
     desc: "تحويل التحليل إلى خطة وتكليف",
-    color: ICON_COLOR, bg: "bg-gradient-to-br from-emerald-400 to-emerald-600", ring: "ring-emerald-400/40" },
+    color: ICON_COLOR, bg: "bg-[image:var(--gradient-primary)]", ring: "ring-primary/40" },
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
     desc: "تقارير موضوعية وتنفيذية سردية",
     color: ICON_COLOR, bg: "bg-gradient-to-br from-rose-400 to-pink-600", ring: "ring-rose-400/40" },
@@ -233,7 +233,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 <div className="flex-1 min-w-0">
                   <div className={cn(
                     "text-[12.5px] font-bold leading-tight truncate tracking-tight transition-colors",
-                    active ? "text-emerald-800" : "text-slate-800 group-hover:text-emerald-800"
+                    active ? "text-primary" : "text-slate-800 group-hover:text-primary"
                   )}>
                     {item.label}
                   </div>
