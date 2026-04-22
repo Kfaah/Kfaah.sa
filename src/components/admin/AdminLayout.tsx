@@ -164,7 +164,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-2.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = item.end
@@ -176,21 +176,27 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 to={item.to}
                 end={item.end}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all border",
+                  "group relative flex items-center gap-3 rounded-xl pr-3 pl-3 py-2.5 transition-all border-2",
                   active
-                    ? "bg-gradient-to-l from-slate-50 via-white to-white border-amber-300/60 shadow-[0_4px_14px_-6px_rgba(15,23,42,0.18)]"
-                    : "border-transparent hover:bg-slate-50 hover:border-slate-200/70"
+                    ? "bg-gradient-to-l from-slate-50 via-white to-white border-amber-400/70 shadow-[0_6px_18px_-8px_rgba(15,23,42,0.25)]"
+                    : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-[0_4px_12px_-6px_rgba(15,23,42,0.15)]"
                 )}
               >
-                {active && (
-                  <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-[3px] rounded-l-full bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 shadow-[0_0_8px_rgba(217,119,6,0.5)]" />
-                )}
+                {/* Right vertical accent bar (always visible, stronger when active) */}
+                <span
+                  className={cn(
+                    "absolute -right-[2px] top-1/2 -translate-y-1/2 w-[4px] rounded-l-full transition-all",
+                    active
+                      ? "h-9 bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 shadow-[0_0_10px_rgba(217,119,6,0.6)]"
+                      : "h-6 bg-slate-200 group-hover:bg-amber-300"
+                  )}
+                />
                 <div
                   className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all",
+                    "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all border-2 border-white",
                     active
-                      ? `${item.activeBg} ${item.activeText} shadow-lg ring-2 ring-white`
-                      : `${item.bg} ${item.color} group-hover:scale-105 group-hover:shadow-md`
+                      ? `${item.activeBg} ${item.activeText} shadow-lg ring-2 ring-amber-300/70`
+                      : `${item.bg} ${item.color} ring-1 ring-slate-200 group-hover:ring-amber-300/60 group-hover:shadow-md`
                   )}
                 >
                   <Icon className="w-[18px] h-[18px]" />
