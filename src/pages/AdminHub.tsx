@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import {
   Building2, Plus, Edit3, Power, PowerOff, Mail, Phone, Crown,
-  Users, LogOut, ArrowLeftCircle, Link2, Copy, Check,
+  Users, LogOut, ArrowLeftCircle, Link2, Copy, Check, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
