@@ -27,6 +27,7 @@ import {
 import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
@@ -83,6 +84,7 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { user, previewAsEmployee, setPreviewAsEmployee, previewingEmployee } = useUser();
   const { signOut, user: authUser } = useAuth();
+  const branding = useOrgBranding();
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
 
   // Check if user is actually an admin (not in preview mode)
@@ -378,8 +380,8 @@ export function Sidebar() {
               {/* Logo container with zoom animation and shimmer */}
               <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform">
                 <img
-                  src={atefLogoIcon}
-                  alt="جمعية عطف"
+                  src={branding.logoUrl || atefLogoIcon}
+                  alt={branding.orgName || "الجمعية"}
                   className="w-28 h-28 object-contain"
                   style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
                 />
@@ -401,7 +403,7 @@ export function Sidebar() {
             {!collapsed && (
               <div className="text-center space-y-1">
                 <h1 className="text-xl font-bold text-slate-800 whitespace-nowrap tracking-wide">
-                  جمعية عطف للأيتام
+                  {branding.orgName || "الجمعية"}
                 </h1>
                 <div className="relative">
                   <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600">
