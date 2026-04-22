@@ -92,6 +92,158 @@ export type Database = {
           },
         ]
       }
+      action_plan_tasks: {
+        Row: {
+          action_plan_id: string
+          ai_suggested_employee_id: string | null
+          ai_suggestion_reason: string | null
+          assigned_employee_id: string | null
+          completed_at: string | null
+          completion_notes: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          impact: string
+          organization_id: string
+          priority: number
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_plan_id: string
+          ai_suggested_employee_id?: string | null
+          ai_suggestion_reason?: string | null
+          assigned_employee_id?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          impact?: string
+          organization_id: string
+          priority?: number
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_plan_id?: string
+          ai_suggested_employee_id?: string | null
+          ai_suggestion_reason?: string | null
+          assigned_employee_id?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          impact?: string
+          organization_id?: string
+          priority?: number
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_plan_tasks_action_plan_id_fkey"
+            columns: ["action_plan_id"]
+            isOneToOne: false
+            referencedRelation: "action_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_plan_tasks_ai_suggested_employee_id_fkey"
+            columns: ["ai_suggested_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_plan_tasks_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_plan_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      action_plans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          organization_id: string
+          progress: number
+          source: string
+          source_insight_id: string | null
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          organization_id: string
+          progress?: number
+          source?: string
+          source_insight_id?: string | null
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          organization_id?: string
+          progress?: number
+          source?: string
+          source_insight_id?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_plans_source_insight_id_fkey"
+            columns: ["source_insight_id"]
+            isOneToOne: false
+            referencedRelation: "admin_ai_insights_cache"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       active_task: {
         Row: {
           created_at: string
@@ -130,6 +282,53 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_ai_insights_cache: {
+        Row: {
+          created_at: string
+          generated_at: string
+          generated_by: string | null
+          id: string
+          insight: Json
+          metrics_snapshot: Json | null
+          organization_id: string
+          period_from: string | null
+          period_label: string
+          period_to: string | null
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          insight: Json
+          metrics_snapshot?: Json | null
+          organization_id: string
+          period_from?: string | null
+          period_label: string
+          period_to?: string | null
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          insight?: Json
+          metrics_snapshot?: Json | null
+          organization_id?: string
+          period_from?: string | null
+          period_label?: string
+          period_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_ai_insights_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
