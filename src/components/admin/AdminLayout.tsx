@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, GitCompareArrows, Sparkles, FileBarChart2,
-  Building2, LogOut, Crown, ArrowLeftCircle, ListChecks,
+  Building2, LogOut, Crown, ArrowLeftCircle, ListChecks, Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +28,9 @@ const navItems = [
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
     desc: "تقارير موضوعية وتنفيذية سردية",
     color: "text-rose-600", bg: "bg-rose-100", activeBg: "bg-rose-500", activeText: "text-white" },
+  { to: "/admin/innovation", label: "الابتكار والتحديث", icon: Lightbulb, end: false,
+    desc: "أفكار AI ابتكارية ونقاش تفاعلي",
+    color: "text-amber-600", bg: "bg-amber-100", activeBg: "bg-amber-500", activeText: "text-white" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
