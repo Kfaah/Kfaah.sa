@@ -1,5 +1,3 @@
-import * as XLSX from "xlsx";
-
 type SubTask = {
   title: string;
   details: string;
@@ -44,7 +42,7 @@ const IMPACT_LABEL: Record<string, string> = {
 
 const formatDate = (value: string | null) => value || "—";
 
-function buildSheet(rows: (string | number)[][]) {
+function buildSheet(XLSX: typeof import("xlsx"), rows: (string | number)[][]) {
   const sheet = XLSX.utils.aoa_to_sheet(rows);
   sheet["!cols"] = rows[0].map((_, index) => ({
     wch: [26, 18, 18, 20, 22, 18, 18, 18, 16, 40][index] || 22,
@@ -52,7 +50,7 @@ function buildSheet(rows: (string | number)[][]) {
   return sheet;
 }
 
-export function exportActionPlanExcel({
+export async function exportActionPlanExcel({
   plan,
   tasks,
   employees,
@@ -61,6 +59,7 @@ export function exportActionPlanExcel({
   tasks: Task[];
   employees: { id: string; full_name: string; job_role: string }[];
 }) {
+  const XLSX = await import("xlsx");
   const employeeNameById = new Map(employees.map((employee) => [employee.id, employee.full_name]));
 
   const summaryRows = [
@@ -112,9 +111,9 @@ export function exportActionPlanExcel({
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, buildSheet(summaryRows), "ملخص الخطة");
-  XLSX.utils.book_append_sheet(workbook, buildSheet(taskRows), "المهام الرئيسية");
-  XLSX.utils.book_append_sheet(workbook, buildSheet(executiveRows), "المهام التنفيذية");
+  XLSX.utils.book_append_sheet(workbook, buildSheet(XLSX, summaryRows), "ملخص الخطة");
+  XLSX.utils.book_append_sheet(workbook, buildSheet(XLSX, taskRows), "المهام الرئيسية");
+  XLSX.utils.book_append_sheet(workbook, buildSheet(XLSX, executiveRows), "المهام التنفيذية");
 
   const fileName = `${(plan.title || "action-plan").replace(/[\\/:*?"<>|]/g, "-")}.xlsx`;
   XLSX.writeFile(workbook, fileName, { compression: true });
