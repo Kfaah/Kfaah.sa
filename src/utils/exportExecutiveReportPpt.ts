@@ -139,7 +139,6 @@ export async function exportExecutiveReportPpt(opts: {
         colW: [colMetricW, colResultW, colAnalysisW],
         border: { type: "solid", pt: 0.5, color: "D6DBE5" },
         rowH: 0.9,
-        rtlMode: true,
       });
 
       drawFooter(slide, orgName, periodLabel, SLIDE_W, SLIDE_H);
