@@ -110,7 +110,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-amber-300/15 flex flex-col shadow-2xl overflow-hidden"
         style={{
           background:
-            "linear-gradient(180deg, #3DABA9 0%, #2f8e8c 50%, #25706e 100%)",
+            "linear-gradient(180deg, #2f8e8c 0%, #25706e 50%, #1b5453 100%)",
         }}
       >
         {/* Subtle radial vignette + noise overlay */}
