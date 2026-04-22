@@ -21,27 +21,35 @@ Deno.serve(async (req) => {
       });
     }
 
-    const sys = `أنت مستشار تنفيذي يكتب تقريرًا رسميًا لمجلس إدارة جمعية خيرية. أسلوبك سرديّ احترافي راقٍ، خالٍ من الانفعال أو المبالغة، يستند فقط للأرقام المعطاة. لا تخترع أي معلومة. اكتب بصيغة الغائب.`;
+    const sys = `أنت مستشار تنفيذي لجمعية خيرية. أعد تقريرًا منظمًا على شكل JSON فقط (بدون أي نص خارج JSON). كل بند يحتوي على "النتيجة/الواقع" و"التحليل والتوجيه". لا تخترع أرقامًا. اكتب باحترافية وإيجاز.`;
     const user = `بيانات الجمعية "${metrics.org_name}" خلال الفترة: ${period_label || "منذ البداية"}
 - إجمالي الإيرادات: ${Math.round(metrics.total_donated).toLocaleString("ar")} ر.س
 - عدد التبرعات: ${metrics.donations_count}
 - متوسط التبرع: ${Math.round(metrics.avg_donation).toLocaleString("ar")} ر.س
-- المتبرعون: ${metrics.donors} منهم ${metrics.recurring_donors} منتظم
+- المتبرعون النشطون: ${metrics.donors} (المنتظمون: ${metrics.recurring_donors})
+- إجمالي قاعدة المتبرعين: ${metrics.donors_total}
 - السلال المتروكة: ${metrics.abandoned_carts} (مسترجع: ${metrics.recovered_carts}, نسبة: ${metrics.recovery_rate.toFixed(1)}%)
 - التحويلات البنكية: ${metrics.bank_transfers} (مطابقة: ${metrics.matched_transfers})
-- الموظفون: ${metrics.employees_count}, المهام: ${metrics.tasks_total} (مكتمل: ${metrics.tasks_completed}, نسبة: ${metrics.task_completion_rate.toFixed(1)}%)
+- الموظفون: ${metrics.employees_count} | المهام: ${metrics.tasks_total} (مكتمل: ${metrics.tasks_completed}, نسبة: ${metrics.task_completion_rate.toFixed(1)}%)
 - الحملات: ${metrics.campaigns}
 - الدرجات (0-100): جمع التبرعات ${metrics.fundraising_score.toFixed(0)} / تفاعل ${metrics.donor_engagement_score.toFixed(0)} / خدمة ${metrics.service_score.toFixed(0)} / فريق ${metrics.team_score.toFixed(0)} / إجمالي ${metrics.overall_score.toFixed(0)}
 
-اكتب تقريرًا رسميًا منظَّمًا في الأقسام التالية بصياغة سردية متماسكة:
-1. مقدمة تنفيذية (فقرة واحدة)
-2. أداء جمع التبرعات والإيرادات
-3. قاعدة المتبرعين وسلوكهم
-4. كفاءة العمليات وخدمة المتبرع
-5. الأداء التشغيلي وفريق العمل
-6. التقييم الختامي والتوجهات المقترحة (فقرة)
+أعد JSON بالشكل التالي حصرًا:
+{
+  "executive_summary": "فقرة موجزة (٣-٤ أسطر) تلخص الحالة العامة.",
+  "overall_verdict": "ممتاز | جيد | متوسط | يحتاج تحسين | حرج",
+  "sections": [
+    {
+      "title": "أداء جمع التبرعات",
+      "rows": [
+        { "metric": "اسم المؤشر بإيجاز", "result": "الرقم/الواقع كنص قصير", "analysis": "التحليل والتوجيه التنفيذي في جملتين كحد أقصى" }
+      ]
+    }
+  ],
+  "strategic_recommendations": ["توصية ١", "توصية ٢", "توصية ٣"]
+}
 
-اجعل العناوين على شكل **عنوان** بين علامتي نجمتين، والفقرات قصيرة وواضحة.`;
+يجب أن تشمل الأقسام: "أداء جمع التبرعات", "قاعدة المتبرعين", "كفاءة العمليات وخدمة المتبرع", "الأداء التشغيلي والفريق", "التقييم العام". كل قسم يحوي 3-5 صفوف على الأقل. لا نص خارج JSON.`;
 
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -50,6 +58,7 @@ Deno.serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         temperature: 0.2,
         seed: 11,
+        response_format: { type: "json_object" },
         messages: [{ role: "system", content: sys }, { role: "user", content: user }],
       }),
     });
@@ -58,8 +67,17 @@ Deno.serve(async (req) => {
     if (r.status === 402) return new Response(JSON.stringify({ error: "نفذ الرصيد" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!r.ok) throw new Error("AI gateway error");
     const j = await r.json();
-    const text = j.choices?.[0]?.message?.content || "";
-    return new Response(JSON.stringify({ report: text }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const text = j.choices?.[0]?.message?.content || "{}";
+    let parsed: any = null;
+    try { parsed = JSON.parse(text); }
+    catch {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) { try { parsed = JSON.parse(match[0]); } catch { /* ignore */ } }
+    }
+    if (!parsed || !parsed.sections) {
+      return new Response(JSON.stringify({ error: "تعذّر تحليل استجابة الذكاء الاصطناعي", raw: text }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ report: parsed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     console.error("executive-report error:", e);
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
