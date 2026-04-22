@@ -296,14 +296,8 @@ export function Sidebar() {
       >
         <div className={cn(
           "w-10 h-10 rounded-lg flex items-center justify-center shadow-md",
-          isActive ? "bg-white/20" : (brandPrimary ? "" : item.iconBg)
-        )}
-        style={
-          !isActive && brandPrimary
-            ? { backgroundImage: `linear-gradient(135deg, ${brandPrimary}, ${brandAccent})` }
-            : undefined
-        }
-        >
+          isActive ? "bg-white/20" : item.iconBg
+        )}>
           <item.icon className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
