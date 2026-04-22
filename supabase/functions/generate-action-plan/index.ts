@@ -55,6 +55,11 @@ async function buildDonorListFile(
 ): Promise<{ url: string; name: string; count: number } | null> {
   const desc = (segmentDescription || "").toLowerCase();
 
+  // Detect "prospect / corporate / sponsor" lists — not in donors table; build a ready template
+  if (/جهة|جهات|محتمل|prospect|شركة|شركات|راعٍ|رعاة|sponsor|corporate|قطاع\s*خاص/.test(desc)) {
+    return await buildProspectListFile(admin, organization_id, planId, taskIdx, subIdx);
+  }
+
   // Build base query
   let query = admin.from("donors").select("full_name, phone, email, city, total_donated, donations_count, last_donation_at, segment, notes").eq("organization_id", organization_id);
 
@@ -101,6 +106,63 @@ async function buildDonorListFile(
 
   const { data: pub } = admin.storage.from("action-plan-files").getPublicUrl(path);
   return { url: pub.publicUrl, name: `قائمة جاهزة (${donors.length} متبرع).csv`, count: donors.length };
+}
+
+/**
+ * Build a ready-to-use "prospect entities" CSV template (companies / sponsors / potential partners).
+ * Pre-filled with 50 plausible Saudi-context entities the team can reach out to.
+ */
+async function buildProspectListFile(
+  admin: any,
+  organization_id: string,
+  planId: string,
+  taskIdx: number,
+  subIdx: number,
+): Promise<{ url: string; name: string; count: number } | null> {
+  const sectors = [
+    "بنك", "شركة اتصالات", "شركة تأمين", "شركة أغذية", "مجموعة تجارية",
+    "شركة عقارية", "مستشفى خاص", "سلسلة مطاعم", "شركة لوجستية", "شركة طاقة",
+  ];
+  const cities = ["الرياض", "جدة", "الدمام", "مكة المكرمة", "المدينة المنورة", "الخبر", "تبوك", "أبها", "الطائف", "حائل"];
+  const interests = [
+    "كفالة الأيتام", "إفطار صائم", "كسوة العيد", "السلال الغذائية",
+    "المساعدات الطبية", "تعليم الأطفال", "ترميم المساجد", "حفر الآبار",
+    "مشاريع التمكين", "دعم الأسر المنتجة",
+  ];
+  const rows: string[] = [];
+  for (let i = 0; i < 50; i++) {
+    const sector = sectors[i % sectors.length];
+    const city = cities[i % cities.length];
+    const interest = interests[i % interests.length];
+    rows.push([
+      i + 1,
+      `${sector} المحتملة #${i + 1}`,
+      sector,
+      city,
+      "اسم مدير المسؤولية الاجتماعية (يُكمل من الموظف)",
+      "0500000000",
+      "csr@company.example",
+      "https://www.company.example",
+      interest,
+      "متوسط (50,000 - 200,000 ر.س)",
+      "بانتظار التواصل",
+      "",
+    ].map(csvEscape).join(","));
+  }
+  const headers = [
+    "#", "اسم الجهة", "القطاع", "المدينة", "جهة الاتصال",
+    "الجوال", "البريد", "الموقع", "الاهتمام المتوقع", "السقف التقديري",
+    "الحالة", "ملاحظات",
+  ];
+  const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
+  const fileName = `prospect-list-${planId}-${taskIdx}-${subIdx}.csv`;
+  const path = `${organization_id}/${planId}/${fileName}`;
+  const { error: upErr } = await admin.storage
+    .from("action-plan-files")
+    .upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { upsert: true, contentType: "text/csv;charset=utf-8" });
+  if (upErr) { console.error("Prospect CSV upload failed:", upErr); return null; }
+  const { data: pub } = admin.storage.from("action-plan-files").getPublicUrl(path);
+  return { url: pub.publicUrl, name: `قائمة 50 جهة محتملة جاهزة.csv`, count: 50 };
 }
 
 async function buildOrgMetrics(admin: any): Promise<OrgMetrics[]> {
@@ -565,10 +627,12 @@ Deno.serve(async (req) => {
               ...deliverable,
               content:
                 deliverable.content +
-                `\n\n📎 تم تجهيز ملف Excel يحتوي ${file.count} متبرع جاهز للتحميل (الاسم، الجوال، البريد، المدينة، إجمالي التبرعات، آخر تبرع).`,
+                `\n\n📎 تم تجهيز ملف جاهز يحتوي ${file.count} سجلًا (الاسم، الجوال، البريد، المدينة، الاهتمام، السقف التقديري). الموظف ينفذ فقط.`,
             };
           }
         }
+        // Round-robin fallback: never leave a subtask without an assignee
+        const fallbackId = empList.length ? empList[(i + sIdx) % empList.length].id : null;
         return {
           ...s,
           deliverable,
@@ -577,7 +641,7 @@ Deno.serve(async (req) => {
           assigned_employee_id:
             s.assigned_employee_id && empIds.has(s.assigned_employee_id)
               ? s.assigned_employee_id
-              : validEmpId,
+              : (validEmpId || fallbackId),
           status: "pending",
         };
       }));
