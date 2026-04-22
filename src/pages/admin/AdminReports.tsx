@@ -36,8 +36,9 @@ export default function AdminReports() {
   const [mode, setMode] = useState<Mode>("thematic");
   const [theme, setTheme] = useState<ThemeKey>("donors");
   const [orgId, setOrgId] = useState<string>("");
-  const [execText, setExecText] = useState<string>("");
+  const [execReport, setExecReport] = useState<ExecReport | null>(null);
   const [execLoading, setExecLoading] = useState(false);
+  const [exportingPpt, setExportingPpt] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,19 +50,36 @@ export default function AdminReports() {
   const generateExecutive = async () => {
     if (!selected) return;
     setExecLoading(true);
-    setExecText("");
+    setExecReport(null);
     try {
       const { data, error } = await supabase.functions.invoke("executive-report", {
         body: { metrics: selected, period_label: range.label },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setExecText(data.report);
+      setExecReport(data.report as ExecReport);
       toast.success("تم توليد التقرير التنفيذي");
     } catch (e: any) {
       toast.error(e.message || "تعذّر توليد التقرير");
     } finally {
       setExecLoading(false);
+    }
+  };
+
+  const exportExecPpt = async () => {
+    if (!selected || !execReport) return;
+    setExportingPpt(true);
+    try {
+      await exportExecutiveReportPpt({
+        orgName: selected.org_name,
+        periodLabel: range.label,
+        report: execReport,
+      });
+      toast.success("تم تصدير ملف PowerPoint");
+    } catch (e: any) {
+      toast.error(e.message || "تعذّر التصدير");
+    } finally {
+      setExportingPpt(false);
     }
   };
 
