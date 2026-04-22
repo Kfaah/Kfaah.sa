@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   FileBarChart2, Download, FileText, Users, HandCoins, ShoppingCart,
   Briefcase, Megaphone, Building2, Loader2, Sparkles, Calendar, Presentation, Award,
+  Gift, HeartHandshake, Activity, Target,
 } from "lucide-react";
 import { useAdminAggregates, type DateRange, type OrgMetrics } from "@/hooks/useAdminAggregates";
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
@@ -15,7 +16,9 @@ import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import { exportExecutiveReportPpt, type ExecReport } from "@/utils/exportExecutiveReportPpt";
 
-type ThemeKey = "donors" | "campaigns" | "abandoned" | "team" | "fundraising";
+type ThemeKey =
+  | "donors" | "campaigns" | "abandoned" | "team" | "fundraising"
+  | "gifts" | "service" | "store_health" | "projects";
 type Mode = "thematic" | "executive";
 
 const THEMES: { key: ThemeKey; title: string; subtitle: string; icon: any; color: string }[] = [
@@ -24,6 +27,10 @@ const THEMES: { key: ThemeKey; title: string; subtitle: string; icon: any; color
   { key: "campaigns", title: "تقرير الحملات", subtitle: "حملات نشطة، تحويل، إنتاجية", icon: Megaphone, color: "bg-violet-500/10 text-violet-600 border-violet-500/30" },
   { key: "abandoned", title: "تقرير السلال المتروكة", subtitle: "تسرّب، استرجاع، تحويلات بنكية", icon: ShoppingCart, color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
   { key: "team", title: "تقرير الموظفين والعمليات", subtitle: "إنجاز المهام، قدرة الفريق", icon: Briefcase, color: "bg-sky-500/10 text-sky-600 border-sky-500/30" },
+  { key: "gifts", title: "تقرير الإهداءات", subtitle: "حجم، تسليم، مهدون متكررون", icon: Gift, color: "bg-pink-500/10 text-pink-600 border-pink-500/30" },
+  { key: "service", title: "تقرير خدمة المتبرع", subtitle: "فشل الدفع، مطابقة، استجابة", icon: HeartHandshake, color: "bg-teal-500/10 text-teal-600 border-teal-500/30" },
+  { key: "store_health", title: "تقرير صحة المتجر", subtitle: "موثوقية، تجربة شراء، تشغيلية", icon: Activity, color: "bg-indigo-500/10 text-indigo-600 border-indigo-500/30" },
+  { key: "projects", title: "تقرير المشاريع", subtitle: "تنوّع المشاريع وتركّز الإيراد", icon: Target, color: "bg-orange-500/10 text-orange-600 border-orange-500/30" },
 ];
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
