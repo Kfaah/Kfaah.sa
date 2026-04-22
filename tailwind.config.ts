@@ -68,6 +68,12 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        "admin-hub": {
+          DEFAULT: "hsl(var(--admin-hub-primary))",
+          foreground: "hsl(var(--admin-hub-foreground))",
+          accent: "hsl(var(--admin-hub-accent))",
+          soft: "hsl(var(--admin-hub-soft))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
