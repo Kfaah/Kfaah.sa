@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon } from "lucide-react";
+import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,12 +21,17 @@ interface ProfileForm {
   youtube_url: string;
   facebook_url: string;
   linkedin_url: string;
+  logo_url: string;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
 }
 
 const empty: ProfileForm = {
   about: "", website_url: "", store_url: "",
   twitter_url: "", instagram_url: "", tiktok_url: "",
   snapchat_url: "", youtube_url: "", facebook_url: "", linkedin_url: "",
+  logo_url: "", primary_color: "", secondary_color: "", accent_color: "",
 };
 
 export default function OrganizationProfile() {
@@ -37,6 +42,7 @@ export default function OrganizationProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [analysis, setAnalysis] = useState<Record<string, unknown> | null>(null);
   const [lastAnalyzed, setLastAnalyzed] = useState<string | null>(null);
 
@@ -62,6 +68,10 @@ export default function OrganizationProfile() {
           youtube_url: p.youtube_url ?? "",
           facebook_url: p.facebook_url ?? "",
           linkedin_url: p.linkedin_url ?? "",
+          logo_url: (p as Record<string, string | null>).logo_url ?? "",
+          primary_color: (p as Record<string, string | null>).primary_color ?? "",
+          secondary_color: (p as Record<string, string | null>).secondary_color ?? "",
+          accent_color: (p as Record<string, string | null>).accent_color ?? "",
         });
         setAnalysis((p.ai_analysis as Record<string, unknown>) || null);
         setLastAnalyzed(p.last_analyzed_at);
@@ -69,6 +79,38 @@ export default function OrganizationProfile() {
       setLoading(false);
     })();
   }, [orgId]);
+
+  const autoExtract = async (websiteUrl: string) => {
+    if (!websiteUrl || !/^https?:\/\//i.test(websiteUrl)) return;
+    setExtracting(true);
+    const { data, error } = await supabase.functions.invoke("extract-website-info", {
+      body: { url: websiteUrl },
+    });
+    setExtracting(false);
+    if (error || !data?.success) {
+      toast.error("تعذّر جلب البيانات من الموقع");
+      return;
+    }
+    const d = data.data as Record<string, string | null>;
+    setForm((prev) => ({
+      ...prev,
+      // only fill empty fields, don't overwrite user input
+      logo_url: prev.logo_url || d.logo_url || "",
+      primary_color: prev.primary_color || d.primary_color || "",
+      secondary_color: prev.secondary_color || d.secondary_color || "",
+      accent_color: prev.accent_color || d.accent_color || "",
+      store_url: prev.store_url || d.store_url || "",
+      twitter_url: prev.twitter_url || d.twitter_url || "",
+      instagram_url: prev.instagram_url || d.instagram_url || "",
+      tiktok_url: prev.tiktok_url || d.tiktok_url || "",
+      snapchat_url: prev.snapchat_url || d.snapchat_url || "",
+      youtube_url: prev.youtube_url || d.youtube_url || "",
+      facebook_url: prev.facebook_url || d.facebook_url || "",
+      linkedin_url: prev.linkedin_url || d.linkedin_url || "",
+      about: prev.about || d.description || "",
+    }));
+    toast.success("تم جلب هوية الجمعية تلقائياً");
+  };
 
   const save = async () => {
     if (!orgId) return;
@@ -98,6 +140,12 @@ export default function OrganizationProfile() {
     toast.success("اكتمل التحليل بنجاح");
   };
 
+  const brand = useMemo(() => ({
+    primary: form.primary_color || "#0F766E",
+    secondary: form.secondary_color || "#0E7490",
+    accent: form.accent_color || "#F59E0B",
+  }), [form.primary_color, form.secondary_color, form.accent_color]);
+
   const socials: { key: keyof ProfileForm; label: string; placeholder: string }[] = [
     { key: "twitter_url", label: "تويتر / X", placeholder: "https://x.com/..." },
     { key: "instagram_url", label: "إنستغرام", placeholder: "https://instagram.com/..." },
@@ -114,27 +162,43 @@ export default function OrganizationProfile() {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-white">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/organizations")} className="gap-1">
+      {/* Brand hero — يتحول تلقائياً لألوان الجمعية بعد جلب الموقع */}
+      <header
+        className="relative overflow-hidden text-white"
+        style={{ background: `linear-gradient(135deg, ${brand.primary}, ${brand.secondary})` }}
+      >
+        <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at 80% 20%, ${brand.accent}, transparent 60%)` }} />
+        <div className="relative max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/organizations")} className="gap-1 text-white hover:bg-white/10">
               <ArrowRight className="w-4 h-4" /> رجوع
             </Button>
-            <div className="h-8 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-primary" />
+            <div className="h-10 w-px bg-white/20" />
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-white/95 shadow-lg flex items-center justify-center overflow-hidden ring-2 ring-white/40">
+                {form.logo_url ? (
+                  <img src={form.logo_url} alt={orgName} className="w-full h-full object-contain p-1" />
+                ) : (
+                  <Building2 className="w-7 h-7" style={{ color: brand.primary }} />
+                )}
+              </div>
               <div>
-                <h1 className="font-bold text-lg">التعرف على الجمعية</h1>
-                <p className="text-xs text-muted-foreground">{orgName}</p>
+                <h1 className="font-bold text-xl">{orgName}</h1>
+                <p className="text-xs text-white/80">التعرف على الجمعية وهويتها البصرية</p>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={save} disabled={saving} className="gap-2">
+            <Button variant="ghost" onClick={save} disabled={saving} className="gap-2 text-white hover:bg-white/10">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               حفظ
             </Button>
-            <Button onClick={analyze} disabled={analyzing} className="gap-2 bg-gradient-to-l from-primary to-accent">
+            <Button
+              onClick={analyze}
+              disabled={analyzing}
+              className="gap-2 bg-white text-foreground hover:bg-white/90"
+              style={{ color: brand.primary }}
+            >
               {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {analyzing ? "جاري التحليل..." : "تحليل ذكي شامل"}
             </Button>
@@ -158,12 +222,23 @@ export default function OrganizationProfile() {
         <Card className="p-6">
           <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
             <Globe className="w-5 h-5 text-primary" /> المواقع الرئيسية
+            {extracting && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1 font-normal">
+                <Loader2 className="w-3 h-3 animate-spin" /> جاري قراءة الموقع...
+              </span>
+            )}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> الموقع الإلكتروني</Label>
-              <Input dir="ltr" placeholder="https://..." value={form.website_url}
-                onChange={(e) => setForm({ ...form, website_url: e.target.value })} />
+              <Label className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5" /> الموقع الإلكتروني
+                <span className="text-[10px] text-muted-foreground font-normal">(يجلب الباقي تلقائياً)</span>
+              </Label>
+              <Input
+                dir="ltr" placeholder="https://..." value={form.website_url}
+                onChange={(e) => setForm({ ...form, website_url: e.target.value })}
+                onBlur={(e) => autoExtract(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5"><ShoppingBag className="w-3.5 h-3.5" /> المتجر الإلكتروني</Label>
@@ -171,7 +246,46 @@ export default function OrganizationProfile() {
                 onChange={(e) => setForm({ ...form, store_url: e.target.value })} />
             </div>
           </div>
+          <div className="mt-3 flex justify-end">
+            <Button
+              type="button" size="sm" variant="outline" className="gap-1.5"
+              onClick={() => autoExtract(form.website_url)}
+              disabled={!form.website_url || extracting}
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              {extracting ? "جاري الجلب..." : "جلب الهوية من الموقع الآن"}
+            </Button>
+          </div>
         </Card>
+
+        {/* Brand identity preview — يظهر بعد جلب الهوية */}
+        {(form.logo_url || form.primary_color) && (
+          <Card className="p-6">
+            <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Palette className="w-5 h-5 text-primary" /> الهوية البصرية للجمعية
+            </h2>
+            <div className="flex items-center gap-4 flex-wrap">
+              {form.logo_url && (
+                <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden border">
+                  <img src={form.logo_url} alt="logo" className="w-full h-full object-contain p-1" />
+                </div>
+              )}
+              <div className="flex gap-3">
+                {(["primary_color", "secondary_color", "accent_color"] as const).map((k) => (
+                  form[k] ? (
+                    <div key={k} className="text-center">
+                      <div
+                        className="w-14 h-14 rounded-lg shadow-sm border"
+                        style={{ background: form[k] }}
+                      />
+                      <div dir="ltr" className="text-[10px] text-muted-foreground mt-1">{form[k]}</div>
+                    </div>
+                  ) : null
+                ))}
+              </div>
+            </div>
+          </Card>
+        )}
 
         <Card className="p-6">
           <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
