@@ -108,10 +108,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       {/* Sidebar — أبيض كلاسيكي يمين الشاشة (RTL) */}
       <aside
         className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-border flex flex-col shadow-card"
-        style={{
-          background:
-            "linear-gradient(180deg, hsl(190 55% 22%) 0%, hsl(195 65% 16%) 50%, hsl(200 70% 12%) 100%)",
-        }}
+        style={{ background: "#3DB5B0" }}
       >
         {/* Brand — Executive identity card */}
         <div
