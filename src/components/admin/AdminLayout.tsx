@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, GitCompareArrows, Sparkles, FileBarChart2,
-  Building2, LogOut, Crown, ArrowLeftCircle,
+  Building2, LogOut, Crown, ArrowLeftCircle, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,8 +22,11 @@ const navItems = [
   { to: "/admin/analytics", label: "التحليل العميق", icon: Sparkles, end: false,
     desc: "تحليل AI لكل جمعية",
     color: "text-amber-600", bg: "bg-amber-100", activeBg: "bg-amber-500", activeText: "text-white" },
+  { to: "/admin/action-plans", label: "الخطط من التوصيات", icon: ListChecks, end: false,
+    desc: "تحويل التحليل إلى خطة وتكليف",
+    color: "text-fuchsia-600", bg: "bg-fuchsia-100", activeBg: "bg-fuchsia-500", activeText: "text-white" },
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
-    desc: "تقارير دقيقة قابلة للتصدير",
+    desc: "تقارير موضوعية وتنفيذية سردية",
     color: "text-rose-600", bg: "bg-rose-100", activeBg: "bg-rose-500", activeText: "text-white" },
 ];
 
