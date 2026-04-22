@@ -124,7 +124,10 @@ export default function Uploads() {
               : p,
           ),
         );
-        toast.success(`تم رفع "${pf.file.name}" — ${data.inserted ?? 0} سجل`);
+        toast.success(
+          `تم رفع "${pf.file.name}" — ${data.inserted ?? 0} سجل. يجري الآن تحليل البيانات وربطها بالنظرة العامة، التحليل العميق، التوصيات، المقارنة، والابتكار…`,
+          { duration: 6000 },
+        );
       } catch (e) {
         const msg = e instanceof Error ? e.message : "فشل الرفع";
         setPending((prev) =>
