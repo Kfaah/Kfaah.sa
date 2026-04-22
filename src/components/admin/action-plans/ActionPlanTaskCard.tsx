@@ -68,6 +68,24 @@ const IMPACT_LABEL: Record<string, string> = {
   low: "منخفض",
 };
 
+const IMPACT_THEME: Record<string, { header: string; badge: string; number: string }> = {
+  high: {
+    header: "from-destructive/10 via-warning/10 to-transparent",
+    badge: "bg-destructive text-destructive-foreground",
+    number: "bg-destructive text-destructive-foreground",
+  },
+  medium: {
+    header: "from-primary/10 via-accent/10 to-transparent",
+    badge: "bg-primary text-primary-foreground",
+    number: "bg-primary text-primary-foreground",
+  },
+  low: {
+    header: "from-success/10 via-accent/10 to-transparent",
+    badge: "bg-success text-success-foreground",
+    number: "bg-success text-success-foreground",
+  },
+};
+
 const triggerClassName = "h-12 text-base text-right [&>span]:w-full [&>span]:text-right";
 
 export function ActionPlanTaskCard({
@@ -107,27 +125,15 @@ export function ActionPlanTaskCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task.id, employees.length]);
 
-  const accentGradient =
-    task.impact === "high"
-      ? "from-rose-500/15 via-amber-400/10 to-transparent"
-      : task.impact === "medium"
-      ? "from-sky-500/15 via-indigo-400/10 to-transparent"
-      : "from-emerald-500/15 via-teal-400/10 to-transparent";
-
-  const numberBg =
-    task.impact === "high"
-      ? "bg-gradient-to-br from-rose-500 to-amber-500 text-white"
-      : task.impact === "medium"
-      ? "bg-gradient-to-br from-sky-500 to-indigo-500 text-white"
-      : "bg-gradient-to-br from-emerald-500 to-teal-500 text-white";
+  const impactTheme = IMPACT_THEME[task.impact] || IMPACT_THEME.medium;
 
   return (
     <Card className="bg-card border-border shadow-md overflow-hidden ring-1 ring-border/50" dir="rtl">
       {/* Header: Goal */}
-      <div className={cn("p-6 border-b border-border bg-gradient-to-l", accentGradient)}>
+      <div className={cn("p-6 border-b border-border bg-gradient-to-l", impactTheme.header)}>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-4 flex-1 min-w-0">
-            <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xl font-bold shadow-md", numberBg)}>
+            <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xl font-bold shadow-md", impactTheme.number)}>
               {index + 1}
             </div>
             <div className="flex-1 min-w-0 space-y-2">
@@ -137,10 +143,8 @@ export function ActionPlanTaskCard({
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge className={cn(
-              "px-3 py-1.5 text-sm font-bold border-0 text-white shadow-sm",
-              task.impact === "high" && "bg-gradient-to-r from-rose-500 to-amber-500",
-              task.impact === "medium" && "bg-gradient-to-r from-sky-500 to-indigo-500",
-              task.impact === "low" && "bg-gradient-to-r from-emerald-500 to-teal-500",
+              "px-3 py-1.5 text-sm font-bold border-0 shadow-sm",
+              impactTheme.badge,
             )}>
               تأثير {IMPACT_LABEL[task.impact] || task.impact}
             </Badge>
