@@ -77,7 +77,7 @@ export default function AdminActionPlanDetails() {
       supabase.from("action_plan_tasks").select("*").eq("action_plan_id", planId).order("priority"),
       supabase.from("employees").select("id, full_name, job_role").eq("organization_id", planData.organization_id),
     ]);
-    setTasks((taskData || []) as Task[]);
+    setTasks((taskData || []) as unknown as Task[]);
     setEmployees((empData || []) as any);
     setLoading(false);
   };
