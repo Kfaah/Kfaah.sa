@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle2, ChevronDown, Clock, Copy, Download, FileText, Package, Paperclip, Sparkles, Star, Upload, User } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -96,7 +96,7 @@ export function ActionPlanTaskCard({
   };
 
   // Auto-assign any unassigned subtask using round-robin over employees (one-time, idempotent)
-  React.useEffect(() => {
+  useEffect(() => {
     if (!employees.length || !subtasks.length) return;
     const needsAssign = subtasks.some((s) => !s.assigned_employee_id);
     if (!needsAssign) return;
