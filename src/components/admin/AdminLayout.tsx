@@ -107,9 +107,25 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     >
       {/* Sidebar — أبيض كلاسيكي يمين الشاشة (RTL) */}
       <aside
-        className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-border flex flex-col shadow-card"
-        style={{ background: "#3DB5B0" }}
+        className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-amber-300/15 flex flex-col shadow-2xl overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(180deg, #0d4f4d 0%, #0a3f3d 35%, #082f2e 70%, #061f1f 100%)",
+        }}
       >
+        {/* Subtle radial vignette + noise overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-60"
+          style={{
+            backgroundImage:
+              "radial-gradient(ellipse at 50% 0%, rgba(61,181,176,0.18) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.5) 0%, transparent 60%)",
+          }}
+        />
+        {/* Soft floating orb */}
+        <div className="absolute -top-12 -left-10 w-40 h-40 rounded-full bg-teal-300/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-24 -right-12 w-44 h-44 rounded-full bg-amber-300/[0.06] blur-3xl pointer-events-none" />
+
+        <div className="relative flex flex-col h-full">
         {/* Brand — Executive identity card */}
         <div
           className="relative px-5 py-6 border-b border-amber-300/20 overflow-hidden"
@@ -166,24 +182,26 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {navItems.map((item) => {
+        <nav className="flex-1 overflow-y-auto px-3 py-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {navItems.map((item, idx) => {
             const Icon = item.icon;
             const active = item.end
               ? location.pathname === item.to
               : location.pathname.startsWith(item.to);
             return (
+              <div key={item.to} className="animate-fade-in" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: "both" }}>
               <NavLink
-                key={item.to}
                 to={item.to}
                 end={item.end}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-lg pr-4 pl-3 py-3 transition-all duration-300 overflow-hidden",
+                  "group relative flex items-center gap-3 rounded-xl pr-4 pl-3 py-3 transition-all duration-300 overflow-hidden",
                   active
-                    ? "bg-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] ring-1 ring-amber-300/70"
-                    : "bg-white/5 hover:bg-white/10 ring-1 ring-white/10 hover:ring-amber-300/40 backdrop-blur-sm"
+                    ? "bg-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.55)] ring-1 ring-amber-300/70 -translate-x-0.5"
+                    : "bg-white/[0.04] hover:bg-white/[0.09] ring-1 ring-white/10 hover:ring-amber-300/40 backdrop-blur-sm hover:-translate-x-0.5 hover:shadow-[0_8px_20px_-10px_rgba(0,0,0,0.6)]"
                 )}
               >
+                {/* Shimmer sweep on hover */}
+                <span className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                 {/* Right vertical gold accent bar */}
                 <span
                   className={cn(
@@ -195,10 +213,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 />
                 <div
                   className={cn(
-                    "relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 border-2 border-white",
+                    "relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 border-2 border-white/90",
                     active
                       ? `${item.bg} ${item.color} ring-2 ring-amber-300/70 shadow-md`
-                      : `${item.bg} ${item.color} ring-1 ${item.ring} group-hover:shadow-md group-hover:scale-105`
+                      : `${item.bg} ${item.color} ring-1 ${item.ring} group-hover:shadow-lg group-hover:scale-110 group-hover:rotate-3`
                   )}
                 >
                   <Icon className="w-[18px] h-[18px]" strokeWidth={2.4} />
@@ -222,6 +240,15 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   <span className="w-1.5 h-1.5 rotate-45 bg-amber-300/90 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex-shrink-0" />
                 )}
               </NavLink>
+              {/* Ornate divider between items */}
+              {idx < navItems.length - 1 && (
+                <div className="flex items-center justify-center gap-2 my-2 px-6 opacity-50">
+                  <span className="h-px flex-1 bg-gradient-to-l from-transparent via-amber-300/30 to-transparent" />
+                  <span className="w-1 h-1 rotate-45 bg-amber-300/40" />
+                  <span className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-300/30 to-transparent" />
+                </div>
+              )}
+              </div>
             );
           })}
         </nav>
@@ -255,6 +282,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             <LogOut className="w-4 h-4 text-amber-200" />
             تسجيل الخروج
           </Button>
+        </div>
         </div>
       </aside>
 
