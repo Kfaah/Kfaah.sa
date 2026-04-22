@@ -232,7 +232,8 @@ async function buildOrgMetrics(admin: any): Promise<OrgMetrics[]> {
     const recurring_pct = donors_total ? (recurring / donors_total) * 100 : 0;
 
     const donor_engagement_score = clamp(recurring_pct * 1.5 + (donors > 0 ? Math.min(40, Math.log10(donors + 1) * 12) : 0));
-    const service_score = clamp(recovery_rate * 0.6 + match_rate * 0.4);
+    // Bank transfer matching depends on donor-uploaded receipts (out of team's control) — exclude from service score
+    const service_score = clamp(recovery_rate);
     const team_score = clamp(completion * 0.7 + Math.log10(employees + 1) * 10);
 
     return {
