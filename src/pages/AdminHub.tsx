@@ -278,6 +278,15 @@ export default function AdminHub() {
                     </Button>
                     <Button
                       size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
+                      onClick={() => navigate(`/admin/organizations/${o.id}/profile`)}
+                      title="التعرف على الجمعية"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> التعرف
+                    </Button>
+                    <Button
+                      size="sm"
                       variant={o.is_active ? "secondary" : "default"}
                       className="gap-1.5"
                       onClick={() => toggleActive(o)}
