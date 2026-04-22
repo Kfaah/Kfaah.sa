@@ -2056,6 +2056,77 @@ export type Database = {
           },
         ]
       }
+      organization_profiles: {
+        Row: {
+          about: string | null
+          ai_analysis: Json | null
+          ai_model: string | null
+          created_at: string
+          facebook_url: string | null
+          id: string
+          instagram_url: string | null
+          last_analyzed_at: string | null
+          linkedin_url: string | null
+          organization_id: string
+          other_links: Json | null
+          snapchat_url: string | null
+          store_url: string | null
+          tiktok_url: string | null
+          twitter_url: string | null
+          updated_at: string
+          website_url: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          about?: string | null
+          ai_analysis?: Json | null
+          ai_model?: string | null
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          last_analyzed_at?: string | null
+          linkedin_url?: string | null
+          organization_id: string
+          other_links?: Json | null
+          snapchat_url?: string | null
+          store_url?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+          website_url?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          about?: string | null
+          ai_analysis?: Json | null
+          ai_model?: string | null
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          last_analyzed_at?: string | null
+          linkedin_url?: string | null
+          organization_id?: string
+          other_links?: Json | null
+          snapchat_url?: string | null
+          store_url?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+          website_url?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           allow_self_signup: boolean

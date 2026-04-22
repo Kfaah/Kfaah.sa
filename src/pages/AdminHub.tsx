@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import {
   Building2, Plus, Edit3, Power, PowerOff, Mail, Phone, Crown,
-  Users, LogOut, ArrowLeftCircle, Link2, Copy, Check,
+  Users, LogOut, ArrowLeftCircle, Link2, Copy, Check, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -275,6 +275,15 @@ export default function AdminHub() {
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => openEdit(o)}>
                       <Edit3 className="w-3.5 h-3.5" /> تعديل
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
+                      onClick={() => navigate(`/admin/organizations/${o.id}/profile`)}
+                      title="التعرف على الجمعية"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> التعرف
                     </Button>
                     <Button
                       size="sm"
