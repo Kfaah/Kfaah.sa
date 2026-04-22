@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import atefLogo from "@/assets/atef-logo-icon.jpg";
 
 // العبارات الافتراضية (تستخدم إذا لم توجد عبارات في قاعدة البيانات)
@@ -29,6 +30,7 @@ interface Quote {
 
 export function WelcomeScreen() {
   const { user } = useUser();
+  const branding = useOrgBranding();
   const [currentQuote, setCurrentQuote] = useState<Quote>(defaultQuotes[0]);
   const [currentBg, setCurrentBg] = useState<string>(defaultBackgrounds[0]);
   const [quotes, setQuotes] = useState<Quote[]>(defaultQuotes);
@@ -213,8 +215,8 @@ export function WelcomeScreen() {
           {/* الشعار - دائرة بيضاء مع ظل */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/80">
             <img
-              src={atefLogo}
-              alt="جمعية عطف"
+              src={branding.logoUrl || atefLogo}
+              alt={branding.orgName || "الجمعية"}
               className="w-44 h-44 object-contain rounded-full"
             />
           </div>
@@ -228,7 +230,7 @@ export function WelcomeScreen() {
           className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-2 shadow-lg mb-6"
         >
           <h2 className="text-2xl font-bold text-slate-700">
-            جمعية عطف للأيتام
+            {branding.orgName || "الجمعية"}
           </h2>
         </motion.div>
 
