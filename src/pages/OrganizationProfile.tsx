@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette } from "lucide-react";
+import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 interface ProfileForm {
   about: string;
+  goals: string;
   website_url: string;
   store_url: string;
   twitter_url: string;
@@ -28,7 +29,7 @@ interface ProfileForm {
 }
 
 const empty: ProfileForm = {
-  about: "", website_url: "", store_url: "",
+  about: "", goals: "", website_url: "", store_url: "",
   twitter_url: "", instagram_url: "", tiktok_url: "",
   snapchat_url: "", youtube_url: "", facebook_url: "", linkedin_url: "",
   logo_url: "", primary_color: "", secondary_color: "", accent_color: "",
