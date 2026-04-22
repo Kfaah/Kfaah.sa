@@ -10,7 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import {
   Sparkles, Loader2, TrendingUp, Lightbulb,
-  AlertTriangle, CheckCircle2, Building2, Users, HandCoins, Target, CalendarDays,
+  AlertTriangle, CheckCircle2, Building2, Users, HandCoins, Target, CalendarDays, RefreshCw,
 } from "lucide-react";
 import { useAdminAggregates } from "@/hooks/useAdminAggregates";
 import type { DateRange } from "@/hooks/useAdminAggregates";
@@ -118,7 +118,7 @@ export default function AdminAnalytics() {
     })();
   }, [selectedId, range.from, range.to]);
 
-  const runAI = async () => {
+  const runAI = async (force = false) => {
     if (!selected) return;
     setAiLoading(true);
     setInsight(null);
@@ -130,12 +130,13 @@ export default function AdminAnalytics() {
           period_label: range.label,
           period_from: range.from?.toISOString() || null,
           period_to: range.to?.toISOString() || null,
+          force,
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setInsight(data.insight);
-      toast.success("تم توليد التحليل الذكي");
+      toast.success(force ? "تم إعادة توليد التحليل" : "تم توليد التحليل الذكي");
     } catch (e: any) {
       toast.error(e.message || "تعذّر توليد التحليل");
     } finally {
@@ -216,12 +217,22 @@ export default function AdminAnalytics() {
             </PopoverContent>
           </Popover>
           <Button
-            onClick={runAI}
+            onClick={() => runAI(false)}
             disabled={!selected || aiLoading}
             className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
           >
             {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             تحليل ذكي بالـ AI
+          </Button>
+          <Button
+            onClick={() => runAI(true)}
+            disabled={!selected || aiLoading}
+            variant="outline"
+            className="gap-2"
+            title="تجاهل النسخة المحفوظة وأعد توليد التحليل من جديد"
+          >
+            {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            إعادة توليد
           </Button>
         </div>
       </div>
