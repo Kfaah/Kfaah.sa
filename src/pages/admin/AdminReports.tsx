@@ -461,6 +461,38 @@ function themeRows(theme: ThemeKey, m: OrgMetrics): { label: string; value: stri
       { label: "نسبة الإنجاز", value: pct(m.task_completion_rate) },
       { label: "نقاط الفريق", value: m.team_score.toFixed(0) + "/100" },
     ];
+    case "gifts": return [
+      { label: "عدد الإهداءات", value: fmt(m.gifts_count) },
+      { label: "قيمة الإهداءات", value: fmtSAR(m.gifts_amount) },
+      { label: "متوسط قيمة الإهداء", value: m.gifts_count ? fmtSAR(m.gifts_amount / m.gifts_count) : "—" },
+      { label: "إهداءات مُسلَّمة", value: fmt(m.gifts_delivered) },
+      { label: "نسبة التسليم", value: pct(m.gifts_delivery_rate) },
+      { label: "عدد المُهدين الفريدين", value: fmt(m.unique_gift_givers) },
+    ];
+    case "service": return [
+      { label: "تبرعات فاشلة", value: fmt(m.failed_donations) },
+      { label: "نسبة الفشل", value: pct(m.failure_rate) },
+      { label: "تحويلات بنكية", value: fmt(m.bank_transfers) },
+      { label: "تحويلات مطابقة", value: fmt(m.matched_transfers) },
+      { label: "نسبة المطابقة", value: pct(m.match_rate) },
+      { label: "نقاط الخدمة", value: m.service_score.toFixed(0) + "/100" },
+    ];
+    case "store_health": return [
+      { label: "نقاط صحة المتجر", value: m.store_health_score.toFixed(0) + "/100" },
+      { label: "نسبة استرجاع السلال", value: pct(m.recovery_rate) },
+      { label: "نسبة مطابقة التحويلات", value: pct(m.match_rate) },
+      { label: "نسبة فشل الدفع", value: pct(m.failure_rate) },
+      { label: "إجمالي محاولات الدفع", value: fmt(m.donations_count + m.failed_donations) },
+      { label: "موثوقية القناة (1 - الفشل)", value: pct(100 - m.failure_rate) },
+    ];
+    case "projects": return [
+      { label: "عدد المشاريع المختلفة", value: fmt(m.projects_count) },
+      { label: "أعلى مشروع تبرعًا", value: m.top_project_name || "—" },
+      { label: "إيراد أعلى مشروع", value: fmtSAR(m.top_project_amount) },
+      { label: "حصة أعلى مشروع من الإجمالي", value: pct(m.top_project_share) },
+      { label: "إجمالي الإيرادات", value: fmtSAR(m.total_donated) },
+      { label: "متوسط التبرع", value: fmtSAR(m.avg_donation) },
+    ];
   }
 }
 
