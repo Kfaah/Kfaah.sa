@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  ArrowRightCircle, Calendar, CheckCircle2, Clock, FileSpreadsheet, Loader2, Presentation, Sparkles, ListChecks,
+  ArrowRightCircle, Calendar, CheckCircle2, Clock, Loader2, Presentation, Sparkles, ListChecks,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -33,7 +33,6 @@ export default function AdminActionPlanDetails() {
   const [employees, setEmployees] = useState<ActionPlanEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingTask, setSavingTask] = useState<string | null>(null);
-  const [exporting, setExporting] = useState(false);
   const [exportingPpt, setExportingPpt] = useState(false);
 
   const load = async () => {
@@ -103,20 +102,6 @@ export default function AdminActionPlanDetails() {
     setTasks(prev => prev.map(task => task.id === taskId ? { ...task, completion_notes: value } : task));
   };
 
-  const handleExportExcel = async () => {
-    if (!plan) return;
-    try {
-      setExporting(true);
-      const { exportActionPlanExcel } = await import("@/utils/exportActionPlanExcel");
-      await exportActionPlanExcel({ plan, tasks, employees });
-      toast.success("تم تصدير الخطة إلى Excel");
-    } catch {
-      toast.error("تعذّر تصدير ملف Excel");
-    } finally {
-      setExporting(false);
-    }
-  };
-
   const handleExportPpt = async () => {
     if (!plan) return;
     try {
@@ -145,13 +130,9 @@ export default function AdminActionPlanDetails() {
           رجوع للخطط
         </Button>
         <div className="flex items-center gap-2">
-          <Button onClick={handleExportExcel} disabled={exporting || !plan} variant="outline" className="gap-2">
-            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
-            تصدير Excel
-          </Button>
           <Button onClick={handleExportPpt} disabled={exportingPpt || !plan} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
             {exportingPpt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Presentation className="w-4 h-4" />}
-            تصدير PowerPoint
+            تصدير PowerPoint الاحترافي
           </Button>
         </div>
       </div>
