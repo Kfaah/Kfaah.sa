@@ -136,16 +136,18 @@ export default function AdminSettings() {
   return (
     <div className="p-6 space-y-6" dir="rtl">
       {/* Header */}
-      <div className="flex items-center gap-4 bg-white rounded-2xl p-5 shadow-card">
-        <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-          style={{ background: "linear-gradient(135deg, hsl(190 55% 30%), hsl(195 65% 18%))" }}
-        >
-          <SettingsIcon className="w-7 h-7 text-white" />
+      <div
+        className="flex items-center gap-4 rounded-2xl p-5 shadow-card text-white relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, hsl(190 55% 26%) 0%, hsl(195 65% 18%) 60%, hsl(200 70% 14%) 100%)" }}
+      >
+        <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-amber-300/60 rounded-tl-md" />
+        <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-amber-300/60 rounded-br-md" />
+        <div className="w-14 h-14 rounded-2xl bg-white/10 ring-2 ring-amber-300/60 flex items-center justify-center shadow-lg">
+          <SettingsIcon className="w-7 h-7 text-amber-200" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">الإعدادات الشاملة</h1>
-          <p className="text-muted-foreground text-sm">تحكّم جذري في الهوية الشخصية والمرئية وعناصر النظام</p>
+          <h1 className="text-2xl font-bold text-white">الإعدادات الشاملة</h1>
+          <p className="text-amber-100/80 text-sm">تحكّم جذري في الهوية الشخصية والمرئية وعناصر النظام</p>
         </div>
       </div>
 
