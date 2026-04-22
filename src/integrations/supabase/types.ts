@@ -1460,6 +1460,103 @@ export type Database = {
           },
         ]
       }
+      innovation_messages: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          role: string
+          suggestion_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role: string
+          suggestion_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: string
+          suggestion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "innovation_messages_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "innovation_suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      innovation_suggestions: {
+        Row: {
+          ai_model: string | null
+          area: string | null
+          category: string
+          created_at: string
+          data_basis: Json | null
+          effort: string | null
+          generated_at: string
+          id: string
+          impact: string | null
+          organization_id: string | null
+          priority: string
+          status: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_model?: string | null
+          area?: string | null
+          category?: string
+          created_at?: string
+          data_basis?: Json | null
+          effort?: string | null
+          generated_at?: string
+          id?: string
+          impact?: string | null
+          organization_id?: string | null
+          priority?: string
+          status?: string
+          summary: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_model?: string | null
+          area?: string | null
+          category?: string
+          created_at?: string
+          data_basis?: Json | null
+          effort?: string | null
+          generated_at?: string
+          id?: string
+          impact?: string | null
+          organization_id?: string | null
+          priority?: string
+          status?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "innovation_suggestions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_roles: {
         Row: {
           color: string | null
