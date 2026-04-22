@@ -39,6 +39,7 @@ import AdminInnovation from "./pages/admin/AdminInnovation";
 import AdminActionPlans from "./pages/admin/AdminActionPlans";
 import AdminActionPlanDetails from "./pages/admin/AdminActionPlanDetails";
 import AdminOrganizations from "./pages/admin/AdminOrganizations";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -124,6 +125,7 @@ function AppRoutes() {
       <Route path="/admin/action-plans/:planId" element={<ProtectedRoute><AdminLayout><AdminActionPlanDetails /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/reports" element={<ProtectedRoute><AdminLayout><AdminReports /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/innovation" element={<ProtectedRoute><AdminLayout><AdminInnovation /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/settings" element={<ProtectedRoute><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
       {/* Org management (edit form etc) — kept inside an org's dashboard */}
       <Route
         path="/organizations"

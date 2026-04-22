@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, GitCompareArrows, Sparkles, FileBarChart2,
-  Building2, LogOut, ArrowLeftCircle, ListChecks, Lightbulb,
+  Building2, LogOut, ArrowLeftCircle, ListChecks, Lightbulb, Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -195,6 +195,20 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           {/* Gold corner accents to match brand header */}
           <div className="absolute top-1.5 left-1.5 w-5 h-5 border-t-2 border-l-2 border-amber-300/60 rounded-tl-md pointer-events-none" />
           <div className="absolute bottom-1.5 right-1.5 w-5 h-5 border-b-2 border-r-2 border-amber-300/60 rounded-br-md pointer-events-none" />
+          <NavLink
+            to="/admin/settings"
+            className={({ isActive }) =>
+              cn(
+                "relative w-full flex items-center justify-center gap-2 font-semibold rounded-md px-3 py-2 mb-2 text-white border transition-all backdrop-blur-sm",
+                isActive
+                  ? "bg-amber-300/20 border-amber-300/70 ring-1 ring-amber-300/40 shadow-lg"
+                  : "bg-white/5 hover:bg-white/15 border-amber-300/40 hover:border-amber-300/70 ring-1 ring-amber-300/20 shadow-lg"
+              )
+            }
+          >
+            <Settings className="w-4 h-4 text-amber-200" />
+            الإعدادات
+          </NavLink>
           <Button
             onClick={handleSignOut}
             className="relative w-full justify-center gap-2 font-semibold text-white bg-white/5 hover:bg-white/15 border border-amber-300/40 hover:border-amber-300/70 ring-1 ring-amber-300/20 shadow-lg backdrop-blur-sm transition-all"
