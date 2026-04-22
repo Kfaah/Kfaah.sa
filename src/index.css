@@ -188,6 +188,38 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.5);
   }
+
+  /* Hide vertical scrollbars globally while keeping scroll functional.
+     Combined with scrollbar-gutter on html to prevent layout shift
+     when navigating between short and tall pages. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+}
+
+/* Stabilize layout: reserve scrollbar space so page does not shift
+   horizontally when switching between scrollable and non-scrollable views. */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Hide the page-level scrollbar across the whole app per design request,
+   while preserving the ability to scroll. */
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 @keyframes fadeIn {
