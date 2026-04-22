@@ -320,7 +320,7 @@ function Heatmap({ data }: { data: { day: number; value: number }[] }) {
             <div
               className="w-full aspect-square rounded-lg flex items-center justify-center font-bold text-sm transition-transform hover:scale-105 border border-border"
               style={{
-                background: `hsl(174, 52%, ${92 - intensity * 45}%)`,
+                background: `hsl(210, 60%, ${96 - intensity * 32}%)`,
                 color: intensity > 0.5 ? "white" : "hsl(var(--foreground))",
               }}
               title={`${labels[d.day]}: ${d.value} تبرع`}
