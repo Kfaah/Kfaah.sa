@@ -232,7 +232,8 @@ async function buildOrgMetrics(admin: any): Promise<OrgMetrics[]> {
     const recurring_pct = donors_total ? (recurring / donors_total) * 100 : 0;
 
     const donor_engagement_score = clamp(recurring_pct * 1.5 + (donors > 0 ? Math.min(40, Math.log10(donors + 1) * 12) : 0));
-    const service_score = clamp(recovery_rate * 0.6 + match_rate * 0.4);
+    // Bank transfer matching depends on donor-uploaded receipts (out of team's control) — exclude from service score
+    const service_score = clamp(recovery_rate);
     const team_score = clamp(completion * 0.7 + Math.log10(employees + 1) * 10);
 
     return {
@@ -295,11 +296,12 @@ async function generateInsight(admin: any, apiKey: string, metrics: OrgMetrics, 
 - متوسط التبرع: ${metrics.avg_donation.toFixed(0)} ر.س
 - المتبرعون: ${metrics.donors} (منتظمون: ${metrics.recurring_donors})
 - السلال المتروكة: ${metrics.abandoned_carts} (مسترجعة: ${metrics.recovered_carts}, نسبة: ${metrics.recovery_rate.toFixed(1)}%)
-- التحويلات البنكية: ${metrics.bank_transfers} (مطابقة: ${metrics.matched_transfers})
 - الموظفون: ${metrics.employees_count}
 - المهام: ${metrics.tasks_total} (مكتمل: ${metrics.tasks_completed}, نسبة: ${metrics.task_completion_rate.toFixed(1)}%)
 - الحملات: ${metrics.campaigns}
 - نقاط (0-100): جمع التبرعات ${metrics.fundraising_score.toFixed(0)} / تفاعل ${metrics.donor_engagement_score.toFixed(0)} / خدمة ${metrics.service_score.toFixed(0)} / فريق ${metrics.team_score.toFixed(0)} / إجمالي ${metrics.overall_score.toFixed(0)} (متوسط الأخريات ${avgScore.toFixed(0)})
+
+ملاحظة مهمة: تجاهل تمامًا موضوع "التحويلات البنكية غير المطابقة/غير المعتمدة" — هذه ناتجة عن إيصالات خاطئة يرفعها المتبرعون أنفسهم في المتجر، وليست مسؤولية الفريق. لا تذكرها في نقاط الضعف، ولا في الفرص، ولا في التوصيات.
 
 قدّم تحليلاً شاملاً يتضمن:
 1) ملخّص تنفيذي يغطي أهم الاستنتاجات ولا يتجاوز 4 جمل.
