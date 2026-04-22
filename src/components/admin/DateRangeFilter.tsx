@@ -93,8 +93,8 @@ export function DateRangeFilter({ value, onChange }: { value: DateRange; onChang
           className={cn(
             "px-3 py-1.5 rounded-md text-xs font-semibold border transition-all",
             activeKey === k
-              ? "bg-accent text-accent-foreground border-accent shadow-sm"
-              : "bg-background border-border text-foreground hover:border-accent/60 hover:bg-accent/10"
+              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+              : "bg-background border-border text-foreground hover:border-primary/60 hover:bg-primary/10"
           )}
         >
           {label}
@@ -108,7 +108,7 @@ export function DateRangeFilter({ value, onChange }: { value: DateRange; onChang
             size="sm"
             className={cn(
               "h-auto py-1.5 px-3 text-xs font-semibold gap-1",
-              activeKey === "custom" && "bg-accent text-accent-foreground border-accent"
+              activeKey === "custom" && "bg-primary text-primary-foreground border-primary"
             )}
           >
             فترة مخصصة
@@ -134,7 +134,7 @@ export function DateRangeFilter({ value, onChange }: { value: DateRange; onChang
       </Popover>
 
       {activeKey !== "all" && (
-        <span className="text-xs text-accent font-bold px-2">{value.label}</span>
+        <span className="text-xs text-primary font-bold px-2">{value.label}</span>
       )}
     </div>
   );
