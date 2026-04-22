@@ -1,4 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -12,11 +14,32 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { metrics, all, period_label } = await req.json();
+    const { metrics, all, period_label, period_from, period_to, force } = await req.json();
     if (!metrics) {
       return new Response(JSON.stringify({ error: "metrics required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Try cache first (stable analysis for same org+period)
+    const supaUrl = Deno.env.get("SUPABASE_URL")!;
+    const supaKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supaUrl, supaKey);
+
+    if (!force) {
+      const { data: cached } = await admin
+        .from("admin_ai_insights_cache")
+        .select("id, insight, generated_at")
+        .eq("organization_id", metrics.org_id)
+        .eq("period_label", period_label || "منذ البداية")
+        .order("generated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cached?.insight) {
+        return new Response(JSON.stringify({ insight: cached.insight, cache_id: cached.id, cached: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Build a compact context comparing this org against the others
@@ -122,7 +145,21 @@ Deno.serve(async (req) => {
     const insight = args ? JSON.parse(args) : null;
     if (!insight) throw new Error("No insight returned");
 
-    return new Response(JSON.stringify({ insight }), {
+    // Persist to cache for stable reproducibility + plan generation
+    const { data: saved } = await admin
+      .from("admin_ai_insights_cache")
+      .insert({
+        organization_id: metrics.org_id,
+        period_label: period_label || "منذ البداية",
+        period_from: period_from || null,
+        period_to: period_to || null,
+        insight,
+        metrics_snapshot: metrics,
+      })
+      .select("id")
+      .maybeSingle();
+
+    return new Response(JSON.stringify({ insight, cache_id: saved?.id, cached: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
