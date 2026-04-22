@@ -3,8 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle2, ChevronDown, Clock, Copy, FileText, Package, Sparkles, Star, User } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle2, ChevronDown, Clock, Copy, Download, FileText, Package, Paperclip, Sparkles, Star, Upload, User } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -23,7 +24,11 @@ export interface ActionPlanSubTask {
     content: string;
     fields?: { label: string; key: string }[];
   } | null;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
   employee_report?: string | null;
+  report_file_url?: string | null;
+  report_file_name?: string | null;
   rating?: number | null;
   rating_notes?: string | null;
 }
