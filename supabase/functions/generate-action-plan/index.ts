@@ -7,12 +7,253 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-/**
- * Generates an Action Plan from the latest cached AI insight for an organization.
- * - Uses recommendations as plan tasks.
- * - Asks AI to assign each task to the most suitable employee (by department/role).
- * - Schedules tasks within the requested duration in days.
- */
+type OrgMetrics = {
+  org_id: string;
+  org_name: string;
+  total_donated: number;
+  donations_count: number;
+  avg_donation: number;
+  donors: number;
+  recurring_donors: number;
+  abandoned_carts: number;
+  recovered_carts: number;
+  recovery_rate: number;
+  bank_transfers: number;
+  matched_transfers: number;
+  employees_count: number;
+  tasks_total: number;
+  tasks_completed: number;
+  task_completion_rate: number;
+  campaigns: number;
+  fundraising_score: number;
+  donor_engagement_score: number;
+  service_score: number;
+  team_score: number;
+  overall_score: number;
+};
+
+const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
+
+async function buildOrgMetrics(admin: any): Promise<OrgMetrics[]> {
+  const { data: orgs, error: orgsErr } = await admin
+    .from("organizations")
+    .select("id, name")
+    .order("created_at", { ascending: true });
+
+  if (orgsErr) throw orgsErr;
+
+  const metrics = await Promise.all((orgs || []).map(async (org: any) => {
+    const orgId = org.id;
+    const head = { count: "exact" as const, head: true };
+
+    const [
+      donorsTotalRes,
+      donationsCountRes,
+      donationsRes,
+      recurringRes,
+      abandonedRes,
+      recoveredRes,
+      transfersRes,
+      matchedRes,
+      campaignsRes,
+      tasksTotalRes,
+      tasksDoneRes,
+      employeesRes,
+    ] = await Promise.all([
+      admin.from("donors").select("*", head).eq("organization_id", orgId),
+      admin.from("donations").select("*", head).eq("organization_id", orgId),
+      admin.from("donations").select("amount, donor_id, donor_phone").eq("organization_id", orgId).limit(20000),
+      admin.from("donors").select("*", head).eq("organization_id", orgId).gte("donations_count", 2),
+      admin.from("abandoned_carts").select("*", head).eq("organization_id", orgId),
+      admin.from("abandoned_carts").select("*", head).eq("organization_id", orgId).eq("recovered", true),
+      admin.from("bank_transfers").select("*", head).eq("organization_id", orgId),
+      admin.from("bank_transfers").select("*", head).eq("organization_id", orgId).eq("reconciliation_status", "matched"),
+      admin.from("campaigns").select("*", head).eq("organization_id", orgId),
+      admin.from("tasks").select("*", head).eq("organization_id", orgId),
+      admin.from("tasks").select("*", head).eq("organization_id", orgId).eq("status", "completed"),
+      admin.from("employees").select("*", head).eq("organization_id", orgId),
+    ]);
+
+    const donationRows = donationsRes.data || [];
+    const total_donated = donationRows.reduce((sum: number, row: any) => sum + Number(row.amount || 0), 0);
+    const donations_count = donationsCountRes.count || 0;
+    const donors_total = donorsTotalRes.count || 0;
+    const activeSet = new Set<string>();
+    donationRows.forEach((row: any) => {
+      const key = row.donor_id || row.donor_phone;
+      if (key) activeSet.add(String(key));
+    });
+
+    const donors = activeSet.size > 0 ? activeSet.size : donors_total;
+    const recurring = recurringRes.count || 0;
+    const abandoned = abandonedRes.count || 0;
+    const recovered = recoveredRes.count || 0;
+    const transfers = transfersRes.count || 0;
+    const matched = matchedRes.count || 0;
+    const tasksTotal = tasksTotalRes.count || 0;
+    const tasksDone = tasksDoneRes.count || 0;
+    const employees = employeesRes.count || 0;
+
+    const avg_donation = donations_count ? total_donated / donations_count : 0;
+    const recovery_rate = abandoned ? (recovered / abandoned) * 100 : 0;
+    const match_rate = transfers ? (matched / transfers) * 100 : 0;
+    const completion = tasksTotal ? (tasksDone / tasksTotal) * 100 : 0;
+    const recurring_pct = donors_total ? (recurring / donors_total) * 100 : 0;
+
+    const donor_engagement_score = clamp(recurring_pct * 1.5 + (donors > 0 ? Math.min(40, Math.log10(donors + 1) * 12) : 0));
+    const service_score = clamp(recovery_rate * 0.6 + match_rate * 0.4);
+    const team_score = clamp(completion * 0.7 + Math.log10(employees + 1) * 10);
+
+    return {
+      org_id: orgId,
+      org_name: org.name,
+      total_donated,
+      donations_count,
+      avg_donation,
+      donors,
+      recurring_donors: recurring,
+      abandoned_carts: abandoned,
+      recovered_carts: recovered,
+      recovery_rate,
+      bank_transfers: transfers,
+      matched_transfers: matched,
+      employees_count: employees,
+      tasks_total: tasksTotal,
+      tasks_completed: tasksDone,
+      task_completion_rate: completion,
+      campaigns: campaignsRes.count || 0,
+      fundraising_score: 0,
+      donor_engagement_score,
+      service_score,
+      team_score,
+      overall_score: 0,
+    } satisfies OrgMetrics;
+  }));
+
+  const maxTotal = metrics.reduce((max: number, metric: OrgMetrics) => Math.max(max, metric.total_donated || 0), 0);
+
+  return metrics.map((metric) => {
+    const fundraising_score = maxTotal > 0 ? clamp((metric.total_donated / maxTotal) * 100) : 0;
+    const overall_score = clamp(
+      (fundraising_score + metric.donor_engagement_score + metric.service_score + metric.team_score) / 4,
+    );
+
+    return { ...metric, fundraising_score, overall_score };
+  });
+}
+
+async function generateInsight(admin: any, apiKey: string, metrics: OrgMetrics, allMetrics: OrgMetrics[]) {
+  const peers = allMetrics.filter((m) => m.org_id !== metrics.org_id);
+  const avgRev = peers.length ? peers.reduce((sum, m) => sum + m.total_donated, 0) / peers.length : 0;
+  const avgScore = peers.length ? peers.reduce((sum, m) => sum + m.overall_score, 0) / peers.length : 0;
+
+  const systemPrompt = `أنت محلل بيانات تنفيذي خبير في إدارة الجمعيات الخيرية والتبرعات وخدمة المتبرعين. مهمتك إنتاج تحليل عربي احترافي شامل وثابت لنفس المدخلات.
+قواعد إلزامية:
+- اعتمد فقط على الأرقام المرسلة ولا تخترع أي رقم أو معلومة.
+- إذا كانت البيانات غير كافية في نقطة ما، اذكر ذلك كاستنتاج محدود لا كحقيقة.
+- لنفس البيانات والفترة يجب أن تكون النتيجة بنفس المنطق والترتيب قدر الإمكان؛ لا تضف تنويعات إبداعية عشوائية.
+- لا تحذف أي ملاحظة مهمة: غطِّ الإيرادات، عدد التبرعات، متوسط التبرع، المتبرعين، المتبرعين المنتظمين، السلال المتروكة، التحويلات البنكية، الموظفين، المهام، الحملات، والدرجات المركبة.
+- استخرج كل نقطة قوة/ضعف/فرصة من مقارنة مباشرة بين أداء الجمعية ومتوسط الجمعيات الأخرى أو من المؤشرات الداخلية.
+- التوصيات يجب أن تكون عملية، قابلة للتنفيذ، مرتبة بالأولوية، ومربوطة بسبب واضح من البيانات.
+- اكتب بلغة تنفيذية ذكية ومباشرة، بدون حشو.`;
+
+  const userPrompt = `حلّل أداء هذه الجمعية للفترة: منذ البداية
+الاسم: ${metrics.org_name}
+- الإيرادات: ${metrics.total_donated.toFixed(0)} ر.س (متوسط الأخريات: ${avgRev.toFixed(0)})
+- عدد التبرعات: ${metrics.donations_count}
+- متوسط التبرع: ${metrics.avg_donation.toFixed(0)} ر.س
+- المتبرعون: ${metrics.donors} (منتظمون: ${metrics.recurring_donors})
+- السلال المتروكة: ${metrics.abandoned_carts} (مسترجعة: ${metrics.recovered_carts}, نسبة: ${metrics.recovery_rate.toFixed(1)}%)
+- التحويلات البنكية: ${metrics.bank_transfers} (مطابقة: ${metrics.matched_transfers})
+- الموظفون: ${metrics.employees_count}
+- المهام: ${metrics.tasks_total} (مكتمل: ${metrics.tasks_completed}, نسبة: ${metrics.task_completion_rate.toFixed(1)}%)
+- الحملات: ${metrics.campaigns}
+- نقاط (0-100): جمع التبرعات ${metrics.fundraising_score.toFixed(0)} / تفاعل ${metrics.donor_engagement_score.toFixed(0)} / خدمة ${metrics.service_score.toFixed(0)} / فريق ${metrics.team_score.toFixed(0)} / إجمالي ${metrics.overall_score.toFixed(0)} (متوسط الأخريات ${avgScore.toFixed(0)})
+
+قدّم تحليلاً شاملاً يتضمن:
+1) ملخّص تنفيذي يغطي أهم الاستنتاجات ولا يتجاوز 4 جمل.
+2) 4-6 نقاط قوة، مع عدم تجاهل أي مؤشر إيجابي واضح.
+3) 4-6 نقاط ضعف أو مخاطر تشغيلية/تسويقية، مع عدم تجاهل أي مؤشر سلبي واضح.
+4) 3-5 فرص نمو وتحسين مستندة إلى البيانات.
+5) 6-8 توصيات قابلة للتنفيذ مع مستوى التأثير، مرتبة من الأعلى أثرًا إلى الأقل.
+راجع إجابتك داخليًا قبل الإرسال للتأكد من الشمول والدقة والثبات وعدم وجود نقص أو أخطاء.`;
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      temperature: 0,
+      top_p: 0.1,
+      seed: 42,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [{
+        type: "function",
+        function: {
+          name: "submit_analysis",
+          description: "Submit the structured analysis",
+          parameters: {
+            type: "object",
+            properties: {
+              summary: { type: "string", description: "ملخّص تنفيذي 2-4 جمل" },
+              strengths: { type: "array", items: { type: "string" } },
+              weaknesses: { type: "array", items: { type: "string" } },
+              opportunities: { type: "array", items: { type: "string" } },
+              recommendations: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    impact: { type: "string", enum: ["high", "medium", "low"] },
+                    action: { type: "string" },
+                  },
+                  required: ["title", "impact", "action"],
+                },
+              },
+            },
+            required: ["summary", "strengths", "weaknesses", "opportunities", "recommendations"],
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "submit_analysis" } },
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error("generate-action-plan insight generation failed:", response.status, text);
+    throw new Error("تعذّر توليد التحليل الذكي التلقائي لهذه الجمعية");
+  }
+
+  const data = await response.json();
+  const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  const insight = args ? JSON.parse(args) : null;
+  if (!insight) throw new Error("تعذّر استخراج التحليل الذكي التلقائي");
+
+  const { data: saved, error: saveErr } = await admin
+    .from("admin_ai_insights_cache")
+    .insert({
+      organization_id: metrics.org_id,
+      period_label: "منذ البداية",
+      period_from: null,
+      period_to: null,
+      insight,
+      metrics_snapshot: metrics,
+    })
+    .select("id, insight, period_label, generated_at")
+    .single();
+
+  if (saveErr) throw saveErr;
+  return saved;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -31,7 +272,7 @@ Deno.serve(async (req) => {
     }
 
     // 1) Latest cached AI insight
-    const { data: cached } = await admin
+    let { data: cached } = await admin
       .from("admin_ai_insights_cache")
       .select("id, insight, period_label, generated_at")
       .eq("organization_id", organization_id)
@@ -40,9 +281,16 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!cached?.insight) {
-      return new Response(JSON.stringify({ error: "لم يتم توليد تحليل ذكي بعد لهذه الجمعية" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const allMetrics = await buildOrgMetrics(admin);
+      const selectedMetrics = allMetrics.find((m) => m.org_id === organization_id);
+
+      if (!selectedMetrics) {
+        return new Response(JSON.stringify({ error: "الجمعية المحددة غير موجودة" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      cached = await generateInsight(admin, LOVABLE_API_KEY, selectedMetrics, allMetrics);
     }
 
     const recs = (cached.insight.recommendations || []) as { title: string; impact: string; action: string }[];
