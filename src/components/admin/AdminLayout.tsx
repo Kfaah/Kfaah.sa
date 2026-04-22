@@ -103,14 +103,16 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       }}
     >
       {/* Sidebar — أبيض كلاسيكي يمين الشاشة (RTL) */}
-      <aside className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-border bg-white flex flex-col shadow-card">
+      <aside
+        className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-border flex flex-col shadow-card"
+        style={{
+          background:
+            "linear-gradient(180deg, hsl(190 55% 22%) 0%, hsl(195 65% 16%) 50%, hsl(200 70% 12%) 100%)",
+        }}
+      >
         {/* Brand — Executive identity card */}
         <div
-          className="relative px-5 py-6 border-b border-border overflow-hidden"
-          style={{
-            background:
-              "linear-gradient(160deg, hsl(190 55% 22%) 0%, hsl(195 65% 16%) 60%, hsl(200 70% 12%) 100%)",
-          }}
+          className="relative px-5 py-6 border-b border-amber-300/20 overflow-hidden"
         >
           {/* Subtle ornamental pattern */}
           <div
@@ -178,8 +180,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 className={cn(
                   "group relative flex items-center gap-3 rounded-lg pr-4 pl-3 py-3 transition-all duration-300 overflow-hidden",
                   active
-                    ? "bg-gradient-to-l from-[hsl(190,55%,22%)] via-[hsl(195,60%,18%)] to-[hsl(200,65%,15%)] shadow-[0_8px_24px_-10px_rgba(15,42,52,0.55)] ring-1 ring-amber-300/50"
-                    : "bg-gradient-to-l from-slate-50 to-white hover:from-white hover:to-slate-50 hover:shadow-[0_4px_14px_-8px_rgba(15,42,52,0.25)] ring-1 ring-slate-200/70 hover:ring-amber-300/50"
+                    ? "bg-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] ring-1 ring-amber-300/70"
+                    : "bg-white/5 hover:bg-white/10 ring-1 ring-white/10 hover:ring-amber-300/40 backdrop-blur-sm"
                 )}
               >
                 {/* Right vertical gold accent bar */}
@@ -188,24 +190,14 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                     "absolute right-0 top-0 bottom-0 w-[3px] transition-all duration-300",
                     active
                       ? "bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.7)]"
-                      : "bg-transparent group-hover:bg-amber-300/60"
+                      : "bg-transparent group-hover:bg-amber-300/50"
                   )}
                 />
-                {/* Subtle ornamental shine on active */}
-                {active && (
-                  <span
-                    className="absolute inset-0 opacity-[0.08] pointer-events-none"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle at 90% 0%, rgba(255,255,255,0.6) 0%, transparent 50%)",
-                    }}
-                  />
-                )}
                 <div
                   className={cn(
                     "relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 border-2 border-white",
                     active
-                      ? "bg-white/15 text-white ring-1 ring-white/40 backdrop-blur-sm shadow-[0_4px_12px_-2px_rgba(0,0,0,0.25)]"
+                      ? `${item.bg} ${item.color} ring-2 ring-amber-300/70 shadow-md`
                       : `${item.bg} ${item.color} ring-1 ${item.ring} group-hover:shadow-md group-hover:scale-105`
                   )}
                 >
@@ -214,13 +206,13 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 <div className="flex-1 min-w-0">
                   <div className={cn(
                     "text-[13.5px] font-bold leading-tight truncate tracking-tight transition-colors",
-                    active ? "text-white" : "text-slate-800 group-hover:text-slate-900"
+                    active ? "text-emerald-800" : "text-white group-hover:text-amber-100"
                   )}>
                     {item.label}
                   </div>
                   <div className={cn(
                     "text-[10.5px] leading-tight mt-0.5 truncate transition-colors",
-                    active ? "text-amber-200/90" : "text-slate-500"
+                    active ? "text-amber-700" : "text-white/60 group-hover:text-amber-200/80"
                   )}>
                     {item.desc}
                   </div>
@@ -236,11 +228,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
         {/* Footer actions */}
         <div
-          className="p-3 border-t border-border relative overflow-hidden"
-          style={{
-            background:
-              "linear-gradient(160deg, hsl(190 55% 22%) 0%, hsl(195 65% 16%) 60%, hsl(200 70% 12%) 100%)",
-          }}
+          className="p-3 border-t border-amber-300/20 relative overflow-hidden"
         >
           {/* Gold corner accents to match brand header */}
           <div className="absolute top-1.5 left-1.5 w-5 h-5 border-t-2 border-l-2 border-amber-300/60 rounded-tl-md pointer-events-none" />
