@@ -11,7 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ActionPlanTaskCard, type ActionPlanEmployee, type ActionPlanTask } from "@/components/admin/action-plans/ActionPlanTaskCard";
-import { exportActionPlanExcel } from "@/utils/exportActionPlanExcel";
 
 interface Plan {
   id: string;
@@ -102,7 +101,8 @@ export default function AdminActionPlanDetails() {
     if (!plan) return;
     try {
       setExporting(true);
-      exportActionPlanExcel({ plan, tasks, employees });
+      const { exportActionPlanExcel } = await import("@/utils/exportActionPlanExcel");
+      await exportActionPlanExcel({ plan, tasks, employees });
       toast.success("تم تصدير الخطة إلى Excel");
     } catch {
       toast.error("تعذّر تصدير ملف Excel");
