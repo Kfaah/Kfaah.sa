@@ -1,0 +1,1 @@
+ALTER TABLE public.organization_profiles ADD COLUMN IF NOT EXISTS goals text;
