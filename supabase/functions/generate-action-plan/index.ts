@@ -483,6 +483,15 @@ Deno.serve(async (req) => {
       due.setDate(due.getDate() + Math.max(stepDays, 3));
       const a = assignments.find(x => x.recommendation_index === r.idx);
       const validEmpId = a && empList.some(e => e.id === a.employee_id) ? a.employee_id : null;
+      const empIds = new Set(empList.map((e) => e.id));
+      const cleanedSubtasks = (a?.subtasks || []).map((s) => ({
+        ...s,
+        assigned_employee_id:
+          s.assigned_employee_id && empIds.has(s.assigned_employee_id)
+            ? s.assigned_employee_id
+            : validEmpId,
+        status: "pending",
+      }));
       return {
         action_plan_id: plan.id,
         organization_id,
@@ -496,7 +505,7 @@ Deno.serve(async (req) => {
         assigned_employee_id: validEmpId,
         ai_suggested_employee_id: validEmpId,
         ai_suggestion_reason: a?.reason || null,
-        subtasks: a?.subtasks || [],
+        subtasks: cleanedSubtasks,
       };
     });
 
