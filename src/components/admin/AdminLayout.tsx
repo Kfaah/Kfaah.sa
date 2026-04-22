@@ -1,11 +1,13 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, GitCompareArrows, Sparkles, FileBarChart2,
-  Building2, LogOut, Crown, ArrowLeftCircle, ListChecks, Lightbulb,
+  Building2, LogOut, ArrowLeftCircle, ListChecks, Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 
@@ -35,8 +37,39 @@ const navItems = [
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const location = useLocation();
+  const [profile, setProfile] = useState<{ name: string; avatar: string | null }>({
+    name: "مدير النظام",
+    avatar: null,
+  });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const fullName =
+        [data?.first_name, data?.last_name].filter(Boolean).join(" ").trim() ||
+        user.email ||
+        "مدير النظام";
+      setProfile({ name: fullName, avatar: data?.avatar_url ?? null });
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, user?.email]);
+
+  const initials = profile.name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0])
+    .join("")
+    .toUpperCase() || "م";
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
@@ -53,19 +86,22 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <aside className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-border bg-white flex flex-col shadow-card">
         {/* Brand */}
         <div className="p-6 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md"
-              style={{
-                background:
-                  "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(195 60% 20%) 100%)",
-              }}
-            >
-              <Crown className="w-6 h-6 text-white" />
-            </div>
+          <div className="flex flex-col items-center text-center gap-2">
+            <Avatar className="w-16 h-16 ring-2 ring-primary/20 shadow-md">
+              {profile.avatar && <AvatarImage src={profile.avatar} alt={profile.name} />}
+              <AvatarFallback
+                className="text-white font-bold text-lg"
+                style={{
+                  background:
+                    "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(195 60% 20%) 100%)",
+                }}
+              >
+                {initials}
+              </AvatarFallback>
+            </Avatar>
             <div>
-              <h1 className="text-foreground font-bold text-base leading-tight">مدير النظام</h1>
-              <p className="text-muted-foreground text-[11px]">مركز قيادة التسويق</p>
+              <h1 className="text-foreground font-bold text-sm leading-tight">{profile.name}</h1>
+              <p className="text-muted-foreground text-[11px] mt-0.5">مدير النظام</p>
             </div>
           </div>
         </div>
