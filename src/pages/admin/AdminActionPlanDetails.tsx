@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  ArrowRightCircle, Calendar, CheckCircle2, Clock, Loader2, Sparkles, User, ListChecks,
+  ArrowRightCircle, Calendar, CheckCircle2, Clock, Loader2, Sparkles, User, ListChecks, CheckSquare, Square,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,6 +26,13 @@ interface Task {
   ai_suggested_employee_id: string | null;
   ai_suggestion_reason: string | null;
   completion_notes: string | null;
+  subtasks: SubTask[] | null;
+}
+interface SubTask {
+  title: string;
+  details: string;
+  duration_days: number;
+  done?: boolean;
 }
 interface Plan {
   id: string;
