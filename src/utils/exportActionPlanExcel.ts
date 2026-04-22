@@ -5,6 +5,14 @@ type SubTask = {
   done?: boolean;
   status?: string;
   assigned_employee_id?: string | null;
+  deliverable?: {
+    type: string;
+    title: string;
+    content: string;
+  } | null;
+  employee_report?: string | null;
+  rating?: number | null;
+  rating_notes?: string | null;
 };
 
 type Plan = {
@@ -91,13 +99,12 @@ export async function exportActionPlanExcel({
   ];
 
   const executiveRows = [
-    ["المهمة الرئيسية", "المهمة التنفيذية", "التفاصيل", "المكلف", "الفترة العامة", "الحالة", "المدة بالأيام"],
+    ["الهدف", "المهمة التنفيذية", "التفاصيل", "المكلف", "المدة (أيام)", "الحالة", "المخرج الجاهز", "تقرير الموظف", "التقييم", "ملاحظة الإدارة"],
     ...tasks.flatMap((task) => {
       const assignee = task.assigned_employee_id ? employeeNameById.get(task.assigned_employee_id) || "—" : "غير مكلّف";
-      const period = `${formatDate(task.start_date)} → ${formatDate(task.due_date)}`;
 
       if (!task.subtasks?.length) {
-        return [[task.title, "—", "لا توجد مهام تنفيذية مولدة بعد", assignee, period, STATUS_LABEL[task.status] || task.status, "—"]];
+        return [[task.title, "—", "لا توجد مهام تنفيذية مولدة بعد", assignee, "—", STATUS_LABEL[task.status] || task.status, "—", "—", "—", "—"]];
       }
 
       return task.subtasks.map((subtask) => [
@@ -107,9 +114,14 @@ export async function exportActionPlanExcel({
         subtask.assigned_employee_id
           ? employeeNameById.get(subtask.assigned_employee_id) || "—"
           : assignee,
-        period,
-        STATUS_LABEL[subtask.status || (subtask.done ? "completed" : task.status)] || task.status,
         subtask.duration_days,
+        STATUS_LABEL[subtask.status || (subtask.done ? "completed" : task.status)] || task.status,
+        subtask.deliverable
+          ? `[${subtask.deliverable.title}]\n${subtask.deliverable.content}`
+          : "—",
+        subtask.employee_report || "—",
+        subtask.rating ? `${subtask.rating}/5` : "—",
+        subtask.rating_notes || "—",
       ]);
     }),
   ];
