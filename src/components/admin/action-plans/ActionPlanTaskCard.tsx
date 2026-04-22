@@ -3,9 +3,10 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle2, ChevronDown, Clock, Sparkles, User } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock, Copy, FileText, Package, Sparkles, Star, User } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export interface ActionPlanSubTask {
   title: string;
@@ -16,6 +17,15 @@ export interface ActionPlanSubTask {
   status?: string;
   start_date?: string | null;
   due_date?: string | null;
+  deliverable?: {
+    type: "donor_list" | "message_template" | "social_post" | "report_form" | "instructions";
+    title: string;
+    content: string;
+    fields?: { label: string; key: string }[];
+  } | null;
+  employee_report?: string | null;
+  rating?: number | null;
+  rating_notes?: string | null;
 }
 
 export interface ActionPlanTask {
@@ -236,7 +246,6 @@ function SubtaskRow({
             </Select>
           </TableCell>
           <TableCell className="pt-3">
-            {subtask.details && (
               <button
                 onClick={() => setOpen((v) => !v)}
                 className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition"
@@ -244,22 +253,169 @@ function SubtaskRow({
               >
                 <ChevronDown className={cn("h-5 w-5 transition-transform", open && "rotate-180")} />
               </button>
-            )}
           </TableCell>
         </TableRow>
-      {open && subtask.details && (
+      {open && (
         <TableRow className="bg-muted/30 hover:bg-muted/30">
           <TableCell></TableCell>
-          <TableCell colSpan={5} className="py-4">
-            <div className="rounded-md border border-border bg-background/60 p-4">
-              <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
-                تفاصيل التنفيذ
+          <TableCell colSpan={5} className="py-5 space-y-4">
+            {subtask.details && (
+              <div className="rounded-md border border-border bg-background/60 p-4">
+                <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
+                  تفاصيل التنفيذ
+                </div>
+                <p className="text-base leading-8 text-foreground whitespace-pre-line">{subtask.details}</p>
               </div>
-              <p className="text-base leading-8 text-foreground whitespace-pre-line">{subtask.details}</p>
-            </div>
+            )}
+
+            {subtask.deliverable && <DeliverableBlock deliverable={subtask.deliverable} />}
+
+            <ReportAndRating
+              report={subtask.employee_report || ""}
+              rating={subtask.rating ?? null}
+              ratingNotes={subtask.rating_notes || ""}
+              onSave={(patch) => onUpdate(patch)}
+            />
           </TableCell>
         </TableRow>
       )}
     </>
+  );
+}
+
+const DELIVERABLE_LABEL: Record<string, string> = {
+  donor_list: "قائمة مانحين جاهزة",
+  message_template: "قالب رسالة جاهز",
+  social_post: "منشور سوشيال ميديا جاهز",
+  report_form: "نموذج تقرير قابل للتعبئة",
+  instructions: "تعليمات تنفيذية",
+};
+
+function DeliverableBlock({ deliverable }: { deliverable: NonNullable<ActionPlanSubTask["deliverable"]> }) {
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(deliverable.content);
+      toast.success("تم النسخ");
+    } catch {
+      toast.error("تعذّر النسخ");
+    }
+  };
+
+  return (
+    <div className="rounded-md border border-accent/30 bg-accent/5 p-4">
+      <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Package className="h-5 w-5 text-accent" />
+          <span className="text-xs font-bold uppercase tracking-wide text-accent">
+            {DELIVERABLE_LABEL[deliverable.type] || "مخرج جاهز"}
+          </span>
+          <span className="text-base font-semibold text-foreground">— {deliverable.title}</span>
+        </div>
+        <button
+          onClick={handleCopy}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+        >
+          <Copy className="h-3.5 w-3.5" /> نسخ
+        </button>
+      </div>
+      <pre className="whitespace-pre-wrap break-words rounded-md bg-background/80 border border-border p-3 text-base leading-8 text-foreground font-sans">
+        {deliverable.content}
+      </pre>
+      {deliverable.fields && deliverable.fields.length > 0 && (
+        <div className="mt-3">
+          <div className="text-xs font-bold text-muted-foreground mb-2">حقول التقرير المطلوبة:</div>
+          <ul className="grid grid-cols-2 gap-2 text-sm text-foreground">
+            {deliverable.fields.map((f) => (
+              <li key={f.key} className="rounded border border-border bg-background/60 px-2 py-1.5">
+                {f.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReportAndRating({
+  report,
+  rating,
+  ratingNotes,
+  onSave,
+}: {
+  report: string;
+  rating: number | null;
+  ratingNotes: string;
+  onSave: (patch: Partial<ActionPlanSubTask>) => Promise<void>;
+}) {
+  const [localReport, setLocalReport] = useState(report);
+  const [localRating, setLocalRating] = useState<number | null>(rating);
+  const [localNotes, setLocalNotes] = useState(ratingNotes);
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {/* Employee report */}
+      <div className="rounded-md border border-border bg-background/60 p-4">
+        <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <FileText className="h-4 w-4" /> تقرير الموظف
+        </div>
+        <Textarea
+          value={localReport}
+          onChange={(e) => setLocalReport(e.target.value)}
+          onBlur={() => localReport !== report && onSave({ employee_report: localReport })}
+          placeholder="يكتب الموظف هنا تقرير تنفيذه (الأرقام، النتائج، الملاحظات)..."
+          rows={4}
+          className="text-base leading-7"
+        />
+      </div>
+
+      {/* Manager rating */}
+      <div className="rounded-md border border-border bg-background/60 p-4">
+        <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <Star className="h-4 w-4" /> تقييم الإدارة
+        </div>
+        <div className="mb-3 flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              onClick={() => {
+                setLocalRating(n);
+                onSave({ rating: n });
+              }}
+              className="transition hover:scale-110"
+              aria-label={`تقييم ${n}`}
+            >
+              <Star
+                className={cn(
+                  "h-7 w-7",
+                  localRating && n <= localRating
+                    ? "fill-amber-400 text-amber-400"
+                    : "text-muted-foreground/40",
+                )}
+              />
+            </button>
+          ))}
+          {localRating && (
+            <button
+              onClick={() => {
+                setLocalRating(null);
+                onSave({ rating: null });
+              }}
+              className="ms-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              مسح
+            </button>
+          )}
+        </div>
+        <Textarea
+          value={localNotes}
+          onChange={(e) => setLocalNotes(e.target.value)}
+          onBlur={() => localNotes !== ratingNotes && onSave({ rating_notes: localNotes })}
+          placeholder="ملاحظة الإدارة على التنفيذ..."
+          rows={2}
+          className="text-sm leading-7"
+        />
+      </div>
+    </div>
   );
 }
