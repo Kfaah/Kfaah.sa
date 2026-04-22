@@ -84,24 +84,61 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     >
       {/* Sidebar — أبيض كلاسيكي يمين الشاشة (RTL) */}
       <aside className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-border bg-white flex flex-col shadow-card">
-        {/* Brand */}
-        <div className="p-6 border-b border-border">
-          <div className="flex flex-col items-center text-center gap-2">
-            <Avatar className="w-16 h-16 ring-2 ring-primary/20 shadow-md">
-              {profile.avatar && <AvatarImage src={profile.avatar} alt={profile.name} />}
-              <AvatarFallback
-                className="text-white font-bold text-lg"
-                style={{
-                  background:
-                    "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(195 60% 20%) 100%)",
-                }}
-              >
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-foreground font-bold text-sm leading-tight">{profile.name}</h1>
-              <p className="text-muted-foreground text-[11px] mt-0.5">مدير النظام</p>
+        {/* Brand — Executive identity card */}
+        <div
+          className="relative px-5 py-6 border-b border-border overflow-hidden"
+          style={{
+            background:
+              "linear-gradient(160deg, hsl(190 55% 22%) 0%, hsl(195 65% 16%) 60%, hsl(200 70% 12%) 100%)",
+          }}
+        >
+          {/* Subtle ornamental pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.08] pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 20% 0%, rgba(255,255,255,0.4) 0%, transparent 40%), radial-gradient(circle at 80% 100%, rgba(255,255,255,0.25) 0%, transparent 40%)",
+            }}
+          />
+          {/* Gold corner accent */}
+          <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-amber-300/60 rounded-tl-md" />
+          <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-amber-300/60 rounded-br-md" />
+
+          <div className="relative flex flex-col items-center text-center gap-3">
+            {/* Avatar with double ring */}
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 blur-sm opacity-60" />
+              <Avatar className="relative w-20 h-20 ring-2 ring-amber-300/80 ring-offset-2 ring-offset-transparent shadow-2xl">
+                {profile.avatar && <AvatarImage src={profile.avatar} alt={profile.name} className="object-cover" />}
+                <AvatarFallback
+                  className="text-white font-bold text-xl"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, hsl(190 50% 35%) 0%, hsl(195 60% 25%) 100%)",
+                  }}
+                >
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-1.5">
+              <h1 className="text-white font-bold text-base leading-tight tracking-wide">
+                {profile.name}
+              </h1>
+
+              {/* Decorative divider with diamond */}
+              <div className="flex items-center justify-center gap-2 px-2">
+                <span className="h-px w-8 bg-gradient-to-l from-transparent via-amber-300/60 to-amber-300/60" />
+                <span className="w-1.5 h-1.5 rotate-45 bg-amber-300/80" />
+                <span className="h-px w-8 bg-gradient-to-r from-transparent via-amber-300/60 to-amber-300/60" />
+              </div>
+
+              {/* Title badge */}
+              <p className="text-amber-200 text-[11px] font-semibold tracking-[0.25em] uppercase">
+                مدير النظام
+              </p>
             </div>
           </div>
         </div>
