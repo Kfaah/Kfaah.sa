@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  ArrowRightCircle, Calendar, CheckCircle2, Clock, Download, Loader2, Sparkles, ListChecks,
+  ArrowRightCircle, Calendar, CheckCircle2, Clock, Download, FileSpreadsheet, Loader2, Presentation, Sparkles, ListChecks,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ interface Plan {
   end_date: string | null;
   progress: number;
   org_name?: string;
+  org_logo_url?: string | null;
 }
 
 export default function AdminActionPlanDetails() {
@@ -33,16 +34,21 @@ export default function AdminActionPlanDetails() {
   const [loading, setLoading] = useState(true);
   const [savingTask, setSavingTask] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportingPpt, setExportingPpt] = useState(false);
 
   const load = async () => {
     if (!planId) return;
     setLoading(true);
     const { data: planData } = await supabase
       .from("action_plans")
-      .select("*, organizations(name)")
+      .select("*, organizations(name, logo_url)")
       .eq("id", planId).maybeSingle();
     if (!planData) { toast.error("الخطة غير موجودة"); navigate("/admin/action-plans"); return; }
-    setPlan({ ...planData, org_name: (planData as any).organizations?.name });
+    setPlan({
+      ...planData,
+      org_name: (planData as any).organizations?.name,
+      org_logo_url: (planData as any).organizations?.logo_url,
+    });
 
     const [{ data: taskData }, { data: empData }] = await Promise.all([
       supabase.from("action_plan_tasks").select("*").eq("action_plan_id", planId).order("priority"),
@@ -111,6 +117,26 @@ export default function AdminActionPlanDetails() {
     }
   };
 
+  const handleExportPpt = async () => {
+    if (!plan) return;
+    try {
+      setExportingPpt(true);
+      const { exportActionPlanPpt } = await import("@/utils/exportActionPlanPpt");
+      await exportActionPlanPpt({
+        plan,
+        tasks,
+        employees,
+        orgLogoUrl: plan.org_logo_url || null,
+      });
+      toast.success("تم تصدير العرض التقديمي");
+    } catch (e) {
+      console.error(e);
+      toast.error("تعذّر تصدير ملف PowerPoint");
+    } finally {
+      setExportingPpt(false);
+    }
+  };
+
   return (
     <div className="p-8 space-y-6" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -118,10 +144,16 @@ export default function AdminActionPlanDetails() {
           <ArrowRightCircle className="w-4 h-4" />
           رجوع للخطط
         </Button>
-        <Button onClick={handleExportExcel} disabled={exporting || !plan} className="gap-2">
-          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          تصدير Excel
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleExportExcel} disabled={exporting || !plan} variant="outline" className="gap-2">
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+            تصدير Excel
+          </Button>
+          <Button onClick={handleExportPpt} disabled={exportingPpt || !plan} className="gap-2 bg-amber-500 hover:bg-amber-600 text-slate-900">
+            {exportingPpt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Presentation className="w-4 h-4" />}
+            تصدير PowerPoint
+          </Button>
+        </div>
       </div>
 
       <Card className="bg-card border-border p-6 shadow-sm">
