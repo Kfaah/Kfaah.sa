@@ -2059,16 +2059,21 @@ export type Database = {
       organization_profiles: {
         Row: {
           about: string | null
+          accent_color: string | null
           ai_analysis: Json | null
           ai_model: string | null
+          auto_extracted_at: string | null
           created_at: string
           facebook_url: string | null
           id: string
           instagram_url: string | null
           last_analyzed_at: string | null
           linkedin_url: string | null
+          logo_url: string | null
           organization_id: string
           other_links: Json | null
+          primary_color: string | null
+          secondary_color: string | null
           snapchat_url: string | null
           store_url: string | null
           tiktok_url: string | null
@@ -2079,16 +2084,21 @@ export type Database = {
         }
         Insert: {
           about?: string | null
+          accent_color?: string | null
           ai_analysis?: Json | null
           ai_model?: string | null
+          auto_extracted_at?: string | null
           created_at?: string
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
           last_analyzed_at?: string | null
           linkedin_url?: string | null
+          logo_url?: string | null
           organization_id: string
           other_links?: Json | null
+          primary_color?: string | null
+          secondary_color?: string | null
           snapchat_url?: string | null
           store_url?: string | null
           tiktok_url?: string | null
@@ -2099,16 +2109,21 @@ export type Database = {
         }
         Update: {
           about?: string | null
+          accent_color?: string | null
           ai_analysis?: Json | null
           ai_model?: string | null
+          auto_extracted_at?: string | null
           created_at?: string
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
           last_analyzed_at?: string | null
           linkedin_url?: string | null
+          logo_url?: string | null
           organization_id?: string
           other_links?: Json | null
+          primary_color?: string | null
+          secondary_color?: string | null
           snapchat_url?: string | null
           store_url?: string | null
           tiktok_url?: string | null
