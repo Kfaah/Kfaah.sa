@@ -13,26 +13,19 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/admin", label: "نظرة عامة موحّدة", icon: LayoutDashboard, end: true,
-    desc: "ملخّص شامل لكل الجمعيات",
-    color: "text-sky-600", bg: "bg-sky-100", activeBg: "bg-sky-500", activeText: "text-white" },
+    desc: "ملخّص شامل لكل الجمعيات" },
   { to: "/admin/organizations", label: "الجمعيات", icon: Building2, end: false,
-    desc: "إدارة وتفاصيل الجمعيات",
-    color: "text-emerald-600", bg: "bg-emerald-100", activeBg: "bg-emerald-500", activeText: "text-white" },
+    desc: "إدارة وتفاصيل الجمعيات" },
   { to: "/admin/compare", label: "المقارنة بين الجمعيات", icon: GitCompareArrows, end: false,
-    desc: "رادار · ترتيب · معايير متعددة",
-    color: "text-violet-600", bg: "bg-violet-100", activeBg: "bg-violet-500", activeText: "text-white" },
+    desc: "رادار · ترتيب · معايير متعددة" },
   { to: "/admin/analytics", label: "التحليل العميق", icon: Sparkles, end: false,
-    desc: "تحليل AI لكل جمعية",
-    color: "text-amber-600", bg: "bg-amber-100", activeBg: "bg-amber-500", activeText: "text-white" },
+    desc: "تحليل AI لكل جمعية" },
   { to: "/admin/action-plans", label: "الخطط من التوصيات", icon: ListChecks, end: false,
-    desc: "تحويل التحليل إلى خطة وتكليف",
-    color: "text-fuchsia-600", bg: "bg-fuchsia-100", activeBg: "bg-fuchsia-500", activeText: "text-white" },
+    desc: "تحويل التحليل إلى خطة وتكليف" },
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
-    desc: "تقارير موضوعية وتنفيذية سردية",
-    color: "text-rose-600", bg: "bg-rose-100", activeBg: "bg-rose-500", activeText: "text-white" },
+    desc: "تقارير موضوعية وتنفيذية سردية" },
   { to: "/admin/innovation", label: "الابتكار والتحديث", icon: Lightbulb, end: false,
-    desc: "أفكار AI ابتكارية ونقاش تفاعلي",
-    color: "text-amber-600", bg: "bg-amber-100", activeBg: "bg-amber-500", activeText: "text-white" },
+    desc: "أفكار AI ابتكارية ونقاش تفاعلي" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
@@ -164,7 +157,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-2.5">
+        <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = item.end
@@ -176,42 +169,59 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 to={item.to}
                 end={item.end}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-xl pr-3 pl-3 py-2.5 transition-all border-2",
+                  "group relative flex items-center gap-3 rounded-lg pr-4 pl-3 py-3 transition-all duration-300 overflow-hidden",
                   active
-                    ? "bg-gradient-to-l from-slate-50 via-white to-white border-amber-400/70 shadow-[0_6px_18px_-8px_rgba(15,23,42,0.25)]"
-                    : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-[0_4px_12px_-6px_rgba(15,23,42,0.15)]"
+                    ? "bg-gradient-to-l from-[hsl(190,55%,22%)] via-[hsl(195,60%,18%)] to-[hsl(200,65%,15%)] shadow-[0_8px_24px_-10px_rgba(15,42,52,0.55)] ring-1 ring-amber-300/50"
+                    : "bg-gradient-to-l from-slate-50 to-white hover:from-white hover:to-slate-50 hover:shadow-[0_4px_14px_-8px_rgba(15,42,52,0.25)] ring-1 ring-slate-200/70 hover:ring-amber-300/50"
                 )}
               >
-                {/* Right vertical accent bar (always visible, stronger when active) */}
+                {/* Right vertical gold accent bar */}
                 <span
                   className={cn(
-                    "absolute -right-[2px] top-1/2 -translate-y-1/2 w-[4px] rounded-l-full transition-all",
+                    "absolute right-0 top-0 bottom-0 w-[3px] transition-all duration-300",
                     active
-                      ? "h-9 bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 shadow-[0_0_10px_rgba(217,119,6,0.6)]"
-                      : "h-6 bg-slate-200 group-hover:bg-amber-300"
+                      ? "bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.7)]"
+                      : "bg-transparent group-hover:bg-amber-300/60"
                   )}
                 />
+                {/* Subtle ornamental shine on active */}
+                {active && (
+                  <span
+                    className="absolute inset-0 opacity-[0.08] pointer-events-none"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle at 90% 0%, rgba(255,255,255,0.6) 0%, transparent 50%)",
+                    }}
+                  />
+                )}
                 <div
                   className={cn(
-                    "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all border-2 border-white",
+                    "relative w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-300",
                     active
-                      ? `${item.activeBg} ${item.activeText} shadow-lg ring-2 ring-amber-300/70`
-                      : `${item.bg} ${item.color} ring-1 ring-slate-200 group-hover:ring-amber-300/60 group-hover:shadow-md`
+                      ? "bg-gradient-to-br from-amber-300 to-amber-500 text-[hsl(195,65%,16%)] shadow-[0_4px_12px_-2px_rgba(251,191,36,0.5)] ring-1 ring-amber-200/80"
+                      : "bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 ring-1 ring-slate-200 group-hover:from-amber-50 group-hover:to-amber-100 group-hover:text-amber-700 group-hover:ring-amber-300/60"
                   )}
                 >
-                  <Icon className="w-[18px] h-[18px]" />
+                  <Icon className="w-[18px] h-[18px]" strokeWidth={2.2} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={cn(
-                    "text-[13.5px] font-bold leading-tight truncate tracking-tight",
-                    active ? "text-slate-900" : "text-slate-700"
+                    "text-[13.5px] font-bold leading-tight truncate tracking-tight transition-colors",
+                    active ? "text-white" : "text-slate-800 group-hover:text-slate-900"
                   )}>
                     {item.label}
                   </div>
-                  <div className="text-[10.5px] text-slate-500 leading-tight mt-0.5 truncate">
+                  <div className={cn(
+                    "text-[10.5px] leading-tight mt-0.5 truncate transition-colors",
+                    active ? "text-amber-200/90" : "text-slate-500"
+                  )}>
                     {item.desc}
                   </div>
                 </div>
+                {/* Decorative diamond on active */}
+                {active && (
+                  <span className="w-1.5 h-1.5 rotate-45 bg-amber-300/90 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex-shrink-0" />
+                )}
               </NavLink>
             );
           })}
