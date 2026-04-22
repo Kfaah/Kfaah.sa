@@ -275,6 +275,144 @@ function ModeCard({ active, onClick, icon: Icon, title, desc }: any) {
   );
 }
 
+function verdictTone(v?: string): string {
+  if (!v) return "bg-muted text-foreground border-border";
+  if (v.includes("ممتاز")) return "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
+  if (v.includes("جيد")) return "bg-sky-500/10 text-sky-600 border-sky-500/30";
+  if (v.includes("متوسط")) return "bg-amber-500/10 text-amber-600 border-amber-500/30";
+  if (v.includes("حرج")) return "bg-red-500/10 text-red-600 border-red-500/30";
+  return "bg-violet-500/10 text-violet-600 border-violet-500/30";
+}
+
+function ExecutiveReportView({
+  orgName, periodLabel, report, loading, exporting, onGenerate, onExportPpt, disabled,
+}: {
+  orgName?: string; periodLabel: string; report: ExecReport | null;
+  loading: boolean; exporting: boolean; disabled: boolean;
+  onGenerate: () => void; onExportPpt: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <Card className="bg-card border-border p-5 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-accent/10 text-accent border border-accent/30 flex items-center justify-center">
+            <FileText className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">تقرير الأداء التنفيذي</h2>
+            <p className="text-sm text-muted-foreground">{orgName || "—"} · {periodLabel}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={onGenerate} disabled={disabled || loading} variant="outline" className="gap-2">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {report ? "إعادة التوليد" : "توليد التقرير"}
+          </Button>
+          <Button onClick={onExportPpt} disabled={!report || exporting} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Presentation className="w-4 h-4" />}
+            تصدير PowerPoint
+          </Button>
+        </div>
+      </Card>
+
+      {!report && !loading && (
+        <Card className="bg-card border-border p-12 text-center">
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">اضغط "توليد التقرير" لإنشاء تقرير تنفيذي منظَّم بأعمدة (الواقع | التحليل والتوجيه)، قابل للتصدير إلى PowerPoint احترافي.</p>
+        </Card>
+      )}
+
+      {loading && (
+        <Card className="bg-card border-border p-12 text-center">
+          <Loader2 className="w-10 h-10 text-accent animate-spin mx-auto mb-3" />
+          <p className="text-muted-foreground">جارٍ تحليل البيانات وصياغة التقرير...</p>
+        </Card>
+      )}
+
+      {report && (
+        <>
+          {/* Hero summary */}
+          <Card className="overflow-hidden border-border" dir="rtl">
+            <div className="bg-gradient-to-l from-[hsl(229_67%_25%)] to-[hsl(229_60%_15%)] p-6 text-white">
+              <div className="flex items-start justify-between flex-wrap gap-3">
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-amber-300/90 font-semibold mb-1">الملخص التنفيذي</div>
+                  <h3 className="text-xl font-bold">{orgName}</h3>
+                  <p className="text-sm text-white/70 mt-0.5">{periodLabel}</p>
+                </div>
+                {report.overall_verdict && (
+                  <div className={cn("px-4 py-2 rounded-full border text-sm font-bold flex items-center gap-2", verdictTone(report.overall_verdict))}>
+                    <Award className="w-4 h-4" />
+                    {report.overall_verdict}
+                  </div>
+                )}
+              </div>
+              <p className="mt-4 text-base leading-loose text-white/95">{report.executive_summary}</p>
+            </div>
+          </Card>
+
+          {/* Sections — two-column tables */}
+          {report.sections.map((section, idx) => (
+            <Card key={idx} className="border-border overflow-hidden" dir="rtl">
+              <div className="bg-muted/40 border-b border-border px-5 py-3 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold tabular-nums">
+                  {idx + 1}
+                </div>
+                <h3 className="font-bold text-foreground">{section.title}</h3>
+                <Badge variant="outline" className="ms-auto">{section.rows.length} مؤشر</Badge>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-[hsl(229_67%_25%)] text-white">
+                      <th className="px-4 py-3 text-right font-bold w-[22%]">المؤشر</th>
+                      <th className="px-4 py-3 text-right font-bold w-[30%]">النتيجة / الواقع</th>
+                      <th className="px-4 py-3 text-right font-bold">التحليل والتوجيه</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {section.rows.map((r, i) => (
+                      <tr key={i} className={cn("border-t border-border", i % 2 === 0 ? "bg-background" : "bg-muted/20")}>
+                        <td className="px-4 py-3 text-right font-bold text-foreground align-top">{r.metric}</td>
+                        <td className="px-4 py-3 text-right text-foreground align-top">
+                          <span className="inline-block px-2.5 py-1 rounded-md bg-accent/10 text-accent border border-accent/20 font-bold tabular-nums">
+                            {r.result}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-muted-foreground align-top leading-relaxed">{r.analysis}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          ))}
+
+          {/* Strategic recommendations */}
+          {report.strategic_recommendations && report.strategic_recommendations.length > 0 && (
+            <Card className="overflow-hidden border-border" dir="rtl">
+              <div className="bg-gradient-to-l from-[hsl(229_67%_25%)] to-[hsl(229_60%_15%)] px-5 py-3">
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-300" /> التوصيات الاستراتيجية
+                </h3>
+              </div>
+              <div className="p-5 space-y-3">
+                {report.strategic_recommendations.map((r, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+                    <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 tabular-nums">{i + 1}</div>
+                    <p className="text-foreground leading-relaxed flex-1">{r}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function themeRows(theme: ThemeKey, m: OrgMetrics): { label: string; value: string }[] {
   switch (theme) {
     case "donors": return [
