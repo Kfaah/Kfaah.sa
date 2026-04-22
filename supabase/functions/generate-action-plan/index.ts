@@ -223,11 +223,6 @@ async function buildPowerPointSupportFile(
   return await uploadPptBuffer(admin, organization_id, planId, fileName, buffer);
 }
 
-/**
- * Build a real donor-list CSV from the DB based on a textual segment description.
- * The AI may suggest one of these segments; we map keywords to real queries.
- * Returns { url, name, count } or null if nothing matched.
- */
 async function buildDonorListFile(
   admin: any,
   organization_id: string,
@@ -237,25 +232,25 @@ async function buildDonorListFile(
   subIdx: number,
 ): Promise<{ url: string; name: string; count: number } | null> {
   const desc = (segmentDescription || "").toLowerCase();
-
-  // Detect "prospect / corporate / sponsor" lists — not in donors table; build a ready template
   if (/جهة|جهات|محتمل|prospect|شركة|شركات|راعٍ|رعاة|sponsor|corporate|قطاع\s*خاص/.test(desc)) {
     return await buildProspectListFile(admin, organization_id, planId, taskIdx, subIdx);
   }
 
-  // Build base query
-  let query = admin.from("donors").select("full_name, phone, email, city, total_donated, donations_count, last_donation_at, segment, notes").eq("organization_id", organization_id);
+  let query = admin
+    .from("donors")
+    .select("full_name, phone, email, city, total_donated, donations_count, last_donation_at, segment, notes")
+    .eq("organization_id", organization_id);
 
-  // Heuristics — choose ordering / filters based on keywords
   if (/غير\s*نشط|متوقف|انقطع|lapsed|inactive/.test(desc)) {
-    const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     query = query.lt("last_donation_at", sixMonthsAgo.toISOString()).order("total_donated", { ascending: false });
   } else if (/كبار|أعلى|top|major|كبير/.test(desc)) {
     query = query.order("total_donated", { ascending: false });
   } else if (/متكرر|recurring|منتظم/.test(desc)) {
     query = query.gte("donations_count", 3).order("donations_count", { ascending: false });
   } else if (/جديد|new|أول/.test(desc)) {
-    query = query.eq("donations_count", 1).order("first_donation_at", { ascending: false });
+    query = query.eq("donations_count", 1).order("created_at", { ascending: false });
   } else {
     query = query.order("total_donated", { ascending: false });
   }
@@ -263,38 +258,57 @@ async function buildDonorListFile(
   const { data: donors, error } = await query.limit(50);
   if (error || !donors || donors.length === 0) return null;
 
-  const headers = ["#","الاسم","الجوال","البريد","المدينة","إجمالي التبرعات","عدد المرات","آخر تبرع","الشريحة","ملاحظات"];
   const rows = donors.map((d: any, i: number) => [
-    i + 1,
-    d.full_name,
-    d.phone || "",
-    d.email || "",
-    d.city || "",
-    Number(d.total_donated || 0).toFixed(2),
-    d.donations_count || 0,
-    d.last_donation_at ? String(d.last_donation_at).slice(0, 10) : "",
-    d.segment || "",
-    d.notes || "",
-  ].map(csvEscape).join(","));
+    String(i + 1),
+    d.full_name || "—",
+    d.phone || "—",
+    d.email || "—",
+    d.city || "—",
+    `${Number(d.total_donated || 0).toFixed(0)} ر.س`,
+    String(d.donations_count || 0),
+    d.last_donation_at ? String(d.last_donation_at).slice(0, 10) : "—",
+    d.segment || "—",
+    d.notes || "—",
+  ]);
 
-  // BOM + sep hint so Excel (incl. Arabic locales using ; as default separator) opens columns correctly
-  const csv = "\uFEFF" + "sep=,\n" + headers.join(",") + "\n" + rows.join("\n");
-  const fileName = `donor-list-${planId}-${taskIdx}-${subIdx}.csv`;
-  const path = `${organization_id}/${planId}/${fileName}`;
+  const file = await buildPowerPointSupportFile(
+    admin,
+    organization_id,
+    planId,
+    taskIdx,
+    subIdx,
+    "قائمة المتبرعين المستهدفة",
+    "مادة داعمة جاهزة للتنفيذ المباشر",
+    [
+      {
+        heading: "وصف القائمة",
+        body: segmentDescription,
+        bullets: [
+          `تم تجهيز ${donors.length} سجلًا جاهزًا للمراجعة والتواصل.`,
+          "استخدم هذه القائمة لتوزيع التواصل بين أعضاء الفريق بحسب الأولوية.",
+          "يمكن للموظف تعديل البيانات وإضافة ملاحظات المتابعة داخل العرض قبل الإرسال أو الاجتماع.",
+        ],
+      },
+      {
+        heading: "آلية التنفيذ المقترحة",
+        bullets: [
+          "ابدأ بأعلى المتبرعين قيمة أو الأكثر انتظامًا حسب ترتيب الجدول.",
+          "حدّث حالة كل اسم بعد التواصل الأول والنتيجة المتوقعة.",
+          "استخرج من القائمة دفعات أسبوعية للتواصل والمتابعة والإغلاق.",
+        ],
+      },
+    ],
+    {
+      headers: ["#", "الاسم", "الجوال", "البريد", "المدينة", "إجمالي التبرعات", "عدد المرات", "آخر تبرع", "الشريحة", "ملاحظات"],
+      rows,
+      note: "الجدول معروض من اليمين إلى اليسار وجاهز للاستخدام في الاجتماعات والمشاركة الداخلية.",
+    },
+    `donor-list-${safeName(segmentDescription, 'donors')}`,
+  );
 
-  const { error: upErr } = await admin.storage
-    .from("action-plan-files")
-    .upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { upsert: true, contentType: "text/csv;charset=utf-8" });
-  if (upErr) { console.error("CSV upload failed:", upErr); return null; }
-
-  const { data: pub } = admin.storage.from("action-plan-files").getPublicUrl(path);
-  return { url: pub.publicUrl, name: `قائمة جاهزة (${donors.length} متبرع).csv`, count: donors.length };
+  return file ? { url: file.url, name: `قائمة جاهزة (${donors.length} متبرع).pptx`, count: donors.length } : null;
 }
 
-/**
- * Build a ready-to-use "prospect entities" CSV template (companies / sponsors / potential partners).
- * Pre-filled with 50 plausible Saudi-context entities the team can reach out to.
- */
 async function buildProspectListFile(
   admin: any,
   organization_id: string,
@@ -302,58 +316,65 @@ async function buildProspectListFile(
   taskIdx: number,
   subIdx: number,
 ): Promise<{ url: string; name: string; count: number } | null> {
-  const sectors = [
-    "بنك", "شركة اتصالات", "شركة تأمين", "شركة أغذية", "مجموعة تجارية",
-    "شركة عقارية", "مستشفى خاص", "سلسلة مطاعم", "شركة لوجستية", "شركة طاقة",
-  ];
+  const sectors = ["بنك", "شركة اتصالات", "شركة تأمين", "شركة أغذية", "مجموعة تجارية", "شركة عقارية", "مستشفى خاص", "سلسلة مطاعم", "شركة لوجستية", "شركة طاقة"];
   const cities = ["الرياض", "جدة", "الدمام", "مكة المكرمة", "المدينة المنورة", "الخبر", "تبوك", "أبها", "الطائف", "حائل"];
-  const interests = [
-    "كفالة الأيتام", "إفطار صائم", "كسوة العيد", "السلال الغذائية",
-    "المساعدات الطبية", "تعليم الأطفال", "ترميم المساجد", "حفر الآبار",
-    "مشاريع التمكين", "دعم الأسر المنتجة",
-  ];
-  const rows: string[] = [];
-  for (let i = 0; i < 50; i++) {
+  const interests = ["كفالة الأيتام", "إفطار صائم", "كسوة العيد", "السلال الغذائية", "المساعدات الطبية", "تعليم الأطفال", "ترميم المساجد", "حفر الآبار", "مشاريع التمكين", "دعم الأسر المنتجة"];
+
+  const rows = Array.from({ length: 50 }, (_, i) => {
     const sector = sectors[i % sectors.length];
-    const city = cities[i % cities.length];
-    const interest = interests[i % interests.length];
-    rows.push([
-      i + 1,
+    return [
+      String(i + 1),
       `${sector} المحتملة #${i + 1}`,
       sector,
-      city,
-      "اسم مدير المسؤولية الاجتماعية (يُكمل من الموظف)",
+      cities[i % cities.length],
+      "اسم مسؤول الشراكات / المسؤولية الاجتماعية",
       "0500000000",
       "csr@company.example",
-      "https://www.company.example",
-      interest,
+      interests[i % interests.length],
       "متوسط (50,000 - 200,000 ر.س)",
       "بانتظار التواصل",
-      "",
-    ].map(csvEscape).join(","));
-  }
-  const headers = [
-    "#", "اسم الجهة", "القطاع", "المدينة", "جهة الاتصال",
-    "الجوال", "البريد", "الموقع", "الاهتمام المتوقع", "السقف التقديري",
-    "الحالة", "ملاحظات",
-  ];
-  const csv = "\uFEFF" + "sep=,\n" + headers.join(",") + "\n" + rows.join("\n");
-  const fileName = `prospect-list-${planId}-${taskIdx}-${subIdx}.csv`;
-  const path = `${organization_id}/${planId}/${fileName}`;
-  const { error: upErr } = await admin.storage
-    .from("action-plan-files")
-    .upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { upsert: true, contentType: "text/csv;charset=utf-8" });
-  if (upErr) { console.error("Prospect CSV upload failed:", upErr); return null; }
-  const { data: pub } = admin.storage.from("action-plan-files").getPublicUrl(path);
-  return { url: pub.publicUrl, name: `قائمة 50 جهة محتملة جاهزة.csv`, count: 50 };
+      "أضف ملاحظة بعد أول تواصل",
+    ];
+  });
+
+  const file = await buildPowerPointSupportFile(
+    admin,
+    organization_id,
+    planId,
+    taskIdx,
+    subIdx,
+    "قائمة 50 جهة محتملة للاستقطاب",
+    "عرض تنفيذي جاهز لتوزيع جهات الاستهداف والشراكات",
+    [
+      {
+        heading: "محتوى المرفق",
+        body: "هذه القائمة تتضمن 50 جهة محتملة موزعة على قطاعات متنوعة يمكن البدء معها مباشرة في حملة الشراكات والاستقطاب.",
+        bullets: [
+          "تم تنويع القطاعات والمدن لتوسيع فرص الوصول.",
+          "أضف اسم نقطة الاتصال الفعلية بعد التحقق من الجهة.",
+          "استخدم السقف التقديري لتحديد أولوية المتابعة والعرض المناسب.",
+        ],
+      },
+      {
+        heading: "طريقة العمل المقترحة",
+        bullets: [
+          "قسّم القائمة إلى دفعتين أو أكثر حسب الجاهزية والقطاع.",
+          "ابدأ بالجهات الأعلى مواءمة مع مجالات الجمعية الحالية.",
+          "اربط كل جهة برسالة وعرض تبرع مناسبين ضمن نفس الخطة.",
+        ],
+      },
+    ],
+    {
+      headers: ["#", "اسم الجهة", "القطاع", "المدينة", "جهة الاتصال", "الجوال", "البريد", "الاهتمام المتوقع", "السقف التقديري", "الحالة", "ملاحظات"],
+      rows,
+      note: "البيانات الأولية قابلة للتخصيص قبل البدء بالتواصل الرسمي.",
+    },
+    "prospect-list",
+  );
+
+  return file ? { url: file.url, name: "قائمة 50 جهة محتملة جاهزة.pptx", count: 50 } : null;
 }
 
-/**
- * Build a generic downloadable supporting-material file for any deliverable.
- * Ensures EVERY subtask has a ready file the employee can download and execute with.
- * - message_template / social_post / instructions => .txt
- * - report_form => CSV template with the requested field columns
- */
 async function buildGenericDeliverableFile(
   admin: any,
   organization_id: string,
@@ -367,52 +388,53 @@ async function buildGenericDeliverableFile(
     fields?: { label: string; key: string }[];
   },
 ): Promise<{ url: string; name: string } | null> {
-  let body = "";
-  let ext = "txt";
-  let mime = "text/plain;charset=utf-8";
-  let label = "مادة داعمة جاهزة";
+  const lines = splitLines(deliverable.content);
+  const intro = lines[0] || deliverable.content || deliverable.title;
+  const bullets = lines.slice(1, 9);
 
-  if (deliverable.type === "report_form") {
-    ext = "csv";
-    mime = "text/csv;charset=utf-8";
-    label = "نموذج تقرير قابل للتعبئة";
-    const headers = (deliverable.fields && deliverable.fields.length
-      ? deliverable.fields.map((f) => f.label)
-      : ["الحقل", "القيمة"]);
-    const headerLine = headers.map(csvEscape).join(",");
-    const emptyRow = headers.map(() => "").join(",");
-    body = "\uFEFF" + "sep=,\n" + `# ${deliverable.title}\n# ${deliverable.content.replace(/\n/g, " ")}\n` + headerLine + "\n" + emptyRow + "\n" + emptyRow + "\n" + emptyRow + "\n";
-  } else if (deliverable.type === "message_template") {
-    label = "قالب رسالة جاهز";
-    body =
-      `# ${deliverable.title}\n` +
-      `# انسخ النص أدناه واستبدل المتغيرات بين {} ببيانات المتبرع قبل الإرسال.\n` +
-      `# يصلح للواتساب / SMS / البريد.\n\n` +
-      deliverable.content + "\n";
-  } else if (deliverable.type === "social_post") {
-    label = "منشور سوشيال جاهز";
-    body =
-      `# ${deliverable.title}\n` +
-      `# انسخ النص والهاشتاقات والصق في منصة النشر.\n\n` +
-      deliverable.content + "\n";
-  } else {
-    label = "تعليمات تنفيذية جاهزة";
-    body =
-      `# ${deliverable.title}\n\n` +
-      deliverable.content + "\n";
-  }
+  const usageByType: Record<string, string[]> = {
+    message_template: ["عدّل المتغيرات بين الأقواس قبل الإرسال.", "راجع النبرة حسب الشريحة المستهدفة.", "استخدمه في الواتساب أو البريد أو الرسائل النصية."],
+    social_post: ["استخدم هذا النص كما هو أو عدّله بحسب المنصة.", "أرفق معه صورة أو فيديو مناسب لرفع التفاعل.", "أضف رابط التبرع المباشر قبل النشر."],
+    report_form: ["اعرض المؤشرات المطلوبة في الاجتماع الدوري.", "حدّث القيم أسبوعيًا أو شهريًا بحسب المهمة.", "استخدم الشريحة الأخيرة كمرجع للتوصيات القادمة."],
+    instructions: ["نفّذ الخطوات حسب الترتيب الوارد في العرض.", "خصّص الأسماء والروابط والمبالغ قبل الاستخدام الخارجي.", "استخدم الشرائح في العرض أو كملف عمل داخلي."],
+  };
 
-  const safeTitle = (deliverable.title || "deliverable").replace(/[^\p{L}\p{N}\-_ ]+/gu, "").trim().slice(0, 60).replace(/\s+/g, "-");
-  const fileName = `${deliverable.type}-${safeTitle || "file"}-${planId}-${taskIdx}-${subIdx}.${ext}`;
-  const path = `${organization_id}/${planId}/${fileName}`;
+  const table = deliverable.type === "report_form"
+    ? {
+        headers: (deliverable.fields?.length ? deliverable.fields.map((f) => f.label) : ["الحقل", "القيمة"]),
+        rows: [
+          (deliverable.fields?.length ? deliverable.fields.map(() => "") : ["", ""]),
+          (deliverable.fields?.length ? deliverable.fields.map(() => "") : ["", ""]),
+          (deliverable.fields?.length ? deliverable.fields.map(() => "") : ["", ""]),
+        ],
+        note: "الجدول مخصص للتعبئة اليدوية أو للاستخدام كقالب متابعة في الاجتماع.",
+      }
+    : undefined;
 
-  const { error: upErr } = await admin.storage
-    .from("action-plan-files")
-    .upload(path, new Blob([body], { type: mime }), { upsert: true, contentType: mime });
-  if (upErr) { console.error("Generic deliverable upload failed:", upErr); return null; }
+  const file = await buildPowerPointSupportFile(
+    admin,
+    organization_id,
+    planId,
+    taskIdx,
+    subIdx,
+    deliverable.title,
+    "مادة داعمة جاهزة بصيغة PowerPoint",
+    [
+      {
+        heading: "المحتوى الجاهز",
+        body: intro,
+        bullets: bullets.length ? bullets : undefined,
+      },
+      {
+        heading: "طريقة الاستخدام",
+        bullets: usageByType[deliverable.type] || usageByType.instructions,
+      },
+    ],
+    table,
+    `${deliverable.type}-${safeName(deliverable.title, 'support')}`,
+  );
 
-  const { data: pub } = admin.storage.from("action-plan-files").getPublicUrl(path);
-  return { url: pub.publicUrl, name: `${label} — ${deliverable.title}.${ext}` };
+  return file ? { url: file.url, name: `${deliverable.title}.pptx` } : null;
 }
 
 async function buildOrgMetrics(admin: any): Promise<OrgMetrics[]> {
