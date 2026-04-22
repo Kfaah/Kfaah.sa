@@ -94,8 +94,8 @@ async function buildDonorListFile(
     d.notes || "",
   ].map(csvEscape).join(","));
 
-  // BOM for Excel Arabic support
-  const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
+  // BOM + sep hint so Excel (incl. Arabic locales using ; as default separator) opens columns correctly
+  const csv = "\uFEFF" + "sep=,\n" + headers.join(",") + "\n" + rows.join("\n");
   const fileName = `donor-list-${planId}-${taskIdx}-${subIdx}.csv`;
   const path = `${organization_id}/${planId}/${fileName}`;
 
@@ -154,7 +154,7 @@ async function buildProspectListFile(
     "الجوال", "البريد", "الموقع", "الاهتمام المتوقع", "السقف التقديري",
     "الحالة", "ملاحظات",
   ];
-  const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
+  const csv = "\uFEFF" + "sep=,\n" + headers.join(",") + "\n" + rows.join("\n");
   const fileName = `prospect-list-${planId}-${taskIdx}-${subIdx}.csv`;
   const path = `${organization_id}/${planId}/${fileName}`;
   const { error: upErr } = await admin.storage
@@ -198,7 +198,7 @@ async function buildGenericDeliverableFile(
       : ["الحقل", "القيمة"]);
     const headerLine = headers.map(csvEscape).join(",");
     const emptyRow = headers.map(() => "").join(",");
-    body = "\uFEFF" + `# ${deliverable.title}\n# ${deliverable.content.replace(/\n/g, " ")}\n` + headerLine + "\n" + emptyRow + "\n" + emptyRow + "\n" + emptyRow + "\n";
+    body = "\uFEFF" + "sep=,\n" + `# ${deliverable.title}\n# ${deliverable.content.replace(/\n/g, " ")}\n` + headerLine + "\n" + emptyRow + "\n" + emptyRow + "\n" + emptyRow + "\n";
   } else if (deliverable.type === "message_template") {
     label = "قالب رسالة جاهز";
     body =

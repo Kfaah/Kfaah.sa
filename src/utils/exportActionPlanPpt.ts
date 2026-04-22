@@ -207,13 +207,14 @@ export async function exportActionPlanPpt({
     s.background = { color: COLORS.light };
     addHeaderBar(s, "الملخص التنفيذي", "نظرة عامة على الخطة وأبرز مؤشراتها");
 
-    // KPI cards row
-    const kpis = [
+    // KPI cards row — reversed so first KPI sits on the right (RTL reading order)
+    const kpisLTR = [
       { label: "المهام الرئيسية", value: String(tasks.length), color: COLORS.primary },
       { label: "المهام التنفيذية", value: String(totalSubtasks), color: COLORS.accent },
       { label: "نسبة الإنجاز", value: `${Math.round(plan.progress || 0)}%`, color: COLORS.success },
       { label: "قيد التنفيذ", value: String(inProgressTasks), color: COLORS.warning },
     ];
+    const kpis = [...kpisLTR].reverse();
     const cardW = 2.95, cardH = 1.6, gap = 0.2;
     const startX = (13.333 - (cardW * 4 + gap * 3)) / 2;
     kpis.forEach((k, i) => {
@@ -310,11 +311,13 @@ export async function exportActionPlanPpt({
     tasks.forEach((t, i) => {
       const col = i < perCol ? 0 : 1;
       const row = i % perCol;
-      const x = col === 0 ? 0.5 : 6.7;
+      // RTL: first half goes to the RIGHT column, second half to the LEFT
+      const x = col === 0 ? 6.7 : 0.5;
       const y = 1.3 + row * 0.55;
       if (y > 7.0) return; // safety
       // number badge
       s.addShape("ellipse", {
+        // place the number badge on the RIGHT edge of the row (RTL)
         x: x + colW - 0.45, y, w: 0.4, h: 0.4,
         fill: { color: COLORS.accent }, line: { color: COLORS.accent },
       });
@@ -343,12 +346,13 @@ export async function exportActionPlanPpt({
       ? employeeNameById.get(task.assigned_employee_id) || "—"
       : "غير مكلّف";
 
-    // Info pills row
-    const pills = [
+    // Info pills row — reversed so first pill (المكلف) sits on the right (RTL)
+    const pillsLTR = [
       { label: "المكلف", value: assignee, color: COLORS.primary },
       { label: "الفترة", value: `${fmtDate(task.start_date)} → ${fmtDate(task.due_date)}`, color: COLORS.accent },
       { label: "الحالة", value: STATUS_LABEL[task.status] || task.status, color: COLORS.success },
     ];
+    const pills = [...pillsLTR].reverse();
     const pillW = 4.05, pillH = 0.7;
     pills.forEach((p, i) => {
       const x = 0.5 + i * (pillW + 0.15);
@@ -385,7 +389,9 @@ export async function exportActionPlanPpt({
 
     // Subtasks table
     const subtasks = task.subtasks || [];
-    const headerRow = [
+    // RTL: build columns in left→right visual order, then reverse so the first
+    // logical column (#) appears on the RIGHT side (Arabic reading direction).
+    const headerRowLTR = [
       { text: "#", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "center", valign: "middle", fontSize: 11, fontFace: "Calibri" } },
       { text: "المهمة التنفيذية", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "right", valign: "middle", fontSize: 11, fontFace: "Calibri", rtlMode: true } },
       { text: "المكلف", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "right", valign: "middle", fontSize: 11, fontFace: "Calibri", rtlMode: true } },
@@ -393,8 +399,9 @@ export async function exportActionPlanPpt({
       { text: "الحالة", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "center", valign: "middle", fontSize: 11, fontFace: "Calibri" } },
       { text: "المخرج / المادة الداعمة", options: { bold: true, color: COLORS.white, fill: { color: COLORS.bgDark }, align: "right", valign: "middle", fontSize: 11, fontFace: "Calibri", rtlMode: true } },
     ];
+    const headerRow = [...headerRowLTR].reverse();
 
-    const bodyRows = subtasks.length
+    const bodyRowsLTR = subtasks.length
       ? subtasks.map((sub, si) => {
           const subAssignee = sub.assigned_employee_id
             ? employeeNameById.get(sub.assigned_employee_id) || assignee
@@ -418,12 +425,14 @@ export async function exportActionPlanPpt({
           { text: "—", options: { color: COLORS.muted, align: "center" as const, fontSize: 11, fontFace: "Calibri" } },
           { text: "لا توجد مهام تنفيذية مفصّلة", options: { color: COLORS.muted, align: "right" as const, fontSize: 11, fontFace: "Calibri", rtlMode: true, colspan: 5 } },
         ]];
+    const bodyRows = bodyRowsLTR.map((row) => [...row].reverse());
 
     s.addTable([headerRow as any, ...bodyRows as any], {
       x: 0.5,
       y: task.description ? 3.25 : 2.15,
       w: 12.333,
-      colW: [0.7, 4.0, 1.9, 0.9, 1.4, 3.433],
+      // Column widths must mirror the reversed visual order
+      colW: [3.433, 1.4, 0.9, 1.9, 4.0, 0.7],
       rowH: 0.42,
       border: { type: "solid", pt: 0.5, color: COLORS.cardBorder },
       fontSize: 10,
