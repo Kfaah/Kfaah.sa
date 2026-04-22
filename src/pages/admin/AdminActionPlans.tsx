@@ -71,27 +71,30 @@ export default function AdminActionPlans() {
     if (!selectedOrg) { toast.error("اختر جمعية"); return; }
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-action-plan", {
-        body: {
-          organization_id: selectedOrg,
-          duration_days: duration,
-          plan_title: planTitle || undefined,
-        },
-      });
-      // Prefer the function's friendly Arabic error if present
-      if (data?.error) throw new Error(data.error);
-      if (error) {
-        // FunctionsHttpError: try to read the response body for a clean message
-        const ctx: any = (error as any).context;
-        if (ctx && typeof ctx.json === "function") {
-          try {
-            const body = await ctx.json();
-            if (body?.error) throw new Error(body.error);
-          } catch (inner: any) {
-            if (inner?.message) throw inner;
-          }
+      // Use direct fetch so we can read the JSON body even on non-2xx responses
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/generate-action-plan`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            organization_id: selectedOrg,
+            duration_days: duration,
+            plan_title: planTitle || undefined,
+          }),
         }
-        throw new Error("لم يتم توليد تحليل ذكي بعد لهذه الجمعية. شغّل التحليل الذكي أولاً ثم أعد المحاولة.");
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data?.error) {
+        throw new Error(
+          data?.error ||
+            "لم يتم توليد تحليل ذكي بعد لهذه الجمعية. شغّل التحليل الذكي أولاً ثم أعد المحاولة."
+        );
       }
       toast.success(`تم توليد خطة من ${data.tasks_count} مهمة`);
       setDialogOpen(false);
