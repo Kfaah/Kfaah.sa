@@ -4,36 +4,15 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  ArrowRightCircle, Calendar, CheckCircle2, Clock, Loader2, Sparkles, User, ListChecks, CheckSquare, Square,
+  ArrowRightCircle, Calendar, CheckCircle2, Clock, Download, Loader2, Sparkles, ListChecks,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ActionPlanTaskCard, type ActionPlanEmployee, type ActionPlanTask } from "@/components/admin/action-plans/ActionPlanTaskCard";
+import { exportActionPlanExcel } from "@/utils/exportActionPlanExcel";
 
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  impact: string;
-  status: string;
-  priority: number;
-  start_date: string | null;
-  due_date: string | null;
-  assigned_employee_id: string | null;
-  ai_suggested_employee_id: string | null;
-  ai_suggestion_reason: string | null;
-  completion_notes: string | null;
-  subtasks: SubTask[] | null;
-}
-interface SubTask {
-  title: string;
-  details: string;
-  duration_days: number;
-  done?: boolean;
-}
 interface Plan {
   id: string;
   organization_id: string;
@@ -46,22 +25,15 @@ interface Plan {
   org_name?: string;
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "قيد الانتظار",
-  in_progress: "قيد التنفيذ",
-  completed: "منجزة",
-  blocked: "متعثرة",
-};
-const IMPACT_LABEL: Record<string, string> = { high: "عالٍ", medium: "متوسط", low: "منخفض" };
-
 export default function AdminActionPlanDetails() {
   const { planId } = useParams();
   const navigate = useNavigate();
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [employees, setEmployees] = useState<{ id: string; full_name: string; job_role: string }[]>([]);
+  const [tasks, setTasks] = useState<ActionPlanTask[]>([]);
+  const [employees, setEmployees] = useState<ActionPlanEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingTask, setSavingTask] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const load = async () => {
     if (!planId) return;
@@ -77,13 +49,13 @@ export default function AdminActionPlanDetails() {
       supabase.from("action_plan_tasks").select("*").eq("action_plan_id", planId).order("priority"),
       supabase.from("employees").select("id, full_name, job_role").eq("organization_id", planData.organization_id),
     ]);
-    setTasks((taskData || []) as unknown as Task[]);
-    setEmployees((empData || []) as any);
+    setTasks((taskData || []) as unknown as ActionPlanTask[]);
+    setEmployees((empData || []) as ActionPlanEmployee[]);
     setLoading(false);
   };
   useEffect(() => { load(); }, [planId]);
 
-  const updateTask = async (id: string, patch: Partial<Task>) => {
+  const updateTask = async (id: string, patch: Partial<ActionPlanTask>) => {
     setSavingTask(id);
     const finalPatch: any = { ...patch };
     if (patch.status === "completed") finalPatch.completed_at = new Date().toISOString();
@@ -112,7 +84,7 @@ export default function AdminActionPlanDetails() {
   const pending = tasks.filter(t => t.status === "pending").length;
   const progress = tasks.length ? (done / tasks.length) * 100 : 0;
 
-  const toggleSubtask = async (task: Task, idx: number) => {
+  const toggleSubtask = async (task: ActionPlanTask, idx: number) => {
     const next = (task.subtasks || []).map((s, i) => i === idx ? { ...s, done: !s.done } : s);
     setTasks(prev => prev.map(t => t.id === task.id ? { ...t, subtasks: next } : t));
     const { error } = await supabase
@@ -122,12 +94,35 @@ export default function AdminActionPlanDetails() {
     if (error) toast.error("تعذّر حفظ المهمة الفرعية");
   };
 
+  const handleCompletionNotesChange = (taskId: string, value: string) => {
+    setTasks(prev => prev.map(task => task.id === taskId ? { ...task, completion_notes: value } : task));
+  };
+
+  const handleExportExcel = async () => {
+    if (!plan) return;
+    try {
+      setExporting(true);
+      exportActionPlanExcel({ plan, tasks, employees });
+      toast.success("تم تصدير الخطة إلى Excel");
+    } catch {
+      toast.error("تعذّر تصدير ملف Excel");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="p-8 space-y-6" dir="rtl">
-      <Button variant="ghost" onClick={() => navigate("/admin/action-plans")} className="text-white hover:bg-white/10 gap-2">
-        <ArrowRightCircle className="w-4 h-4" />
-        رجوع للخطط
-      </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="ghost" onClick={() => navigate("/admin/action-plans")} className="text-white hover:bg-white/10 gap-2">
+          <ArrowRightCircle className="w-4 h-4" />
+          رجوع للخطط
+        </Button>
+        <Button onClick={handleExportExcel} disabled={exporting || !plan} className="gap-2">
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          تصدير Excel
+        </Button>
+      </div>
 
       <Card className="bg-card border-border p-6 shadow-sm">
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -157,128 +152,18 @@ export default function AdminActionPlanDetails() {
         </div>
       </Card>
 
-      <div className="space-y-3">
-        {tasks.map((t, i) => (
-          <Card key={t.id} className="bg-card border-border p-6 shadow-sm">
-            <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 rounded-lg bg-accent/15 text-accent flex items-center justify-center font-bold text-base shrink-0">
-                  {i + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-foreground leading-tight">{t.title}</h3>
-                  {t.description && <p className="text-base text-muted-foreground mt-2 leading-relaxed">{t.description}</p>}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Badge className="bg-transparent text-foreground border border-border text-sm px-3 py-1">
-                  تأثير {IMPACT_LABEL[t.impact] || t.impact}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Executive subtasks */}
-            {t.subtasks && t.subtasks.length > 0 && (
-              <div className="mb-4 bg-muted/30 border border-border rounded-lg p-4">
-                <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-accent" />
-                  المهام التنفيذية الدقيقة ({t.subtasks.filter(s => s.done).length}/{t.subtasks.length})
-                </h4>
-                <ul className="space-y-2.5">
-                  {t.subtasks.map((sub, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <button
-                        onClick={() => toggleSubtask(t, idx)}
-                        className="mt-0.5 shrink-0 text-accent hover:text-accent/80 transition"
-                        aria-label={sub.done ? "إلغاء الإنجاز" : "وضع علامة منجز"}
-                      >
-                        {sub.done ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className={cn(
-                          "text-base font-semibold text-foreground leading-snug",
-                          sub.done && "line-through opacity-60"
-                        )}>
-                          {sub.title}
-                        </div>
-                        <p className={cn(
-                          "text-sm text-muted-foreground mt-1 leading-relaxed",
-                          sub.done && "line-through opacity-60"
-                        )}>
-                          {sub.details}
-                        </p>
-                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-1.5">
-                          <Clock className="w-3 h-3" /> {sub.duration_days} يوم
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="grid md:grid-cols-3 gap-3 mb-3">
-              <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
-                  <User className="w-3 h-3" /> الموظف المكلَّف
-                </label>
-                <Select
-                  value={t.assigned_employee_id || "unassigned"}
-                  onValueChange={(v) => updateTask(t.id, { assigned_employee_id: v === "unassigned" ? null : v })}
-                >
-                  <SelectTrigger className="h-10 text-sm">
-                    <SelectValue placeholder="اختر..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">— غير مكلَّف —</SelectItem>
-                    {employees.map(e => (
-                      <SelectItem key={e.id} value={e.id}>{e.full_name} · {e.job_role}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {t.ai_suggestion_reason && t.assigned_employee_id === t.ai_suggested_employee_id && (
-                  <p className="text-xs text-accent flex items-start gap-1 mt-1">
-                    <Sparkles className="w-3 h-3 mt-0.5 shrink-0" />
-                    <span className="line-clamp-2">{t.ai_suggestion_reason}</span>
-                  </p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> الفترة
-                </label>
-                <div className="text-sm text-foreground bg-muted/50 px-3 py-2.5 rounded-md border border-border">
-                  {t.start_date} → {t.due_date}
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground font-semibold">الحالة</label>
-                <Select value={t.status} onValueChange={(v) => updateTask(t.id, { status: v })}>
-                  <SelectTrigger className={cn("h-10 text-sm",
-                    t.status === "completed" && "border-success/50 text-success",
-                    t.status === "in_progress" && "border-accent/50 text-accent",
-                  )}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STATUS_LABEL).map(([k, l]) => (
-                      <SelectItem key={k} value={k}>{l}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <Textarea
-              placeholder="ملاحظات الإنجاز / التقدّم..."
-              value={t.completion_notes || ""}
-              onChange={(e) => setTasks(prev => prev.map(x => x.id === t.id ? { ...x, completion_notes: e.target.value } : x))}
-              onBlur={() => updateTask(t.id, { completion_notes: t.completion_notes })}
-              className="text-sm"
-              rows={2}
-            />
-            {savingTask === t.id && <p className="text-[10px] text-muted-foreground mt-1">جاري الحفظ...</p>}
-          </Card>
+      <div className="space-y-4">
+        {tasks.map((task, index) => (
+          <ActionPlanTaskCard
+            key={task.id}
+            index={index}
+            task={task}
+            employees={employees}
+            saving={savingTask === task.id}
+            onUpdateTask={updateTask}
+            onToggleSubtask={toggleSubtask}
+            onCompletionNotesChange={handleCompletionNotesChange}
+          />
         ))}
       </div>
     </div>
