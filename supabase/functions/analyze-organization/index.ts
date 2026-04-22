@@ -1,5 +1,9 @@
-import { corsHeaders } from "https://esm.sh/@supabase/[email protected]/cors";
 import { createClient } from "https://esm.sh/@supabase/[email protected]";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
