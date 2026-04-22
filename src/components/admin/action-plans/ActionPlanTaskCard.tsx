@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle2, ChevronDown, Clock, Copy, Download, FileText, Package, Paperclip, Sparkles, Star, Upload, User } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock, Download, FileText, Package, Paperclip, Sparkles, Star, Upload, User } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -342,15 +342,6 @@ function DeliverableBlock({
   attachmentUrl?: string | null;
   attachmentName?: string | null;
 }) {
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(deliverable.content);
-      toast.success("تم النسخ");
-    } catch {
-      toast.error("تعذّر النسخ");
-    }
-  };
-
   return (
     <div className="rounded-md border border-accent/30 bg-accent/5 p-4">
       <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
@@ -362,28 +353,23 @@ function DeliverableBlock({
           <span className="text-base font-semibold text-foreground">— {deliverable.title}</span>
         </div>
         <div className="flex items-center gap-2">
-            {attachmentUrl && (
+          {attachmentUrl ? (
             <a
               href={attachmentUrl}
               download={attachmentName || undefined}
               className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent text-accent-foreground px-3 py-1.5 text-xs font-bold transition hover:bg-accent/90"
             >
-                <Download className="h-3.5 w-3.5" /> تحميل عرض PowerPoint
+              <Download className="h-3.5 w-3.5" /> تحميل عرض PowerPoint
             </a>
+          ) : (
+            <span className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              جارٍ تجهيز ملف PowerPoint
+            </span>
           )}
-          <button
-            onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-          >
-            <Copy className="h-3.5 w-3.5" /> نسخ
-          </button>
         </div>
       </div>
-      <pre className="whitespace-pre-wrap break-words rounded-md bg-background/80 border border-border p-3 text-base leading-8 text-foreground font-sans">
-        {deliverable.content}
-      </pre>
       {attachmentUrl && (
-        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="mt-3 flex items-center gap-2 rounded-md border border-border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
           <Paperclip className="h-3.5 w-3.5" />
           <span>{attachmentName || "عرض PowerPoint مرفق وجاهز للتنزيل"}</span>
         </div>
