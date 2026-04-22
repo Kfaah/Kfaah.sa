@@ -11,33 +11,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 
-// Unified executive turquoise icon styling — formal & elegant
+// Distinctive icon colors per nav item — vibrant gradients
 const ICON_COLOR = "text-white";
-const ICON_BG = "bg-[hsl(190_55%_22%)]";
-const ICON_RING = "ring-[hsl(190_50%_35%)]";
 
 const navItems = [
   { to: "/admin", label: "نظرة عامة موحّدة", icon: LayoutDashboard, end: true,
     desc: "ملخّص شامل لكل الجمعيات",
-    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-violet-500 to-purple-600", ring: "ring-violet-400/40" },
   { to: "/admin/organizations", label: "الجمعيات", icon: Building2, end: false,
     desc: "إدارة وتفاصيل الجمعيات",
-    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-indigo-400 to-indigo-600", ring: "ring-indigo-400/40" },
   { to: "/admin/compare", label: "المقارنة بين الجمعيات", icon: GitCompareArrows, end: false,
     desc: "رادار · ترتيب · معايير متعددة",
-    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-cyan-400 to-cyan-600", ring: "ring-cyan-400/40" },
   { to: "/admin/analytics", label: "التحليل العميق", icon: Sparkles, end: false,
     desc: "تحليل AI لكل جمعية",
-    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-fuchsia-500 to-pink-600", ring: "ring-fuchsia-400/40" },
   { to: "/admin/action-plans", label: "الخطط من التوصيات", icon: ListChecks, end: false,
     desc: "تحويل التحليل إلى خطة وتكليف",
-    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-emerald-400 to-emerald-600", ring: "ring-emerald-400/40" },
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
     desc: "تقارير موضوعية وتنفيذية سردية",
-    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-rose-400 to-pink-600", ring: "ring-rose-400/40" },
   { to: "/admin/innovation", label: "الابتكار والتحديث", icon: Lightbulb, end: false,
     desc: "أفكار AI ابتكارية ونقاش تفاعلي",
-    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-amber-400 to-orange-500", ring: "ring-amber-400/40" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
