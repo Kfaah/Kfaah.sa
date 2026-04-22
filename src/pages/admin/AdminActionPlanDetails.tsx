@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  ArrowRightCircle, Calendar, CheckCircle2, Clock, Download, FileSpreadsheet, Loader2, Presentation, Sparkles, ListChecks,
+  ArrowRightCircle, Calendar, CheckCircle2, Clock, FileSpreadsheet, Loader2, Presentation, Sparkles, ListChecks,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -149,7 +149,7 @@ export default function AdminActionPlanDetails() {
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
             تصدير Excel
           </Button>
-          <Button onClick={handleExportPpt} disabled={exportingPpt || !plan} className="gap-2 bg-amber-500 hover:bg-amber-600 text-slate-900">
+          <Button onClick={handleExportPpt} disabled={exportingPpt || !plan} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
             {exportingPpt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Presentation className="w-4 h-4" />}
             تصدير PowerPoint
           </Button>
