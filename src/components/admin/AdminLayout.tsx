@@ -164,53 +164,49 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {navItems.map((item, idx) => {
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5">
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = item.end
               ? location.pathname === item.to
               : location.pathname.startsWith(item.to);
             return (
-              <div key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={item.end}
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={cn(
+                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all border",
+                  active
+                    ? "bg-gradient-to-l from-slate-50 via-white to-white border-amber-300/60 shadow-[0_4px_14px_-6px_rgba(15,23,42,0.18)]"
+                    : "border-transparent hover:bg-slate-50 hover:border-slate-200/70"
+                )}
+              >
+                {active && (
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-[3px] rounded-l-full bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 shadow-[0_0_8px_rgba(217,119,6,0.5)]" />
+                )}
+                <div
                   className={cn(
-                    "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all",
+                    "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all",
                     active
-                      ? "bg-gradient-to-l from-slate-50 to-white shadow-[inset_0_0_0_1px_hsl(190_30%_85%)]"
-                      : "hover:bg-slate-50/80"
+                      ? `${item.activeBg} ${item.activeText} shadow-lg ring-2 ring-white`
+                      : `${item.bg} ${item.color} group-hover:scale-105 group-hover:shadow-md`
                   )}
                 >
-                  {active && (
-                    <span className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-l-full bg-gradient-to-b from-amber-400 to-amber-600" />
-                  )}
-                  <div
-                    className={cn(
-                      "w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 transition-all",
-                      active
-                        ? `${item.activeBg} ${item.activeText} shadow-md`
-                        : `${item.bg} ${item.color} group-hover:shadow-sm`
-                    )}
-                  >
-                    <Icon className="w-[18px] h-[18px]" />
+                  <Icon className="w-[18px] h-[18px]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className={cn(
+                    "text-[13.5px] font-bold leading-tight truncate tracking-tight",
+                    active ? "text-slate-900" : "text-slate-700"
+                  )}>
+                    {item.label}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={cn(
-                      "text-[13px] font-semibold leading-tight truncate",
-                      active ? "text-slate-900" : "text-slate-700"
-                    )}>
-                      {item.label}
-                    </div>
-                    <div className="text-[10.5px] text-slate-500 leading-tight mt-0.5 truncate">
-                      {item.desc}
-                    </div>
+                  <div className="text-[10.5px] text-slate-500 leading-tight mt-0.5 truncate">
+                    {item.desc}
                   </div>
-                </NavLink>
-                {idx < navItems.length - 1 && (
-                  <div className="my-1 mx-3 h-px bg-gradient-to-l from-transparent via-slate-200 to-transparent" />
-                )}
-              </div>
+                </div>
+              </NavLink>
             );
           })}
         </nav>
