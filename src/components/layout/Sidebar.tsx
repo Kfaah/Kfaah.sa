@@ -435,10 +435,26 @@ export function Sidebar() {
                   {branding.orgName || "الجمعية"}
                 </h1>
                 <div className="relative">
-                  <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600">
+                  <p
+                    className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600"
+                    style={
+                      branding.primary
+                        ? {
+                            backgroundImage: `linear-gradient(to left, ${branding.primary}, ${branding.accent || branding.primary}, ${branding.primary})`,
+                          }
+                        : undefined
+                    }
+                  >
                     نظام إدارة التسويق الإلكتروني
                   </p>
-                  <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full" />
+                  <div
+                    className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full"
+                    style={
+                      branding.primary
+                        ? { backgroundImage: `linear-gradient(to right, transparent, ${branding.accent || branding.primary}, transparent)` }
+                        : undefined
+                    }
+                  />
                 </div>
               </div>
             )}
@@ -455,7 +471,10 @@ export function Sidebar() {
             <div className="bg-white rounded-2xl p-3 shadow-lg relative z-20">
               <div className="flex items-center gap-3">
                 {/* Avatar - Left side, larger with cyan border */}
-                <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0">
+                <div
+                  className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0"
+                  style={branding.primary ? { borderColor: branding.accent || branding.primary } : undefined}
+                >
                   {user.profileImage ? (
                     <img
                       src={user.profileImage}
@@ -463,7 +482,14 @@ export function Sidebar() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
+                    <div
+                      className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white"
+                      style={
+                        branding.primary
+                          ? { backgroundImage: `linear-gradient(135deg, ${branding.primary}, ${branding.accent || branding.primary})` }
+                          : undefined
+                      }
+                    >
                       {user.firstName.charAt(0)}
                     </div>
                   )}
