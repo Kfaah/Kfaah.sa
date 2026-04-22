@@ -373,24 +373,109 @@ function DeliverableBlock({
   );
 }
 
+function computeAutoRating(args: {
+  report: string;
+  hasFile: boolean;
+  status: string;
+  dueDate: string | null;
+}): { stars: number; reason: string } {
+  const reportLen = (args.report || "").trim().length;
+  if (!reportLen && !args.hasFile) return { stars: 0, reason: "بانتظار تقرير الموظف" };
+
+  let score = 0;
+  const reasons: string[] = [];
+
+  // Quality of written report (length-based proxy, 0-2)
+  if (reportLen >= 300) { score += 2; reasons.push("تقرير مفصّل"); }
+  else if (reportLen >= 80) { score += 1; reasons.push("تقرير موجز"); }
+
+  // Evidence file uploaded (0-2)
+  if (args.hasFile) { score += 2; reasons.push("مرفق إثبات"); }
+
+  // Completion + on-time (0-1)
+  if (args.status === "completed") {
+    if (args.dueDate) {
+      const onTime = new Date() <= new Date(args.dueDate + "T23:59:59");
+      if (onTime) { score += 1; reasons.push("ضمن الموعد"); }
+      else reasons.push("تأخر عن الموعد");
+    } else {
+      score += 1;
+    }
+  }
+
+  return { stars: Math.max(1, Math.min(5, score)), reason: reasons.join(" • ") };
+}
+
 function ReportAndRating({
-  report,
-  rating,
-  ratingNotes,
+  subtask,
+  status,
+  dueDate,
   onSave,
 }: {
-  report: string;
-  rating: number | null;
-  ratingNotes: string;
+  subtask: ActionPlanSubTask;
+  status: string;
+  dueDate: string | null;
   onSave: (patch: Partial<ActionPlanSubTask>) => Promise<void>;
 }) {
-  const [localReport, setLocalReport] = useState(report);
-  const [localRating, setLocalRating] = useState<number | null>(rating);
-  const [localNotes, setLocalNotes] = useState(ratingNotes);
+  const [localReport, setLocalReport] = useState(subtask.employee_report || "");
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const auto = useMemo(
+    () => computeAutoRating({
+      report: localReport,
+      hasFile: !!subtask.report_file_url,
+      status,
+      dueDate,
+    }),
+    [localReport, subtask.report_file_url, status, dueDate],
+  );
+
+  const handleUpload = async (file: File) => {
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) { toast.error("حجم الملف يجب أن يكون أقل من 20MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `reports/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("action-plan-files")
+        .upload(path, file, { upsert: false, contentType: file.type || undefined });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("action-plan-files").getPublicUrl(path);
+      const newAuto = computeAutoRating({ report: localReport, hasFile: true, status, dueDate });
+      await onSave({
+        report_file_url: pub.publicUrl,
+        report_file_name: file.name,
+        rating: newAuto.stars || null,
+        rating_notes: newAuto.reason,
+      });
+      toast.success("تم رفع الملف");
+    } catch (e: any) {
+      toast.error(e.message || "تعذّر رفع الملف");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleReportBlur = async () => {
+    if (localReport === (subtask.employee_report || "")) return;
+    const newAuto = computeAutoRating({
+      report: localReport,
+      hasFile: !!subtask.report_file_url,
+      status,
+      dueDate,
+    });
+    await onSave({
+      employee_report: localReport,
+      rating: newAuto.stars || null,
+      rating_notes: newAuto.reason,
+    });
+  };
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {/* Employee report */}
+      {/* Employee report (text + file) */}
       <div className="rounded-md border border-border bg-background/60 p-4">
         <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
           <FileText className="h-4 w-4" /> تقرير الموظف
@@ -398,59 +483,74 @@ function ReportAndRating({
         <Textarea
           value={localReport}
           onChange={(e) => setLocalReport(e.target.value)}
-          onBlur={() => localReport !== report && onSave({ employee_report: localReport })}
-          placeholder="يكتب الموظف هنا تقرير تنفيذه (الأرقام، النتائج، الملاحظات)..."
+          onBlur={handleReportBlur}
+          placeholder="اكتب تقرير التنفيذ (الأرقام، النتائج، الملاحظات)..."
           rows={4}
           className="text-base leading-7"
         />
-      </div>
-
-      {/* Manager rating */}
-      <div className="rounded-md border border-border bg-background/60 p-4">
-        <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          <Star className="h-4 w-4" /> تقييم الإدارة
-        </div>
-        <div className="mb-3 flex items-center gap-1">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              onClick={() => {
-                setLocalRating(n);
-                onSave({ rating: n });
-              }}
-              className="transition hover:scale-110"
-              aria-label={`تقييم ${n}`}
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
+          <input
+            ref={inputRef}
+            type="file"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleUpload(f);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            {uploading ? "جاري الرفع..." : subtask.report_file_url ? "استبدال الملف" : "إرفاق ملف الإثبات"}
+          </button>
+          {subtask.report_file_url && (
+            <a
+              href={subtask.report_file_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-foreground hover:bg-muted"
             >
-              <Star
-                className={cn(
-                  "h-7 w-7",
-                  localRating && n <= localRating
-                    ? "fill-amber-400 text-amber-400"
-                    : "text-muted-foreground/40",
-                )}
-              />
-            </button>
-          ))}
-          {localRating && (
-            <button
-              onClick={() => {
-                setLocalRating(null);
-                onSave({ rating: null });
-              }}
-              className="ms-2 text-xs text-muted-foreground hover:text-foreground"
-            >
-              مسح
-            </button>
+              <Paperclip className="h-3.5 w-3.5" />
+              {subtask.report_file_name || "الملف المرفق"}
+            </a>
           )}
         </div>
-        <Textarea
-          value={localNotes}
-          onChange={(e) => setLocalNotes(e.target.value)}
-          onBlur={() => localNotes !== ratingNotes && onSave({ rating_notes: localNotes })}
-          placeholder="ملاحظة الإدارة على التنفيذ..."
-          rows={2}
-          className="text-sm leading-7"
-        />
+      </div>
+
+      {/* Automatic rating */}
+      <div className="rounded-md border border-border bg-background/60 p-4">
+        <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <Sparkles className="h-4 w-4 text-accent" /> تقييم تلقائي
+        </div>
+        <div className="mb-2 flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <Star
+              key={n}
+              className={cn(
+                "h-7 w-7",
+                auto.stars > 0 && n <= auto.stars
+                  ? "fill-accent text-accent"
+                  : "text-muted-foreground/40",
+              )}
+            />
+          ))}
+          <span className="ms-2 text-sm font-bold text-foreground">
+            {auto.stars > 0 ? `${auto.stars}/5` : "—"}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground leading-6">
+          {auto.reason || "يحسب تلقائيًا من جودة التقرير، إرفاق الإثبات، والالتزام بالموعد."}
+        </p>
+        <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+          <li>• تقرير ≥ 300 حرف: <span className="text-foreground">+2</span></li>
+          <li>• إرفاق ملف الإثبات: <span className="text-foreground">+2</span></li>
+          <li>• إنجاز ضمن الموعد: <span className="text-foreground">+1</span></li>
+        </ul>
       </div>
     </div>
   );
