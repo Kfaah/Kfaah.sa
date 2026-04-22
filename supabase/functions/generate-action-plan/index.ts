@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import PptxGenJS from "npm:pptxgenjs@4.0.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,10 +35,192 @@ type OrgMetrics = {
 
 const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
 
-function csvEscape(v: any): string {
-  const s = v == null ? "" : String(v);
-  if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
+const PPT = {
+  bgDark: "0F1E3D",
+  bgDarker: "081229",
+  primary: "1E3A8A",
+  accent: "D4AF37",
+  accentSoft: "F5E6A8",
+  white: "FFFFFF",
+  muted: "94A3B8",
+  light: "F8FAFC",
+  border: "CBD5E1",
+  rowAlt: "F8FAFC",
+};
+
+function safeName(value: string, fallback = "file") {
+  const cleaned = (value || fallback)
+    .replace(/[\\/:*?"<>|]/g, "-")
+    .replace(/\s+/g, "-")
+    .trim();
+  return cleaned || fallback;
+}
+
+function splitLines(content: string) {
+  return String(content || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+async function uploadPptBuffer(
+  admin: any,
+  organization_id: string,
+  planId: string,
+  fileName: string,
+  buffer: Uint8Array,
+): Promise<{ url: string; name: string } | null> {
+  const path = `${organization_id}/${planId}/${fileName}`;
+  const { error: upErr } = await admin.storage
+    .from("action-plan-files")
+    .upload(path, buffer, {
+      upsert: true,
+      contentType: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    });
+  if (upErr) {
+    console.error("PowerPoint upload failed:", upErr);
+    return null;
+  }
+  const { data: pub } = admin.storage.from("action-plan-files").getPublicUrl(path);
+  return { url: pub.publicUrl, name: fileName };
+}
+
+function addPptHeader(slide: any, title: string, subtitle?: string) {
+  slide.background = { color: PPT.light };
+  slide.addShape("rect", { x: 0, y: 0, w: 13.333, h: 0.16, fill: { color: PPT.accent }, line: { color: PPT.accent } });
+  slide.addShape("rect", { x: 0, y: 0.16, w: 13.333, h: 0.95, fill: { color: PPT.bgDark }, line: { color: PPT.bgDark } });
+  slide.addText(title, {
+    x: 0.55, y: 0.22, w: 12.2, h: 0.45,
+    fontFace: "Calibri", fontSize: 23, bold: true, color: PPT.white,
+    align: "right", valign: "middle", rtlMode: true,
+  });
+  if (subtitle) {
+    slide.addText(subtitle, {
+      x: 0.55, y: 0.68, w: 12.2, h: 0.22,
+      fontFace: "Calibri", fontSize: 10.5, color: PPT.accentSoft,
+      align: "right", valign: "middle", rtlMode: true,
+    });
+  }
+}
+
+function addPptFooter(slide: any, footer: string) {
+  slide.addShape("rect", { x: 0, y: 7.22, w: 13.333, h: 0.28, fill: { color: PPT.bgDarker }, line: { color: PPT.bgDarker } });
+  slide.addText(footer, {
+    x: 0.45, y: 7.23, w: 12.4, h: 0.2,
+    fontFace: "Calibri", fontSize: 9, color: PPT.muted,
+    align: "right", valign: "middle", rtlMode: true,
+  });
+}
+
+async function buildPowerPointSupportFile(
+  admin: any,
+  organization_id: string,
+  planId: string,
+  taskIdx: number,
+  subIdx: number,
+  title: string,
+  subtitle: string,
+  sections: Array<{ heading: string; body?: string; bullets?: string[] }>,
+  table?: { headers: string[]; rows: string[][]; note?: string },
+  fileLabel?: string,
+): Promise<{ url: string; name: string } | null> {
+  const ppt = new PptxGenJS();
+  ppt.layout = "LAYOUT_WIDE";
+  ppt.rtlMode = true;
+  ppt.author = "Lovable";
+  ppt.company = "Lovable Cloud";
+  ppt.subject = subtitle;
+  ppt.title = title;
+
+  const cover = ppt.addSlide();
+  cover.background = { color: PPT.bgDark };
+  cover.addShape("rect", { x: 0, y: 0, w: 13.333, h: 0.18, fill: { color: PPT.accent }, line: { color: PPT.accent } });
+  cover.addShape("rect", { x: 0, y: 7.32, w: 13.333, h: 0.18, fill: { color: PPT.accent }, line: { color: PPT.accent } });
+  cover.addText(title, {
+    x: 0.8, y: 2.0, w: 11.7, h: 1.2,
+    fontFace: "Calibri", fontSize: 28, bold: true, color: PPT.white,
+    align: "center", valign: "middle", rtlMode: true,
+  });
+  cover.addText(subtitle, {
+    x: 1.2, y: 3.35, w: 10.9, h: 0.65,
+    fontFace: "Calibri", fontSize: 15, color: PPT.accentSoft,
+    align: "center", valign: "middle", rtlMode: true,
+  });
+  cover.addText("مادة داعمة تنفيذية جاهزة للاستخدام والتعديل", {
+    x: 1.6, y: 4.3, w: 10.1, h: 0.45,
+    fontFace: "Calibri", fontSize: 12, color: PPT.muted,
+    align: "center", valign: "middle", rtlMode: true,
+  });
+
+  sections.forEach((section, idx) => {
+    const slide = ppt.addSlide();
+    addPptHeader(slide, title, section.heading);
+    slide.addShape("roundRect", {
+      x: 0.55, y: 1.35, w: 12.2, h: 5.55,
+      fill: { color: PPT.white }, line: { color: PPT.border, width: 0.6 }, rectRadius: 0.06,
+    });
+    slide.addText(section.heading, {
+      x: 0.8, y: 1.58, w: 11.7, h: 0.4,
+      fontFace: "Calibri", fontSize: 18, bold: true, color: PPT.primary,
+      align: "right", rtlMode: true,
+    });
+    if (section.body) {
+      slide.addText(section.body, {
+        x: 0.8, y: 2.05, w: 11.7, h: 1.05,
+        fontFace: "Calibri", fontSize: 13, color: PPT.bgDark,
+        align: "right", valign: "top", rtlMode: true,
+        breakLine: false,
+      });
+    }
+    const bullets = section.bullets || [];
+    if (bullets.length) {
+      slide.addText(
+        bullets.map((bullet) => ({
+          text: bullet,
+          options: { bullet: { indent: 18 }, hanging: 3 },
+        })),
+        {
+          x: 1.0, y: section.body ? 3.2 : 2.15, w: 11.2, h: 3.25,
+          fontFace: "Calibri", fontSize: 15, color: PPT.bgDark,
+          align: "right", valign: "top", rtlMode: true,
+          paraSpaceAfterPt: 10,
+        },
+      );
+    }
+    addPptFooter(slide, `مادة داعمة ${idx + 1}/${sections.length}${table ? " + جدول مرفق" : ""}`);
+  });
+
+  if (table) {
+    const slide = ppt.addSlide();
+    addPptHeader(slide, title, "الجدول التنفيذي");
+    slide.addTable(
+      [table.headers.slice().reverse(), ...table.rows.map((row) => row.slice().reverse())],
+      {
+        x: 0.45,
+        y: 1.35,
+        w: 12.45,
+        border: { type: "solid", pt: 0.5, color: PPT.border },
+        fill: PPT.white,
+        color: PPT.bgDark,
+        fontFace: "Calibri",
+        fontSize: 10.5,
+        rowH: 0.36,
+        autoPage: true,
+      },
+    );
+    if (table.note) {
+      slide.addText(table.note, {
+        x: 0.6, y: 6.7, w: 12.0, h: 0.25,
+        fontFace: "Calibri", fontSize: 9.5, color: PPT.muted,
+        align: "right", rtlMode: true,
+      });
+    }
+    addPptFooter(slide, "مرفق تنفيذي جاهز للمراجعة والاستخدام");
+  }
+
+  const buffer = await ppt.write({ outputType: "uint8array" }) as Uint8Array;
+  const fileName = `${safeName(fileLabel || title)}-${planId}-${taskIdx}-${subIdx}.pptx`;
+  return await uploadPptBuffer(admin, organization_id, planId, fileName, buffer);
 }
 
 /**
