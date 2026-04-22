@@ -78,8 +78,21 @@ export default function AdminActionPlans() {
           plan_title: planTitle || undefined,
         },
       });
-      if (error) throw error;
+      // Prefer the function's friendly Arabic error if present
       if (data?.error) throw new Error(data.error);
+      if (error) {
+        // FunctionsHttpError: try to read the response body for a clean message
+        const ctx: any = (error as any).context;
+        if (ctx && typeof ctx.json === "function") {
+          try {
+            const body = await ctx.json();
+            if (body?.error) throw new Error(body.error);
+          } catch (inner: any) {
+            if (inner?.message) throw inner;
+          }
+        }
+        throw new Error("لم يتم توليد تحليل ذكي بعد لهذه الجمعية. شغّل التحليل الذكي أولاً ثم أعد المحاولة.");
+      }
       toast.success(`تم توليد خطة من ${data.tasks_count} مهمة`);
       setDialogOpen(false);
       setPlanTitle("");
