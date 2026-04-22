@@ -266,7 +266,7 @@ export function Sidebar() {
     navigate("/", { replace: true });
   };
 
-  const NavLink = ({ item }: { item: NavItem }) => {
+  const NavLink = ({ item, index = 0 }: { item: NavItem; index?: number }) => {
     const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
     const badgeCount = item.badge;
 
@@ -275,6 +275,11 @@ export function Sidebar() {
 
     const brandPrimary = branding.primary;
     const brandAccent = branding.accent || branding.primary;
+
+    // Build icon background from brand colors when available — alternate between primary (green) and accent (orange)
+    const useBrandIcon = !!brandPrimary;
+    const iconColor1 = index % 2 === 0 ? brandPrimary : (brandAccent || brandPrimary);
+    const iconColor2 = index % 2 === 0 ? (brandAccent || brandPrimary) : brandPrimary;
 
     return (
       <Link
@@ -296,8 +301,14 @@ export function Sidebar() {
       >
         <div className={cn(
           "w-10 h-10 rounded-lg flex items-center justify-center shadow-md",
-          isActive ? "bg-white/20" : item.iconBg
-        )}>
+          isActive ? "bg-white/20" : (useBrandIcon ? "" : item.iconBg)
+        )}
+        style={
+          !isActive && useBrandIcon
+            ? { backgroundImage: `linear-gradient(135deg, ${iconColor1}, ${iconColor2})` }
+            : undefined
+        }
+        >
           <item.icon className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
@@ -544,9 +555,9 @@ export function Sidebar() {
                 : roleLevel === "manager"
                   ? managerNavItems
                   : employeeNavItems
-            ).map((item) => (
+            ).map((item, idx) => (
               <div key={item.href}>
-                <NavLink item={item} />
+                <NavLink item={item} index={idx} />
               </div>
             ))}
 
