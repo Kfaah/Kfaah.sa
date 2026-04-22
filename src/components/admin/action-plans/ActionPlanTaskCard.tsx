@@ -2,7 +2,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, CheckCircle2, CheckSquare, Clock, Sparkles, Square, User } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CheckCircle2, ChevronDown, Clock, Sparkles, User } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export interface ActionPlanSubTask {
@@ -10,6 +13,10 @@ export interface ActionPlanSubTask {
   details: string;
   duration_days: number;
   done?: boolean;
+  assigned_employee_id?: string | null;
+  status?: string;
+  start_date?: string | null;
+  due_date?: string | null;
 }
 
 export interface ActionPlanTask {
