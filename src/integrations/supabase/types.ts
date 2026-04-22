@@ -2065,6 +2065,7 @@ export type Database = {
           auto_extracted_at: string | null
           created_at: string
           facebook_url: string | null
+          goals: string | null
           id: string
           instagram_url: string | null
           last_analyzed_at: string | null
@@ -2090,6 +2091,7 @@ export type Database = {
           auto_extracted_at?: string | null
           created_at?: string
           facebook_url?: string | null
+          goals?: string | null
           id?: string
           instagram_url?: string | null
           last_analyzed_at?: string | null
@@ -2115,6 +2117,7 @@ export type Database = {
           auto_extracted_at?: string | null
           created_at?: string
           facebook_url?: string | null
+          goals?: string | null
           id?: string
           instagram_url?: string | null
           last_analyzed_at?: string | null

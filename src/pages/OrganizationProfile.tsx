@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette } from "lucide-react";
+import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 interface ProfileForm {
   about: string;
+  goals: string;
   website_url: string;
   store_url: string;
   twitter_url: string;
@@ -28,7 +29,7 @@ interface ProfileForm {
 }
 
 const empty: ProfileForm = {
-  about: "", website_url: "", store_url: "",
+  about: "", goals: "", website_url: "", store_url: "",
   twitter_url: "", instagram_url: "", tiktok_url: "",
   snapchat_url: "", youtube_url: "", facebook_url: "", linkedin_url: "",
   logo_url: "", primary_color: "", secondary_color: "", accent_color: "",
@@ -59,6 +60,7 @@ export default function OrganizationProfile() {
       if (p) {
         setForm({
           about: p.about ?? "",
+          goals: (p as Record<string, string | null>).goals ?? "",
           website_url: p.website_url ?? "",
           store_url: p.store_url ?? "",
           twitter_url: p.twitter_url ?? "",
@@ -207,77 +209,54 @@ export default function OrganizationProfile() {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
-        <Card className="p-6">
+        {/* 1) Website URL on top — triggers identity extraction */}
+        <Card className="p-6 border-primary/30 bg-gradient-to-bl from-primary/5 to-transparent">
           <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-primary" /> نبذة عن الجمعية
-          </h2>
-          <Textarea
-            rows={4}
-            placeholder="اكتب نبذة شاملة عن الجمعية: تخصصها، رسالتها، أبرز برامجها..."
-            value={form.about}
-            onChange={(e) => setForm({ ...form, about: e.target.value })}
-          />
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <Globe className="w-5 h-5 text-primary" /> المواقع الرئيسية
+            <Globe className="w-5 h-5 text-primary" /> الموقع الإلكتروني للجمعية
             {extracting && (
               <span className="text-xs text-muted-foreground flex items-center gap-1 font-normal">
                 <Loader2 className="w-3 h-3 animate-spin" /> جاري قراءة الموقع...
               </span>
             )}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5" /> الموقع الإلكتروني
-                <span className="text-[10px] text-muted-foreground font-normal">(يجلب الباقي تلقائياً)</span>
-              </Label>
-              <Input
-                dir="ltr" placeholder="https://..." value={form.website_url}
-                onChange={(e) => setForm({ ...form, website_url: e.target.value })}
-                onBlur={(e) => autoExtract(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5"><ShoppingBag className="w-3.5 h-3.5" /> المتجر الإلكتروني</Label>
-              <Input dir="ltr" placeholder="https://..." value={form.store_url}
-                onChange={(e) => setForm({ ...form, store_url: e.target.value })} />
-            </div>
-          </div>
-          <div className="mt-3 flex justify-end">
+          <p className="text-xs text-muted-foreground mb-3">
+            بمجرد إدخال الموقع، تقوم المنصة تلقائياً بجلب الشعار، الألوان، المتجر، وحسابات التواصل.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              dir="ltr" placeholder="https://..." value={form.website_url}
+              onChange={(e) => setForm({ ...form, website_url: e.target.value })}
+              onBlur={(e) => autoExtract(e.target.value)}
+              className="flex-1"
+            />
             <Button
-              type="button" size="sm" variant="outline" className="gap-1.5"
+              type="button" className="gap-1.5"
               onClick={() => autoExtract(form.website_url)}
               disabled={!form.website_url || extracting}
             >
               <Wand2 className="w-3.5 h-3.5" />
-              {extracting ? "جاري الجلب..." : "جلب الهوية من الموقع الآن"}
+              {extracting ? "جاري الجلب..." : "جلب الهوية"}
             </Button>
           </div>
         </Card>
 
-        {/* Brand identity preview — يظهر بعد جلب الهوية */}
+        {/* 2) Identity: Logo + Colors */}
         {(form.logo_url || form.primary_color) && (
           <Card className="p-6">
             <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <Palette className="w-5 h-5 text-primary" /> الهوية البصرية للجمعية
+              <Palette className="w-5 h-5 text-primary" /> الهوية البصرية
             </h2>
-            <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-6 flex-wrap">
               {form.logo_url && (
-                <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden border">
-                  <img src={form.logo_url} alt="logo" className="w-full h-full object-contain p-1" />
+                <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center overflow-hidden border-2">
+                  <img src={form.logo_url} alt="logo" className="w-full h-full object-contain p-2" />
                 </div>
               )}
               <div className="flex gap-3">
                 {(["primary_color", "secondary_color", "accent_color"] as const).map((k) => (
                   form[k] ? (
                     <div key={k} className="text-center">
-                      <div
-                        className="w-14 h-14 rounded-lg shadow-sm border"
-                        style={{ background: form[k] }}
-                      />
+                      <div className="w-14 h-14 rounded-lg shadow-sm border" style={{ background: form[k] }} />
                       <div dir="ltr" className="text-[10px] text-muted-foreground mt-1">{form[k]}</div>
                     </div>
                   ) : null
@@ -287,11 +266,50 @@ export default function OrganizationProfile() {
           </Card>
         )}
 
+        {/* 3) Org Name (read-only) + About + Goals */}
+        <Card className="p-6 space-y-4">
+          <h2 className="font-bold text-lg flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-primary" /> بيانات الجمعية
+          </h2>
+          <div className="space-y-2">
+            <Label>اسم الجمعية</Label>
+            <Input value={orgName} readOnly className="bg-muted/40" />
+          </div>
+          <div className="space-y-2">
+            <Label>نبذة عن الجمعية</Label>
+            <Textarea
+              rows={4}
+              placeholder="اكتب نبذة شاملة عن الجمعية: تخصصها، رسالتها، أبرز برامجها..."
+              value={form.about}
+              onChange={(e) => setForm({ ...form, about: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Target className="w-3.5 h-3.5" /> أهداف الجمعية
+            </Label>
+            <Textarea
+              rows={4}
+              placeholder="أهم الأهداف الاستراتيجية والتشغيلية للجمعية..."
+              value={form.goals}
+              onChange={(e) => setForm({ ...form, goals: e.target.value })}
+            />
+          </div>
+        </Card>
+
+        {/* 4) Store + social links at the bottom */}
         <Card className="p-6">
           <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <LinkIcon className="w-5 h-5 text-primary" /> حسابات التواصل الاجتماعي
+            <LinkIcon className="w-5 h-5 text-primary" /> المتجر وحسابات التواصل
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2 md:col-span-2">
+              <Label className="flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-primary" /> المتجر الإلكتروني / صفحة التبرع
+              </Label>
+              <Input dir="ltr" placeholder="https://..." value={form.store_url}
+                onChange={(e) => setForm({ ...form, store_url: e.target.value })} />
+            </div>
             {socials.map((s) => (
               <div key={s.key} className="space-y-2">
                 <Label>{s.label}</Label>
@@ -300,6 +318,18 @@ export default function OrganizationProfile() {
               </div>
             ))}
           </div>
+        </Card>
+
+        {/* 5) Save + analyze actions */}
+        <Card className="p-4 flex justify-end gap-2 sticky bottom-4 shadow-lg border-primary/20">
+          <Button variant="outline" onClick={save} disabled={saving} className="gap-2">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            حفظ البيانات
+          </Button>
+          <Button onClick={analyze} disabled={analyzing} className="gap-2">
+            {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {analyzing ? "جاري التحليل..." : "تحليل ذكي شامل"}
+          </Button>
         </Card>
 
         {analysis && (
