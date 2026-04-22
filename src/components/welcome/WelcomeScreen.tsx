@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import atefLogo from "@/assets/atef-logo-icon.jpg";
 
 // العبارات الافتراضية (تستخدم إذا لم توجد عبارات في قاعدة البيانات)
@@ -23,6 +24,19 @@ const defaultBackgrounds = [
   "/welcome-backgrounds/bg-05.jpg",
 ];
 
+// خلفيات مخصصة لكل جمعية حسب تخصصها (تظهر تلقائياً عند اختيار الجمعية)
+// يمكن إضافة المزيد من الجمعيات هنا لاحقاً
+const orgBackgrounds: Record<string, string[]> = {
+  // جمعية سكينة — مساجد جميلة وحدائق ورود
+  sakinah: [
+    "/welcome-backgrounds/sakina/mosque-01.jpg",
+    "/welcome-backgrounds/sakina/mosque-02.jpg",
+    "/welcome-backgrounds/sakina/mosque-03.jpg",
+    "/welcome-backgrounds/sakina/mosque-04.jpg",
+    "/welcome-backgrounds/sakina/mosque-05.jpg",
+  ],
+};
+
 interface Quote {
   quote: string;
   emoji: string;
@@ -31,6 +45,7 @@ interface Quote {
 export function WelcomeScreen() {
   const { user } = useUser();
   const branding = useOrgBranding();
+  const { currentOrg } = useOrganization();
   const [currentQuote, setCurrentQuote] = useState<Quote>(defaultQuotes[0]);
   const [currentBg, setCurrentBg] = useState<string>(defaultBackgrounds[0]);
   const [quotes, setQuotes] = useState<Quote[]>(defaultQuotes);
@@ -39,7 +54,7 @@ export function WelcomeScreen() {
 
   useEffect(() => {
     fetchContent();
-  }, []);
+  }, [currentOrg?.slug]);
 
   useEffect(() => {
     // اختيار عبارة بناءً على اليوم
@@ -60,6 +75,21 @@ export function WelcomeScreen() {
 
   const fetchContent = async () => {
     try {
+      // إذا كانت الجمعية لها خلفيات مخصصة، استخدمها مباشرة وتجاوز قاعدة البيانات
+      const orgSlug = currentOrg?.slug;
+      if (orgSlug && orgBackgrounds[orgSlug]) {
+        setBackgrounds(orgBackgrounds[orgSlug]);
+        setHasFeaturedBg(false);
+        // اجلب فقط العبارات
+        const { data: qData } = await supabase
+          .from("welcome_quotes")
+          .select("quote, emoji")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true });
+        if (qData && qData.length > 0) setQuotes(qData);
+        return;
+      }
+
       const [quotesRes, bgRes] = await Promise.all([
         supabase
           .from("welcome_quotes")
