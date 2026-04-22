@@ -93,6 +93,14 @@ interface ActivityInfo {
   activity_name: string;
 }
 
+type TaskUpdateData = {
+  status?: Task["status"];
+  started_at?: string;
+  actual_time_minutes?: number;
+  completion_percentage?: number;
+  quality_percentage?: number;
+};
+
 const MONTHS_AR = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
@@ -391,7 +399,7 @@ const Tasks = () => {
     if (!task) return;
 
     const now = new Date().toISOString();
-    let updateData: Record<string, any> = { status: newStatus };
+    const updateData: TaskUpdateData = { status: newStatus as Task["status"] };
     let localUpdate: Partial<Task> = { status: newStatus as Task["status"] };
 
     // عند بدء التنفيذ، نسجل وقت البدء
@@ -462,7 +470,7 @@ const Tasks = () => {
     if (!task) return;
 
     const now = new Date().toISOString();
-    let updateData: Record<string, any> = { status: newStatus };
+    const updateData: TaskUpdateData = { status: newStatus as Task["status"] };
     let localUpdate: Partial<Task> = { status: newStatus as Task["status"] };
 
     // عند بدء التنفيذ، نسجل وقت البدء
@@ -540,7 +548,7 @@ const Tasks = () => {
     try {
       const { error } = await supabase
         .from("tasks")
-        .update({ [field]: clampedValue })
+        .update(field === "completion_percentage" ? { completion_percentage: clampedValue } : { quality_percentage: clampedValue })
         .eq("id", taskId);
       
       if (error) throw error;
