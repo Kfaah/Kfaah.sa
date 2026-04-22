@@ -164,51 +164,27 @@ export default function OrganizationProfile() {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* Brand hero — يتحول تلقائياً لألوان الجمعية بعد جلب الموقع */}
-      <header
-        className="relative overflow-hidden text-white"
-        style={{ background: `linear-gradient(135deg, ${brand.primary}, ${brand.secondary})` }}
-      >
-        <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at 80% 20%, ${brand.accent}, transparent 60%)` }} />
-        <div className="relative max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+      <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+        {/* Header — same style as Settings page */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/organizations")} className="gap-1 text-white hover:bg-white/10">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/organizations")} className="gap-1">
               <ArrowRight className="w-4 h-4" /> رجوع
             </Button>
-            <div className="h-10 w-px bg-white/20" />
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-white/95 shadow-lg flex items-center justify-center overflow-hidden ring-2 ring-white/40">
-                {form.logo_url ? (
-                  <img src={form.logo_url} alt={orgName} className="w-full h-full object-contain p-1" />
-                ) : (
-                  <Building2 className="w-7 h-7" style={{ color: brand.primary }} />
-                )}
-              </div>
-              <div>
-                <h1 className="font-bold text-xl">{orgName}</h1>
-                <p className="text-xs text-white/80">التعرف على الجمعية وهويتها البصرية</p>
-              </div>
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg overflow-hidden">
+              {form.logo_url ? (
+                <img src={form.logo_url} alt={orgName} className="w-full h-full object-contain p-1 bg-white/95" />
+              ) : (
+                <Building2 className="w-7 h-7 text-white" />
+              )}
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{orgName}</h1>
+              <p className="text-muted-foreground text-sm">التعرف على الجمعية وهويتها البصرية</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={save} disabled={saving} className="gap-2 text-white hover:bg-white/10">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              حفظ
-            </Button>
-            <Button
-              onClick={analyze}
-              disabled={analyzing}
-              className="gap-2 bg-white text-foreground hover:bg-white/90"
-              style={{ color: brand.primary }}
-            >
-              {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {analyzing ? "جاري التحليل..." : "تحليل ذكي شامل"}
-            </Button>
-          </div>
         </div>
-      </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
         {/* 1) Website URL on top — triggers identity extraction */}
         <Card className="p-6 border-primary/30 bg-gradient-to-bl from-primary/5 to-transparent">
           <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
