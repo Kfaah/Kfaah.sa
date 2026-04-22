@@ -198,7 +198,7 @@ export default function AdminReports() {
       {/* Thematic mode */}
       {mode === "thematic" && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {THEMES.map(t => {
               const Icon = t.icon;
               const isActive = theme === t.key;
