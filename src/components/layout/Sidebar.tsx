@@ -544,9 +544,9 @@ export function Sidebar() {
                 : roleLevel === "manager"
                   ? managerNavItems
                   : employeeNavItems
-            ).map((item, idx) => (
+            ).map((item) => (
               <div key={item.href}>
-                <NavLink item={item} index={idx} />
+                <NavLink item={item} />
               </div>
             ))}
 
