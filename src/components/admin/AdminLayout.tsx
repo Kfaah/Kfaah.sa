@@ -11,28 +11,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 
+// Unified executive turquoise icon styling — formal & elegant
+const ICON_COLOR = "text-white";
+const ICON_BG = "bg-[hsl(190_55%_22%)]";
+const ICON_RING = "ring-[hsl(190_50%_35%)]";
+
 const navItems = [
   { to: "/admin", label: "نظرة عامة موحّدة", icon: LayoutDashboard, end: true,
     desc: "ملخّص شامل لكل الجمعيات",
-    color: "text-sky-600", bg: "bg-sky-100", ring: "ring-sky-200" },
+    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
   { to: "/admin/organizations", label: "الجمعيات", icon: Building2, end: false,
     desc: "إدارة وتفاصيل الجمعيات",
-    color: "text-emerald-600", bg: "bg-emerald-100", ring: "ring-emerald-200" },
+    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
   { to: "/admin/compare", label: "المقارنة بين الجمعيات", icon: GitCompareArrows, end: false,
     desc: "رادار · ترتيب · معايير متعددة",
-    color: "text-violet-600", bg: "bg-violet-100", ring: "ring-violet-200" },
+    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
   { to: "/admin/analytics", label: "التحليل العميق", icon: Sparkles, end: false,
     desc: "تحليل AI لكل جمعية",
-    color: "text-amber-600", bg: "bg-amber-100", ring: "ring-amber-200" },
+    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
   { to: "/admin/action-plans", label: "الخطط من التوصيات", icon: ListChecks, end: false,
     desc: "تحويل التحليل إلى خطة وتكليف",
-    color: "text-fuchsia-600", bg: "bg-fuchsia-100", ring: "ring-fuchsia-200" },
+    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
     desc: "تقارير موضوعية وتنفيذية سردية",
-    color: "text-rose-600", bg: "bg-rose-100", ring: "ring-rose-200" },
+    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
   { to: "/admin/innovation", label: "الابتكار والتحديث", icon: Lightbulb, end: false,
     desc: "أفكار AI ابتكارية ونقاش تفاعلي",
-    color: "text-amber-600", bg: "bg-amber-100", ring: "ring-amber-200" },
+    color: ICON_COLOR, bg: ICON_BG, ring: ICON_RING },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
