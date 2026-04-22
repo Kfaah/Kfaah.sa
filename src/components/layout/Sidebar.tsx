@@ -273,21 +273,37 @@ export function Sidebar() {
     // جميع الروابط تضيف state لإخفاء شاشة الترحيب
     const linkState = { fromNavigation: true };
 
+    const brandPrimary = branding.primary;
+    const brandAccent = branding.accent || branding.primary;
+
     return (
       <Link
         to={item.href}
         state={linkState}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none",
+          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none transition-colors",
           isActive
-            ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-white shadow-lg ring-2 ring-white"
-            : "bg-white text-slate-700"
+            ? "text-white shadow-lg ring-2 ring-white"
+            : "bg-white text-slate-700 hover:bg-white/90"
         )}
+        style={
+          isActive && brandPrimary
+            ? { backgroundImage: `linear-gradient(to right, ${brandPrimary}, ${brandAccent})` }
+            : isActive
+              ? undefined
+              : undefined
+        }
       >
         <div className={cn(
           "w-10 h-10 rounded-lg flex items-center justify-center shadow-md",
-          isActive ? "bg-white/20" : item.iconBg
-        )}>
+          isActive ? "bg-white/20" : (brandPrimary ? "" : item.iconBg)
+        )}
+        style={
+          !isActive && brandPrimary
+            ? { backgroundImage: `linear-gradient(135deg, ${brandPrimary}, ${brandAccent})` }
+            : undefined
+        }
+        >
           <item.icon className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
@@ -419,10 +435,26 @@ export function Sidebar() {
                   {branding.orgName || "الجمعية"}
                 </h1>
                 <div className="relative">
-                  <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600">
+                  <p
+                    className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600"
+                    style={
+                      branding.primary
+                        ? {
+                            backgroundImage: `linear-gradient(to left, ${branding.primary}, ${branding.accent || branding.primary}, ${branding.primary})`,
+                          }
+                        : undefined
+                    }
+                  >
                     نظام إدارة التسويق الإلكتروني
                   </p>
-                  <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full" />
+                  <div
+                    className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full"
+                    style={
+                      branding.primary
+                        ? { backgroundImage: `linear-gradient(to right, transparent, ${branding.accent || branding.primary}, transparent)` }
+                        : undefined
+                    }
+                  />
                 </div>
               </div>
             )}
@@ -439,7 +471,10 @@ export function Sidebar() {
             <div className="bg-white rounded-2xl p-3 shadow-lg relative z-20">
               <div className="flex items-center gap-3">
                 {/* Avatar - Left side, larger with cyan border */}
-                <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0">
+                <div
+                  className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0"
+                  style={branding.primary ? { borderColor: branding.accent || branding.primary } : undefined}
+                >
                   {user.profileImage ? (
                     <img
                       src={user.profileImage}
@@ -447,7 +482,14 @@ export function Sidebar() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">
+                    <div
+                      className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white"
+                      style={
+                        branding.primary
+                          ? { backgroundImage: `linear-gradient(135deg, ${branding.primary}, ${branding.accent || branding.primary})` }
+                          : undefined
+                      }
+                    >
                       {user.firstName.charAt(0)}
                     </div>
                   )}
