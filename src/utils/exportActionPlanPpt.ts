@@ -311,11 +311,13 @@ export async function exportActionPlanPpt({
     tasks.forEach((t, i) => {
       const col = i < perCol ? 0 : 1;
       const row = i % perCol;
-      const x = col === 0 ? 0.5 : 6.7;
+      // RTL: first half goes to the RIGHT column, second half to the LEFT
+      const x = col === 0 ? 6.7 : 0.5;
       const y = 1.3 + row * 0.55;
       if (y > 7.0) return; // safety
       // number badge
       s.addShape("ellipse", {
+        // place the number badge on the RIGHT edge of the row (RTL)
         x: x + colW - 0.45, y, w: 0.4, h: 0.4,
         fill: { color: COLORS.accent }, line: { color: COLORS.accent },
       });
