@@ -339,7 +339,7 @@ function AIInsightView({ insight }: { insight: AIInsight }) {
   const impactColor = (_: string) => "bg-transparent text-white border-white/60";
 
   return (
-    <Card className="bg-transparent border-accent/30 p-6 space-y-5 shadow-sm">
+    <Card className="bg-transparent border-primary/30 p-6 space-y-5 shadow-sm">
       <div className="flex items-center gap-2 mb-2">
         <Sparkles className="w-5 h-5 text-white" />
         <h3 className="text-white font-bold text-lg">التحليل الذكي</h3>

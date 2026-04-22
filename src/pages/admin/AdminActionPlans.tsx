@@ -186,7 +186,7 @@ export default function AdminActionPlans() {
                         </div>
                         <Progress value={p.tasks_count ? (p.tasks_done! / p.tasks_count!) * 100 : 0} />
                       </div>
-                      <Button variant="ghost" size="sm" className="w-full mt-3 gap-1 text-accent hover:text-accent">
+                      <Button variant="ghost" size="sm" className="w-full mt-3 gap-1 text-primary hover:text-primary">
                         فتح الخطة <ArrowLeftCircle className="w-3.5 h-3.5" />
                       </Button>
                     </Card>
@@ -202,7 +202,7 @@ export default function AdminActionPlans() {
         <DialogContent dir="rtl" className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-accent" />
+              <Sparkles className="w-5 h-5 text-primary" />
               توليد خطة من التحليل الذكي
             </DialogTitle>
             <DialogDescription>

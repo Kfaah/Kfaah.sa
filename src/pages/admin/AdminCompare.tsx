@@ -275,7 +275,7 @@ export default function AdminCompare() {
                           {isScore ? (
                             <ScoreBadge value={v} display={display} />
                           ) : (
-                            <span dir="ltr" className={cn("inline-block text-base font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
+                            <span dir="ltr" className={cn("inline-block text-base font-semibold tabular-nums", sortKey === s.key && "text-primary font-bold")}>{display}</span>
                           )}
                         </td>
                       );
@@ -298,8 +298,8 @@ export default function AdminCompare() {
 
 function ScoreBadge({ value, display }: { value: number; display: string }) {
   const v = Math.max(0, Math.min(100, value));
-  const color = v >= 75 ? "bg-success/15 text-success border-success/40"
-              : v >= 50 ? "bg-accent/15 text-accent border-accent/40"
+  const color = v >= 75 ? "bg-primary/15 text-primary border-primary/40"
+              : v >= 50 ? "bg-primary/10 text-primary border-primary/30"
               : v >= 25 ? "bg-warning/15 text-warning border-warning/40"
               : "bg-destructive/15 text-destructive border-destructive/40";
   return (
