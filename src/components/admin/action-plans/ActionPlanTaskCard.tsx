@@ -3,9 +3,10 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle2, ChevronDown, Clock, Sparkles, User } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock, Copy, FileText, Package, Sparkles, Star, User } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export interface ActionPlanSubTask {
   title: string;
@@ -16,6 +17,15 @@ export interface ActionPlanSubTask {
   status?: string;
   start_date?: string | null;
   due_date?: string | null;
+  deliverable?: {
+    type: "donor_list" | "message_template" | "social_post" | "report_form" | "instructions";
+    title: string;
+    content: string;
+    fields?: { label: string; key: string }[];
+  } | null;
+  employee_report?: string | null;
+  rating?: number | null;
+  rating_notes?: string | null;
 }
 
 export interface ActionPlanTask {
