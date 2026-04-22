@@ -206,12 +206,12 @@ export default function AdminHub() {
                 }`}
               >
                 {/* Decorative top */}
-                <div className="h-1 bg-gradient-to-l from-accent to-primary" />
+                <div className="h-1 bg-[image:var(--gradient-admin-hub)]" />
 
                 <div className="p-6">
                   {/* Logo + name */}
                   <div className="flex items-start gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+                      <div className="w-16 h-16 rounded-2xl bg-admin-hub flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
                       {o.logo_url ? (
                         <img src={o.logo_url} alt={o.name} className="w-full h-full object-cover" />
                       ) : (
@@ -221,7 +221,10 @@ export default function AdminHub() {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-lg text-foreground truncate">{o.name}</h3>
                       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                        <Badge variant={o.is_active ? "default" : "secondary"} className="text-[10px]">
+                        <Badge
+                          variant={o.is_active ? "default" : "secondary"}
+                          className={o.is_active ? "text-[10px] bg-admin-hub text-white hover:bg-admin-hub/90" : "text-[10px]"}
+                        >
                           {o.is_active ? "نشطة" : "موقوفة"}
                         </Badge>
                         <Badge variant="outline" className="text-[10px]">{o.subscription_tier}</Badge>
@@ -262,11 +265,11 @@ export default function AdminHub() {
                   )}
 
                   {/* Primary action */}
-                  <Button
-                    onClick={() => enterOrg(o)}
-                    disabled={!o.is_active}
-                    className="w-full gap-2 bg-gradient-to-l from-primary to-accent hover:opacity-90 mb-2"
-                  >
+                   <Button
+                     onClick={() => enterOrg(o)}
+                     disabled={!o.is_active}
+                     className="w-full gap-2 bg-[image:var(--gradient-admin-hub)] text-white hover:opacity-90 mb-2"
+                   >
                     <ArrowLeftCircle className="w-4 h-4" />
                     الدخول إلى نظام الجمعية
                   </Button>
@@ -279,7 +282,7 @@ export default function AdminHub() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="flex-1 gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
+                      className="flex-1 gap-1.5 border-admin-hub/40 text-admin-hub hover:bg-admin-hub-soft"
                       onClick={() => navigate(`/admin/organizations/${o.id}/profile`)}
                       title="التعرف على الجمعية"
                     >
