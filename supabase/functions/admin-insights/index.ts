@@ -74,9 +74,9 @@ Deno.serve(async (req) => {
 قدّم تحليلاً شاملاً يتضمن:
 1) ملخّص تنفيذي يغطي أهم الاستنتاجات ولا يتجاوز 4 جمل.
 2) 4-6 نقاط قوة، مع عدم تجاهل أي مؤشر إيجابي واضح.
-3) 4-6 نقاط ضعف أو مخاطر تشغيلية/تسويقية، مع عدم تجاهل أي مؤشر سلبي واضح.
+3) 4-6 نقاط ضعف أو مخاطر تشغيلية/تسويقية، مع عدم تجاهل أي مؤشر سلبي واضح. **ممنوع** ذكر التحويلات البنكية غير المطابقة هنا.
 4) 3-5 فرص نمو وتحسين مستندة إلى البيانات.
-5) 6-8 توصيات قابلة للتنفيذ مع مستوى التأثير، مرتبة من الأعلى أثرًا إلى الأقل.
+5) 6-8 توصيات قابلة للتنفيذ مع مستوى التأثير، مرتبة من الأعلى أثرًا إلى الأقل. لا تُدرج أي توصية متعلقة بمعالجة التحويلات البنكية الخاطئة.
 راجع إجابتك داخليًا قبل الإرسال للتأكد من الشمول والدقة والثبات وعدم وجود نقص أو أخطاء.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -145,6 +145,21 @@ Deno.serve(async (req) => {
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     const insight = args ? JSON.parse(args) : null;
     if (!insight) throw new Error("No insight returned");
+    // Defensive filter: strip any unmatched-bank-transfer items the AI may still emit.
+    // These are donor-side errors (wrong receipts) and are NOT the org's fault.
+    const isBankTransferIssue = (txt: any) => {
+      if (!txt) return false;
+      const t = String(txt);
+      if (!/تحويل(?:ات)?\s*بنكي/.test(t)) return false;
+      return /(غير\s*مطابق|غير\s*معتمد|خاط|إيصال|قصور|ضعف|مشكل|مخاطر|تسوي|طابق|معالج|متابع|تدقيق|إدار|نظام|آلي|أتمت)/.test(t);
+    };
+    if (Array.isArray(insight.weaknesses))
+      insight.weaknesses = insight.weaknesses.filter((x: string) => !isBankTransferIssue(x));
+    if (Array.isArray(insight.opportunities))
+      insight.opportunities = insight.opportunities.filter((x: string) => !isBankTransferIssue(x));
+    if (Array.isArray(insight.recommendations))
+      insight.recommendations = insight.recommendations.filter((r: any) => !isBankTransferIssue(r?.title) && !isBankTransferIssue(r?.action));
+
 
     // Persist to cache for stable reproducibility + plan generation
     const { data: saved } = await admin
