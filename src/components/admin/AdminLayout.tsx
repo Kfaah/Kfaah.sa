@@ -181,8 +181,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {/* Nav — white surface */}
+        <nav className="flex-1 overflow-hidden px-2 py-3 bg-white space-y-1.5">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
             const active = item.end
@@ -194,43 +194,43 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 to={item.to}
                 end={item.end}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-xl pr-4 pl-3 py-3 transition-all duration-300 overflow-hidden",
+                  "group relative flex items-center gap-3 rounded-lg pr-3 pl-2 py-2 transition-all duration-300 overflow-hidden",
                   active
-                    ? "bg-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.55)] ring-1 ring-amber-300/70 -translate-x-0.5"
-                    : "bg-white/[0.04] hover:bg-white/[0.09] ring-1 ring-white/10 hover:ring-amber-300/40 backdrop-blur-sm hover:-translate-x-0.5 hover:shadow-[0_8px_20px_-10px_rgba(0,0,0,0.6)]"
+                    ? "bg-gradient-to-l from-amber-50 to-white shadow-md ring-1 ring-amber-300/70 -translate-x-0.5"
+                    : "bg-white hover:bg-amber-50/60 ring-1 ring-slate-200/70 hover:ring-amber-300/50 hover:-translate-x-0.5 hover:shadow-sm"
                 )}
               >
                 {/* Shimmer sweep on hover */}
-                <span className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                <span className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out bg-gradient-to-r from-transparent via-amber-200/30 to-transparent" />
                 {/* Right vertical gold accent bar */}
                 <span
                   className={cn(
                     "absolute right-0 top-0 bottom-0 w-[3px] transition-all duration-300",
                     active
                       ? "bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.7)]"
-                      : "bg-transparent group-hover:bg-amber-300/50"
+                      : "bg-transparent group-hover:bg-amber-300/60"
                   )}
                 />
                 <div
                   className={cn(
-                    "relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 border-2 border-white/90",
+                    "relative w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 border border-white shadow-sm",
                     active
-                      ? `${item.bg} ${item.color} ring-2 ring-amber-300/70 shadow-md`
-                      : `${item.bg} ${item.color} ring-1 ${item.ring} group-hover:shadow-lg group-hover:scale-110 group-hover:rotate-3`
+                      ? `${item.bg} ${item.color} ring-2 ring-amber-300/70`
+                      : `${item.bg} ${item.color} ring-1 ${item.ring} group-hover:shadow-md group-hover:scale-110 group-hover:rotate-3`
                   )}
                 >
-                  <Icon className="w-[18px] h-[18px]" strokeWidth={2.4} />
+                  <Icon className="w-[16px] h-[16px]" strokeWidth={2.4} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={cn(
-                    "text-[13.5px] font-bold leading-tight truncate tracking-tight transition-colors",
-                    active ? "text-emerald-800" : "text-white group-hover:text-amber-100"
+                    "text-[12.5px] font-bold leading-tight truncate tracking-tight transition-colors",
+                    active ? "text-emerald-800" : "text-slate-800 group-hover:text-emerald-800"
                   )}>
                     {item.label}
                   </div>
                   <div className={cn(
-                    "text-[10.5px] leading-tight mt-0.5 truncate transition-colors",
-                    active ? "text-amber-700" : "text-white/60 group-hover:text-amber-200/80"
+                    "text-[10px] leading-tight mt-0.5 truncate transition-colors",
+                    active ? "text-amber-700" : "text-slate-500 group-hover:text-amber-700/80"
                   )}>
                     {item.desc}
                   </div>
