@@ -316,22 +316,48 @@ Deno.serve(async (req) => {
     }));
 
     // 3) Ask AI to assign + schedule + break down into executive subtasks
+    //    Each subtask gets its own assigned employee + a ready-to-use deliverable.
     let assignments: {
       recommendation_index: number;
       employee_id: string | null;
       reason: string;
-      subtasks: { title: string; details: string; duration_days: number }[];
+      subtasks: {
+        title: string;
+        details: string;
+        duration_days: number;
+        assigned_employee_id?: string | null;
+        deliverable?: {
+          type: "donor_list" | "message_template" | "social_post" | "report_form" | "instructions";
+          title: string;
+          content: string;
+          fields?: { label: string; key: string }[];
+        };
+      }[];
     }[] = [];
     if (empList.length > 0) {
-      const sysPrompt = `أنت مدير تنفيذي خبير. مهمتك لكل توصية:
-1) اختر الموظف الأنسب من القائمة (حسب القسم/الدور) واذكر سببًا موجزًا.
-2) فكّك التوصية إلى 4-7 مهام تنفيذية دقيقة، عملية، قابلة للقياس، بترتيب زمني منطقي.
-كل مهمة تنفيذية يجب أن:
-- تبدأ بفعل أمر واضح (أنشئ، اتصل بـ، أعدّ تقريرًا، حدّد، صمّم...).
-- تكون محددة تمامًا لا عامة (مثال: "اتصل بأكبر 20 متبرعًا غير نشط لمدة 6 أشهر" بدلاً من "تواصل مع المتبرعين").
-- تحتوي على تفاصيل تنفيذية: الكمية، الجهة، الأداة، أو المخرج المتوقع.
-- مدة تنفيذ مقدّرة بالأيام (1-30).
-استخدم العربية الاحترافية. لا تخترع أرقامًا غير مذكورة.`;
+      const sysPrompt = `أنت مدير تنفيذي خبير. الجمعية تملك بالفعل قاعدة بيانات متبرعين، فريق عمل، وأدوات تواصل. مهمتك أن تجهّز كل شيء بحيث يكون الموظف منفّذًا فقط (لا يفكر، لا يبني من الصفر).
+
+لكل توصية:
+1) اختر "المسؤول الأول" من قائمة الموظفين (للإشراف العام) واذكر سببًا موجزًا.
+2) فكّك التوصية إلى 4-7 مهام تنفيذية دقيقة، بترتيب زمني منطقي.
+
+لكل مهمة تنفيذية:
+- title: يبدأ بفعل أمر محدد (مثال: "أرسل رسالة الواتساب الجاهزة لقائمة المتبرعين المرفقة").
+- details: شرح موجز جدًا (سطر أو سطرين) لما سيقوم به الموظف فعليًا.
+- duration_days: 1-15.
+- assigned_employee_id: اختر الموظف الأنسب لهذه المهمة بالذات (حسب job_role/department؛ الاتصال للعلاقات العامة، التصميم/النشر للتسويق، التقارير المالية للمحاسبة...). لا تترك المهمة بدون موظف.
+- deliverable: مخرج جاهز يستخدمه الموظف مباشرة. اختر النوع المناسب:
+  * "donor_list": قائمة شريحة مانحين محددة من قاعدة البيانات (مثال: "المانحون غير النشطين منذ 6 أشهر، مرتبون حسب أعلى تبرع سابق"). content = وصف تشغيلي دقيق للشريحة (المعايير).
+  * "message_template": نص رسالة واتساب/SMS/بريد جاهز للنسخ مع متغيرات بين قوسين {الاسم} {آخر_تبرع}. content = الرسالة كاملة بدون أي مكان فارغ يحتاج تفكير.
+  * "social_post": منشور سوشيال ميديا جاهز (نص + هاشتاقات + اقتراح بصري). content = المنشور النهائي.
+  * "report_form": نموذج تقرير قابل للتعبئة. content = تعليمات مختصرة، fields = قائمة الحقول المطلوبة.
+  * "instructions": تعليمات تنفيذية واضحة عندما لا ينطبق ما سبق. content = خطوات مرقّمة.
+- title (داخل deliverable): اسم المخرج (مثال: "رسالة استرجاع المانحين غير النشطين").
+
+قواعد:
+- لا تطلب من الموظف "بناء" أو "إعداد قائمة" — أنت من يحدد القائمة، هو ينفذ فقط.
+- لا تخترع أرقامًا أو معلومات غير مذكورة في البيانات.
+- استخدم العربية الاحترافية المباشرة.`;
       const userPrompt = `الموظفون المتاحون:\n${JSON.stringify(empList, null, 2)}\n\nالتوصيات:\n${recs.map((r, i) => `${i}) [${r.impact}] ${r.title}\n   الإجراء: ${r.action}`).join("\n\n")}`;
 
       const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -368,11 +394,32 @@ Deno.serve(async (req) => {
                           items: {
                             type: "object",
                             properties: {
-                              title: { type: "string", description: "مهمة تنفيذية دقيقة تبدأ بفعل أمر" },
-                              details: { type: "string", description: "تفاصيل تنفيذية واضحة (الكمية/الأداة/المخرج)" },
-                              duration_days: { type: "number", description: "مدة التنفيذ بالأيام (1-30)" },
+                              title: { type: "string", description: "فعل أمر محدد للموظف" },
+                              details: { type: "string", description: "شرح موجز سطر أو سطرين" },
+                              duration_days: { type: "number", description: "1-15" },
+                              assigned_employee_id: { type: "string", description: "id الموظف المنفّذ لهذه المهمة" },
+                              deliverable: {
+                                type: "object",
+                                properties: {
+                                  type: { type: "string", enum: ["donor_list", "message_template", "social_post", "report_form", "instructions"] },
+                                  title: { type: "string" },
+                                  content: { type: "string" },
+                                  fields: {
+                                    type: "array",
+                                    items: {
+                                      type: "object",
+                                      properties: {
+                                        label: { type: "string" },
+                                        key: { type: "string" },
+                                      },
+                                      required: ["label", "key"],
+                                    },
+                                  },
+                                },
+                                required: ["type", "title", "content"],
+                              },
                             },
-                            required: ["title", "details", "duration_days"],
+                            required: ["title", "details", "duration_days", "assigned_employee_id", "deliverable"],
                           },
                         },
                       },
