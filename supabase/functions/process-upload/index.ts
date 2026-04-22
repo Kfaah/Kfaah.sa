@@ -347,6 +347,34 @@ Deno.serve(async (req) => {
     // We don't await it so the upload response stays fast.
     if (inserted > 0) {
       try {
+        // 1) Invalidate cached deep-analysis & comparison insights for this org
+        //    so the next visit to "النظرة العامة / التحليل العميق / المقارنة"
+        //    regenerates fresh results that include the new data.
+        admin
+          .from("admin_ai_insights_cache")
+          .delete()
+          .eq("organization_id", organizationId)
+          .then(({ error }) => {
+            if (error) console.error("cache invalidation failed:", error);
+          });
+
+        // 2) Trigger the full intelligence engine: deep insights, smart tasks,
+        //    marketing ideas, lifecycle events — all bound to this upload.
+        fetch(`${supabaseUrl}/functions/v1/run-intelligence`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({
+            organizationId,
+            triggerSource: "upload",
+            uploadId,
+            scope: [detected],
+          }),
+        }).catch((err) => console.error("run-intelligence trigger failed:", err));
+
+        // 3) Innovation suggestions tailored to this file
         const minimalMetrics = {
           org_name: "الجمعية",
           total_donated: 0, donations_count: inserted, avg_donation: 0,
