@@ -545,7 +545,7 @@ Deno.serve(async (req) => {
       });
 
     const stepDays = Math.max(1, Math.floor(Number(duration_days) / Math.max(sorted.length, 1)));
-    const tasksPayload = sorted.map((r, i) => {
+    const tasksPayload = await Promise.all(sorted.map(async (r, i) => {
       const start = new Date(today);
       start.setDate(start.getDate() + i * stepDays);
       const due = new Date(start);
@@ -553,13 +553,33 @@ Deno.serve(async (req) => {
       const a = assignments.find(x => x.recommendation_index === r.idx);
       const validEmpId = a && empList.some(e => e.id === a.employee_id) ? a.employee_id : null;
       const empIds = new Set(empList.map((e) => e.id));
-      const cleanedSubtasks = (a?.subtasks || []).map((s) => ({
-        ...s,
-        assigned_employee_id:
-          s.assigned_employee_id && empIds.has(s.assigned_employee_id)
-            ? s.assigned_employee_id
-            : validEmpId,
-        status: "pending",
+      const cleanedSubtasks = await Promise.all((a?.subtasks || []).map(async (s, sIdx) => {
+        let deliverable = s.deliverable;
+        let attachment: { url: string; name: string } | null = null;
+        // For donor_list: build a real CSV from real DB data
+        if (deliverable?.type === "donor_list") {
+          const file = await buildDonorListFile(admin, organization_id, deliverable.content, plan.id, i, sIdx);
+          if (file) {
+            attachment = { url: file.url, name: file.name };
+            deliverable = {
+              ...deliverable,
+              content:
+                deliverable.content +
+                `\n\n📎 تم تجهيز ملف Excel يحتوي ${file.count} متبرع جاهز للتحميل (الاسم، الجوال، البريد، المدينة، إجمالي التبرعات، آخر تبرع).`,
+            };
+          }
+        }
+        return {
+          ...s,
+          deliverable,
+          attachment_url: attachment?.url || null,
+          attachment_name: attachment?.name || null,
+          assigned_employee_id:
+            s.assigned_employee_id && empIds.has(s.assigned_employee_id)
+              ? s.assigned_employee_id
+              : validEmpId,
+          status: "pending",
+        };
       }));
       return {
         action_plan_id: plan.id,
@@ -576,7 +596,7 @@ Deno.serve(async (req) => {
         ai_suggestion_reason: a?.reason || null,
         subtasks: cleanedSubtasks,
       };
-    });
+    }));
 
     const { error: tasksErr } = await admin.from("action_plan_tasks").insert(tasksPayload);
     if (tasksErr) throw tasksErr;
