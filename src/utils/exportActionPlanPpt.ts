@@ -207,13 +207,14 @@ export async function exportActionPlanPpt({
     s.background = { color: COLORS.light };
     addHeaderBar(s, "الملخص التنفيذي", "نظرة عامة على الخطة وأبرز مؤشراتها");
 
-    // KPI cards row
-    const kpis = [
+    // KPI cards row — reversed so first KPI sits on the right (RTL reading order)
+    const kpisLTR = [
       { label: "المهام الرئيسية", value: String(tasks.length), color: COLORS.primary },
       { label: "المهام التنفيذية", value: String(totalSubtasks), color: COLORS.accent },
       { label: "نسبة الإنجاز", value: `${Math.round(plan.progress || 0)}%`, color: COLORS.success },
       { label: "قيد التنفيذ", value: String(inProgressTasks), color: COLORS.warning },
     ];
+    const kpis = [...kpisLTR].reverse();
     const cardW = 2.95, cardH = 1.6, gap = 0.2;
     const startX = (13.333 - (cardW * 4 + gap * 3)) / 2;
     kpis.forEach((k, i) => {
