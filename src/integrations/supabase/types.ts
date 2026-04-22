@@ -109,6 +109,7 @@ export type Database = {
           priority: number
           start_date: string | null
           status: string
+          subtasks: Json | null
           title: string
           updated_at: string
         }
@@ -128,6 +129,7 @@ export type Database = {
           priority?: number
           start_date?: string | null
           status?: string
+          subtasks?: Json | null
           title: string
           updated_at?: string
         }
@@ -147,6 +149,7 @@ export type Database = {
           priority?: number
           start_date?: string | null
           status?: string
+          subtasks?: Json | null
           title?: string
           updated_at?: string
         }
