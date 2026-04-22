@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   FileBarChart2, Download, FileText, Users, HandCoins, ShoppingCart,
-  Briefcase, Megaphone, Building2, Loader2, Sparkles, Calendar,
+  Briefcase, Megaphone, Building2, Loader2, Sparkles, Calendar, Presentation, Award,
 } from "lucide-react";
 import { useAdminAggregates, type DateRange, type OrgMetrics } from "@/hooks/useAdminAggregates";
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
+import { exportExecutiveReportPpt, type ExecReport } from "@/utils/exportExecutiveReportPpt";
 
 type ThemeKey = "donors" | "campaigns" | "abandoned" | "team" | "fundraising";
 type Mode = "thematic" | "executive";
