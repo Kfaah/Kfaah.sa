@@ -1,0 +1,1 @@
+DELETE FROM public.admin_ai_insights_cache WHERE organization_id = '25e17864-ca4d-4dd5-8f92-16da4986d8d3';
