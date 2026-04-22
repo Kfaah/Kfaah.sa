@@ -87,6 +87,13 @@ export function Sidebar() {
   const branding = useOrgBranding();
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
 
+  // Build a gradient from the org's brand colors; fall back to default teal palette.
+  const sidebarBgStyle = branding.primary
+    ? {
+        backgroundImage: `linear-gradient(to bottom, ${branding.primary} 0%, ${branding.secondary || branding.primary} 50%, ${branding.primary} 100%)`,
+      }
+    : undefined;
+
   // Check if user is actually an admin (not in preview mode)
   const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
 
@@ -313,7 +320,13 @@ export function Sidebar() {
       )}
     >
       {/* Modern 3D Gradient Background with Geometric Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#3d9aa8] via-[#4A9BA8] to-[#2d7a85]" />
+      <div
+        className={cn(
+          "absolute inset-0",
+          !branding.primary && "bg-gradient-to-b from-[#3d9aa8] via-[#4A9BA8] to-[#2d7a85]"
+        )}
+        style={sidebarBgStyle}
+      />
 
       {/* Animated Gradient Overlay */}
       <div
