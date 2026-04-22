@@ -273,12 +273,18 @@ function SubtaskRow({
               </div>
             )}
 
-            {subtask.deliverable && <DeliverableBlock deliverable={subtask.deliverable} />}
+            {subtask.deliverable && (
+              <DeliverableBlock
+                deliverable={subtask.deliverable}
+                attachmentUrl={subtask.attachment_url || null}
+                attachmentName={subtask.attachment_name || null}
+              />
+            )}
 
             <ReportAndRating
-              report={subtask.employee_report || ""}
-              rating={subtask.rating ?? null}
-              ratingNotes={subtask.rating_notes || ""}
+              subtask={subtask}
+              dueDate={subtask.due_date || null}
+              status={status}
               onSave={(patch) => onUpdate(patch)}
             />
           </TableCell>
