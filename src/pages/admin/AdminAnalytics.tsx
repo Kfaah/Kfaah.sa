@@ -124,7 +124,13 @@ export default function AdminAnalytics() {
     setInsight(null);
     try {
       const { data, error } = await supabase.functions.invoke("admin-insights", {
-        body: { metrics: selected, all: metrics, period_label: range.label },
+        body: {
+          metrics: selected,
+          all: metrics,
+          period_label: range.label,
+          period_from: range.from?.toISOString() || null,
+          period_to: range.to?.toISOString() || null,
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
