@@ -3,6 +3,44 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+
+async function firecrawlSearch(query: string, limit = 5): Promise<Array<{ url: string; title?: string; description?: string }>> {
+  if (!FIRECRAWL_API_KEY) return [];
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/search", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, limit, lang: "ar", country: "sa" }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      console.error("firecrawl search failed", res.status, data);
+      return [];
+    }
+    // v2 returns { data: { web: [...] } } or { data: [...] }
+    const web = data?.data?.web ?? data?.data ?? [];
+    return Array.isArray(web) ? web : [];
+  } catch (e) {
+    console.error("firecrawl search error", e);
+    return [];
+  }
+}
+
+async function findOrgNameFromWebsite(url: string): Promise<string | null> {
+  const html = await fetchHtml(url, 8000);
+  if (!html) return null;
+  const ogSite = html.match(/<meta\s+property=["']og:site_name["']\s+content=["']([^"']+)["']/i);
+  if (ogSite) return ogSite[1].trim();
+  const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
+  if (ogTitle) return ogTitle[1].trim();
+  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (title) return title[1].split(/[|\-–—•·]/)[0].trim();
+  return null;
+}
 function absolutize(href: string, base: string): string {
   try { return new URL(href, base).toString(); } catch { return href; }
 }
@@ -143,6 +181,45 @@ Deno.serve(async (req) => {
       })
     );
     for (const r of subResults) if (r) mergeResults(data, r);
+
+    // ===== Use Firecrawl Search to find the correct STORE URL =====
+    // Strategy: search Google for the org name, take the FIRST result as authoritative store/website.
+    try {
+      const orgName = await findOrgNameFromWebsite(url);
+      if (orgName && FIRECRAWL_API_KEY) {
+        // Search for the org's donation/store page directly
+        const queries = [
+          `${orgName} تبرع`,
+          `${orgName} متجر`,
+          orgName,
+        ];
+        let bestStore: string | null = null;
+        const mainHost = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } })();
+
+        for (const q of queries) {
+          const results = await firecrawlSearch(q, 5);
+          if (!results.length) continue;
+          // Prefer first result that looks like a donate/store page on a known platform or same brand
+          const storeHints = /(ehsan\.sa|tabby|donate|\/donate|\/shop|\/store|shop\.|store\.|متجر|تبرع|give\.|payment)/i;
+          const picked = results.find((r) => r.url && storeHints.test(r.url))
+            ?? results.find((r) => {
+              try {
+                const h = new URL(r.url).hostname.replace(/^www\./, "");
+                return mainHost && (h === mainHost || h.endsWith("." + mainHost) || mainHost.endsWith("." + h));
+              } catch { return false; }
+            })
+            ?? results[0];
+          if (picked?.url) { bestStore = picked.url; break; }
+        }
+
+        if (bestStore) {
+          // Override store_url with the search result (more accurate than HTML scrape)
+          data.store_url = bestStore;
+        }
+      }
+    } catch (e) {
+      console.error("firecrawl store-search step failed", e);
+    }
 
     return new Response(JSON.stringify({ success: true, data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
