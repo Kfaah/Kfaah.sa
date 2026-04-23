@@ -402,12 +402,23 @@ export function Sidebar() {
 
               {/* Logo container with zoom animation and shimmer */}
               <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform">
-                <img
-                  src={branding.logoUrl || atefLogoIcon}
-                  alt={branding.orgName || "الجمعية"}
-                  className="w-28 h-28 object-contain"
-                  style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
-                />
+                {branding.loading ? (
+                  <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" />
+                ) : branding.logoUrl ? (
+                  <img
+                    src={branding.logoUrl}
+                    alt={branding.orgName || "الجمعية"}
+                    className="w-28 h-28 object-contain"
+                    style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
+                  />
+                ) : (
+                  <img
+                    src={atefLogoIcon}
+                    alt={branding.orgName || "الجمعية"}
+                    className="w-28 h-28 object-contain"
+                    style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
+                  />
+                )}
                 {/* Shimmer/Glow effect */}
                 <div
                   className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full"
