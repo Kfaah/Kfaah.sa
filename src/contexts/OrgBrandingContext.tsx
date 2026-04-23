@@ -9,9 +9,10 @@ interface Branding {
   primary: string | null;   // hex
   secondary: string | null;
   accent: string | null;
+  loading: boolean;
 }
 
-const Ctx = createContext<Branding>({ logoUrl: null, orgName: "", primary: null, secondary: null, accent: null });
+const Ctx = createContext<Branding>({ logoUrl: null, orgName: "", primary: null, secondary: null, accent: null, loading: true });
 
 /** Convert "#rrggbb" → "h s% l%" string for CSS HSL tokens. */
 function hexToHslTokens(hex: string): string | null {
@@ -78,16 +79,18 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   const { currentOrg } = useOrganization();
   const location = useLocation();
   const [branding, setBranding] = useState<Branding>({
-    logoUrl: null, orgName: "", primary: null, secondary: null, accent: null,
+    logoUrl: null, orgName: "", primary: null, secondary: null, accent: null, loading: true,
   });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!currentOrg) {
-        setBranding({ logoUrl: null, orgName: "", primary: null, secondary: null, accent: null });
+        setBranding({ logoUrl: null, orgName: "", primary: null, secondary: null, accent: null, loading: false });
         return;
       }
+      // Mark as loading and clear the previous org's logo immediately to avoid flashing the old logo
+      setBranding((prev) => ({ ...prev, logoUrl: null, orgName: currentOrg.name, loading: true }));
       const { data } = await supabase
         .from("organization_profiles")
         .select("logo_url, primary_color, secondary_color, accent_color")
@@ -100,6 +103,7 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
         primary: (data as Record<string, string | null> | null)?.primary_color || null,
         secondary: (data as Record<string, string | null> | null)?.secondary_color || null,
         accent: (data as Record<string, string | null> | null)?.accent_color || null,
+        loading: false,
       };
       setBranding(next);
     })();
