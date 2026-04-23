@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -29,6 +30,7 @@ const STORAGE_KEY = "active_organization_id";
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
   const { user: authUser } = useAuth();
+  const location = useLocation();
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
   const [availableOrgs, setAvailableOrgs] = useState<Organization[]>([]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -67,17 +69,38 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       const list = (orgs as Organization[]) || [];
       setAvailableOrgs(list);
 
+      const routeSlug = location.pathname.split("/").filter(Boolean)[0] || null;
+      const slugMatch = routeSlug ? list.find((o) => o.slug === routeSlug) : null;
       const stored = localStorage.getItem(STORAGE_KEY);
       const preferred = stored ? list.find((o) => o.id === stored) : null;
-      setCurrentOrg(preferred || list[0] || null);
+      const nextOrg = slugMatch || preferred || list[0] || null;
+
+      if (nextOrg) {
+        localStorage.setItem(STORAGE_KEY, nextOrg.id);
+      }
+
+      setCurrentOrg(nextOrg);
     } finally {
       setLoading(false);
     }
-  }, [authUser]);
+  }, [authUser, location.pathname]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!availableOrgs.length) return;
+
+    const routeSlug = location.pathname.split("/").filter(Boolean)[0] || null;
+    if (!routeSlug) return;
+
+    const slugMatch = availableOrgs.find((org) => org.slug === routeSlug);
+    if (!slugMatch || slugMatch.id === currentOrg?.id) return;
+
+    localStorage.setItem(STORAGE_KEY, slugMatch.id);
+    setCurrentOrg(slugMatch);
+  }, [availableOrgs, currentOrg?.id, location.pathname]);
 
   const switchOrg = (orgId: string) => {
     const target = availableOrgs.find((o) => o.id === orgId);

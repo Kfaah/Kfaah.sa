@@ -244,11 +244,15 @@ export function WelcomeScreen() {
 
           {/* الشعار - دائرة بيضاء مع ظل */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/80">
-            <img
-              src={branding.logoUrl || atefLogo}
-              alt={branding.orgName || "الجمعية"}
-              className="w-44 h-44 object-contain rounded-full"
-            />
+            {branding.loading ? (
+              <div className="w-44 h-44 rounded-full bg-muted animate-pulse" />
+            ) : (
+              <img
+                src={branding.logoUrl || atefLogo}
+                alt={branding.orgName || "الجمعية"}
+                className="w-44 h-44 object-contain rounded-full"
+              />
+            )}
           </div>
         </motion.div>
 
