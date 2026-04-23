@@ -3,6 +3,44 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+
+async function firecrawlSearch(query: string, limit = 5): Promise<Array<{ url: string; title?: string; description?: string }>> {
+  if (!FIRECRAWL_API_KEY) return [];
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/search", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, limit, lang: "ar", country: "sa" }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      console.error("firecrawl search failed", res.status, data);
+      return [];
+    }
+    // v2 returns { data: { web: [...] } } or { data: [...] }
+    const web = data?.data?.web ?? data?.data ?? [];
+    return Array.isArray(web) ? web : [];
+  } catch (e) {
+    console.error("firecrawl search error", e);
+    return [];
+  }
+}
+
+async function findOrgNameFromWebsite(url: string): Promise<string | null> {
+  const html = await fetchHtml(url, 8000);
+  if (!html) return null;
+  const ogSite = html.match(/<meta\s+property=["']og:site_name["']\s+content=["']([^"']+)["']/i);
+  if (ogSite) return ogSite[1].trim();
+  const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
+  if (ogTitle) return ogTitle[1].trim();
+  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (title) return title[1].split(/[|\-–—•·]/)[0].trim();
+  return null;
+}
 function absolutize(href: string, base: string): string {
   try { return new URL(href, base).toString(); } catch { return href; }
 }
