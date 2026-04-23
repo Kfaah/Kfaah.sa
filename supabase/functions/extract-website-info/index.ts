@@ -182,6 +182,45 @@ Deno.serve(async (req) => {
     );
     for (const r of subResults) if (r) mergeResults(data, r);
 
+    // ===== Use Firecrawl Search to find the correct STORE URL =====
+    // Strategy: search Google for the org name, take the FIRST result as authoritative store/website.
+    try {
+      const orgName = await findOrgNameFromWebsite(url);
+      if (orgName && FIRECRAWL_API_KEY) {
+        // Search for the org's donation/store page directly
+        const queries = [
+          `${orgName} تبرع`,
+          `${orgName} متجر`,
+          orgName,
+        ];
+        let bestStore: string | null = null;
+        const mainHost = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } })();
+
+        for (const q of queries) {
+          const results = await firecrawlSearch(q, 5);
+          if (!results.length) continue;
+          // Prefer first result that looks like a donate/store page on a known platform or same brand
+          const storeHints = /(ehsan\.sa|tabby|donate|\/donate|\/shop|\/store|shop\.|store\.|متجر|تبرع|give\.|payment)/i;
+          const picked = results.find((r) => r.url && storeHints.test(r.url))
+            ?? results.find((r) => {
+              try {
+                const h = new URL(r.url).hostname.replace(/^www\./, "");
+                return mainHost && (h === mainHost || h.endsWith("." + mainHost) || mainHost.endsWith("." + h));
+              } catch { return false; }
+            })
+            ?? results[0];
+          if (picked?.url) { bestStore = picked.url; break; }
+        }
+
+        if (bestStore) {
+          // Override store_url with the search result (more accurate than HTML scrape)
+          data.store_url = bestStore;
+        }
+      }
+    } catch (e) {
+      console.error("firecrawl store-search step failed", e);
+    }
+
     return new Response(JSON.stringify({ success: true, data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
