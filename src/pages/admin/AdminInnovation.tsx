@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Lightbulb, Sparkles, Loader2, Building2, Send, MessageSquare,
   CheckCircle2, XCircle, Trash2, Zap, FileText, BarChart3, Wrench,
-  Wand2, Cog, TrendingUp, Database, Calendar,
+  Wand2, Cog, TrendingUp, Database, Calendar, Filter, ChevronLeft,
 } from "lucide-react";
 import { useAdminAggregates, type DateRange, type OrgMetrics } from "@/hooks/useAdminAggregates";
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
