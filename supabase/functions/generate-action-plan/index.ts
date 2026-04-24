@@ -124,7 +124,7 @@ async function buildPowerPointSupportFile(
   table?: { headers: string[]; rows: string[][]; note?: string },
   fileLabel?: string,
 ): Promise<{ url: string; name: string } | null> {
-  const ppt = new PptxGenJS();
+  const ppt = new (PptxGenJS as any)();
   ppt.layout = "LAYOUT_WIDE";
   ppt.rtlMode = true;
   ppt.author = "Lovable";
@@ -698,7 +698,7 @@ Deno.serve(async (req) => {
       cached = await generateInsight(admin, LOVABLE_API_KEY, selectedMetrics, allMetrics);
     }
 
-    const recs = (cached.insight.recommendations || []) as { title: string; impact: string; action: string }[];
+    const recs = (cached!.insight.recommendations || []) as { title: string; impact: string; action: string }[];
     if (!recs.length) {
       return new Response(JSON.stringify({ error: "لا توجد توصيات في التحليل" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -866,10 +866,10 @@ Deno.serve(async (req) => {
       .from("action_plans")
       .insert({
         organization_id,
-        title: plan_title || `خطة من التحليل الذكي (${cached.period_label})`,
-        description: cached.insight.summary || null,
+        title: plan_title || `خطة من التحليل الذكي (${cached!.period_label})`,
+        description: cached!.insight.summary || null,
         source: "ai_insight",
-        source_insight_id: cached.id,
+        source_insight_id: cached!.id,
         status: "active",
         start_date: isoDate(today),
         end_date: isoDate(endDate),
