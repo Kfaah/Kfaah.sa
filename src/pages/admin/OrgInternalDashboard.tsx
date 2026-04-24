@@ -476,13 +476,13 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
 
 function SourceLink({ label, url }: { label: string; url: string | null | undefined }) {
   if (!url) return (
-    <div className="flex items-center justify-between text-right text-muted-foreground">
+    <div className="flex flex-row-reverse items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 text-right text-muted-foreground" dir="rtl">
       <span className="font-medium">{label}</span>
       <span className="text-xs">— غير مضاف</span>
     </div>
   );
   return (
-    <a href={url} target="_blank" rel="noreferrer" className="group flex items-center justify-between text-right transition-colors hover:text-primary">
+    <a href={url} target="_blank" rel="noreferrer" className="group flex flex-row-reverse items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 text-right transition-colors hover:border-primary/40 hover:text-primary" dir="rtl">
       <span className="font-medium">{label}</span>
       <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
     </a>
@@ -497,19 +497,19 @@ function ListCard({ title, items, icon, emptyText, tone }: { title: string; item
   }[tone];
   return (
     <Card className={toneClass}>
-      <CardHeader className="text-right">
-        <CardTitle className="flex items-center gap-2 text-base justify-start text-right">
+      <CardHeader className="text-right" dir="rtl">
+        <CardTitle className="flex flex-row-reverse items-center justify-start gap-2 text-right text-base">
           {icon}
           <span>{title}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="text-right">
+      <CardContent className="text-right" dir="rtl">
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">{emptyText}</p>
         ) : (
           <ul className="space-y-2">
             {items.map((s, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-right">
+              <li key={i} className="flex flex-row-reverse items-start gap-2 text-right text-sm leading-relaxed">
                 <span className="text-primary mt-1 flex-shrink-0">•</span>
                 <span className="flex-1">{s}</span>
               </li>
