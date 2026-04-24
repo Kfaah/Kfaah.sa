@@ -92,6 +92,156 @@ export type Database = {
           },
         ]
       }
+      accountability_questions: {
+        Row: {
+          answer: string | null
+          answer_yes_no: string | null
+          answered_at: string | null
+          answered_by: string | null
+          category: string
+          context: string | null
+          created_at: string
+          deep_analysis_id: string | null
+          evidence_check_id: string | null
+          evidence_findings: Json | null
+          evidence_notes: string | null
+          evidence_score: number | null
+          evidence_url: string | null
+          evidence_verdict: string | null
+          expected_evidence: string | null
+          generated_task_id: string | null
+          id: string
+          organization_id: string
+          priority: string
+          question_text: string
+          status: string
+          target_employee_id: string | null
+          target_job_role: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          answer?: string | null
+          answer_yes_no?: string | null
+          answered_at?: string | null
+          answered_by?: string | null
+          category: string
+          context?: string | null
+          created_at?: string
+          deep_analysis_id?: string | null
+          evidence_check_id?: string | null
+          evidence_findings?: Json | null
+          evidence_notes?: string | null
+          evidence_score?: number | null
+          evidence_url?: string | null
+          evidence_verdict?: string | null
+          expected_evidence?: string | null
+          generated_task_id?: string | null
+          id?: string
+          organization_id: string
+          priority?: string
+          question_text: string
+          status?: string
+          target_employee_id?: string | null
+          target_job_role: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string | null
+          answer_yes_no?: string | null
+          answered_at?: string | null
+          answered_by?: string | null
+          category?: string
+          context?: string | null
+          created_at?: string
+          deep_analysis_id?: string | null
+          evidence_check_id?: string | null
+          evidence_findings?: Json | null
+          evidence_notes?: string | null
+          evidence_score?: number | null
+          evidence_url?: string | null
+          evidence_verdict?: string | null
+          expected_evidence?: string | null
+          generated_task_id?: string | null
+          id?: string
+          organization_id?: string
+          priority?: string
+          question_text?: string
+          status?: string
+          target_employee_id?: string | null
+          target_job_role?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      accountability_tasks: {
+        Row: {
+          ai_generated: boolean
+          ai_reason: string | null
+          assigned_employee_id: string | null
+          category: string | null
+          completed_at: string | null
+          completion_notes: string | null
+          created_at: string
+          description: string | null
+          detailed_instructions: string | null
+          due_date: string | null
+          id: string
+          organization_id: string
+          priority: string
+          source: string
+          source_id: string | null
+          status: string
+          target_job_role: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_generated?: boolean
+          ai_reason?: string | null
+          assigned_employee_id?: string | null
+          category?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          description?: string | null
+          detailed_instructions?: string | null
+          due_date?: string | null
+          id?: string
+          organization_id: string
+          priority?: string
+          source?: string
+          source_id?: string | null
+          status?: string
+          target_job_role?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_generated?: boolean
+          ai_reason?: string | null
+          assigned_employee_id?: string | null
+          category?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          description?: string | null
+          detailed_instructions?: string | null
+          due_date?: string | null
+          id?: string
+          organization_id?: string
+          priority?: string
+          source?: string
+          source_id?: string | null
+          status?: string
+          target_job_role?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       action_plan_tasks: {
         Row: {
           action_plan_id: string
@@ -647,6 +797,90 @@ export type Database = {
           },
         ]
       }
+      deep_analyses: {
+        Row: {
+          ai_model: string | null
+          campaigns_analysis: Json | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          donations_summary: Json | null
+          donors_segmentation: Json | null
+          error_message: string | null
+          gaps: Json | null
+          id: string
+          organization_id: string
+          overall_assessment: string | null
+          questions_generated: number
+          recommendations: Json | null
+          social_insights: Json | null
+          sources: Json
+          started_at: string
+          status: string
+          store_insights: Json | null
+          strengths: Json | null
+          tasks_generated: number
+          trigger_source: string
+          updated_at: string
+          upload_id: string | null
+          website_insights: Json | null
+        }
+        Insert: {
+          ai_model?: string | null
+          campaigns_analysis?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          donations_summary?: Json | null
+          donors_segmentation?: Json | null
+          error_message?: string | null
+          gaps?: Json | null
+          id?: string
+          organization_id: string
+          overall_assessment?: string | null
+          questions_generated?: number
+          recommendations?: Json | null
+          social_insights?: Json | null
+          sources?: Json
+          started_at?: string
+          status?: string
+          store_insights?: Json | null
+          strengths?: Json | null
+          tasks_generated?: number
+          trigger_source?: string
+          updated_at?: string
+          upload_id?: string | null
+          website_insights?: Json | null
+        }
+        Update: {
+          ai_model?: string | null
+          campaigns_analysis?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          donations_summary?: Json | null
+          donors_segmentation?: Json | null
+          error_message?: string | null
+          gaps?: Json | null
+          id?: string
+          organization_id?: string
+          overall_assessment?: string | null
+          questions_generated?: number
+          recommendations?: Json | null
+          social_insights?: Json | null
+          sources?: Json
+          started_at?: string
+          status?: string
+          store_insights?: Json | null
+          strengths?: Json | null
+          tasks_generated?: number
+          trigger_source?: string
+          updated_at?: string
+          upload_id?: string | null
+          website_insights?: Json | null
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           color: string | null
@@ -1110,6 +1344,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      evidence_checks: {
+        Row: {
+          accountability_question_id: string | null
+          ai_model: string | null
+          created_at: string
+          error_message: string | null
+          evidence_url: string
+          findings: Json | null
+          id: string
+          organization_id: string
+          recommendations: string | null
+          score: number | null
+          scrape_content_excerpt: string | null
+          scrape_metadata: Json | null
+          scrape_status: string
+          verdict: string | null
+        }
+        Insert: {
+          accountability_question_id?: string | null
+          ai_model?: string | null
+          created_at?: string
+          error_message?: string | null
+          evidence_url: string
+          findings?: Json | null
+          id?: string
+          organization_id: string
+          recommendations?: string | null
+          score?: number | null
+          scrape_content_excerpt?: string | null
+          scrape_metadata?: Json | null
+          scrape_status?: string
+          verdict?: string | null
+        }
+        Update: {
+          accountability_question_id?: string | null
+          ai_model?: string | null
+          created_at?: string
+          error_message?: string | null
+          evidence_url?: string
+          findings?: Json | null
+          id?: string
+          organization_id?: string
+          recommendations?: string | null
+          score?: number | null
+          scrape_content_excerpt?: string | null
+          scrape_metadata?: Json | null
+          scrape_status?: string
+          verdict?: string | null
+        }
+        Relationships: []
       }
       executive_plans: {
         Row: {
