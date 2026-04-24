@@ -167,7 +167,10 @@ export default function AdminActionPlans() {
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h3 className="font-bold text-foreground line-clamp-2">{p.title}</h3>
-                        <Badge variant={p.status === "active" ? "default" : "secondary"}>
+                        <Badge
+                          variant={p.status === "active" ? "default" : "secondary"}
+                          className={p.status === "active" ? "bg-accent text-accent-foreground hover:bg-accent/90 border-transparent" : ""}
+                        >
                           {p.status === "active" ? "نشطة" : p.status === "completed" ? "منجزة" : p.status}
                         </Badge>
                       </div>
