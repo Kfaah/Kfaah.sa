@@ -56,15 +56,8 @@ const adminNavItems: NavItem[] = [
   { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
   { title: "رفع البيانات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
-  { title: "التحليل الذكي", href: "/intelligence", icon: Brain, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
+  { title: "التحليل والمساءلات", href: "/internal-dashboard", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
   { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
-  // —— صلاحيات المدير الشاملة (تفصيل اللوحة الداخلية كأيقونات منفصلة) ——
-  { title: "التحليل العميق", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-red-500 to-rose-600" },
-  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "bg-gradient-to-br from-yellow-400 to-amber-500" },
-  { title: "تقارير الجمعية", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "bg-gradient-to-br from-sky-500 to-blue-600" },
-  { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "bg-gradient-to-br from-rose-500 to-pink-600" },
-  { title: "نظرة شاملة (الجمعية)", href: "/internal-dashboard?tab=overview", icon: ShieldCheck, iconBg: "bg-gradient-to-br from-teal-500 to-emerald-600" },
 ];
 
 // قائمة المدير المتوسط (Manager) — له خططه الشخصية + يرى فريقه عبر Toggle داخل كل صفحة
