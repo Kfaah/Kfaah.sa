@@ -298,7 +298,7 @@ export default function AdminAnalytics() {
 function StatBox({ icon: Icon, label, value, sub }: any) {
   return (
     <Card className="bg-card border-border p-4 shadow-sm">
-      <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-2">
+      <div className="w-10 h-10 rounded-xl bg-accent text-accent-foreground flex items-center justify-center mb-2 shadow-sm">
         <Icon className="w-5 h-5" />
       </div>
       <div className="text-xs text-muted-foreground">{label}</div>
