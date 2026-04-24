@@ -349,33 +349,48 @@ function SuggestionCard({ s, onOpen, onStatus, onDelete }: {
 }) {
   const meta = CATEGORY_META[s.category] || CATEGORY_META.feature;
   const Icon = meta.icon;
+  const priorityLabel =
+    s.priority === "high" ? "أولوية عالية" : s.priority === "medium" ? "متوسطة" : "منخفضة";
+  const unifiedBadge =
+    "bg-accent text-accent-foreground border border-accent/60 hover:bg-accent/90";
   return (
-    <Card className="bg-card border-border p-5 flex flex-col gap-3 hover:border-accent/40 transition-colors">
-      <div className="flex items-start gap-3">
-        <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center border shrink-0", meta.tone)}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-foreground leading-tight">{s.title}</h3>
-          <div className="flex flex-wrap items-center gap-1.5 mt-1">
-            <Badge variant="outline" className={meta.tone}>{meta.label}</Badge>
-            <Badge variant="outline" className={PRIORITY_TONE[s.priority] || ""}>{
-              s.priority === "high" ? "أولوية عالية" : s.priority === "medium" ? "متوسطة" : "منخفضة"
-            }</Badge>
-            <Badge variant="outline" className={STATUS_TONE[s.status]}>{STATUS_LABEL[s.status]}</Badge>
+    <Card
+      dir="rtl"
+      className="bg-card border-border p-0 flex flex-col overflow-hidden hover:border-accent/40 hover:shadow-md transition-all"
+    >
+      {/* Header */}
+      <div className="p-5 pb-4">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-accent text-accent-foreground border border-accent/60 shadow-sm">
+            <Icon className="w-6 h-6" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-foreground leading-snug text-base mb-2 line-clamp-2">{s.title}</h3>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge variant="outline" className={unifiedBadge}>{meta.label}</Badge>
+              <Badge variant="outline" className={unifiedBadge}>{priorityLabel}</Badge>
+              <Badge variant="outline" className={unifiedBadge}>{STATUS_LABEL[s.status]}</Badge>
+            </div>
           </div>
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">{s.summary}</p>
+      {/* Divider */}
+      <div className="h-px w-full bg-border" />
 
-      {s.area && (
-        <div className="text-xs text-muted-foreground border-t border-border pt-2">
-          <span className="font-semibold text-foreground">المنطقة المستهدفة: </span>{s.area}
-        </div>
-      )}
+      {/* Description */}
+      <div className="px-5 py-4 flex-1">
+        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">{s.summary}</p>
 
-      <div className="flex items-center gap-1.5 mt-auto pt-2 border-t border-border">
+        {s.area && (
+          <div className="text-xs text-muted-foreground mt-3 pt-3 border-t border-dashed border-border">
+            <span className="font-semibold text-foreground">المنطقة المستهدفة: </span>{s.area}
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1.5 px-5 py-3 bg-muted/30 border-t border-border">
         <Button size="sm" onClick={onOpen} className="gap-1.5 flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
           <MessageSquare className="w-3.5 h-3.5" /> ناقش
         </Button>
