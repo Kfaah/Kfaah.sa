@@ -236,14 +236,14 @@ export default function AdminInnovation() {
       </div>
 
       {/* Filter chips */}
-      <Card className="p-3 bg-card border-border">
+      <Card className="p-3 bg-accent border-accent text-accent-foreground">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground ms-1">التصنيف:</span>
+          <span className="text-xs text-accent-foreground/80 ms-1">التصنيف:</span>
           <FilterChip active={filterCategory === "all"} onClick={() => setFilterCategory("all")} label="الكل" />
           {(Object.keys(CATEGORY_META) as Category[]).map((c) => (
             <FilterChip key={c} active={filterCategory === c} onClick={() => setFilterCategory(c)} label={CATEGORY_META[c].label} />
           ))}
-          <span className="text-xs text-muted-foreground ms-3">الحالة:</span>
+          <span className="text-xs text-accent-foreground/80 ms-3">الحالة:</span>
           <FilterChip active={filterStatus === "all"} onClick={() => setFilterStatus("all")} label="الكل" />
           {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
             <FilterChip key={s} active={filterStatus === s} onClick={() => setFilterStatus(s)} label={STATUS_LABEL[s]} />
