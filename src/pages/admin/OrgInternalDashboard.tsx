@@ -197,31 +197,34 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-slate-200">
+        {/* Right side: logo + title (RTL natural start) */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")}>
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-white shadow-lg">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-white shadow-lg flex-shrink-0">
             {org?.logo_url ? (
               <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover rounded-xl" />
             ) : (
               <Building2 className="w-7 h-7" />
             )}
           </div>
-          <div>
+          <div className="text-right">
             <h1 className="text-2xl font-bold text-slate-900">{org?.name ?? "الجمعية"}</h1>
             <p className="text-sm text-slate-500">لوحة التحكم الداخلية الشاملة</p>
           </div>
         </div>
-        <div className="flex gap-2">
+
+        {/* Left side: action buttons + back */}
+        <div className="flex items-center gap-2">
+          <Button onClick={runDeepAnalysis} disabled={analyzing} className="bg-gradient-to-l from-fuchsia-500 to-pink-600 text-white hover:opacity-90">
+            {analyzing ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Sparkles className="w-4 h-4 ml-2" />}
+            تشغيل التحليل العميق
+          </Button>
           <Button asChild variant="outline">
             <Link to={`/admin/organizations/${orgId}/profile`}>
               <Building2 className="w-4 h-4 ml-2" /> ملف الجمعية
             </Link>
           </Button>
-          <Button onClick={runDeepAnalysis} disabled={analyzing} className="bg-gradient-to-l from-fuchsia-500 to-pink-600 text-white hover:opacity-90">
-            {analyzing ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Sparkles className="w-4 h-4 ml-2" />}
-            تشغيل التحليل العميق
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة" className="text-slate-600 hover:text-slate-900">
+            <ArrowRight className="w-5 h-5" />
           </Button>
         </div>
       </div>
