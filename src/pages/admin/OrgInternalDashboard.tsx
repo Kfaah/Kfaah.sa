@@ -209,8 +209,8 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
               <Building2 className="w-7 h-7" />
             )}
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة">
-            <ArrowRight className="w-5 h-5 rotate-180" />
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة" className="text-slate-600 hover:text-slate-900">
+            <ArrowRight className="w-5 h-5" />
           </Button>
         </div>
         <div className="flex gap-2">
