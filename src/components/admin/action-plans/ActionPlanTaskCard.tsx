@@ -119,15 +119,16 @@ export function ActionPlanTaskCard({
   const impactTheme = IMPACT_THEME[task.impact] || IMPACT_THEME.medium;
 
   return (
-    <Card className="bg-card border-border shadow-md overflow-hidden ring-1 ring-border/50" dir="rtl">
+    <Card
+      className="border-amber-300/30 ring-1 ring-amber-300/20 shadow-xl overflow-hidden text-white backdrop-blur-sm"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+      }}
+      dir="rtl"
+    >
       {/* Header: Goal */}
-      <div
-        className="p-6 border-b border-amber-300/30 text-white"
-        style={{
-          background:
-            "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
-        }}
-      >
+      <div className="p-6 border-b border-amber-300/30 text-white">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xl font-bold shadow-md", impactTheme.number)}>
