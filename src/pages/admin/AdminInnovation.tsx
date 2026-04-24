@@ -312,7 +312,7 @@ function FilterChip({ active, onClick, label }: any) {
         "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
         active
           ? "bg-background text-foreground border-background shadow-sm"
-          : "bg-accent text-accent-foreground border-accent/60 hover:bg-accent/90"
+          : "bg-transparent text-accent-foreground border-accent-foreground/40 hover:bg-accent-foreground/10"
       )}
     >{label}</button>
   );
