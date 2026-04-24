@@ -41,6 +41,48 @@ async function findOrgNameFromWebsite(url: string): Promise<string | null> {
   if (title) return title[1].split(/[|\-–—•·]/)[0].trim();
   return null;
 }
+
+function normalizeArabicName(value: string | null | undefined): string {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/[\s\-_/|،,:;()\[\]{}]+/g, "")
+    .trim();
+}
+
+function sameRegistrableDomain(a: string, b: string): boolean {
+  try {
+    const hostA = new URL(a).hostname.replace(/^www\./, "").toLowerCase();
+    const hostB = new URL(b).hostname.replace(/^www\./, "").toLowerCase();
+    if (hostA === hostB) return true;
+    return hostA.endsWith(`.${hostB}`) || hostB.endsWith(`.${hostA}`);
+  } catch {
+    return false;
+  }
+}
+
+async function storeCandidateMatchesOrg(candidateUrl: string, orgName: string, websiteUrl: string): Promise<boolean> {
+  if (sameRegistrableDomain(candidateUrl, websiteUrl)) return true;
+  const html = await fetchHtml(candidateUrl, 7000);
+  if (!html) return false;
+
+  const ogSite = html.match(/<meta\s+property=["']og:site_name["']\s+content=["']([^"']+)["']/i)?.[1] ?? null;
+  const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i)?.[1] ?? null;
+  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ?? null;
+
+  const normalizedOrg = normalizeArabicName(orgName);
+  const candidates = [ogSite, ogTitle, title]
+    .map(normalizeArabicName)
+    .filter(Boolean);
+
+  return candidates.some((value) => value.includes(normalizedOrg) || normalizedOrg.includes(value));
+}
+
 function absolutize(href: string, base: string): string {
   try { return new URL(href, base).toString(); } catch { return href; }
 }
@@ -213,8 +255,13 @@ Deno.serve(async (req) => {
         }
 
         if (bestStore) {
-          // Override store_url with the search result (more accurate than HTML scrape)
-          data.store_url = bestStore;
+          const matchesOrg = await storeCandidateMatchesOrg(bestStore, orgName, url);
+          if (matchesOrg) {
+            // Only accept searched stores when they clearly belong to the same org/brand
+            data.store_url = bestStore;
+          } else {
+            console.warn("Rejected store candidate due to org mismatch", { orgName, website: url, candidate: bestStore });
+          }
         }
       }
     } catch (e) {
