@@ -310,7 +310,9 @@ function FilterChip({ active, onClick, label }: any) {
       onClick={onClick}
       className={cn(
         "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-        active ? "bg-accent text-accent-foreground border-accent" : "bg-background text-muted-foreground border-border hover:border-accent/50"
+        active
+          ? "bg-background text-foreground border-background shadow-sm"
+          : "bg-accent text-accent-foreground border-accent/60 hover:bg-accent/90"
       )}
     >{label}</button>
   );
