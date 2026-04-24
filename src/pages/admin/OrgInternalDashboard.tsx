@@ -222,18 +222,15 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
             <Button
               onClick={runDeepAnalysis}
               disabled={analyzing}
-              className="bg-gradient-to-l from-primary via-accent to-primary/90 text-white shadow-md ring-1 ring-white/30 hover:opacity-90"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-md ring-1 ring-white/30"
             >
               {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
               تشغيل التحليل العميق
             </Button>
-            <Button asChild variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white">
+            <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 border-transparent">
               <Link to={`/admin/organizations/${orgId}/profile`}>
                 <Building2 className="ml-2 h-4 w-4" /> ملف الجمعية
               </Link>
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة" className="text-white hover:bg-white/15 hover:text-white">
-              <ArrowRight className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -555,7 +552,7 @@ function EmptyState({ text, onAction, actionLabel }: { text: string; onAction?: 
     <div className="flex flex-col items-center justify-center text-center py-8 gap-3">
       <p className="text-muted-foreground">{text}</p>
       {onAction && actionLabel && (
-        <Button onClick={onAction} className="bg-gradient-to-l from-fuchsia-500 to-pink-600 text-white">
+        <Button onClick={onAction} className="bg-accent text-accent-foreground hover:bg-accent/90">
           <Sparkles className="w-4 h-4 ml-2" /> {actionLabel}
         </Button>
       )}
