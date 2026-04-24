@@ -191,14 +191,33 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
   }
 
   return (
-    <div className="p-6" dir="rtl">
-    <div
-      className="mx-auto max-w-[1600px] space-y-6 rounded-2xl border bg-card p-8 text-card-foreground shadow-2xl"
-      dir="rtl"
-    >
-      {/* Header */}
-      <div className="grid grid-cols-1 gap-4 border-b border-border pb-4 lg:grid-cols-[auto,1fr]" dir="ltr">
-        <div dir="rtl" className="flex flex-wrap items-center gap-2 lg:justify-self-start">
+    <div className="p-8 space-y-6" dir="rtl">
+      {/* Header — مطابق لهوية صفحة "المقارنة بين الجمعيات" */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <GitCompareArrows className="w-8 h-8 text-accent" />
+            المقارنة بين الجمعيات
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            لوحة الجمعية الداخلية — رؤية شاملة · تقييم عميق · مساءلات ذكية
+          </p>
+          <div className="mt-3 flex items-center gap-3">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-md overflow-hidden">
+              {org?.logo_url ? (
+                <img src={org.logo_url} alt={org.name} className="h-full w-full object-cover" />
+              ) : (
+                <Building2 className="h-6 w-6" />
+              )}
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold text-foreground leading-tight">{org?.name ?? "الجمعية"}</div>
+              <div className="text-xs text-muted-foreground">{org?.slug}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
           <Button onClick={runDeepAnalysis} disabled={analyzing} className="bg-gradient-to-l from-fuchsia-500 to-pink-600 text-white hover:opacity-90">
             {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
             تشغيل التحليل العميق
@@ -211,31 +230,6 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة" className="text-muted-foreground hover:text-foreground">
             <ArrowRight className="h-5 w-5" />
           </Button>
-        </div>
-
-        <div dir="rtl" className="flex items-start justify-end gap-4 text-right lg:justify-self-end">
-          <div className="min-w-0">
-            <h1 className="flex items-center justify-end gap-3 text-3xl font-bold text-foreground">
-              المقارنة بين الجمعيات
-              <GitCompareArrows className="h-8 w-8 text-accent" />
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              ترتيب بصري وهوية متطابقة مع صفحة المقارنة بين الجمعيات مع قراءة عربية كاملة من اليمين إلى اليسار
-            </p>
-            <div className="mt-3 flex items-center justify-end gap-3">
-              <div>
-                <div className="text-lg font-bold text-foreground">{org?.name ?? "الجمعية"}</div>
-                <div className="text-xs text-muted-foreground">رؤية شاملة · تقييم عميق · مساءلات ذكية</div>
-              </div>
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-lg">
-                {org?.logo_url ? (
-                  <img src={org.logo_url} alt={org.name} className="h-full w-full rounded-xl object-cover" />
-                ) : (
-                  <Building2 className="h-7 w-7" />
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -250,7 +244,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList dir="ltr" className="h-auto w-full flex-row-reverse flex-wrap justify-start border border-border bg-muted p-1.5">
+        <TabsList className="h-auto w-full flex-wrap justify-start border border-border bg-muted p-1.5">
           <TabsTrigger dir="rtl" value="overview" className="gap-2"><LayoutDashboard className="h-4 w-4" /> نظرة عامة</TabsTrigger>
           <TabsTrigger dir="rtl" value="analysis" className="gap-2"><Sparkles className="h-4 w-4" /> التحليل العميق</TabsTrigger>
           <TabsTrigger dir="rtl" value="accountability" className="gap-2"><ShieldAlert className="h-4 w-4" /> المساءلات</TabsTrigger>
@@ -264,10 +258,13 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
 
         {/* OVERVIEW */}
         <TabsContent value="overview" className="space-y-4 mt-6">
-          <div className="flex flex-col gap-4 lg:flex-row" dir="ltr">
-            <Card dir="rtl" className="lg:order-2 lg:w-[30%]">
+          <div className="flex flex-col gap-4 lg:flex-row-reverse">
+            {/* المصادر — على اليسار */}
+            <Card className="lg:w-[30%]">
               <CardHeader className="text-right">
-                <CardTitle className="flex flex-row-reverse items-center justify-end gap-2 text-right"><Building2 className="h-5 w-5 text-primary" /> المصادر</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-right justify-start">
+                  <Building2 className="h-5 w-5 text-primary" /> المصادر
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-right text-sm">
                 <SourceLink label="الموقع الإلكتروني" url={profile?.website_url} />
@@ -280,10 +277,12 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
               </CardContent>
             </Card>
 
-            {/* التقييم العام — على اليمين (يأخذ عمودين) */}
-            <Card dir="rtl" className="border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background lg:order-1 lg:flex-1">
+            {/* التقييم العام — على اليمين */}
+            <Card className="border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background lg:flex-1">
               <CardHeader className="text-right">
-                <CardTitle className="flex flex-row-reverse items-center justify-end gap-2 text-right"><Sparkles className="h-5 w-5 text-primary" /> التقييم العام</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-right justify-start">
+                  <Sparkles className="h-5 w-5 text-primary" /> التقييم العام
+                </CardTitle>
                 <CardDescription className="text-right">
                   {analysis?.completed_at ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}` : "لم يتم تشغيل التحليل بعد"}
                 </CardDescription>
@@ -456,7 +455,6 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         </TabsContent>
       </Tabs>
     </div>
-    </div>
   );
 }
 
@@ -480,12 +478,13 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
 
 function SourceLink({ label, url }: { label: string; url: string | null | undefined }) {
   if (!url) return (
-    <div className="flex flex-row-reverse items-center justify-between text-right text-muted-foreground" dir="rtl">
-      <span>{label}</span><span className="text-xs">غير مضاف —</span>
+    <div className="flex items-center justify-between text-right text-muted-foreground">
+      <span className="font-medium">{label}</span>
+      <span className="text-xs">— غير مضاف</span>
     </div>
   );
   return (
-    <a href={url} target="_blank" rel="noreferrer" dir="rtl" className="group flex flex-row-reverse items-center justify-between text-right transition-colors hover:text-primary">
+    <a href={url} target="_blank" rel="noreferrer" className="group flex items-center justify-between text-right transition-colors hover:text-primary">
       <span className="font-medium">{label}</span>
       <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
     </a>
@@ -501,7 +500,10 @@ function ListCard({ title, items, icon, emptyText, tone }: { title: string; item
   return (
     <Card className={toneClass}>
       <CardHeader className="text-right">
-        <CardTitle className="flex flex-row-reverse items-center justify-end gap-2 text-base">{icon} {title}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base justify-start text-right">
+          {icon}
+          <span>{title}</span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="text-right">
         {items.length === 0 ? (
@@ -509,9 +511,9 @@ function ListCard({ title, items, icon, emptyText, tone }: { title: string; item
         ) : (
           <ul className="space-y-2">
             {items.map((s, i) => (
-              <li key={i} className="flex flex-row-reverse gap-2 text-sm leading-relaxed text-right">
-                <span className="text-primary mt-1">•</span>
-                <span>{s}</span>
+              <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-right">
+                <span className="text-primary mt-1 flex-shrink-0">•</span>
+                <span className="flex-1">{s}</span>
               </li>
             ))}
           </ul>
