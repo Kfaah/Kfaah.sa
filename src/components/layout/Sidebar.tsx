@@ -31,6 +31,7 @@ import {
   Lightbulb,
   FileBarChart2,
   HeartHandshake,
+  Award,
 } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
