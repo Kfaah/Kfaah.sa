@@ -266,8 +266,9 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.9fr)]">
             <Card className="order-1 border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background" dir="rtl">
               <CardHeader className="text-right">
-                <CardTitle className="flex flex-row-reverse items-center justify-start gap-2 text-right">
-                  <Sparkles className="h-5 w-5 text-primary" /> التقييم العام
+                <CardTitle className="flex items-center justify-end gap-2 text-right">
+                  <span>التقييم العام</span>
+                  <Sparkles className="h-5 w-5 text-primary" />
                 </CardTitle>
                 <CardDescription className="text-right">
                   {analysis?.completed_at ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}` : "لم يتم تشغيل التحليل بعد"}
