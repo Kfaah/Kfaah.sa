@@ -498,27 +498,22 @@ function SourceLink({ label, url }: { label: string; url: string | null | undefi
 }
 
 function ListCard({ title, items, icon, emptyText, tone }: { title: string; items: string[]; icon: React.ReactNode; emptyText: string; tone: "emerald" | "amber" | "primary" }) {
-  const toneClass = {
-    emerald: "border-emerald-500/30 bg-emerald-500/5",
-    amber: "border-amber-500/30 bg-amber-500/5",
-    primary: "border-primary/30 bg-primary/5",
-  }[tone];
   return (
-    <Card className={toneClass}>
+    <Card className="relative overflow-hidden border-white/20 bg-gradient-to-l from-primary via-accent to-primary/90 text-white shadow-lg">
       <CardHeader className="text-right" dir="rtl">
-        <CardTitle className="flex flex-row-reverse items-center justify-start gap-2 text-right text-base">
+        <CardTitle className="flex flex-row-reverse items-center justify-start gap-2 text-right text-base text-white">
           {icon}
           <span>{title}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="text-right" dir="rtl">
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{emptyText}</p>
+          <p className="text-sm text-white/80">{emptyText}</p>
         ) : (
           <ul className="space-y-2">
             {items.map((s, i) => (
-              <li key={i} className="flex flex-row-reverse items-start gap-2 text-right text-sm leading-relaxed">
-                <span className="text-primary mt-1 flex-shrink-0">•</span>
+              <li key={i} className="flex flex-row-reverse items-start justify-start gap-2 text-right text-sm leading-relaxed text-white">
+                <span className="mt-1 flex-shrink-0 text-white">•</span>
                 <span className="flex-1">{s}</span>
               </li>
             ))}
