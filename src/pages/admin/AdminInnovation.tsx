@@ -48,8 +48,8 @@ const CATEGORY_META: Record<Category, { label: string; icon: any; tone: string }
   analytics:  { label: "تحليل عميق",     icon: BarChart3,   tone: "bg-violet-500/10 text-violet-600 border-violet-500/30" },
   feature:    { label: "ميزة جديدة",     icon: Wand2,       tone: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
   ux:         { label: "تجربة استخدام",  icon: Wrench,      tone: "bg-sky-500/10 text-sky-600 border-sky-500/30" },
-  automation: { label: "أتمتة وعمليات",   icon: Cog,         tone: "bg-accent/10 text-accent border-accent/30" },
-  growth:     { label: "نمو وشراكات",    icon: TrendingUp,  tone: "bg-accent/10 text-accent border-accent/30" },
+  automation: { label: "أتمتة وعمليات",   icon: Cog,         tone: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
+  growth:     { label: "نمو وشراكات",    icon: TrendingUp,  tone: "bg-orange-500/10 text-orange-600 border-orange-500/30" },
   data:       { label: "بيانات وحوكمة",  icon: Database,    tone: "bg-indigo-500/10 text-indigo-600 border-indigo-500/30" },
 };
 
@@ -361,7 +361,10 @@ function SuggestionCard({ s, onOpen, onStatus, onDelete }: {
       {/* Header */}
       <div className="p-5 pb-4">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-accent text-accent-foreground border border-accent/60 shadow-sm">
+          <div className={cn(
+            "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm",
+            meta.tone
+          )}>
             <Icon className="w-6 h-6" />
           </div>
           <div className="flex-1 min-w-0">
