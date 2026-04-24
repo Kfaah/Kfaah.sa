@@ -299,7 +299,7 @@ export function Sidebar() {
     const targetTab = targetParams.get("tab");
     const currentTab = new URLSearchParams(location.search).get("tab");
     const isActive = targetTab
-      ? location.pathname === targetPath && (currentTab === targetTab || currentTab === null)
+      ? location.pathname === targetPath && currentTab === targetTab
       : location.pathname === targetPath || location.pathname.startsWith(targetPath + '/');
     const badgeCount = item.badge;
 
