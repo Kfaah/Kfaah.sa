@@ -311,7 +311,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         </TabsContent>
 
         {/* ANALYSIS */}
-        <TabsContent value="analysis" className="space-y-4 mt-6">
+        <TabsContent value="analysis" className="space-y-4 mt-6" dir="rtl">
           {!analysis ? (
             <Card>
               <CardContent className="py-12">
@@ -331,7 +331,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         </TabsContent>
 
         {/* ACCOUNTABILITY */}
-        <TabsContent value="accountability" className="space-y-4 mt-6">
+        <TabsContent value="accountability" className="space-y-4 mt-6" dir="rtl">
           <Card>
             <CardHeader>
               <CardTitle>مساءلات الموظفين ({questions.length})</CardTitle>
@@ -408,7 +408,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         </TabsContent>
 
         {/* EMPLOYEES */}
-        <TabsContent value="employees" className="mt-6">
+        <TabsContent value="employees" className="mt-6" dir="rtl">
           <Card>
             <CardHeader>
               <CardTitle>الموظفون ({employees.length})</CardTitle>
@@ -443,19 +443,19 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         </TabsContent>
 
         {/* TASKS / REPORTS / INNOVATION / UPLOADS / DONORS - placeholder summaries linking to existing pages */}
-        <TabsContent value="tasks" className="mt-6">
+        <TabsContent value="tasks" className="mt-6" dir="rtl">
           <PlaceholderTab title="المهام" desc="تُدار من خلال صفحة المهام داخل مساحة عمل الجمعية. ستظهر هنا قريباً مهام الجمعية مرتبطة بالمساءلات." />
         </TabsContent>
-        <TabsContent value="reports" className="mt-6">
+        <TabsContent value="reports" className="mt-6" dir="rtl">
           <PlaceholderTab title="التقارير" desc="تقارير تنفيذية وموضوعية." linkTo="/admin/reports" linkLabel="فتح التقارير" />
         </TabsContent>
-        <TabsContent value="innovation" className="mt-6">
+        <TabsContent value="innovation" className="mt-6" dir="rtl">
           <PlaceholderTab title="الابتكار والتحديث" desc="أفكار AI ابتكارية لتطوير عمل الجمعية." linkTo="/admin/innovation" linkLabel="فتح الابتكار" />
         </TabsContent>
-        <TabsContent value="uploads" className="mt-6">
+        <TabsContent value="uploads" className="mt-6" dir="rtl">
           <PlaceholderTab title="التحميلات" desc="رفع ملفات التبرعات اليومية. (الرفع سيتفعّل لاحقاً عبر موظف رفع عام.)" />
         </TabsContent>
-        <TabsContent value="donors" className="mt-6">
+        <TabsContent value="donors" className="mt-6" dir="rtl">
           <PlaceholderTab title="المتبرعون" desc={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`} />
         </TabsContent>
       </Tabs>
