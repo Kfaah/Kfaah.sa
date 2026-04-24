@@ -14,7 +14,6 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { SourceLink } from "@/components/admin/SourceLink";
 
 interface OrgInfo {
   id: string;
