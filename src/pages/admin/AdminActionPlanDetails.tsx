@@ -141,8 +141,10 @@ export default function AdminActionPlanDetails() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div className="text-sm text-muted-foreground mb-1">{plan.org_name}</div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <ListChecks className="w-7 h-7 text-accent" />
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <span className="w-11 h-11 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shadow-sm shrink-0">
+                <ListChecks className="w-6 h-6" />
+              </span>
               {plan.title}
             </h1>
             {plan.description && <p className="text-base text-muted-foreground mt-3 max-w-3xl leading-relaxed">{plan.description}</p>}
