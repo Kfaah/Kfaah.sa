@@ -257,12 +257,29 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         </TabsList>
 
         {/* OVERVIEW */}
-        <TabsContent value="overview" className="space-y-4 mt-6">
-          <div className="flex flex-col gap-4 lg:flex-row-reverse">
-            {/* المصادر — على اليسار */}
-            <Card className="lg:w-[30%]">
+        <TabsContent value="overview" className="mt-6 space-y-4" dir="rtl">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.9fr)]">
+            <Card className="order-1 border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background" dir="rtl">
               <CardHeader className="text-right">
-                <CardTitle className="flex items-center gap-2 text-right justify-start">
+                <CardTitle className="flex flex-row-reverse items-center justify-start gap-2 text-right">
+                  <Sparkles className="h-5 w-5 text-primary" /> التقييم العام
+                </CardTitle>
+                <CardDescription className="text-right">
+                  {analysis?.completed_at ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}` : "لم يتم تشغيل التحليل بعد"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-right">
+                {analysis?.overall_assessment ? (
+                  <p className="whitespace-pre-line leading-relaxed text-foreground/90">{analysis.overall_assessment}</p>
+                ) : (
+                  <EmptyState text="شغّل التحليل العميق لاستخراج تقييم شامل ومساءلات احترافية." onAction={runDeepAnalysis} actionLabel="تشغيل الآن" />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="order-2" dir="rtl">
+              <CardHeader className="text-right">
+                <CardTitle className="flex flex-row-reverse items-center justify-start gap-2 text-right">
                   <Building2 className="h-5 w-5 text-primary" /> المصادر
                 </CardTitle>
               </CardHeader>
@@ -274,25 +291,6 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
                 <SourceLink label="TikTok" url={profile?.tiktok_url} />
                 <SourceLink label="YouTube" url={profile?.youtube_url} />
                 <SourceLink label="Snapchat" url={profile?.snapchat_url} />
-              </CardContent>
-            </Card>
-
-            {/* التقييم العام — على اليمين */}
-            <Card className="border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background lg:flex-1">
-              <CardHeader className="text-right">
-                <CardTitle className="flex items-center gap-2 text-right justify-start">
-                  <Sparkles className="h-5 w-5 text-primary" /> التقييم العام
-                </CardTitle>
-                <CardDescription className="text-right">
-                  {analysis?.completed_at ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}` : "لم يتم تشغيل التحليل بعد"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-right">
-                {analysis?.overall_assessment ? (
-                  <p className="text-foreground/90 leading-relaxed whitespace-pre-line">{analysis.overall_assessment}</p>
-                ) : (
-                  <EmptyState text="شغّل التحليل العميق لاستخراج تقييم شامل ومساءلات احترافية." onAction={runDeepAnalysis} actionLabel="تشغيل الآن" />
-                )}
               </CardContent>
             </Card>
           </div>
