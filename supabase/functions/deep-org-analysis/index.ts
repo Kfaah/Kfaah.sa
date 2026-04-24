@@ -2,7 +2,7 @@
 // يدمج: ملف التبرعات + الموقع الإلكتروني + المتجر + حسابات التواصل
 // يصدر: تقييم شامل + نقاط قوة + فجوات + توصيات + مساءلات للموظفين بحسب الدور
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
