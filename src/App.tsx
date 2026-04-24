@@ -41,6 +41,7 @@ import AdminActionPlans from "./pages/admin/AdminActionPlans";
 import AdminActionPlanDetails from "./pages/admin/AdminActionPlanDetails";
 import AdminOrganizations from "./pages/admin/AdminOrganizations";
 import AdminSettings from "./pages/admin/AdminSettings";
+import OrgInternalDashboard from "./pages/admin/OrgInternalDashboard";
 import NotFound from "./pages/NotFound";
 import OrganizationProfile from "./pages/OrganizationProfile";
 
@@ -122,6 +123,7 @@ function AppRoutes() {
       <Route path="/admin" element={<ProtectedRoute><AdminLayout><AdminOverview /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/organizations" element={<ProtectedRoute><AdminLayout><AdminOrganizations /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/organizations/:orgId/profile" element={<ProtectedRoute><AdminLayout><OrganizationProfile /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/organizations/:orgId/dashboard" element={<ProtectedRoute><AdminLayout><OrgInternalDashboard /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/compare" element={<ProtectedRoute><AdminLayout><AdminCompare /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/analytics" element={<ProtectedRoute><AdminLayout><AdminAnalytics /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/action-plans" element={<ProtectedRoute><AdminLayout><AdminActionPlans /></AdminLayout></ProtectedRoute>} />
