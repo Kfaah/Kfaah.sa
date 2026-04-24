@@ -145,8 +145,8 @@ export default function AdminAnalytics() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-end justify-between flex-wrap gap-4">
+    <div className="p-8 space-y-6" dir="rtl">
+      <div className="flex items-end justify-between flex-wrap gap-4" dir="rtl">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Sparkles className="w-8 h-8 text-accent" />
@@ -155,12 +155,12 @@ export default function AdminAnalytics() {
           <p className="text-white mt-1">اختر فترة وجمعية لرؤية تحليل تفصيلي وتوصيات ذكية ثابتة لنفس البيانات</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" dir="rtl">
           <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger className="w-[280px]">
+            <SelectTrigger dir="rtl" className="w-[280px] text-right">
               <SelectValue placeholder="اختر جمعية..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent dir="rtl">
               {metrics.map(m => (
                 <SelectItem key={m.org_id} value={m.org_id}>
                   {m.org_name} {!m.is_active && "(موقوفة)"}
@@ -177,13 +177,13 @@ export default function AdminAnalytics() {
               else { setRange(buildPreset(k)); }
             }}
           >
-            <SelectTrigger className="w-[200px] bg-accent text-accent-foreground border-accent hover:bg-accent/90 font-semibold gap-2">
+            <SelectTrigger dir="rtl" className="w-[200px] bg-accent text-accent-foreground border-accent hover:bg-accent/90 font-semibold gap-2 text-right">
               <CalendarDays className="w-4 h-4" />
               <SelectValue placeholder="الفترة">
                 {periodKey === "custom" ? range.label : undefined}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent dir="rtl">
               {PERIOD_OPTIONS.map(([k, label]) => (
                 <SelectItem key={k} value={k}>{label}</SelectItem>
               ))}
