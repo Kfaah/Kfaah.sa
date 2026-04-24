@@ -68,19 +68,13 @@ const IMPACT_LABEL: Record<string, string> = {
   low: "منخفض",
 };
 
+const PETROL_SURFACE =
+  "bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm";
+
 const IMPACT_THEME: Record<string, { badge: string; number: string }> = {
-  high: {
-    badge: "bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm",
-    number: "bg-accent text-accent-foreground",
-  },
-  medium: {
-    badge: "bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm",
-    number: "bg-accent text-accent-foreground",
-  },
-  low: {
-    badge: "bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm",
-    number: "bg-accent text-accent-foreground",
-  },
+  high:   { badge: PETROL_SURFACE, number: PETROL_SURFACE },
+  medium: { badge: PETROL_SURFACE, number: PETROL_SURFACE },
+  low:    { badge: PETROL_SURFACE, number: PETROL_SURFACE },
 };
 
 const triggerClassName = "h-12 text-base text-right [&>span]:w-full [&>span]:text-right";
