@@ -253,12 +253,12 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         <TabsList className="h-auto w-full flex-row-reverse flex-wrap justify-start border border-border bg-muted p-1.5">
           <TabsTrigger dir="rtl" value="overview" className="flex-row-reverse gap-2"><LayoutDashboard className="h-4 w-4" /> نظرة عامة</TabsTrigger>
           <TabsTrigger dir="rtl" value="analysis" className="flex-row-reverse gap-2"><Sparkles className="h-4 w-4" /> التحليل العميق</TabsTrigger>
-          <TabsTrigger dir="rtl" value="accountability" className="flex-row-reverse gap-2"><ShieldAlert className="h-4 w-4" /> المساءلات</TabsTrigger>
           <TabsTrigger dir="rtl" value="employees" className="flex-row-reverse gap-2"><Users className="h-4 w-4" /> الموظفون</TabsTrigger>
           <TabsTrigger dir="rtl" value="tasks" className="flex-row-reverse gap-2"><ListChecks className="h-4 w-4" /> المهام</TabsTrigger>
+          <TabsTrigger dir="rtl" value="accountability" className="flex-row-reverse gap-2"><ShieldAlert className="h-4 w-4" /> المساءلات</TabsTrigger>
           <TabsTrigger dir="rtl" value="reports" className="flex-row-reverse gap-2"><FileBarChart2 className="h-4 w-4" /> التقارير</TabsTrigger>
           <TabsTrigger dir="rtl" value="innovation" className="flex-row-reverse gap-2"><Lightbulb className="h-4 w-4" /> الابتكار</TabsTrigger>
-          <TabsTrigger dir="rtl" value="uploads" className="flex-row-reverse gap-2"><Upload className="h-4 w-4" /> الرفعات</TabsTrigger>
+          <TabsTrigger dir="rtl" value="uploads" className="flex-row-reverse gap-2"><Upload className="h-4 w-4" /> التحميلات</TabsTrigger>
           <TabsTrigger dir="rtl" value="donors" className="flex-row-reverse gap-2"><HeartHandshake className="h-4 w-4" /> المتبرعون</TabsTrigger>
         </TabsList>
 
@@ -307,7 +307,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
             <ListCard title="الفجوات الحرجة" items={analysis?.gaps ?? []} icon={<AlertTriangle className="w-5 h-5 text-amber-500" />} emptyText="لا توجد فجوات مرصودة" tone="amber" />
           </div>
 
-          <ListCard title="التوصيات التنفيذية" items={analysis?.recommendations ?? []} icon={<Target className="w-5 h-5 text-primary" />} emptyText="لا توجد توصيات بعد" tone="primary" />
+          <ListCard title="التوصيات التنفيذية" items={analysis?.recommendations ?? []} icon={<Target className="w-5 h-5 text-orange-400" />} emptyText="لا توجد توصيات بعد" tone="primary" />
         </TabsContent>
 
         {/* ANALYSIS */}
@@ -453,7 +453,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <PlaceholderTab title="الابتكار والتحديث" desc="أفكار AI ابتكارية لتطوير عمل الجمعية." linkTo="/admin/innovation" linkLabel="فتح الابتكار" />
         </TabsContent>
         <TabsContent value="uploads" className="mt-6">
-          <PlaceholderTab title="الرفعات" desc="رفع ملفات التبرعات اليومية. (الرفع سيتفعّل لاحقاً عبر موظف رفع عام.)" />
+          <PlaceholderTab title="التحميلات" desc="رفع ملفات التبرعات اليومية. (الرفع سيتفعّل لاحقاً عبر موظف رفع عام.)" />
         </TabsContent>
         <TabsContent value="donors" className="mt-6">
           <PlaceholderTab title="المتبرعون" desc={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`} />
