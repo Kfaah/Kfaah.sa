@@ -348,7 +348,7 @@ function SuggestionCard({ s, onOpen, onStatus, onDelete }: {
       )}
 
       <div className="flex items-center gap-1.5 mt-auto pt-2 border-t border-border">
-        <Button size="sm" variant="default" onClick={onOpen} className="gap-1.5 flex-1">
+        <Button size="sm" onClick={onOpen} className="gap-1.5 flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
           <MessageSquare className="w-3.5 h-3.5" /> ناقش
         </Button>
         <Button size="sm" variant="outline" onClick={() => onStatus("accepted")} title="قبول" className="gap-1 text-accent hover:text-accent/80">
