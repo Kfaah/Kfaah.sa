@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SourceLink } from "@/components/admin/SourceLink";
 
 interface OrgInfo {
   id: string;
@@ -480,7 +481,6 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
   );
 }
 
-import { SourceLink } from "@/components/admin/SourceLink";
 
 function ListCard({ title, items, icon, emptyText, tone }: { title: string; items: string[]; icon: React.ReactNode; emptyText: string; tone: "emerald" | "amber" | "primary" }) {
   return (
