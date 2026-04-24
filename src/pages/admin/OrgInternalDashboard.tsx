@@ -247,16 +247,16 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-start border border-border bg-muted p-1.5">
-          <TabsTrigger dir="rtl" value="overview" className="gap-2"><LayoutDashboard className="h-4 w-4" /> نظرة عامة</TabsTrigger>
-          <TabsTrigger dir="rtl" value="analysis" className="gap-2"><Sparkles className="h-4 w-4" /> التحليل العميق</TabsTrigger>
-          <TabsTrigger dir="rtl" value="employees" className="gap-2"><Users className="h-4 w-4" /> الموظفون</TabsTrigger>
-          <TabsTrigger dir="rtl" value="tasks" className="gap-2"><ListChecks className="h-4 w-4" /> المهام</TabsTrigger>
-          <TabsTrigger dir="rtl" value="accountability" className="gap-2"><ShieldAlert className="h-4 w-4" /> المساءلات</TabsTrigger>
-          <TabsTrigger dir="rtl" value="reports" className="gap-2"><FileBarChart2 className="h-4 w-4" /> التقارير</TabsTrigger>
-          <TabsTrigger dir="rtl" value="innovation" className="gap-2"><Lightbulb className="h-4 w-4" /> الابتكار</TabsTrigger>
-          <TabsTrigger dir="rtl" value="uploads" className="gap-2"><Upload className="h-4 w-4" /> التحميلات</TabsTrigger>
-          <TabsTrigger dir="rtl" value="donors" className="gap-2"><HeartHandshake className="h-4 w-4" /> المتبرعون</TabsTrigger>
+        <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-start border border-accent/40 bg-accent p-1.5 text-accent-foreground">
+          <TabsTrigger dir="rtl" value="overview" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><LayoutDashboard className="h-4 w-4" /> نظرة عامة</TabsTrigger>
+          <TabsTrigger dir="rtl" value="analysis" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Sparkles className="h-4 w-4" /> التحليل العميق</TabsTrigger>
+          <TabsTrigger dir="rtl" value="employees" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Users className="h-4 w-4" /> الموظفون</TabsTrigger>
+          <TabsTrigger dir="rtl" value="tasks" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ListChecks className="h-4 w-4" /> المهام</TabsTrigger>
+          <TabsTrigger dir="rtl" value="accountability" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ShieldAlert className="h-4 w-4" /> المساءلات</TabsTrigger>
+          <TabsTrigger dir="rtl" value="reports" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><FileBarChart2 className="h-4 w-4" /> التقارير</TabsTrigger>
+          <TabsTrigger dir="rtl" value="innovation" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Lightbulb className="h-4 w-4" /> الابتكار</TabsTrigger>
+          <TabsTrigger dir="rtl" value="uploads" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Upload className="h-4 w-4" /> التحميلات</TabsTrigger>
+          <TabsTrigger dir="rtl" value="donors" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><HeartHandshake className="h-4 w-4" /> المتبرعون</TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW */}
