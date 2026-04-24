@@ -361,7 +361,10 @@ function SuggestionCard({ s, onOpen, onStatus, onDelete }: {
       {/* Header */}
       <div className="p-5 pb-4">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-accent text-accent-foreground border border-accent/60 shadow-sm">
+          <div className={cn(
+            "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm",
+            meta.tone
+          )}>
             <Icon className="w-6 h-6" />
           </div>
           <div className="flex-1 min-w-0">
