@@ -43,6 +43,8 @@ import AdminOrganizations from "./pages/admin/AdminOrganizations";
 import AdminSettings from "./pages/admin/AdminSettings";
 import OrgInternalDashboard from "./pages/admin/OrgInternalDashboard";
 import InternalDashboard from "./pages/InternalDashboard";
+import MyAccountability from "./pages/MyAccountability";
+import MyPerformance from "./pages/MyPerformance";
 import NotFound from "./pages/NotFound";
 import OrganizationProfile from "./pages/OrganizationProfile";
 
@@ -168,6 +170,8 @@ function AppRoutes() {
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
       <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
+      <Route path="/my-accountability" element={<ProtectedRoute><MyAccountability /></ProtectedRoute>} />
+      <Route path="/my-performance" element={<ProtectedRoute><MyPerformance /></ProtectedRoute>} />
 
       {/* Org-scoped aliases: charity-crm.org/atff/app, /atff/tasks ... */}
       <Route path="/:slug/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -188,6 +192,8 @@ function AppRoutes() {
       <Route path="/:slug/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/:slug/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
       <Route path="/:slug/internal-dashboard" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
+      <Route path="/:slug/my-accountability" element={<ProtectedRoute><MyAccountability /></ProtectedRoute>} />
+      <Route path="/:slug/my-performance" element={<ProtectedRoute><MyPerformance /></ProtectedRoute>} />
 
       {/* Short org slug: charity-crm.org/atff → نفس صفحة /j/atff */}
       <Route path="/:slug" element={<OrgAuth />} />
