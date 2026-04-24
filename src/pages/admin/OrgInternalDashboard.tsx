@@ -190,9 +190,13 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-[1600px] mx-auto" dir="rtl">
+    <div className="p-6" dir="rtl">
+    <div
+      className="space-y-6 p-6 max-w-[1600px] mx-auto bg-white rounded-2xl shadow-2xl border border-slate-200/60 text-slate-800"
+      dir="rtl"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-slate-200">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")}>
             <ArrowRight className="w-5 h-5" />
@@ -205,8 +209,8 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
             )}
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{org?.name ?? "الجمعية"}</h1>
-            <p className="text-sm text-muted-foreground">لوحة التحكم الداخلية الشاملة</p>
+            <h1 className="text-2xl font-bold text-slate-900">{org?.name ?? "الجمعية"}</h1>
+            <p className="text-sm text-slate-500">لوحة التحكم الداخلية الشاملة</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -233,7 +237,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start flex-wrap h-auto p-1.5 bg-muted/50">
+        <TabsList className="w-full justify-start flex-wrap h-auto p-1.5 bg-slate-100 border border-slate-200">
           <TabsTrigger value="overview" className="gap-2"><LayoutDashboard className="w-4 h-4" /> نظرة عامة</TabsTrigger>
           <TabsTrigger value="analysis" className="gap-2"><Sparkles className="w-4 h-4" /> التحليل العميق</TabsTrigger>
           <TabsTrigger value="accountability" className="gap-2"><ShieldAlert className="w-4 h-4" /> المساءلات</TabsTrigger>
@@ -437,6 +441,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <PlaceholderTab title="المتبرعون" desc={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`} />
         </TabsContent>
       </Tabs>
+    </div>
     </div>
   );
 }
