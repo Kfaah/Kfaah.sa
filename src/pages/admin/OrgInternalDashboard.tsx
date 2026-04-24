@@ -465,13 +465,13 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
 function KpiCard({ label, value, icon, color }: { label: string; value: number; icon: React.ReactNode; color: string }) {
   return (
     <Card className="overflow-hidden">
-      <CardContent className="p-4 flex items-center gap-3">
+      <CardContent className="flex items-center justify-between gap-3 p-4 text-right" dir="rtl">
+        <div className="min-w-0 flex-1">
+          <div className="text-2xl font-bold leading-none">{value}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+        </div>
         <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white shadow`}>
           {icon}
-        </div>
-        <div>
-          <div className="text-2xl font-bold leading-none">{value}</div>
-          <div className="text-xs text-muted-foreground mt-1">{label}</div>
         </div>
       </CardContent>
     </Card>
@@ -480,12 +480,12 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
 
 function SourceLink({ label, url }: { label: string; url: string | null | undefined }) {
   if (!url) return (
-    <div className="flex items-center justify-between text-muted-foreground">
-      <span>{label}</span><span className="text-xs">— غير مضاف</span>
+    <div className="flex flex-row-reverse items-center justify-between text-right text-muted-foreground" dir="rtl">
+      <span>{label}</span><span className="text-xs">غير مضاف —</span>
     </div>
   );
   return (
-    <a href={url} target="_blank" rel="noreferrer" className="flex items-center justify-between hover:text-primary transition-colors group">
+    <a href={url} target="_blank" rel="noreferrer" dir="rtl" className="group flex flex-row-reverse items-center justify-between text-right transition-colors hover:text-primary">
       <span className="font-medium">{label}</span>
       <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
     </a>
@@ -500,16 +500,16 @@ function ListCard({ title, items, icon, emptyText, tone }: { title: string; item
   }[tone];
   return (
     <Card className={toneClass}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">{icon} {title}</CardTitle>
+      <CardHeader className="text-right">
+        <CardTitle className="flex flex-row-reverse items-center justify-end gap-2 text-base">{icon} {title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="text-right">
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">{emptyText}</p>
         ) : (
           <ul className="space-y-2">
             {items.map((s, i) => (
-              <li key={i} className="text-sm leading-relaxed flex gap-2">
+              <li key={i} className="flex flex-row-reverse gap-2 text-sm leading-relaxed text-right">
                 <span className="text-primary mt-1">•</span>
                 <span>{s}</span>
               </li>
@@ -523,25 +523,25 @@ function ListCard({ title, items, icon, emptyText, tone }: { title: string; item
 
 function InsightCard({ title, data }: { title: string; data: Record<string, unknown> | null | undefined }) {
   return (
-    <Card>
-      <CardHeader>
+    <Card dir="rtl">
+      <CardHeader className="text-right">
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="text-right">
         {!data || Object.keys(data).length === 0 ? (
           <p className="text-sm text-muted-foreground">لا توجد بيانات</p>
         ) : (
           <div className="space-y-2 text-sm">
             {Object.entries(data).map(([k, v]) => (
-              <div key={k}>
+              <div key={k} className="text-right">
                 <div className="font-semibold text-xs text-muted-foreground uppercase mb-1">{k}</div>
                 <div className="text-foreground/90">
                   {Array.isArray(v) ? (
                     v.length === 0 ? <span className="text-muted-foreground">—</span> : (
-                      <ul className="list-disc pr-4 space-y-1">{v.map((x, i) => <li key={i}>{typeof x === "string" ? x : JSON.stringify(x)}</li>)}</ul>
+                      <ul className="list-disc space-y-1 pr-4">{v.map((x, i) => <li key={i}>{typeof x === "string" ? x : JSON.stringify(x)}</li>)}</ul>
                     )
                   ) : typeof v === "object" && v !== null ? (
-                    <pre className="text-xs bg-muted/50 p-2 rounded overflow-auto">{JSON.stringify(v, null, 2)}</pre>
+                    <pre className="overflow-auto rounded bg-muted/50 p-2 text-xs">{JSON.stringify(v, null, 2)}</pre>
                   ) : (
                     String(v ?? "—")
                   )}
