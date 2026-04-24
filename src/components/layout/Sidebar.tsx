@@ -55,8 +55,8 @@ const adminNavItems: NavItem[] = [
   { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
   { title: "التحليل والمساءلات", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
   { title: "الموظفون", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
-  { title: "الغرفة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "الغرفة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
+  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
+  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
   { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
 ];
