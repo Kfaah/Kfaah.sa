@@ -484,21 +484,28 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
 
 function ListCard({ title, items, icon, emptyText, tone }: { title: string; items: string[]; icon: React.ReactNode; emptyText: string; tone: "emerald" | "amber" | "primary" }) {
   return (
-    <Card className="relative overflow-hidden border-white/20 bg-gradient-to-l from-primary via-accent to-primary/90 text-white shadow-lg">
-      <CardHeader className="text-right" dir="rtl">
-        <CardTitle className="flex flex-row-reverse items-center justify-start gap-2 text-right text-base text-white">
+    <Card
+      dir="rtl"
+      className="relative overflow-hidden border border-amber-300/40 ring-1 ring-amber-300/20 text-white shadow-lg backdrop-blur-sm"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+      }}
+    >
+      <CardHeader className="text-right">
+        <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-white">
           {icon}
           <span>{title}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="text-right" dir="rtl">
+      <CardContent className="text-right">
         {items.length === 0 ? (
           <p className="text-sm text-white/80">{emptyText}</p>
         ) : (
           <ul className="space-y-2">
             {items.map((s, i) => (
-              <li key={i} className="flex flex-row-reverse items-start justify-start gap-2 text-right text-sm leading-relaxed text-white">
-                <span className="mt-1 flex-shrink-0 text-white">•</span>
+              <li key={i} className="flex items-start justify-start gap-2 text-right text-sm leading-relaxed text-white">
+                <span className="mt-1 flex-shrink-0 text-amber-200">•</span>
                 <span className="flex-1">{s}</span>
               </li>
             ))}
