@@ -283,13 +283,13 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
               </CardContent>
             </Card>
 
-            <Card className="order-2" dir="rtl">
-              <CardHeader className="text-right">
-                <CardTitle className="flex flex-row-reverse items-center justify-start gap-2 text-right">
+            <Card className="order-2" dir="ltr">
+              <CardHeader className="text-left">
+                <CardTitle className="flex items-center justify-start gap-2 text-left">
                   <Building2 className="h-5 w-5 text-primary" /> المصادر
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-right text-sm">
+              <CardContent className="space-y-2 text-left text-sm">
                 <SourceLink label="الموقع الإلكتروني" url={profile?.website_url} />
                 <SourceLink label="المتجر" url={profile?.store_url} />
                 <SourceLink label="X (تويتر)" url={profile?.twitter_url} />
