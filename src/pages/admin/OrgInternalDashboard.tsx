@@ -4,6 +4,7 @@ import {
   ArrowRight, LayoutDashboard, Users, ListChecks, FileBarChart2,
   Lightbulb, ShieldAlert, Upload, HeartHandshake, Building2,
   Loader2, Sparkles, ExternalLink, Target, AlertTriangle, CheckCircle2,
+  GitCompareArrows,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -192,45 +193,49 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
   return (
     <div className="p-6" dir="rtl">
     <div
-      className="space-y-6 p-6 max-w-[1600px] mx-auto bg-white rounded-2xl shadow-2xl border border-slate-200/60 text-slate-800"
+      className="mx-auto max-w-[1600px] space-y-6 rounded-2xl border bg-card p-8 text-card-foreground shadow-2xl"
       dir="rtl"
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-slate-200">
-        {/* Right side: logo + title (RTL natural start) */}
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-white shadow-lg flex-shrink-0">
-            {org?.logo_url ? (
-              <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover rounded-xl" />
-            ) : (
-              <Building2 className="w-7 h-7" />
-            )}
-          </div>
-          <div className="text-right">
-            <div className="flex items-center gap-2 mb-1">
-              <Badge className="bg-primary/10 text-primary border-primary/30 hover:bg-primary/15 text-[11px] font-bold">
-                لوحة الجمعية الداخلية
-              </Badge>
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900">{org?.name ?? "الجمعية"}</h1>
-            <p className="text-sm text-slate-500">رؤية شاملة · تقييم عميق · مساءلات ذكية</p>
-          </div>
-        </div>
-
-        {/* Left side: action buttons + back */}
-        <div className="flex items-center gap-2">
+      <div className="grid grid-cols-1 gap-4 border-b border-border pb-4 lg:grid-cols-[auto,1fr]" dir="ltr">
+        <div dir="rtl" className="flex flex-wrap items-center gap-2 lg:justify-self-start">
           <Button onClick={runDeepAnalysis} disabled={analyzing} className="bg-gradient-to-l from-fuchsia-500 to-pink-600 text-white hover:opacity-90">
-            {analyzing ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Sparkles className="w-4 h-4 ml-2" />}
+            {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
             تشغيل التحليل العميق
           </Button>
           <Button asChild variant="outline">
             <Link to={`/admin/organizations/${orgId}/profile`}>
-              <Building2 className="w-4 h-4 ml-2" /> ملف الجمعية
+              <Building2 className="ml-2 h-4 w-4" /> ملف الجمعية
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة" className="text-slate-600 hover:text-slate-900">
-            <ArrowRight className="w-5 h-5" />
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة" className="text-muted-foreground hover:text-foreground">
+            <ArrowRight className="h-5 w-5" />
           </Button>
+        </div>
+
+        <div dir="rtl" className="flex items-start justify-end gap-4 text-right lg:justify-self-end">
+          <div className="min-w-0">
+            <h1 className="flex items-center justify-end gap-3 text-3xl font-bold text-foreground">
+              لوحة الجمعية الداخلية
+              <GitCompareArrows className="h-8 w-8 text-accent" />
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              هوية بصرية مطابقة لصفحة المقارنة بين الجمعيات مع قراءة عربية كاملة من اليمين إلى اليسار
+            </p>
+            <div className="mt-3 flex items-center justify-end gap-3">
+              <div>
+                <div className="text-lg font-bold text-foreground">{org?.name ?? "الجمعية"}</div>
+                <div className="text-xs text-muted-foreground">رؤية شاملة · تقييم عميق · مساءلات ذكية</div>
+              </div>
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-lg">
+                {org?.logo_url ? (
+                  <img src={org.logo_url} alt={org.name} className="h-full w-full rounded-xl object-cover" />
+                ) : (
+                  <Building2 className="h-7 w-7" />
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -245,27 +250,26 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start flex-wrap h-auto p-1.5 bg-slate-100 border border-slate-200">
-          <TabsTrigger value="overview" className="gap-2"><LayoutDashboard className="w-4 h-4" /> نظرة عامة</TabsTrigger>
-          <TabsTrigger value="analysis" className="gap-2"><Sparkles className="w-4 h-4" /> التحليل العميق</TabsTrigger>
-          <TabsTrigger value="accountability" className="gap-2"><ShieldAlert className="w-4 h-4" /> المساءلات</TabsTrigger>
-          <TabsTrigger value="employees" className="gap-2"><Users className="w-4 h-4" /> الموظفون</TabsTrigger>
-          <TabsTrigger value="tasks" className="gap-2"><ListChecks className="w-4 h-4" /> المهام</TabsTrigger>
-          <TabsTrigger value="reports" className="gap-2"><FileBarChart2 className="w-4 h-4" /> التقارير</TabsTrigger>
-          <TabsTrigger value="innovation" className="gap-2"><Lightbulb className="w-4 h-4" /> الابتكار</TabsTrigger>
-          <TabsTrigger value="uploads" className="gap-2"><Upload className="w-4 h-4" /> الرفعات</TabsTrigger>
-          <TabsTrigger value="donors" className="gap-2"><HeartHandshake className="w-4 h-4" /> المتبرعون</TabsTrigger>
+        <TabsList dir="ltr" className="h-auto w-full flex-row-reverse flex-wrap justify-end border border-border bg-muted p-1.5">
+          <TabsTrigger dir="rtl" value="overview" className="gap-2"><LayoutDashboard className="h-4 w-4" /> نظرة عامة</TabsTrigger>
+          <TabsTrigger dir="rtl" value="analysis" className="gap-2"><Sparkles className="h-4 w-4" /> التحليل العميق</TabsTrigger>
+          <TabsTrigger dir="rtl" value="accountability" className="gap-2"><ShieldAlert className="h-4 w-4" /> المساءلات</TabsTrigger>
+          <TabsTrigger dir="rtl" value="employees" className="gap-2"><Users className="h-4 w-4" /> الموظفون</TabsTrigger>
+          <TabsTrigger dir="rtl" value="tasks" className="gap-2"><ListChecks className="h-4 w-4" /> المهام</TabsTrigger>
+          <TabsTrigger dir="rtl" value="reports" className="gap-2"><FileBarChart2 className="h-4 w-4" /> التقارير</TabsTrigger>
+          <TabsTrigger dir="rtl" value="innovation" className="gap-2"><Lightbulb className="h-4 w-4" /> الابتكار</TabsTrigger>
+          <TabsTrigger dir="rtl" value="uploads" className="gap-2"><Upload className="h-4 w-4" /> الرفعات</TabsTrigger>
+          <TabsTrigger dir="rtl" value="donors" className="gap-2"><HeartHandshake className="h-4 w-4" /> المتبرعون</TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW */}
         <TabsContent value="overview" className="space-y-4 mt-6">
-          <div className="grid lg:grid-cols-3 gap-4">
-            {/* المصادر — على اليسار */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 justify-start text-right"><Building2 className="w-5 h-5 text-primary" /> المصادر</CardTitle>
+          <div className="flex flex-col gap-4 lg:flex-row" dir="ltr">
+            <Card dir="rtl" className="lg:order-2 lg:w-[30%]">
+              <CardHeader className="text-right">
+                <CardTitle className="flex flex-row-reverse items-center justify-end gap-2 text-right"><Building2 className="h-5 w-5 text-primary" /> المصادر</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
+              <CardContent className="space-y-2 text-right text-sm">
                 <SourceLink label="الموقع الإلكتروني" url={profile?.website_url} />
                 <SourceLink label="المتجر" url={profile?.store_url} />
                 <SourceLink label="X (تويتر)" url={profile?.twitter_url} />
@@ -277,9 +281,9 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
             </Card>
 
             {/* التقييم العام — على اليمين (يأخذ عمودين) */}
-            <Card className="lg:col-span-2 border-fuchsia-200/60 bg-gradient-to-bl from-fuchsia-50/60 via-white to-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 justify-start text-right"><Sparkles className="w-5 h-5 text-fuchsia-500" /> التقييم العام</CardTitle>
+            <Card dir="rtl" className="border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background lg:order-1 lg:flex-1">
+              <CardHeader className="text-right">
+                <CardTitle className="flex flex-row-reverse items-center justify-end gap-2 text-right"><Sparkles className="h-5 w-5 text-primary" /> التقييم العام</CardTitle>
                 <CardDescription className="text-right">
                   {analysis?.completed_at ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}` : "لم يتم تشغيل التحليل بعد"}
                 </CardDescription>
