@@ -103,8 +103,9 @@ const STATUS_LABEL: Record<string, string> = {
   completed: "مكتملة",
 };
 
-export default function OrgInternalDashboard() {
-  const { orgId } = useParams<{ orgId: string }>();
+export default function OrgInternalDashboard({ orgIdProp }: { orgIdProp?: string } = {}) {
+  const params = useParams<{ orgId: string }>();
+  const orgId = orgIdProp ?? params.orgId;
   const navigate = useNavigate();
 
   const [org, setOrg] = useState<OrgInfo | null>(null);
