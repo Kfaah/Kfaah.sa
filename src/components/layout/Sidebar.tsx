@@ -37,6 +37,7 @@ import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
@@ -51,13 +52,13 @@ interface NavItem {
 // قائمة مدير النظام (Admin) — يرى بيانات الجمعية فقط، بدون "خططي" الشخصية
 const adminNavItems: NavItem[] = [
   { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الموظفين", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
-  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
+  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
+  { title: "التحليل والمساءلات", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
+  { title: "الموظفون", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
+  { title: "الغرفة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
+  { title: "الغرفة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "رفع البيانات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
-  { title: "التحليل والمساءلات", href: "/internal-dashboard", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
+  { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
 ];
 
 // قائمة المدير المتوسط (Manager) — له خططه الشخصية + يرى فريقه عبر Toggle داخل كل صفحة
@@ -98,6 +99,7 @@ export function Sidebar() {
   const { user, previewAsEmployee, setPreviewAsEmployee, previewingEmployee } = useUser();
   const { signOut, user: authUser } = useAuth();
   const branding = useOrgBranding();
+  const { currentOrg } = useOrganization();
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
 
   // Build a gradient from the org's brand colors; fall back to default teal palette.
@@ -280,7 +282,25 @@ export function Sidebar() {
   };
 
   const NavLink = ({ item }: { item: NavItem }) => {
-    const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+    const scopedHref = (() => {
+      if (!currentOrg?.slug || !item.href.startsWith("/")) return item.href;
+
+      const [path, query] = item.href.split("?");
+      if (path === "/" || path.startsWith("/admin") || path.startsWith("/auth") || path.startsWith("/j/")) {
+        return item.href;
+      }
+
+      const prefixedPath = path.startsWith(`/${currentOrg.slug}`) ? path : `/${currentOrg.slug}${path}`;
+      return query ? `${prefixedPath}?${query}` : prefixedPath;
+    })();
+
+    const [targetPath, targetQuery] = scopedHref.split("?");
+    const targetParams = new URLSearchParams(targetQuery ?? "");
+    const targetTab = targetParams.get("tab");
+    const currentTab = new URLSearchParams(location.search).get("tab");
+    const isActive = targetTab
+      ? location.pathname === targetPath && currentTab === targetTab
+      : location.pathname === targetPath || location.pathname.startsWith(targetPath + '/');
     const badgeCount = item.badge;
 
     // جميع الروابط تضيف state لإخفاء شاشة الترحيب
@@ -291,7 +311,7 @@ export function Sidebar() {
 
     return (
       <Link
-        to={item.href}
+        to={scopedHref}
         state={linkState}
         className={cn(
           "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none transition-colors",
