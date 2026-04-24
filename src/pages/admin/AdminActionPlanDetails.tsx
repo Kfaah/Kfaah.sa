@@ -183,10 +183,12 @@ export default function AdminActionPlanDetails() {
   );
 }
 
-function StatPill({ icon: Icon, label, value, color }: any) {
+function StatPill({ icon: Icon, label, value }: any) {
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
-      <Icon className={cn("w-5 h-5", color)} />
+      <div className="w-9 h-9 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shadow-sm shrink-0">
+        <Icon className="w-5 h-5" />
+      </div>
       <div>
         <div className="text-[11px] text-muted-foreground">{label}</div>
         <div className="font-bold text-foreground">{value}</div>
