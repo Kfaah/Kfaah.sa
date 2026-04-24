@@ -255,14 +255,15 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         {/* OVERVIEW */}
         <TabsContent value="overview" className="space-y-4 mt-6">
           <div className="grid lg:grid-cols-3 gap-4">
-            <Card className="lg:col-span-2">
+            {/* التقييم العام — على اليمين (يأخذ عمودين) */}
+            <Card className="lg:col-span-2 lg:order-1 order-1 border-fuchsia-200/60 bg-gradient-to-bl from-fuchsia-50/60 via-white to-white">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-fuchsia-500" /> التقييم العام</CardTitle>
-                <CardDescription>
+                <CardTitle className="flex items-center gap-2 justify-start text-right"><Sparkles className="w-5 h-5 text-fuchsia-500" /> التقييم العام</CardTitle>
+                <CardDescription className="text-right">
                   {analysis?.completed_at ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}` : "لم يتم تشغيل التحليل بعد"}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="text-right">
                 {analysis?.overall_assessment ? (
                   <p className="text-foreground/90 leading-relaxed whitespace-pre-line">{analysis.overall_assessment}</p>
                 ) : (
@@ -271,9 +272,10 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
               </CardContent>
             </Card>
 
-            <Card>
+            {/* المصادر — على اليسار */}
+            <Card className="lg:order-2 order-2">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /> المصادر</CardTitle>
+                <CardTitle className="flex items-center gap-2 justify-start text-right"><Building2 className="w-5 h-5 text-primary" /> المصادر</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <SourceLink label="الموقع الإلكتروني" url={profile?.website_url} />
