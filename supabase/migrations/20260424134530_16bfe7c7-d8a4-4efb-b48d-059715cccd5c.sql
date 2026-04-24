@@ -1,0 +1,3 @@
+UPDATE organization_profiles SET store_url = 'https://attaaa.sa/' WHERE organization_id = (SELECT id FROM organizations WHERE name = 'جمعية عطاء');
+UPDATE organization_profiles SET store_url = 'https://atft.org.sa/' WHERE organization_id = (SELECT id FROM organizations WHERE name = 'جمعية عطف');
+UPDATE organization_profiles SET store_url = 'https://dawa-alqasba.sa/' WHERE organization_id = (SELECT id FROM organizations WHERE name = 'جمعية دعوة القصبة');
