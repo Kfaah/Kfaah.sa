@@ -212,12 +212,12 @@ export default function AdminInnovation() {
       )}
 
       {/* Filters */}
-      <Card className="p-3 bg-card border-border">
+      <Card className="p-3 bg-card border-border" dir="rtl">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 min-w-[260px]">
+          <div className="flex items-center gap-2 flex-1 min-w-[260px]" dir="rtl">
             <Building2 className="w-4 h-4 text-muted-foreground" />
-            <Select value={orgId} onValueChange={setOrgId}>
-              <SelectTrigger className="flex-1"><SelectValue placeholder="اختر جمعية..." /></SelectTrigger>
+            <Select value={orgId} onValueChange={setOrgId} dir="rtl">
+              <SelectTrigger className="flex-1 flex-row-reverse text-right"><SelectValue placeholder="اختر جمعية..." /></SelectTrigger>
               <SelectContent>
                 {metrics.map((m) => (<SelectItem key={m.org_id} value={m.org_id}>{m.org_name}</SelectItem>))}
               </SelectContent>
@@ -236,18 +236,44 @@ export default function AdminInnovation() {
       </div>
 
       {/* Filter chips */}
-      <Card className="p-3 bg-accent border-accent text-accent-foreground">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-accent-foreground/80 ms-1">التصنيف:</span>
-          <FilterChip active={filterCategory === "all"} onClick={() => setFilterCategory("all")} label="الكل" />
-          {(Object.keys(CATEGORY_META) as Category[]).map((c) => (
-            <FilterChip key={c} active={filterCategory === c} onClick={() => setFilterCategory(c)} label={CATEGORY_META[c].label} />
-          ))}
-          <span className="text-xs text-accent-foreground/80 ms-3">الحالة:</span>
-          <FilterChip active={filterStatus === "all"} onClick={() => setFilterStatus("all")} label="الكل" />
-          {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
-            <FilterChip key={s} active={filterStatus === s} onClick={() => setFilterStatus(s)} label={STATUS_LABEL[s]} />
-          ))}
+      <Card className="p-5 bg-accent border-accent text-accent-foreground shadow-md" dir="rtl">
+        <div className="flex flex-col gap-4">
+          {/* Category row */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 min-w-[120px]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-foreground/15 ring-1 ring-accent-foreground/30">
+                <Filter className="h-4 w-4" />
+              </div>
+              <span className="text-base font-bold tracking-wide">التصنيف</span>
+            </div>
+            <ChevronLeft className="h-5 w-5 text-accent-foreground/60" />
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <FilterChip active={filterCategory === "all"} onClick={() => setFilterCategory("all")} label="الكل" />
+              {(Object.keys(CATEGORY_META) as Category[]).map((c) => (
+                <FilterChip key={c} active={filterCategory === c} onClick={() => setFilterCategory(c)} label={CATEGORY_META[c].label} />
+              ))}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px w-full bg-accent-foreground/20" />
+
+          {/* Status row */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 min-w-[120px]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-foreground/15 ring-1 ring-accent-foreground/30">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+              <span className="text-base font-bold tracking-wide">الحالة</span>
+            </div>
+            <ChevronLeft className="h-5 w-5 text-accent-foreground/60" />
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <FilterChip active={filterStatus === "all"} onClick={() => setFilterStatus("all")} label="الكل" />
+              {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
+                <FilterChip key={s} active={filterStatus === s} onClick={() => setFilterStatus(s)} label={STATUS_LABEL[s]} />
+              ))}
+            </div>
+          </div>
         </div>
       </Card>
 
