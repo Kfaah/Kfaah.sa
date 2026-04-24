@@ -255,8 +255,24 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         {/* OVERVIEW */}
         <TabsContent value="overview" className="space-y-4 mt-6">
           <div className="grid lg:grid-cols-3 gap-4">
+            {/* المصادر — على اليسار */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 justify-start text-right"><Building2 className="w-5 h-5 text-primary" /> المصادر</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <SourceLink label="الموقع الإلكتروني" url={profile?.website_url} />
+                <SourceLink label="المتجر" url={profile?.store_url} />
+                <SourceLink label="X (تويتر)" url={profile?.twitter_url} />
+                <SourceLink label="Instagram" url={profile?.instagram_url} />
+                <SourceLink label="TikTok" url={profile?.tiktok_url} />
+                <SourceLink label="YouTube" url={profile?.youtube_url} />
+                <SourceLink label="Snapchat" url={profile?.snapchat_url} />
+              </CardContent>
+            </Card>
+
             {/* التقييم العام — على اليمين (يأخذ عمودين) */}
-            <Card className="lg:col-span-2 lg:order-1 order-1 border-fuchsia-200/60 bg-gradient-to-bl from-fuchsia-50/60 via-white to-white">
+            <Card className="lg:col-span-2 border-fuchsia-200/60 bg-gradient-to-bl from-fuchsia-50/60 via-white to-white">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 justify-start text-right"><Sparkles className="w-5 h-5 text-fuchsia-500" /> التقييم العام</CardTitle>
                 <CardDescription className="text-right">
@@ -269,22 +285,6 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
                 ) : (
                   <EmptyState text="شغّل التحليل العميق لاستخراج تقييم شامل ومساءلات احترافية." onAction={runDeepAnalysis} actionLabel="تشغيل الآن" />
                 )}
-              </CardContent>
-            </Card>
-
-            {/* المصادر — على اليسار */}
-            <Card className="lg:order-2 order-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 justify-start text-right"><Building2 className="w-5 h-5 text-primary" /> المصادر</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <SourceLink label="الموقع الإلكتروني" url={profile?.website_url} />
-                <SourceLink label="المتجر" url={profile?.store_url} />
-                <SourceLink label="X (تويتر)" url={profile?.twitter_url} />
-                <SourceLink label="Instagram" url={profile?.instagram_url} />
-                <SourceLink label="TikTok" url={profile?.tiktok_url} />
-                <SourceLink label="YouTube" url={profile?.youtube_url} />
-                <SourceLink label="Snapchat" url={profile?.snapchat_url} />
               </CardContent>
             </Card>
           </div>
