@@ -23,6 +23,7 @@ import {
   Briefcase,
   Upload,
   Brain,
+  ShieldCheck,
 } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -42,6 +43,7 @@ interface NavItem {
 // قائمة مدير النظام (Admin) — يرى بيانات الجمعية فقط، بدون "خططي" الشخصية
 const adminNavItems: NavItem[] = [
   { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
+  { title: "اللوحة الداخلية الشاملة", href: "/internal-dashboard", icon: ShieldCheck, iconBg: "bg-gradient-to-br from-teal-500 to-emerald-600" },
   { title: "الموظفين", href: "/employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
   { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
   { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
