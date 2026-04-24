@@ -482,15 +482,15 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
 
 function SourceLink({ label, url }: { label: string; url: string | null | undefined }) {
   if (!url) return (
-    <div className="flex flex-row-reverse items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 text-right text-muted-foreground" dir="rtl">
-      <span className="font-medium">{label}</span>
+    <div className="flex items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 text-muted-foreground" dir="rtl">
       <span className="text-xs">— غير مضاف</span>
+      <span className="font-medium text-right">{label}</span>
     </div>
   );
   return (
-    <a href={url} target="_blank" rel="noreferrer" className="group flex flex-row-reverse items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 text-right transition-colors hover:border-primary/40 hover:text-primary" dir="rtl">
-      <span className="font-medium">{label}</span>
+    <a href={url} target="_blank" rel="noreferrer" className="group flex items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 transition-colors hover:border-primary/40 hover:text-primary" dir="rtl">
       <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
+      <span className="font-medium text-right">{label}</span>
     </a>
   );
 }
