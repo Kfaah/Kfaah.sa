@@ -74,59 +74,63 @@ export default function PublicLanding() {
       dir="rtl"
       style={{
         background:
-          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+          "linear-gradient(135deg, hsl(210 65% 18%) 0%, hsl(200 60% 14%) 55%, hsl(195 70% 10%) 100%)",
       }}
     >
       {/* Background pattern */}
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0 opacity-[0.06] pointer-events-none"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }}
       />
 
+      {/* Soft glow orbs to add depth */}
+      <div className="absolute top-10 right-10 w-96 h-96 rounded-full bg-cyan-400/10 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 left-10 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+
       <div className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-5xl grid md:grid-cols-2 gap-8 items-center">
+        <div className="w-full max-w-5xl grid md:grid-cols-2 gap-10 items-center">
           {/* Brand side */}
-          <div className="text-white space-y-6 text-center md:text-right">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow-2xl mb-4">
+          <div className="text-white space-y-6 text-center md:text-right md:order-1 order-2">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow-[0_10px_40px_-10px_rgba(34,211,238,0.6)] mb-4">
               <Building2 className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
               نظام إدارة التسويق الإلكتروني
-              <span className="block text-2xl md:text-3xl text-cyan-300 mt-2">للجمعيات الخيرية</span>
+              <span className="block text-2xl md:text-3xl text-cyan-300 mt-3 font-semibold">للجمعيات الخيرية</span>
             </h1>
-            <p className="text-lg text-slate-300 leading-relaxed max-w-md mx-auto md:mx-0">
+            <p className="text-lg text-slate-100/90 leading-relaxed max-w-md mx-auto md:mx-0 md:mr-0 md:ml-auto" style={{ textAlign: "right" }}>
               منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
             </p>
-            <div className="flex flex-wrap gap-3 justify-center md:justify-start pt-2">
-              <div className="px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm">
+            <div className="flex flex-wrap gap-3 justify-center md:justify-end pt-2">
+              <div className="px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-sm text-white backdrop-blur-sm">
                 إدارة متعددة الجمعيات
               </div>
-              <div className="px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm">
+              <div className="px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-sm text-white backdrop-blur-sm">
                 تقارير لحظية
               </div>
-              <div className="px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm">
+              <div className="px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-sm text-white backdrop-blur-sm">
                 واجهة عربية كاملة
               </div>
             </div>
           </div>
 
           {/* Login card */}
-          <Card className="border-0 shadow-2xl backdrop-blur-sm bg-white/95">
+          <Card className="border-0 shadow-2xl backdrop-blur-sm bg-white md:order-2 order-1">
             <CardHeader className="text-center space-y-2">
               <div className="inline-flex mx-auto items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent">
                 <Shield className="w-6 h-6 text-white" />
               </div>
-              <CardTitle className="text-2xl">دخول مدير النظام</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-2xl text-slate-900">دخول مدير النظام</CardTitle>
+              <CardDescription className="text-slate-600">
                 هذه الواجهة مخصصة لمدير المنصة. لدخول جمعيتك، استخدم الرابط الخاص بها.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="flex items-center gap-2">
+                  <Label htmlFor="username" className="flex items-center gap-2 justify-end text-slate-700">
                     <User className="w-4 h-4" /> اسم المستخدم / رقم الهوية
                   </Label>
                   <Input
@@ -135,12 +139,12 @@ export default function PublicLanding() {
                     onChange={(e) => setUsername(e.target.value)}
                     required
                     placeholder="أدخل رقم الهوية"
-                    className="h-11"
+                    className="h-11 text-right"
                     dir="ltr"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="flex items-center gap-2">
+                  <Label htmlFor="password" className="flex items-center gap-2 justify-end text-slate-700">
                     <Lock className="w-4 h-4" /> كلمة المرور
                   </Label>
                   <div className="relative">
@@ -178,7 +182,7 @@ export default function PublicLanding() {
         </div>
       </div>
 
-      <footer className="relative z-10 text-center text-slate-400 text-sm py-4">
+      <footer className="relative z-10 text-center text-slate-200/80 text-sm py-4">
         © {new Date().getFullYear()} نظام إدارة التسويق الإلكتروني للجمعيات
       </footer>
     </div>
