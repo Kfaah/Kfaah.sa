@@ -249,13 +249,15 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-start border border-accent/40 bg-accent p-1.5 text-accent-foreground">
           <TabsTrigger dir="rtl" value="overview" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><LayoutDashboard className="h-4 w-4" /> نظرة عامة</TabsTrigger>
-          <TabsTrigger dir="rtl" value="analysis" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Sparkles className="h-4 w-4" /> التحليل العميق</TabsTrigger>
+          <TabsTrigger dir="rtl" value="uploads" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Upload className="h-4 w-4" /> رفع الملفات</TabsTrigger>
+          <TabsTrigger dir="rtl" value="analysis" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Sparkles className="h-4 w-4" /> التحليل الذكي</TabsTrigger>
           <TabsTrigger dir="rtl" value="employees" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Users className="h-4 w-4" /> الموظفون</TabsTrigger>
+          <TabsTrigger dir="rtl" value="executive-room" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Building2 className="h-4 w-4" /> الغرفة التنفيذية</TabsTrigger>
           <TabsTrigger dir="rtl" value="tasks" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ListChecks className="h-4 w-4" /> المهام</TabsTrigger>
-          <TabsTrigger dir="rtl" value="accountability" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ShieldAlert className="h-4 w-4" /> المساءلات</TabsTrigger>
+          <TabsTrigger dir="rtl" value="performance" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Target className="h-4 w-4" /> تقييم الأداء</TabsTrigger>
+          <TabsTrigger dir="rtl" value="accountability" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ShieldAlert className="h-4 w-4" /> تحليل المساءلات</TabsTrigger>
           <TabsTrigger dir="rtl" value="reports" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><FileBarChart2 className="h-4 w-4" /> التقارير</TabsTrigger>
           <TabsTrigger dir="rtl" value="innovation" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Lightbulb className="h-4 w-4" /> الابتكار</TabsTrigger>
-          <TabsTrigger dir="rtl" value="uploads" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Upload className="h-4 w-4" /> التحميلات</TabsTrigger>
           <TabsTrigger dir="rtl" value="donors" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><HeartHandshake className="h-4 w-4" /> المتبرعون</TabsTrigger>
         </TabsList>
 
@@ -450,7 +452,13 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <PlaceholderTab title="الابتكار والتحديث" desc="أفكار AI ابتكارية لتطوير عمل الجمعية." linkTo="/admin/innovation" linkLabel="فتح الابتكار" />
         </TabsContent>
         <TabsContent value="uploads" className="mt-6" dir="rtl">
-          <PlaceholderTab title="التحميلات" desc="رفع ملفات التبرعات اليومية. (الرفع سيتفعّل لاحقاً عبر موظف رفع عام.)" />
+          <PlaceholderTab title="رفع الملفات" desc="رفع ملفات التبرعات اليومية. (الرفع سيتفعّل لاحقاً عبر موظف رفع عام.)" />
+        </TabsContent>
+        <TabsContent value="executive-room" className="mt-6" dir="rtl">
+          <PlaceholderTab title="الغرفة التنفيذية" desc="مساحة قيادية لمتابعة القرارات والمبادرات التنفيذية للجمعية. (قيد التطوير.)" />
+        </TabsContent>
+        <TabsContent value="performance" className="mt-6" dir="rtl">
+          <PlaceholderTab title="تقييم الأداء" desc="تقييمات الأداء الدورية للموظفين بناءً على المهام والمساءلات والأهداف. (قيد التطوير.)" />
         </TabsContent>
         <TabsContent value="donors" className="mt-6" dir="rtl">
           <PlaceholderTab title="المتبرعون" desc={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`} />
