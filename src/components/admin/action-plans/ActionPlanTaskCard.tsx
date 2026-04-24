@@ -68,13 +68,13 @@ const IMPACT_LABEL: Record<string, string> = {
   low: "منخفض",
 };
 
-const PETROL_SURFACE =
-  "bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm";
+const GOAL_HEADER_SURFACE =
+  "bg-accent/15 text-accent-foreground border border-accent-foreground/20";
 
 const IMPACT_THEME: Record<string, { badge: string; number: string }> = {
-  high:   { badge: PETROL_SURFACE, number: PETROL_SURFACE },
-  medium: { badge: PETROL_SURFACE, number: PETROL_SURFACE },
-  low:    { badge: PETROL_SURFACE, number: PETROL_SURFACE },
+  high:   { badge: GOAL_HEADER_SURFACE, number: GOAL_HEADER_SURFACE },
+  medium: { badge: GOAL_HEADER_SURFACE, number: GOAL_HEADER_SURFACE },
+  low:    { badge: GOAL_HEADER_SURFACE, number: GOAL_HEADER_SURFACE },
 };
 
 const triggerClassName = "h-12 text-base text-right [&>span]:w-full [&>span]:text-right";
@@ -119,24 +119,17 @@ export function ActionPlanTaskCard({
   const impactTheme = IMPACT_THEME[task.impact] || IMPACT_THEME.medium;
 
   return (
-    <Card
-      className="border-amber-300/30 ring-1 ring-amber-300/20 shadow-xl overflow-hidden text-white backdrop-blur-sm"
-      style={{
-        background:
-          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
-      }}
-      dir="rtl"
-    >
+    <Card className="overflow-hidden border-border bg-card text-foreground shadow-sm" dir="rtl">
       {/* Header: Goal */}
-      <div className="p-6 border-b border-amber-300/30 text-white">
+      <div className="border-b border-accent/20 bg-accent px-6 py-6 text-accent-foreground">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xl font-bold shadow-md", impactTheme.number)}>
               {index + 1}
             </div>
             <div className="flex-1 min-w-0 space-y-2">
-              <h3 className="text-2xl font-bold text-white leading-tight">{task.title}</h3>
-              {task.description && <p className="text-base text-white/85 leading-7">{task.description}</p>}
+              <h3 className="text-2xl font-bold text-accent-foreground leading-tight">{task.title}</h3>
+              {task.description && <p className="text-base text-accent-foreground/85 leading-7">{task.description}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -146,7 +139,7 @@ export function ActionPlanTaskCard({
             )}>
               تأثير {IMPACT_LABEL[task.impact] || task.impact}
             </Badge>
-            <Badge className="px-3 py-1.5 text-sm bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm">
+            <Badge className="px-3 py-1.5 text-sm bg-accent-foreground/10 text-accent-foreground border border-accent-foreground/20">
               {completedSubtasks}/{subtasks.length} منجزة
             </Badge>
           </div>
