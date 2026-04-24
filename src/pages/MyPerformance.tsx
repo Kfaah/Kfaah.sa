@@ -31,16 +31,17 @@ export default function MyPerformance() {
       setEmployee(emp);
       if (!emp) { setLoading(false); return; }
 
-      const qRes: any = await supabase.from("accountability_questions")
+      const sb = supabase as any;
+      const qRes: any = await sb.from("accountability_questions")
         .select("status,evidence_score,evidence_verdict")
         .eq("target_employee_id", emp.id);
-      const tRes: any = await supabase.from("tasks")
+      const tRes: any = await sb.from("tasks")
         .select("status,id")
-        .eq("assigned_to", user.id);
-      const accTRes: any = await supabase.from("accountability_tasks")
+        .eq("assigned_employee_id", emp.id);
+      const accTRes: any = await sb.from("accountability_tasks")
         .select("status")
         .eq("assigned_employee_id", emp.id);
-      const evRes: any = await supabase.from("evidence_checks")
+      const evRes: any = await sb.from("evidence_checks")
         .select("id,verdict,score,created_at,accountability_question_id")
         .order("created_at", { ascending: false }).limit(10);
 
