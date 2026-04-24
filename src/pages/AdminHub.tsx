@@ -274,6 +274,16 @@ export default function AdminHub() {
                     الدخول إلى نظام الجمعية
                   </Button>
 
+                  {/* Internal dashboard quick link */}
+                  <Button
+                    onClick={() => navigate(`/admin/organizations/${o.id}/dashboard`)}
+                    variant="outline"
+                    className="w-full gap-2 mb-2 border-fuchsia-500/40 text-fuchsia-700 dark:text-fuchsia-300 hover:bg-fuchsia-500/10"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    اللوحة الداخلية الشاملة
+                  </Button>
+
                   {/* Secondary actions */}
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => openEdit(o)}>
