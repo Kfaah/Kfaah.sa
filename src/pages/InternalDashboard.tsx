@@ -87,25 +87,7 @@ export default function InternalDashboard() {
 
   return (
     <DashboardLayout>
-      <OrgInternalDashboardEmbedded orgId={orgId} />
+      <OrgInternalDashboard orgIdProp={orgId} />
     </DashboardLayout>
-  );
-}
-
-/**
- * Renders OrgInternalDashboard but injects orgId via a wrapping route param.
- * Uses a thin proxy that overrides useParams via a memory router scope.
- */
-import { MemoryRouter, Routes, Route } from "react-router-dom";
-function OrgInternalDashboardEmbedded({ orgId }: { orgId: string }) {
-  return (
-    <MemoryRouter initialEntries={[`/admin/organizations/${orgId}/dashboard`]}>
-      <Routes>
-        <Route
-          path="/admin/organizations/:orgId/dashboard"
-          element={<OrgInternalDashboard />}
-        />
-      </Routes>
-    </MemoryRouter>
   );
 }
