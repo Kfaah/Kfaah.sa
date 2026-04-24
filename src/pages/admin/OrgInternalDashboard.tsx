@@ -207,8 +207,13 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
             )}
           </div>
           <div className="text-right">
+            <div className="flex items-center gap-2 mb-1">
+              <Badge className="bg-primary/10 text-primary border-primary/30 hover:bg-primary/15 text-[11px] font-bold">
+                لوحة الجمعية الداخلية
+              </Badge>
+            </div>
             <h1 className="text-2xl font-bold text-slate-900">{org?.name ?? "الجمعية"}</h1>
-            <p className="text-sm text-slate-500">لوحة التحكم الداخلية الشاملة</p>
+            <p className="text-sm text-slate-500">رؤية شاملة · تقييم عميق · مساءلات ذكية</p>
           </div>
         </div>
 
