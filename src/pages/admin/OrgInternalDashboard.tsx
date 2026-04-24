@@ -452,7 +452,13 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <PlaceholderTab title="الابتكار والتحديث" desc="أفكار AI ابتكارية لتطوير عمل الجمعية." linkTo="/admin/innovation" linkLabel="فتح الابتكار" />
         </TabsContent>
         <TabsContent value="uploads" className="mt-6" dir="rtl">
-          <PlaceholderTab title="التحميلات" desc="رفع ملفات التبرعات اليومية. (الرفع سيتفعّل لاحقاً عبر موظف رفع عام.)" />
+          <PlaceholderTab title="رفع الملفات" desc="رفع ملفات التبرعات اليومية. (الرفع سيتفعّل لاحقاً عبر موظف رفع عام.)" />
+        </TabsContent>
+        <TabsContent value="executive-room" className="mt-6" dir="rtl">
+          <PlaceholderTab title="الغرفة التنفيذية" desc="مساحة قيادية لمتابعة القرارات والمبادرات التنفيذية للجمعية. (قيد التطوير.)" />
+        </TabsContent>
+        <TabsContent value="performance" className="mt-6" dir="rtl">
+          <PlaceholderTab title="تقييم الأداء" desc="تقييمات الأداء الدورية للموظفين بناءً على المهام والمساءلات والأهداف. (قيد التطوير.)" />
         </TabsContent>
         <TabsContent value="donors" className="mt-6" dir="rtl">
           <PlaceholderTab title="المتبرعون" desc={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`} />
