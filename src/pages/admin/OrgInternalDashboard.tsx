@@ -197,10 +197,11 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-slate-200">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")}>
-            <ArrowRight className="w-5 h-5" />
-          </Button>
+        <div className="flex items-center gap-4 flex-row-reverse">
+          <div className="text-right">
+            <h1 className="text-2xl font-bold text-slate-900">{org?.name ?? "الجمعية"}</h1>
+            <p className="text-sm text-slate-500">لوحة التحكم الداخلية الشاملة</p>
+          </div>
           <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-white shadow-lg">
             {org?.logo_url ? (
               <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover rounded-xl" />
@@ -208,10 +209,9 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
               <Building2 className="w-7 h-7" />
             )}
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{org?.name ?? "الجمعية"}</h1>
-            <p className="text-sm text-slate-500">لوحة التحكم الداخلية الشاملة</p>
-          </div>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة">
+            <ArrowRight className="w-5 h-5 rotate-180" />
+          </Button>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
