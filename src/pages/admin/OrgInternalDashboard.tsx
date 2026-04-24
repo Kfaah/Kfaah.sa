@@ -283,13 +283,13 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
               </CardContent>
             </Card>
 
-            <Card className="order-2" dir="rtl">
-              <CardHeader className="text-right">
-                <CardTitle className="flex flex-row-reverse items-center justify-start gap-2 text-right">
+            <Card className="order-2" dir="ltr">
+              <CardHeader className="text-left">
+                <CardTitle className="flex items-center justify-start gap-2 text-left">
                   <Building2 className="h-5 w-5 text-primary" /> المصادر
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-right text-sm">
+              <CardContent className="space-y-2 text-left text-sm">
                 <SourceLink label="الموقع الإلكتروني" url={profile?.website_url} />
                 <SourceLink label="المتجر" url={profile?.store_url} />
                 <SourceLink label="X (تويتر)" url={profile?.twitter_url} />
@@ -482,15 +482,15 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
 
 function SourceLink({ label, url }: { label: string; url: string | null | undefined }) {
   if (!url) return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 text-muted-foreground" dir="rtl">
-      <span className="text-xs">— غير مضاف</span>
-      <span className="font-medium text-right">{label}</span>
+    <div className="flex w-full items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 text-muted-foreground" dir="ltr">
+      <span className="font-medium text-right" dir="rtl">{label}</span>
+      <span className="text-xs" dir="rtl">— غير مضاف</span>
     </div>
   );
   return (
-    <a href={url} target="_blank" rel="noreferrer" className="group flex items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 transition-colors hover:border-primary/40 hover:text-primary" dir="rtl">
+    <a href={url} target="_blank" rel="noreferrer" className="group flex w-full items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2 transition-colors hover:border-primary/40 hover:text-primary" dir="ltr">
+      <span className="font-medium text-right" dir="rtl">{label}</span>
       <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
-      <span className="font-medium text-right">{label}</span>
     </a>
   );
 }
