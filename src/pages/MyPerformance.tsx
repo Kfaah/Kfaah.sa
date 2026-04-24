@@ -31,16 +31,18 @@ export default function MyPerformance() {
       setEmployee(emp);
       if (!emp) { setLoading(false); return; }
 
-      const [qRes, tRes, accTRes, evRes] = await Promise.all([
-        supabase.from("accountability_questions").select("status,evidence_score,evidence_verdict")
-          .eq("target_employee_id", emp.id),
-        supabase.from("tasks").select("status,id", { count: "exact" })
-          .eq("assigned_to", user.id),
-        supabase.from("accountability_tasks").select("status")
-          .eq("assigned_employee_id", emp.id),
-        supabase.from("evidence_checks").select("id,verdict,score,created_at,accountability_question_id")
-          .order("created_at", { ascending: false }).limit(10),
-      ]);
+      const qRes: any = await supabase.from("accountability_questions")
+        .select("status,evidence_score,evidence_verdict")
+        .eq("target_employee_id", emp.id);
+      const tRes: any = await supabase.from("tasks")
+        .select("status,id")
+        .eq("assigned_to", user.id);
+      const accTRes: any = await supabase.from("accountability_tasks")
+        .select("status")
+        .eq("assigned_employee_id", emp.id);
+      const evRes: any = await supabase.from("evidence_checks")
+        .select("id,verdict,score,created_at,accountability_question_id")
+        .order("created_at", { ascending: false }).limit(10);
 
       const qs = (qRes.data ?? []) as any[];
       const scores = qs.filter((q) => q.evidence_score != null).map((q) => Number(q.evidence_score));
