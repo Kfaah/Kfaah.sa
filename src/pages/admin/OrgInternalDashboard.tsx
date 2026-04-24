@@ -192,43 +192,49 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
 
   return (
     <div className="space-y-6 p-8" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-3 text-3xl font-bold text-foreground">
-            <GitCompareArrows className="h-8 w-8 text-accent" />
-            المقارنة بين الجمعيات
-          </h1>
-          <p className="mt-1 text-muted-foreground">
-            لوحة الجمعية الداخلية — رؤية شاملة · تقييم عميق · مساءلات ذكية
-          </p>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-md">
-              {org?.logo_url ? (
-                <img src={org.logo_url} alt={org.name} className="h-full w-full object-cover" />
-              ) : (
-                <Building2 className="h-6 w-6" />
-              )}
-            </div>
-            <div className="text-right">
-              <div className="text-lg font-bold leading-tight text-foreground">{org?.name ?? "الجمعية"}</div>
-              <div className="text-xs text-muted-foreground">{org?.slug}</div>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-primary via-accent to-primary/90 p-6 shadow-lg">
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="flex items-center gap-3 text-3xl font-bold text-white">
+              <GitCompareArrows className="h-8 w-8 text-white" />
+              لوحة الجمعية الداخلية
+            </h1>
+            <p className="mt-1 text-white/90">
+              رؤية شاملة · تقييم عميق · مساءلات ذكية
+            </p>
+            <div className="mt-3 flex items-center gap-3">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/15 text-white shadow-md ring-1 ring-white/30 backdrop-blur">
+                {org?.logo_url ? (
+                  <img src={org.logo_url} alt={org.name} className="h-full w-full object-cover" />
+                ) : (
+                  <Building2 className="h-6 w-6" />
+                )}
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold leading-tight text-white">{org?.name ?? "الجمعية"}</div>
+                <div className="text-xs text-white/80">{org?.slug}</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={runDeepAnalysis} disabled={analyzing} className="bg-gradient-to-l from-fuchsia-500 to-pink-600 text-white hover:opacity-90">
-            {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
-            تشغيل التحليل العميق
-          </Button>
-          <Button asChild variant="outline">
-            <Link to={`/admin/organizations/${orgId}/profile`}>
-              <Building2 className="ml-2 h-4 w-4" /> ملف الجمعية
-            </Link>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة" className="text-muted-foreground hover:text-foreground">
-            <ArrowRight className="h-5 w-5" />
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={runDeepAnalysis}
+              disabled={analyzing}
+              className="bg-gradient-to-l from-primary via-accent to-primary/90 text-white shadow-md ring-1 ring-white/30 hover:opacity-90"
+            >
+              {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
+              تشغيل التحليل العميق
+            </Button>
+            <Button asChild variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white">
+              <Link to={`/admin/organizations/${orgId}/profile`}>
+                <Building2 className="ml-2 h-4 w-4" /> ملف الجمعية
+              </Link>
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => navigate("/admin/organizations")} title="عودة" className="text-white hover:bg-white/15 hover:text-white">
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
