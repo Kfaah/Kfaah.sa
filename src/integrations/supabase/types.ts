@@ -111,9 +111,13 @@ export type Database = {
           expected_evidence: string | null
           generated_task_id: string | null
           id: string
+          last_check_score: number | null
+          last_check_verdict: string | null
           organization_id: string
           priority: string
           question_text: string
+          reminder_count: number
+          reminder_sent_at: string | null
           status: string
           target_employee_id: string | null
           target_job_role: string
@@ -138,9 +142,13 @@ export type Database = {
           expected_evidence?: string | null
           generated_task_id?: string | null
           id?: string
+          last_check_score?: number | null
+          last_check_verdict?: string | null
           organization_id: string
           priority?: string
           question_text: string
+          reminder_count?: number
+          reminder_sent_at?: string | null
           status?: string
           target_employee_id?: string | null
           target_job_role: string
@@ -165,9 +173,13 @@ export type Database = {
           expected_evidence?: string | null
           generated_task_id?: string | null
           id?: string
+          last_check_score?: number | null
+          last_check_verdict?: string | null
           organization_id?: string
           priority?: string
           question_text?: string
+          reminder_count?: number
+          reminder_sent_at?: string | null
           status?: string
           target_employee_id?: string | null
           target_job_role?: string
@@ -188,8 +200,11 @@ export type Database = {
           description: string | null
           detailed_instructions: string | null
           due_date: string | null
+          evidence_score_when_generated: number | null
+          gap_reason: string | null
           id: string
           organization_id: string
+          parent_question_id: string | null
           priority: string
           source: string
           source_id: string | null
@@ -209,8 +224,11 @@ export type Database = {
           description?: string | null
           detailed_instructions?: string | null
           due_date?: string | null
+          evidence_score_when_generated?: number | null
+          gap_reason?: string | null
           id?: string
           organization_id: string
+          parent_question_id?: string | null
           priority?: string
           source?: string
           source_id?: string | null
@@ -230,8 +248,11 @@ export type Database = {
           description?: string | null
           detailed_instructions?: string | null
           due_date?: string | null
+          evidence_score_when_generated?: number | null
+          gap_reason?: string | null
           id?: string
           organization_id?: string
+          parent_question_id?: string | null
           priority?: string
           source?: string
           source_id?: string | null
@@ -1354,12 +1375,15 @@ export type Database = {
           evidence_url: string
           findings: Json | null
           id: string
+          missing_items: Json | null
           organization_id: string
           recommendations: string | null
           score: number | null
           scrape_content_excerpt: string | null
           scrape_metadata: Json | null
           scrape_status: string
+          strict_mode: boolean
+          sub_checks: Json | null
           verdict: string | null
         }
         Insert: {
@@ -1370,12 +1394,15 @@ export type Database = {
           evidence_url: string
           findings?: Json | null
           id?: string
+          missing_items?: Json | null
           organization_id: string
           recommendations?: string | null
           score?: number | null
           scrape_content_excerpt?: string | null
           scrape_metadata?: Json | null
           scrape_status?: string
+          strict_mode?: boolean
+          sub_checks?: Json | null
           verdict?: string | null
         }
         Update: {
@@ -1386,12 +1413,15 @@ export type Database = {
           evidence_url?: string
           findings?: Json | null
           id?: string
+          missing_items?: Json | null
           organization_id?: string
           recommendations?: string | null
           score?: number | null
           scrape_content_excerpt?: string | null
           scrape_metadata?: Json | null
           scrape_status?: string
+          strict_mode?: boolean
+          sub_checks?: Json | null
           verdict?: string | null
         }
         Relationships: []
