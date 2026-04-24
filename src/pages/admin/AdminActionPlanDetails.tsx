@@ -137,33 +137,44 @@ export default function AdminActionPlanDetails() {
         </div>
       </div>
 
-      <Card className="bg-card border-border p-6 shadow-sm">
+      <Card
+        className="border-amber-300/30 ring-1 ring-amber-300/20 p-6 shadow-xl text-white backdrop-blur-sm"
+        style={{
+          background:
+            "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+        }}
+      >
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <div className="text-sm text-muted-foreground mb-1">{plan.org_name}</div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <div className="text-sm text-amber-200/90 mb-1">{plan.org_name}</div>
+            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
               <span className="w-11 h-11 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shadow-sm shrink-0">
                 <ListChecks className="w-6 h-6" />
               </span>
               {plan.title}
             </h1>
-            {plan.description && <p className="text-base text-muted-foreground mt-3 max-w-3xl leading-relaxed">{plan.description}</p>}
-            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-3">
+            {plan.description && <p className="text-base text-white/85 mt-3 max-w-3xl leading-relaxed">{plan.description}</p>}
+            <div className="flex items-center gap-3 text-sm text-white/80 mt-3">
               <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {plan.start_date} → {plan.end_date}</span>
-              <Badge variant={plan.status === "active" ? "default" : "secondary"} className="text-sm">{plan.status === "active" ? "نشطة" : plan.status}</Badge>
+              <Badge
+                variant={plan.status === "active" ? "default" : "secondary"}
+                className={`text-sm ${plan.status === "active" ? "bg-accent text-accent-foreground hover:bg-accent/90 border-transparent" : ""}`}
+              >
+                {plan.status === "active" ? "نشطة" : plan.status}
+              </Badge>
             </div>
           </div>
           <div className="text-center min-w-[200px]">
-            <div className="text-5xl font-bold text-accent">{progress.toFixed(0)}%</div>
-            <div className="text-sm text-muted-foreground mt-1">{done}/{tasks.length} مكتملة</div>
+            <div className="text-5xl font-bold text-amber-300">{progress.toFixed(0)}%</div>
+            <div className="text-sm text-white/80 mt-1">{done}/{tasks.length} مكتملة</div>
             <Progress value={progress} className="mt-2" />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mt-5">
-          <StatPill icon={Clock} label="قيد الانتظار" value={pending} color="text-muted-foreground" />
-          <StatPill icon={Sparkles} label="قيد التنفيذ" value={inProgress} color="text-accent" />
-          <StatPill icon={CheckCircle2} label="منجزة" value={done} color="text-success" />
+          <StatPill icon={Clock} label="قيد الانتظار" value={pending} />
+          <StatPill icon={Sparkles} label="قيد التنفيذ" value={inProgress} />
+          <StatPill icon={CheckCircle2} label="منجزة" value={done} />
         </div>
       </Card>
 
@@ -187,13 +198,13 @@ export default function AdminActionPlanDetails() {
 
 function StatPill({ icon: Icon, label, value }: any) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm">
       <div className="w-9 h-9 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shadow-sm shrink-0">
         <Icon className="w-5 h-5" />
       </div>
       <div>
-        <div className="text-[11px] text-muted-foreground">{label}</div>
-        <div className="font-bold text-foreground">{value}</div>
+        <div className="text-[11px] text-amber-200/90">{label}</div>
+        <div className="font-bold text-white">{value}</div>
       </div>
     </div>
   );

@@ -68,21 +68,18 @@ const IMPACT_LABEL: Record<string, string> = {
   low: "منخفض",
 };
 
-const IMPACT_THEME: Record<string, { header: string; badge: string; number: string }> = {
+const IMPACT_THEME: Record<string, { badge: string; number: string }> = {
   high: {
-    header: "from-destructive/10 via-warning/10 to-transparent",
-    badge: "bg-destructive text-destructive-foreground",
-    number: "bg-destructive text-destructive-foreground",
+    badge: "bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm",
+    number: "bg-accent text-accent-foreground",
   },
   medium: {
-    header: "from-primary/10 via-accent/10 to-transparent",
-    badge: "bg-primary text-primary-foreground",
-    number: "bg-primary text-primary-foreground",
+    badge: "bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm",
+    number: "bg-accent text-accent-foreground",
   },
   low: {
-    header: "from-success/10 via-accent/10 to-transparent",
-    badge: "bg-success text-success-foreground",
-    number: "bg-success text-success-foreground",
+    badge: "bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm",
+    number: "bg-accent text-accent-foreground",
   },
 };
 
@@ -130,25 +127,31 @@ export function ActionPlanTaskCard({
   return (
     <Card className="bg-card border-border shadow-md overflow-hidden ring-1 ring-border/50" dir="rtl">
       {/* Header: Goal */}
-      <div className={cn("p-6 border-b border-border bg-gradient-to-l", impactTheme.header)}>
+      <div
+        className="p-6 border-b border-amber-300/30 text-white"
+        style={{
+          background:
+            "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+        }}
+      >
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xl font-bold shadow-md", impactTheme.number)}>
               {index + 1}
             </div>
             <div className="flex-1 min-w-0 space-y-2">
-              <h3 className="text-2xl font-bold text-foreground leading-tight">{task.title}</h3>
-              {task.description && <p className="text-base text-muted-foreground leading-7">{task.description}</p>}
+              <h3 className="text-2xl font-bold text-white leading-tight">{task.title}</h3>
+              {task.description && <p className="text-base text-white/85 leading-7">{task.description}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge className={cn(
-              "px-3 py-1.5 text-sm font-bold border-0 shadow-sm",
+              "px-3 py-1.5 text-sm font-bold shadow-sm",
               impactTheme.badge,
             )}>
               تأثير {IMPACT_LABEL[task.impact] || task.impact}
             </Badge>
-            <Badge variant="secondary" className="px-3 py-1.5 text-sm">
+            <Badge className="px-3 py-1.5 text-sm bg-white/5 text-white border border-amber-300/40 ring-1 ring-amber-300/20 backdrop-blur-sm">
               {completedSubtasks}/{subtasks.length} منجزة
             </Badge>
           </div>
