@@ -103,7 +103,7 @@ const STATUS_LABEL: Record<string, string> = {
   completed: "مكتملة",
 };
 
-export default function OrgInternalDashboard({ orgIdProp }: { orgIdProp?: string } = {}) {
+export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdProp?: string; initialTab?: string } = {}) {
   const params = useParams<{ orgId: string }>();
   const orgId = orgIdProp ?? params.orgId;
   const navigate = useNavigate();
@@ -119,6 +119,11 @@ export default function OrgInternalDashboard({ orgIdProp }: { orgIdProp?: string
   });
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(initialTab ?? "overview");
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
 
   const loadAll = async () => {
     if (!orgId) return;
@@ -227,7 +232,7 @@ export default function OrgInternalDashboard({ orgIdProp }: { orgIdProp?: string
         <KpiCard label="مهام مساءلة" value={aTasks.length} icon={<AlertTriangle className="w-4 h-4" />} color="from-emerald-500 to-teal-600" />
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start flex-wrap h-auto p-1.5 bg-muted/50">
           <TabsTrigger value="overview" className="gap-2"><LayoutDashboard className="w-4 h-4" /> نظرة عامة</TabsTrigger>
           <TabsTrigger value="analysis" className="gap-2"><Sparkles className="w-4 h-4" /> التحليل العميق</TabsTrigger>

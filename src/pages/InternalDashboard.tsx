@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,8 @@ import OrgInternalDashboard from "@/pages/admin/OrgInternalDashboard";
  */
 export default function InternalDashboard() {
   const { slug } = useParams<{ slug?: string }>();
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get("tab") ?? undefined;
   const { user } = useAuth();
   const [orgId, setOrgId] = useState<string | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
@@ -87,7 +89,7 @@ export default function InternalDashboard() {
 
   return (
     <DashboardLayout>
-      <OrgInternalDashboard orgIdProp={orgId} />
+      <OrgInternalDashboard orgIdProp={orgId} initialTab={tab} />
     </DashboardLayout>
   );
 }
