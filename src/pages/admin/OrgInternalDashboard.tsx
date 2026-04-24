@@ -216,11 +216,11 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         <div dir="rtl" className="flex items-start justify-end gap-4 text-right lg:justify-self-end">
           <div className="min-w-0">
             <h1 className="flex items-center justify-end gap-3 text-3xl font-bold text-foreground">
-              لوحة الجمعية الداخلية
+              المقارنة بين الجمعيات
               <GitCompareArrows className="h-8 w-8 text-accent" />
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              هوية بصرية مطابقة لصفحة المقارنة بين الجمعيات مع قراءة عربية كاملة من اليمين إلى اليسار
+              ترتيب بصري وهوية متطابقة مع صفحة المقارنة بين الجمعيات مع قراءة عربية كاملة من اليمين إلى اليسار
             </p>
             <div className="mt-3 flex items-center justify-end gap-3">
               <div>
@@ -250,7 +250,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList dir="ltr" className="h-auto w-full flex-row-reverse flex-wrap justify-end border border-border bg-muted p-1.5">
+        <TabsList dir="ltr" className="h-auto w-full flex-row-reverse flex-wrap justify-start border border-border bg-muted p-1.5">
           <TabsTrigger dir="rtl" value="overview" className="gap-2"><LayoutDashboard className="h-4 w-4" /> نظرة عامة</TabsTrigger>
           <TabsTrigger dir="rtl" value="analysis" className="gap-2"><Sparkles className="h-4 w-4" /> التحليل العميق</TabsTrigger>
           <TabsTrigger dir="rtl" value="accountability" className="gap-2"><ShieldAlert className="h-4 w-4" /> المساءلات</TabsTrigger>
