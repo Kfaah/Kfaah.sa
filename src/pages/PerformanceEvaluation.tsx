@@ -125,7 +125,9 @@ export default function PerformanceEvaluation() {
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [scores, setScores] = useState<ScoreRow[]>([]);
-  const [period, setPeriod] = useState<string>("month");
+  const [period, setPeriod] = useState<string>("month_to_date");
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
   const [empFilter, setEmpFilter] = useState<string>("all");
   const [deptFilter, setDeptFilter] = useState<string>("all");
 
@@ -144,6 +146,11 @@ export default function PerformanceEvaluation() {
   const [scoreValue, setScoreValue] = useState<number>(0);
   const [scoreNotes, setScoreNotes] = useState("");
 
+  const range = useMemo(
+    () => rangeForPeriod(period, customFrom, customTo),
+    [period, customFrom, customTo]
+  );
+
   const loadAll = async () => {
     setLoading(true);
     // Resolve current user's organization to scope the table
@@ -154,7 +161,8 @@ export default function PerformanceEvaluation() {
         ? supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null).eq("organization_id", orgId as string)
         : supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null)
       ),
-      supabase.from("employee_evaluation_scores").select("*").eq("period", period),
+      // Fetch all scores; filter client-side by date range OR by legacy period label.
+      supabase.from("employee_evaluation_scores").select("*"),
       supabase.from("departments").select("id, name"),
     ]);
     if (cRes.error) toast.error("تعذر تحميل المعايير");
@@ -168,11 +176,29 @@ export default function PerformanceEvaluation() {
         .filter(e => e.user_id)
         .map(e => ({ ...e, department_name: e.department_id ? (deptMap.get(e.department_id) ?? null) : null })) as Employee[]
     );
-    setScores((sRes.data ?? []) as ScoreRow[]);
+    // Filter scores: keep rows whose [period_start, period_end] intersects the active range,
+    // OR (for legacy seed data without dates) whose `period` label maps to the same preset.
+    const all = (sRes.data ?? []) as ScoreRow[];
+    const legacyMap: Record<string, string> = {
+      yesterday: "day",
+      last_week: "week",
+      month_to_date: "month",
+      last_month: "month",
+      last_year: "year",
+    };
+    const legacyPeriod = legacyMap[period];
+    const inRange = (s: ScoreRow) => {
+      if (s.period_start && s.period_end) {
+        return !(s.period_end < range.start || s.period_start > range.end);
+      }
+      // No dates → fall back to legacy label match
+      return legacyPeriod ? s.period === legacyPeriod : false;
+    };
+    setScores(all.filter(inRange));
     setLoading(false);
   };
 
-  useEffect(() => { loadAll(); }, [period]);
+  useEffect(() => { loadAll(); }, [period, customFrom, customTo]);
 
   const departments = useMemo(() => {
     const set = new Set(employees.map(e => e.department_name).filter(Boolean) as string[]);
