@@ -107,7 +107,15 @@ const STATUS_LABEL: Record<string, string> = {
   completed: "مكتملة",
 };
 
-export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdProp?: string; initialTab?: string } = {}) {
+export default function OrgInternalDashboard({
+  orgIdProp,
+  initialTab,
+  standaloneTab = false,
+}: {
+  orgIdProp?: string;
+  initialTab?: string;
+  standaloneTab?: boolean;
+} = {}) {
   const params = useParams<{ orgId: string }>();
   const orgId = orgIdProp ?? params.orgId;
   const navigate = useNavigate();
@@ -194,8 +202,8 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
   }
 
   return (
-    <div className="space-y-6 p-8" dir="rtl">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-primary via-accent to-primary/90 p-6 shadow-lg">
+    <div className={standaloneTab ? "space-y-6" : "space-y-6 p-8"} dir="rtl">
+      {!standaloneTab && <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-primary via-accent to-primary/90 p-6 shadow-lg">
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="flex items-center gap-3 text-3xl font-bold text-white">
@@ -236,20 +244,20 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
             </Button>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      {!standaloneTab && <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <KpiCard label="موظفون" value={counts.employees} icon={<Users className="w-4 h-4" />} color="from-indigo-500 to-violet-600" />
         <KpiCard label="مهام" value={counts.tasks} icon={<ListChecks className="w-4 h-4" />} color="from-cyan-500 to-blue-600" />
         <KpiCard label="تبرعات" value={counts.donations} icon={<HeartHandshake className="w-4 h-4" />} color="from-rose-500 to-pink-600" />
         <KpiCard label="حملات" value={counts.campaigns} icon={<Target className="w-4 h-4" />} color="from-amber-500 to-orange-600" />
         <KpiCard label="مساءلات" value={questions.length} icon={<ShieldAlert className="w-4 h-4" />} color="from-fuchsia-500 to-purple-600" />
         <KpiCard label="مهام مساءلة" value={aTasks.length} icon={<AlertTriangle className="w-4 h-4" />} color="from-emerald-500 to-teal-600" />
-      </div>
+      </div>}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-center gap-0 border border-accent/40 bg-accent p-1.5 text-accent-foreground [&>[role=separator]]:mx-1 [&>[role=separator]]:h-6 [&>[role=separator]]:w-px [&>[role=separator]]:self-center [&>[role=separator]]:bg-accent-foreground/30">
+        {!standaloneTab && <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-center gap-0 border border-accent/40 bg-accent p-1.5 text-accent-foreground [&>[role=separator]]:mx-1 [&>[role=separator]]:h-6 [&>[role=separator]]:w-px [&>[role=separator]]:self-center [&>[role=separator]]:bg-accent-foreground/30">
           {(() => {
             const tabs = [
               { value: "uploads", label: "رفع الملفات", Icon: Upload },
@@ -282,7 +290,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
                 : [trigger];
             });
           })()}
-        </TabsList>
+        </TabsList>}
 
         {/* OVERVIEW */}
         <TabsContent value="overview" className="mt-6 space-y-4" dir="rtl">
