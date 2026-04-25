@@ -252,16 +252,16 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
             const tabs = [
               { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "uploads", label: "رفع الملفات", Icon: Upload },
-              { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
               { value: "employees", label: "الموظفون", Icon: Users },
               { value: "operational-plans", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
-              { value: "innovation", label: "الابتكار", Icon: Lightbulb },
               { value: "tasks", label: "المهام", Icon: ClipboardList },
               { value: "performance", label: "تقييم الأداء", Icon: Target },
-              { value: "accountability", label: "تحليل المساءلات", Icon: ShieldAlert },
               { value: "reports", label: "التقارير", Icon: FileBarChart2 },
               { value: "donors", label: "المتبرعون", Icon: HeartHandshake },
+              { value: "innovation", label: "الابتكار", Icon: Lightbulb },
+              { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
+              { value: "accountability", label: "تحليل المساءلات", Icon: ShieldAlert },
             ];
             return tabs.flatMap((t, i) => {
               const trigger = (
