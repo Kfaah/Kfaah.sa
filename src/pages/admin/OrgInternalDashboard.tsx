@@ -643,7 +643,7 @@ interface HistoryRow {
   created_at: string;
 }
 
-function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
+function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: string; orgName: string; onRunAnalysis: () => Promise<void> | void; analyzing: boolean }) {
   const [forDate, setForDate] = useState<string>(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
@@ -653,6 +653,7 @@ function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [dragOver, setDragOver] = useState(false);
+  const [batchRunning, setBatchRunning] = useState(false);
   let fileInputEl: HTMLInputElement | null = null;
 
   const loadHistory = async () => {
@@ -704,8 +705,38 @@ function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
       id: crypto.randomUUID(), file: f, status: "queued", progress: 0,
     }));
     setPending((prev) => [...prev, ...newPending]);
-    (async () => { for (const pf of newPending) await processFile(pf); })();
+    // Do NOT auto-upload — wait for user to click "بدء الرفع والتحليل".
   };
+
+  const removeFile = (id: string) => {
+    setPending((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const startBatch = async () => {
+    const queue = pending.filter((p) => p.status === "queued" || p.status === "error");
+    if (queue.length === 0) {
+      toast.error("لا توجد ملفات في قائمة الانتظار");
+      return;
+    }
+    setBatchRunning(true);
+    try {
+      for (const pf of queue) {
+        await processFile(pf);
+      }
+      // After all uploads complete — run the smart analysis on the consolidated data
+      toast.loading("جاري تشغيل التحليل الذكي على جميع الملفات المرفوعة...", { id: "batch-analysis" });
+      try {
+        await onRunAnalysis();
+        toast.success("اكتمل الرفع والتحليل الذكي", { id: "batch-analysis" });
+      } catch {
+        toast.error("اكتمل الرفع لكن فشل التحليل", { id: "batch-analysis" });
+      }
+    } finally {
+      setBatchRunning(false);
+    }
+  };
+
+  const queuedCount = pending.filter((p) => p.status === "queued" || p.status === "error").length;
 
   return (
     <div className="space-y-6" dir="rtl">
