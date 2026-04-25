@@ -361,6 +361,139 @@ export default function EmployeeOnboarding() {
               </>
             )}
 
+            {currentStep.key === "duties" && (
+              <div className="space-y-5">
+                <div className="rounded-lg border border-fuchsia-200 bg-fuchsia-50/60 p-4 text-sm text-fuchsia-900">
+                  سجّل هنا المهام الوظيفية التي تقوم بها بشكل دوري. ستستخدمها المنصة لتوليد خططك التنفيذية ومهامك اليومية تلقائياً، ولفهم قدراتك بدقة.
+                </div>
+
+                {jobDuties.length > 0 && (
+                  <div className="space-y-2">
+                    {jobDuties.map((d, i) => (
+                      <div key={i} className="flex items-start gap-3 border rounded-lg p-3 bg-card">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold">{d.title}</span>
+                            <Badge variant="secondary" className="text-xs">{frequencyLabel[d.frequency]}</Badge>
+                            <Badge variant="outline" className="text-xs">{priorityLabel[d.priority]}</Badge>
+                            {d.category && <Badge variant="outline" className="text-xs">{d.category}</Badge>}
+                            {d.estimated_time_minutes ? (
+                              <Badge variant="outline" className="text-xs">{d.estimated_time_minutes} دقيقة</Badge>
+                            ) : null}
+                          </div>
+                          {d.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{d.description}</p>
+                          )}
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => removeDuty(i)} className="text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="border rounded-xl p-4 space-y-3 bg-muted/30">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                    <Plus className="w-4 h-4" />
+                    إضافة مهمة وظيفية
+                  </div>
+                  <div>
+                    <Label>عنوان المهمة</Label>
+                    <Input
+                      placeholder="مثال: متابعة المتبرعين الجدد، إعداد التقرير الأسبوعي"
+                      value={draftDuty.title}
+                      onChange={(e) => setDraftDuty((p) => ({ ...p, title: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>وصف مختصر (اختياري)</Label>
+                    <Textarea
+                      rows={2}
+                      placeholder="ماذا تتضمن هذه المهمة بالتفصيل؟"
+                      value={draftDuty.description}
+                      onChange={(e) => setDraftDuty((p) => ({ ...p, description: e.target.value }))}
+                    />
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div>
+                      <Label>التصنيف</Label>
+                      <Input
+                        placeholder="مثال: متبرعون، تقارير، تواصل"
+                        value={draftDuty.category}
+                        onChange={(e) => setDraftDuty((p) => ({ ...p, category: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>الوقت المقدّر (بالدقائق)</Label>
+                      <Input
+                        type="number"
+                        min={5}
+                        placeholder="30"
+                        value={draftDuty.estimated_time_minutes ?? ""}
+                        onChange={(e) =>
+                          setDraftDuty((p) => ({
+                            ...p,
+                            estimated_time_minutes: e.target.value ? Number(e.target.value) : null,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div>
+                      <Label>تكرار المهمة</Label>
+                      <RadioGroup
+                        value={draftDuty.frequency}
+                        onValueChange={(v) => setDraftDuty((p) => ({ ...p, frequency: v as any }))}
+                        className="grid grid-cols-2 gap-2 mt-1"
+                      >
+                        {(["daily", "weekly", "monthly", "adhoc"] as const).map((f) => (
+                          <label
+                            key={f}
+                            className={`border rounded-lg p-2 cursor-pointer flex items-center gap-2 text-sm ${
+                              draftDuty.frequency === f ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                            }`}
+                          >
+                            <RadioGroupItem value={f} />
+                            {frequencyLabel[f]}
+                          </label>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                    <div>
+                      <Label>الأولوية</Label>
+                      <RadioGroup
+                        value={draftDuty.priority}
+                        onValueChange={(v) => setDraftDuty((p) => ({ ...p, priority: v as any }))}
+                        className="grid grid-cols-3 gap-2 mt-1"
+                      >
+                        {(["low", "medium", "high"] as const).map((p) => (
+                          <label
+                            key={p}
+                            className={`border rounded-lg p-2 cursor-pointer flex items-center gap-2 text-sm ${
+                              draftDuty.priority === p ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                            }`}
+                          >
+                            <RadioGroupItem value={p} />
+                            {priorityLabel[p]}
+                          </label>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={addDuty}
+                    type="button"
+                    className="bg-gradient-to-l from-fuchsia-600 to-pink-600 hover:opacity-90 text-white"
+                  >
+                    <Plus className="w-4 h-4 ml-1" />
+                    إضافة المهمة
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {currentStep.key === "personality" && (
               <>
                 <RadioBlock
