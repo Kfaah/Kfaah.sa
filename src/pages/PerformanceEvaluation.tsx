@@ -441,37 +441,37 @@ export default function PerformanceEvaluation() {
                 <Loader2 className="w-7 h-7 animate-spin text-primary" />
               </div>
             ) : (
-              <table className="w-full" dir="rtl">
+              <table className="w-full text-sm border-collapse" dir="rtl">
                 <thead>
                   <tr
-                    className="text-white text-sm"
+                    className="text-white text-[12px] uppercase tracking-wide"
                     style={{
                       background:
                         "linear-gradient(90deg, hsl(var(--sidebar-primary)) 0%, hsl(174 52% 45%) 100%)",
                     }}
                   >
-                    <th className="text-right p-4 font-bold sticky right-0 z-10"
+                    <th className="text-right py-2.5 px-3 font-semibold sticky right-0 z-10"
                         style={{ background: "hsl(var(--sidebar-primary))" }}>
                       الموظف
                     </th>
                     {criteria.map(c => {
                       const Icon = METRIC_ICONS[c.metric_key ?? ""] ?? Sparkles;
                       return (
-                        <th key={c.id} className="p-4 font-bold whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-2">
-                            <Icon className="w-4 h-4" />
+                        <th key={c.id} className="py-2.5 px-2 font-semibold whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <Icon className="w-3.5 h-3.5" />
                             <span>{c.name}</span>
                             {!c.is_automatic && (
                               <button onClick={() => deleteCriterion(c.id)}
-                                      className="text-white/70 hover:text-rose-200 ms-1">
-                                <Trash2 className="w-3.5 h-3.5" />
+                                      className="text-white/60 hover:text-rose-200 ms-0.5">
+                                <Trash2 className="w-3 h-3" />
                               </button>
                             )}
                           </div>
                         </th>
                       );
                     })}
-                    <th className="p-4 font-bold text-center border-r border-white/20"
+                    <th className="py-2.5 px-3 font-semibold text-center border-r border-white/20"
                         style={{ background: "hsl(174 52% 38%)" }}>
                       التقييم النهائي
                     </th>
@@ -491,13 +491,13 @@ export default function PerformanceEvaluation() {
                     return (
                       <tr key={e.id}
                           className={cn(
-                            "border-b border-border/50 transition-colors hover:bg-muted/40",
-                            idx % 2 === 0 ? "bg-background" : "bg-muted/20",
+                            "border-b border-border/40 transition-colors hover:bg-primary/5 group",
+                            idx % 2 === 0 ? "bg-background" : "bg-muted/15",
                           )}>
                         {/* Employee cell */}
-                        <td className="p-4 sticky right-0 bg-inherit z-[1]">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-amber-400 flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
+                        <td className="py-2 px-3 sticky right-0 bg-inherit z-[1]">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-amber-400 flex items-center justify-center text-white font-bold text-[11px] shadow-sm flex-shrink-0 ring-2 ring-white">
                               {e.avatar_url ? (
                                 <img src={e.avatar_url} alt={e.full_name} className="w-full h-full rounded-full object-cover" />
                               ) : (
@@ -505,8 +505,8 @@ export default function PerformanceEvaluation() {
                               )}
                             </div>
                             <div className="min-w-0">
-                              <div className="font-semibold text-sm truncate">{e.full_name}</div>
-                              <div className="text-xs text-muted-foreground truncate">
+                              <div className="font-semibold text-[13px] truncate leading-tight">{e.full_name}</div>
+                              <div className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
                                 {e.job_role || e.department_name || "—"}
                               </div>
                             </div>
@@ -519,29 +519,27 @@ export default function PerformanceEvaluation() {
                           const v = s ? Number(s.score) : null;
                           const t = v !== null ? scoreTone(v) : null;
                           return (
-                            <td key={c.id} className="p-3 text-center">
+                            <td key={c.id} className="py-1.5 px-2 text-center">
                               <button
                                 onClick={() => openScore(e.user_id!, c.id, e.full_name, c.name)}
                                 className={cn(
-                                  "group inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all",
-                                  "hover:scale-105 hover:shadow-md",
-                                  v !== null ? `${t!.bg} ring-1 ${t!.ring}` : "border border-dashed border-border hover:border-primary",
+                                  "inline-flex flex-col items-center gap-1 px-2.5 py-1 rounded-lg transition-all min-w-[58px]",
+                                  "hover:scale-105 hover:shadow-sm",
+                                  v !== null ? `${t!.bg} ring-1 ${t!.ring}` : "border border-dashed border-border/70 hover:border-primary text-muted-foreground hover:text-primary",
                                 )}
                               >
                                 {v !== null ? (
                                   <>
-                                    <span className={cn("text-lg font-bold leading-none", t!.text)}>
+                                    <span className={cn("text-[15px] font-bold leading-none tabular-nums", t!.text)}>
                                       {v}
                                     </span>
-                                    <span className="h-1 w-12 rounded-full bg-white/60 overflow-hidden">
+                                    <span className="h-[3px] w-10 rounded-full bg-white/70 overflow-hidden">
                                       <span className={cn("block h-full rounded-full bg-gradient-to-r", t!.grad)}
                                             style={{ width: `${v}%` }} />
                                     </span>
                                   </>
                                 ) : (
-                                  <span className="text-xs text-muted-foreground group-hover:text-primary">
-                                    + إضافة
-                                  </span>
+                                  <span className="text-[11px] py-1">＋</span>
                                 )}
                               </button>
                             </td>
@@ -549,15 +547,15 @@ export default function PerformanceEvaluation() {
                         })}
 
                         {/* Final score */}
-                        <td className="p-4 text-center bg-yellow-50/50">
-                          <div className="flex flex-col items-center gap-1">
+                        <td className="py-1.5 px-3 text-center bg-amber-50/40 border-r border-amber-100">
+                          <div className="flex flex-col items-center gap-0.5">
                             <div className={cn(
-                              "w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg shadow-md text-white bg-gradient-to-br",
+                              "w-11 h-11 rounded-full flex items-center justify-center font-bold text-[14px] shadow-sm text-white bg-gradient-to-br ring-2 ring-white tabular-nums",
                               tone.grad,
                             )}>
                               {final}
                             </div>
-                            <span className={cn("text-[11px] font-semibold", tone.text)}>{tone.label}</span>
+                            <span className={cn("text-[10px] font-semibold leading-tight", tone.text)}>{tone.label}</span>
                           </div>
                         </td>
                       </tr>
