@@ -664,7 +664,7 @@ function EmbeddedOrgPage({
           src={src}
           title={title}
           className="w-full border-0 bg-background"
-          style={{ height: "calc(100vh - 280px)", minHeight: 600 }}
+          style={{ height: "calc(100vh - 180px)", minHeight: 700 }}
         />
       </CardContent>
     </Card>
