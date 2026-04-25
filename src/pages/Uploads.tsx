@@ -71,12 +71,13 @@ interface HistoryRow {
   completed_at: string | null;
 }
 
-// كل الأنواع تستخدم هوية الجمعية (primary/accent) مع تمييز خفيف بالشفافية.
-// الحالات الدلالية فقط تحتفظ بألوان token-based (success/warning/destructive).
+// هوية حرف: تركوازي (primary/accent) + لمسة كهرمانية دافئة محدودة للجمالية.
 const BRAND_BG = "bg-[hsl(var(--primary))]";
 const BRAND_BG_SOFT = "bg-[hsl(var(--accent))]";
+const BRAND_BG_WARM = "bg-[hsl(38_85%_55%)]"; // كهرماني دافئ — accent جمالي محدود
 const BRAND_GRADIENT = "from-[hsl(var(--primary))] to-[hsl(var(--accent))]";
 const BRAND_GRADIENT_SOFT = "from-[hsl(var(--accent))] to-[hsl(var(--primary))]";
+const BRAND_GRADIENT_WARM = "from-[hsl(var(--primary))] to-[hsl(38_85%_55%)]"; // تركوازي → كهرماني
 
 const SCHEMA_LABELS: Record<string, { label: string; color: string }> = {
   donations: { label: "تبرعات", color: BRAND_BG },
@@ -84,10 +85,10 @@ const SCHEMA_LABELS: Record<string, { label: string; color: string }> = {
   store_daily: { label: "تبرعات المتجر اليومية", color: BRAND_BG_SOFT },
   failed_donations: { label: "تبرعات فاشلة", color: "bg-destructive" },
   bank_transfers: { label: "تحويلات بنكية", color: BRAND_BG },
-  abandoned_carts: { label: "سلال متروكة", color: "bg-warning" },
-  campaigns: { label: "حملات", color: BRAND_BG_SOFT },
+  abandoned_carts: { label: "سلال متروكة", color: BRAND_BG_WARM },
+  campaigns: { label: "حملات", color: BRAND_BG_WARM },
   subscriptions: { label: "استقطاعات/اشتراكات", color: BRAND_BG },
-  gifts: { label: "إهداءات", color: BRAND_BG_SOFT },
+  gifts: { label: "إهداءات", color: BRAND_BG_WARM },
   staff_duties: { label: "مهام الموظفين", color: BRAND_BG },
   reports: { label: "تقارير", color: BRAND_BG_SOFT },
   profiles: { label: "ملفات تعريفية", color: BRAND_BG },
@@ -104,13 +105,13 @@ const CATEGORY_OPTIONS: {
   icon: any;
   color: string;
 }[] = [
-  { value: "auto", label: "بيانات عامة عن الجمعية", desc: "أي بيانات عامة عن الجمعية", icon: Sparkles, color: BRAND_GRADIENT },
+  { value: "auto", label: "بيانات عامة عن الجمعية", desc: "أي بيانات عامة عن الجمعية", icon: Sparkles, color: BRAND_GRADIENT_WARM },
   { value: "store_master", label: "ملف المتجر (الضخم)", desc: "ملف تبرعات المتجر منذ تأسيس المتجر", icon: Database, color: BRAND_GRADIENT },
   { value: "store_daily", label: "تبرعات المتجر اليومية", desc: "ملف تبرعات المتجر اليومي", icon: HeartHandshake, color: BRAND_GRADIENT_SOFT },
   { value: "staff_duties", label: "مهام موظفي المتجر", desc: "ربط المهام بكل موظف تلقائياً", icon: Users, color: BRAND_GRADIENT },
   { value: "reports", label: "تقارير", desc: "تقارير دورية، ملفات تحليلية", icon: FileText, color: BRAND_GRADIENT_SOFT },
   { value: "profiles", label: "ملفات تعريفية", desc: "بروفايلات، تعاريف موظفين/جمعية", icon: IdCard, color: BRAND_GRADIENT },
-  { value: "tasks", label: "مهام/خطط", desc: "ملفات مهام أو خطط للأرشفة", icon: ListChecks, color: BRAND_GRADIENT_SOFT },
+  { value: "tasks", label: "مهام/خطط", desc: "ملفات مهام أو خطط للأرشفة", icon: ListChecks, color: BRAND_GRADIENT_WARM },
   { value: "other", label: "ملفات أخرى", desc: "أي ملف آخر للأرشفة والتحليل", icon: FolderOpen, color: BRAND_GRADIENT },
 ];
 
