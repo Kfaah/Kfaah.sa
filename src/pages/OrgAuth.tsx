@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight } from "lucide-react";
+import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone } from "lucide-react";
 
 interface OrgInfo {
   id: string;
@@ -17,6 +17,10 @@ interface OrgInfo {
   logo_url: string | null;
   is_active: boolean;
   allow_self_signup: boolean;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  primary_color?: string | null;
+  accent_color?: string | null;
 }
 
 const normalizeDigits = (value: string, trim = false) => {
@@ -27,6 +31,31 @@ const normalizeDigits = (value: string, trim = false) => {
     .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
     .replace(/[۰-۹]/g, (d) => String(persian.indexOf(d)));
 };
+
+/** Convert "#rrggbb" → "h s% l%" string for CSS HSL tokens. */
+function hexToHsl(hex: string | null | undefined): string | null {
+  if (!hex) return null;
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const int = parseInt(m[1], 16);
+  const r = ((int >> 16) & 255) / 255;
+  const g = ((int >> 8) & 255) / 255;
+  const b = (int & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+      case g: h = ((b - r) / d + 2); break;
+      case b: h = ((r - g) / d + 4); break;
+    }
+    h *= 60;
+  }
+  return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
 
 export default function OrgAuth() {
   const { slug } = useParams<{ slug: string }>();
@@ -58,9 +87,31 @@ export default function OrgAuth() {
       const { data, error } = await supabase.rpc("get_organization_by_slug", { _slug: slug });
       if (error || !data || data.length === 0) {
         setOrgError("لم يتم العثور على الجمعية أو أنها غير نشطة");
-      } else {
-        setOrg(data[0] as OrgInfo);
+        setOrgLoading(false);
+        return;
       }
+      const baseOrg = data[0] as OrgInfo;
+      // Pull richer branding (colors + contact) without requiring auth
+      const [{ data: orgRow }, { data: profRow }] = await Promise.all([
+        supabase
+          .from("organizations")
+          .select("contact_email, contact_phone, logo_url")
+          .eq("id", baseOrg.id)
+          .maybeSingle(),
+        supabase
+          .from("organization_profiles")
+          .select("logo_url, primary_color, accent_color")
+          .eq("organization_id", baseOrg.id)
+          .maybeSingle(),
+      ]);
+      setOrg({
+        ...baseOrg,
+        logo_url: profRow?.logo_url || orgRow?.logo_url || baseOrg.logo_url,
+        contact_email: orgRow?.contact_email ?? null,
+        contact_phone: orgRow?.contact_phone ?? null,
+        primary_color: profRow?.primary_color ?? null,
+        accent_color: profRow?.accent_color ?? null,
+      });
       setOrgLoading(false);
     })();
   }, [slug]);
@@ -183,23 +234,124 @@ export default function OrgAuth() {
     );
   }
 
+  const primaryHsl = hexToHsl(org.primary_color) || "210 60% 28%";
+  const accentHsl  = hexToHsl(org.accent_color)  || "174 52% 52%";
+  const brandStyle = {
+    ["--brand-primary" as any]: primaryHsl,
+    ["--brand-accent"  as any]: accentHsl,
+  } as React.CSSProperties;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4" dir="rtl">
-      <div className="w-full max-w-md">
-        {/* Org branding */}
-        <div className="text-center mb-6">
-          <div className="mx-auto w-24 h-24 rounded-2xl bg-white shadow-lg border border-border flex items-center justify-center overflow-hidden mb-4">
-            {org.logo_url ? (
-              <img src={org.logo_url} alt={org.name} className="w-full h-full object-contain p-2" />
-            ) : (
-              <Building2 className="w-12 h-12 text-primary" />
-            )}
+    <div
+      className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
+      dir="rtl"
+      style={{
+        ...brandStyle,
+        background: `radial-gradient(circle at 20% 10%, hsl(${accentHsl} / 0.18), transparent 55%),
+                     radial-gradient(circle at 80% 90%, hsl(${primaryHsl} / 0.18), transparent 55%),
+                     linear-gradient(135deg, hsl(${primaryHsl} / 0.08) 0%, hsl(0 0% 98%) 50%, hsl(${accentHsl} / 0.08) 100%)`,
+      }}
+    >
+      {/* Decorative ambient blobs */}
+      <div
+        className="pointer-events-none absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full blur-3xl opacity-40"
+        style={{ background: `hsl(${primaryHsl} / 0.45)` }}
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -bottom-32 -left-32 w-[420px] h-[420px] rounded-full blur-3xl opacity-40"
+        style={{ background: `hsl(${accentHsl} / 0.45)` }}
+        aria-hidden="true"
+      />
+
+      <div className="relative w-full max-w-md">
+        {/* Org branding with orbiting rings */}
+        <div className="text-center mb-7">
+          <div className="relative mx-auto w-44 h-44 mb-5">
+            {/* Outer pulsing halo */}
+            <div
+              className="absolute inset-0 rounded-full org-halo-pulse"
+              style={{
+                background: `radial-gradient(circle, hsl(${accentHsl} / 0.35) 0%, transparent 70%)`,
+              }}
+              aria-hidden="true"
+            />
+
+            {/* Outer ring — slow clockwise, dashed */}
+            <div
+              className="absolute inset-0 rounded-full org-spin-slow"
+              style={{
+                border: `2px dashed hsl(${primaryHsl} / 0.45)`,
+              }}
+              aria-hidden="true"
+            />
+
+            {/* Mid ring — reverse direction, gradient conic */}
+            <div
+              className="absolute inset-2 rounded-full org-spin-reverse"
+              style={{
+                background: `conic-gradient(from 0deg, hsl(${primaryHsl}) 0%, transparent 30%, hsl(${accentHsl}) 60%, transparent 90%, hsl(${primaryHsl}) 100%)`,
+                WebkitMask: "radial-gradient(circle, transparent 62%, #000 64%, #000 70%, transparent 72%)",
+                mask: "radial-gradient(circle, transparent 62%, #000 64%, #000 70%, transparent 72%)",
+              }}
+              aria-hidden="true"
+            />
+
+            {/* Orbiting dots */}
+            <div className="absolute inset-0 org-spin-medium" aria-hidden="true">
+              <span
+                className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-3 h-3 rounded-full shadow-lg"
+                style={{ background: `hsl(${accentHsl})`, boxShadow: `0 0 12px hsl(${accentHsl})` }}
+              />
+            </div>
+            <div className="absolute inset-0 org-spin-reverse" aria-hidden="true">
+              <span
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-2.5 h-2.5 rounded-full shadow-lg"
+                style={{ background: `hsl(${primaryHsl})`, boxShadow: `0 0 10px hsl(${primaryHsl})` }}
+              />
+              <span
+                className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1 w-2 h-2 rounded-full shadow-lg"
+                style={{ background: `hsl(${accentHsl})`, boxShadow: `0 0 8px hsl(${accentHsl})` }}
+              />
+            </div>
+
+            {/* Logo card center */}
+            <div
+              className="absolute inset-6 rounded-full bg-white shadow-2xl flex items-center justify-center overflow-hidden"
+              style={{
+                boxShadow: `0 20px 50px -10px hsl(${primaryHsl} / 0.45), 0 0 0 4px white, 0 0 0 5px hsl(${primaryHsl} / 0.25)`,
+              }}
+            >
+              {org.logo_url ? (
+                <img
+                  src={org.logo_url}
+                  alt={org.name}
+                  className="w-full h-full object-contain p-3"
+                  loading="eager"
+                />
+              ) : (
+                <Building2 className="w-12 h-12" style={{ color: `hsl(${primaryHsl})` }} />
+              )}
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">{org.name}</h1>
-          <p className="text-sm text-muted-foreground mt-1">نظام إدارة التسويق الإلكتروني</p>
+
+          <h1
+            className="text-3xl font-extrabold tracking-tight"
+            style={{ color: `hsl(${primaryHsl})` }}
+          >
+            {org.name}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1.5">منصّة إدارة الجمعية الذكية</p>
+
+          {/* Decorative divider */}
+          <div className="flex items-center justify-center gap-2 mt-3" aria-hidden="true">
+            <span className="h-px w-10" style={{ background: `hsl(${primaryHsl} / 0.4)` }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: `hsl(${accentHsl})` }} />
+            <span className="h-px w-10" style={{ background: `hsl(${primaryHsl} / 0.4)` }} />
+          </div>
         </div>
 
-        <Card className="shadow-2xl border-0">
+        <Card className="shadow-2xl border border-white/60 backdrop-blur-sm bg-white/95">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-xl">
               {isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"}
@@ -269,20 +421,56 @@ export default function OrgAuth() {
                 </>
               )}
 
-              <Button type="submit" className="w-full h-12 gap-2 bg-gradient-to-l from-accent to-primary hover:opacity-90" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full h-12 gap-2 text-white border-0 hover:opacity-90"
+                style={{
+                  background: `linear-gradient(to left, hsl(${accentHsl}), hsl(${primaryHsl}))`,
+                }}
+                disabled={loading}
+              >
                 {loading ? <span className="animate-spin">⏳</span> : isLogin ? <><LogIn className="w-5 h-5" /> تسجيل الدخول</> : <><UserPlus className="w-5 h-5" /> إنشاء حساب</>}
               </Button>
             </form>
 
             {org.allow_self_signup && (
               <div className="mt-6 text-center">
-                <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-accent hover:underline font-medium text-sm">
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="hover:underline font-medium text-sm"
+                  style={{ color: `hsl(${accentHsl})` }}
+                >
                   {isLogin ? "ليس لديك حساب؟ أنشئ حساباً جديداً" : "لديك حساب؟ سجل الدخول"}
                 </button>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Contact info chip */}
+        {(org.contact_phone || org.contact_email) && (
+          <div
+            className="mt-4 flex items-center justify-center gap-3 text-xs px-4 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 shadow-sm w-fit mx-auto"
+            style={{ color: `hsl(${primaryHsl})` }}
+          >
+            {org.contact_phone && (
+              <span className="inline-flex items-center gap-1.5 font-medium" dir="ltr">
+                <Phone className="w-3.5 h-3.5" />
+                {org.contact_phone}
+              </span>
+            )}
+            {org.contact_phone && org.contact_email && (
+              <span className="w-px h-3" style={{ background: `hsl(${primaryHsl} / 0.3)` }} />
+            )}
+            {org.contact_email && (
+              <span className="inline-flex items-center gap-1.5 font-medium" dir="ltr">
+                <Mail className="w-3.5 h-3.5" />
+                {org.contact_email}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="text-center mt-4">
           <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
