@@ -110,10 +110,12 @@ const METRIC_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 };
 
 function scoreTone(v: number) {
-  if (v >= 85) return { text: "text-emerald-600", bg: "bg-emerald-50", ring: "ring-emerald-200", grad: "from-emerald-500 to-teal-500", label: "ممتاز" };
-  if (v >= 70) return { text: "text-sky-600", bg: "bg-sky-50", ring: "ring-sky-200", grad: "from-sky-500 to-blue-500", label: "جيد جداً" };
-  if (v >= 50) return { text: "text-amber-600", bg: "bg-amber-50", ring: "ring-amber-200", grad: "from-amber-500 to-orange-500", label: "مقبول" };
-  return { text: "text-rose-600", bg: "bg-rose-50", ring: "ring-rose-200", grad: "from-rose-500 to-red-500", label: "ضعيف" };
+  if (v >= 96) return { text: "text-emerald-700", bg: "bg-emerald-50", ring: "ring-emerald-200", grad: "from-emerald-500 to-teal-500", label: "ممتاز جداً" };
+  if (v >= 90) return { text: "text-emerald-600", bg: "bg-emerald-50", ring: "ring-emerald-200", grad: "from-emerald-500 to-green-500", label: "ممتاز" };
+  if (v >= 80) return { text: "text-sky-600",     bg: "bg-sky-50",     ring: "ring-sky-200",     grad: "from-sky-500 to-blue-500",       label: "جيد جداً" };
+  if (v >= 70) return { text: "text-indigo-600",  bg: "bg-indigo-50",  ring: "ring-indigo-200",  grad: "from-indigo-500 to-violet-500",  label: "جيد" };
+  if (v >= 60) return { text: "text-amber-600",   bg: "bg-amber-50",   ring: "ring-amber-200",   grad: "from-amber-500 to-orange-500",   label: "مقبول" };
+  return         { text: "text-rose-600",    bg: "bg-rose-50",    ring: "ring-rose-200",    grad: "from-rose-500 to-red-500",       label: "ضعيف" };
 }
 
 function initials(name: string) {
