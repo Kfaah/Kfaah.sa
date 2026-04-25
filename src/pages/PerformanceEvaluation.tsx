@@ -51,11 +51,54 @@ type ScoreRow = {
 };
 
 const PERIODS = [
-  { value: "day", label: "يومي" },
-  { value: "week", label: "أسبوعي" },
-  { value: "month", label: "شهري" },
-  { value: "year", label: "سنوي" },
+  { value: "yesterday", label: "أمس" },
+  { value: "last_week", label: "الأسبوع الماضي" },
+  { value: "month_to_date", label: "الشهر حتى الآن" },
+  { value: "last_month", label: "الشهر الماضي" },
+  { value: "last_year", label: "السنة الماضية" },
+  { value: "custom", label: "فترة مخصصة" },
 ];
+
+/** Map a period preset to ISO date range [start, end] (inclusive). */
+function rangeForPeriod(p: string, customFrom?: string, customTo?: string): { start: string; end: string; label: string } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+
+  switch (p) {
+    case "yesterday":
+      return { start: fmt(yesterday), end: fmt(yesterday), label: `أمس (${fmt(yesterday)})` };
+    case "last_week": {
+      // Last completed week: previous Sunday → previous Saturday
+      const dow = today.getDay(); // 0 (Sun) .. 6 (Sat)
+      const lastSat = new Date(today); lastSat.setDate(today.getDate() - dow - 1);
+      const lastSun = new Date(lastSat); lastSun.setDate(lastSat.getDate() - 6);
+      return { start: fmt(lastSun), end: fmt(lastSat), label: `الأسبوع الماضي (${fmt(lastSun)} → ${fmt(lastSat)})` };
+    }
+    case "month_to_date": {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      return { start: fmt(first), end: fmt(yesterday), label: `الشهر حتى الآن (${fmt(first)} → ${fmt(yesterday)})` };
+    }
+    case "last_month": {
+      const firstThis = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastPrev = new Date(firstThis); lastPrev.setDate(0);
+      const firstPrev = new Date(lastPrev.getFullYear(), lastPrev.getMonth(), 1);
+      return { start: fmt(firstPrev), end: fmt(lastPrev), label: `الشهر الماضي (${fmt(firstPrev)} → ${fmt(lastPrev)})` };
+    }
+    case "last_year": {
+      const y = today.getFullYear() - 1;
+      return { start: `${y}-01-01`, end: `${y}-12-31`, label: `السنة الماضية (${y})` };
+    }
+    case "custom": {
+      const s = customFrom || fmt(yesterday);
+      const e = customTo || fmt(yesterday);
+      return { start: s, end: e, label: `${s} → ${e}` };
+    }
+    default:
+      return { start: fmt(yesterday), end: fmt(yesterday), label: "أمس" };
+  }
+}
 
 const METRIC_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   task_completion: CheckCircle2,
