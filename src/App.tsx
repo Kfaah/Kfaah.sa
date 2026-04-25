@@ -246,6 +246,8 @@ function AppRoutes() {
       <Route path="/employee-onboarding" element={<ProtectedRoute><EmployeeOnboarding /></ProtectedRoute>} />
       <Route path="/staff-duties-upload" element={<ProtectedRoute><StaffDutiesUpload /></ProtectedRoute>} />
       <Route path="/my-assistant" element={<ProtectedRoute><MyAssistant /></ProtectedRoute>} />
+      <Route path="/performance" element={<ProtectedRoute><PerformanceEvaluation /></ProtectedRoute>} />
+      <Route path="/:slug/performance" element={<ProtectedRoute><PerformanceEvaluation /></ProtectedRoute>} />
 
       {/* Org-scoped aliases: charity-crm.org/atff/app, /atff/tasks ... */}
       <Route path="/:slug/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
