@@ -97,7 +97,7 @@ const CATEGORY_OPTIONS: {
   icon: any;
   color: string;
 }[] = [
-  { value: "auto", label: "كشف تلقائي (بيانات الجمعية)", desc: "تبرعات/سلال/حملات/استقطاعات...", icon: Sparkles, color: "from-fuchsia-500 to-pink-600" },
+  { value: "auto", label: "بيانات عامة عن الجمعية", desc: "أي بيانات عامة عن الجمعية", icon: Sparkles, color: "from-fuchsia-500 to-pink-600" },
   { value: "store_master", label: "ملف المتجر (الضخم)", desc: "ملف تبرعات المتجر منذ تأسيس المتجر", icon: Database, color: "from-emerald-700 to-teal-800" },
   { value: "store_daily", label: "تبرعات المتجر اليومية", desc: "ملف تبرعات المتجر اليومي", icon: HeartHandshake, color: "from-emerald-500 to-teal-600" },
   { value: "staff_duties", label: "مهام موظفي المتجر", desc: "ربط المهام بكل موظف تلقائياً", icon: Users, color: "from-indigo-500 to-violet-600" },
