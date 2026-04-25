@@ -1094,14 +1094,7 @@ function getInitials(name: string): string {
   return (parts[0][0] ?? "") + (parts[1][0] ?? "");
 }
 
-// هوية جمعية حرف — تركوازي بحري (مأخوذ من الشعار)
-const HARF = {
-  primary: "#2BA0B5",      // Teal من شعار حرف
-  primaryDark: "#1B7A8A",
-  primarySoft: "#E1F2F4",
-  accent: "#4FBFD1",
-};
-const HARF_GRADIENT = `linear-gradient(135deg, ${HARF.primary} 0%, ${HARF.accent} 100%)`;
+// هوية الجمعية تأتي من tokens النظام (يتم تطبيقها تلقائياً عبر OrgBrandingContext من قاعدة البيانات)
 
 function EmployeesShowcase({
   employees,
