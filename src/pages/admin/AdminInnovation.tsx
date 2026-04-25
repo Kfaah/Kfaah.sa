@@ -222,15 +222,17 @@ export default function AdminInnovation() {
       {/* Filters */}
       <Card className="p-3 bg-card border-border" dir="rtl">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 min-w-[260px]" dir="rtl">
-            <Building2 className="w-4 h-4 text-muted-foreground" />
-            <Select value={orgId} onValueChange={setOrgId} dir="rtl">
-              <SelectTrigger className="flex-1 text-right"><SelectValue placeholder="اختر جمعية..." /></SelectTrigger>
-              <SelectContent>
-                {metrics.map((m) => (<SelectItem key={m.org_id} value={m.org_id}>{m.org_name}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isEmbedded && (
+            <div className="flex items-center gap-2 flex-1 min-w-[260px]" dir="rtl">
+              <Building2 className="w-4 h-4 text-muted-foreground" />
+              <Select value={orgId} onValueChange={setOrgId} dir="rtl">
+                <SelectTrigger className="flex-1 text-right"><SelectValue placeholder="اختر جمعية..." /></SelectTrigger>
+                <SelectContent>
+                  {visibleMetrics.map((m) => (<SelectItem key={m.org_id} value={m.org_id}>{m.org_name}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <DateRangeFilter value={range} onChange={setRange} />
         </div>
       </Card>
