@@ -60,9 +60,9 @@ export function AssistantFab() {
       className={cn(
         "fixed bottom-6 left-6 z-50 group",
         "flex items-center gap-2 rounded-full",
-        "bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600",
-        "text-white shadow-2xl shadow-fuchsia-500/40",
-        "px-5 py-3 transition-all hover:scale-105 hover:shadow-fuchsia-500/60",
+        "bg-gradient-to-br from-emerald-600 via-green-500 to-yellow-400",
+        "text-white shadow-2xl shadow-emerald-500/40",
+        "px-5 py-3 transition-all hover:scale-105 hover:shadow-emerald-500/60",
         "ring-2 ring-white/30 hover:ring-white/60",
       )}
     >
