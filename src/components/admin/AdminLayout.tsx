@@ -48,6 +48,45 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const isEmbedded =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("embedded") === "1";
+  const orgSlug =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("org")
+      : null;
+  const [orgBgStyle, setOrgBgStyle] = useState<string | null>(null);
+
+  // When embedded inside an organization dashboard, derive the page
+  // background from that organization's brand identity so the inner
+  // pages (innovation, action plans, reports, ...) feel native to the org.
+  useEffect(() => {
+    if (!isEmbedded || !orgSlug) return;
+    let cancelled = false;
+    (async () => {
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("slug", orgSlug)
+        .maybeSingle();
+      if (!org?.id || cancelled) return;
+      const { data: profile } = await supabase
+        .from("organization_profiles")
+        .select("primary_color, secondary_color")
+        .eq("organization_id", org.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const primary = (profile as Record<string, string | null> | null)?.primary_color;
+      const secondary = (profile as Record<string, string | null> | null)?.secondary_color;
+      if (primary) {
+        // Soft, branded surface — primary tinted, very light so the page
+        // content (cards/tables) remains readable.
+        const tint = secondary || primary;
+        setOrgBgStyle(
+          `linear-gradient(135deg, ${primary}14 0%, ${tint}1F 50%, ${primary}1A 100%)`,
+        );
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isEmbedded, orgSlug]);
+
   const [profile, setProfile] = useState<{ name: string; avatar: string | null }>({
     name: "مدير النظام",
     avatar: null,
@@ -109,6 +148,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         dir="rtl"
         style={{
           background:
+            orgBgStyle ||
             "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
         }}
       >
