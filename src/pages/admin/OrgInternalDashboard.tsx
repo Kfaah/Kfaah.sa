@@ -5,6 +5,7 @@ import {
   Lightbulb, ShieldAlert, Upload, HeartHandshake, Building2,
   Loader2, Sparkles, ExternalLink, Target, AlertTriangle, CheckCircle2,
   GitCompareArrows, CalendarCheck, ClipboardList, FileSpreadsheet, XCircle,
+  Database, FileText, IdCard, FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -683,14 +684,43 @@ const SCHEMA_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 type UploadStatus = "queued" | "uploading" | "success" | "error";
+type UploadCategory =
+  | "auto"
+  | "store_master"
+  | "store_daily"
+  | "staff_duties"
+  | "reports"
+  | "profiles"
+  | "tasks"
+  | "other";
+
 interface PendingFile {
   id: string;
   file: File;
   status: UploadStatus;
   progress: number;
+  category: UploadCategory;
   result?: { detected: string; inserted: number; duplicates: number; failed: number };
   error?: string;
 }
+
+const ADMIN_CATEGORY_OPTIONS: {
+  value: UploadCategory;
+  label: string;
+  desc: string;
+  icon: any;
+  color: string;
+}[] = [
+  { value: "auto", label: "بيانات عامة عن الجمعية", desc: "أي بيانات عامة عن الجمعية", icon: Sparkles, color: "from-fuchsia-500 to-pink-600" },
+  { value: "store_master", label: "ملف المتجر (الضخم)", desc: "ملف تبرعات المتجر منذ تأسيس المتجر", icon: Database, color: "from-emerald-700 to-teal-800" },
+  { value: "store_daily", label: "تبرعات المتجر اليومية", desc: "ملف تبرعات المتجر اليومي", icon: HeartHandshake, color: "from-emerald-500 to-teal-600" },
+  { value: "staff_duties", label: "مهام موظفي المتجر", desc: "ربط المهام بكل موظف تلقائياً", icon: Users, color: "from-indigo-500 to-violet-600" },
+  { value: "reports", label: "تقارير", desc: "تقارير دورية، ملفات تحليلية", icon: FileText, color: "from-rose-500 to-pink-600" },
+  { value: "profiles", label: "ملفات تعريفية", desc: "بروفايلات، تعاريف موظفين/جمعية", icon: IdCard, color: "from-amber-500 to-orange-600" },
+  { value: "tasks", label: "مهام/خطط", desc: "ملفات مهام أو خطط للأرشفة", icon: ListChecks, color: "from-orange-500 to-amber-600" },
+  { value: "other", label: "ملفات أخرى", desc: "أي ملف آخر للأرشفة والتحليل", icon: FolderOpen, color: "from-slate-500 to-slate-600" },
+];
+
 interface HistoryRow {
   id: string;
   file_name: string;
@@ -709,6 +739,7 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
     d.setDate(d.getDate() - 1);
     return d.toISOString().split("T")[0];
   });
+  const [category, setCategory] = useState<UploadCategory>("auto");
   const [pending, setPending] = useState<PendingFile[]>([]);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -733,19 +764,58 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
   const processFile = async (pf: PendingFile) => {
     setPending((prev) => prev.map((p) => p.id === pf.id ? { ...p, status: "uploading", progress: 30 } : p));
     try {
-      const formData = new FormData();
-      formData.append("file", pf.file);
-      if (forDate) formData.append("for_date", forDate);
-      formData.append("target_organization_id", orgId);
+      let result: PendingFile["result"];
 
-      const { data, error } = await supabase.functions.invoke("process-upload", { body: formData });
-      if (error) throw error;
+      if (
+        pf.category === "reports" ||
+        pf.category === "profiles" ||
+        pf.category === "tasks" ||
+        pf.category === "other" ||
+        pf.category === "staff_duties"
+      ) {
+        // أرشفة الملف في تخزين الجمعية + تسجيله في سجل الرفع
+        const path = `${orgId}/archive/${pf.category}/${Date.now()}_${pf.file.name}`;
+        const { error: upErr } = await supabase.storage
+          .from("data-uploads")
+          .upload(path, pf.file, { upsert: false });
+        if (upErr) throw upErr;
 
-      setPending((prev) => prev.map((p) => p.id === pf.id ? {
-        ...p, status: "success", progress: 100,
-        result: { detected: data.detected, inserted: data.inserted ?? 0, duplicates: data.duplicates ?? 0, failed: data.failed ?? 0 },
-      } : p));
-      toast.success(`تم رفع "${pf.file.name}" — ${data.inserted ?? 0} سجل لجمعية ${orgName}`);
+        const { data: authData } = await supabase.auth.getUser();
+        await supabase.from("data_uploads_log").insert({
+          uploaded_by: authData.user?.id ?? "",
+          organization_id: orgId,
+          file_name: pf.file.name,
+          file_type: pf.file.type || "application/octet-stream",
+          detected_schema: pf.category,
+          total_rows: 0,
+          inserted_rows: 1,
+          duplicate_rows: 0,
+          failed_rows: 0,
+          for_date: forDate || null,
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        });
+        result = { detected: pf.category, inserted: 1, duplicates: 0, failed: 0 };
+      } else {
+        const formData = new FormData();
+        formData.append("file", pf.file);
+        if (forDate) formData.append("for_date", forDate);
+        formData.append("target_organization_id", orgId);
+        if (pf.category === "store_master") formData.append("source_kind", "store_master");
+        if (pf.category === "store_daily") formData.append("source_kind", "store_daily");
+
+        const { data, error } = await supabase.functions.invoke("process-upload", { body: formData });
+        if (error) throw error;
+        result = {
+          detected: data.detected,
+          inserted: data.inserted ?? 0,
+          duplicates: data.duplicates ?? 0,
+          failed: data.failed ?? 0,
+        };
+      }
+
+      setPending((prev) => prev.map((p) => p.id === pf.id ? { ...p, status: "success", progress: 100, result } : p));
+      toast.success(`تم رفع "${pf.file.name}" — ${result?.inserted ?? 0} سجل لجمعية ${orgName}`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "فشل الرفع";
       setPending((prev) => prev.map((p) => p.id === pf.id ? { ...p, status: "error", progress: 100, error: msg } : p));
@@ -756,13 +826,24 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
   };
 
   const handleFiles = (files: FileList | File[]) => {
-    const arr = Array.from(files).filter((f) => /\.(xlsx|xls|csv)$/i.test(f.name));
+    const isDataCategory =
+      category === "auto" ||
+      category === "store_master" ||
+      category === "store_daily";
+    const arr = Array.from(files).filter((f) => {
+      if (isDataCategory) return /\.(xlsx|xls|csv)$/i.test(f.name);
+      return f.size <= 50 * 1024 * 1024;
+    });
     if (arr.length === 0) {
-      toast.error("الرجاء اختيار ملفات Excel أو CSV فقط");
+      toast.error(
+        isDataCategory
+          ? "الرجاء اختيار ملفات Excel أو CSV فقط"
+          : "تعذر قبول الملفات (الحد الأقصى 50MB)",
+      );
       return;
     }
     const newPending: PendingFile[] = arr.map((f) => ({
-      id: crypto.randomUUID(), file: f, status: "queued", progress: 0,
+      id: crypto.randomUUID(), file: f, status: "queued", progress: 0, category,
     }));
     setPending((prev) => [...prev, ...newPending]);
     // Do NOT auto-upload — wait for user to click "بدء الرفع والتحليل".
@@ -790,9 +871,49 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
   };
 
   const queuedCount = pending.filter((p) => p.status === "queued" || p.status === "error").length;
+  const activeCat = ADMIN_CATEGORY_OPTIONS.find((c) => c.value === category)!;
+  const ActiveIcon = activeCat.icon;
+  const isDataCategory =
+    category === "auto" || category === "store_master" || category === "store_daily";
 
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Category selector */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FolderOpen className="w-5 h-5 text-primary" />
+            نوع الملف
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {ADMIN_CATEGORY_OPTIONS.map((opt) => {
+              const Icon = opt.icon;
+              const active = category === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setCategory(opt.value)}
+                  className={`text-right rounded-xl border-2 p-3 transition-all ${
+                    active
+                      ? "border-primary bg-primary/5 shadow-md"
+                      : "border-border hover:border-primary/40 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${opt.color} flex items-center justify-center mb-2 shadow`}>
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-800">{opt.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-tight">{opt.desc}</p>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-end gap-4 flex-wrap">
@@ -819,18 +940,22 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
             ref={(el) => { fileInputEl = el; }}
             type="file"
             multiple
-            accept=".xlsx,.xls,.csv"
+            accept={isDataCategory ? ".xlsx,.xls,.csv" : undefined}
             className="hidden"
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
           />
           <div className="flex flex-col items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center">
-              <Upload className="w-10 h-10 text-rose-500" />
+            <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${activeCat.color} flex items-center justify-center shadow-lg`}>
+              <ActiveIcon className="w-10 h-10 text-white" />
             </div>
             <div>
-              <p className="text-xl font-semibold">اسحب الملفات هنا</p>
+              <p className="text-xl font-semibold">
+                اسحب ملفات <span className="text-primary">{activeCat.label}</span> هنا
+              </p>
               <p className="text-sm text-muted-foreground mt-1">
-                ارفع كل الملفات (تبرعات، حملات، استقطاعات، سلال…) ثم اضغط <span className="font-semibold text-foreground">بدء الرفع</span>. ثم انتقل إلى تبويب <span className="font-semibold text-foreground">التحليل الذكي</span> لتشغيل التحليل.
+                {isDataCategory
+                  ? <>اختر ملفات Excel/CSV ثم اضغط <span className="font-semibold text-foreground">بدء الرفع</span>. ثم انتقل إلى تبويب <span className="font-semibold text-foreground">التحليل الذكي</span> لتشغيل التحليل.</>
+                  : "أو انقر للاختيار — يقبل أي صيغة (PDF, Word, Excel, صور…) حتى 50MB"}
               </p>
             </div>
             <Button variant="outline" type="button">
