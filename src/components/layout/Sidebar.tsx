@@ -112,6 +112,7 @@ export function Sidebar() {
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">(
     isActuallyAdmin || isAdminArea ? "admin" : "employee"
   );
+  const [roleReady, setRoleReady] = useState(isActuallyAdmin || isAdminArea);
 
   // خلفية واحدة ثابتة من أعلى القائمة إلى أسفلها بدون أي تدرج.
   const sidebarBgStyle = branding.primary
@@ -119,14 +120,30 @@ export function Sidebar() {
         backgroundColor: branding.primary,
       }
     : undefined;
+  const visibleNavItems = previewAsEmployee
+    ? employeeNavItems
+    : !roleReady
+      ? []
+      : roleLevel === "admin"
+        ? adminNavItems
+        : roleLevel === "manager"
+          ? managerNavItems
+          : employeeNavItems;
 
   // Resolve role_level from employees table to know which menu to show
   useEffect(() => {
     const fetchRoleLevel = async () => {
-      if (!authUser) return;
+      if (!authUser) {
+        setRoleLevel("employee");
+        setRoleReady(true);
+        return;
+      }
+
+      setRoleReady(false);
 
       if (isActuallyAdmin || isAdminArea) {
         setRoleLevel("admin");
+        setRoleReady(true);
         return;
       }
 
@@ -136,6 +153,7 @@ export function Sidebar() {
       });
       if (userRole === "admin" || userRole === "super_admin") {
         setRoleLevel("admin");
+        setRoleReady(true);
         return;
       }
 
@@ -150,6 +168,7 @@ export function Sidebar() {
       } else {
         setRoleLevel("employee");
       }
+      setRoleReady(true);
     };
     fetchRoleLevel();
   }, [authUser, isActuallyAdmin, isAdminArea]);
@@ -515,15 +534,7 @@ export function Sidebar() {
           }}
         >
           <div className="space-y-2.5" dir="rtl">
-            {/* عرض القائمة حسب مستوى الصلاحية (admin/manager/employee) أو وضع المعاينة */}
-            {(previewAsEmployee
-              ? employeeNavItems
-              : roleLevel === "admin"
-                ? adminNavItems
-                : roleLevel === "manager"
-                  ? managerNavItems
-                  : employeeNavItems
-            ).map((item) => (
+            {visibleNavItems.map((item) => (
               <div key={item.href}>
                 <NavLink item={item} />
               </div>
