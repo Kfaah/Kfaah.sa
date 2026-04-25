@@ -1085,3 +1085,191 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
     </div>
   );
 }
+
+// ===== Creative Employees Showcase =====
+function getInitials(name: string): string {
+  if (!name) return "؟";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2);
+  return (parts[0][0] ?? "") + (parts[1][0] ?? "");
+}
+
+const AVATAR_GRADIENTS = [
+  "from-primary to-accent",
+  "from-accent to-primary",
+  "from-emerald-500 to-teal-600",
+  "from-amber-500 to-orange-600",
+  "from-rose-500 to-pink-600",
+  "from-sky-500 to-indigo-600",
+  "from-violet-500 to-fuchsia-600",
+];
+
+function EmployeesShowcase({
+  employees,
+  questions,
+  empSearch,
+  setEmpSearch,
+  orgSlug,
+}: {
+  employees: Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null }>;
+  questions: AccountabilityQuestion[];
+  empSearch: string;
+  setEmpSearch: (v: string) => void;
+  orgSlug: string | undefined;
+}) {
+  const filtered = employees.filter((e) => {
+    if (!empSearch.trim()) return true;
+    const q = empSearch.trim().toLowerCase();
+    return (
+      e.full_name.toLowerCase().includes(q) ||
+      (e.job_role ?? "").toLowerCase().includes(q) ||
+      (e.title ?? "").toLowerCase().includes(q) ||
+      (e.email ?? "").toLowerCase().includes(q)
+    );
+  });
+
+  const totalQuestions = questions.length;
+  const managersCount = employees.filter((e) =>
+    /(مدير|رئيس|قائد|director|manager|head)/i.test((e.job_role ?? "") + " " + (e.title ?? ""))
+  ).length;
+  const addEmployeeHref = orgSlug ? `/${orgSlug}/employees/add` : "/employees/add";
+
+  return (
+    <div className="space-y-6">
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-l from-primary/95 via-accent/90 to-primary p-8 shadow-xl">
+        <div className="absolute -top-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-24 -right-10 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative flex flex-wrap items-end justify-between gap-6">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs text-white ring-1 ring-white/30 backdrop-blur">
+              <Users className="h-3.5 w-3.5" />
+              فريق العمل
+            </div>
+            <h2 className="mt-3 text-3xl font-bold text-white">طاقم الموظفين</h2>
+            <p className="mt-1 text-white/85">منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة</p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <div className="rounded-2xl bg-white/15 px-4 py-2 text-white ring-1 ring-white/25 backdrop-blur">
+                <div className="text-2xl font-bold leading-none">{employees.length}</div>
+                <div className="text-[11px] opacity-90">إجمالي الموظفين</div>
+              </div>
+              <div className="rounded-2xl bg-white/15 px-4 py-2 text-white ring-1 ring-white/25 backdrop-blur">
+                <div className="flex items-center gap-1 text-2xl font-bold leading-none">
+                  <Crown className="h-5 w-5" />
+                  {managersCount}
+                </div>
+                <div className="text-[11px] opacity-90">قيادات</div>
+              </div>
+              <div className="rounded-2xl bg-white/15 px-4 py-2 text-white ring-1 ring-white/25 backdrop-blur">
+                <div className="text-2xl font-bold leading-none">{totalQuestions}</div>
+                <div className="text-[11px] opacity-90">مساءلات نشطة</div>
+              </div>
+            </div>
+          </div>
+          <Link to={addEmployeeHref}>
+            <Button size="lg" className="gap-2 bg-white text-primary hover:bg-white/90 shadow-lg">
+              <UserPlus className="h-5 w-5" />
+              إضافة موظف جديد
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={empSearch}
+          onChange={(e) => setEmpSearch(e.target.value)}
+          placeholder="ابحث بالاسم أو الدور أو اللقب..."
+          className="pr-10"
+        />
+      </div>
+
+      {/* Grid */}
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border-2 border-dashed border-border bg-muted/30 p-12 text-center">
+          <Users className="mx-auto h-12 w-12 text-muted-foreground/60" />
+          <p className="mt-3 text-muted-foreground">
+            {employees.length === 0 ? "لا يوجد موظفون مسجلون بعد." : "لا توجد نتائج مطابقة."}
+          </p>
+          {employees.length === 0 && (
+            <Link to={addEmployeeHref}>
+              <Button className="mt-4 gap-2"><UserPlus className="h-4 w-4" /> إضافة أول موظف</Button>
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filtered.map((e, idx) => {
+            const qCount = questions.filter(
+              (q) =>
+                q.target_employee_id === e.id ||
+                (q.target_job_role && e.job_role && q.target_job_role === e.job_role)
+            ).length;
+            const grad = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length];
+            const isLeader = /(مدير|رئيس|قائد|director|manager|head)/i.test(
+              (e.job_role ?? "") + " " + (e.title ?? "")
+            );
+            return (
+              <div
+                key={e.id}
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl"
+              >
+                <div className={`absolute inset-x-0 top-0 h-20 bg-gradient-to-l ${grad} opacity-90`} />
+                <div className="relative flex items-start gap-3">
+                  <div className={`flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${grad} text-xl font-bold text-white shadow-lg ring-4 ring-card`}>
+                    {e.avatar_url ? (
+                      <img src={e.avatar_url} alt={e.full_name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span>{getInitials(e.full_name)}</span>
+                    )}
+                  </div>
+                  {isLeader && (
+                    <Badge className="ms-auto gap-1 bg-amber-500/20 text-amber-700 border-amber-500/40 dark:text-amber-300">
+                      <Crown className="h-3 w-3" /> قيادي
+                    </Badge>
+                  )}
+                </div>
+                <div className="relative mt-10">
+                  <h3 className="truncate text-base font-bold text-foreground">{e.full_name}</h3>
+                  {e.title && (
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-primary">
+                      <Sparkles className="h-3 w-3" />
+                      {e.title}
+                    </p>
+                  )}
+                  <p className="mt-1 flex items-center gap-1 truncate text-sm text-muted-foreground">
+                    <Briefcase className="h-3.5 w-3.5" />
+                    {e.job_role ?? "بدون دور"}
+                  </p>
+                </div>
+                <div className="relative mt-3 space-y-1 text-xs text-muted-foreground">
+                  {e.email && (
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Mail className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{e.email}</span>
+                    </div>
+                  )}
+                  {e.phone && (
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Phone className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{e.phone}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="relative mt-4 flex items-center justify-between border-t border-border pt-3">
+                  <div className="flex items-center gap-1 text-xs">
+                    <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">المساءلات:</span>
+                    <Badge variant={qCount > 0 ? "default" : "secondary"} className="h-5">
+                      {qCount}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
