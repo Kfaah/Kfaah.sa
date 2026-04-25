@@ -71,23 +71,30 @@ interface HistoryRow {
   completed_at: string | null;
 }
 
+// كل الأنواع تستخدم هوية الجمعية (primary/accent) مع تمييز خفيف بالشفافية.
+// الحالات الدلالية فقط تحتفظ بألوان token-based (success/warning/destructive).
+const BRAND_BG = "bg-[hsl(var(--primary))]";
+const BRAND_BG_SOFT = "bg-[hsl(var(--accent))]";
+const BRAND_GRADIENT = "from-[hsl(var(--primary))] to-[hsl(var(--accent))]";
+const BRAND_GRADIENT_SOFT = "from-[hsl(var(--accent))] to-[hsl(var(--primary))]";
+
 const SCHEMA_LABELS: Record<string, { label: string; color: string }> = {
-  donations: { label: "تبرعات", color: "bg-emerald-500" },
-  store_master: { label: "ملف المتجر (الضخم)", color: "bg-emerald-700" },
-  store_daily: { label: "تبرعات المتجر اليومية", color: "bg-emerald-500" },
-  failed_donations: { label: "تبرعات فاشلة", color: "bg-red-500" },
-  bank_transfers: { label: "تحويلات بنكية", color: "bg-blue-500" },
-  abandoned_carts: { label: "سلال متروكة", color: "bg-orange-500" },
-  campaigns: { label: "حملات", color: "bg-purple-500" },
-  subscriptions: { label: "استقطاعات/اشتراكات", color: "bg-cyan-500" },
-  gifts: { label: "إهداءات", color: "bg-pink-500" },
-  staff_duties: { label: "مهام الموظفين", color: "bg-indigo-500" },
-  reports: { label: "تقارير", color: "bg-rose-500" },
-  profiles: { label: "ملفات تعريفية", color: "bg-amber-500" },
-  tasks: { label: "مهام", color: "bg-orange-500" },
-  other: { label: "ملفات أخرى", color: "bg-slate-500" },
-  archived: { label: "مؤرشف", color: "bg-slate-500" },
-  unknown: { label: "غير معروف", color: "bg-slate-500" },
+  donations: { label: "تبرعات", color: BRAND_BG },
+  store_master: { label: "ملف المتجر (الضخم)", color: BRAND_BG },
+  store_daily: { label: "تبرعات المتجر اليومية", color: BRAND_BG_SOFT },
+  failed_donations: { label: "تبرعات فاشلة", color: "bg-destructive" },
+  bank_transfers: { label: "تحويلات بنكية", color: BRAND_BG },
+  abandoned_carts: { label: "سلال متروكة", color: "bg-warning" },
+  campaigns: { label: "حملات", color: BRAND_BG_SOFT },
+  subscriptions: { label: "استقطاعات/اشتراكات", color: BRAND_BG },
+  gifts: { label: "إهداءات", color: BRAND_BG_SOFT },
+  staff_duties: { label: "مهام الموظفين", color: BRAND_BG },
+  reports: { label: "تقارير", color: BRAND_BG_SOFT },
+  profiles: { label: "ملفات تعريفية", color: BRAND_BG },
+  tasks: { label: "مهام", color: BRAND_BG_SOFT },
+  other: { label: "ملفات أخرى", color: "bg-muted-foreground" },
+  archived: { label: "مؤرشف", color: "bg-muted-foreground" },
+  unknown: { label: "غير معروف", color: "bg-muted-foreground" },
 };
 
 const CATEGORY_OPTIONS: {
@@ -97,14 +104,14 @@ const CATEGORY_OPTIONS: {
   icon: any;
   color: string;
 }[] = [
-  { value: "auto", label: "بيانات عامة عن الجمعية", desc: "أي بيانات عامة عن الجمعية", icon: Sparkles, color: "from-fuchsia-500 to-pink-600" },
-  { value: "store_master", label: "ملف المتجر (الضخم)", desc: "ملف تبرعات المتجر منذ تأسيس المتجر", icon: Database, color: "from-emerald-700 to-teal-800" },
-  { value: "store_daily", label: "تبرعات المتجر اليومية", desc: "ملف تبرعات المتجر اليومي", icon: HeartHandshake, color: "from-emerald-500 to-teal-600" },
-  { value: "staff_duties", label: "مهام موظفي المتجر", desc: "ربط المهام بكل موظف تلقائياً", icon: Users, color: "from-indigo-500 to-violet-600" },
-  { value: "reports", label: "تقارير", desc: "تقارير دورية، ملفات تحليلية", icon: FileText, color: "from-rose-500 to-pink-600" },
-  { value: "profiles", label: "ملفات تعريفية", desc: "بروفايلات، تعاريف موظفين/جمعية", icon: IdCard, color: "from-amber-500 to-orange-600" },
-  { value: "tasks", label: "مهام/خطط", desc: "ملفات مهام أو خطط للأرشفة", icon: ListChecks, color: "from-orange-500 to-amber-600" },
-  { value: "other", label: "ملفات أخرى", desc: "أي ملف آخر للأرشفة والتحليل", icon: FolderOpen, color: "from-slate-500 to-slate-600" },
+  { value: "auto", label: "بيانات عامة عن الجمعية", desc: "أي بيانات عامة عن الجمعية", icon: Sparkles, color: BRAND_GRADIENT },
+  { value: "store_master", label: "ملف المتجر (الضخم)", desc: "ملف تبرعات المتجر منذ تأسيس المتجر", icon: Database, color: BRAND_GRADIENT },
+  { value: "store_daily", label: "تبرعات المتجر اليومية", desc: "ملف تبرعات المتجر اليومي", icon: HeartHandshake, color: BRAND_GRADIENT_SOFT },
+  { value: "staff_duties", label: "مهام موظفي المتجر", desc: "ربط المهام بكل موظف تلقائياً", icon: Users, color: BRAND_GRADIENT },
+  { value: "reports", label: "تقارير", desc: "تقارير دورية، ملفات تحليلية", icon: FileText, color: BRAND_GRADIENT_SOFT },
+  { value: "profiles", label: "ملفات تعريفية", desc: "بروفايلات، تعاريف موظفين/جمعية", icon: IdCard, color: BRAND_GRADIENT },
+  { value: "tasks", label: "مهام/خطط", desc: "ملفات مهام أو خطط للأرشفة", icon: ListChecks, color: BRAND_GRADIENT_SOFT },
+  { value: "other", label: "ملفات أخرى", desc: "أي ملف آخر للأرشفة والتحليل", icon: FolderOpen, color: BRAND_GRADIENT },
 ];
 
 export default function Uploads() {
@@ -358,8 +365,8 @@ export default function Uploads() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg">
-                <Upload className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-lg">
+                <Upload className="w-6 h-6 text-primary-foreground" />
               </div>
               رفع الملفات
             </h1>
@@ -400,9 +407,9 @@ export default function Uploads() {
                         opt.color,
                       )}
                     >
-                      <Icon className="w-5 h-5 text-white" />
+                      <Icon className="w-5 h-5 text-primary-foreground" />
                     </div>
-                    <p className="text-sm font-bold text-slate-800">{opt.label}</p>
+                    <p className="text-sm font-bold text-foreground">{opt.label}</p>
                     <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
                       {opt.desc}
                     </p>
@@ -463,7 +470,7 @@ export default function Uploads() {
             />
             <div className="flex flex-col items-center gap-4">
               <div className={cn("w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg", activeCat.color)}>
-                <ActiveIcon className="w-10 h-10 text-white" />
+                <ActiveIcon className="w-10 h-10 text-primary-foreground" />
               </div>
               <div>
                 <p className="text-xl font-semibold">
@@ -513,7 +520,7 @@ export default function Uploads() {
                         <Badge variant="secondary">في الانتظار</Badge>
                       )}
                       {p.status === "uploading" && (
-                        <Badge className="bg-blue-500">
+                        <Badge className="bg-accent text-accent-foreground">
                           <Loader2 className="w-3 h-3 ml-1 animate-spin" />
                           جاري المعالجة
                         </Badge>
@@ -536,28 +543,28 @@ export default function Uploads() {
                     )}
                     {p.status === "success" && p.result && (
                       <div className="flex gap-4 text-sm pt-1 mr-8 flex-wrap">
-                        <span className="text-emerald-600 font-medium">
+                        <span className="text-primary font-medium">
                           ✓ مُدخل: {p.result.inserted}
                         </span>
                         {p.result.matched !== undefined && p.result.matched > 0 && (
-                          <span className="text-indigo-600">
+                          <span className="text-accent">
                             👤 موظف مرتبط: {p.result.matched}
                           </span>
                         )}
                         {p.result.duplicates > 0 && (
-                          <span className="text-amber-600">
+                          <span className="text-warning">
                             ⚠ مكرر: {p.result.duplicates}
                           </span>
                         )}
                         {p.result.failed > 0 && (
-                          <span className="text-red-600">
+                          <span className="text-destructive">
                             ✗ فشل: {p.result.failed}
                           </span>
                         )}
                       </div>
                     )}
                     {p.status === "error" && p.error && (
-                      <div className="flex items-start gap-2 text-sm text-red-600 mr-8">
+                      <div className="flex items-start gap-2 text-sm text-destructive mr-8">
                         <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                         <span>{p.error}</span>
                       </div>
@@ -616,21 +623,21 @@ export default function Uploads() {
                           </Badge>
                         </TableCell>
                         <TableCell>{row.for_date ?? "—"}</TableCell>
-                        <TableCell className="text-emerald-600 font-medium">
+                        <TableCell className="text-primary font-medium">
                           {row.inserted_rows}
                         </TableCell>
-                        <TableCell className="text-amber-600">
+                        <TableCell className="text-warning">
                           {row.duplicate_rows}
                         </TableCell>
-                        <TableCell className="text-red-600">
+                        <TableCell className="text-destructive">
                           {row.failed_rows}
                         </TableCell>
                         <TableCell>
                           {row.status === "completed" && (
-                            <Badge className="bg-emerald-500">مكتمل</Badge>
+                            <Badge className="bg-primary text-primary-foreground">مكتمل</Badge>
                           )}
                           {row.status === "completed_with_errors" && (
-                            <Badge className="bg-amber-500">مكتمل مع أخطاء</Badge>
+                            <Badge className="bg-warning text-warning-foreground">مكتمل مع أخطاء</Badge>
                           )}
                           {row.status === "failed" && (
                             <Badge variant="destructive">فشل</Badge>
