@@ -354,11 +354,11 @@ export default function PerformanceEvaluation() {
                     className="text-white text-sm"
                     style={{
                       background:
-                        "linear-gradient(90deg, hsl(160 50% 25%) 0%, hsl(170 45% 30%) 100%)",
+                        "linear-gradient(90deg, hsl(var(--sidebar-primary)) 0%, hsl(174 52% 45%) 100%)",
                     }}
                   >
                     <th className="text-right p-4 font-bold sticky right-0 z-10"
-                        style={{ background: "linear-gradient(90deg, hsl(160 50% 25%), hsl(160 50% 27%))" }}>
+                        style={{ background: "hsl(var(--sidebar-primary))" }}>
                       الموظف
                     </th>
                     {criteria.map(c => {
@@ -378,7 +378,8 @@ export default function PerformanceEvaluation() {
                         </th>
                       );
                     })}
-                    <th className="p-4 font-bold text-center bg-yellow-500/30 border-r border-white/20">
+                    <th className="p-4 font-bold text-center border-r border-white/20"
+                        style={{ background: "hsl(174 52% 38%)" }}>
                       التقييم النهائي
                     </th>
                   </tr>
