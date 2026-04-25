@@ -741,7 +741,7 @@ function RadioBlock({
   );
 }
 
-function SummaryView({ data }: { data: any }) {
+function SummaryView({ data, dutiesCount = 0 }: { data: any; dutiesCount?: number }) {
   const Section = ({ title, children }: any) => (
     <div className="border rounded-lg p-4 bg-muted/30">
       <h4 className="font-semibold text-sm mb-2 text-primary">{title}</h4>
@@ -761,6 +761,9 @@ function SummaryView({ data }: { data: any }) {
         <Row k="المهارات" v={data.technical_skills.join("، ") || "—"} />
         <Row k="اللغات" v={data.languages.join("، ") || "—"} />
         <Row k="الشهادات" v={data.certifications.join("، ") || "—"} />
+      </Section>
+      <Section title="📋 المهام الوظيفية">
+        <Row k="عدد المهام المسجّلة" v={`${dutiesCount} مهمة`} />
       </Section>
       <Section title="🧠 النمط الشخصي">
         <Row k="أسلوب العمل" v={labelMap.work_style[data.work_style]} />
