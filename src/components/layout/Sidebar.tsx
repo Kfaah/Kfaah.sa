@@ -430,27 +430,16 @@ export function Sidebar() {
           {!collapsed && (
             <div className="text-center space-y-1">
               <h1 className="text-xl font-bold text-white whitespace-nowrap tracking-wide drop-shadow">
-                  {branding.orgName || "الجمعية"}
-                </h1>
-                <div className="relative">
-                  <p
-                        : undefined
-                    }
-                  >
-                    نظام إدارة التسويق الإلكتروني
-                  </p>
-                  <div
-                    className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full"
-                    style={
-                      branding.primary
-                        ? { backgroundImage: `linear-gradient(to right, transparent, ${branding.accent || branding.primary}, transparent)` }
-                        : undefined
-                    }
-                  />
-                </div>
+                {branding.orgName || "الجمعية"}
+              </h1>
+              <div className="relative">
+                <p className="text-sm font-semibold text-white/90">
+                  نظام إدارة التسويق الإلكتروني
+                </p>
+                <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-white/70 to-transparent rounded-full" />
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
