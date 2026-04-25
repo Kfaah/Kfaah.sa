@@ -127,7 +127,8 @@ export default function OrgInternalDashboard({
   const [analysis, setAnalysis] = useState<DeepAnalysis | null>(null);
   const [questions, setQuestions] = useState<AccountabilityQuestion[]>([]);
   const [aTasks, setATasks] = useState<AccountabilityTask[]>([]);
-  const [employees, setEmployees] = useState<Array<{ id: string; full_name: string; job_role: string | null }>>([]);
+  const [employees, setEmployees] = useState<Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null; department: string | null; is_manager: boolean | null }>>([]);
+  const [empSearch, setEmpSearch] = useState("");
   const [counts, setCounts] = useState({
     employees: 0, tasks: 0, donations: 0, campaigns: 0,
   });
@@ -149,7 +150,7 @@ export default function OrgInternalDashboard({
         supabase.from("deep_analyses").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("accountability_questions").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
         supabase.from("accountability_tasks").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
-        supabase.from("employees").select("id,full_name,job_role").eq("organization_id", orgId).limit(500),
+        supabase.from("employees").select("id,full_name,job_role,email,phone,avatar_url,title,department,is_manager").eq("organization_id", orgId).limit(500),
         supabase.from("donations").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
         supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
         supabase.from("tasks").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
