@@ -474,7 +474,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <PlaceholderTab title="الابتكار والتحديث" desc="أفكار AI ابتكارية لتطوير عمل الجمعية." linkTo="/admin/innovation" linkLabel="فتح الابتكار" />
         </TabsContent>
         <TabsContent value="uploads" className="mt-6" dir="rtl">
-          <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} />
+          <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
         </TabsContent>
         <TabsContent value="operational-plans" className="mt-6" dir="rtl">
           <PlaceholderTab title="الخطط التشغيلية" desc="إدارة الخطط التشغيلية للجمعية ومتابعة المبادرات والأهداف." linkTo="/operational-plans" linkLabel="فتح الخطط التشغيلية" />
