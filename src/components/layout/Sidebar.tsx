@@ -25,6 +25,7 @@ import {
   Brain,
   ShieldCheck,
   ListChecks,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   Sparkles,
