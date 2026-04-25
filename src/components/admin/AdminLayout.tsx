@@ -74,14 +74,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (cancelled) return;
       const primary = (profile as Record<string, string | null> | null)?.primary_color;
-      const secondary = (profile as Record<string, string | null> | null)?.secondary_color;
       if (primary) {
-        // Soft, branded surface — primary tinted, very light so the page
-        // content (cards/tables) remains readable.
-        const tint = secondary || primary;
-        setOrgBgStyle(
-          `linear-gradient(135deg, ${primary}14 0%, ${tint}1F 50%, ${primary}1A 100%)`,
-        );
+        // Solid, professional brand surface so white headers/text on the
+        // inner pages remain crisp and fully readable.
+        setOrgBgStyle(primary);
       }
     })();
     return () => { cancelled = true; };
