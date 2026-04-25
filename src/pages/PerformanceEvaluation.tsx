@@ -47,15 +47,60 @@ type ScoreRow = {
   criterion_id: string;
   score: number;
   period: string;
+  period_start?: string | null;
+  period_end?: string | null;
   notes: string | null;
 };
 
 const PERIODS = [
-  { value: "day", label: "يومي" },
-  { value: "week", label: "أسبوعي" },
-  { value: "month", label: "شهري" },
-  { value: "year", label: "سنوي" },
+  { value: "yesterday", label: "أمس" },
+  { value: "last_week", label: "الأسبوع الماضي" },
+  { value: "month_to_date", label: "الشهر حتى الآن" },
+  { value: "last_month", label: "الشهر الماضي" },
+  { value: "last_year", label: "السنة الماضية" },
+  { value: "custom", label: "فترة مخصصة" },
 ];
+
+/** Map a period preset to ISO date range [start, end] (inclusive). */
+function rangeForPeriod(p: string, customFrom?: string, customTo?: string): { start: string; end: string; label: string } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+
+  switch (p) {
+    case "yesterday":
+      return { start: fmt(yesterday), end: fmt(yesterday), label: `أمس (${fmt(yesterday)})` };
+    case "last_week": {
+      // Last completed week: previous Sunday → previous Saturday
+      const dow = today.getDay(); // 0 (Sun) .. 6 (Sat)
+      const lastSat = new Date(today); lastSat.setDate(today.getDate() - dow - 1);
+      const lastSun = new Date(lastSat); lastSun.setDate(lastSat.getDate() - 6);
+      return { start: fmt(lastSun), end: fmt(lastSat), label: `الأسبوع الماضي (${fmt(lastSun)} → ${fmt(lastSat)})` };
+    }
+    case "month_to_date": {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      return { start: fmt(first), end: fmt(yesterday), label: `الشهر حتى الآن (${fmt(first)} → ${fmt(yesterday)})` };
+    }
+    case "last_month": {
+      const firstThis = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastPrev = new Date(firstThis); lastPrev.setDate(0);
+      const firstPrev = new Date(lastPrev.getFullYear(), lastPrev.getMonth(), 1);
+      return { start: fmt(firstPrev), end: fmt(lastPrev), label: `الشهر الماضي (${fmt(firstPrev)} → ${fmt(lastPrev)})` };
+    }
+    case "last_year": {
+      const y = today.getFullYear() - 1;
+      return { start: `${y}-01-01`, end: `${y}-12-31`, label: `السنة الماضية (${y})` };
+    }
+    case "custom": {
+      const s = customFrom || fmt(yesterday);
+      const e = customTo || fmt(yesterday);
+      return { start: s, end: e, label: `${s} → ${e}` };
+    }
+    default:
+      return { start: fmt(yesterday), end: fmt(yesterday), label: "أمس" };
+  }
+}
 
 const METRIC_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   task_completion: CheckCircle2,
@@ -82,7 +127,9 @@ export default function PerformanceEvaluation() {
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [scores, setScores] = useState<ScoreRow[]>([]);
-  const [period, setPeriod] = useState<string>("month");
+  const [period, setPeriod] = useState<string>("month_to_date");
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
   const [empFilter, setEmpFilter] = useState<string>("all");
   const [deptFilter, setDeptFilter] = useState<string>("all");
 
@@ -101,6 +148,11 @@ export default function PerformanceEvaluation() {
   const [scoreValue, setScoreValue] = useState<number>(0);
   const [scoreNotes, setScoreNotes] = useState("");
 
+  const range = useMemo(
+    () => rangeForPeriod(period, customFrom, customTo),
+    [period, customFrom, customTo]
+  );
+
   const loadAll = async () => {
     setLoading(true);
     // Resolve current user's organization to scope the table
@@ -111,7 +163,8 @@ export default function PerformanceEvaluation() {
         ? supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null).eq("organization_id", orgId as string)
         : supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null)
       ),
-      supabase.from("employee_evaluation_scores").select("*").eq("period", period),
+      // Fetch all scores; filter client-side by date range OR by legacy period label.
+      supabase.from("employee_evaluation_scores").select("*"),
       supabase.from("departments").select("id, name"),
     ]);
     if (cRes.error) toast.error("تعذر تحميل المعايير");
@@ -125,11 +178,29 @@ export default function PerformanceEvaluation() {
         .filter(e => e.user_id)
         .map(e => ({ ...e, department_name: e.department_id ? (deptMap.get(e.department_id) ?? null) : null })) as Employee[]
     );
-    setScores((sRes.data ?? []) as ScoreRow[]);
+    // Filter scores: keep rows whose [period_start, period_end] intersects the active range,
+    // OR (for legacy seed data without dates) whose `period` label maps to the same preset.
+    const all = (sRes.data ?? []) as ScoreRow[];
+    const legacyMap: Record<string, string> = {
+      yesterday: "day",
+      last_week: "week",
+      month_to_date: "month",
+      last_month: "month",
+      last_year: "year",
+    };
+    const legacyPeriod = legacyMap[period];
+    const inRange = (s: ScoreRow) => {
+      if (s.period_start && s.period_end) {
+        return !(s.period_end < range.start || s.period_start > range.end);
+      }
+      // No dates → fall back to legacy label match
+      return legacyPeriod ? s.period === legacyPeriod : false;
+    };
+    setScores(all.filter(inRange));
     setLoading(false);
   };
 
-  useEffect(() => { loadAll(); }, [period]);
+  useEffect(() => { loadAll(); }, [period, customFrom, customTo]);
 
   const departments = useMemo(() => {
     const set = new Set(employees.map(e => e.department_name).filter(Boolean) as string[]);
@@ -226,6 +297,8 @@ export default function PerformanceEvaluation() {
         criterion_id: scoreDialog.criterion_id,
         score: scoreValue,
         period,
+        period_start: range.start,
+        period_end: range.end,
         notes: scoreNotes || null,
         evaluated_by: user?.id ?? null,
       });
@@ -341,6 +414,21 @@ export default function PerformanceEvaluation() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            {period === "custom" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3" dir="rtl">
+                <div>
+                  <Label className="text-xs mb-1.5 block">من تاريخ</Label>
+                  <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} dir="ltr" className="text-right" />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">إلى تاريخ</Label>
+                  <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} dir="ltr" className="text-right" />
+                </div>
+              </div>
+            )}
+            <div className="mt-3 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
+              النطاق المطبّق: <span className="font-semibold text-foreground">{range.label}</span>
             </div>
           </CardContent>
         </Card>
