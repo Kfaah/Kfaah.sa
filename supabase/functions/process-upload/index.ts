@@ -234,7 +234,11 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    const organizationId = orgRow?.organization_id;
+    let organizationId = orgRow?.organization_id;
+
+    // Allow admin/super_admin to upload on behalf of another organization
+    // by passing target_organization_id in the form data.
+    // (We resolve this AFTER reading the form below, so we re-check there.)
     if (!organizationId) {
       return new Response(JSON.stringify({ error: "User has no organization" }), {
         status: 400,
