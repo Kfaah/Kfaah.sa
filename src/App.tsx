@@ -53,6 +53,7 @@ import OrganizationProfile from "./pages/OrganizationProfile";
 import EmployeeOnboarding from "./pages/EmployeeOnboarding";
 import StaffDutiesUpload from "./pages/StaffDutiesUpload";
 import MyAssistant from "./pages/MyAssistant";
+import PerformanceEvaluation from "./pages/PerformanceEvaluation";
 import { AssistantFab } from "@/components/assistant/AssistantFab";
 
 const queryClient = new QueryClient();
