@@ -247,19 +247,38 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-start border border-accent/40 bg-accent p-1.5 text-accent-foreground">
-          <TabsTrigger dir="rtl" value="overview" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><LayoutDashboard className="h-4 w-4" /> نظرة عامة</TabsTrigger>
-          <TabsTrigger dir="rtl" value="uploads" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Upload className="h-4 w-4" /> رفع الملفات</TabsTrigger>
-          <TabsTrigger dir="rtl" value="analysis" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Sparkles className="h-4 w-4" /> التحليل الذكي</TabsTrigger>
-          <TabsTrigger dir="rtl" value="employees" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Users className="h-4 w-4" /> الموظفون</TabsTrigger>
-          <TabsTrigger dir="rtl" value="operational-plans" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Target className="h-4 w-4" /> الخطط التشغيلية</TabsTrigger>
-          <TabsTrigger dir="rtl" value="executive-plans" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><CalendarCheck className="h-4 w-4" /> الخطط التنفيذية</TabsTrigger>
-          <TabsTrigger dir="rtl" value="tasks" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ClipboardList className="h-4 w-4" /> المهام</TabsTrigger>
-          <TabsTrigger dir="rtl" value="performance" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Target className="h-4 w-4" /> تقييم الأداء</TabsTrigger>
-          <TabsTrigger dir="rtl" value="accountability" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ShieldAlert className="h-4 w-4" /> تحليل المساءلات</TabsTrigger>
-          <TabsTrigger dir="rtl" value="reports" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><FileBarChart2 className="h-4 w-4" /> التقارير</TabsTrigger>
-          <TabsTrigger dir="rtl" value="innovation" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Lightbulb className="h-4 w-4" /> الابتكار</TabsTrigger>
-          <TabsTrigger dir="rtl" value="donors" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><HeartHandshake className="h-4 w-4" /> المتبرعون</TabsTrigger>
+        <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-center gap-0 border border-accent/40 bg-accent p-1.5 text-accent-foreground [&>[role=separator]]:mx-1 [&>[role=separator]]:h-6 [&>[role=separator]]:w-px [&>[role=separator]]:self-center [&>[role=separator]]:bg-accent-foreground/30">
+          {(() => {
+            const tabs = [
+              { value: "uploads", label: "رفع الملفات", Icon: Upload },
+              { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
+              { value: "employees", label: "الموظفون", Icon: Users },
+              { value: "operational-plans", label: "الخطط التشغيلية", Icon: Target },
+              { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
+              { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
+              { value: "innovation", label: "الابتكار", Icon: Lightbulb },
+              { value: "tasks", label: "المهام", Icon: ClipboardList },
+              { value: "performance", label: "تقييم الأداء", Icon: Target },
+              { value: "accountability", label: "تحليل المساءلات", Icon: ShieldAlert },
+              { value: "reports", label: "التقارير", Icon: FileBarChart2 },
+              { value: "donors", label: "المتبرعون", Icon: HeartHandshake },
+            ];
+            return tabs.flatMap((t, i) => {
+              const trigger = (
+                <TabsTrigger
+                  key={t.value}
+                  dir="rtl"
+                  value={t.value}
+                  className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"
+                >
+                  <t.Icon className="h-4 w-4" /> {t.label}
+                </TabsTrigger>
+              );
+              return i < tabs.length - 1
+                ? [trigger, <span key={`sep-${i}`} role="separator" aria-hidden="true" />]
+                : [trigger];
+            });
+          })()}
         </TabsList>
 
         {/* OVERVIEW */}
