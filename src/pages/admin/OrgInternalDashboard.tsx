@@ -780,7 +780,9 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
           .upload(path, pf.file, { upsert: false });
         if (upErr) throw upErr;
 
+        const { data: authData } = await supabase.auth.getUser();
         await supabase.from("data_uploads_log").insert({
+          uploaded_by: authData.user?.id ?? "",
           organization_id: orgId,
           file_name: pf.file.name,
           file_type: pf.file.type || "application/octet-stream",
