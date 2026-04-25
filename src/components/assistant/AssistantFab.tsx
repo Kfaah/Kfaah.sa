@@ -60,11 +60,14 @@ export function AssistantFab() {
       className={cn(
         "fixed bottom-6 left-6 z-50 group",
         "flex items-center gap-2 rounded-full",
-        "bg-gradient-to-br from-emerald-600 via-green-500 to-yellow-400",
-        "text-white shadow-2xl shadow-emerald-500/40",
-        "px-5 py-3 transition-all hover:scale-105 hover:shadow-emerald-500/60",
+        "text-white shadow-2xl",
+        "px-5 py-3 transition-all hover:scale-105",
         "ring-2 ring-white/30 hover:ring-white/60",
       )}
+      style={{
+        background: "radial-gradient(circle at 30% 30%, #48876b 0%, #6f8f5c 45%, #b09b43 100%)",
+        boxShadow: "0 10px 30px -5px rgba(111, 143, 92, 0.6)",
+      }}
     >
       <span className="relative">
         <Sparkles className="h-5 w-5" />
