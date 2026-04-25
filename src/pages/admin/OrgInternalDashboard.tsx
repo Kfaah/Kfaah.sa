@@ -4,7 +4,7 @@ import {
   ArrowRight, LayoutDashboard, Users, ListChecks, FileBarChart2,
   Lightbulb, ShieldAlert, Upload, HeartHandshake, Building2,
   Loader2, Sparkles, ExternalLink, Target, AlertTriangle, CheckCircle2,
-  GitCompareArrows,
+  GitCompareArrows, CalendarCheck, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -252,8 +252,9 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <TabsTrigger dir="rtl" value="uploads" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Upload className="h-4 w-4" /> رفع الملفات</TabsTrigger>
           <TabsTrigger dir="rtl" value="analysis" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Sparkles className="h-4 w-4" /> التحليل الذكي</TabsTrigger>
           <TabsTrigger dir="rtl" value="employees" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Users className="h-4 w-4" /> الموظفون</TabsTrigger>
-          <TabsTrigger dir="rtl" value="executive-room" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Building2 className="h-4 w-4" /> الغرفة التنفيذية</TabsTrigger>
-          <TabsTrigger dir="rtl" value="tasks" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ListChecks className="h-4 w-4" /> المهام</TabsTrigger>
+          <TabsTrigger dir="rtl" value="operational-plans" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Target className="h-4 w-4" /> الخطط التشغيلية</TabsTrigger>
+          <TabsTrigger dir="rtl" value="executive-plans" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><CalendarCheck className="h-4 w-4" /> الخطط التنفيذية</TabsTrigger>
+          <TabsTrigger dir="rtl" value="tasks" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ClipboardList className="h-4 w-4" /> المهام</TabsTrigger>
           <TabsTrigger dir="rtl" value="performance" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><Target className="h-4 w-4" /> تقييم الأداء</TabsTrigger>
           <TabsTrigger dir="rtl" value="accountability" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><ShieldAlert className="h-4 w-4" /> تحليل المساءلات</TabsTrigger>
           <TabsTrigger dir="rtl" value="reports" className="gap-2 text-accent-foreground/90 hover:bg-accent-foreground/10 data-[state=active]:bg-background data-[state=active]:text-foreground"><FileBarChart2 className="h-4 w-4" /> التقارير</TabsTrigger>
@@ -454,8 +455,11 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         <TabsContent value="uploads" className="mt-6" dir="rtl">
           <PlaceholderTab title="رفع الملفات" desc="رفع ملفات التبرعات اليومية. (الرفع سيتفعّل لاحقاً عبر موظف رفع عام.)" />
         </TabsContent>
-        <TabsContent value="executive-room" className="mt-6" dir="rtl">
-          <PlaceholderTab title="الغرفة التنفيذية" desc="مساحة قيادية لمتابعة القرارات والمبادرات التنفيذية للجمعية. (قيد التطوير.)" />
+        <TabsContent value="operational-plans" className="mt-6" dir="rtl">
+          <PlaceholderTab title="الخطط التشغيلية" desc="إدارة الخطط التشغيلية للجمعية ومتابعة المبادرات والأهداف." linkTo="/operational-plans" linkLabel="فتح الخطط التشغيلية" />
+        </TabsContent>
+        <TabsContent value="executive-plans" className="mt-6" dir="rtl">
+          <PlaceholderTab title="الخطط التنفيذية" desc="الخطط التنفيذية المرتبطة بالخطط التشغيلية ومتابعة تنفيذها." linkTo="/executive-plans" linkLabel="فتح الخطط التنفيذية" />
         </TabsContent>
         <TabsContent value="performance" className="mt-6" dir="rtl">
           <PlaceholderTab title="تقييم الأداء" desc="تقييمات الأداء الدورية للموظفين بناءً على المهام والمساءلات والأهداف. (قيد التطوير.)" />
