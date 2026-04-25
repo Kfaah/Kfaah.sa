@@ -51,52 +51,56 @@ interface NavItem {
   iconBg: string;
 }
 
-// قائمة مدير النظام (Admin) — يرى بيانات الجمعية فقط، بدون "خططي" الشخصية
+// خلفية أيقونة موحّدة لكل العناصر — هوية الجمعية فقط (تركوازي).
+// لا نغيّرها بين عنصر وآخر حتى لا يحصل اهتزاز/تبدّل ألوان عند التنقّل.
+const ICON_BG = "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))]";
+
+// قائمة مدير النظام (Admin)
 const adminNavItems: NavItem[] = [
-  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
-  { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
-  { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "bg-gradient-to-br from-teal-400 to-cyan-600" },
-  { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
-  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "تحليل المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-red-400 to-rose-500" },
-  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "bg-gradient-to-br from-rose-400 to-pink-600" },
-  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500" },
+  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: ICON_BG },
+  { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: ICON_BG },
+  { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: ICON_BG },
+  { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: ICON_BG },
+  { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: ICON_BG },
+  { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: ICON_BG },
+  { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: ICON_BG },
+  { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: ICON_BG },
+  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: ICON_BG },
+  { title: "تحليل المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: ICON_BG },
+  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: ICON_BG },
+  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: ICON_BG },
+  { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: ICON_BG },
 ];
 
-// قائمة المدير المتوسط (Manager) — له خططه الشخصية + يرى فريقه عبر Toggle داخل كل صفحة
+// قائمة المدير المتوسط (Manager)
 const managerNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "مساءلاتي", href: "/my-accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "أدائي", href: "/my-performance", icon: Award, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
+  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: ICON_BG },
+  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: ICON_BG },
+  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: ICON_BG },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: ICON_BG },
+  { title: "مساءلاتي", href: "/my-accountability", icon: ShieldAlert, iconBg: ICON_BG },
+  { title: "أدائي", href: "/my-performance", icon: Award, iconBg: ICON_BG },
+  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: ICON_BG },
 ];
 
 // قائمة الموظف العادي
 const employeeNavItems: NavItem[] = [
-  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
-  { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "bg-gradient-to-br from-rose-400 to-pink-600" },
-  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
+  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: ICON_BG },
+  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: ICON_BG },
+  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: ICON_BG },
+  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: ICON_BG },
+  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: ICON_BG },
+  { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: ICON_BG },
+  { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: ICON_BG },
+  { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: ICON_BG },
+  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: ICON_BG },
 ];
 
 const settingsNavItem: NavItem = {
   title: "الإعدادات",
   href: "/settings",
   icon: Settings,
-  iconBg: "bg-gradient-to-br from-slate-400 to-slate-500"
+  iconBg: ICON_BG,
 };
 
 export function Sidebar() {
@@ -386,71 +390,56 @@ export function Sidebar() {
       {/* ظل سفلي ناعم */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/15 to-transparent pointer-events-none" />
 
-      {/* White Header Section with Logo */}
+      {/* Header Section with Logo — بدون خلفية مربعة */}
       <div className="relative z-10">
-        {/* خلفية بيضاء أنيقة للشعار */}
-        <div className="bg-white rounded-b-[3rem] relative mx-4 shadow-lg">
-          <div className="p-4 pb-6 flex flex-col items-center relative z-10">
-            {/* الشعار — قابل للنقر للعودة للرئيسية */}
-            <Link
-              to="/"
-              className="relative mb-3 group cursor-pointer"
-              title="العودة للصفحة الرئيسية"
-            >
-              {/* حلقة هادئة حول الشعار */}
-              <div className="absolute inset-[-6px] w-[156px] h-[156px] rounded-full border-2 border-[hsl(var(--accent))]/30 pointer-events-none" />
+        <div className="relative pt-6 pb-4 flex flex-col items-center">
+          {/* الشعار — قابل للنقر، مع نبض هادئ وحلقة متوهجة */}
+          <Link
+            to="/"
+            className="relative mb-3 group cursor-pointer animate-scale-in"
+            title="العودة للصفحة الرئيسية"
+          >
+            {/* حلقة خارجية متوهجة (pulse هادئ) */}
+            <div className="absolute inset-[-10px] w-[164px] h-[164px] rounded-full border-2 border-white/40 pointer-events-none animate-pulse" />
+            {/* حلقة داخلية ثابتة */}
+            <div className="absolute inset-[-4px] w-[152px] h-[152px] rounded-full border border-white/60 pointer-events-none" />
+            {/* توهّج خلفي ناعم */}
+            <div className="absolute inset-0 w-36 h-36 rounded-full bg-white/20 blur-xl pointer-events-none" />
 
-              {/* حاوية الشعار */}
-              <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-md overflow-hidden transition-transform duration-300 group-hover:scale-[1.02]">
-                {branding.loading ? (
-                  <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" />
-                ) : branding.logoUrl ? (
-                  <img
-                    src={branding.logoUrl}
-                    alt={branding.orgName || "الجمعية"}
-                    className="w-28 h-28 object-contain"
-                  />
-                ) : (
-                  <img
-                    src={atefLogoIcon}
-                    alt={branding.orgName || "الجمعية"}
-                    className="w-28 h-28 object-contain"
-                  />
-                )}
-              </div>
-            </Link>
+            {/* حاوية الشعار — دائرة بيضاء فقط، لا مربع */}
+            <div className="relative w-36 h-36 rounded-full bg-white flex items-center justify-center shadow-2xl overflow-hidden transition-transform duration-500 group-hover:scale-105">
+              {branding.loading ? (
+                <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" />
+              ) : branding.logoUrl ? (
+                <img
+                  src={branding.logoUrl}
+                  alt={branding.orgName || "الجمعية"}
+                  className="w-28 h-28 object-contain"
+                />
+              ) : (
+                <img
+                  src={atefLogoIcon}
+                  alt={branding.orgName || "الجمعية"}
+                  className="w-28 h-28 object-contain"
+                />
+              )}
+            </div>
+          </Link>
 
-            {/* Text under logo */}
-            {!collapsed && (
-              <div className="text-center space-y-1">
-                <h1 className="text-xl font-bold text-slate-800 whitespace-nowrap tracking-wide">
-                  {branding.orgName || "الجمعية"}
-                </h1>
-                <div className="relative">
-                  <p
-                    className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-l from-cyan-600 via-teal-500 to-cyan-600"
-                    style={
-                      branding.primary
-                        ? {
-                            backgroundImage: `linear-gradient(to left, ${branding.primary}, ${branding.accent || branding.primary}, ${branding.primary})`,
-                          }
-                        : undefined
-                    }
-                  >
-                    نظام إدارة التسويق الإلكتروني
-                  </p>
-                  <div
-                    className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full"
-                    style={
-                      branding.primary
-                        ? { backgroundImage: `linear-gradient(to right, transparent, ${branding.accent || branding.primary}, transparent)` }
-                        : undefined
-                    }
-                  />
-                </div>
+          {/* Text under logo */}
+          {!collapsed && (
+            <div className="text-center space-y-1">
+              <h1 className="text-xl font-bold text-white whitespace-nowrap tracking-wide drop-shadow">
+                {branding.orgName || "الجمعية"}
+              </h1>
+              <div className="relative">
+                <p className="text-sm font-semibold text-white/90">
+                  نظام إدارة التسويق الإلكتروني
+                </p>
+                <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-white/70 to-transparent rounded-full" />
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
