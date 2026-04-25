@@ -6,7 +6,7 @@ import {
   Loader2, Sparkles, ExternalLink, Target, AlertTriangle, CheckCircle2,
   GitCompareArrows, CalendarCheck, ClipboardList, FileSpreadsheet, XCircle,
   Database, FileText, IdCard, FolderOpen,
-  UserPlus, Briefcase, Search, Mail, Phone, Crown,
+  UserPlus, Briefcase, Search, Mail, Phone, Crown, Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
