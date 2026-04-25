@@ -112,6 +112,7 @@ export function Sidebar() {
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">(
     isActuallyAdmin || isAdminArea ? "admin" : "employee"
   );
+  const [roleReady, setRoleReady] = useState(isActuallyAdmin || isAdminArea);
 
   // خلفية واحدة ثابتة من أعلى القائمة إلى أسفلها بدون أي تدرج.
   const sidebarBgStyle = branding.primary
@@ -123,10 +124,17 @@ export function Sidebar() {
   // Resolve role_level from employees table to know which menu to show
   useEffect(() => {
     const fetchRoleLevel = async () => {
-      if (!authUser) return;
+      if (!authUser) {
+        setRoleLevel("employee");
+        setRoleReady(true);
+        return;
+      }
+
+      setRoleReady(false);
 
       if (isActuallyAdmin || isAdminArea) {
         setRoleLevel("admin");
+        setRoleReady(true);
         return;
       }
 
@@ -136,6 +144,7 @@ export function Sidebar() {
       });
       if (userRole === "admin" || userRole === "super_admin") {
         setRoleLevel("admin");
+        setRoleReady(true);
         return;
       }
 
@@ -150,6 +159,7 @@ export function Sidebar() {
       } else {
         setRoleLevel("employee");
       }
+      setRoleReady(true);
     };
     fetchRoleLevel();
   }, [authUser, isActuallyAdmin, isAdminArea]);
