@@ -322,38 +322,33 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none transition-colors",
+          // ثابت دائمًا: نفس البنية والأبعاد، فقط الإطار يتغيّر برفق → لا اهتزاز.
+          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none bg-white text-slate-700 transition-shadow duration-200",
           isActive
-            ? "text-white shadow-lg ring-2 ring-white"
-            : "bg-white text-slate-700 hover:bg-white/90"
+            ? "shadow-lg ring-2 ring-white"
+            : "hover:shadow-md"
         )}
-        style={
-          isActive && brandPrimary
-            ? { backgroundImage: `linear-gradient(to right, ${brandPrimary}, ${brandAccent})` }
-            : isActive
-              ? undefined
-              : undefined
-        }
       >
+        {/* الأيقونة تحتفظ بلونها الجميل دائمًا — لا تتبدّل عند active */}
         <div className={cn(
-          "w-10 h-10 rounded-lg flex items-center justify-center shadow-md",
-          isActive ? "bg-white/20" : item.iconBg
+          "w-10 h-10 rounded-lg flex items-center justify-center shadow-md flex-shrink-0",
+          item.iconBg
         )}>
           <item.icon className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
           <>
             <span className={cn(
-              "font-bold text-base flex-1 text-right",
-              isActive ? "text-white" : "text-slate-700"
+              "font-bold text-base flex-1 text-right transition-colors",
+              isActive ? "text-[hsl(var(--primary))]" : "text-slate-700"
             )}>
               {item.title}
             </span>
             {badgeCount && badgeCount > 0 && (
-              <span className={cn(
-                "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
-                isActive ? "bg-white/25 text-white" : "bg-amber-400 text-white"
-              )} style={{ fontFamily: 'Arial, sans-serif' }}>
+              <span
+                className="text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center bg-amber-400 text-white"
+                style={{ fontFamily: 'Arial, sans-serif' }}
+              >
                 {badgeCount > 9 ? '9+' : formatNumberPlain(badgeCount)}
               </span>
             )}
