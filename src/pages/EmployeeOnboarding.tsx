@@ -171,6 +171,19 @@ export default function EmployeeOnboarding() {
     }));
   };
 
+  const addDuty = () => {
+    if (!draftDuty.title.trim()) {
+      toast.error("اكتب عنوان المهمة أولاً");
+      return;
+    }
+    setJobDuties((prev) => [...prev, { ...draftDuty, title: draftDuty.title.trim() }]);
+    setDraftDuty({ ...NEW_DUTY });
+  };
+
+  const removeDuty = (idx: number) => {
+    setJobDuties((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
