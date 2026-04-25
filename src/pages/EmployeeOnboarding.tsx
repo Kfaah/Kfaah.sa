@@ -23,17 +23,52 @@ import {
   Award,
   Loader2,
   X,
+  ListChecks,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
-type StepKey = "skills" | "personality" | "goals" | "availability" | "summary";
+type StepKey = "skills" | "duties" | "personality" | "goals" | "availability" | "summary";
 
 const STEPS: { key: StepKey; title: string; subtitle: string; icon: any }[] = [
   { key: "skills", title: "مهاراتك وخبراتك", subtitle: "ساعدنا نتعرف على قدراتك التقنية", icon: Award },
+  { key: "duties", title: "مهامك الوظيفية", subtitle: "سجّل المهام التي تقوم بها فعلياً ليتعرّف عليها النظام", icon: ListChecks },
   { key: "personality", title: "نمطك الشخصي", subtitle: "كيف تحب أن تعمل؟", icon: Brain },
   { key: "goals", title: "أهدافك وتوجهاتك", subtitle: "ما الذي تطمح إليه؟", icon: Target },
   { key: "availability", title: "توفرك وقدرتك", subtitle: "متى وكيف تعمل بأفضل أداء؟", icon: Clock },
   { key: "summary", title: "المراجعة والحفظ", subtitle: "تأكد من المعلومات قبل الإرسال", icon: Sparkles },
 ];
+
+interface JobDuty {
+  id?: string;
+  title: string;
+  description: string;
+  category: string;
+  frequency: "daily" | "weekly" | "monthly" | "adhoc";
+  priority: "low" | "medium" | "high";
+  estimated_time_minutes: number | null;
+}
+
+const NEW_DUTY: JobDuty = {
+  title: "",
+  description: "",
+  category: "",
+  frequency: "daily",
+  priority: "medium",
+  estimated_time_minutes: null,
+};
+
+const frequencyLabel: Record<string, string> = {
+  daily: "يومية",
+  weekly: "أسبوعية",
+  monthly: "شهرية",
+  adhoc: "حسب الحاجة",
+};
+const priorityLabel: Record<string, string> = {
+  low: "منخفضة",
+  medium: "متوسطة",
+  high: "عالية",
+};
 
 export default function EmployeeOnboarding() {
   const { user } = useAuth();
@@ -43,6 +78,8 @@ export default function EmployeeOnboarding() {
   const [saving, setSaving] = useState(false);
 
   const [employee, setEmployee] = useState<any>(null);
+  const [jobDuties, setJobDuties] = useState<JobDuty[]>([]);
+  const [draftDuty, setDraftDuty] = useState<JobDuty>({ ...NEW_DUTY });
   const [data, setData] = useState({
     technical_skills: [] as string[],
     languages: [] as string[],
