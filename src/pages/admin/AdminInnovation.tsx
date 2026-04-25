@@ -79,6 +79,14 @@ export default function AdminInnovation() {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
   const { metrics, loading: metricsLoading } = useAdminAggregates(range);
   const [orgId, setOrgId] = useState<string>("");
+  // Embedded mode (inside org dashboard iframe) — lock to one org via ?org=slug
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const isEmbedded = params.get("embedded") === "1";
+  const lockedSlug = params.get("org") || "";
+  const visibleMetrics = useMemo(
+    () => (isEmbedded && lockedSlug ? metrics.filter((m) => m.org_slug === lockedSlug) : metrics),
+    [metrics, isEmbedded, lockedSlug]
+  );
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -86,9 +94,9 @@ export default function AdminInnovation() {
   const [filterStatus, setFilterStatus] = useState<"all" | Status>("all");
   const [openSuggestion, setOpenSuggestion] = useState<Suggestion | null>(null);
 
-  useEffect(() => { if (!orgId && metrics.length > 0) setOrgId(metrics[0].org_id); }, [metrics, orgId]);
+  useEffect(() => { if (!orgId && visibleMetrics.length > 0) setOrgId(visibleMetrics[0].org_id); }, [visibleMetrics, orgId]);
 
-  const selected = useMemo(() => metrics.find((m) => m.org_id === orgId), [metrics, orgId]);
+  const selected = useMemo(() => visibleMetrics.find((m) => m.org_id === orgId), [visibleMetrics, orgId]);
 
   const loadSuggestions = async (oid: string) => {
     setLoading(true);
@@ -214,15 +222,17 @@ export default function AdminInnovation() {
       {/* Filters */}
       <Card className="p-3 bg-card border-border" dir="rtl">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 min-w-[260px]" dir="rtl">
-            <Building2 className="w-4 h-4 text-muted-foreground" />
-            <Select value={orgId} onValueChange={setOrgId} dir="rtl">
-              <SelectTrigger className="flex-1 text-right"><SelectValue placeholder="اختر جمعية..." /></SelectTrigger>
-              <SelectContent>
-                {metrics.map((m) => (<SelectItem key={m.org_id} value={m.org_id}>{m.org_name}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isEmbedded && (
+            <div className="flex items-center gap-2 flex-1 min-w-[260px]" dir="rtl">
+              <Building2 className="w-4 h-4 text-muted-foreground" />
+              <Select value={orgId} onValueChange={setOrgId} dir="rtl">
+                <SelectTrigger className="flex-1 text-right"><SelectValue placeholder="اختر جمعية..." /></SelectTrigger>
+                <SelectContent>
+                  {visibleMetrics.map((m) => (<SelectItem key={m.org_id} value={m.org_id}>{m.org_name}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <DateRangeFilter value={range} onChange={setRange} />
         </div>
       </Card>

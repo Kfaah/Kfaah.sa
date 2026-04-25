@@ -14,7 +14,7 @@ import { ListChecks, Loader2, Sparkles, Plus, Calendar, Users, ArrowLeftCircle, 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface OrgRow { id: string; name: string; }
+interface OrgRow { id: string; name: string; slug?: string | null; }
 interface PlanRow {
   id: string;
   organization_id: string;
@@ -32,6 +32,9 @@ interface PlanRow {
 
 export default function AdminActionPlans() {
   const navigate = useNavigate();
+  const _params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const isEmbedded = _params.get("embedded") === "1";
+  const lockedSlug = _params.get("org") || "";
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,20 +44,34 @@ export default function AdminActionPlans() {
   const [planTitle, setPlanTitle] = useState("");
   const [generating, setGenerating] = useState(false);
 
+  // Auto-select the locked org in embedded mode
+  useEffect(() => {
+    if (isEmbedded && orgs.length === 1 && !selectedOrg) {
+      setSelectedOrg(orgs[0].id);
+    }
+  }, [isEmbedded, orgs, selectedOrg]);
+
   const fetchAll = async () => {
     setLoading(true);
     const [{ data: orgsData }, { data: plansData }] = await Promise.all([
-      supabase.from("organizations").select("id, name").order("name"),
+      supabase.from("organizations").select("id, name, slug").order("name"),
       supabase.from("action_plans")
         .select("*, organizations(name)")
         .order("created_at", { ascending: false }),
     ]);
     const orgList = (orgsData || []) as OrgRow[];
-    setOrgs(orgList);
+    const visibleOrgs = isEmbedded && lockedSlug
+      ? orgList.filter((o) => o.slug === lockedSlug)
+      : orgList;
+    setOrgs(visibleOrgs);
+    const lockedOrgIds = new Set(visibleOrgs.map((o) => o.id));
 
     const planList = (plansData || []) as any[];
+    const filteredPlans = isEmbedded && lockedSlug
+      ? planList.filter((p) => lockedOrgIds.has(p.organization_id))
+      : planList;
     // counts per plan
-    const enriched = await Promise.all(planList.map(async (p) => {
+    const enriched = await Promise.all(filteredPlans.map(async (p) => {
       const [{ count: total }, { count: done }] = await Promise.all([
         supabase.from("action_plan_tasks").select("*", { count: "exact", head: true }).eq("action_plan_id", p.id),
         supabase.from("action_plan_tasks").select("*", { count: "exact", head: true }).eq("action_plan_id", p.id).eq("status", "completed"),
