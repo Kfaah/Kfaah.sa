@@ -48,11 +48,19 @@ export default function AdminReports() {
   const [exportingPpt, setExportingPpt] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!orgId && metrics.length > 0) setOrgId(metrics[0].org_id);
-  }, [metrics, orgId]);
+  const _params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const isEmbedded = _params.get("embedded") === "1";
+  const lockedSlug = _params.get("org") || "";
+  const visibleMetrics = useMemo(
+    () => (isEmbedded && lockedSlug ? metrics.filter((m) => m.org_slug === lockedSlug) : metrics),
+    [metrics, isEmbedded, lockedSlug]
+  );
 
-  const selected = useMemo(() => metrics.find(m => m.org_id === orgId), [metrics, orgId]);
+  useEffect(() => {
+    if (!orgId && visibleMetrics.length > 0) setOrgId(visibleMetrics[0].org_id);
+  }, [visibleMetrics, orgId]);
+
+  const selected = useMemo(() => visibleMetrics.find(m => m.org_id === orgId), [visibleMetrics, orgId]);
 
   const generateExecutive = async () => {
     if (!selected) return;
