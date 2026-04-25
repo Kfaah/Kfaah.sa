@@ -301,7 +301,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
                 {analysis?.overall_assessment ? (
                   <p className="whitespace-pre-line leading-relaxed text-foreground/90">{analysis.overall_assessment}</p>
                 ) : (
-                  <EmptyState text="شغّل التحليل الذكي لاستخراج تقييم شامل ومساءلات احترافية." onAction={runDeepAnalysis} actionLabel="تشغيل الآن" />
+                  <EmptyState text="سيظهر التقييم العام تلقائياً بعد تشغيل التحليل الذكي من تبويب «التحليل الذكي»." />
                 )}
               </CardContent>
             </Card>
