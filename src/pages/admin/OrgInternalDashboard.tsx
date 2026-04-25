@@ -253,8 +253,8 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           {(() => {
             const tabs = [
               { value: "uploads", label: "رفع الملفات", Icon: Upload },
-              { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
+              { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "operational-plans", label: "الخطط من التوصيات", Icon: ListChecks },
               { value: "operational-plans-main", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
