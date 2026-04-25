@@ -236,22 +236,31 @@ Deno.serve(async (req) => {
 
     let organizationId = orgRow?.organization_id;
 
-    // Allow admin/super_admin to upload on behalf of another organization
-    // by passing target_organization_id in the form data.
-    // (We resolve this AFTER reading the form below, so we re-check there.)
-    if (!organizationId) {
-      return new Response(JSON.stringify({ error: "User has no organization" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const forDate = form.get("for_date") as string | null;
     const targetOrgId = (form.get("target_organization_id") as string | null) || null;
     if (!file) {
       return new Response(JSON.stringify({ error: "Missing file" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // If admin/super_admin passes target_organization_id, use it instead.
+    if (targetOrgId) {
+      const { data: roleRows } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      const isAdmin = (roleRows ?? []).some((r) => r.role === "admin" || r.role === "super_admin");
+      if (isAdmin) {
+        organizationId = targetOrgId;
+      }
+    }
+
+    if (!organizationId) {
+      return new Response(JSON.stringify({ error: "User has no organization" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
