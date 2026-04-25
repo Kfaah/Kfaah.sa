@@ -52,6 +52,8 @@ import NotFound from "./pages/NotFound";
 import OrganizationProfile from "./pages/OrganizationProfile";
 import EmployeeOnboarding from "./pages/EmployeeOnboarding";
 import StaffDutiesUpload from "./pages/StaffDutiesUpload";
+import MyAssistant from "./pages/MyAssistant";
+import { AssistantFab } from "@/components/assistant/AssistantFab";
 
 const queryClient = new QueryClient();
 
@@ -242,6 +244,7 @@ function AppRoutes() {
       <Route path="/my-performance" element={<ProtectedRoute><MyPerformance /></ProtectedRoute>} />
       <Route path="/employee-onboarding" element={<ProtectedRoute><EmployeeOnboarding /></ProtectedRoute>} />
       <Route path="/staff-duties-upload" element={<ProtectedRoute><StaffDutiesUpload /></ProtectedRoute>} />
+      <Route path="/my-assistant" element={<ProtectedRoute><MyAssistant /></ProtectedRoute>} />
 
       {/* Org-scoped aliases: charity-crm.org/atff/app, /atff/tasks ... */}
       <Route path="/:slug/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -266,6 +269,7 @@ function AppRoutes() {
       <Route path="/:slug/my-performance" element={<ProtectedRoute><MyPerformance /></ProtectedRoute>} />
       <Route path="/:slug/employee-onboarding" element={<ProtectedRoute><EmployeeOnboarding /></ProtectedRoute>} />
       <Route path="/:slug/staff-duties-upload" element={<ProtectedRoute><StaffDutiesUpload /></ProtectedRoute>} />
+      <Route path="/:slug/my-assistant" element={<ProtectedRoute><MyAssistant /></ProtectedRoute>} />
 
       {/* Short org slug: charity-crm.org/atff → نفس صفحة /j/atff */}
       <Route path="/:slug" element={<OrgAuth />} />
@@ -285,6 +289,7 @@ function AppContent() {
               <Toaster />
               <Sonner />
               <AppRoutes />
+              <AssistantFab />
             </TooltipProvider>
           </UserProvider>
         </OrgBrandingProvider>
