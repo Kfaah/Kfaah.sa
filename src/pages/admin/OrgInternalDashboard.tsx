@@ -474,7 +474,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <PlaceholderTab title="الابتكار والتحديث" desc="أفكار AI ابتكارية لتطوير عمل الجمعية." linkTo="/admin/innovation" linkLabel="فتح الابتكار" />
         </TabsContent>
         <TabsContent value="uploads" className="mt-6" dir="rtl">
-          <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} />
+          <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
         </TabsContent>
         <TabsContent value="operational-plans" className="mt-6" dir="rtl">
           <PlaceholderTab title="الخطط التشغيلية" desc="إدارة الخطط التشغيلية للجمعية ومتابعة المبادرات والأهداف." linkTo="/operational-plans" linkLabel="فتح الخطط التشغيلية" />
@@ -643,7 +643,7 @@ interface HistoryRow {
   created_at: string;
 }
 
-function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
+function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: string; orgName: string; onRunAnalysis: () => Promise<void> | void; analyzing: boolean }) {
   const [forDate, setForDate] = useState<string>(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
@@ -653,6 +653,7 @@ function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [dragOver, setDragOver] = useState(false);
+  const [batchRunning, setBatchRunning] = useState(false);
   let fileInputEl: HTMLInputElement | null = null;
 
   const loadHistory = async () => {
@@ -704,8 +705,38 @@ function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
       id: crypto.randomUUID(), file: f, status: "queued", progress: 0,
     }));
     setPending((prev) => [...prev, ...newPending]);
-    (async () => { for (const pf of newPending) await processFile(pf); })();
+    // Do NOT auto-upload — wait for user to click "بدء الرفع والتحليل".
   };
+
+  const removeFile = (id: string) => {
+    setPending((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const startBatch = async () => {
+    const queue = pending.filter((p) => p.status === "queued" || p.status === "error");
+    if (queue.length === 0) {
+      toast.error("لا توجد ملفات في قائمة الانتظار");
+      return;
+    }
+    setBatchRunning(true);
+    try {
+      for (const pf of queue) {
+        await processFile(pf);
+      }
+      // After all uploads complete — run the smart analysis on the consolidated data
+      toast.loading("جاري تشغيل التحليل الذكي على جميع الملفات المرفوعة...", { id: "batch-analysis" });
+      try {
+        await onRunAnalysis();
+        toast.success("اكتمل الرفع والتحليل الذكي", { id: "batch-analysis" });
+      } catch {
+        toast.error("اكتمل الرفع لكن فشل التحليل", { id: "batch-analysis" });
+      }
+    } finally {
+      setBatchRunning(false);
+    }
+  };
+
+  const queuedCount = pending.filter((p) => p.status === "queued" || p.status === "error").length;
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -745,7 +776,9 @@ function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
             </div>
             <div>
               <p className="text-xl font-semibold">اسحب الملفات هنا</p>
-              <p className="text-sm text-muted-foreground mt-1">أو انقر للاختيار — XLSX, XLS, CSV</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                ارفع كل الملفات (تبرعات، حملات، استقطاعات، سلال…) ثم اضغط <span className="font-semibold text-foreground">بدء الرفع والتحليل</span> ليتم تحليل كل البيانات معًا.
+              </p>
             </div>
             <Button variant="outline" type="button">
               <FileSpreadsheet className="w-4 h-4 ml-2" /> اختر ملفات
@@ -756,7 +789,30 @@ function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
 
       {pending.length > 0 && (
         <Card>
-          <CardHeader><CardTitle>الملفات الحالية ({pending.length})</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <CardTitle>قائمة الملفات ({pending.length})</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPending((prev) => prev.filter((p) => p.status !== "success"))}
+                disabled={batchRunning || analyzing}
+              >
+                مسح المكتملة
+              </Button>
+              <Button
+                onClick={startBatch}
+                disabled={batchRunning || analyzing || queuedCount === 0}
+                className="bg-primary text-primary-foreground"
+              >
+                {batchRunning || analyzing ? (
+                  <><Loader2 className="w-4 h-4 ml-2 animate-spin" /> جاري المعالجة…</>
+                ) : (
+                  <><Sparkles className="w-4 h-4 ml-2" /> بدء الرفع والتحليل ({queuedCount})</>
+                )}
+              </Button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-3">
             {pending.map((p) => {
               const schema = p.result?.detected ? SCHEMA_LABELS[p.result.detected] ?? SCHEMA_LABELS.unknown : null;
@@ -772,6 +828,11 @@ function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
                     {p.status === "uploading" && <Badge className="bg-blue-500"><Loader2 className="w-3 h-3 ml-1 animate-spin" />جاري المعالجة</Badge>}
                     {p.status === "success" && schema && <Badge className={schema.color}><CheckCircle2 className="w-3 h-3 ml-1" />{schema.label}</Badge>}
                     {p.status === "error" && <Badge variant="destructive"><XCircle className="w-3 h-3 ml-1" />فشل</Badge>}
+                    {(p.status === "queued" || p.status === "error") && !batchRunning && (
+                      <Button variant="ghost" size="sm" onClick={() => removeFile(p.id)} className="h-7 px-2 text-muted-foreground hover:text-destructive">
+                        إزالة
+                      </Button>
+                    )}
                   </div>
                   {(p.status === "uploading" || p.status === "queued") && <Progress value={p.progress} className="h-2" />}
                   {p.status === "success" && p.result && (
