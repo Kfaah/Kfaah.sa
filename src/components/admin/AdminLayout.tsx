@@ -24,7 +24,7 @@ const navItems = [
   { to: "/admin/compare", label: "المقارنة بين الجمعيات", icon: GitCompareArrows, end: false,
     desc: "رادار · ترتيب · معايير متعددة",
     color: ICON_COLOR, bg: "bg-gradient-to-br from-cyan-400 to-cyan-600", ring: "ring-cyan-400/40" },
-  { to: "/admin/analytics", label: "التحليل العميق", icon: Sparkles, end: false,
+  { to: "/admin/analytics", label: "التحليل الذكي", icon: Sparkles, end: false,
     desc: "تحليل AI لكل جمعية",
     color: ICON_COLOR, bg: "bg-gradient-to-br from-fuchsia-500 to-pink-600", ring: "ring-fuchsia-400/40" },
   { to: "/admin/action-plans", label: "الخطط من التوصيات", icon: ListChecks, end: false,

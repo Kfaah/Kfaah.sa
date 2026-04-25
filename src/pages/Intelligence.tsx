@@ -100,7 +100,7 @@ const Intelligence = () => {
 
   const runAnalysis = async () => {
     setRunning(true);
-    toast.info("جاري التحليل العميق للبيانات...");
+    toast.info("جاري التحليل الذكي للبيانات...");
     try {
       const { data, error } = await supabase.functions.invoke("run-intelligence", { body: { triggerSource: "manual" } });
       if (error) throw error;
@@ -133,12 +133,12 @@ const Intelligence = () => {
                 التحليل الذكي
                 <Sparkles className="w-5 h-5 text-yellow-500" />
               </h1>
-              <p className="text-muted-foreground">رؤى عميقة، مهام ذكية، وأفكار إبداعية مولّدة من بيانات جمعيتك</p>
+              <p className="text-muted-foreground">رؤى ذكية، مهام ذكية، وأفكار إبداعية مولّدة من بيانات جمعيتك</p>
             </div>
           </div>
           <Button size="lg" onClick={runAnalysis} disabled={running} className="gap-2 shadow-lg">
             <RefreshCcw className={`w-4 h-4 ${running ? "animate-spin" : ""}`} />
-            {running ? "جاري التحليل..." : "تشغيل تحليل عميق الآن"}
+            {running ? "جاري التحليل..." : "تشغيل تحليل ذكي الآن"}
           </Button>
         </div>
 

@@ -14,7 +14,7 @@ interface InnovationItem {
 
 const CATEGORY_LABEL: Record<string, string> = {
   content: "محتوى ومقالات",
-  analytics: "تحليل عميق",
+  analytics: "تحليل ذكي",
   feature: "ميزة جديدة",
   ux: "تجربة استخدام",
   automation: "أتمتة وعمليات",
