@@ -120,6 +120,15 @@ export function Sidebar() {
         backgroundColor: branding.primary,
       }
     : undefined;
+  const visibleNavItems = previewAsEmployee
+    ? employeeNavItems
+    : !roleReady
+      ? []
+      : roleLevel === "admin"
+        ? adminNavItems
+        : roleLevel === "manager"
+          ? managerNavItems
+          : employeeNavItems;
 
   // Resolve role_level from employees table to know which menu to show
   useEffect(() => {
@@ -525,15 +534,7 @@ export function Sidebar() {
           }}
         >
           <div className="space-y-2.5" dir="rtl">
-            {/* عرض القائمة حسب مستوى الصلاحية (admin/manager/employee) أو وضع المعاينة */}
-            {(previewAsEmployee
-              ? employeeNavItems
-              : roleLevel === "admin"
-                ? adminNavItems
-                : roleLevel === "manager"
-                  ? managerNavItems
-                  : employeeNavItems
-            ).map((item) => (
+            {visibleNavItems.map((item) => (
               <div key={item.href}>
                 <NavLink item={item} />
               </div>
