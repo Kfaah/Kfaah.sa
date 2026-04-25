@@ -334,10 +334,24 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
 
         {/* ANALYSIS */}
         <TabsContent value="analysis" className="space-y-4 mt-6" dir="rtl">
+          <Card className="border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background">
+            <CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-right">
+                <p className="font-semibold">تشغيل التحليل الذكي</p>
+                <p className="text-sm text-muted-foreground">
+                  يعتمد التحليل على آخر الملفات المرفوعة لهذه الجمعية ومصادرها الرقمية.
+                </p>
+              </div>
+              <Button onClick={runDeepAnalysis} disabled={analyzing} size="lg" className="gap-2">
+                {analyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                {analysis ? "إعادة تشغيل التحليل" : "تشغيل التحليل الذكي"}
+              </Button>
+            </CardContent>
+          </Card>
           {!analysis ? (
             <Card>
               <CardContent className="py-12">
-                <EmptyState text="لا يوجد تحليل ذكي بعد." onAction={runDeepAnalysis} actionLabel="تشغيل التحليل الذكي" />
+                <EmptyState text="لا يوجد تحليل ذكي بعد. ارفع الملفات أولاً ثم اضغط زر التشغيل أعلاه." />
               </CardContent>
             </Card>
           ) : (
