@@ -627,6 +627,50 @@ function PlaceholderTab({ title, desc, linkTo, linkLabel }: { title: string; des
   );
 }
 
+function EmbeddedOrgPage({
+  slug,
+  path,
+  title,
+  embedSlug = true,
+}: {
+  slug?: string | null;
+  path: string;
+  title: string;
+  embedSlug?: boolean;
+}) {
+  if (!slug) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>جارٍ تحميل بيانات الجمعية…</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+  const src = embedSlug ? `/${slug}${path}?embedded=1` : `${path}?embedded=1&org=${slug}`;
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 py-3">
+        <CardTitle className="text-lg">{title}</CardTitle>
+        <Button asChild size="sm" variant="outline" className="gap-1">
+          <a href={src} target="_blank" rel="noreferrer">
+            <ExternalLink className="w-4 h-4" /> فتح في نافذة
+          </a>
+        </Button>
+      </CardHeader>
+      <CardContent className="p-0">
+        <iframe
+          src={src}
+          title={title}
+          className="w-full border-0 bg-background"
+          style={{ height: "calc(100vh - 280px)", minHeight: 600 }}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
 /* ---------- inline uploader for admin (org-scoped) ---------- */
 
 const SCHEMA_LABELS: Record<string, { label: string; color: string }> = {
