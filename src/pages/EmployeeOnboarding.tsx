@@ -320,14 +320,14 @@ export default function EmployeeOnboarding() {
       <div className="space-y-6 p-6 max-w-4xl mx-auto" dir="rtl">
         {/* Header */}
         <Card className="overflow-hidden border-0 shadow-xl">
-          <div className="bg-gradient-to-l from-fuchsia-600 via-pink-600 to-rose-500 p-6 text-white">
+          <div className="bg-gradient-to-l from-primary via-primary to-primary/80 p-6 text-primary-foreground">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg">
                 <Sparkles className="w-8 h-8" />
               </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold">ملفك الذكي ✨</h1>
-                <p className="text-white/90 text-sm mt-1">
+                <p className="text-primary-foreground/90 text-sm mt-1">
                   أهلًا {employee?.full_name ?? ""} — ساعدنا في التعرف عليك لنبني خططك ومهامك بذكاء يطابق شخصيتك وقدراتك
                 </p>
               </div>
@@ -343,10 +343,10 @@ export default function EmployeeOnboarding() {
         </Card>
 
         {/* Step content */}
-        <Card className="shadow-lg">
+        <Card className="shadow-lg" dir="rtl">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 flex items-center justify-center text-white shadow">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground shadow">
                 <StepIcon className="w-6 h-6" />
               </div>
               <div>
@@ -366,6 +366,8 @@ export default function EmployeeOnboarding() {
                   onInputChange={(v) => setChipInputs((p) => ({ ...p, technical_skills: v }))}
                   onAdd={() => addChip("technical_skills")}
                   onRemove={(i) => removeChip("technical_skills", i)}
+                  suggestions={SUGGESTIONS.technical_skills}
+                  onPick={(v) => setData((p) => ({ ...p, technical_skills: Array.from(new Set([...p.technical_skills, v])) }))}
                 />
                 <ChipField
                   label="اللغات"
@@ -375,6 +377,8 @@ export default function EmployeeOnboarding() {
                   onInputChange={(v) => setChipInputs((p) => ({ ...p, languages: v }))}
                   onAdd={() => addChip("languages")}
                   onRemove={(i) => removeChip("languages", i)}
+                  suggestions={SUGGESTIONS.languages}
+                  onPick={(v) => setData((p) => ({ ...p, languages: Array.from(new Set([...p.languages, v])) }))}
                 />
                 <ChipField
                   label="الشهادات والدورات"
@@ -384,6 +388,8 @@ export default function EmployeeOnboarding() {
                   onInputChange={(v) => setChipInputs((p) => ({ ...p, certifications: v }))}
                   onAdd={() => addChip("certifications")}
                   onRemove={(i) => removeChip("certifications", i)}
+                  suggestions={SUGGESTIONS.certifications}
+                  onPick={(v) => setData((p) => ({ ...p, certifications: Array.from(new Set([...p.certifications, v])) }))}
                 />
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -410,7 +416,7 @@ export default function EmployeeOnboarding() {
 
             {currentStep.key === "duties" && (
               <div className="space-y-5">
-                <div className="rounded-lg border border-fuchsia-200 bg-fuchsia-50/60 p-4 text-sm text-fuchsia-900">
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground">
                   سجّل هنا المهام الوظيفية التي تقوم بها بشكل دوري. ستستخدمها المنصة لتوليد خططك التنفيذية ومهامك اليومية تلقائياً، ولفهم قدراتك بدقة.
                 </div>
 
@@ -532,7 +538,7 @@ export default function EmployeeOnboarding() {
                   <Button
                     onClick={addDuty}
                     type="button"
-                    className="bg-gradient-to-l from-fuchsia-600 to-pink-600 hover:opacity-90 text-white"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     <Plus className="w-4 h-4 ml-1" />
                     إضافة المهمة
@@ -612,6 +618,8 @@ export default function EmployeeOnboarding() {
                   onInputChange={(v) => setChipInputs((p) => ({ ...p, development_areas: v }))}
                   onAdd={() => addChip("development_areas")}
                   onRemove={(i) => removeChip("development_areas", i)}
+                  suggestions={SUGGESTIONS.development_areas}
+                  onPick={(v) => setData((p) => ({ ...p, development_areas: Array.from(new Set([...p.development_areas, v])) }))}
                 />
                 <ChipField
                   label="المجالات/المهام المفضلة لديك"
@@ -621,6 +629,8 @@ export default function EmployeeOnboarding() {
                   onInputChange={(v) => setChipInputs((p) => ({ ...p, preferred_domains: v }))}
                   onAdd={() => addChip("preferred_domains")}
                   onRemove={(i) => removeChip("preferred_domains", i)}
+                  suggestions={SUGGESTIONS.preferred_domains}
+                  onPick={(v) => setData((p) => ({ ...p, preferred_domains: Array.from(new Set([...p.preferred_domains, v])) }))}
                 />
               </>
             )}
@@ -671,7 +681,7 @@ export default function EmployeeOnboarding() {
         </Card>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3" dir="rtl">
           <Button
             variant="outline"
             onClick={() => setStepIdx((i) => Math.max(0, i - 1))}
@@ -684,7 +694,7 @@ export default function EmployeeOnboarding() {
           {stepIdx < STEPS.length - 1 ? (
             <Button
               onClick={() => setStepIdx((i) => Math.min(STEPS.length - 1, i + 1))}
-              className="bg-gradient-to-l from-fuchsia-600 to-pink-600 hover:opacity-90 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               التالي
               <ChevronLeft className="w-4 h-4 mr-1" />
@@ -713,6 +723,8 @@ function ChipField({
   onInputChange,
   onAdd,
   onRemove,
+  suggestions,
+  onPick,
 }: {
   label: string;
   placeholder: string;
@@ -721,12 +733,31 @@ function ChipField({
   onInputChange: (v: string) => void;
   onAdd: () => void;
   onRemove: (idx: number) => void;
+  suggestions?: string[];
+  onPick?: (v: string) => void;
 }) {
+  const remaining = (suggestions ?? []).filter((s) => !values.includes(s));
   return (
-    <div>
+    <div dir="rtl">
       <Label>{label}</Label>
-      <div className="flex gap-2">
+      {remaining.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2 mb-2">
+          {remaining.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => onPick?.(s)}
+              className="text-xs px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              + {s}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-2 mt-1">
         <Input
+          dir="rtl"
+          className="text-right"
           placeholder={placeholder}
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
@@ -769,13 +800,13 @@ function RadioBlock({
   options: { v: string; l: string }[];
 }) {
   return (
-    <div>
+    <div dir="rtl">
       <Label className="mb-2 block">{label}</Label>
       <RadioGroup value={value} onValueChange={onChange} className="grid md:grid-cols-3 gap-2">
         {options.map((o) => (
           <label
             key={o.v}
-            className={`border rounded-lg p-3 cursor-pointer transition-colors flex items-center gap-2 ${
+            className={`border rounded-lg p-3 cursor-pointer transition-colors flex items-center gap-2 text-right ${
               value === o.v ? "border-primary bg-primary/5" : "hover:bg-muted/50"
             }`}
           >
