@@ -49,6 +49,7 @@ import MyPerformance from "./pages/MyPerformance";
 import NotFound from "./pages/NotFound";
 import OrganizationProfile from "./pages/OrganizationProfile";
 import EmployeeOnboarding from "./pages/EmployeeOnboarding";
+import StaffDutiesUpload from "./pages/StaffDutiesUpload";
 
 const queryClient = new QueryClient();
 
@@ -176,6 +177,7 @@ function AppRoutes() {
       <Route path="/my-accountability" element={<ProtectedRoute><MyAccountability /></ProtectedRoute>} />
       <Route path="/my-performance" element={<ProtectedRoute><MyPerformance /></ProtectedRoute>} />
       <Route path="/employee-onboarding" element={<ProtectedRoute><EmployeeOnboarding /></ProtectedRoute>} />
+      <Route path="/staff-duties-upload" element={<ProtectedRoute><StaffDutiesUpload /></ProtectedRoute>} />
 
       {/* Org-scoped aliases: charity-crm.org/atff/app, /atff/tasks ... */}
       <Route path="/:slug/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -199,6 +201,7 @@ function AppRoutes() {
       <Route path="/:slug/my-accountability" element={<ProtectedRoute><MyAccountability /></ProtectedRoute>} />
       <Route path="/:slug/my-performance" element={<ProtectedRoute><MyPerformance /></ProtectedRoute>} />
       <Route path="/:slug/employee-onboarding" element={<ProtectedRoute><EmployeeOnboarding /></ProtectedRoute>} />
+      <Route path="/:slug/staff-duties-upload" element={<ProtectedRoute><StaffDutiesUpload /></ProtectedRoute>} />
 
       {/* Short org slug: charity-crm.org/atff → نفس صفحة /j/atff */}
       <Route path="/:slug" element={<OrgAuth />} />
