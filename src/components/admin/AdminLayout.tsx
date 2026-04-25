@@ -42,6 +42,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const location = useLocation();
+  // Embedded mode: when this admin page is rendered inside an iframe of the
+  // org internal dashboard, hide the admin sidebar so only the page content
+  // shows (no double sidebars).
+  const isEmbedded =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("embedded") === "1";
   const [profile, setProfile] = useState<{ name: string; avatar: string | null }>({
     name: "مدير النظام",
     avatar: null,
@@ -95,6 +101,14 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     .toUpperCase() || "م";
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
+
+  if (isEmbedded) {
+    return (
+      <div className="min-h-screen bg-background" dir="rtl">
+        <div className="admin-soft-surface p-4">{children}</div>
+      </div>
+    );
+  }
 
   return (
     <div

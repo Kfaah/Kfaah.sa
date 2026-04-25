@@ -6,6 +6,20 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  // Embedded mode: when the page is rendered inside an iframe of the admin
+  // internal dashboard, hide the org sidebar so only the page content shows.
+  const isEmbedded =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("embedded") === "1";
+
+  if (isEmbedded) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="p-6">{children}</main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
