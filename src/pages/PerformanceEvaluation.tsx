@@ -103,9 +103,14 @@ export default function PerformanceEvaluation() {
 
   const loadAll = async () => {
     setLoading(true);
+    // Resolve current user's organization to scope the table
+    const { data: orgId } = await supabase.rpc("get_user_organization_id", { _user_id: user?.id });
     const [cRes, eRes, sRes, dRes] = await Promise.all([
       supabase.from("evaluation_criteria").select("*").eq("is_active", true).order("display_order"),
-      supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null),
+      (orgId
+        ? supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null).eq("organization_id", orgId as string)
+        : supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null)
+      ),
       supabase.from("employee_evaluation_scores").select("*").eq("period", period),
       supabase.from("departments").select("id, name"),
     ]);
