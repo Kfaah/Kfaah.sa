@@ -107,24 +107,27 @@ export function Sidebar() {
   const { signOut, user: authUser } = useAuth();
   const branding = useOrgBranding();
   const { currentOrg } = useOrganization();
-  const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
+  const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
+  const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">(
+    isActuallyAdmin ? "admin" : "employee"
+  );
 
-    // خلفية واحدة مستمرة من أعلى القائمة إلى أسفلها بهوية الجمعية.
+  // خلفية واحدة ثابتة من أعلى القائمة إلى أسفلها بدون أي تدرج.
   const sidebarBgStyle = branding.primary
     ? {
-        background: branding.secondary
-          ? `linear-gradient(180deg, ${branding.primary} 0%, ${branding.secondary} 100%)`
-          : branding.primary,
+        backgroundColor: branding.primary,
       }
     : undefined;
-
-  // Check if user is actually an admin (not in preview mode)
-  const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
 
   // Resolve role_level from employees table to know which menu to show
   useEffect(() => {
     const fetchRoleLevel = async () => {
       if (!authUser) return;
+
+      if (isActuallyAdmin) {
+        setRoleLevel("admin");
+        return;
+      }
 
       // 1) Check global user_roles first — admin/super_admin always wins
       const { data: userRole } = await supabase.rpc("get_user_role", {
@@ -361,11 +364,11 @@ export function Sidebar() {
         collapsed ? "w-20" : "w-72"
       )}
     >
-      {/* خلفية القائمة — تدرج واحد مستمر بهوية الجمعية */}
+      {/* خلفية القائمة — لون واحد ثابت بهوية الجمعية */}
       <div
         className={cn(
           "absolute inset-0",
-          !branding.primary && "bg-gradient-to-b from-[hsl(var(--primary))] to-[hsl(var(--accent))]"
+          !branding.primary && "bg-[hsl(var(--primary))]"
         )}
         style={sidebarBgStyle}
       />
