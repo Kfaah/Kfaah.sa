@@ -297,6 +297,8 @@ export default function PerformanceEvaluation() {
         criterion_id: scoreDialog.criterion_id,
         score: scoreValue,
         period,
+        period_start: range.start,
+        period_end: range.end,
         notes: scoreNotes || null,
         evaluated_by: user?.id ?? null,
       });
