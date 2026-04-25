@@ -51,52 +51,56 @@ interface NavItem {
   iconBg: string;
 }
 
-// قائمة مدير النظام (Admin) — يرى بيانات الجمعية فقط، بدون "خططي" الشخصية
+// خلفية أيقونة موحّدة لكل العناصر — هوية الجمعية فقط (تركوازي).
+// لا نغيّرها بين عنصر وآخر حتى لا يحصل اهتزاز/تبدّل ألوان عند التنقّل.
+const ICON_BG = "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))]";
+
+// قائمة مدير النظام (Admin)
 const adminNavItems: NavItem[] = [
-  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
-  { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
-  { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "bg-gradient-to-br from-teal-400 to-cyan-600" },
-  { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
-  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "تحليل المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-red-400 to-rose-500" },
-  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "bg-gradient-to-br from-rose-400 to-pink-600" },
-  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500" },
+  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: ICON_BG },
+  { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: ICON_BG },
+  { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: ICON_BG },
+  { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: ICON_BG },
+  { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: ICON_BG },
+  { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: ICON_BG },
+  { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: ICON_BG },
+  { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: ICON_BG },
+  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: ICON_BG },
+  { title: "تحليل المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: ICON_BG },
+  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: ICON_BG },
+  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: ICON_BG },
+  { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: ICON_BG },
 ];
 
-// قائمة المدير المتوسط (Manager) — له خططه الشخصية + يرى فريقه عبر Toggle داخل كل صفحة
+// قائمة المدير المتوسط (Manager)
 const managerNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "مساءلاتي", href: "/my-accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "أدائي", href: "/my-performance", icon: Award, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
+  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: ICON_BG },
+  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: ICON_BG },
+  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: ICON_BG },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: ICON_BG },
+  { title: "مساءلاتي", href: "/my-accountability", icon: ShieldAlert, iconBg: ICON_BG },
+  { title: "أدائي", href: "/my-performance", icon: Award, iconBg: ICON_BG },
+  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: ICON_BG },
 ];
 
 // قائمة الموظف العادي
 const employeeNavItems: NavItem[] = [
-  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
-  { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "bg-gradient-to-br from-rose-400 to-pink-600" },
-  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
+  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: ICON_BG },
+  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: ICON_BG },
+  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: ICON_BG },
+  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: ICON_BG },
+  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: ICON_BG },
+  { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: ICON_BG },
+  { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: ICON_BG },
+  { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: ICON_BG },
+  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: ICON_BG },
 ];
 
 const settingsNavItem: NavItem = {
   title: "الإعدادات",
   href: "/settings",
   icon: Settings,
-  iconBg: "bg-gradient-to-br from-slate-400 to-slate-500"
+  iconBg: ICON_BG,
 };
 
 export function Sidebar() {
