@@ -33,7 +33,8 @@ type UploadStatus = "queued" | "uploading" | "success" | "error";
 
 type UploadCategory =
   | "auto"
-  | "donations"
+  | "store_master"
+  | "store_daily"
   | "staff_duties"
   | "reports"
   | "profiles"
@@ -72,6 +73,8 @@ interface HistoryRow {
 
 const SCHEMA_LABELS: Record<string, { label: string; color: string }> = {
   donations: { label: "تبرعات", color: "bg-emerald-500" },
+  store_master: { label: "ملف المتجر (الضخم)", color: "bg-emerald-700" },
+  store_daily: { label: "تبرعات المتجر اليومية", color: "bg-emerald-500" },
   failed_donations: { label: "تبرعات فاشلة", color: "bg-red-500" },
   bank_transfers: { label: "تحويلات بنكية", color: "bg-blue-500" },
   abandoned_carts: { label: "سلال متروكة", color: "bg-orange-500" },
@@ -95,7 +98,8 @@ const CATEGORY_OPTIONS: {
   color: string;
 }[] = [
   { value: "auto", label: "كشف تلقائي (بيانات الجمعية)", desc: "تبرعات/سلال/حملات/استقطاعات...", icon: Sparkles, color: "from-fuchsia-500 to-pink-600" },
-  { value: "donations", label: "تبرعات المتجر / المسجد", desc: "ملف تبرعات يومي/شهري ضخم", icon: HeartHandshake, color: "from-emerald-500 to-teal-600" },
+  { value: "store_master", label: "ملف المتجر (الضخم)", desc: "ملف تبرعات المتجر منذ تأسيس المتجر", icon: Database, color: "from-emerald-700 to-teal-800" },
+  { value: "store_daily", label: "تبرعات المتجر اليومية", desc: "ملف تبرعات المتجر اليومي", icon: HeartHandshake, color: "from-emerald-500 to-teal-600" },
   { value: "staff_duties", label: "مهام موظفي المتجر", desc: "ربط المهام بكل موظف تلقائياً", icon: Users, color: "from-indigo-500 to-violet-600" },
   { value: "reports", label: "تقارير", desc: "تقارير دورية، ملفات تحليلية", icon: FileText, color: "from-rose-500 to-pink-600" },
   { value: "profiles", label: "ملفات تعريفية", desc: "بروفايلات، تعاريف موظفين/جمعية", icon: IdCard, color: "from-amber-500 to-orange-600" },
@@ -243,9 +247,12 @@ export default function Uploads() {
         ) {
           result = await archiveFile(pf, pf.category);
         } else {
+          // auto / store_master / store_daily — تمر عبر معالج البيانات الذكي
           const formData = new FormData();
           formData.append("file", pf.file);
           if (forDate) formData.append("for_date", forDate);
+          if (pf.category === "store_master") formData.append("source_kind", "store_master");
+          if (pf.category === "store_daily") formData.append("source_kind", "store_daily");
           const { data, error } = await supabase.functions.invoke("process-upload", {
             body: formData,
           });
@@ -282,7 +289,11 @@ export default function Uploads() {
 
   const handleFiles = useCallback(
     (files: FileList | File[]) => {
-      const isDataCategory = category === "auto" || category === "donations" || category === "staff_duties";
+      const isDataCategory =
+        category === "auto" ||
+        category === "store_master" ||
+        category === "store_daily" ||
+        category === "staff_duties";
       const arr = Array.from(files).filter((f) => {
         if (isDataCategory) return /\.(xlsx|xls|csv)$/i.test(f.name);
         return f.size <= 50 * 1024 * 1024;
@@ -334,7 +345,11 @@ export default function Uploads() {
 
   const activeCat = CATEGORY_OPTIONS.find((c) => c.value === category)!;
   const ActiveIcon = activeCat.icon;
-  const isDataCategory = category === "auto" || category === "donations" || category === "staff_duties";
+  const isDataCategory =
+    category === "auto" ||
+    category === "store_master" ||
+    category === "store_daily" ||
+    category === "staff_duties";
 
   return (
     <DashboardLayout>
