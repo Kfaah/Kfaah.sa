@@ -308,11 +308,12 @@ export default function PerformanceEvaluation() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3" dir="rtl">
               <div>
-                <Label className="text-xs mb-1.5 block">الفترة الزمنية</Label>
-                <Select value={period} onValueChange={setPeriod} dir="rtl">
+                <Label className="text-xs mb-1.5 block">القسم</Label>
+                <Select value={deptFilter} onValueChange={(v) => { setDeptFilter(v); setEmpFilter("all"); }} dir="rtl">
                   <SelectTrigger className="text-right"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {PERIODS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    <SelectItem value="all">جميع الأقسام</SelectItem>
+                    {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -322,17 +323,16 @@ export default function PerformanceEvaluation() {
                   <SelectTrigger className="text-right"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">جميع الموظفين</SelectItem>
-                    {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}
+                    {employeesInDept.map(e => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs mb-1.5 block">القسم</Label>
-                <Select value={deptFilter} onValueChange={setDeptFilter} dir="rtl">
+                <Label className="text-xs mb-1.5 block">الفترة الزمنية</Label>
+                <Select value={period} onValueChange={setPeriod} dir="rtl">
                   <SelectTrigger className="text-right"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">جميع الأقسام</SelectItem>
-                    {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    {PERIODS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
