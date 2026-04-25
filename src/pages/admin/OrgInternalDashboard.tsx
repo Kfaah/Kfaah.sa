@@ -4,13 +4,15 @@ import {
   ArrowRight, LayoutDashboard, Users, ListChecks, FileBarChart2,
   Lightbulb, ShieldAlert, Upload, HeartHandshake, Building2,
   Loader2, Sparkles, ExternalLink, Target, AlertTriangle, CheckCircle2,
-  GitCompareArrows, CalendarCheck, ClipboardList,
+  GitCompareArrows, CalendarCheck, ClipboardList, FileSpreadsheet, XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -250,8 +252,8 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-center gap-0 border border-accent/40 bg-accent p-1.5 text-accent-foreground [&>[role=separator]]:mx-1 [&>[role=separator]]:h-6 [&>[role=separator]]:w-px [&>[role=separator]]:self-center [&>[role=separator]]:bg-accent-foreground/30">
           {(() => {
             const tabs = [
-              { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "uploads", label: "رفع الملفات", Icon: Upload },
+              { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "employees", label: "الموظفون", Icon: Users },
               { value: "operational-plans", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
