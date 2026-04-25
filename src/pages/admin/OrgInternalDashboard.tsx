@@ -776,7 +776,9 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
             </div>
             <div>
               <p className="text-xl font-semibold">اسحب الملفات هنا</p>
-              <p className="text-sm text-muted-foreground mt-1">أو انقر للاختيار — XLSX, XLS, CSV</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                ارفع كل الملفات (تبرعات، حملات، استقطاعات، سلال…) ثم اضغط <span className="font-semibold text-foreground">بدء الرفع والتحليل</span> ليتم تحليل كل البيانات معًا.
+              </p>
             </div>
             <Button variant="outline" type="button">
               <FileSpreadsheet className="w-4 h-4 ml-2" /> اختر ملفات
