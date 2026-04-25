@@ -79,6 +79,14 @@ export default function AdminInnovation() {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
   const { metrics, loading: metricsLoading } = useAdminAggregates(range);
   const [orgId, setOrgId] = useState<string>("");
+  // Embedded mode (inside org dashboard iframe) — lock to one org via ?org=slug
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const isEmbedded = params.get("embedded") === "1";
+  const lockedSlug = params.get("org") || "";
+  const visibleMetrics = useMemo(
+    () => (isEmbedded && lockedSlug ? metrics.filter((m) => m.org_slug === lockedSlug) : metrics),
+    [metrics, isEmbedded, lockedSlug]
+  );
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -86,9 +94,9 @@ export default function AdminInnovation() {
   const [filterStatus, setFilterStatus] = useState<"all" | Status>("all");
   const [openSuggestion, setOpenSuggestion] = useState<Suggestion | null>(null);
 
-  useEffect(() => { if (!orgId && metrics.length > 0) setOrgId(metrics[0].org_id); }, [metrics, orgId]);
+  useEffect(() => { if (!orgId && visibleMetrics.length > 0) setOrgId(visibleMetrics[0].org_id); }, [visibleMetrics, orgId]);
 
-  const selected = useMemo(() => metrics.find((m) => m.org_id === orgId), [metrics, orgId]);
+  const selected = useMemo(() => visibleMetrics.find((m) => m.org_id === orgId), [visibleMetrics, orgId]);
 
   const loadSuggestions = async (oid: string) => {
     setLoading(true);
