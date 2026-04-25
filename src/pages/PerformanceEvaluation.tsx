@@ -37,7 +37,7 @@ type Employee = {
   full_name: string;
   department_id: string | null;
   department_name: string | null;
-  job_title: string | null;
+  job_role: string | null;
   avatar_url: string | null;
 };
 
@@ -160,8 +160,8 @@ export default function PerformanceEvaluation() {
     const [cRes, eRes, sRes, dRes] = await Promise.all([
       supabase.from("evaluation_criteria").select("*").eq("is_active", true).order("display_order"),
       (orgId
-        ? supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null).eq("organization_id", orgId as string)
-        : supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null)
+        ? supabase.from("employees").select("id, user_id, full_name, department_id, job_role, avatar_url").not("user_id", "is", null).eq("organization_id", orgId as string)
+        : supabase.from("employees").select("id, user_id, full_name, department_id, job_role, avatar_url").not("user_id", "is", null)
       ),
       // Fetch all scores; filter client-side by date range OR by legacy period label.
       supabase.from("employee_evaluation_scores").select("*"),
