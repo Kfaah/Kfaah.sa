@@ -415,6 +415,21 @@ export default function PerformanceEvaluation() {
                 </Select>
               </div>
             </div>
+            {period === "custom" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3" dir="rtl">
+                <div>
+                  <Label className="text-xs mb-1.5 block">من تاريخ</Label>
+                  <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} dir="ltr" className="text-right" />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">إلى تاريخ</Label>
+                  <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} dir="ltr" className="text-right" />
+                </div>
+              </div>
+            )}
+            <div className="mt-3 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
+              النطاق المطبّق: <span className="font-semibold text-foreground">{range.label}</span>
+            </div>
           </CardContent>
         </Card>
 
