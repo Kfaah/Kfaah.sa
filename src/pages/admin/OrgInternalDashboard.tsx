@@ -1094,15 +1094,8 @@ function getInitials(name: string): string {
   return (parts[0][0] ?? "") + (parts[1][0] ?? "");
 }
 
-const AVATAR_GRADIENTS = [
-  "from-primary to-accent",
-  "from-accent to-primary",
-  "from-emerald-500 to-teal-600",
-  "from-amber-500 to-orange-600",
-  "from-rose-500 to-pink-600",
-  "from-sky-500 to-indigo-600",
-  "from-violet-500 to-fuchsia-600",
-];
+// هوية موحدة هادئة: الأزرق الداكن والتركوازي فقط
+const BRAND_GRADIENT = "from-primary to-accent";
 
 function EmployeesShowcase({
   employees,
@@ -1136,38 +1129,39 @@ function EmployeesShowcase({
 
   return (
     <div className="space-y-6">
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-l from-primary/95 via-accent/90 to-primary p-8 shadow-xl">
-        <div className="absolute -top-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -bottom-24 -right-10 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+      {/* Hero — هوية هادئة موحّدة */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
+        <div className="absolute inset-0 bg-gradient-to-l from-primary/5 via-transparent to-accent/5" />
+        <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute -bottom-24 -right-10 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
         <div className="relative flex flex-wrap items-end justify-between gap-6">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs text-white ring-1 ring-white/30 backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs text-primary ring-1 ring-primary/20">
               <Users className="h-3.5 w-3.5" />
               فريق العمل
             </div>
-            <h2 className="mt-3 text-3xl font-bold text-white">طاقم الموظفين</h2>
-            <p className="mt-1 text-white/85">منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة</p>
+            <h2 className="mt-3 text-3xl font-bold text-foreground">طاقم الموظفين</h2>
+            <p className="mt-1 text-muted-foreground">منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة</p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <div className="rounded-2xl bg-white/15 px-4 py-2 text-white ring-1 ring-white/25 backdrop-blur">
-                <div className="text-2xl font-bold leading-none">{employees.length}</div>
-                <div className="text-[11px] opacity-90">إجمالي الموظفين</div>
+              <div className="rounded-2xl border border-border bg-background/60 px-4 py-2 backdrop-blur">
+                <div className="text-2xl font-bold leading-none text-primary">{employees.length}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">إجمالي الموظفين</div>
               </div>
-              <div className="rounded-2xl bg-white/15 px-4 py-2 text-white ring-1 ring-white/25 backdrop-blur">
-                <div className="flex items-center gap-1 text-2xl font-bold leading-none">
+              <div className="rounded-2xl border border-border bg-background/60 px-4 py-2 backdrop-blur">
+                <div className="flex items-center gap-1 text-2xl font-bold leading-none text-accent">
                   <Crown className="h-5 w-5" />
                   {managersCount}
                 </div>
-                <div className="text-[11px] opacity-90">قيادات</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">قيادات</div>
               </div>
-              <div className="rounded-2xl bg-white/15 px-4 py-2 text-white ring-1 ring-white/25 backdrop-blur">
-                <div className="text-2xl font-bold leading-none">{totalQuestions}</div>
-                <div className="text-[11px] opacity-90">مساءلات نشطة</div>
+              <div className="rounded-2xl border border-border bg-background/60 px-4 py-2 backdrop-blur">
+                <div className="text-2xl font-bold leading-none text-primary">{totalQuestions}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">مساءلات نشطة</div>
               </div>
             </div>
           </div>
           <Link to={addEmployeeHref}>
-            <Button size="lg" className="gap-2 bg-white text-primary hover:bg-white/90 shadow-lg">
+            <Button size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
               <UserPlus className="h-5 w-5" />
               إضافة موظف جديد
             </Button>
@@ -1201,22 +1195,23 @@ function EmployeesShowcase({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((e, idx) => {
+          {filtered.map((e) => {
             const qCount = questions.filter(
               (q) =>
                 q.target_employee_id === e.id ||
                 (q.target_job_role && e.job_role && q.target_job_role === e.job_role)
             ).length;
-            const grad = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length];
+            const grad = BRAND_GRADIENT;
             const isLeader = /(مدير|رئيس|قائد|director|manager|head)/i.test(
               (e.job_role ?? "") + " " + (e.title ?? "")
             );
+            const editHref = orgSlug ? `/${orgSlug}/employees/${e.id}/edit` : `/employees/${e.id}/edit`;
             return (
               <div
                 key={e.id}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl"
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-accent/40 hover:shadow-md"
               >
-                <div className={`absolute inset-x-0 top-0 h-20 bg-gradient-to-l ${grad} opacity-90`} />
+                <div className={`absolute inset-x-0 top-0 h-20 bg-gradient-to-l ${grad} opacity-15`} />
                 <div className="relative flex items-start gap-3">
                   <div className={`flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${grad} text-xl font-bold text-white shadow-lg ring-4 ring-card`}>
                     {e.avatar_url ? (
@@ -1225,16 +1220,25 @@ function EmployeesShowcase({
                       <span>{getInitials(e.full_name)}</span>
                     )}
                   </div>
-                  {isLeader && (
-                    <Badge className="ms-auto gap-1 bg-amber-500/20 text-amber-700 border-amber-500/40 dark:text-amber-300">
-                      <Crown className="h-3 w-3" /> قيادي
-                    </Badge>
-                  )}
+                  <div className="ms-auto flex items-center gap-2">
+                    {isLeader && (
+                      <Badge variant="outline" className="gap-1 border-accent/40 bg-accent/10 text-accent">
+                        <Crown className="h-3 w-3" /> قيادي
+                      </Badge>
+                    )}
+                    <Link
+                      to={editHref}
+                      title="تعديل"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 text-muted-foreground opacity-0 transition-all hover:border-primary/40 hover:text-primary group-hover:opacity-100"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
                 </div>
                 <div className="relative mt-10">
                   <h3 className="truncate text-base font-bold text-foreground">{e.full_name}</h3>
                   {e.title && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-primary">
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-accent">
                       <Sparkles className="h-3 w-3" />
                       {e.title}
                     </p>
@@ -1257,13 +1261,26 @@ function EmployeesShowcase({
                   )}
                 </div>
                 <div className="relative mt-4 flex items-center justify-between border-t border-border pt-3">
-                  <div className="flex items-center gap-1 text-xs">
-                    <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <ShieldAlert className="h-3.5 w-3.5 text-primary" />
                     <span className="text-muted-foreground">المساءلات:</span>
-                    <Badge variant={qCount > 0 ? "default" : "secondary"} className="h-5">
+                    <span
+                      className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-semibold ${
+                        qCount > 0
+                          ? "bg-accent/15 text-accent ring-1 ring-accent/30"
+                          : "bg-muted text-muted-foreground ring-1 ring-border"
+                      }`}
+                    >
                       {qCount}
-                    </Badge>
+                    </span>
                   </div>
+                  <Link
+                    to={editHref}
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-primary transition-colors hover:bg-primary/10"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    تعديل
+                  </Link>
                 </div>
               </div>
             );
