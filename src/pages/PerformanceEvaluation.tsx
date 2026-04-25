@@ -413,7 +413,7 @@ export default function PerformanceEvaluation() {
                             <div className="min-w-0">
                               <div className="font-semibold text-sm truncate">{e.full_name}</div>
                               <div className="text-xs text-muted-foreground truncate">
-                                {e.job_title || e.department || "—"}
+                                {e.job_title || e.department_name || "—"}
                               </div>
                             </div>
                           </div>
