@@ -47,6 +47,8 @@ type ScoreRow = {
   criterion_id: string;
   score: number;
   period: string;
+  period_start?: string | null;
+  period_end?: string | null;
   notes: string | null;
 };
 
