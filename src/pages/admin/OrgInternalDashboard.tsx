@@ -480,28 +480,28 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
 
         {/* TASKS / REPORTS / INNOVATION / UPLOADS / DONORS - placeholder summaries linking to existing pages */}
         <TabsContent value="tasks" className="mt-6" dir="rtl">
-          <PlaceholderTab title="المهام" desc="تُدار من خلال صفحة المهام داخل مساحة عمل الجمعية. ستظهر هنا قريباً مهام الجمعية مرتبطة بالمساءلات." />
+          <EmbeddedOrgPage slug={org?.slug} path="/tasks" title="المهام" />
         </TabsContent>
         <TabsContent value="reports" className="mt-6" dir="rtl">
-          <PlaceholderTab title="التقارير" desc="تقارير تنفيذية وموضوعية." linkTo="/admin/reports" linkLabel="فتح التقارير" />
+          <EmbeddedOrgPage slug={org?.slug} path="/admin/reports" title="التقارير" embedSlug={false} />
         </TabsContent>
         <TabsContent value="innovation" className="mt-6" dir="rtl">
-          <PlaceholderTab title="الابتكار والتحديث" desc="أفكار AI ابتكارية لتطوير عمل الجمعية." linkTo="/admin/innovation" linkLabel="فتح الابتكار" />
+          <EmbeddedOrgPage slug={org?.slug} path="/admin/innovation" title="الابتكار والتحديث" embedSlug={false} />
         </TabsContent>
         <TabsContent value="uploads" className="mt-6" dir="rtl">
           <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
         </TabsContent>
         <TabsContent value="operational-plans" className="mt-6" dir="rtl">
-          <PlaceholderTab title="الخطط من التوصيات" desc="خطط مولّدة تلقائياً من توصيات التحليل الذكي ومتابعة تنفيذها." linkTo="/admin/action-plans" linkLabel="فتح الخطط من التوصيات" />
+          <EmbeddedOrgPage slug={org?.slug} path="/admin/action-plans" title="الخطط من التوصيات" embedSlug={false} />
         </TabsContent>
         <TabsContent value="operational-plans-main" className="mt-6" dir="rtl">
-          <PlaceholderTab title="الخطط التشغيلية" desc="إدارة الخطط التشغيلية للجمعية ومتابعة المبادرات والأهداف." linkTo="/operational-plans" linkLabel="فتح الخطط التشغيلية" />
+          <EmbeddedOrgPage slug={org?.slug} path="/operational-plans" title="الخطط التشغيلية" />
         </TabsContent>
         <TabsContent value="executive-plans" className="mt-6" dir="rtl">
-          <PlaceholderTab title="الخطط التنفيذية" desc="الخطط التنفيذية المرتبطة بالخطط التشغيلية ومتابعة تنفيذها." linkTo="/executive-plans" linkLabel="فتح الخطط التنفيذية" />
+          <EmbeddedOrgPage slug={org?.slug} path="/executive-plans" title="الخطط التنفيذية" />
         </TabsContent>
         <TabsContent value="performance" className="mt-6" dir="rtl">
-          <PlaceholderTab title="تقييم الأداء" desc="تقييمات الأداء الدورية للموظفين بناءً على المهام والمساءلات والأهداف. (قيد التطوير.)" />
+          <EmbeddedOrgPage slug={org?.slug} path="/performance" title="تقييم الأداء" />
         </TabsContent>
         <TabsContent value="donors" className="mt-6" dir="rtl">
           <PlaceholderTab title="المتبرعون" desc={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`} />
