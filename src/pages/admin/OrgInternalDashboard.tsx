@@ -727,14 +727,7 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
       for (const pf of queue) {
         await processFile(pf);
       }
-      // After all uploads complete — run the smart analysis on the consolidated data
-      toast.loading("جاري تشغيل التحليل الذكي على جميع الملفات المرفوعة...", { id: "batch-analysis" });
-      try {
-        await onRunAnalysis();
-        toast.success("اكتمل الرفع والتحليل الذكي", { id: "batch-analysis" });
-      } catch {
-        toast.error("اكتمل الرفع لكن فشل التحليل", { id: "batch-analysis" });
-      }
+      toast.success("اكتمل رفع الملفات. انتقل إلى تبويب «التحليل الذكي» لتشغيل التحليل.");
     } finally {
       setBatchRunning(false);
     }
