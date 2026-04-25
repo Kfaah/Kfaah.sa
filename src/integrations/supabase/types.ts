@@ -1253,6 +1253,96 @@ export type Database = {
           },
         ]
       }
+      employee_intelligence_profiles: {
+        Row: {
+          ai_analyzed_at: string | null
+          ai_summary: string | null
+          career_goals: string | null
+          certifications: Json | null
+          communication_style: string | null
+          created_at: string
+          development_areas: Json | null
+          employee_id: string | null
+          focus_hours_per_day: number | null
+          id: string
+          languages: Json | null
+          max_parallel_tasks: number | null
+          onboarding_completed: boolean
+          onboarding_completed_at: string | null
+          organization_id: string | null
+          peak_hours: string | null
+          personality_notes: string | null
+          planning_preference: string | null
+          preferred_domains: Json | null
+          pressure_handling: string | null
+          previous_roles: string | null
+          technical_skills: Json | null
+          unavailable_days: Json | null
+          updated_at: string
+          user_id: string
+          work_style: string | null
+          years_of_experience: number | null
+        }
+        Insert: {
+          ai_analyzed_at?: string | null
+          ai_summary?: string | null
+          career_goals?: string | null
+          certifications?: Json | null
+          communication_style?: string | null
+          created_at?: string
+          development_areas?: Json | null
+          employee_id?: string | null
+          focus_hours_per_day?: number | null
+          id?: string
+          languages?: Json | null
+          max_parallel_tasks?: number | null
+          onboarding_completed?: boolean
+          onboarding_completed_at?: string | null
+          organization_id?: string | null
+          peak_hours?: string | null
+          personality_notes?: string | null
+          planning_preference?: string | null
+          preferred_domains?: Json | null
+          pressure_handling?: string | null
+          previous_roles?: string | null
+          technical_skills?: Json | null
+          unavailable_days?: Json | null
+          updated_at?: string
+          user_id: string
+          work_style?: string | null
+          years_of_experience?: number | null
+        }
+        Update: {
+          ai_analyzed_at?: string | null
+          ai_summary?: string | null
+          career_goals?: string | null
+          certifications?: Json | null
+          communication_style?: string | null
+          created_at?: string
+          development_areas?: Json | null
+          employee_id?: string | null
+          focus_hours_per_day?: number | null
+          id?: string
+          languages?: Json | null
+          max_parallel_tasks?: number | null
+          onboarding_completed?: boolean
+          onboarding_completed_at?: string | null
+          organization_id?: string | null
+          peak_hours?: string | null
+          personality_notes?: string | null
+          planning_preference?: string | null
+          preferred_domains?: Json | null
+          pressure_handling?: string | null
+          previous_roles?: string | null
+          technical_skills?: Json | null
+          unavailable_days?: Json | null
+          updated_at?: string
+          user_id?: string
+          work_style?: string | null
+          years_of_experience?: number | null
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           avatar_url: string | null
