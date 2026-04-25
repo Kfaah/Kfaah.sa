@@ -618,7 +618,7 @@ export default function EmployeeOnboarding() {
             )}
 
             {currentStep.key === "summary" && (
-              <SummaryView data={data} />
+              <SummaryView data={data} dutiesCount={jobDuties.length} />
             )}
           </CardContent>
         </Card>
