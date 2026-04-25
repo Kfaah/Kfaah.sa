@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
 import { Users, CheckCircle, Clock, Trophy, TrendingUp, Calendar, ListTodo, Timer, Target } from "lucide-react";
@@ -33,6 +33,7 @@ interface AdminStats {
 
 const Index = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [showWelcome, setShowWelcome] = useState(true);
   const [currentMessage, setCurrentMessage] = useState("");
   const { user, previewAsEmployee, previewingEmployee } = useUser();
@@ -92,6 +93,19 @@ const Index = () => {
 
         const admin = !!hasAdminRole;
         setIsAdmin(admin);
+
+        // إعادة توجيه الموظف العادي للاستبيان الذكي إذا لم يكمله بعد
+        if (!admin) {
+          const { data: profile } = await supabase
+            .from("employee_intelligence_profiles")
+            .select("onboarding_completed")
+            .eq("user_id", authUser.id)
+            .maybeSingle();
+          if (!profile?.onboarding_completed) {
+            navigate("/employee-onboarding", { replace: true });
+            return;
+          }
+        }
 
         if (admin) {
           await fetchAdminStats();
