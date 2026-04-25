@@ -53,6 +53,7 @@ import OrganizationProfile from "./pages/OrganizationProfile";
 import EmployeeOnboarding from "./pages/EmployeeOnboarding";
 import StaffDutiesUpload from "./pages/StaffDutiesUpload";
 import MyAssistant from "./pages/MyAssistant";
+import PerformanceEvaluation from "./pages/PerformanceEvaluation";
 import { AssistantFab } from "@/components/assistant/AssistantFab";
 
 const queryClient = new QueryClient();
@@ -245,6 +246,8 @@ function AppRoutes() {
       <Route path="/employee-onboarding" element={<ProtectedRoute><EmployeeOnboarding /></ProtectedRoute>} />
       <Route path="/staff-duties-upload" element={<ProtectedRoute><StaffDutiesUpload /></ProtectedRoute>} />
       <Route path="/my-assistant" element={<ProtectedRoute><MyAssistant /></ProtectedRoute>} />
+      <Route path="/performance" element={<ProtectedRoute><PerformanceEvaluation /></ProtectedRoute>} />
+      <Route path="/:slug/performance" element={<ProtectedRoute><PerformanceEvaluation /></ProtectedRoute>} />
 
       {/* Org-scoped aliases: charity-crm.org/atff/app, /atff/tasks ... */}
       <Route path="/:slug/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />

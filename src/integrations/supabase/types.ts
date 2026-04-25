@@ -1304,6 +1304,62 @@ export type Database = {
           },
         ]
       }
+      employee_evaluation_scores: {
+        Row: {
+          created_at: string
+          criterion_id: string
+          employee_user_id: string
+          evaluated_by: string | null
+          id: string
+          is_automatic: boolean
+          notes: string | null
+          organization_id: string | null
+          period: string
+          period_end: string | null
+          period_start: string | null
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criterion_id: string
+          employee_user_id: string
+          evaluated_by?: string | null
+          id?: string
+          is_automatic?: boolean
+          notes?: string | null
+          organization_id?: string | null
+          period?: string
+          period_end?: string | null
+          period_start?: string | null
+          score: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criterion_id?: string
+          employee_user_id?: string
+          evaluated_by?: string | null
+          id?: string
+          is_automatic?: boolean
+          notes?: string | null
+          organization_id?: string | null
+          period?: string
+          period_end?: string | null
+          period_start?: string | null
+          score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_evaluation_scores_criterion_id_fkey"
+            columns: ["criterion_id"]
+            isOneToOne: false
+            referencedRelation: "evaluation_criteria"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_files: {
         Row: {
           category: string
@@ -1619,6 +1675,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      evaluation_criteria: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          is_automatic: boolean
+          metric_key: string | null
+          name: string
+          organization_id: string | null
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_automatic?: boolean
+          metric_key?: string | null
+          name: string
+          organization_id?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_automatic?: boolean
+          metric_key?: string | null
+          name?: string
+          organization_id?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
       }
       evidence_checks: {
         Row: {
