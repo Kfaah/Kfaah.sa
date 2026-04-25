@@ -217,6 +217,34 @@ export default function EmployeeOnboarding() {
         .upsert(payload, { onConflict: "user_id" });
 
       if (error) throw error;
+
+      // حفظ المهام الوظيفية: مكان مركّز يفهم منه النظام مهام الموظف بدقة
+      await supabase
+        .from("employee_job_duties")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("source", "self_declared");
+
+      if (jobDuties.length > 0) {
+        const dutyRows = jobDuties.map((d) => ({
+          user_id: user.id,
+          employee_id: employee?.id ?? null,
+          organization_id: employee?.organization_id ?? null,
+          title: d.title,
+          description: d.description || null,
+          category: d.category || null,
+          frequency: d.frequency,
+          priority: d.priority,
+          estimated_time_minutes: d.estimated_time_minutes,
+          source: "self_declared",
+          is_active: true,
+        }));
+        const { error: dutiesError } = await supabase
+          .from("employee_job_duties")
+          .insert(dutyRows);
+        if (dutiesError) throw dutiesError;
+      }
+
       toast.success("تم حفظ ملفك الذكي بنجاح ✨");
       navigate("/app");
     } catch (e: any) {
