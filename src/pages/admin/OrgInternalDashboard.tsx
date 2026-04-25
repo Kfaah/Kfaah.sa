@@ -253,8 +253,8 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           {(() => {
             const tabs = [
               { value: "uploads", label: "رفع الملفات", Icon: Upload },
-              { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
+              { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "operational-plans", label: "الخطط من التوصيات", Icon: ListChecks },
               { value: "operational-plans-main", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
@@ -334,10 +334,24 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
 
         {/* ANALYSIS */}
         <TabsContent value="analysis" className="space-y-4 mt-6" dir="rtl">
+          <Card className="border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background">
+            <CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-right">
+                <p className="font-semibold">تشغيل التحليل الذكي</p>
+                <p className="text-sm text-muted-foreground">
+                  يعتمد التحليل على آخر الملفات المرفوعة لهذه الجمعية ومصادرها الرقمية.
+                </p>
+              </div>
+              <Button onClick={runDeepAnalysis} disabled={analyzing} size="lg" className="gap-2">
+                {analyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                {analysis ? "إعادة تشغيل التحليل" : "تشغيل التحليل الذكي"}
+              </Button>
+            </CardContent>
+          </Card>
           {!analysis ? (
             <Card>
               <CardContent className="py-12">
-                <EmptyState text="لا يوجد تحليل ذكي بعد." onAction={runDeepAnalysis} actionLabel="تشغيل التحليل الذكي" />
+                <EmptyState text="لا يوجد تحليل ذكي بعد. ارفع الملفات أولاً ثم اضغط زر التشغيل أعلاه." />
               </CardContent>
             </Card>
           ) : (
@@ -727,14 +741,7 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
       for (const pf of queue) {
         await processFile(pf);
       }
-      // After all uploads complete — run the smart analysis on the consolidated data
-      toast.loading("جاري تشغيل التحليل الذكي على جميع الملفات المرفوعة...", { id: "batch-analysis" });
-      try {
-        await onRunAnalysis();
-        toast.success("اكتمل الرفع والتحليل الذكي", { id: "batch-analysis" });
-      } catch {
-        toast.error("اكتمل الرفع لكن فشل التحليل", { id: "batch-analysis" });
-      }
+      toast.success("اكتمل رفع الملفات. انتقل إلى تبويب «التحليل الذكي» لتشغيل التحليل.");
     } finally {
       setBatchRunning(false);
     }
@@ -781,7 +788,7 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
             <div>
               <p className="text-xl font-semibold">اسحب الملفات هنا</p>
               <p className="text-sm text-muted-foreground mt-1">
-                ارفع كل الملفات (تبرعات، حملات، استقطاعات، سلال…) ثم اضغط <span className="font-semibold text-foreground">بدء الرفع والتحليل</span> ليتم تحليل كل البيانات معًا.
+                ارفع كل الملفات (تبرعات، حملات، استقطاعات، سلال…) ثم اضغط <span className="font-semibold text-foreground">بدء الرفع</span>. ثم انتقل إلى تبويب <span className="font-semibold text-foreground">التحليل الذكي</span> لتشغيل التحليل.
               </p>
             </div>
             <Button variant="outline" type="button">
@@ -875,7 +882,7 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
                 {batchRunning || analyzing ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> جاري المعالجة…</>
                 ) : (
-                  <><Sparkles className="w-5 h-5" /> بدء الرفع والتحليل ({queuedCount})</>
+                  <><Upload className="w-5 h-5" /> بدء الرفع ({queuedCount})</>
                 )}
               </Button>
             </div>
