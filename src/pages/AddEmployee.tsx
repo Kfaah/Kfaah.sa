@@ -387,7 +387,7 @@ const AddEmployee = () => {
                   }}
                   placeholder="أدخل رقم الهوية (10 أرقام)"
                   className={errors.username ? "border-destructive" : ""}
-                  dir="ltr"
+                  dir="rtl"
                 />
                 {errors.username && (
                   <p className="text-sm text-destructive flex items-center gap-1">
@@ -516,11 +516,12 @@ const AddEmployee = () => {
                     setForm((prev) => ({ ...prev, department: v, role: "" }));
                     if (errors.department) setErrors((prev) => ({ ...prev, department: "" }));
                   }}
+                  dir="rtl"
                 >
-                  <SelectTrigger className={errors.department ? "border-destructive" : ""}>
+                  <SelectTrigger dir="rtl" className={`text-right ${errors.department ? "border-destructive" : ""}`}>
                     <SelectValue placeholder="اختر القسم" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
+                  <SelectContent dir="rtl" className="bg-background z-50 text-right">
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.name}>
                         {dept.name}
@@ -550,11 +551,12 @@ const AddEmployee = () => {
                     setForm((prev) => ({ ...prev, role: v }));
                     if (errors.role) setErrors((prev) => ({ ...prev, role: "" }));
                   }}
+                  dir="rtl"
                 >
-                  <SelectTrigger className={errors.role ? "border-destructive" : ""}>
+                  <SelectTrigger dir="rtl" className={`text-right ${errors.role ? "border-destructive" : ""}`}>
                     <SelectValue placeholder="اختر الدور الوظيفي" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
+                  <SelectContent dir="rtl" className="bg-background z-50 text-right">
                     {filteredRoles.map((role) => (
                       <SelectItem key={role.id} value={role.name}>
                         {role.name}
@@ -586,11 +588,12 @@ const AddEmployee = () => {
                 <Select
                   value={form.directManagerId}
                   onValueChange={(v) => setForm((prev) => ({ ...prev, directManagerId: v }))}
+                  dir="rtl"
                 >
-                  <SelectTrigger>
+                  <SelectTrigger dir="rtl" className="text-right">
                     <SelectValue placeholder="اختر المدير المباشر (اختياري)" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
+                  <SelectContent dir="rtl" className="bg-background z-50 text-right">
                     <SelectItem value="none">بدون مدير مباشر</SelectItem>
                     {employees.map((emp) => (
                       <SelectItem key={emp.id} value={emp.id}>
@@ -612,11 +615,12 @@ const AddEmployee = () => {
                 <Select
                   value={form.executiveManagerId}
                   onValueChange={(v) => setForm((prev) => ({ ...prev, executiveManagerId: v }))}
+                  dir="rtl"
                 >
-                  <SelectTrigger>
+                  <SelectTrigger dir="rtl" className="text-right">
                     <SelectValue placeholder="اختر المدير التنفيذي (اختياري)" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
+                  <SelectContent dir="rtl" className="bg-background z-50 text-right">
                     <SelectItem value="none">بدون مدير تنفيذي</SelectItem>
                     {employees.map((emp) => (
                       <SelectItem key={emp.id} value={emp.id}>
@@ -644,11 +648,12 @@ const AddEmployee = () => {
                 onValueChange={(v) =>
                   setForm((prev) => ({ ...prev, roleLevel: v as any }))
                 }
+                dir="rtl"
               >
-                <SelectTrigger>
+                <SelectTrigger dir="rtl" className="text-right">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50">
+                <SelectContent dir="rtl" className="bg-background z-50 text-right">
                   <SelectItem value="employee">
                     👤 موظف عادي — يرى بياناته فقط
                   </SelectItem>
