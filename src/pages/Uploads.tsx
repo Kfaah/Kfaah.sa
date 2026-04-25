@@ -362,18 +362,30 @@ export default function Uploads() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-lg">
-                <Upload className="w-6 h-6 text-primary-foreground" />
-              </div>
-              رفع الملفات
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              مكان موحّد لرفع جميع ملفات الجمعية — اختر الفئة وسيقوم النظام بالقراءة، الربط، والتحليل تلقائياً (تبرعات المتجر، مهام الموظفين، تقارير، ملفات تعريفية…)
-            </p>
+        {/* Header — بانر زخرفي هادئ بهوية الجمعية */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-l from-[hsl(var(--primary))] via-[hsl(var(--primary))] to-[hsl(var(--accent))] p-6 shadow-lg">
+          {/* دوائر زخرفية ناعمة */}
+          <div className="pointer-events-none absolute -top-16 -left-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-20 right-1/4 h-48 w-48 rounded-full bg-[hsl(38_85%_55%)]/20 blur-3xl" />
+          <div className="pointer-events-none absolute top-4 left-1/3 h-2 w-2 rounded-full bg-white/40" />
+          <div className="pointer-events-none absolute bottom-6 left-1/4 h-1.5 w-1.5 rounded-full bg-white/30" />
+
+          <div className="relative flex items-center justify-between gap-6">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold flex items-center gap-3 text-white">
+                <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-lg">
+                  <Upload className="w-6 h-6 text-white" />
+                </div>
+                رفع الملفات
+              </h1>
+              <p className="text-white/85 mt-2 max-w-3xl text-sm leading-relaxed">
+                مكان موحّد لرفع جميع ملفات الجمعية — اختر الفئة وسيقوم النظام بالقراءة، الربط، والتحليل تلقائياً (تبرعات المتجر، مهام الموظفين، تقارير، ملفات تعريفية…)
+              </p>
+            </div>
+            {/* أيقونة زخرفية كبيرة على اليسار */}
+            <div className="hidden md:flex shrink-0 w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 items-center justify-center">
+              <FolderOpen className="w-10 h-10 text-white/80" strokeWidth={1.5} />
+            </div>
           </div>
         </div>
 
@@ -444,14 +456,15 @@ export default function Uploads() {
           </CardContent>
         </Card>
 
-        {/* Dropzone */}
-        <Card>
+        {/* Dropzone — مع توهج خفيف عند السحب */}
+        <Card className="overflow-hidden">
           <CardContent
             className={cn(
-              "p-12 border-2 border-dashed rounded-lg text-center cursor-pointer transition-all",
+              "relative p-12 border-2 border-dashed rounded-lg text-center cursor-pointer transition-all",
+              "bg-gradient-to-br from-[hsl(var(--accent)/0.04)] via-transparent to-[hsl(var(--primary)/0.04)]",
               dragOver
-                ? "border-primary bg-primary/5 scale-[1.01]"
-                : "border-border hover:border-primary/50",
+                ? "border-primary bg-primary/5 scale-[1.01] shadow-[0_0_40px_-10px_hsl(var(--accent)/0.5)]"
+                : "border-border hover:border-primary/50 hover:bg-primary/[0.02]",
             )}
             onDragOver={(e) => {
               e.preventDefault();
