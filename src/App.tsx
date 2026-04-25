@@ -2,7 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
+import { Routes, Route, Navigate, BrowserRouter, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { UserProvider } from "@/contexts/UserContext";
 import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeContext";
@@ -56,6 +58,50 @@ const queryClient = new QueryClient();
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { isPreviewMode } = usePreviewMode();
+  const location = useLocation();
+
+  // Onboarding gate: any non-admin user must complete the intelligence
+  // onboarding survey before accessing any protected page.
+  const [onboardingState, setOnboardingState] = useState<
+    "checking" | "ok" | "needs_onboarding"
+  >("checking");
+
+  // Skip the gate for the onboarding page itself, embedded iframes, or preview.
+  const isEmbedded =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("embedded") === "1";
+  const isOnboardingPath = location.pathname.includes("/employee-onboarding");
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!user?.id || isPreviewMode || isEmbedded || isOnboardingPath) {
+        if (!cancelled) setOnboardingState("ok");
+        return;
+      }
+      // Admins / super admins / managers bypass the onboarding requirement.
+      const [{ data: isAdmin }, { data: isSuper }, { data: isMgr }] =
+        await Promise.all([
+          supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
+          supabase.rpc("is_super_admin", { _user_id: user.id }),
+          supabase.rpc("is_manager", { _user_id: user.id }),
+        ]);
+      if (cancelled) return;
+      if (isAdmin || isSuper || isMgr) {
+        setOnboardingState("ok");
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("employee_intelligence_profiles")
+        .select("onboarding_completed")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setOnboardingState(profile?.onboarding_completed ? "ok" : "needs_onboarding");
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [user?.id, isPreviewMode, isEmbedded, isOnboardingPath, location.pathname]);
 
   // في وضع المعاينة، نسمح بالوصول مباشرة
   if (isPreviewMode) {
@@ -77,6 +123,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/" replace />;
+  }
+
+  if (onboardingState === "checking") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (onboardingState === "needs_onboarding") {
+    // Preserve the org slug if present in the current path: /:slug/...
+    const segments = location.pathname.split("/").filter(Boolean);
+    const slug = segments[0] && !["admin", "auth", "employee-onboarding"].includes(segments[0])
+      ? segments[0]
+      : null;
+    const target = slug ? `/${slug}/employee-onboarding` : "/employee-onboarding";
+    return <Navigate to={target} replace />;
   }
 
   return <>{children}</>;
