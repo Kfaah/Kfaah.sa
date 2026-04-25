@@ -113,6 +113,18 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const isAdminRoute = location.pathname.startsWith("/admin");
     applyBrandingToDocument(isAdminRoute ? { primary: null, secondary: null, accent: null } : branding);
+
+    // Mark <html> with data-org-branded so the global CSS override layer
+    // (in index.css) re-routes hardcoded Tailwind color classes
+    // (blue/cyan/teal/emerald/...) to the org's primary/accent.
+    const root = document.documentElement;
+    const hasOrgColors =
+      !isAdminRoute && (!!branding.primary || !!branding.accent);
+    if (hasOrgColors) {
+      root.setAttribute("data-org-branded", "true");
+    } else {
+      root.removeAttribute("data-org-branded");
+    }
   }, [branding, location.pathname]);
 
   const value = useMemo(() => branding, [branding]);
