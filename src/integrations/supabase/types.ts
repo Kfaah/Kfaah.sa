@@ -1209,6 +1209,101 @@ export type Database = {
           },
         ]
       }
+      employee_ai_usage_logs: {
+        Row: {
+          context: Json | null
+          created_at: string
+          feature: string
+          id: string
+          organization_id: string | null
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          feature: string
+          id?: string
+          organization_id?: string | null
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          feature?: string
+          id?: string
+          organization_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      employee_assistant_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          organization_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          organization_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          organization_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      employee_assistant_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          model: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_assistant_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "employee_assistant_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_files: {
         Row: {
           category: string
@@ -3142,6 +3237,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      task_quality_evaluations: {
+        Row: {
+          ai_model: string | null
+          created_at: string
+          evaluated_at: string
+          id: string
+          improvements: Json | null
+          organization_id: string | null
+          quality_score: number
+          strengths: Json | null
+          summary: string | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          created_at?: string
+          evaluated_at?: string
+          id?: string
+          improvements?: Json | null
+          organization_id?: string | null
+          quality_score: number
+          strengths?: Json | null
+          summary?: string | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          created_at?: string
+          evaluated_at?: string
+          id?: string
+          improvements?: Json | null
+          organization_id?: string | null
+          quality_score?: number
+          strengths?: Json | null
+          summary?: string | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       tasks: {
         Row: {
