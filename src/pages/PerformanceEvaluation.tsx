@@ -123,6 +123,15 @@ function initials(name: string) {
   return (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "");
 }
 
+// Deterministic demo score (0-100) per employee+criterion, used only when
+// no real score exists yet, to preview the table visually.
+function demoScore(uid: string, cid: string): number {
+  let h = 0;
+  const s = uid + "|" + cid;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return 55 + (h % 46); // 55..100
+}
+
 export default function PerformanceEvaluation() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
