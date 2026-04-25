@@ -53,8 +53,7 @@ interface NavItem {
 
 // قائمة مدير النظام (Admin) — يرى بيانات الجمعية فقط، بدون "خططي" الشخصية
 const adminNavItems: NavItem[] = [
-  { title: "رفع الملفات", href: "/internal-dashboard?tab=uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
-  { title: "مهام موظفي المتجر", href: "/staff-duties-upload", icon: FileSpreadsheet, iconBg: "bg-gradient-to-br from-indigo-500 to-violet-600" },
+  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
   { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
   { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
   { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },

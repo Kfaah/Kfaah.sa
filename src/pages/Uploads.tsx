@@ -16,6 +16,13 @@ import {
   Calendar,
   Database,
   AlertCircle,
+  HeartHandshake,
+  Users,
+  FileText,
+  IdCard,
+  ListChecks,
+  FolderOpen,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,16 +31,27 @@ import { cn } from "@/lib/utils";
 
 type UploadStatus = "queued" | "uploading" | "success" | "error";
 
+type UploadCategory =
+  | "auto"
+  | "donations"
+  | "staff_duties"
+  | "reports"
+  | "profiles"
+  | "tasks"
+  | "other";
+
 interface PendingFile {
   id: string;
   file: File;
   status: UploadStatus;
   progress: number;
+  category: UploadCategory;
   result?: {
     detected: string;
     inserted: number;
     duplicates: number;
     failed: number;
+    matched?: number;
   };
   error?: string;
 }
@@ -60,8 +78,30 @@ const SCHEMA_LABELS: Record<string, { label: string; color: string }> = {
   campaigns: { label: "حملات", color: "bg-purple-500" },
   subscriptions: { label: "استقطاعات/اشتراكات", color: "bg-cyan-500" },
   gifts: { label: "إهداءات", color: "bg-pink-500" },
+  staff_duties: { label: "مهام الموظفين", color: "bg-indigo-500" },
+  reports: { label: "تقارير", color: "bg-rose-500" },
+  profiles: { label: "ملفات تعريفية", color: "bg-amber-500" },
+  tasks: { label: "مهام", color: "bg-orange-500" },
+  other: { label: "ملفات أخرى", color: "bg-slate-500" },
+  archived: { label: "مؤرشف", color: "bg-slate-500" },
   unknown: { label: "غير معروف", color: "bg-slate-500" },
 };
+
+const CATEGORY_OPTIONS: {
+  value: UploadCategory;
+  label: string;
+  desc: string;
+  icon: any;
+  color: string;
+}[] = [
+  { value: "auto", label: "كشف تلقائي (بيانات الجمعية)", desc: "تبرعات/سلال/حملات/استقطاعات...", icon: Sparkles, color: "from-fuchsia-500 to-pink-600" },
+  { value: "donations", label: "تبرعات المتجر / المسجد", desc: "ملف تبرعات يومي/شهري ضخم", icon: HeartHandshake, color: "from-emerald-500 to-teal-600" },
+  { value: "staff_duties", label: "مهام موظفي المتجر", desc: "ربط المهام بكل موظف تلقائياً", icon: Users, color: "from-indigo-500 to-violet-600" },
+  { value: "reports", label: "تقارير", desc: "تقارير دورية، ملفات تحليلية", icon: FileText, color: "from-rose-500 to-pink-600" },
+  { value: "profiles", label: "ملفات تعريفية", desc: "بروفايلات، تعاريف موظفين/جمعية", icon: IdCard, color: "from-amber-500 to-orange-600" },
+  { value: "tasks", label: "مهام/خطط", desc: "ملفات مهام أو خطط للأرشفة", icon: ListChecks, color: "from-orange-500 to-amber-600" },
+  { value: "other", label: "ملفات أخرى", desc: "أي ملف آخر للأرشفة والتحليل", icon: FolderOpen, color: "from-slate-500 to-slate-600" },
+];
 
 export default function Uploads() {
   const { user } = useAuth();
@@ -71,10 +111,20 @@ export default function Uploads() {
     d.setDate(d.getDate() - 1);
     return d.toISOString().split("T")[0];
   });
+  const [category, setCategory] = useState<UploadCategory>("auto");
   const [pending, setPending] = useState<PendingFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [orgId, setOrgId] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      if (!user) return;
+      const { data } = await supabase.rpc("get_user_organization_id", { _user_id: user.id });
+      setOrgId((data as string | null) ?? null);
+    })();
+  }, [user]);
 
   const loadHistory = useCallback(async () => {
     setLoadingHistory(true);
@@ -91,41 +141,130 @@ export default function Uploads() {
     loadHistory();
   }, [loadHistory]);
 
+  const processStaffDuties = useCallback(
+    async (pf: PendingFile) => {
+      if (!user || !orgId) throw new Error("تعذر تحديد الجمعية");
+      const path = `${orgId}/${Date.now()}_${pf.file.name}`;
+      const { error: upErr } = await supabase.storage
+        .from("staff-duties-files")
+        .upload(path, pf.file, { upsert: false });
+      if (upErr) throw upErr;
+
+      const { data: imp, error: impErr } = await supabase
+        .from("staff_duties_imports")
+        .insert({
+          uploaded_by: user.id,
+          organization_id: orgId,
+          file_name: pf.file.name,
+          file_path: path,
+          file_size_bytes: pf.file.size,
+          status: "pending",
+        })
+        .select()
+        .single();
+      if (impErr) throw impErr;
+
+      const { data: parsed, error: fnErr } = await supabase.functions.invoke(
+        "parse-staff-duties-xlsx",
+        { body: { import_id: imp.id } },
+      );
+      if (fnErr) throw fnErr;
+
+      await supabase.from("data_uploads_log").insert({
+        uploaded_by: user.id,
+        organization_id: orgId,
+        file_name: pf.file.name,
+        file_type: pf.file.type || "application/vnd.ms-excel",
+        detected_schema: "staff_duties",
+        total_rows: parsed?.total ?? 0,
+        inserted_rows: parsed?.imported ?? 0,
+        duplicate_rows: 0,
+        failed_rows: parsed?.unmatched ?? 0,
+        for_date: forDate || null,
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      });
+
+      return {
+        detected: "staff_duties",
+        inserted: parsed?.imported ?? 0,
+        duplicates: 0,
+        failed: parsed?.unmatched ?? 0,
+        matched: parsed?.matched ?? 0,
+      };
+    },
+    [user, orgId, forDate],
+  );
+
+  const archiveFile = useCallback(
+    async (pf: PendingFile, schemaTag: string) => {
+      if (!user || !orgId) throw new Error("تعذر تحديد الجمعية");
+      const path = `${orgId}/archive/${schemaTag}/${Date.now()}_${pf.file.name}`;
+      const { error: upErr } = await supabase.storage
+        .from("data-uploads")
+        .upload(path, pf.file, { upsert: false });
+      if (upErr) throw upErr;
+
+      await supabase.from("data_uploads_log").insert({
+        uploaded_by: user.id,
+        organization_id: orgId,
+        file_name: pf.file.name,
+        file_type: pf.file.type || "application/octet-stream",
+        detected_schema: schemaTag,
+        total_rows: 0,
+        inserted_rows: 1,
+        duplicate_rows: 0,
+        failed_rows: 0,
+        for_date: forDate || null,
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      });
+
+      return { detected: schemaTag, inserted: 1, duplicates: 0, failed: 0 };
+    },
+    [user, orgId, forDate],
+  );
+
   const processFile = useCallback(
     async (pf: PendingFile) => {
       setPending((prev) =>
         prev.map((p) => (p.id === pf.id ? { ...p, status: "uploading", progress: 30 } : p)),
       );
       try {
-        const formData = new FormData();
-        formData.append("file", pf.file);
-        if (forDate) formData.append("for_date", forDate);
+        let result: PendingFile["result"];
 
-        const { data, error } = await supabase.functions.invoke("process-upload", {
-          body: formData,
-        });
-
-        if (error) throw error;
+        if (pf.category === "staff_duties") {
+          result = await processStaffDuties(pf);
+        } else if (
+          pf.category === "reports" ||
+          pf.category === "profiles" ||
+          pf.category === "tasks" ||
+          pf.category === "other"
+        ) {
+          result = await archiveFile(pf, pf.category);
+        } else {
+          const formData = new FormData();
+          formData.append("file", pf.file);
+          if (forDate) formData.append("for_date", forDate);
+          const { data, error } = await supabase.functions.invoke("process-upload", {
+            body: formData,
+          });
+          if (error) throw error;
+          result = {
+            detected: data.detected,
+            inserted: data.inserted ?? 0,
+            duplicates: data.duplicates ?? 0,
+            failed: data.failed ?? 0,
+          };
+        }
 
         setPending((prev) =>
           prev.map((p) =>
-            p.id === pf.id
-              ? {
-                  ...p,
-                  status: "success",
-                  progress: 100,
-                  result: {
-                    detected: data.detected,
-                    inserted: data.inserted ?? 0,
-                    duplicates: data.duplicates ?? 0,
-                    failed: data.failed ?? 0,
-                  },
-                }
-              : p,
+            p.id === pf.id ? { ...p, status: "success", progress: 100, result } : p,
           ),
         );
         toast.success(
-          `تم رفع "${pf.file.name}" — ${data.inserted ?? 0} سجل. يجري الآن تحليل البيانات وربطها بالنظرة العامة، التحليل الذكي، التوصيات، المقارنة، والابتكار…`,
+          `تم رفع "${pf.file.name}" — ${result?.inserted ?? 0} سجل. يجري ربط الملف بالتحليل الذكي والتوصيات والمساءلات…`,
           { duration: 6000 },
         );
       } catch (e) {
@@ -138,16 +277,22 @@ export default function Uploads() {
         loadHistory();
       }
     },
-    [forDate, loadHistory],
+    [forDate, loadHistory, processStaffDuties, archiveFile],
   );
 
   const handleFiles = useCallback(
     (files: FileList | File[]) => {
-      const arr = Array.from(files).filter((f) =>
-        /\.(xlsx|xls|csv)$/i.test(f.name),
-      );
+      const isDataCategory = category === "auto" || category === "donations" || category === "staff_duties";
+      const arr = Array.from(files).filter((f) => {
+        if (isDataCategory) return /\.(xlsx|xls|csv)$/i.test(f.name);
+        return f.size <= 50 * 1024 * 1024;
+      });
       if (arr.length === 0) {
-        toast.error("الرجاء اختيار ملفات Excel أو CSV فقط");
+        toast.error(
+          isDataCategory
+            ? "الرجاء اختيار ملفات Excel أو CSV فقط"
+            : "تعذر قبول الملفات (الحد الأقصى 50MB)",
+        );
         return;
       }
       const newPending: PendingFile[] = arr.map((f) => ({
@@ -155,16 +300,16 @@ export default function Uploads() {
         file: f,
         status: "queued",
         progress: 0,
+        category,
       }));
       setPending((prev) => [...prev, ...newPending]);
-      // Process sequentially to avoid hammering the function
       (async () => {
         for (const pf of newPending) {
           await processFile(pf);
         }
       })();
     },
-    [processFile],
+    [processFile, category],
   );
 
   const onDrop = (e: React.DragEvent) => {
@@ -187,6 +332,10 @@ export default function Uploads() {
     );
   }
 
+  const activeCat = CATEGORY_OPTIONS.find((c) => c.value === category)!;
+  const ActiveIcon = activeCat.icon;
+  const isDataCategory = category === "auto" || category === "donations" || category === "staff_duties";
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -197,13 +346,57 @@ export default function Uploads() {
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg">
                 <Upload className="w-6 h-6 text-white" />
               </div>
-              رفع البيانات
+              رفع الملفات
             </h1>
             <p className="text-muted-foreground mt-2">
-              ارفع ملفات Excel/CSV — سيتم اكتشاف نوع الملف تلقائيًا (تبرعات، سلال، حملات، استقطاعات، إهداءات، تحويلات)
+              مكان موحّد لرفع جميع ملفات الجمعية — اختر الفئة وسيقوم النظام بالقراءة، الربط، والتحليل تلقائياً (تبرعات المتجر، مهام الموظفين، تقارير، ملفات تعريفية…)
             </p>
           </div>
         </div>
+
+        {/* Category selector */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FolderOpen className="w-5 h-5 text-primary" />
+              نوع الملف
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {CATEGORY_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const active = category === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setCategory(opt.value)}
+                    className={cn(
+                      "text-right rounded-xl border-2 p-3 transition-all",
+                      active
+                        ? "border-primary bg-primary/5 shadow-md"
+                        : "border-border hover:border-primary/40 hover:bg-muted/40",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "w-9 h-9 rounded-lg bg-gradient-to-br flex items-center justify-center mb-2 shadow",
+                        opt.color,
+                      )}
+                    >
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-800">{opt.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                      {opt.desc}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Date selector */}
         <Card>
@@ -249,18 +442,22 @@ export default function Uploads() {
               ref={inputRef}
               type="file"
               multiple
-              accept=".xlsx,.xls,.csv"
+              accept={isDataCategory ? ".xlsx,.xls,.csv" : undefined}
               className="hidden"
               onChange={(e) => e.target.files && handleFiles(e.target.files)}
             />
             <div className="flex flex-col items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center">
-                <Upload className="w-10 h-10 text-rose-500" />
+              <div className={cn("w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg", activeCat.color)}>
+                <ActiveIcon className="w-10 h-10 text-white" />
               </div>
               <div>
-                <p className="text-xl font-semibold">اسحب الملفات هنا</p>
+                <p className="text-xl font-semibold">
+                  اسحب ملفات <span className="text-primary">{activeCat.label}</span> هنا
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  أو انقر للاختيار — يدعم XLSX, XLS, CSV (حتى 50MB)
+                  {isDataCategory
+                    ? "أو انقر للاختيار — يدعم XLSX, XLS, CSV (حتى 50MB)"
+                    : "أو انقر للاختيار — يقبل أي صيغة (PDF, Word, Excel, صور…) حتى 50MB"}
                 </p>
               </div>
               <Button variant="outline" type="button">
@@ -323,10 +520,15 @@ export default function Uploads() {
                       <Progress value={p.progress} className="h-2" />
                     )}
                     {p.status === "success" && p.result && (
-                      <div className="flex gap-4 text-sm pt-1 mr-8">
+                      <div className="flex gap-4 text-sm pt-1 mr-8 flex-wrap">
                         <span className="text-emerald-600 font-medium">
                           ✓ مُدخل: {p.result.inserted}
                         </span>
+                        {p.result.matched !== undefined && p.result.matched > 0 && (
+                          <span className="text-indigo-600">
+                            👤 موظف مرتبط: {p.result.matched}
+                          </span>
+                        )}
                         {p.result.duplicates > 0 && (
                           <span className="text-amber-600">
                             ⚠ مكرر: {p.result.duplicates}
