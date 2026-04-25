@@ -44,6 +44,13 @@ export default function AdminActionPlans() {
   const [planTitle, setPlanTitle] = useState("");
   const [generating, setGenerating] = useState(false);
 
+  // Auto-select the locked org in embedded mode
+  useEffect(() => {
+    if (isEmbedded && orgs.length === 1 && !selectedOrg) {
+      setSelectedOrg(orgs[0].id);
+    }
+  }, [isEmbedded, orgs, selectedOrg]);
+
   const fetchAll = async () => {
     setLoading(true);
     const [{ data: orgsData }, { data: plansData }] = await Promise.all([
