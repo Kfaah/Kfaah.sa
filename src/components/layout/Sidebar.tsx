@@ -464,7 +464,7 @@ export function Sidebar() {
               <div className="flex items-center gap-3">
                 {/* Avatar - Left side, larger with cyan border */}
                 <div
-                  className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0"
+                  className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-[hsl(var(--accent))] shadow-md flex-shrink-0"
                   style={branding.primary ? { borderColor: branding.accent || branding.primary } : undefined}
                 >
                   {user.profileImage ? (
@@ -475,7 +475,7 @@ export function Sidebar() {
                     />
                   ) : (
                     <div
-                      className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white"
+                      className="w-full h-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center text-xl font-bold text-white"
                       style={
                         branding.primary
                           ? { backgroundImage: `linear-gradient(135deg, ${branding.primary}, ${branding.accent || branding.primary})` }
@@ -490,7 +490,14 @@ export function Sidebar() {
                 {/* Name and Role - Right side, centered vertically */}
                 <div className="flex-1 flex flex-col items-center justify-center gap-2">
                   <h3 className="font-bold text-slate-800 text-base">{user.firstName} {user.lastName}</h3>
-                  <span className="text-xs text-cyan-600 font-semibold bg-cyan-50 rounded-full px-3 py-1 border border-cyan-200">
+                  <span
+                    className="text-xs font-semibold rounded-full px-3 py-1 border"
+                    style={{
+                      color: branding.primary || 'hsl(var(--primary))',
+                      backgroundColor: `${branding.primary || 'hsl(var(--primary))'}14`,
+                      borderColor: `${branding.primary || 'hsl(var(--primary))'}33`,
+                    }}
+                  >
                     {user.role}
                   </span>
                 </div>
@@ -502,7 +509,14 @@ export function Sidebar() {
               to="/profile"
               className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 group relative"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform relative">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-transform duration-200 group-hover:scale-[1.04] relative"
+                style={{
+                  backgroundImage: branding.primary
+                    ? `linear-gradient(135deg, ${branding.primary}, ${branding.accent || branding.primary})`
+                    : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))',
+                }}
+              >
                 <User className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 text-right">
@@ -511,14 +525,14 @@ export function Sidebar() {
               </div>
               {/* أيقونة الإشعارات مع العداد (إشعارات + رسائل) */}
               <div className="relative">
-                <Bell className="w-5 h-5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
+                <Bell className="w-5 h-5 text-slate-400 group-hover:text-[hsl(var(--primary))] transition-colors" />
                 {(unreadCount + unreadMessagesCount) > 0 && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
                     {(unreadCount + unreadMessagesCount) > 9 ? '9+' : formatNumberPlain(unreadCount + unreadMessagesCount)}
                   </span>
                 )}
               </div>
-              <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 transition-colors" />
+              <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-[hsl(var(--primary))] transition-colors" />
             </Link>
 
           </div>
