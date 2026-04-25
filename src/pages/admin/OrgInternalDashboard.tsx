@@ -644,7 +644,6 @@ interface HistoryRow {
 }
 
 function OrgUploadsTab({ orgId, orgName }: { orgId: string; orgName: string }) {
-  const inputRef = useState<HTMLInputElement | null>(null);
   const [forDate, setForDate] = useState<string>(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
