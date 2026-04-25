@@ -17,6 +17,7 @@ export default function InternalDashboard() {
   const { slug } = useParams<{ slug?: string }>();
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab") ?? undefined;
+  const isSectionRoute = Boolean(tab);
   const { user } = useAuth();
   const [orgId, setOrgId] = useState<string | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
@@ -65,7 +66,7 @@ export default function InternalDashboard() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center py-24">
+        <div className="flex items-center justify-center py-24" dir="rtl">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       </DashboardLayout>
@@ -89,7 +90,7 @@ export default function InternalDashboard() {
 
   return (
     <DashboardLayout>
-      <OrgInternalDashboard orgIdProp={orgId} initialTab={tab} />
+      <OrgInternalDashboard orgIdProp={orgId} initialTab={tab} standaloneTab={isSectionRoute} />
     </DashboardLayout>
   );
 }
