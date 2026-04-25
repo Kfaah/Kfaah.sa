@@ -109,10 +109,12 @@ export function Sidebar() {
   const { currentOrg } = useOrganization();
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
 
-  // Build a gradient from the org's brand colors; fall back to default teal palette.
+    // خلفية واحدة مستمرة من أعلى القائمة إلى أسفلها بهوية الجمعية.
   const sidebarBgStyle = branding.primary
     ? {
-        backgroundImage: `linear-gradient(to bottom, ${branding.primary} 0%, ${branding.secondary || branding.primary} 50%, ${branding.primary} 100%)`,
+        background: branding.secondary
+          ? `linear-gradient(180deg, ${branding.primary} 0%, ${branding.secondary} 100%)`
+          : branding.primary,
       }
     : undefined;
 
