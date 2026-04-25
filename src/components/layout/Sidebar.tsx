@@ -389,28 +389,24 @@ export function Sidebar() {
             className="relative mb-3 group cursor-pointer animate-scale-in"
             title="العودة للصفحة الرئيسية"
           >
-            {/* حلقة خارجية متوهجة (pulse هادئ) */}
-            <div className="absolute inset-[-10px] w-[164px] h-[164px] rounded-full border-2 border-white/40 pointer-events-none animate-pulse" />
-            {/* حلقة داخلية ثابتة */}
-            <div className="absolute inset-[-4px] w-[152px] h-[152px] rounded-full border border-white/60 pointer-events-none" />
-            {/* توهّج خلفي ناعم */}
-            <div className="absolute inset-0 w-36 h-36 rounded-full bg-white/20 blur-xl pointer-events-none" />
+            {/* توهّج خلفي ناعم — يعطي عمقًا بدون مربع */}
+            <div className="absolute inset-0 w-36 h-36 rounded-full bg-white/30 blur-2xl pointer-events-none scale-110" />
 
-            {/* حاوية الشعار — دائرة بيضاء فقط، لا مربع */}
-            <div className="relative w-36 h-36 rounded-full bg-white flex items-center justify-center shadow-2xl overflow-hidden transition-transform duration-500 group-hover:scale-105">
+            {/* حاوية الشعار — شفافة تمامًا، الشعار يظهر مباشرة على هوية الجمعية */}
+            <div className="relative w-36 h-36 rounded-full flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
               {branding.loading ? (
                 <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
                   src={branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-28 h-28 object-contain"
+                  className="w-32 h-32 object-contain drop-shadow-2xl"
                 />
               ) : (
                 <img
                   src={atefLogoIcon}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-28 h-28 object-contain"
+                  className="w-32 h-32 object-contain drop-shadow-2xl"
                 />
               )}
             </div>
