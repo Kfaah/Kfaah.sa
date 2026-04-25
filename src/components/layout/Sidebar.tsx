@@ -80,13 +80,16 @@ const managerNavItems: NavItem[] = [
 
 // قائمة الموظف العادي
 const employeeNavItems: NavItem[] = [
+const employeeNavItems: NavItem[] = [
+  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
   { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
   { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
   { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
   { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "مساءلاتي", href: "/my-accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "أدائي", href: "/my-performance", icon: Award, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم أدائي", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
+  { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
+  { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
+  { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "bg-gradient-to-br from-rose-400 to-pink-600" },
+  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
 ];
 
 const settingsNavItem: NavItem = {
