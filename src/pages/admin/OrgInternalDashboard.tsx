@@ -774,7 +774,7 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
             <div>
               <p className="text-xl font-semibold">اسحب الملفات هنا</p>
               <p className="text-sm text-muted-foreground mt-1">
-                ارفع كل الملفات (تبرعات، حملات، استقطاعات، سلال…) ثم اضغط <span className="font-semibold text-foreground">بدء الرفع والتحليل</span> ليتم تحليل كل البيانات معًا.
+                ارفع كل الملفات (تبرعات، حملات، استقطاعات، سلال…) ثم اضغط <span className="font-semibold text-foreground">بدء الرفع</span>. ثم انتقل إلى تبويب <span className="font-semibold text-foreground">التحليل الذكي</span> لتشغيل التحليل.
               </p>
             </div>
             <Button variant="outline" type="button">
@@ -868,7 +868,7 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
                 {batchRunning || analyzing ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> جاري المعالجة…</>
                 ) : (
-                  <><Sparkles className="w-5 h-5" /> بدء الرفع والتحليل ({queuedCount})</>
+                  <><Upload className="w-5 h-5" /> بدء الرفع ({queuedCount})</>
                 )}
               </Button>
             </div>
