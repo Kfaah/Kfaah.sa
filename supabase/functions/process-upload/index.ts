@@ -245,6 +245,7 @@ Deno.serve(async (req) => {
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const forDate = form.get("for_date") as string | null;
+    const targetOrgId = (form.get("target_organization_id") as string | null) || null;
     if (!file) {
       return new Response(JSON.stringify({ error: "Missing file" }), {
         status: 400,
