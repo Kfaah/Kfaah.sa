@@ -789,68 +789,92 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
 
       {pending.length > 0 && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CardHeader>
             <CardTitle>قائمة الملفات ({pending.length})</CardTitle>
-            <div className="flex items-center gap-2">
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Files Grid - Side by Side */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {pending.map((p) => {
+                const schema = p.result?.detected ? SCHEMA_LABELS[p.result.detected] ?? SCHEMA_LABELS.unknown : null;
+                return (
+                  <div key={p.id} className="border rounded-lg p-4 space-y-3 bg-card">
+                    <div className="flex items-center gap-3">
+                      <FileSpreadsheet className="w-8 h-8 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate text-sm">{p.file.name}</p>
+                        <p className="text-xs text-muted-foreground">{(p.file.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                      {(p.status === "queued" || p.status === "error") && !batchRunning && (
+                        <Button variant="ghost" size="sm" onClick={() => removeFile(p.id)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {p.status === "queued" && <Badge variant="secondary" className="w-full justify-center">في الانتظار</Badge>}
+                    {p.status === "uploading" && (
+                      <>
+                        <Badge className="bg-blue-500 w-full justify-center"><Loader2 className="w-3 h-3 ml-1 animate-spin" />جاري المعالجة</Badge>
+                        <Progress value={p.progress} className="h-2" />
+                      </>
+                    )}
+                    {p.status === "success" && schema && (
+                      <Badge className={`${schema.color} w-full justify-center`}><CheckCircle2 className="w-3 h-3 ml-1" />{schema.label}</Badge>
+                    )}
+                    {p.status === "error" && <Badge variant="destructive" className="w-full justify-center"><XCircle className="w-3 h-3 ml-1" />فشل</Badge>}
+
+                    {p.status === "success" && p.result && (
+                      <div className="flex flex-wrap gap-2 text-xs pt-1">
+                        <span className="text-emerald-600 font-medium">✓ {p.result.inserted}</span>
+                        {p.result.duplicates > 0 && <span className="text-amber-600">⚠ {p.result.duplicates}</span>}
+                        {p.result.failed > 0 && <span className="text-red-600">✗ {p.result.failed}</span>}
+                      </div>
+                    )}
+                    {p.status === "error" && p.error && (
+                      <div className="flex items-start gap-2 text-xs text-red-600">
+                        <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                        <span className="line-clamp-2">{p.error}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Upload & Analyze Buttons - Bottom */}
+            <div className="flex items-center justify-center gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => fileInputEl?.click()}
+                disabled={batchRunning || analyzing}
+                className="gap-2"
+              >
+                <Upload className="w-5 h-5" />
+                إضافة ملفات
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setPending((prev) => prev.filter((p) => p.status !== "success"))}
-                disabled={batchRunning || analyzing}
+                disabled={batchRunning || analyzing || !pending.some((p) => p.status === "success")}
               >
                 مسح المكتملة
               </Button>
               <Button
                 onClick={startBatch}
                 disabled={batchRunning || analyzing || queuedCount === 0}
-                className="bg-primary text-primary-foreground"
+                size="lg"
+                className="bg-primary text-primary-foreground gap-2"
               >
                 {batchRunning || analyzing ? (
-                  <><Loader2 className="w-4 h-4 ml-2 animate-spin" /> جاري المعالجة…</>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> جاري المعالجة…</>
                 ) : (
-                  <><Sparkles className="w-4 h-4 ml-2" /> بدء الرفع والتحليل ({queuedCount})</>
+                  <><Sparkles className="w-5 h-5" /> بدء الرفع والتحليل ({queuedCount})</>
                 )}
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {pending.map((p) => {
-              const schema = p.result?.detected ? SCHEMA_LABELS[p.result.detected] ?? SCHEMA_LABELS.unknown : null;
-              return (
-                <div key={p.id} className="border rounded-lg p-4 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <FileSpreadsheet className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{p.file.name}</p>
-                      <p className="text-xs text-muted-foreground">{(p.file.size / 1024).toFixed(1)} KB</p>
-                    </div>
-                    {p.status === "queued" && <Badge variant="secondary">في الانتظار</Badge>}
-                    {p.status === "uploading" && <Badge className="bg-blue-500"><Loader2 className="w-3 h-3 ml-1 animate-spin" />جاري المعالجة</Badge>}
-                    {p.status === "success" && schema && <Badge className={schema.color}><CheckCircle2 className="w-3 h-3 ml-1" />{schema.label}</Badge>}
-                    {p.status === "error" && <Badge variant="destructive"><XCircle className="w-3 h-3 ml-1" />فشل</Badge>}
-                    {(p.status === "queued" || p.status === "error") && !batchRunning && (
-                      <Button variant="ghost" size="sm" onClick={() => removeFile(p.id)} className="h-7 px-2 text-muted-foreground hover:text-destructive">
-                        إزالة
-                      </Button>
-                    )}
-                  </div>
-                  {(p.status === "uploading" || p.status === "queued") && <Progress value={p.progress} className="h-2" />}
-                  {p.status === "success" && p.result && (
-                    <div className="flex gap-4 text-sm pt-1 mr-8">
-                      <span className="text-emerald-600 font-medium">✓ مُدخل: {p.result.inserted}</span>
-                      {p.result.duplicates > 0 && <span className="text-amber-600">⚠ مكرر: {p.result.duplicates}</span>}
-                      {p.result.failed > 0 && <span className="text-red-600">✗ فشل: {p.result.failed}</span>}
-                    </div>
-                  )}
-                  {p.status === "error" && p.error && (
-                    <div className="flex items-start gap-2 text-sm text-red-600 mr-8">
-                      <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                      <span>{p.error}</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
           </CardContent>
         </Card>
       )}
