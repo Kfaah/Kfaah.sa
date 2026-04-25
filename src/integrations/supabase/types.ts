@@ -1343,6 +1343,60 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_job_duties: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          employee_id: string | null
+          estimated_time_minutes: number | null
+          frequency: string | null
+          id: string
+          is_active: boolean
+          organization_id: string | null
+          priority: string
+          source: string
+          tags: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          employee_id?: string | null
+          estimated_time_minutes?: number | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          priority?: string
+          source?: string
+          tags?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          employee_id?: string | null
+          estimated_time_minutes?: number | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          priority?: string
+          source?: string
+          tags?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           avatar_url: string | null
