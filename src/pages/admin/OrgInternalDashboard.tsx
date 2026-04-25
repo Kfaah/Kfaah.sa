@@ -165,7 +165,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
   const runDeepAnalysis = async () => {
     if (!orgId) return;
     setAnalyzing(true);
-    toast.loading("جاري التحليل العميق الشامل...", { id: "deep" });
+    toast.loading("جاري التحليل الذكي الشامل...", { id: "deep" });
     try {
       const { data, error } = await supabase.functions.invoke("deep-org-analysis", {
         body: { organization_id: orgId, trigger_source: "manual" },
@@ -225,7 +225,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
               className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-md ring-1 ring-white/30"
             >
               {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
-              تشغيل التحليل العميق
+              تشغيل التحليل الذكي
             </Button>
             <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 border-transparent">
               <Link to={`/admin/organizations/${orgId}/profile`}>
@@ -298,7 +298,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
                 {analysis?.overall_assessment ? (
                   <p className="whitespace-pre-line leading-relaxed text-foreground/90">{analysis.overall_assessment}</p>
                 ) : (
-                  <EmptyState text="شغّل التحليل العميق لاستخراج تقييم شامل ومساءلات احترافية." onAction={runDeepAnalysis} actionLabel="تشغيل الآن" />
+                  <EmptyState text="شغّل التحليل الذكي لاستخراج تقييم شامل ومساءلات احترافية." onAction={runDeepAnalysis} actionLabel="تشغيل الآن" />
                 )}
               </CardContent>
             </Card>
@@ -334,7 +334,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           {!analysis ? (
             <Card>
               <CardContent className="py-12">
-                <EmptyState text="لا يوجد تحليل عميق بعد." onAction={runDeepAnalysis} actionLabel="تشغيل التحليل العميق" />
+                <EmptyState text="لا يوجد تحليل ذكي بعد." onAction={runDeepAnalysis} actionLabel="تشغيل التحليل الذكي" />
               </CardContent>
             </Card>
           ) : (
@@ -354,11 +354,11 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
           <Card>
             <CardHeader>
               <CardTitle>مساءلات الموظفين ({questions.length})</CardTitle>
-              <CardDescription>أسئلة مولّدة من التحليل العميق ومُوزّعة بحسب الدور الوظيفي</CardDescription>
+              <CardDescription>أسئلة مولّدة من التحليل الذكي ومُوزّعة بحسب الدور الوظيفي</CardDescription>
             </CardHeader>
             <CardContent>
               {questions.length === 0 ? (
-                <EmptyState text="لا توجد مساءلات بعد. شغّل التحليل العميق." onAction={runDeepAnalysis} actionLabel="تشغيل" />
+                <EmptyState text="لا توجد مساءلات بعد. شغّل التحليل الذكي." onAction={runDeepAnalysis} actionLabel="تشغيل" />
               ) : (
                 <div className="space-y-3">
                   {questions.map((q) => {
