@@ -315,24 +315,19 @@ export function Sidebar() {
     // جميع الروابط تضيف state لإخفاء شاشة الترحيب
     const linkState = { fromNavigation: true };
 
-    const brandPrimary = branding.primary;
-    const brandAccent = branding.accent || branding.primary;
-
     return (
       <Link
         to={scopedHref}
         state={linkState}
         className={cn(
-          // ثابت دائمًا: نفس البنية والأبعاد، فقط الإطار يتغيّر برفق → لا اهتزاز.
-          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none bg-white text-slate-700 transition-shadow duration-200",
+          "group/nav flex h-14 items-center gap-3 rounded-l-xl rounded-r-none border border-white/0 bg-white/95 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-150",
           isActive
-            ? "shadow-lg ring-2 ring-white"
-            : "hover:shadow-md"
+            ? "border-white bg-white text-[hsl(var(--primary))] shadow-md"
+            : "hover:bg-white hover:text-[hsl(var(--primary))]"
         )}
       >
-        {/* الأيقونة تحتفظ بلونها الجميل دائمًا — لا تتبدّل عند active */}
         <div className={cn(
-          "w-10 h-10 rounded-lg flex items-center justify-center shadow-md flex-shrink-0",
+          "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl shadow-md",
           item.iconBg
         )}>
           <item.icon className="w-5 h-5 text-white" />
@@ -340,7 +335,7 @@ export function Sidebar() {
         {!collapsed && (
           <>
             <span className={cn(
-              "font-bold text-base flex-1 text-right transition-colors",
+              "font-bold text-base flex-1 text-right transition-colors duration-150",
               isActive ? "text-[hsl(var(--primary))]" : "text-slate-700"
             )}>
               {item.title}
