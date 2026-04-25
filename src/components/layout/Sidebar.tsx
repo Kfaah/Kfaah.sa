@@ -361,48 +361,40 @@ export function Sidebar() {
         collapsed ? "w-20" : "w-72"
       )}
     >
-      {/* خلفية القائمة — هوية الجمعية ثابتة وأنيقة */}
+      {/* خلفية القائمة — تدرج واحد مستمر بهوية الجمعية */}
       <div
         className={cn(
           "absolute inset-0",
-          !branding.primary && "bg-gradient-to-b from-[hsl(var(--primary))] via-[hsl(var(--primary))] to-[hsl(var(--primary))]"
+          !branding.primary && "bg-gradient-to-b from-[hsl(var(--primary))] to-[hsl(var(--accent))]"
         )}
         style={sidebarBgStyle}
       />
 
-      {/* لمسة عمق علوية ناعمة */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
-
-      {/* ظل سفلي ناعم */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/15 to-transparent pointer-events-none" />
-
-      {/* Header Section with Logo — بدون خلفية مربعة */}
+      {/* Header Section with Logo */}
       <div className="relative z-10">
         <div className="relative pt-6 pb-4 flex flex-col items-center">
-          {/* الشعار — قابل للنقر، مع نبض هادئ وحلقة متوهجة */}
+          {/* الشعار — بدائرة واضحة وحركة الدخول السابقة */}
           <Link
             to="/"
             className="relative mb-3 group cursor-pointer animate-scale-in"
             title="العودة للصفحة الرئيسية"
           >
-            {/* توهّج خلفي ناعم — يعطي عمقًا بدون مربع */}
-            <div className="absolute inset-0 w-36 h-36 rounded-full bg-white/30 blur-2xl pointer-events-none scale-110" />
-
-            {/* حاوية الشعار — شفافة تمامًا، الشعار يظهر مباشرة على هوية الجمعية */}
-            <div className="relative w-36 h-36 rounded-full flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
+            <div className="absolute inset-[-12px] rounded-full border-2 border-white/45 pointer-events-none animate-pulse" />
+            <div className="absolute inset-[-22px] rounded-full bg-white/20 blur-2xl pointer-events-none" />
+            <div className="relative w-36 h-36 rounded-full bg-white flex items-center justify-center shadow-2xl overflow-hidden ring-4 ring-white/35 transition-transform duration-500 group-hover:scale-105">
               {branding.loading ? (
                 <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
                   src={branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-32 h-32 object-contain drop-shadow-2xl"
+                  className="w-32 h-32 object-contain p-1 drop-shadow-xl"
                 />
               ) : (
                 <img
                   src={atefLogoIcon}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-32 h-32 object-contain drop-shadow-2xl"
+                  className="w-32 h-32 object-contain p-1 drop-shadow-xl"
                 />
               )}
             </div>
