@@ -45,7 +45,7 @@ interface Message {
 
 const CATEGORY_META: Record<Category, { label: string; icon: any; tone: string }> = {
   content:    { label: "محتوى ومقالات",  icon: FileText,    tone: "bg-rose-500/10 text-rose-600 border-rose-500/30" },
-  analytics:  { label: "تحليل عميق",     icon: BarChart3,   tone: "bg-violet-500/10 text-violet-600 border-violet-500/30" },
+  analytics:  { label: "تحليل ذكي",     icon: BarChart3,   tone: "bg-violet-500/10 text-violet-600 border-violet-500/30" },
   feature:    { label: "ميزة جديدة",     icon: Wand2,       tone: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
   ux:         { label: "تجربة استخدام",  icon: Wrench,      tone: "bg-sky-500/10 text-sky-600 border-sky-500/30" },
   automation: { label: "أتمتة وعمليات",   icon: Cog,         tone: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },

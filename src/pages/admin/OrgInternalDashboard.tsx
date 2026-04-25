@@ -201,7 +201,7 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
               لوحة الجمعية الداخلية
             </h1>
             <p className="mt-1 text-white/90">
-              رؤية شاملة · تقييم عميق · مساءلات ذكية
+              رؤية شاملة · تقييم ذكي · مساءلات ذكية
             </p>
             <div className="mt-3 flex items-center gap-3">
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/15 text-white shadow-md ring-1 ring-white/30 backdrop-blur">

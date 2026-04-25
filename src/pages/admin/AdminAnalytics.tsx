@@ -150,7 +150,7 @@ export default function AdminAnalytics() {
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Sparkles className="w-8 h-8 text-accent" />
-            التحليل العميق
+            التحليل الذكي
           </h1>
           <p className="text-white mt-1">اختر فترة وجمعية لرؤية تحليل تفصيلي وتوصيات ذكية ثابتة لنفس البيانات</p>
         </div>

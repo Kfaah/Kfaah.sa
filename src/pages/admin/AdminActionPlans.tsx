@@ -141,7 +141,7 @@ export default function AdminActionPlans() {
           <ListChecks className="w-14 h-14 mx-auto text-muted-foreground mb-3" />
           <p className="text-foreground font-bold mb-1">لا توجد خطط بعد</p>
           <p className="text-muted-foreground text-sm mb-4">
-            ابدأ بتشغيل "تحليل ذكي بالـ AI" في صفحة التحليل العميق، ثم ولّد خطة منه هنا.
+            ابدأ بتشغيل "تحليل ذكي بالـ AI" في صفحة التحليل الذكي، ثم ولّد خطة منه هنا.
           </p>
           <Button onClick={() => setDialogOpen(true)} className="gap-2">
             <Plus className="w-4 h-4" /> توليد خطة
