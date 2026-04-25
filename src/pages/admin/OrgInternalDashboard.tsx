@@ -255,16 +255,16 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
               { value: "uploads", label: "رفع الملفات", Icon: Upload },
               { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
               { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
-              { value: "operational-plans", label: "الخطط من التوصيات", Icon: ListChecks },
+              { value: "employees", label: "الموظفون", Icon: Users },
               { value: "operational-plans-main", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
               { value: "tasks", label: "المهام", Icon: ClipboardList },
+              { value: "operational-plans", label: "الخطط من التوصيات", Icon: ListChecks },
+              { value: "accountability", label: "تحليل المساءلات", Icon: ShieldAlert },
               { value: "performance", label: "تقييم الأداء", Icon: Target },
               { value: "reports", label: "التقارير", Icon: FileBarChart2 },
               { value: "innovation", label: "الابتكار والتحديث", Icon: Lightbulb },
-              { value: "employees", label: "الموظفون", Icon: Users },
               { value: "donors", label: "المتبرعون", Icon: HeartHandshake },
-              { value: "accountability", label: "تحليل المساءلات", Icon: ShieldAlert },
             ];
             return tabs.flatMap((t, i) => {
               const trigger = (
@@ -650,24 +650,14 @@ function EmbeddedOrgPage({
   }
   const src = embedSlug ? `/${slug}${path}?embedded=1` : `${path}?embedded=1&org=${slug}`;
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 py-3">
-        <CardTitle className="text-lg">{title}</CardTitle>
-        <Button asChild size="sm" variant="outline" className="gap-1">
-          <a href={src} target="_blank" rel="noreferrer">
-            <ExternalLink className="w-4 h-4" /> فتح في نافذة
-          </a>
-        </Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        <iframe
-          src={src}
-          title={title}
-          className="w-full border-0 bg-background"
-          style={{ height: "calc(100vh - 180px)", minHeight: 700 }}
-        />
-      </CardContent>
-    </Card>
+    <div className="w-full -mx-2">
+      <iframe
+        src={src}
+        title={title}
+        className="w-full border-0 bg-transparent block"
+        style={{ height: "calc(100vh - 120px)", minHeight: 800 }}
+      />
+    </div>
   );
 }
 
