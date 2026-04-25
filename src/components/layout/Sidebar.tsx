@@ -51,51 +51,50 @@ interface NavItem {
   iconBg: string;
 }
 
-// كل أيقونة بلونها المميز — vector art ملوّن جميل.
-// مهم: لون الأيقونة ثابت دائماً (لا يتغيّر عند active) → لا اهتزاز ولا تبديل.
+// كل أيقونة بلونها المميز — ثابت دائمًا لتجنب تبدّل الألوان أو اهتزاز القائمة عند التنقل.
 const adminNavItems: NavItem[] = [
-  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "bg-gradient-to-br from-rose-400 to-pink-500" },
-  { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-500" },
-  { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "bg-gradient-to-br from-teal-400 to-cyan-600" },
-  { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
-  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "تحليل المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-red-400 to-rose-500" },
-  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "bg-gradient-to-br from-rose-400 to-pink-600" },
-  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500" },
+  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "nav-icon-upload" },
+  { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "nav-icon-analysis" },
+  { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "nav-icon-overview" },
+  { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "nav-icon-people" },
+  { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "nav-icon-plans" },
+  { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive" },
+  { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: "nav-icon-tasks" },
+  { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "nav-icon-performance" },
+  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations" },
+  { title: "تحليل المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: "nav-icon-accountability" },
+  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports" },
+  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation" },
+  { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "nav-icon-donors" },
 ];
 
 const managerNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "مساءلاتي", href: "/my-accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "أدائي", href: "/my-performance", icon: Award, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
+  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "nav-icon-overview" },
+  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "nav-icon-plans" },
+  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive" },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "nav-icon-tasks" },
+  { title: "مساءلاتي", href: "/my-accountability", icon: ShieldAlert, iconBg: "nav-icon-analysis" },
+  { title: "أدائي", href: "/my-performance", icon: Award, iconBg: "nav-icon-innovation" },
+  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "nav-icon-performance" },
 ];
 
 const employeeNavItems: NavItem[] = [
-  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
-  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
-  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-500" },
-  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
-  { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: "bg-gradient-to-br from-amber-300 to-yellow-500" },
-  { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
-  { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "bg-gradient-to-br from-rose-400 to-pink-600" },
-  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500" },
+  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: "nav-icon-analysis" },
+  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "nav-icon-overview" },
+  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "nav-icon-plans" },
+  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive" },
+  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "nav-icon-tasks" },
+  { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: "nav-icon-performance" },
+  { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: "nav-icon-analysis" },
+  { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "nav-icon-reports" },
+  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "nav-icon-innovation" },
 ];
 
 const settingsNavItem: NavItem = {
   title: "الإعدادات",
   href: "/settings",
   icon: Settings,
-  iconBg: "bg-gradient-to-br from-slate-400 to-slate-500",
+  iconBg: "nav-icon-settings",
 };
 
 export function Sidebar() {
@@ -110,10 +109,12 @@ export function Sidebar() {
   const { currentOrg } = useOrganization();
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
 
-  // Build a gradient from the org's brand colors; fall back to default teal palette.
+    // خلفية واحدة مستمرة من أعلى القائمة إلى أسفلها بهوية الجمعية.
   const sidebarBgStyle = branding.primary
     ? {
-        backgroundImage: `linear-gradient(to bottom, ${branding.primary} 0%, ${branding.secondary || branding.primary} 50%, ${branding.primary} 100%)`,
+        background: branding.secondary
+          ? `linear-gradient(180deg, ${branding.primary} 0%, ${branding.secondary} 100%)`
+          : branding.primary,
       }
     : undefined;
 
@@ -314,24 +315,19 @@ export function Sidebar() {
     // جميع الروابط تضيف state لإخفاء شاشة الترحيب
     const linkState = { fromNavigation: true };
 
-    const brandPrimary = branding.primary;
-    const brandAccent = branding.accent || branding.primary;
-
     return (
       <Link
         to={scopedHref}
         state={linkState}
         className={cn(
-          // ثابت دائمًا: نفس البنية والأبعاد، فقط الإطار يتغيّر برفق → لا اهتزاز.
-          "flex items-center gap-3 px-3 py-2 rounded-l-xl rounded-r-none bg-white text-slate-700 transition-shadow duration-200",
+          "group/nav flex h-14 items-center gap-3 rounded-l-xl rounded-r-none border border-white/0 bg-white/95 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-150",
           isActive
-            ? "shadow-lg ring-2 ring-white"
-            : "hover:shadow-md"
+            ? "border-white bg-white text-[hsl(var(--primary))] shadow-md"
+            : "hover:bg-white hover:text-[hsl(var(--primary))]"
         )}
       >
-        {/* الأيقونة تحتفظ بلونها الجميل دائمًا — لا تتبدّل عند active */}
         <div className={cn(
-          "w-10 h-10 rounded-lg flex items-center justify-center shadow-md flex-shrink-0",
+          "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl shadow-md",
           item.iconBg
         )}>
           <item.icon className="w-5 h-5 text-white" />
@@ -339,7 +335,7 @@ export function Sidebar() {
         {!collapsed && (
           <>
             <span className={cn(
-              "font-bold text-base flex-1 text-right transition-colors",
+              "font-bold text-base flex-1 text-right transition-colors duration-150",
               isActive ? "text-[hsl(var(--primary))]" : "text-slate-700"
             )}>
               {item.title}
@@ -365,48 +361,40 @@ export function Sidebar() {
         collapsed ? "w-20" : "w-72"
       )}
     >
-      {/* خلفية القائمة — هوية الجمعية ثابتة وأنيقة */}
+      {/* خلفية القائمة — تدرج واحد مستمر بهوية الجمعية */}
       <div
         className={cn(
           "absolute inset-0",
-          !branding.primary && "bg-gradient-to-b from-[hsl(var(--primary))] via-[hsl(var(--primary))] to-[hsl(var(--primary))]"
+          !branding.primary && "bg-gradient-to-b from-[hsl(var(--primary))] to-[hsl(var(--accent))]"
         )}
         style={sidebarBgStyle}
       />
 
-      {/* لمسة عمق علوية ناعمة */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
-
-      {/* ظل سفلي ناعم */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/15 to-transparent pointer-events-none" />
-
-      {/* Header Section with Logo — بدون خلفية مربعة */}
+      {/* Header Section with Logo */}
       <div className="relative z-10">
         <div className="relative pt-6 pb-4 flex flex-col items-center">
-          {/* الشعار — قابل للنقر، مع نبض هادئ وحلقة متوهجة */}
+          {/* الشعار — بدائرة واضحة وحركة الدخول السابقة */}
           <Link
             to="/"
             className="relative mb-3 group cursor-pointer animate-scale-in"
             title="العودة للصفحة الرئيسية"
           >
-            {/* توهّج خلفي ناعم — يعطي عمقًا بدون مربع */}
-            <div className="absolute inset-0 w-36 h-36 rounded-full bg-white/30 blur-2xl pointer-events-none scale-110" />
-
-            {/* حاوية الشعار — شفافة تمامًا، الشعار يظهر مباشرة على هوية الجمعية */}
-            <div className="relative w-36 h-36 rounded-full flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
+            <div className="absolute inset-[-12px] rounded-full border-2 border-white/45 pointer-events-none animate-pulse" />
+            <div className="absolute inset-[-22px] rounded-full bg-white/20 blur-2xl pointer-events-none" />
+            <div className="relative w-36 h-36 rounded-full bg-white flex items-center justify-center shadow-2xl overflow-hidden ring-4 ring-white/35 transition-transform duration-500 group-hover:scale-105">
               {branding.loading ? (
                 <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
                   src={branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-32 h-32 object-contain drop-shadow-2xl"
+                  className="w-32 h-32 object-contain p-1 drop-shadow-xl"
                 />
               ) : (
                 <img
                   src={atefLogoIcon}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-32 h-32 object-contain drop-shadow-2xl"
+                  className="w-32 h-32 object-contain p-1 drop-shadow-xl"
                 />
               )}
             </div>
