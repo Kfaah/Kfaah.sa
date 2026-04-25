@@ -188,17 +188,19 @@ export default function AdminReports() {
       {/* Filters: org + period */}
       <Card className="p-3 bg-card border-border">
         <div className="flex flex-wrap items-center gap-3">
+          {!isEmbedded && (
           <div className="flex items-center gap-2 flex-1 min-w-[260px]">
             <Building2 className="w-4 h-4 text-muted-foreground" />
             <Select value={orgId} onValueChange={setOrgId}>
               <SelectTrigger className="flex-1"><SelectValue placeholder="اختر جمعية..." /></SelectTrigger>
               <SelectContent>
-                {metrics.map(m => (
+                {visibleMetrics.map(m => (
                   <SelectItem key={m.org_id} value={m.org_id}>{m.org_name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          )}
           <DateRangeFilter value={range} onChange={setRange} />
         </div>
       </Card>
