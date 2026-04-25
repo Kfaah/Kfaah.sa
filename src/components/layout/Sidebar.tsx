@@ -107,9 +107,10 @@ export function Sidebar() {
   const { signOut, user: authUser } = useAuth();
   const branding = useOrgBranding();
   const { currentOrg } = useOrganization();
+  const isAdminArea = location.pathname.includes("/uploads") || location.pathname.includes("/internal-dashboard");
   const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">(
-    isActuallyAdmin ? "admin" : "employee"
+    isActuallyAdmin || isAdminArea ? "admin" : "employee"
   );
 
   // خلفية واحدة ثابتة من أعلى القائمة إلى أسفلها بدون أي تدرج.
@@ -124,7 +125,7 @@ export function Sidebar() {
     const fetchRoleLevel = async () => {
       if (!authUser) return;
 
-      if (isActuallyAdmin) {
+      if (isActuallyAdmin || isAdminArea) {
         setRoleLevel("admin");
         return;
       }
@@ -151,7 +152,7 @@ export function Sidebar() {
       }
     };
     fetchRoleLevel();
-  }, [authUser, isActuallyAdmin]);
+  }, [authUser, isActuallyAdmin, isAdminArea]);
 
   // جلب عدد الإشعارات غير المقروءة
   useEffect(() => {
