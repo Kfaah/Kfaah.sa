@@ -250,12 +250,12 @@ export default function OrgInternalDashboard({ orgIdProp, initialTab }: { orgIdP
         <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-center gap-0 border border-accent/40 bg-accent p-1.5 text-accent-foreground [&>[role=separator]]:mx-1 [&>[role=separator]]:h-6 [&>[role=separator]]:w-px [&>[role=separator]]:self-center [&>[role=separator]]:bg-accent-foreground/30">
           {(() => {
             const tabs = [
+              { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "uploads", label: "رفع الملفات", Icon: Upload },
               { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
               { value: "employees", label: "الموظفون", Icon: Users },
               { value: "operational-plans", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
-              { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "innovation", label: "الابتكار", Icon: Lightbulb },
               { value: "tasks", label: "المهام", Icon: ClipboardList },
               { value: "performance", label: "تقييم الأداء", Icon: Target },
