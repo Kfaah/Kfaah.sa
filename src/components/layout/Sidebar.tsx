@@ -80,7 +80,6 @@ const managerNavItems: NavItem[] = [
 
 // قائمة الموظف العادي
 const employeeNavItems: NavItem[] = [
-const employeeNavItems: NavItem[] = [
   { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: "bg-gradient-to-br from-fuchsia-500 to-pink-600" },
   { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "bg-gradient-to-br from-violet-500 to-purple-600" },
   { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "bg-gradient-to-br from-cyan-400 to-cyan-500" },
