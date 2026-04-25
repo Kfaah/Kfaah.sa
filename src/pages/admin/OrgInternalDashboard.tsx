@@ -1094,12 +1094,13 @@ function getInitials(name: string): string {
   return (parts[0][0] ?? "") + (parts[1][0] ?? "");
 }
 
-// هوية جمعية حرف — تركوازي بحري (مأخوذ من الشعار)
+// هوية جمعية حرف — تأتي من قاعدة البيانات عبر OrgBrandingContext
+// هذه القيم احتياطية ومطابقة لما هو محفوظ للجمعية
 const HARF = {
-  primary: "#2BA0B5",      // Teal من شعار حرف
-  primaryDark: "#1B7A8A",
+  primary: "#057D87",      // تركوازي بحري داكن من الشعار
+  primaryDark: "#04626B",
   primarySoft: "#E1F2F4",
-  accent: "#4FBFD1",
+  accent: "#2BA0B5",       // تركوازي فاتح
 };
 const HARF_GRADIENT = `linear-gradient(135deg, ${HARF.primary} 0%, ${HARF.accent} 100%)`;
 

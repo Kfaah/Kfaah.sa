@@ -371,79 +371,37 @@ export function Sidebar() {
         collapsed ? "w-20" : "w-72"
       )}
     >
-      {/* Modern 3D Gradient Background with Geometric Pattern */}
+      {/* خلفية القائمة — هوية الجمعية ثابتة وأنيقة */}
       <div
         className={cn(
           "absolute inset-0",
-          !branding.primary && "bg-gradient-to-b from-[#3d9aa8] via-[#4A9BA8] to-[#2d7a85]"
+          !branding.primary && "bg-gradient-to-b from-[hsl(var(--primary))] via-[hsl(var(--primary))] to-[hsl(var(--primary))]"
         )}
         style={sidebarBgStyle}
       />
 
-      {/* Animated Gradient Overlay */}
-      <div
-        className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20"
-        style={{ animation: 'gradientShift 8s ease-in-out infinite alternate' }}
-      />
+      {/* لمسة عمق علوية ناعمة */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
 
-      {/* Geometric Pattern Overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.08]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* 3D Light Effect - Top Highlight */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/15 to-transparent" />
-
-      {/* 3D Depth Effect - Bottom Shadow */}
-      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/20 to-transparent" />
-
-      {/* Floating Orbs for Modern Effect */}
-      <div
-        className="absolute top-1/4 right-4 w-32 h-32 rounded-full bg-white/5 blur-2xl"
-        style={{ animation: 'float 6s ease-in-out infinite' }}
-      />
-      <div
-        className="absolute bottom-1/3 left-4 w-24 h-24 rounded-full bg-cyan-300/10 blur-xl"
-        style={{ animation: 'float 8s ease-in-out infinite reverse' }}
-      />
-
-      {/* Shimmer Line Effect */}
-      <div
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full"
-        style={{ animation: 'shimmer 4s ease-in-out infinite' }}
-      />
+      {/* ظل سفلي ناعم */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/15 to-transparent pointer-events-none" />
 
       {/* White Header Section with Logo */}
       <div className="relative z-10">
-        {/* Circular border around logo area */}
-        <div className="absolute inset-4 border-4 border-dashed border-cyan-300/50 rounded-full pointer-events-none" style={{ top: '10px', left: '10%', right: '10%', height: '200px' }} />
-
-        {/* White curved background for logo */}
+        {/* خلفية بيضاء أنيقة للشعار */}
         <div className="bg-white rounded-b-[3rem] relative mx-4 shadow-lg">
           <div className="p-4 pb-6 flex flex-col items-center relative z-10">
-            {/* Logo with zoom animation - قابل للنقر للعودة للصفحة الرئيسية */}
+            {/* الشعار — قابل للنقر للعودة للرئيسية */}
             <Link
               to="/"
               className="relative mb-3 group cursor-pointer"
               title="العودة للصفحة الرئيسية"
             >
-              {/* Outer rotating ring */}
-              <div
-                className="absolute inset-[-8px] w-[160px] h-[160px] rounded-full border-4 border-accent/30 border-t-accent animate-spin"
-                style={{ animationDuration: '8s' }}
-              />
+              {/* حلقة هادئة حول الشعار */}
+              <div className="absolute inset-[-6px] w-[156px] h-[156px] rounded-full border-2 border-[hsl(var(--accent))]/30 pointer-events-none" />
 
-              {/* Inner glow circle */}
-              <div
-                className="absolute inset-2 w-[136px] h-[136px] rounded-full bg-gradient-to-br from-accent/20 to-primary/10 animate-pulse"
-                style={{ animationDuration: '3s' }}
-              />
-
-              {/* Logo container with zoom animation and shimmer */}
-              <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-105 transition-transform">
+              {/* حاوية الشعار */}
+              <div className="relative w-36 h-36 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-md overflow-hidden transition-transform duration-300 group-hover:scale-[1.02]">
                 {branding.loading ? (
                   <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" />
                 ) : branding.logoUrl ? (
@@ -451,28 +409,15 @@ export function Sidebar() {
                     src={branding.logoUrl}
                     alt={branding.orgName || "الجمعية"}
                     className="w-28 h-28 object-contain"
-                    style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
                   />
                 ) : (
                   <img
                     src={atefLogoIcon}
                     alt={branding.orgName || "الجمعية"}
                     className="w-28 h-28 object-contain"
-                    style={{ animation: 'zoomPulse 4s ease-in-out infinite' }}
                   />
                 )}
-                {/* Shimmer/Glow effect */}
-                <div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full"
-                  style={{ animation: 'shimmer 3s ease-in-out infinite' }}
-                />
               </div>
-
-              {/* Decorative dot */}
-              <div
-                className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-lg animate-bounce"
-                style={{ animationDuration: '2s' }}
-              />
             </Link>
 
             {/* Text under logo */}
@@ -519,7 +464,7 @@ export function Sidebar() {
               <div className="flex items-center gap-3">
                 {/* Avatar - Left side, larger with cyan border */}
                 <div
-                  className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-cyan-400 shadow-lg flex-shrink-0"
+                  className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-[hsl(var(--accent))] shadow-md flex-shrink-0"
                   style={branding.primary ? { borderColor: branding.accent || branding.primary } : undefined}
                 >
                   {user.profileImage ? (
@@ -530,7 +475,7 @@ export function Sidebar() {
                     />
                   ) : (
                     <div
-                      className="w-full h-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white"
+                      className="w-full h-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center text-xl font-bold text-white"
                       style={
                         branding.primary
                           ? { backgroundImage: `linear-gradient(135deg, ${branding.primary}, ${branding.accent || branding.primary})` }
@@ -545,7 +490,14 @@ export function Sidebar() {
                 {/* Name and Role - Right side, centered vertically */}
                 <div className="flex-1 flex flex-col items-center justify-center gap-2">
                   <h3 className="font-bold text-slate-800 text-base">{user.firstName} {user.lastName}</h3>
-                  <span className="text-xs text-cyan-600 font-semibold bg-cyan-50 rounded-full px-3 py-1 border border-cyan-200">
+                  <span
+                    className="text-xs font-semibold rounded-full px-3 py-1 border"
+                    style={{
+                      color: branding.primary || 'hsl(var(--primary))',
+                      backgroundColor: `${branding.primary || 'hsl(var(--primary))'}14`,
+                      borderColor: `${branding.primary || 'hsl(var(--primary))'}33`,
+                    }}
+                  >
                     {user.role}
                   </span>
                 </div>
@@ -557,7 +509,14 @@ export function Sidebar() {
               to="/profile"
               className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 group relative"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform relative">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-transform duration-200 group-hover:scale-[1.04] relative"
+                style={{
+                  backgroundImage: branding.primary
+                    ? `linear-gradient(135deg, ${branding.primary}, ${branding.accent || branding.primary})`
+                    : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))',
+                }}
+              >
                 <User className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 text-right">
@@ -566,14 +525,14 @@ export function Sidebar() {
               </div>
               {/* أيقونة الإشعارات مع العداد (إشعارات + رسائل) */}
               <div className="relative">
-                <Bell className="w-5 h-5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
+                <Bell className="w-5 h-5 text-slate-400 group-hover:text-[hsl(var(--primary))] transition-colors" />
                 {(unreadCount + unreadMessagesCount) > 0 && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
                     {(unreadCount + unreadMessagesCount) > 9 ? '9+' : formatNumberPlain(unreadCount + unreadMessagesCount)}
                   </span>
                 )}
               </div>
-              <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 transition-colors" />
+              <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-[hsl(var(--primary))] transition-colors" />
             </Link>
 
           </div>
