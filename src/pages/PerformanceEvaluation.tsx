@@ -35,7 +35,8 @@ type Employee = {
   id: string;
   user_id: string | null;
   full_name: string;
-  department: string | null;
+  department_id: string | null;
+  department_name: string | null;
   job_title: string | null;
   avatar_url: string | null;
 };
@@ -102,16 +103,23 @@ export default function PerformanceEvaluation() {
 
   const loadAll = async () => {
     setLoading(true);
-    const [cRes, eRes, sRes] = await Promise.all([
+    const [cRes, eRes, sRes, dRes] = await Promise.all([
       supabase.from("evaluation_criteria").select("*").eq("is_active", true).order("display_order"),
-      supabase.from("employees").select("id, user_id, full_name, department, job_title, avatar_url").not("user_id", "is", null),
+      supabase.from("employees").select("id, user_id, full_name, department_id, job_title, avatar_url").not("user_id", "is", null),
       supabase.from("employee_evaluation_scores").select("*").eq("period", period),
+      supabase.from("departments").select("id, name"),
     ]);
     if (cRes.error) toast.error("تعذر تحميل المعايير");
     if (eRes.error) toast.error("تعذر تحميل الموظفين");
     if (sRes.error) toast.error("تعذر تحميل الدرجات");
+    const deptMap = new Map<string, string>();
+    for (const d of (dRes.data ?? []) as any[]) deptMap.set(d.id, d.name);
     setCriteria((cRes.data ?? []) as Criterion[]);
-    setEmployees(((eRes.data ?? []) as any[]).filter(e => e.user_id) as Employee[]);
+    setEmployees(
+      ((eRes.data ?? []) as any[])
+        .filter(e => e.user_id)
+        .map(e => ({ ...e, department_name: e.department_id ? (deptMap.get(e.department_id) ?? null) : null })) as Employee[]
+    );
     setScores((sRes.data ?? []) as ScoreRow[]);
     setLoading(false);
   };
@@ -119,17 +127,22 @@ export default function PerformanceEvaluation() {
   useEffect(() => { loadAll(); }, [period]);
 
   const departments = useMemo(() => {
-    const set = new Set(employees.map(e => e.department).filter(Boolean) as string[]);
+    const set = new Set(employees.map(e => e.department_name).filter(Boolean) as string[]);
     return Array.from(set);
   }, [employees]);
 
+  // Department filter constrains the employee dropdown options
+  const employeesInDept = useMemo(
+    () => deptFilter === "all" ? employees : employees.filter(e => e.department_name === deptFilter),
+    [employees, deptFilter]
+  );
+
   const filteredEmployees = useMemo(() => {
-    return employees.filter(e => {
+    return employeesInDept.filter(e => {
       if (empFilter !== "all" && e.id !== empFilter) return false;
-      if (deptFilter !== "all" && e.department !== deptFilter) return false;
       return true;
     });
-  }, [employees, empFilter, deptFilter]);
+  }, [employeesInDept, empFilter]);
 
   const getScore = (uid: string, cid: string): ScoreRow | undefined =>
     scores.find(s => s.employee_user_id === uid && s.criterion_id === cid);
