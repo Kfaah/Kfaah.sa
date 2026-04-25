@@ -1350,12 +1350,17 @@ export type Database = {
           description: string | null
           employee_id: string | null
           estimated_time_minutes: number | null
+          external_employee_ref: string | null
           frequency: string | null
           id: string
+          import_id: string | null
           is_active: boolean
           organization_id: string | null
           priority: string
+          raw_data: Json | null
           source: string
+          source_row: number | null
+          source_sheet: string | null
           tags: Json | null
           title: string
           updated_at: string
@@ -1367,12 +1372,17 @@ export type Database = {
           description?: string | null
           employee_id?: string | null
           estimated_time_minutes?: number | null
+          external_employee_ref?: string | null
           frequency?: string | null
           id?: string
+          import_id?: string | null
           is_active?: boolean
           organization_id?: string | null
           priority?: string
+          raw_data?: Json | null
           source?: string
+          source_row?: number | null
+          source_sheet?: string | null
           tags?: Json | null
           title: string
           updated_at?: string
@@ -1384,12 +1394,17 @@ export type Database = {
           description?: string | null
           employee_id?: string | null
           estimated_time_minutes?: number | null
+          external_employee_ref?: string | null
           frequency?: string | null
           id?: string
+          import_id?: string | null
           is_active?: boolean
           organization_id?: string | null
           priority?: string
+          raw_data?: Json | null
           source?: string
+          source_row?: number | null
+          source_sheet?: string | null
           tags?: Json | null
           title?: string
           updated_at?: string
@@ -2838,6 +2853,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      staff_duties_imports: {
+        Row: {
+          ai_notes: string | null
+          completed_at: string | null
+          created_at: string
+          error_log: Json | null
+          file_name: string
+          file_path: string
+          file_size_bytes: number | null
+          id: string
+          imported_duties: number
+          matched_employees: number
+          organization_id: string | null
+          sheet_summary: Json | null
+          started_at: string | null
+          status: string
+          total_rows: number
+          unmatched_rows: number
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          ai_notes?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_log?: Json | null
+          file_name: string
+          file_path: string
+          file_size_bytes?: number | null
+          id?: string
+          imported_duties?: number
+          matched_employees?: number
+          organization_id?: string | null
+          sheet_summary?: Json | null
+          started_at?: string | null
+          status?: string
+          total_rows?: number
+          unmatched_rows?: number
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          ai_notes?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_log?: Json | null
+          file_name?: string
+          file_path?: string
+          file_size_bytes?: number | null
+          id?: string
+          imported_duties?: number
+          matched_employees?: number
+          organization_id?: string | null
+          sheet_summary?: Json | null
+          started_at?: string | null
+          status?: string
+          total_rows?: number
+          unmatched_rows?: number
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
       }
       strategic_goal_departments: {
         Row: {
