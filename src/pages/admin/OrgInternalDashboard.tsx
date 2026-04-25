@@ -456,37 +456,13 @@ export default function OrgInternalDashboard({
 
         {/* EMPLOYEES */}
         <TabsContent value="employees" className="mt-6" dir="rtl">
-          <Card>
-            <CardHeader>
-              <CardTitle>الموظفون ({employees.length})</CardTitle>
-              <CardDescription>عرض سريع — للإدارة الكاملة استخدم لوحة الموظفين</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {employees.length === 0 ? <EmptyState text="لا يوجد موظفون مسجلون." /> : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">الاسم</TableHead>
-                      <TableHead className="text-right">الدور الوظيفي</TableHead>
-                      <TableHead className="text-right">عدد المساءلات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {employees.map((e) => {
-                      const qCount = questions.filter((q) => q.target_employee_id === e.id || (q.target_job_role && e.job_role && q.target_job_role === e.job_role)).length;
-                      return (
-                        <TableRow key={e.id}>
-                          <TableCell className="font-medium">{e.full_name}</TableCell>
-                          <TableCell className="text-muted-foreground">{e.job_role ?? "—"}</TableCell>
-                          <TableCell><Badge variant={qCount > 0 ? "default" : "secondary"}>{qCount}</Badge></TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <EmployeesShowcase
+            employees={employees}
+            questions={questions}
+            empSearch={empSearch}
+            setEmpSearch={setEmpSearch}
+            orgSlug={org?.slug}
+          />
         </TabsContent>
 
         {/* TASKS / REPORTS / INNOVATION / UPLOADS / DONORS - placeholder summaries linking to existing pages */}
