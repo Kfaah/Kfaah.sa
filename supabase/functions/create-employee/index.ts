@@ -53,13 +53,18 @@ serve(async (req) => {
 
     const requestingUserId = claimsData.claims.sub as string;
 
-    // Check if requesting user is admin
-    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
-      _user_id: requestingUserId,
-      _role: "admin",
-    });
+    // السماح بإنشاء الموظفين للأدوار التالية:
+    // - admin / super_admin (صلاحيات النظام)
+    // - manager (مدراء — مدير تنفيذي، مدير تسويق، رئيس قسم… عبر role_level=manager)
+    const [{ data: isAdmin }, { data: isSuperAdmin }, { data: isManager }] = await Promise.all([
+      supabaseAdmin.rpc("has_role", { _user_id: requestingUserId, _role: "admin" }),
+      supabaseAdmin.rpc("is_super_admin", { _user_id: requestingUserId }),
+      supabaseAdmin.rpc("is_manager", { _user_id: requestingUserId }),
+    ]);
 
-    if (!isAdmin) {
+    const canManageEmployees = Boolean(isAdmin || isSuperAdmin || isManager);
+
+    if (!canManageEmployees) {
       return new Response(
         JSON.stringify({ error: "ليس لديك صلاحية لإضافة موظفين" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
