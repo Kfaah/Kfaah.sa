@@ -234,19 +234,33 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    const organizationId = orgRow?.organization_id;
-    if (!organizationId) {
-      return new Response(JSON.stringify({ error: "User has no organization" }), {
+    let organizationId = orgRow?.organization_id;
+
+    const form = await req.formData();
+    const file = form.get("file") as File | null;
+    const forDate = form.get("for_date") as string | null;
+    const targetOrgId = (form.get("target_organization_id") as string | null) || null;
+    if (!file) {
+      return new Response(JSON.stringify({ error: "Missing file" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const form = await req.formData();
-    const file = form.get("file") as File | null;
-    const forDate = form.get("for_date") as string | null;
-    if (!file) {
-      return new Response(JSON.stringify({ error: "Missing file" }), {
+    // If admin/super_admin passes target_organization_id, use it instead.
+    if (targetOrgId) {
+      const { data: roleRows } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      const isAdmin = (roleRows ?? []).some((r) => r.role === "admin" || r.role === "super_admin");
+      if (isAdmin) {
+        organizationId = targetOrgId;
+      }
+    }
+
+    if (!organizationId) {
+      return new Response(JSON.stringify({ error: "User has no organization" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
