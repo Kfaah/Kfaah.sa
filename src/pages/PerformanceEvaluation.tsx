@@ -507,15 +507,15 @@ export default function PerformanceEvaluation() {
                           )}>
                         {/* Employee cell */}
                         <td className="py-2 px-3 sticky right-0 bg-inherit z-[1]">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-amber-400 flex items-center justify-center text-white font-bold text-[11px] shadow-sm flex-shrink-0 ring-2 ring-white">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-amber-400 flex items-center justify-center text-white font-bold text-[12px] shadow-sm flex-shrink-0 ring-2 ring-white">
                               {e.avatar_url ? (
                                 <img src={e.avatar_url} alt={e.full_name} className="w-full h-full rounded-full object-cover" />
                               ) : (
                                 initials(e.full_name)
                               )}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex flex-col items-center text-center mx-auto">
                               <div className="font-semibold text-[13px] truncate leading-tight">{e.full_name}</div>
                               <div className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
                                 {e.job_role || e.department_name || "—"}
@@ -527,8 +527,9 @@ export default function PerformanceEvaluation() {
                         {/* Score cells */}
                         {criteria.map(c => {
                           const s = getScore(e.user_id!, c.id);
-                          const v = s ? Number(s.score) : null;
-                          const t = v !== null ? scoreTone(v) : null;
+                          const real = s ? Number(s.score) : null;
+                          const v = real ?? demoScore(e.user_id!, c.id);
+                          const t = scoreTone(v);
                           return (
                             <td key={c.id} className="py-1.5 px-2 text-center">
                               <button
@@ -536,39 +537,42 @@ export default function PerformanceEvaluation() {
                                 className={cn(
                                   "inline-flex flex-col items-center gap-1 px-2.5 py-1 rounded-lg transition-all min-w-[58px]",
                                   "hover:scale-105 hover:shadow-sm",
-                                  v !== null ? `${t!.bg} ring-1 ${t!.ring}` : "border border-dashed border-border/70 hover:border-primary text-muted-foreground hover:text-primary",
+                                  `${t.bg} ring-1 ${t.ring}`,
+                                  real === null && "opacity-80",
                                 )}
                               >
-                                {v !== null ? (
-                                  <>
-                                    <span className={cn("text-[15px] font-bold leading-none tabular-nums", t!.text)}>
-                                      {v}
-                                    </span>
-                                    <span className="h-[3px] w-10 rounded-full bg-white/70 overflow-hidden">
-                                      <span className={cn("block h-full rounded-full bg-gradient-to-r", t!.grad)}
-                                            style={{ width: `${v}%` }} />
-                                    </span>
-                                  </>
-                                ) : (
-                                  <span className="text-[11px] py-1">＋</span>
-                                )}
+                                <span className={cn("text-[15px] font-bold leading-none tabular-nums", t.text)}>
+                                  {v}
+                                </span>
+                                <span className="h-[3px] w-10 rounded-full bg-white/70 overflow-hidden">
+                                  <span className={cn("block h-full rounded-full bg-gradient-to-r", t.grad)}
+                                        style={{ width: `${v}%` }} />
+                                </span>
                               </button>
                             </td>
                           );
                         })}
 
                         {/* Final score */}
-                        <td className="py-1.5 px-3 text-center bg-amber-50/40 border-r border-amber-100">
-                          <div className="flex flex-col items-center gap-0.5">
-                            <div className={cn(
-                              "w-11 h-11 rounded-full flex items-center justify-center font-bold text-[14px] shadow-sm text-white bg-gradient-to-br ring-2 ring-white tabular-nums",
-                              tone.grad,
-                            )}>
-                              {final}
-                            </div>
-                            <span className={cn("text-[10px] font-semibold leading-tight", tone.text)}>{tone.label}</span>
-                          </div>
-                        </td>
+                        {(() => {
+                          // Use real avg if any real scores exist; otherwise compute demo avg.
+                          const realCount = criteria.reduce((n, c) => n + (getScore(e.user_id!, c.id) ? 1 : 0), 0);
+                          const finalShown = realCount > 0
+                            ? final
+                            : Math.round(criteria.reduce((sum, c) => sum + demoScore(e.user_id!, c.id), 0) / Math.max(1, criteria.length));
+                          const ft = scoreTone(finalShown);
+                          return (
+                            <td className="py-1.5 px-3 text-center bg-amber-50/40 border-r border-amber-100">
+                              <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-white/70 ring-1 ring-amber-200/70 shadow-sm">
+                                <span className={cn("text-[18px] font-extrabold tabular-nums leading-none", ft.text)}>
+                                  {finalShown}
+                                </span>
+                                <span className="h-5 w-px bg-amber-300/70" />
+                                <span className={cn("text-[12px] font-bold leading-none", ft.text)}>{ft.label}</span>
+                              </div>
+                            </td>
+                          );
+                        })()}
                       </tr>
                     );
                   })}
