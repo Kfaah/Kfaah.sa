@@ -124,6 +124,14 @@ export default function EmployeeOnboarding() {
         .eq("user_id", user.id)
         .maybeSingle();
 
+      const { data: duties } = await supabase
+        .from("employee_job_duties")
+        .select("id, title, description, category, frequency, priority, estimated_time_minutes")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+      if (duties) setJobDuties(duties as any);
+
       if (existing) {
         setData((prev) => ({
           ...prev,
