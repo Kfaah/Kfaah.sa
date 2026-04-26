@@ -1393,13 +1393,25 @@ function EmployeesShowcase({
             return (
               <div
                 key={e.id}
-                className="group relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:shadow-md"
-                style={{ borderColor: 'hsl(var(--border))', borderTopWidth: 3, borderTopColor: ORG_PRIMARY }}
+                className="group relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
+                style={{
+                  borderColor: 'hsl(var(--border))',
+                  background: `linear-gradient(180deg, ${ORG_PRIMARY_TINT} 0%, hsl(var(--card)) 35%)`,
+                }}
               >
+                {/* شريط هوية علوي بتدرج */}
+                <div
+                  className="absolute inset-x-0 top-0 h-1.5"
+                  style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
+                />
+                <div
+                  className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full opacity-25 blur-2xl"
+                  style={{ background: ORG_ACCENT }}
+                />
                 <div className="relative flex items-start gap-3">
                   <div
-                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 bg-background text-xl font-bold"
-                    style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
+                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white shadow-md ring-2 ring-white/60"
+                    style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
                   >
                     {e.avatar_url ? (
                       <img src={e.avatar_url} alt={e.full_name} className="h-full w-full object-cover" />
