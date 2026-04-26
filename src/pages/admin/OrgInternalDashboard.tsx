@@ -550,16 +550,16 @@ export default function OrgInternalDashboard({
         <TabsContent value="operational-plans" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/admin/action-plans" title="الخطط من التوصيات" embedSlug={false} />
         </TabsContent>
-        <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
+        <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
           <OperationalPlans embedded />
         </TabsContent>
-        <TabsContent value="executive-plans" forceMount className={standaloneTab ? "data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
+        <TabsContent value="executive-plans" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
           <ExecutivePlans embedded />
         </TabsContent>
-        <TabsContent value="performance" className={standaloneTab ? "" : "mt-6"} dir="rtl">
+        <TabsContent value="performance" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/performance" title="تقييم الأداء" />
         </TabsContent>
-        <TabsContent value="donors" className={standaloneTab ? "" : "mt-6"} dir="rtl">
+        <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <div className="space-y-4">
             <PageHeader
               icon={<HeartHandshake />}
