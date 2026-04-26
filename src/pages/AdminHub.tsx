@@ -41,7 +41,6 @@ const emptyForm: FormState = {
 
 export default function AdminHub() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
   const { isSuperAdmin, loading: orgLoading, refresh, switchOrg } = useOrganization();
   const [orgs, setOrgs] = useState<OrgWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
