@@ -207,48 +207,82 @@ export default function OrgInternalDashboard({
 
   return (
     <div className={standaloneTab ? "space-y-6" : "space-y-6 p-8"} dir="rtl">
-      {!standaloneTab && <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-primary via-accent to-primary/90 p-6 shadow-lg">
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="flex items-center gap-3 text-3xl font-bold text-white">
-              <GitCompareArrows className="h-8 w-8 text-white" />
-              لوحة الجمعية الداخلية
-            </h1>
-            <p className="mt-1 text-white/90">
-              رؤية شاملة · تقييم ذكي · مساءلات ذكية
-            </p>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/15 text-white shadow-md ring-1 ring-white/30 backdrop-blur">
+      {!standaloneTab && (
+        <div
+          className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
+          style={{ borderTop: `4px solid ${ORG_PRIMARY}` }}
+        >
+          {/* Subtle brand gradient backdrop */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.06]"
+            style={{ background: ORG_GRADIENT }}
+          />
+          <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full opacity-10 blur-3xl"
+            style={{ background: ORG_PRIMARY }}
+          />
+          <div className="pointer-events-none absolute -right-24 -bottom-24 h-64 w-64 rounded-full opacity-10 blur-3xl"
+            style={{ background: ORG_ACCENT }}
+          />
+
+          <div className="relative flex flex-wrap items-center justify-between gap-6 p-6">
+            {/* Right: Identity */}
+            <div className="flex min-w-0 items-center gap-5">
+              <div
+                className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-background shadow-md ring-1"
+                style={{ ['--tw-ring-color' as string]: ORG_PRIMARY_RING, boxShadow: `0 4px 14px ${ORG_PRIMARY_SOFT}` }}
+              >
                 {org?.logo_url ? (
-                  <img src={org.logo_url} alt={org.name} className="h-full w-full object-cover" />
+                  <img src={org.logo_url} alt={org.name} className="h-full w-full object-contain p-1" />
                 ) : (
-                  <Building2 className="h-6 w-6" />
+                  <Building2 className="h-8 w-8" style={{ color: ORG_PRIMARY }} />
                 )}
               </div>
-              <div className="text-right">
-                <div className="text-lg font-bold leading-tight text-white">{org?.name ?? "الجمعية"}</div>
-                <div className="text-xs text-white/80">{org?.slug}</div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide"
+                    style={{ backgroundColor: ORG_ACCENT_SOFT, color: ORG_PRIMARY, border: `1px solid ${ORG_ACCENT_RING}` }}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    اللوحة الداخلية
+                  </span>
+                </div>
+                <h1
+                  className="mt-1.5 truncate text-2xl font-extrabold leading-tight md:text-3xl"
+                  style={{ color: ORG_PRIMARY }}
+                >
+                  {org?.name ?? "الجمعية"}
+                </h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  رؤية شاملة · تقييم ذكي · مساءلات ذكية
+                </p>
               </div>
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              onClick={runDeepAnalysis}
-              disabled={analyzing}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-md ring-1 ring-white/30"
-            >
-              {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
-              تشغيل التحليل الذكي
-            </Button>
-            <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 border-transparent">
-              <Link to={`/admin/organizations/${orgId}/profile`}>
-                <Building2 className="ml-2 h-4 w-4" /> ملف الجمعية
-              </Link>
-            </Button>
+            {/* Left: Actions */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                onClick={runDeepAnalysis}
+                disabled={analyzing}
+                className="text-white shadow-md hover:opacity-95"
+                style={{ background: ORG_GRADIENT }}
+              >
+                {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
+                تشغيل التحليل الذكي
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
+              >
+                <Link to={`/admin/organizations/${orgId}/profile`}>
+                  <Building2 className="ml-2 h-4 w-4" /> ملف الجمعية
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
-      </div>}
+      )}
 
       {/* KPI Strip */}
       {!standaloneTab && <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
