@@ -338,52 +338,23 @@ export default function OrgInternalDashboard({
         {/* OVERVIEW */}
         <TabsContent value="overview" className="mt-6 space-y-4" dir="rtl">
           {standaloneTab && (
-            <div
-              className="relative overflow-hidden rounded-2xl shadow-xl"
-              style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
-              dir="rtl"
-            >
-              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
-              <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-              <div
-                className="pointer-events-none absolute inset-0 opacity-[0.08]"
-                style={{
-                  backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-                  backgroundSize: "22px 22px",
-                }}
-              />
-              <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-white/40 p-2">
-                    {org?.logo_url ? (
-                      <img src={org.logo_url} alt={org.name} className="h-full w-full object-contain" />
-                    ) : (
-                      <Building2 className="h-10 w-10" style={{ color: ORG_PRIMARY }} />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
-                      {org?.name ?? "نظرة عامة"}
-                    </h2>
-                    <p className="mt-1 text-sm text-white/85">
-                      رؤية شاملة · تقييم ذكي · مساءلات ذكية
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    onClick={runDeepAnalysis}
-                    disabled={analyzing}
-                    size="lg"
-                    className="gap-2 bg-white shadow-md hover:bg-white/90"
-                    style={{ color: ORG_PRIMARY }}
-                  >
-                    {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                    تشغيل التحليل الذكي
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <PageHeader
+              icon={<LayoutDashboard className="w-6 h-6" />}
+              title="نظرة عامة"
+              subtitle="رؤية شاملة · تقييم ذكي · مساءلات ذكية"
+              actions={
+                <Button
+                  onClick={runDeepAnalysis}
+                  disabled={analyzing}
+                  size="lg"
+                  className="gap-2 bg-white shadow-md hover:bg-white/90"
+                  style={{ color: ORG_PRIMARY }}
+                >
+                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  تشغيل التحليل الذكي
+                </Button>
+              }
+            />
           )}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.9fr)]">
             <Card className="order-1 border-border bg-card" dir="rtl">
@@ -434,52 +405,23 @@ export default function OrgInternalDashboard({
         {/* ANALYSIS */}
         <TabsContent value="analysis" className="space-y-4 mt-6" dir="rtl">
           {standaloneTab && (
-            <div
-              className="relative overflow-hidden rounded-2xl shadow-xl"
-              style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
-              dir="rtl"
-            >
-              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
-              <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-              <div
-                className="pointer-events-none absolute inset-0 opacity-[0.08]"
-                style={{
-                  backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-                  backgroundSize: "22px 22px",
-                }}
-              />
-              <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-white/40 p-2">
-                    {org?.logo_url ? (
-                      <img src={org.logo_url} alt={org.name} className="h-full w-full object-contain" />
-                    ) : (
-                      <Sparkles className="h-10 w-10" style={{ color: ORG_PRIMARY }} />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
-                      التحليل الذكي
-                    </h2>
-                    <p className="mt-1 text-sm text-white/85">
-                      {org?.name ? `${org.name} · ` : ""}يعتمد التحليل على آخر الملفات المرفوعة لهذه الجمعية ومصادرها الرقمية
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    onClick={runDeepAnalysis}
-                    disabled={analyzing}
-                    size="lg"
-                    className="gap-2 bg-white shadow-md hover:bg-white/90"
-                    style={{ color: ORG_PRIMARY }}
-                  >
-                    {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                    {analysis ? "إعادة تشغيل التحليل" : "تشغيل التحليل الذكي"}
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <PageHeader
+              icon={<Sparkles className="w-6 h-6" />}
+              title="التحليل الذكي"
+              subtitle="يعتمد التحليل على آخر الملفات المرفوعة ومصادرها الرقمية"
+              actions={
+                <Button
+                  onClick={runDeepAnalysis}
+                  disabled={analyzing}
+                  size="lg"
+                  className="gap-2 bg-white shadow-md hover:bg-white/90"
+                  style={{ color: ORG_PRIMARY }}
+                >
+                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {analysis ? "إعادة تشغيل التحليل" : "تشغيل التحليل الذكي"}
+                </Button>
+              }
+            />
           )}
           {!analysis ? (
             <Card>
@@ -1293,69 +1235,23 @@ function EmployeesShowcase({
 
   return (
     <div className="space-y-6">
-      {/* Hero - Brand-dominant header */}
-      <div
-        className="relative overflow-hidden rounded-2xl shadow-xl"
-        style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
-        dir="rtl"
-      >
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
-        <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-            backgroundSize: "22px 22px",
-          }}
-        />
-        <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-white/40 p-2">
-              {branding.logoUrl ? (
-                <img src={branding.logoUrl} alt={branding.orgName || "الجمعية"} className="h-full w-full object-contain" />
-              ) : (
-                <Users className="h-10 w-10 text-primary" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
-                طاقم الموظفين
-              </h2>
-              <p className="mt-1 text-sm text-white/85">
-                منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
-              <div className="text-2xl font-bold leading-none text-white">{employees.length}</div>
-              <div className="mt-1 text-[11px] text-white/80">إجمالي الموظفين</div>
-            </div>
-            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
-              <div className="flex items-center gap-1 text-2xl font-bold leading-none text-white">
-                <Crown className="h-5 w-5" />
-                {managersCount}
-              </div>
-              <div className="mt-1 text-[11px] text-white/80">قيادات</div>
-            </div>
-            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
-              <div className="text-2xl font-bold leading-none text-white">{totalQuestions}</div>
-              <div className="mt-1 text-[11px] text-white/80">مساءلات نشطة</div>
-            </div>
-            <Link to={addEmployeeHref}>
-              <Button
-                size="lg"
-                className="gap-2 bg-white text-primary shadow-md hover:bg-white/90"
-                style={{ color: ORG_PRIMARY }}
-              >
-                <UserPlus className="h-5 w-5" />
-                إضافة موظف جديد
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        icon={<Users className="w-6 h-6" />}
+        title="طاقم الموظفين"
+        subtitle="منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة"
+        actions={
+          <Link to={addEmployeeHref}>
+            <Button
+              size="lg"
+              className="gap-2 bg-white text-primary shadow-md hover:bg-white/90"
+              style={{ color: ORG_PRIMARY }}
+            >
+              <UserPlus className="h-5 w-5" />
+              إضافة موظف جديد
+            </Button>
+          </Link>
+        }
+      />
 
       {/* Search */}
       <div className="relative">
