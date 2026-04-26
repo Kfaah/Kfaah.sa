@@ -345,28 +345,20 @@ export function Sidebar() {
         className={cn(
           "group/nav flex h-14 items-center gap-3 rounded-l-xl rounded-r-none border border-white/0 bg-white/95 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-150",
           isActive
-            ? "border-white bg-white text-[hsl(var(--primary))] shadow-md"
-            : "hover:bg-white hover:text-[hsl(var(--primary))]"
+            ? "border-white bg-white text-slate-900 shadow-md"
+            : "hover:bg-white hover:text-slate-900"
         )}
       >
         <div
-          className={cn(
-            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl shadow-md",
-            item.iconBg
-          )}
-          style={
-            branding.primary
-              ? { backgroundImage: `linear-gradient(135deg, ${branding.primary} 0%, ${branding.accent || branding.primary} 100%)` }
-              : undefined
-          }
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 shadow-sm"
         >
-          <item.icon className="w-5 h-5 text-white" />
+          <item.icon className="w-5 h-5" />
         </div>
         {!collapsed && (
           <>
             <span className={cn(
               "font-bold text-base flex-1 text-right transition-colors duration-150",
-              isActive ? "text-[hsl(var(--primary))]" : "text-slate-700"
+              isActive ? "text-slate-900" : "text-slate-700"
             )}>
               {item.title}
             </span>
