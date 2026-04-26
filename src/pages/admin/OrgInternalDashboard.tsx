@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SourceLink } from "@/components/admin/SourceLink";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 interface OrgInfo {
   id: string;
@@ -497,6 +498,11 @@ export default function OrgInternalDashboard({
 
         {/* ACCOUNTABILITY */}
         <TabsContent value="accountability" className="space-y-4 mt-6" dir="rtl">
+          <PageHeader
+            icon={<ShieldAlert className="w-7 h-7" />}
+            title="مساءلات الموظفين"
+            subtitle="أسئلة مولّدة من التحليل الذكي ومُوزّعة بحسب الدور الوظيفي"
+          />
           <Card>
             <CardHeader>
               <CardTitle>مساءلات الموظفين ({questions.length})</CardTitle>
@@ -609,7 +615,13 @@ export default function OrgInternalDashboard({
           <EmbeddedOrgPage slug={org?.slug} path="/performance" title="تقييم الأداء" />
         </TabsContent>
         <TabsContent value="donors" className="mt-6" dir="rtl">
-          <PlaceholderTab title="المتبرعون" desc={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`} />
+          <div className="space-y-4">
+            <PageHeader
+              icon={<HeartHandshake className="w-7 h-7" />}
+              title="المتبرعون"
+              subtitle={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
