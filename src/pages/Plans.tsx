@@ -232,6 +232,7 @@ const Plans = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <PageHeader
+          icon={<Target />}
           title="الخطط"
           subtitle="إدارة خطط العمل والمهام التلقائية للموظفين"
           actions={
