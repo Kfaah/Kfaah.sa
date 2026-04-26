@@ -419,81 +419,86 @@ body::-webkit-scrollbar {
 html[data-org-branded="true"] {
   /* ---- Backgrounds ---- */
   .bg-blue-50, .bg-sky-50, .bg-cyan-50, .bg-teal-50, .bg-emerald-50,
-  .bg-indigo-50, .bg-green-50, .bg-purple-50 {
+  .bg-indigo-50, .bg-green-50, .bg-purple-50, .bg-pink-50, .bg-fuchsia-50, .bg-violet-50 {
     background-color: hsl(var(--accent) / 0.08) !important;
   }
   .bg-blue-100, .bg-sky-100, .bg-cyan-100, .bg-teal-100, .bg-emerald-100,
-  .bg-indigo-100, .bg-green-100, .bg-purple-100 {
+  .bg-indigo-100, .bg-green-100, .bg-purple-100, .bg-pink-100, .bg-fuchsia-100, .bg-violet-100 {
     background-color: hsl(var(--accent) / 0.15) !important;
   }
   .bg-blue-200, .bg-sky-200, .bg-cyan-200, .bg-teal-200, .bg-emerald-200,
-  .bg-indigo-200, .bg-green-200, .bg-purple-200 {
+  .bg-indigo-200, .bg-green-200, .bg-purple-200, .bg-pink-200, .bg-fuchsia-200, .bg-violet-200 {
     background-color: hsl(var(--accent) / 0.25) !important;
   }
   .bg-blue-500, .bg-sky-500, .bg-cyan-500, .bg-teal-500, .bg-emerald-500,
-  .bg-indigo-500, .bg-green-500, .bg-purple-500 {
+  .bg-indigo-500, .bg-green-500, .bg-purple-500, .bg-pink-500, .bg-fuchsia-500, .bg-violet-500 {
     background-color: hsl(var(--accent)) !important;
   }
   .bg-blue-600, .bg-sky-600, .bg-cyan-600, .bg-teal-600, .bg-emerald-600,
-  .bg-indigo-600, .bg-green-600, .bg-purple-600 {
+  .bg-indigo-600, .bg-green-600, .bg-purple-600, .bg-pink-600, .bg-fuchsia-600, .bg-violet-600 {
     background-color: hsl(var(--primary)) !important;
   }
   .bg-blue-700, .bg-sky-700, .bg-cyan-700, .bg-teal-700, .bg-emerald-700,
-  .bg-indigo-700, .bg-green-700, .bg-purple-700,
+  .bg-indigo-700, .bg-green-700, .bg-purple-700, .bg-pink-700, .bg-fuchsia-700, .bg-violet-700,
   .bg-blue-800, .bg-sky-800, .bg-cyan-800, .bg-teal-800, .bg-emerald-800,
-  .bg-indigo-800, .bg-green-800, .bg-purple-800,
+  .bg-indigo-800, .bg-green-800, .bg-purple-800, .bg-pink-800, .bg-fuchsia-800, .bg-violet-800,
   .bg-blue-900, .bg-sky-900, .bg-cyan-900, .bg-teal-900, .bg-emerald-900,
-  .bg-indigo-900, .bg-green-900, .bg-purple-900 {
+  .bg-indigo-900, .bg-green-900, .bg-purple-900, .bg-pink-900, .bg-fuchsia-900, .bg-violet-900 {
     background-color: hsl(var(--primary) / 0.92) !important;
   }
 
   /* ---- Text colors ---- */
   .text-blue-500, .text-sky-500, .text-cyan-500, .text-teal-500, .text-emerald-500,
-  .text-indigo-500, .text-green-500, .text-purple-500 {
+  .text-indigo-500, .text-green-500, .text-purple-500, .text-pink-500, .text-fuchsia-500, .text-violet-500 {
     color: hsl(var(--accent)) !important;
   }
   .text-blue-600, .text-sky-600, .text-cyan-600, .text-teal-600, .text-emerald-600,
-  .text-indigo-600, .text-green-600, .text-purple-600,
+  .text-indigo-600, .text-green-600, .text-purple-600, .text-pink-600, .text-fuchsia-600, .text-violet-600,
   .text-blue-700, .text-sky-700, .text-cyan-700, .text-teal-700, .text-emerald-700,
-  .text-indigo-700, .text-green-700, .text-purple-700,
+  .text-indigo-700, .text-green-700, .text-purple-700, .text-pink-700, .text-fuchsia-700, .text-violet-700,
   .text-blue-800, .text-sky-800, .text-cyan-800, .text-teal-800, .text-emerald-800,
-  .text-indigo-800, .text-green-800, .text-purple-800,
+  .text-indigo-800, .text-green-800, .text-purple-800, .text-pink-800, .text-fuchsia-800, .text-violet-800,
   .text-blue-900, .text-sky-900, .text-cyan-900, .text-teal-900, .text-emerald-900,
-  .text-indigo-900, .text-green-900, .text-purple-900 {
+  .text-indigo-900, .text-green-900, .text-purple-900, .text-pink-900, .text-fuchsia-900, .text-violet-900 {
     color: hsl(var(--primary)) !important;
   }
 
   /* ---- Borders ---- */
   [class*="border-blue-"], [class*="border-sky-"], [class*="border-cyan-"],
   [class*="border-teal-"], [class*="border-emerald-"], [class*="border-indigo-"],
-  [class*="border-green-"], [class*="border-purple-"] {
+  [class*="border-green-"], [class*="border-purple-"], [class*="border-pink-"],
+  [class*="border-fuchsia-"], [class*="border-violet-"] {
     border-color: hsl(var(--accent) / 0.4) !important;
   }
 
   /* ---- Gradients (from-*, to-*, via-*) ---- */
   [class*="from-blue-"], [class*="from-sky-"], [class*="from-cyan-"],
   [class*="from-teal-"], [class*="from-emerald-"], [class*="from-indigo-"],
-  [class*="from-green-"], [class*="from-purple-"] {
+  [class*="from-green-"], [class*="from-purple-"], [class*="from-pink-"],
+  [class*="from-fuchsia-"], [class*="from-violet-"] {
     --tw-gradient-from: hsl(var(--primary)) var(--tw-gradient-from-position) !important;
     --tw-gradient-to: hsl(var(--primary) / 0) var(--tw-gradient-to-position) !important;
     --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
   }
   [class*="via-blue-"], [class*="via-sky-"], [class*="via-cyan-"],
   [class*="via-teal-"], [class*="via-emerald-"], [class*="via-indigo-"],
-  [class*="via-green-"], [class*="via-purple-"] {
+  [class*="via-green-"], [class*="via-purple-"], [class*="via-pink-"],
+  [class*="via-fuchsia-"], [class*="via-violet-"] {
     --tw-gradient-via: hsl(var(--accent)) var(--tw-gradient-via-position) !important;
     --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to) !important;
   }
   [class*="to-blue-"], [class*="to-sky-"], [class*="to-cyan-"],
   [class*="to-teal-"], [class*="to-emerald-"], [class*="to-indigo-"],
-  [class*="to-green-"], [class*="to-purple-"] {
+  [class*="to-green-"], [class*="to-purple-"], [class*="to-pink-"],
+  [class*="to-fuchsia-"], [class*="to-violet-"] {
     --tw-gradient-to: hsl(var(--accent)) var(--tw-gradient-to-position) !important;
   }
 
   /* ---- Ring (focus rings) ---- */
   [class*="ring-blue-"], [class*="ring-sky-"], [class*="ring-cyan-"],
   [class*="ring-teal-"], [class*="ring-emerald-"], [class*="ring-indigo-"],
-  [class*="ring-green-"], [class*="ring-purple-"] {
+  [class*="ring-green-"], [class*="ring-purple-"], [class*="ring-pink-"],
+  [class*="ring-fuchsia-"], [class*="ring-violet-"] {
     --tw-ring-color: hsl(var(--accent) / 0.5) !important;
   }
 
