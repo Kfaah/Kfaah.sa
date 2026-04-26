@@ -427,20 +427,20 @@ export function Sidebar() {
           >
             <div className="absolute inset-[-12px] rounded-full border-2 border-white/45 pointer-events-none animate-pulse" />
             <div className="absolute inset-[-24px] rounded-full bg-white/20 blur-2xl pointer-events-none" />
-            <div className="relative w-44 h-44 rounded-full bg-white flex flex-col items-center justify-center gap-1 px-3 py-5 text-center shadow-2xl overflow-hidden ring-4 ring-white/35 transition-transform duration-500 group-hover:scale-105 shrink-0">
+            <div className="relative w-52 h-52 rounded-full bg-white flex flex-col items-center justify-center text-center shadow-2xl overflow-hidden ring-4 ring-white/35 transition-transform duration-500 group-hover:scale-105 shrink-0">
               {branding.loading ? (
-                <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" />
+                <div className="w-44 h-44 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
                   src={branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
-                  className="h-40 w-40 object-contain drop-shadow-xl"
+                  className="h-[200px] w-[200px] object-contain drop-shadow-xl scale-110"
                 />
               ) : (
                 <img
                   src={atefLogoIcon}
                   alt={branding.orgName || "الجمعية"}
-                  className="h-40 w-40 object-contain drop-shadow-xl"
+                  className="h-[200px] w-[200px] object-contain drop-shadow-xl scale-110"
                 />
               )}
             </div>
