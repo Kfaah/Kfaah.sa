@@ -351,8 +351,8 @@ export function Sidebar() {
       >
         <div
           className={cn(
-            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white shadow-md ring-1 ring-white/40",
-            item.iconBg
+            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/30 backdrop-blur-sm transition-colors",
+            isActive && "bg-white/25 ring-white/50"
           )}
         >
           <item.icon className="w-5 h-5" />
