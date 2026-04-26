@@ -154,15 +154,16 @@ export default function AdminReports() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between mb-2 animate-fade-in flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">التقارير</h1>
-          <p className="text-muted-foreground mt-1">تقارير موضوعية متخصصة + تقارير تنفيذية سردية للمجلس والجهات الرسمية، قابلة للتصدير PDF</p>
-        </div>
-        <Button onClick={exportPDF} disabled={!selected} className="gap-2 rounded-2xl">
-          <Download className="w-4 h-4" /> تصدير PDF
-        </Button>
-      </div>
+      <PageHeader
+        icon={<FileBarChart2 className="w-7 h-7" />}
+        title="التقارير"
+        subtitle="تقارير موضوعية متخصصة + تقارير تنفيذية سردية للمجلس والجهات الرسمية، قابلة للتصدير PDF"
+        actions={
+          <Button onClick={exportPDF} disabled={!selected} className="gap-2 bg-white text-primary hover:bg-white/90 disabled:bg-white/60">
+            <Download className="w-4 h-4" /> تصدير PDF
+          </Button>
+        }
+      />
 
       {/* Mode tabs */}
       <div className="grid md:grid-cols-2 gap-3">
