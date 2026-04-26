@@ -468,7 +468,7 @@ export function Sidebar() {
             {/* Profile Icon Button */}
             <Link
               to="/profile"
-              className="group relative flex w-full items-center gap-3 -ml-3 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-5 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
+              className="group relative flex w-full items-center gap-3 -ml-6 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-8 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
             >
               <div className="sidebar-reference-icon relative flex h-10 w-10 items-center justify-center rounded-full text-sidebar-primary-foreground transition-transform duration-200 group-hover:scale-[1.04]">
                 <User className="w-5 h-5" />
