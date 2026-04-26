@@ -70,8 +70,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       setAvailableOrgs(list);
 
       const segments = location.pathname.split("/").filter(Boolean);
+      const searchOrgSlug = new URLSearchParams(location.search).get("org");
       let routeSlug: string | null = null;
-      if (segments[0] === "admin" && segments.length >= 3 && /^orgs?$|^organizations?$/.test(segments[1])) {
+      if (searchOrgSlug) {
+        routeSlug = searchOrgSlug;
+      } else if (segments[0] === "admin" && segments.length >= 3 && /^orgs?$|^organizations?$/.test(segments[1])) {
         routeSlug = segments[2];
       } else if (segments[0] && segments[0] !== "admin") {
         routeSlug = segments[0];
@@ -89,7 +92,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [authUser, location.pathname]);
+  }, [authUser, location.pathname, location.search]);
 
   useEffect(() => {
     load();
@@ -101,8 +104,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     // Resolve the org slug from either the first path segment (/sakinah/...)
     // or from admin org-scoped routes (/admin/orgs/:slug/..., /admin/organizations/:slug/...).
     const segments = location.pathname.split("/").filter(Boolean);
+    const searchOrgSlug = new URLSearchParams(location.search).get("org");
     let routeSlug: string | null = null;
-    if (segments[0] === "admin" && segments.length >= 3 && /^orgs?$|^organizations?$/.test(segments[1])) {
+    if (searchOrgSlug) {
+      routeSlug = searchOrgSlug;
+    } else if (segments[0] === "admin" && segments.length >= 3 && /^orgs?$|^organizations?$/.test(segments[1])) {
       routeSlug = segments[2];
     } else if (segments[0] && segments[0] !== "admin") {
       routeSlug = segments[0];
@@ -114,7 +120,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
     localStorage.setItem(STORAGE_KEY, slugMatch.id);
     setCurrentOrg(slugMatch);
-  }, [availableOrgs, currentOrg?.id, location.pathname]);
+  }, [availableOrgs, currentOrg?.id, location.pathname, location.search]);
 
   const switchOrg = (orgId: string) => {
     const target = availableOrgs.find((o) => o.id === orgId);
