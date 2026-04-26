@@ -239,74 +239,43 @@ const Tasks = () => {
 
   // تم إزالة التحقق من المهمة النشطة - يتم الآن من خلال أيقونة تسجيل الحضور في الشريط الجانبي
 
-  // جلب المهام
+  // جلب جميع البيانات بالتوازي لتسريع التحميل
   useEffect(() => {
-    const fetchTasks = async () => {
-      if (!authUser) return;
-      
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("tasks")
-          .select("*")
-          .order("due_date", { ascending: true });
-        
-        if (error) throw error;
-        setTasks((data as Task[]) || []);
-      } catch (error: any) {
-        toast({ title: "خطأ", description: error.message, variant: "destructive" });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchTasks();
-  }, [authUser]);
+    if (!authUser) return;
 
-  // جلب الأقسام
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      if (!authUser) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from("departments")
-          .select("id, name")
-          .order("name");
-        
-        if (error) throw error;
-        setDepartments((data as Department[]) || []);
-      } catch (error: any) {
-        console.error("Error fetching departments:", error);
-      }
-    };
-    
-    fetchDepartments();
-  }, [authUser]);
+    setLoading(true);
 
-  // جلب الموظفين
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      if (!authUser) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from("employees")
-          .select("id, full_name, user_id, department_id")
-          .order("full_name");
-        
-        if (error) throw error;
-        setEmployees((data as Employee[]) || []);
-      } catch (error: any) {
-        console.error("Error fetching employees:", error);
-      }
-    };
-    
-    fetchEmployees();
-  }, [authUser]);
+    // جلب المهام (الأولوية القصوى — يحدد متى تختفي شاشة التحميل)
+    const tasksPromise = supabase
+      .from("tasks")
+      .select("*")
+      .order("due_date", { ascending: true })
+      .then(({ data, error }) => {
+        if (error) {
+          toast({ title: "خطأ", description: error.message, variant: "destructive" });
+        } else {
+          setTasks((data as Task[]) || []);
+        }
+        setLoading(false); // إخفاء شاشة التحميل فور وصول المهام
+      });
 
-  // جلب الأنشطة من الخطط التنفيذية
-  useEffect(() => {
+    // باقي البيانات تُجلب بالتوازي وتظهر تدريجيًا دون تأخير الواجهة
+    supabase
+      .from("departments")
+      .select("id, name")
+      .order("name")
+      .then(({ data, error }) => {
+        if (!error) setDepartments((data as Department[]) || []);
+      });
+
+    supabase
+      .from("employees")
+      .select("id, full_name, user_id, department_id")
+      .order("full_name")
+      .then(({ data, error }) => {
+        if (!error) setEmployees((data as Employee[]) || []);
+      });
+
     const fetchActivities = async () => {
       if (!authUser) return;
       
