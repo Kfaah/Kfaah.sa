@@ -3,12 +3,13 @@ import { Sidebar } from "./Sidebar";
 
 interface DashboardLayoutProps {
   children: ReactNode;
+  embedded?: boolean;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, embedded = false }: DashboardLayoutProps) {
   // Embedded mode: when the page is rendered inside an iframe of the admin
   // internal dashboard, hide the org sidebar so only the page content shows.
-  const isEmbedded =
+  const isEmbedded = embedded ||
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("embedded") === "1";
 

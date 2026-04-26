@@ -243,7 +243,7 @@ function wrapTextByChars(text: string, maxChars = 30): string {
   return lines.join("\n");
 }
 
-export default function ExecutivePlans() {
+export default function ExecutivePlans({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
   const { slug } = useParams<{ slug?: string }>();
@@ -941,7 +941,7 @@ export default function ExecutivePlans() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout embedded={embedded}>
       <div className="space-y-6">
         {/* Header */}
         <PageHeader
