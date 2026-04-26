@@ -133,8 +133,9 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     // so internal pages (employees, plans, ...) match the org identity.
     const path = location.pathname;
     const isAdminRoute = path.startsWith("/admin");
+    const searchOrgSlug = new URLSearchParams(location.search).get("org");
     const isAdminOrgScopedRoute = isAdminRoute && /\/admin\/(orgs?|organizations?)\//.test(path);
-    const useOrgBranding = !isAdminRoute || isAdminOrgScopedRoute;
+    const useOrgBranding = !isAdminRoute || isAdminOrgScopedRoute || Boolean(searchOrgSlug);
     if (useOrgBranding) {
       // Don't write anything until we actually have new values to apply,
       // otherwise we'd briefly clear the current colors and flash the
