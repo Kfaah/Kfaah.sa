@@ -337,7 +337,7 @@ export default function ExecutivePlans() {
       if (!authUser) return;
       
       // جلب قائمة الموظفين للجميع (للبحث عن employee.id)
-      const { data, error } = await supabase
+      let query = supabase
         .from("employees")
         .select(`
           id, 
@@ -348,6 +348,8 @@ export default function ExecutivePlans() {
           departments:department_id (name)
         `)
         .eq("status", "active");
+      if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+      const { data, error } = await query;
       
       if (error) {
         toast({ title: "خطأ", description: "فشل في جلب الموظفين", variant: "destructive" });
@@ -375,7 +377,7 @@ export default function ExecutivePlans() {
     };
     
     fetchEmployees();
-  }, [isAdmin, authUser]);
+  }, [isAdmin, authUser, activeOrgId]);
 
   // تحديد المستخدمين المختارين بناءً على الفلتر
   // ملاحظة: الخطط التشغيلية مرتبطة بـ user_id (معرّف حساب المستخدم)، وليس employee.id
