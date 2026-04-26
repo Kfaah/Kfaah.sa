@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef } from "react";
+import { useEffect, useState, forwardRef, lazy, Suspense } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowRight, LayoutDashboard, Users, ListChecks, FileBarChart2,
@@ -21,8 +21,8 @@ import { toast } from "sonner";
 import { SourceLink } from "@/components/admin/SourceLink";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { PageHeader } from "@/components/layout/PageHeader";
-import OperationalPlans from "@/pages/OperationalPlans";
-import ExecutivePlans from "@/pages/ExecutivePlans";
+const OperationalPlans = lazy(() => import("@/pages/OperationalPlans"));
+const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 
 interface OrgInfo {
   id: string;
@@ -551,10 +551,14 @@ export default function OrgInternalDashboard({
           <EmbeddedOrgPage slug={org?.slug} path="/admin/action-plans" title="الخطط من التوصيات" embedSlug={false} />
         </TabsContent>
         <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
-          <OperationalPlans embedded />
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            <OperationalPlans embedded />
+          </Suspense>
         </TabsContent>
         <TabsContent value="executive-plans" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
-          <ExecutivePlans embedded />
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            <ExecutivePlans embedded />
+          </Suspense>
         </TabsContent>
         <TabsContent value="performance" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/performance" title="تقييم الأداء" />
