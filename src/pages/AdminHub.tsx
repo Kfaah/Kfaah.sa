@@ -217,7 +217,7 @@ export default function AdminHub() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-lg text-foreground truncate">{o.name}</h3>
+                      <h3 className="font-bold text-lg text-foreground line-clamp-2 leading-tight break-words">{o.name}</h3>
                       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                         <Badge
                           variant={o.is_active ? "default" : "secondary"}
