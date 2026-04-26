@@ -356,7 +356,7 @@ const TaskDetails = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[hsl(var(--primary)/<alpha-value>)]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[hsl(var(--primary))]" />
         </div>
       </DashboardLayout>
     );
@@ -402,7 +402,7 @@ const TaskDetails = () => {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              className="gap-2 border-[hsl(var(--primary)/<alpha-value>)] text-[hsl(var(--primary)/<alpha-value>)] hover:bg-[hsl(var(--primary)/<alpha-value>)]/10"
+              className="gap-2 border-[hsl(var(--primary))] text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.1)]"
               onClick={() => setIsCommunicationDialogOpen(true)}
             >
               <MessageSquare className="w-4 h-4" />
@@ -412,7 +412,7 @@ const TaskDetails = () => {
             {isAdmin && !isEditMode && (
               <Button
                 variant="default"
-                className="gap-2 bg-[hsl(var(--primary)/<alpha-value>)] hover:bg-[hsl(var(--primary)/<alpha-value>)]/90"
+                className="gap-2 bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.9)]"
                 onClick={startEdit}
               >
                 <Edit className="w-4 h-4" />
@@ -435,8 +435,8 @@ const TaskDetails = () => {
         </div>
 
         {/* البطاقة الرئيسية */}
-        <Card className="border-[hsl(var(--primary)/<alpha-value>)]/20 shadow-lg">
-          <CardHeader className="bg-gradient-to-l from-[hsl(var(--primary)/<alpha-value>)]/10 to-transparent border-b">
+        <Card className="border-[hsl(var(--primary)/0.2)] shadow-lg">
+          <CardHeader className="bg-gradient-to-l from-[hsl(var(--primary)/0.1)] to-transparent border-b">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
                 {task.ai_generated && (
@@ -450,7 +450,7 @@ const TaskDetails = () => {
                   </CardTitle>
                   {activity && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Target className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
+                      <Target className="w-4 h-4 text-[hsl(var(--primary))]" />
                       <span>{activity.activity_name}</span>
                     </div>
                   )}
@@ -488,7 +488,7 @@ const TaskDetails = () => {
             {/* التفاصيل */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
+                <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
                 <h3 className="font-semibold text-foreground">التفاصيل</h3>
               </div>
 
@@ -579,9 +579,9 @@ const TaskDetails = () => {
                 {/* معلومات المهمة */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* المنفذ */}
-              <div className="p-4 bg-[hsl(var(--primary)/<alpha-value>)]/5 rounded-lg border border-[hsl(var(--primary)/<alpha-value>)]/10">
+              <div className="p-4 bg-[hsl(var(--primary)/0.05)] rounded-lg border border-[hsl(var(--primary)/0.1)]">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                  <User className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
+                  <User className="w-4 h-4 text-[hsl(var(--primary))]" />
                   <span>المنفذ</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -592,8 +592,8 @@ const TaskDetails = () => {
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-[hsl(var(--primary)/<alpha-value>)]/20 flex items-center justify-center">
-                      <User className="w-5 h-5 text-[hsl(var(--primary)/<alpha-value>)]" />
+                    <div className="w-10 h-10 rounded-full bg-[hsl(var(--primary)/0.2)] flex items-center justify-center">
+                      <User className="w-5 h-5 text-[hsl(var(--primary))]" />
                     </div>
                   )}
                   <div>
@@ -604,9 +604,9 @@ const TaskDetails = () => {
               </div>
 
               {/* التاريخ */}
-              <div className="p-4 bg-[hsl(var(--primary)/<alpha-value>)]/5 rounded-lg border border-[hsl(var(--primary)/<alpha-value>)]/10">
+              <div className="p-4 bg-[hsl(var(--primary)/0.05)] rounded-lg border border-[hsl(var(--primary)/0.1)]">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                  <Calendar className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
+                  <Calendar className="w-4 h-4 text-[hsl(var(--primary))]" />
                   <span>تاريخ الاستحقاق</span>
                 </div>
                 <div>
@@ -631,9 +631,9 @@ const TaskDetails = () => {
               </div>
 
               {/* الوقت المقدر */}
-              <div className="p-4 bg-[hsl(var(--primary)/<alpha-value>)]/5 rounded-lg border border-[hsl(var(--primary)/<alpha-value>)]/10">
+              <div className="p-4 bg-[hsl(var(--primary)/0.05)] rounded-lg border border-[hsl(var(--primary)/0.1)]">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                  <Clock className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
+                  <Clock className="w-4 h-4 text-[hsl(var(--primary))]" />
                   <span>الوقت المقدر</span>
                 </div>
                 <p className="font-semibold text-foreground text-lg" style={{ fontFamily: 'Arial, sans-serif' }}>
@@ -642,7 +642,7 @@ const TaskDetails = () => {
               </div>
 
               {/* الوقت الفعلي */}
-              <div className="p-4 bg-[hsl(var(--primary)/<alpha-value>)]/5 rounded-lg border border-[hsl(var(--primary)/<alpha-value>)]/10">
+              <div className="p-4 bg-[hsl(var(--primary)/0.05)] rounded-lg border border-[hsl(var(--primary)/0.1)]">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                   <Clock className="w-4 h-4 text-emerald-500" />
                   <span>الوقت الفعلي</span>

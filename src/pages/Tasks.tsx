@@ -951,19 +951,19 @@ const Tasks = () => {
         </div>
 
         {/* الفلاتر */}
-        <Card className="border border-[hsl(var(--primary)/<alpha-value>)]/20 shadow-sm bg-gradient-to-l from-[hsl(var(--primary)/<alpha-value>)]/5 to-transparent">
+        <Card className="border border-[hsl(var(--primary)/0.2)] shadow-sm bg-gradient-to-l from-[hsl(var(--primary)/0.05)] to-transparent">
           <CardContent className="p-5">
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-[hsl(var(--primary)/<alpha-value>)] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[hsl(var(--primary))] flex items-center justify-center">
                 <Filter className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-[hsl(var(--primary)/<alpha-value>)] text-lg">الفلاتر</span>
+              <span className="font-bold text-[hsl(var(--primary))] text-lg">الفلاتر</span>
               {hasActiveFilters && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={resetFilters}
-                  className="mr-auto border-[hsl(var(--primary)/<alpha-value>)]/30 text-[hsl(var(--primary)/<alpha-value>)] hover:bg-[hsl(var(--primary)/<alpha-value>)]/10"
+                  className="mr-auto border-[hsl(var(--primary)/0.3)] text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.1)]"
                 >
                   <X className="w-4 h-4 ml-1" />
                   إعادة تعيين
@@ -973,16 +973,16 @@ const Tasks = () => {
             <div className={cn("grid gap-4", isAdmin ? "grid-cols-2 md:grid-cols-4 lg:grid-cols-8" : "grid-cols-2 md:grid-cols-5")}>
               {/* فلتر السنة */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-[hsl(var(--primary)/<alpha-value>)]">السنة</label>
+                <label className="text-sm font-semibold text-[hsl(var(--primary))]">السنة</label>
                 <Select value={filterYear} onValueChange={(v) => {
                   setFilterYear(v);
                   setFilterMonth("all");
                   setFilterDay("all");
                 }}>
-                  <SelectTrigger className="bg-white border-[hsl(var(--primary)/<alpha-value>)]/30 focus:ring-[hsl(var(--primary)/<alpha-value>)]/20">
+                  <SelectTrigger className="bg-white border-[hsl(var(--primary)/0.3)] focus:ring-[hsl(var(--primary)/0.2)]">
                     <SelectValue placeholder="السنة" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/<alpha-value>)]/20">
+                  <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/0.2)]">
                     <SelectItem value="all">كل السنوات</SelectItem>
                     {availableYears.map(year => (
                       <SelectItem key={year} value={String(year)}>
@@ -995,15 +995,15 @@ const Tasks = () => {
 
               {/* فلتر الشهر */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-[hsl(var(--primary)/<alpha-value>)]">الشهر</label>
+                <label className="text-sm font-semibold text-[hsl(var(--primary))]">الشهر</label>
                 <Select value={filterMonth} onValueChange={(v) => {
                   setFilterMonth(v);
                   setFilterDay("all");
                 }}>
-                  <SelectTrigger className="bg-white border-[hsl(var(--primary)/<alpha-value>)]/30 focus:ring-[hsl(var(--primary)/<alpha-value>)]/20">
+                  <SelectTrigger className="bg-white border-[hsl(var(--primary)/0.3)] focus:ring-[hsl(var(--primary)/0.2)]">
                     <SelectValue placeholder="كل الشهور" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/<alpha-value>)]/20">
+                  <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/0.2)]">
                     <SelectItem value="all">كل الشهور</SelectItem>
                     {MONTHS_AR.map((month, index) => (
                       <SelectItem key={index + 1} value={String(index + 1)}>
@@ -1016,16 +1016,16 @@ const Tasks = () => {
 
               {/* فلتر اليوم */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-[hsl(var(--primary)/<alpha-value>)]">اليوم</label>
+                <label className="text-sm font-semibold text-[hsl(var(--primary))]">اليوم</label>
                 <Select 
                   value={filterDay} 
                   onValueChange={setFilterDay}
                   disabled={filterMonth === "all"}
                 >
-                  <SelectTrigger className="bg-white border-[hsl(var(--primary)/<alpha-value>)]/30 focus:ring-[hsl(var(--primary)/<alpha-value>)]/20">
+                  <SelectTrigger className="bg-white border-[hsl(var(--primary)/0.3)] focus:ring-[hsl(var(--primary)/0.2)]">
                     <SelectValue placeholder="كل الأيام" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/<alpha-value>)]/20">
+                  <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/0.2)]">
                     <SelectItem value="all">كل الأيام</SelectItem>
                     {availableDays.map(day => (
                       <SelectItem key={day} value={String(day)}>
@@ -1039,15 +1039,15 @@ const Tasks = () => {
               {/* فلتر القسم - للمدير فقط */}
               {isAdmin && (
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[hsl(var(--primary)/<alpha-value>)]">القسم</label>
+                  <label className="text-sm font-semibold text-[hsl(var(--primary))]">القسم</label>
                   <Select value={filterDepartment} onValueChange={(v) => {
                     setFilterDepartment(v);
                     setFilterEmployee("all"); // إعادة تعيين الموظف عند تغيير القسم
                   }}>
-                    <SelectTrigger className="bg-white border-[hsl(var(--primary)/<alpha-value>)]/30 focus:ring-[hsl(var(--primary)/<alpha-value>)]/20">
+                    <SelectTrigger className="bg-white border-[hsl(var(--primary)/0.3)] focus:ring-[hsl(var(--primary)/0.2)]">
                       <SelectValue placeholder="كل الأقسام" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/<alpha-value>)]/20">
+                    <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/0.2)]">
                       <SelectItem value="all">كل الأقسام</SelectItem>
                       {departments.map(dept => (
                         <SelectItem key={dept.id} value={dept.id}>
@@ -1062,12 +1062,12 @@ const Tasks = () => {
               {/* فلتر المنفذ - للمدير فقط */}
               {isAdmin && (
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[hsl(var(--primary)/<alpha-value>)]">الموظف</label>
+                  <label className="text-sm font-semibold text-[hsl(var(--primary))]">الموظف</label>
                   <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                    <SelectTrigger className="bg-white border-[hsl(var(--primary)/<alpha-value>)]/30 focus:ring-[hsl(var(--primary)/<alpha-value>)]/20">
+                    <SelectTrigger className="bg-white border-[hsl(var(--primary)/0.3)] focus:ring-[hsl(var(--primary)/0.2)]">
                       <SelectValue placeholder="كل الموظفين" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/<alpha-value>)]/20">
+                    <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/0.2)]">
                       <SelectItem value="all">كل الموظفين</SelectItem>
                       {employees
                         .filter(emp => filterDepartment === "all" || emp.department_id === filterDepartment)
@@ -1083,12 +1083,12 @@ const Tasks = () => {
 
               {/* فلتر النشاط */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-[hsl(var(--primary)/<alpha-value>)]">النشاط</label>
+                <label className="text-sm font-semibold text-[hsl(var(--primary))]">النشاط</label>
                 <Select value={filterActivity} onValueChange={setFilterActivity}>
-                  <SelectTrigger className="bg-white border-[hsl(var(--primary)/<alpha-value>)]/30 focus:ring-[hsl(var(--primary)/<alpha-value>)]/20">
+                  <SelectTrigger className="bg-white border-[hsl(var(--primary)/0.3)] focus:ring-[hsl(var(--primary)/0.2)]">
                     <SelectValue placeholder="كل الأنشطة" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/<alpha-value>)]/20">
+                  <SelectContent className="bg-white z-50 border-[hsl(var(--primary)/0.2)]">
                     <SelectItem value="all">كل الأنشطة</SelectItem>
                     {uniqueActivities.map(activity => (
                       <SelectItem key={activity.id} value={activity.id}>
@@ -1101,14 +1101,14 @@ const Tasks = () => {
 
               {/* البحث */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-[hsl(var(--primary)/<alpha-value>)]">البحث</label>
+                <label className="text-sm font-semibold text-[hsl(var(--primary))]">البحث</label>
                 <div className="relative">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]/60" />
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--primary)/0.6)]" />
                   <Input
                     placeholder="البحث في المهام..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pr-10 bg-white border-[hsl(var(--primary)/<alpha-value>)]/30 focus:ring-[hsl(var(--primary)/<alpha-value>)]/20"
+                    className="pr-10 bg-white border-[hsl(var(--primary)/0.3)] focus:ring-[hsl(var(--primary)/0.2)]"
                   />
                 </div>
               </div>
@@ -1140,11 +1140,11 @@ const Tasks = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card className="overflow-hidden border border-[hsl(var(--primary)/<alpha-value>)]/20 shadow-md">
+          <Card className="overflow-hidden border border-[hsl(var(--primary)/0.2)] shadow-md">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-[hsl(var(--primary)/<alpha-value>)] hover:bg-[hsl(var(--primary)/<alpha-value>)]">
+                  <TableRow className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]">
                     <TableHead className="text-right font-bold text-white border-l border-white/20 w-48">النشاط</TableHead>
                     <TableHead className="text-right font-bold text-white border-l border-white/20">المهمة</TableHead>
                     <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">تاريخ التنفيذ</TableHead>
@@ -1167,8 +1167,8 @@ const Tasks = () => {
                 <TableBody>
                   {groupedTasks.map((group, groupIndex) => {
                     const isEven = groupIndex % 2 === 0;
-                    const rowBgClass = isEven ? "bg-white" : "bg-[hsl(var(--primary)/<alpha-value>)]/10";
-                    const activityColorClass = "text-[hsl(var(--primary)/<alpha-value>)]";
+                    const rowBgClass = isEven ? "bg-white" : "bg-[hsl(var(--primary)/0.1)]";
+                    const activityColorClass = "text-[hsl(var(--primary))]";
                     
                     return group.tasks.map((task, taskIndex) => {
                       const statusConfig = getStatusConfig(task.status);
@@ -1176,11 +1176,11 @@ const Tasks = () => {
                       const isFirstInGroup = taskIndex === 0;
                       
                       return (
-                        <TableRow key={task.id} className={cn(rowBgClass, "hover:bg-[hsl(var(--primary)/<alpha-value>)]/20")}>
+                        <TableRow key={task.id} className={cn(rowBgClass, "hover:bg-[hsl(var(--primary)/0.2)]")}>
                           {/* النشاط - يظهر فقط في أول مهمة من كل مجموعة */}
                           {isFirstInGroup ? (
                             <TableCell 
-                              className={cn("border-l border-[hsl(var(--primary)/<alpha-value>)]/20 font-semibold", activityColorClass)}
+                              className={cn("border-l border-[hsl(var(--primary)/0.2)] font-semibold", activityColorClass)}
                               rowSpan={group.tasks.length}
                             >
                               <div className="flex items-center gap-2">
@@ -1191,7 +1191,7 @@ const Tasks = () => {
                           ) : null}
                           
                           {/* المهمة */}
-                          <TableCell className="border-l border-[hsl(var(--primary)/<alpha-value>)]/20">
+                          <TableCell className="border-l border-[hsl(var(--primary)/0.2)]">
                             <div 
                               className="flex items-start gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                               onClick={() => navigate(`/tasks/${task.id}`)}
@@ -1202,7 +1202,7 @@ const Tasks = () => {
                                 </div>
                               )}
                               <div>
-                                <p className="font-semibold text-foreground hover:text-[hsl(var(--primary)/<alpha-value>)] transition-colors">{task.title}</p>
+                                <p className="font-semibold text-foreground hover:text-[hsl(var(--primary))] transition-colors">{task.title}</p>
                                 {task.description && (
                                   <p className="text-sm text-muted-foreground line-clamp-1">{task.description}</p>
                                 )}
@@ -1211,7 +1211,7 @@ const Tasks = () => {
                           </TableCell>
                           
                           {/* تاريخ التنفيذ */}
-                          <TableCell className="text-center border-l border-[hsl(var(--primary)/<alpha-value>)]/20 py-1">
+                          <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)] py-1">
                             {(() => {
                               const dates = formatDateWithHijri(task.due_date);
                               return (
@@ -1228,7 +1228,7 @@ const Tasks = () => {
                           </TableCell>
 
                           {/* الأولوية */}
-                          <TableCell className="text-center border-l border-[hsl(var(--primary)/<alpha-value>)]/20">
+                          <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)]">
                             <Badge className={priorityConfig.class}>
                               {priorityConfig.label}
                             </Badge>
@@ -1236,10 +1236,10 @@ const Tasks = () => {
 
                           {/* المنفذ - يظهر للمدير فقط */}
                           {isAdmin && (
-                            <TableCell className="text-center border-l border-[hsl(var(--primary)/<alpha-value>)]/20">
+                            <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)]">
                               <div className="flex items-center justify-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-[hsl(var(--primary)/<alpha-value>)]/10 flex items-center justify-center">
-                                  <User className="w-3 h-3 text-[hsl(var(--primary)/<alpha-value>)]" />
+                                <div className="w-6 h-6 rounded-full bg-[hsl(var(--primary)/0.1)] flex items-center justify-center">
+                                  <User className="w-3 h-3 text-[hsl(var(--primary))]" />
                                 </div>
                                 <span className="text-base font-bold">{getExecutorName(task.user_id)}</span>
                               </div>
@@ -1247,9 +1247,9 @@ const Tasks = () => {
                           )}
 
                           {/* الوقت المقدر */}
-                          <TableCell className="text-center border-l border-[hsl(var(--primary)/<alpha-value>)]/20">
+                          <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)]">
                             <div className="flex items-center justify-center">
-                              <Clock className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)] ml-1" />
+                              <Clock className="w-4 h-4 text-[hsl(var(--primary))] ml-1" />
                               <span className="text-base font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>
                                 {task.estimated_time_minutes ? `${formatNumberPlain(task.estimated_time_minutes)} د` : '-'}
                               </span>
@@ -1257,7 +1257,7 @@ const Tasks = () => {
                           </TableCell>
 
                           {/* الوقت الفعلي / المؤقت النشط */}
-                          <TableCell className="text-center border-l border-[hsl(var(--primary)/<alpha-value>)]/20">
+                          <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)]">
                             {task.status === "in_progress" && task.started_at ? (
                               <LiveTimer 
                                 startedAt={task.started_at} 
@@ -1274,11 +1274,11 @@ const Tasks = () => {
                           </TableCell>
 
                           {/* المرفقات والتواصل */}
-                          <TableCell className="text-center border-l border-[hsl(var(--primary)/<alpha-value>)]/20">
+                          <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)]">
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="gap-1 text-[hsl(var(--primary)/<alpha-value>)] hover:text-[hsl(var(--primary)/<alpha-value>)] hover:bg-[hsl(var(--primary)/<alpha-value>)]/10 font-bold text-base"
+                              className="gap-1 text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.1)] font-bold text-base"
                               onClick={() => {
                                 setSelectedTaskForCommunication(task);
                                 setIsCommunicationDialogOpen(true);
@@ -1290,7 +1290,7 @@ const Tasks = () => {
                           </TableCell>
                           
                           {/* الحالة */}
-                          <TableCell className="text-center border-l border-[hsl(var(--primary)/<alpha-value>)]/20">
+                          <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)]">
                             {isAdmin ? (
                               // المدير: يستطيع اختيار جميع الحالات
                               <Select
@@ -1331,7 +1331,7 @@ const Tasks = () => {
                           </TableCell>
                           
                           {/* التقييم - يظهر للجميع لكن التعديل للمدير فقط */}
-                          <TableCell className="text-center border-l border-[hsl(var(--primary)/<alpha-value>)]/20 py-1">
+                          <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)] py-1">
                             <div className="flex items-center justify-center gap-2">
                               {/* عمود الإنجاز */}
                               <div className="flex flex-col items-center">
@@ -1418,7 +1418,7 @@ const Tasks = () => {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-[hsl(var(--primary)/<alpha-value>)] hover:text-[hsl(var(--primary)/<alpha-value>)] hover:bg-[hsl(var(--primary)/<alpha-value>)]/10"
+                                  className="h-8 w-8 text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.1)]"
                                   onClick={() => navigate(`/tasks/${task.id}?edit=true`)}
                                   title="تعديل"
                                 >
@@ -1530,7 +1530,7 @@ const Tasks = () => {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)]/80 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.8)] flex items-center justify-center">
                   <Edit className="w-5 h-5 text-white" />
                 </div>
                 تعديل المهمة
@@ -1784,7 +1784,7 @@ const Tasks = () => {
                 </Button>
                 <Button 
                   onClick={saveTaskEdit}
-                  className="bg-[hsl(var(--primary)/<alpha-value>)] hover:bg-[hsl(var(--primary)/<alpha-value>)]/90"
+                  className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.9)]"
                 >
                   حفظ التعديلات
                 </Button>

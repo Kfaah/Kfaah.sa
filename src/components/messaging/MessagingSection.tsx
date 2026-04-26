@@ -482,10 +482,10 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
 
   return (
     <Card className="overflow-visible">
-      <CardHeader className="bg-gradient-to-l from-[hsl(var(--primary)/<alpha-value>)]/10 to-transparent border-b">
+      <CardHeader className="bg-gradient-to-l from-[hsl(var(--primary)/0.1)] to-transparent border-b">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] flex items-center justify-center shadow-lg">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center shadow-lg">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             الرسائل
@@ -501,7 +501,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
               fetchEmployees();
               setIsNewConversationOpen(true);
             }}
-            className="gap-2 bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] hover:from-[hsl(var(--primary)/<alpha-value>)] hover:to-[#1a5a63] shadow-lg"
+            className="gap-2 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] hover:from-[hsl(var(--primary))] hover:to-[#1a5a63] shadow-lg"
           >
             <Plus className="w-4 h-4" />
             محادثة جديدة
@@ -526,7 +526,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
             <ScrollArea className="h-[calc(550px-60px)]">
               {loading ? (
                 <div className="flex items-center justify-center h-32">
-                  <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--primary)/<alpha-value>)]" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--primary))]" />
                 </div>
               ) : filteredConversations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
@@ -540,12 +540,12 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                       key={conv.id}
                       onClick={() => openConversation(conv)}
                       className={cn(
-                        "w-full py-3 px-5 text-right hover:bg-[hsl(var(--primary)/<alpha-value>)]/5 transition-colors flex items-center gap-4 overflow-visible",
-                        selectedConversation?.id === conv.id && "bg-[hsl(var(--primary)/<alpha-value>)]/10"
+                        "w-full py-3 px-5 text-right hover:bg-[hsl(var(--primary)/0.05)] transition-colors flex items-center gap-4 overflow-visible",
+                        selectedConversation?.id === conv.id && "bg-[hsl(var(--primary)/0.1)]"
                       )}
                       dir="rtl"
                     >
-                      <div className="w-12 h-12 min-w-12 rounded-full bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] flex items-center justify-center text-white text-base font-bold leading-none flex-shrink-0 ring-2 ring-background shadow-card">
+                      <div className="w-12 h-12 min-w-12 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center text-white text-base font-bold leading-none flex-shrink-0 ring-2 ring-background shadow-card">
                         {conv.participants[0]?.full_name?.[0] || "؟"}
                       </div>
 
@@ -581,7 +581,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
               <>
                 {/* Header المحادثة */}
                 <div className="p-4 border-b bg-white flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] flex items-center justify-center text-white font-bold">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center text-white font-bold">
                     {selectedConversation.participants[0]?.full_name?.[0] || "؟"}
                   </div>
                   <div>
@@ -595,7 +595,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                 <ScrollArea className="flex-1 p-4" ref={scrollRef}>
                   {messagesLoading ? (
                     <div className="flex items-center justify-center h-32">
-                      <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--primary)/<alpha-value>)]" />
+                      <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--primary))]" />
                     </div>
                   ) : messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
@@ -620,7 +620,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                               <div className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
                                 isOwn
-                                  ? "bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] text-white"
+                                  ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] text-white"
                                   : "bg-slate-200 text-slate-600"
                               )}>
                                 {(msg.sender_name || "؟")[0]}
@@ -633,7 +633,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                                     {msg.sender_name}
                                   </span>
                                   {msg.is_admin && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(var(--primary)/<alpha-value>)]/10 text-[hsl(var(--primary)/<alpha-value>)] font-medium">
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))] font-medium">
                                       مدير النظام
                                     </span>
                                   )}
@@ -643,7 +643,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                                 className={cn(
                                   "rounded-2xl p-3 shadow-sm",
                                   isOwn
-                                    ? "bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] text-white rounded-tr-md"
+                                    ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] text-white rounded-tr-md"
                                     : "bg-white border border-slate-200 text-slate-800 rounded-tl-md"
                                 )}
                               >
@@ -732,7 +732,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                     <Button
                       onClick={() => sendMessage()}
                       disabled={sending || !newMessage.trim()}
-                      className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)]"
+                      className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))]"
                     >
                       {sending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -745,8 +745,8 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
               </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)]/20 to-[hsl(var(--primary)/<alpha-value>)]/5 flex items-center justify-center mb-4">
-                  <MessageSquare className="w-10 h-10 text-[hsl(var(--primary)/<alpha-value>)]" />
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[hsl(var(--primary)/0.2)] to-[hsl(var(--primary)/0.05)] flex items-center justify-center mb-4">
+                  <MessageSquare className="w-10 h-10 text-[hsl(var(--primary))]" />
                 </div>
                 <p className="font-medium">اختر محادثة للبدء</p>
                 <p className="text-sm mt-1">أو أنشئ محادثة جديدة</p>
@@ -760,9 +760,9 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
       <Dialog open={isNewConversationOpen} onOpenChange={setIsNewConversationOpen}>
         <DialogContent className="max-w-md p-0 overflow-hidden">
           {/* Header مع زر الإغلاق */}
-          <div className="flex items-center justify-between p-4 border-b bg-gradient-to-l from-[hsl(var(--primary)/<alpha-value>)]/10 to-transparent">
+          <div className="flex items-center justify-between p-4 border-b bg-gradient-to-l from-[hsl(var(--primary)/0.1)] to-transparent">
             <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center">
                 <Users className="w-4 h-4 text-white" />
               </div>
               محادثة جديدة
@@ -809,14 +809,14 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                         className={cn(
                           "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-right",
                           isSelected
-                            ? "bg-gradient-to-l from-[hsl(var(--primary)/<alpha-value>)]/20 to-[hsl(var(--primary)/<alpha-value>)]/5 border-2 border-[hsl(var(--primary)/<alpha-value>)]"
+                            ? "bg-gradient-to-l from-[hsl(var(--primary)/0.2)] to-[hsl(var(--primary)/0.05)] border-2 border-[hsl(var(--primary))]"
                             : "hover:bg-slate-50 border-2 border-transparent"
                         )}
                       >
                         <div className={cn(
                           "w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold",
                           isSelected 
-                            ? "bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] text-white"
+                            ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] text-white"
                             : "bg-slate-200 text-slate-600"
                         )}>
                           {emp.full_name.charAt(0)}
@@ -824,7 +824,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                         <div className="flex-1">
                           <p className={cn(
                             "font-medium",
-                            isSelected ? "text-[hsl(var(--primary)/<alpha-value>)]" : "text-foreground"
+                            isSelected ? "text-[hsl(var(--primary))]" : "text-foreground"
                           )}>
                             {emp.full_name}
                           </p>
@@ -833,7 +833,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                           </Badge>
                         </div>
                         {isSelected && (
-                          <div className="w-6 h-6 rounded-full bg-[hsl(var(--primary)/<alpha-value>)] flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full bg-[hsl(var(--primary))] flex items-center justify-center">
                             <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
@@ -850,7 +850,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
             <Button
               onClick={createConversation}
               disabled={!selectedEmployee}
-              className="w-full h-12 text-base bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] hover:from-[hsl(var(--primary)/<alpha-value>)] hover:to-[#1a5a63] rounded-xl shadow-lg"
+              className="w-full h-12 text-base bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] hover:from-[hsl(var(--primary))] hover:to-[#1a5a63] rounded-xl shadow-lg"
             >
               <MessageSquare className="w-5 h-5 ml-2" />
               بدء المحادثة

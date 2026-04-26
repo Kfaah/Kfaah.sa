@@ -155,7 +155,7 @@ export default function Organizations() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] via-[hsl(var(--accent)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] p-8 shadow-xl">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[hsl(var(--primary))] via-[hsl(var(--accent))] to-[hsl(var(--primary))] p-8 shadow-xl">
           <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20" />
           <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-white/5 blur-2xl" />
           <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
