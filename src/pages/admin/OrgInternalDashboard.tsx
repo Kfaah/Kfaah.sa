@@ -245,7 +245,7 @@ export default function OrgInternalDashboard({
             <div className="flex min-w-0 flex-col items-center gap-3 sm:items-start">
               {/* Logo on top, full and untrimmed */}
               <div
-                className="flex h-36 min-w-[8rem] max-w-[22rem] items-center justify-center overflow-hidden rounded-2xl bg-background px-5 py-3 shadow-md ring-1"
+                className="flex h-36 min-w-[8rem] max-w-[22rem] items-center justify-center overflow-hidden rounded-2xl bg-white px-5 py-3 shadow-md ring-1"
                 style={{ ['--tw-ring-color' as string]: ORG_PRIMARY_RING, boxShadow: `0 4px 14px ${ORG_PRIMARY_SOFT}` }}
               >
                 {org?.logo_url ? (
