@@ -343,8 +343,8 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center rounded-l-2xl rounded-r-none bg-sidebar-item py-2 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
-          collapsed ? "justify-center px-0" : "gap-3 pr-3 pl-4",
+          "group/nav flex h-14 items-center rounded-l-2xl rounded-r-none bg-sidebar-item py-2 -ml-3 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
+          collapsed ? "justify-center px-0" : "gap-3 pr-4 pl-6",
           isActive ? "shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]" : "hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
         )}
       >
@@ -438,10 +438,10 @@ export function Sidebar() {
         {!collapsed && (
           <div className="mb-4 flex-shrink-0 space-y-2">
             {/* Main Profile Card - Matching design */}
-            <div className="relative z-20 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 shadow-[0_5px_14px_hsl(var(--sidebar-item-shadow))]">
+            <div className="relative z-20 -ml-3 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-5 shadow-[0_5px_14px_hsl(var(--sidebar-item-shadow))]">
               <div className="flex items-center gap-3">
                 {/* Avatar - Left side, larger with cyan border */}
-                <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-slate-200 shadow-md flex-shrink-0">
+                <div className="w-20 h-20 rounded-full overflow-hidden border-[4px] border-[hsl(var(--sidebar-icon-start))] shadow-[0_0_0_3px_hsl(var(--sidebar-item)),0_6px_14px_hsl(var(--sidebar-item-shadow))] ring-2 ring-[hsl(var(--sidebar-icon-end))] flex-shrink-0">
                   {user.profileImage ? (
                     <img
                       src={user.profileImage}
@@ -457,7 +457,7 @@ export function Sidebar() {
 
                 {/* Name and Role - Right side, centered vertically */}
                 <div className="flex-1 flex flex-col items-center justify-center gap-2">
-                  <h3 className="text-base font-bold text-sidebar-item-foreground">{user.firstName} {user.lastName}</h3>
+                  <h3 className="text-base font-bold text-sidebar-item-foreground rounded-full border-2 border-[hsl(var(--sidebar-icon-start))] bg-background/60 px-4 py-1">{user.firstName} {user.lastName}</h3>
                   <span className="rounded-full border border-sidebar-border bg-background px-3 py-1 text-xs font-semibold text-sidebar-foreground">
                     {user.role}
                   </span>
@@ -468,7 +468,7 @@ export function Sidebar() {
             {/* Profile Icon Button */}
             <Link
               to="/profile"
-              className="group relative flex w-full items-center gap-3 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
+              className="group relative flex w-full items-center gap-3 -ml-3 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-5 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
             >
               <div className="sidebar-reference-icon relative flex h-10 w-10 items-center justify-center rounded-full text-sidebar-primary-foreground transition-transform duration-200 group-hover:scale-[1.04]">
                 <User className="w-5 h-5" />
