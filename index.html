@@ -130,7 +130,7 @@
             var el = document.getElementById("__branding_gate__");
             if (el && el.parentNode) el.parentNode.removeChild(el);
           }
-          var timeoutId = setTimeout(reveal, 1200);
+          var timeoutId = setTimeout(reveal, 600);
 
           // Fetch organization_profiles via REST joined with organizations(slug).
           var url = SUPABASE_URL + "/rest/v1/organizations?slug=eq."

@@ -45,7 +45,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setLoading(true);
+    // Only show a loading state on the very first load. Subsequent
+    // refreshes (e.g. after route changes) must NOT flip loading back to
+    // true, otherwise the branding gate re-hides the body and the page
+    // appears to "shake".
+    setLoading((prev) => (availableOrgs.length === 0 ? true : prev));
     try {
       const { data: superCheck } = await supabase.rpc("is_super_admin", {
         _user_id: authUser.id,
@@ -92,7 +96,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [authUser, location.pathname, location.search]);
+    // Intentionally depend ONLY on the auth user. Route-driven org
+    // changes are handled by the second effect below — re-running the
+    // full load on every navigation caused a flash/shake.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser]);
 
   useEffect(() => {
     load();
