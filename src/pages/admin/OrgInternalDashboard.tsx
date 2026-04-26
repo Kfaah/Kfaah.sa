@@ -620,13 +620,19 @@ export default function OrgInternalDashboard({
 
 function KpiCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
-    <Card className="overflow-hidden">
+    <Card
+      className="overflow-hidden border-border bg-card"
+      style={{ borderRightWidth: 3, borderRightColor: ORG_PRIMARY }}
+    >
       <CardContent className="flex items-center justify-between gap-3 p-4 text-right" dir="rtl">
         <div className="min-w-0 flex-1">
-          <div className="text-2xl font-bold leading-none">{value}</div>
+          <div className="text-2xl font-bold leading-none text-foreground">{value}</div>
           <div className="mt-1 text-xs text-muted-foreground">{label}</div>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-lg border bg-background"
+          style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
+        >
           {icon}
         </div>
       </CardContent>
@@ -640,6 +646,7 @@ function ListCard({ title, items, icon, emptyText }: { title: string; items: str
     <Card
       dir="rtl"
       className="relative overflow-hidden border-border bg-card shadow-sm"
+      style={{ borderRightWidth: 3, borderRightColor: ORG_PRIMARY }}
     >
       <CardHeader className="text-right">
         <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-foreground">
@@ -653,8 +660,12 @@ function ListCard({ title, items, icon, emptyText }: { title: string; items: str
         ) : (
           <ul className="space-y-2">
             {items.map((s, i) => (
-              <li key={i} className="flex items-start justify-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-right text-sm leading-relaxed text-foreground">
-                <span className="mt-1 flex-shrink-0 text-muted-foreground">•</span>
+              <li
+                key={i}
+                className="flex items-start justify-start gap-2 rounded-lg border border-border bg-background p-3 text-right text-sm leading-relaxed text-foreground"
+                style={{ borderRightWidth: 2, borderRightColor: ORG_PRIMARY_RING }}
+              >
+                <span className="mt-1 flex-shrink-0" style={{ color: ORG_PRIMARY }}>•</span>
                 <span className="flex-1">{s}</span>
               </li>
             ))}
