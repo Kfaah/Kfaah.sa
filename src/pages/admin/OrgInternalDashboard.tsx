@@ -1190,17 +1190,14 @@ function EmployeesShowcase({
 
         <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-sm">
+            <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-white shadow-xl ring-1 ring-white/40 p-2">
               {branding.logoUrl ? (
-                <img src={branding.logoUrl} alt={branding.orgName || "الجمعية"} className="h-full w-full object-contain p-1" />
+                <img src={branding.logoUrl} alt={branding.orgName || "الجمعية"} className="h-full w-full object-contain" />
               ) : (
-                <Users className="h-7 w-7" />
+                <Users className="h-10 w-10 text-primary" />
               )}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-semibold text-white/85">
-                {branding.orgName || "الجمعية"}
-              </div>
               <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
                 طاقم الموظفين
               </h2>
