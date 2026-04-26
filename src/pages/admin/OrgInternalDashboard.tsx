@@ -339,7 +339,7 @@ export default function OrgInternalDashboard({
         <TabsContent value="overview" className={standaloneTab ? "space-y-4" : "mt-6 space-y-4"} dir="rtl">
           {standaloneTab && (
             <PageHeader
-              icon={<LayoutDashboard className="w-6 h-6" />}
+              icon={<LayoutDashboard />}
               title="نظرة عامة"
               subtitle="رؤية شاملة · تقييم ذكي · مساءلات ذكية"
               actions={
@@ -406,7 +406,7 @@ export default function OrgInternalDashboard({
         <TabsContent value="analysis" className={standaloneTab ? "space-y-4" : "mt-6 space-y-4"} dir="rtl">
           {standaloneTab && (
             <PageHeader
-              icon={<Sparkles className="w-6 h-6" />}
+              icon={<Sparkles />}
               title="التحليل الذكي"
               subtitle="يعتمد التحليل على آخر الملفات المرفوعة ومصادرها الرقمية"
               actions={
@@ -444,7 +444,7 @@ export default function OrgInternalDashboard({
         {/* ACCOUNTABILITY */}
         <TabsContent value="accountability" className={standaloneTab ? "space-y-4" : "mt-6 space-y-4"} dir="rtl">
           <PageHeader
-            icon={<ShieldAlert className="w-7 h-7" />}
+            icon={<ShieldAlert />}
             title="مساءلات الموظفين"
             subtitle="أسئلة مولّدة من التحليل الذكي ومُوزّعة بحسب الدور الوظيفي"
           />
