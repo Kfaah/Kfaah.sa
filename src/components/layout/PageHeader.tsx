@@ -7,6 +7,8 @@ interface PageHeaderProps {
   subtitle?: ReactNode;
   actions?: ReactNode;
   className?: string;
+  /** Optional inline style (e.g. to override the gradient background). */
+  style?: React.CSSProperties;
 }
 
 /**
@@ -14,10 +16,11 @@ interface PageHeaderProps {
  * Uses the active organization branding (primary/accent) as a bold gradient banner,
  * making the brand color the dominant visual on every internal page.
  */
-export function PageHeader({ icon, title, subtitle, actions, className }: PageHeaderProps) {
+export function PageHeader({ icon, title, subtitle, actions, className, style }: PageHeaderProps) {
   return (
     <div
       dir="rtl"
+      style={style}
       className={cn(
         "relative overflow-hidden rounded-2xl shadow-xl",
         "bg-gradient-to-l from-primary via-primary to-accent",
