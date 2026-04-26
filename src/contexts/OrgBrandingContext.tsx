@@ -10,6 +10,7 @@ const FALLBACK_BRANDING = {
 };
 
 const BRANDING_CACHE_PREFIX = "org_branding_v1:";
+const BRANDING_SLUG_CACHE_PREFIX = "org_branding_slug_v1:";
 
 interface CachedBranding {
   logoUrl: string | null;
@@ -32,6 +33,23 @@ function writeCache(orgId: string, b: CachedBranding) {
     localStorage.setItem(BRANDING_CACHE_PREFIX + orgId, JSON.stringify(b));
   } catch {
     /* noop */
+  }
+}
+
+function writeSlugCache(slug: string, b: CachedBranding) {
+  try {
+    localStorage.setItem(BRANDING_SLUG_CACHE_PREFIX + slug, JSON.stringify(b));
+  } catch {
+    /* noop */
+  }
+}
+
+function readSlugCache(slug: string): CachedBranding | null {
+  try {
+    const raw = localStorage.getItem(BRANDING_SLUG_CACHE_PREFIX + slug);
+    return raw ? (JSON.parse(raw) as CachedBranding) : null;
+  } catch {
+    return null;
   }
 }
 
@@ -119,14 +137,41 @@ function applyBrandingToDocument(
 export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   const { currentOrg } = useOrganization();
   const location = useLocation();
-  const [branding, setBranding] = useState<Branding>(() => ({
-    logoUrl: null,
-    orgName: "",
-    primary: null,
-    secondary: null,
-    accent: null,
-    loading: true,
-  }));
+  const [branding, setBranding] = useState<Branding>(() => {
+    // Synchronously hydrate from slug-keyed cache on first render so the
+    // very first paint already has the correct org colors — no flicker.
+    try {
+      const path = window.location.pathname || "";
+      const search = window.location.search || "";
+      const seg = path.split("/").filter(Boolean);
+      let slug: string | null = null;
+      const qs = new URLSearchParams(search).get("org");
+      if (qs) slug = qs;
+      else if (seg[0] === "admin" && seg.length >= 3 && /^orgs?$|^organizations?$/.test(seg[1])) slug = seg[2];
+      else if (seg[0] && seg[0] !== "admin") slug = seg[0];
+      if (slug) {
+        const c = readSlugCache(slug);
+        if (c) {
+          return {
+            logoUrl: c.logoUrl,
+            orgName: "",
+            primary: c.primary,
+            secondary: c.secondary,
+            accent: c.accent,
+            loading: true,
+          };
+        }
+      }
+    } catch { /* noop */ }
+    return {
+      logoUrl: null,
+      orgName: "",
+      primary: null,
+      secondary: null,
+      accent: null,
+      loading: true,
+    };
+  });
   const [appliedOrgId, setAppliedOrgId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -182,6 +227,14 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
         secondary: next.secondary,
         accent: next.accent,
       });
+      if (currentOrg.slug) {
+        writeSlugCache(currentOrg.slug, {
+          logoUrl: next.logoUrl,
+          primary: next.primary,
+          secondary: next.secondary,
+          accent: next.accent,
+        });
+      }
       setBranding((prev) => {
         // Avoid a needless re-render (and any chance of repaint) when the
         // freshly-fetched values are identical to what we already applied
