@@ -441,7 +441,7 @@ export function Sidebar() {
 
           {/* Text under logo */}
           {!collapsed && (
-            <div className="text-center space-y-1">
+            <div className="text-center space-y-1 mt-2">
               <div className="relative">
                 {branding.orgName && (() => {
                   const short = getShortOrgName(branding.orgName);
