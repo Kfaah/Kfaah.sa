@@ -336,7 +336,7 @@ export default function OrgAuth() {
           </div>
 
           <h1
-            className="text-3xl font-extrabold tracking-tight"
+            className="text-3xl font-extrabold tracking-tight break-words leading-tight px-2"
             style={{ color: `hsl(${primaryHsl})` }}
           >
             {org.name}
@@ -472,11 +472,6 @@ export default function OrgAuth() {
           </div>
         )}
 
-        <div className="text-center mt-4">
-          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-            <ArrowRight className="w-3 h-3" /> هذه ليست جمعيتك؟ ارجع للصفحة الرئيسية
-          </Link>
-        </div>
       </div>
     </div>
   );
