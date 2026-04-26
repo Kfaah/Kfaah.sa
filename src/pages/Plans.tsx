@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -230,15 +231,11 @@ const Plans = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">الخطط</h1>
-            <p className="text-muted-foreground mt-1">
-              إدارة خطط العمل والمهام التلقائية للموظفين
-            </p>
-          </div>
-          <Dialog>
+        <PageHeader
+          title="الخطط"
+          subtitle="إدارة خطط العمل والمهام التلقائية للموظفين"
+          actions={
+            <Dialog>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
