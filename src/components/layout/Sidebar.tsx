@@ -376,7 +376,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 overflow-hidden",
-        collapsed ? "w-20" : "w-[280px]"
+        collapsed ? "w-20" : "w-[284px]"
       )}
     >
       {/* خلفية القائمة — لون واحد ثابت بهوية الجمعية */}
