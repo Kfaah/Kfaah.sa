@@ -1166,18 +1166,18 @@ function EmployeesShowcase({
             <p className="mt-1 text-muted-foreground">منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة</p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <div className="rounded-2xl border border-border bg-background/60 px-4 py-2 backdrop-blur">
-                <div className="text-2xl font-bold leading-none" style={{ color: HARF.primary }}>{employees.length}</div>
+                <div className="text-2xl font-bold leading-none" style={{ color: ORG_PRIMARY }}>{employees.length}</div>
                 <div className="mt-1 text-[11px] text-muted-foreground">إجمالي الموظفين</div>
               </div>
               <div className="rounded-2xl border border-border bg-background/60 px-4 py-2 backdrop-blur">
-                <div className="flex items-center gap-1 text-2xl font-bold leading-none" style={{ color: HARF.accent }}>
+                <div className="flex items-center gap-1 text-2xl font-bold leading-none" style={{ color: ORG_ACCENT }}>
                   <Crown className="h-5 w-5" />
                   {managersCount}
                 </div>
                 <div className="mt-1 text-[11px] text-muted-foreground">قيادات</div>
               </div>
               <div className="rounded-2xl border border-border bg-background/60 px-4 py-2 backdrop-blur">
-                <div className="text-2xl font-bold leading-none" style={{ color: HARF.primary }}>{totalQuestions}</div>
+                <div className="text-2xl font-bold leading-none" style={{ color: ORG_PRIMARY }}>{totalQuestions}</div>
                 <div className="mt-1 text-[11px] text-muted-foreground">مساءلات نشطة</div>
               </div>
             </div>
@@ -1186,7 +1186,7 @@ function EmployeesShowcase({
             <Button
               size="lg"
               className="gap-2 text-white shadow-md hover:opacity-90"
-              style={{ backgroundColor: HARF.primary }}
+              style={{ backgroundColor: ORG_PRIMARY }}
             >
               <UserPlus className="h-5 w-5" />
               إضافة موظف جديد
@@ -1235,16 +1235,16 @@ function EmployeesShowcase({
               <div
                 key={e.id}
                 className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-                style={{ ['--harf-hover' as string]: HARF.primary }}
+                style={{ ['--org-hover' as string]: ORG_PRIMARY }}
               >
                 <div
                   className="absolute inset-x-0 top-0 h-20 opacity-20"
-                  style={{ background: HARF_GRADIENT }}
+                  style={{ background: ORG_GRADIENT }}
                 />
                 <div className="relative flex items-start gap-3">
                   <div
                     className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white shadow-lg ring-4 ring-card"
-                    style={{ background: HARF_GRADIENT }}
+                    style={{ background: ORG_GRADIENT }}
                   >
                     {e.avatar_url ? (
                       <img src={e.avatar_url} alt={e.full_name} className="h-full w-full object-cover" />
@@ -1257,7 +1257,7 @@ function EmployeesShowcase({
                       <Badge
                         variant="outline"
                         className="gap-1"
-                        style={{ borderColor: `${HARF.accent}66`, backgroundColor: `${HARF.accent}1F`, color: HARF.primaryDark }}
+                        style={{ borderColor: ORG_ACCENT_RING, backgroundColor: ORG_ACCENT_SOFT, color: ORG_PRIMARY }}
                       >
                         <Crown className="h-3 w-3" /> قيادي
                       </Badge>
@@ -1267,7 +1267,7 @@ function EmployeesShowcase({
                       title="تعديل"
                       className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 text-muted-foreground opacity-0 transition-all group-hover:opacity-100"
                       style={{ ['--tw-text-opacity' as string]: 1 }}
-                      onMouseEnter={(ev) => { ev.currentTarget.style.color = HARF.primary; ev.currentTarget.style.borderColor = `${HARF.primary}66`; }}
+                      onMouseEnter={(ev) => { ev.currentTarget.style.color = ORG_PRIMARY; ev.currentTarget.style.borderColor = ORG_PRIMARY_RING; }}
                       onMouseLeave={(ev) => { ev.currentTarget.style.color = ''; ev.currentTarget.style.borderColor = ''; }}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -1277,7 +1277,7 @@ function EmployeesShowcase({
                 <div className="relative mt-10">
                   <h3 className="truncate text-base font-bold text-foreground">{e.full_name}</h3>
                   {e.title && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs" style={{ color: HARF.primary }}>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs" style={{ color: ORG_PRIMARY }}>
                       <Sparkles className="h-3 w-3" />
                       {e.title}
                     </p>
@@ -1301,13 +1301,13 @@ function EmployeesShowcase({
                 </div>
                 <div className="relative mt-4 flex items-center justify-between border-t border-border pt-3">
                   <div className="flex items-center gap-1.5 text-xs">
-                    <ShieldAlert className="h-3.5 w-3.5" style={{ color: HARF.primary }} />
+                    <ShieldAlert className="h-3.5 w-3.5" style={{ color: ORG_PRIMARY }} />
                     <span className="text-muted-foreground">المساءلات:</span>
                     <span
                       className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-semibold ring-1"
                       style={
                         qCount > 0
-                          ? { backgroundColor: `${HARF.primary}1F`, color: HARF.primaryDark, borderColor: `${HARF.primary}4D` }
+                          ? { backgroundColor: ORG_PRIMARY_SOFT, color: ORG_PRIMARY, borderColor: ORG_PRIMARY_RING }
                           : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))', borderColor: 'hsl(var(--border))' }
                       }
                     >
@@ -1317,8 +1317,8 @@ function EmployeesShowcase({
                   <Link
                     to={editHref}
                     className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] transition-colors"
-                    style={{ color: HARF.primary }}
-                    onMouseEnter={(ev) => { ev.currentTarget.style.backgroundColor = `${HARF.primary}14`; }}
+                    style={{ color: ORG_PRIMARY }}
+                    onMouseEnter={(ev) => { ev.currentTarget.style.backgroundColor = ORG_PRIMARY_TINT; }}
                     onMouseLeave={(ev) => { ev.currentTarget.style.backgroundColor = ''; }}
                   >
                     <Pencil className="h-3 w-3" />
