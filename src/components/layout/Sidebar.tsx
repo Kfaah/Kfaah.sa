@@ -411,19 +411,14 @@ export function Sidebar() {
                 <img
                   src={branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
-                  className="h-24 w-32 object-contain drop-shadow-xl"
+                  className="h-40 w-40 object-contain drop-shadow-xl"
                 />
               ) : (
                 <img
                   src={atefLogoIcon}
                   alt={branding.orgName || "الجمعية"}
-                  className="h-24 w-32 object-contain drop-shadow-xl"
+                  className="h-40 w-40 object-contain drop-shadow-xl"
                 />
-              )}
-              {!collapsed && !branding.loading && (
-                <span className="max-w-[8.5rem] text-center text-sm font-extrabold leading-snug text-[hsl(var(--primary))]">
-                  {branding.orgName || "الجمعية"}
-                </span>
               )}
             </div>
           </Link>
