@@ -57,6 +57,36 @@ function readSlugCache(slug: string): CachedBranding | null {
   }
 }
 
+/**
+ * Preload an org logo so the header <img> can paint instantly from the
+ * HTTP/image cache when branding changes. Idempotent — repeated calls
+ * with the same URL are a no-op.
+ */
+function preloadLogo(url: string | null) {
+  if (!url || typeof document === "undefined") return;
+  try {
+    const selector = 'link[rel="preload"][as="image"][data-branding-logo="true"]';
+    const existing = document.head.querySelector(selector) as HTMLLinkElement | null;
+    if (existing?.href === url) {
+      // Already preloaded — still trigger Image() to ensure decode.
+    } else {
+      if (existing?.parentNode) existing.parentNode.removeChild(existing);
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.href = url;
+      link.setAttribute("data-branding-logo", "true");
+      link.setAttribute("fetchpriority", "high");
+      document.head.appendChild(link);
+    }
+    const img = new Image();
+    img.decoding = "async";
+    img.src = url;
+  } catch {
+    /* noop */
+  }
+}
+
 interface Branding {
   logoUrl: string | null;
   orgName: string;
@@ -298,6 +328,10 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
         applyBrandingToDocument(FALLBACK_BRANDING);
         setAppliedOrgId("__fallback__");
       }
+      // Warm the image cache for the active logo so the header swap is
+      // smooth — even if the URL just changed via the background API
+      // revalidate or an org switch.
+      if (branding.logoUrl) preloadLogo(branding.logoUrl);
     } else {
       if (appliedOrgId) {
         applyBrandingToDocument({ primary: null, secondary: null, accent: null }, { reset: true });
