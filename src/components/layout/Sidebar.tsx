@@ -422,10 +422,15 @@ export function Sidebar() {
           {!collapsed && (
             <div className="text-center space-y-1">
               <div className="relative">
+                {branding.orgName && (
+                  <p className="text-base font-bold text-white drop-shadow-sm">
+                    {branding.orgName}
+                  </p>
+                )}
+                <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-white/70 to-transparent rounded-full" />
                 <p className="text-sm font-semibold text-white/90">
                   نظام إدارة التسويق الإلكتروني
                 </p>
-                <div className="mt-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-white/70 to-transparent rounded-full" />
               </div>
             </div>
           )}
