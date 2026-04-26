@@ -343,15 +343,19 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center gap-3 rounded-2xl px-2 py-2 shadow-md transition-all duration-150",
-          isActive
-            ? "bg-white shadow-lg scale-[1.02]"
-            : "bg-white hover:shadow-lg"
+          "group/nav flex h-14 items-center rounded-l-2xl rounded-r-none bg-sidebar-item py-2 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
+          collapsed ? "justify-center px-0" : "gap-3 pr-3 pl-4",
+          isActive ? "shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]" : "hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
         )}
       >
+        <div
+          className="sidebar-reference-icon flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sidebar-primary-foreground"
+        >
+          <item.icon className="w-5 h-5" />
+        </div>
         {!collapsed && (
           <span
-            className="font-bold text-base flex-1 text-center transition-colors duration-150 text-slate-800"
+            className="flex-1 text-right text-base font-bold text-sidebar-item-foreground transition-colors duration-150"
           >
             {item.title}
           </span>
@@ -364,15 +368,6 @@ export function Sidebar() {
             {badgeCount > 9 ? '9+' : formatNumberPlain(badgeCount)}
           </span>
         )}
-        <div
-          className={cn(
-            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-colors",
-            "text-white"
-          )}
-          style={branding.primary ? { backgroundColor: branding.primary } : { backgroundColor: 'hsl(155,55%,28%)' }}
-        >
-          <item.icon className="w-5 h-5" />
-        </div>
       </Link>
     );
   };
@@ -381,7 +376,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 overflow-hidden",
-        collapsed ? "w-20" : "w-72"
+        collapsed ? "w-20" : "w-[253px]"
       )}
     >
       {/* خلفية القائمة — لون واحد ثابت بهوية الجمعية */}
@@ -441,9 +436,9 @@ export function Sidebar() {
       <div className="flex-1 flex flex-col min-h-0 relative z-10 pt-6">
         {/* User Profile Card - SEPARATED from logo */}
         {!collapsed && (
-          <div className="mx-4 mb-4 flex-shrink-0 space-y-2">
+          <div className="mb-4 flex-shrink-0 space-y-2">
             {/* Main Profile Card - Matching design */}
-            <div className="bg-white rounded-2xl p-3 shadow-lg relative z-20">
+            <div className="relative z-20 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 shadow-[0_5px_14px_hsl(var(--sidebar-item-shadow))]">
               <div className="flex items-center gap-3">
                 {/* Avatar - Left side, larger with cyan border */}
                 <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-slate-200 shadow-md flex-shrink-0">
@@ -454,7 +449,7 @@ export function Sidebar() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-slate-700 flex items-center justify-center text-xl font-bold text-white">
+                    <div className="flex h-full w-full items-center justify-center bg-primary text-xl font-bold text-primary-foreground">
                       {user.firstName.charAt(0)}
                     </div>
                   )}
@@ -462,8 +457,8 @@ export function Sidebar() {
 
                 {/* Name and Role - Right side, centered vertically */}
                 <div className="flex-1 flex flex-col items-center justify-center gap-2">
-                  <h3 className="font-bold text-slate-800 text-base">{user.firstName} {user.lastName}</h3>
-                  <span className="text-xs font-semibold rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600">
+                  <h3 className="text-base font-bold text-sidebar-item-foreground">{user.firstName} {user.lastName}</h3>
+                  <span className="rounded-full border border-sidebar-border bg-background px-3 py-1 text-xs font-semibold text-sidebar-foreground">
                     {user.role}
                   </span>
                 </div>
@@ -473,25 +468,25 @@ export function Sidebar() {
             {/* Profile Icon Button */}
             <Link
               to="/profile"
-              className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 group relative"
+              className="group relative flex w-full items-center gap-3 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
             >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-200 bg-slate-50 text-slate-600 shadow-sm transition-transform duration-200 group-hover:scale-[1.04] relative">
+              <div className="sidebar-reference-icon relative flex h-10 w-10 items-center justify-center rounded-full text-sidebar-primary-foreground transition-transform duration-200 group-hover:scale-[1.04]">
                 <User className="w-5 h-5" />
               </div>
               <div className="flex-1 text-right">
-                <span className="text-sm font-semibold text-slate-700">الملف الشخصي</span>
-                <p className="text-xs text-slate-500">إدارة معلوماتك وصورتك</p>
+                <span className="text-sm font-semibold text-sidebar-item-foreground">الملف الشخصي</span>
+                <p className="text-xs text-muted-foreground">إدارة معلوماتك وصورتك</p>
               </div>
               {/* أيقونة الإشعارات مع العداد (إشعارات + رسائل) */}
               <div className="relative">
-                <Bell className="w-5 h-5 text-slate-400 group-hover:text-[hsl(var(--primary))] transition-colors" />
+                <Bell className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary" />
                 {(unreadCount + unreadMessagesCount) > 0 && (
                   <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
                     {(unreadCount + unreadMessagesCount) > 9 ? '9+' : formatNumberPlain(unreadCount + unreadMessagesCount)}
                   </span>
                 )}
               </div>
-              <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-[hsl(var(--primary))] transition-colors" />
+              <ChevronLeft className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
             </Link>
 
           </div>
@@ -499,7 +494,7 @@ export function Sidebar() {
 
         {/* Navigation Items - Scrollable with Settings inside */}
         <nav
-          className="flex-1 pr-4 pl-4 space-y-2.5 py-3 min-h-0 overflow-y-auto scrollbar-none"
+          className="scrollbar-none min-h-0 flex-1 space-y-2.5 overflow-y-auto py-3 pr-0 pl-0"
           dir="ltr"
           style={{
             scrollbarWidth: 'none',
