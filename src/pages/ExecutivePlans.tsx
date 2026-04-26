@@ -411,7 +411,10 @@ export default function ExecutivePlans() {
       setLoading(true);
       try {
         const { userIds, employeeIds } = getFilteredUserIds();
-        if (userIds.length === 0 && employeeIds.length === 0) {
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const validUserIds = Array.from(new Set(userIds.filter((v): v is string => !!v && UUID_RE.test(v))));
+        const validEmployeeIds = Array.from(new Set(employeeIds.filter((v): v is string => !!v && UUID_RE.test(v))));
+        if (validUserIds.length === 0 && validEmployeeIds.length === 0) {
           setOperationalPlans([]);
           setPlanMonths([]);
           setExecutivePlans([]);
@@ -423,11 +426,11 @@ export default function ExecutivePlans() {
         let allPlans: OperationalPlan[] = [];
         
         // جلب الخطط حسب user_id (المنشئ)
-        if (userIds.length > 0) {
+        if (validUserIds.length > 0) {
           const { data: plansByUser, error: userError } = await supabase
             .from("operational_plans")
             .select("*")
-            .in("user_id", userIds)
+            .in("user_id", validUserIds)
             .eq("year", selectedYear);
           
           if (userError) throw userError;
@@ -435,11 +438,11 @@ export default function ExecutivePlans() {
         }
         
         // جلب الخطط حسب responsible_employee_id (المسؤول عن التنفيذ)
-        if (employeeIds.length > 0) {
+        if (validEmployeeIds.length > 0) {
           const { data: plansByEmployee, error: empError } = await supabase
             .from("operational_plans")
             .select("*")
-            .in("responsible_employee_id", employeeIds)
+            .in("responsible_employee_id", validEmployeeIds)
             .eq("year", selectedYear);
           
           if (empError) throw empError;
@@ -1155,7 +1158,7 @@ export default function ExecutivePlans() {
             </div>
             
             {/* المهام المرتبطة */}
-            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-3 text-white shadow-md">
+            <div className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.8)] rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/80 text-xs font-medium">المهام</p>
