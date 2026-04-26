@@ -288,12 +288,12 @@ export default function OrgInternalDashboard({
 
       {/* KPI Strip */}
       {!standaloneTab && <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <KpiCard label="موظفون" value={counts.employees} icon={<Users className="w-4 h-4" />} color="from-indigo-500 to-violet-600" />
-        <KpiCard label="مهام" value={counts.tasks} icon={<ListChecks className="w-4 h-4" />} color="from-cyan-500 to-blue-600" />
-        <KpiCard label="تبرعات" value={counts.donations} icon={<HeartHandshake className="w-4 h-4" />} color="from-rose-500 to-pink-600" />
-        <KpiCard label="حملات" value={counts.campaigns} icon={<Target className="w-4 h-4" />} color="from-amber-500 to-orange-600" />
-        <KpiCard label="مساءلات" value={questions.length} icon={<ShieldAlert className="w-4 h-4" />} color="from-fuchsia-500 to-purple-600" />
-        <KpiCard label="مهام مساءلة" value={aTasks.length} icon={<AlertTriangle className="w-4 h-4" />} color="from-emerald-500 to-teal-600" />
+        <KpiCard label="موظفون" value={counts.employees} icon={<Users className="w-4 h-4" />} />
+        <KpiCard label="مهام" value={counts.tasks} icon={<ListChecks className="w-4 h-4" />} />
+        <KpiCard label="تبرعات" value={counts.donations} icon={<HeartHandshake className="w-4 h-4" />} />
+        <KpiCard label="حملات" value={counts.campaigns} icon={<Target className="w-4 h-4" />} />
+        <KpiCard label="مساءلات" value={questions.length} icon={<ShieldAlert className="w-4 h-4" />} />
+        <KpiCard label="مهام مساءلة" value={aTasks.length} icon={<AlertTriangle className="w-4 h-4" />} />
       </div>}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -630,7 +630,7 @@ export default function OrgInternalDashboard({
 
 /* ---------- subcomponents ---------- */
 
-function KpiCard({ label, value, icon, color }: { label: string; value: number; icon: React.ReactNode; color: string }) {
+function KpiCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="flex items-center justify-between gap-3 p-4 text-right" dir="rtl">
@@ -638,7 +638,7 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
           <div className="text-2xl font-bold leading-none">{value}</div>
           <div className="mt-1 text-xs text-muted-foreground">{label}</div>
         </div>
-        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white shadow`}>
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground">
           {icon}
         </div>
       </CardContent>
