@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SourceLink } from "@/components/admin/SourceLink";
+import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 
 interface OrgInfo {
   id: string;
@@ -1094,15 +1095,14 @@ function getInitials(name: string): string {
   return (parts[0][0] ?? "") + (parts[1][0] ?? "");
 }
 
-// هوية جمعية حرف — تأتي من قاعدة البيانات عبر OrgBrandingContext
-// هذه القيم احتياطية ومطابقة لما هو محفوظ للجمعية
-const HARF = {
-  primary: "#057D87",      // تركوازي بحري داكن من الشعار
-  primaryDark: "#04626B",
-  primarySoft: "#E1F2F4",
-  accent: "#2BA0B5",       // تركوازي فاتح
-};
-const HARF_GRADIENT = `linear-gradient(135deg, ${HARF.primary} 0%, ${HARF.accent} 100%)`;
+const ORG_PRIMARY = "hsl(var(--primary))";
+const ORG_PRIMARY_SOFT = "hsl(var(--primary) / 0.12)";
+const ORG_PRIMARY_TINT = "hsl(var(--primary) / 0.08)";
+const ORG_PRIMARY_RING = "hsl(var(--primary) / 0.28)";
+const ORG_ACCENT = "hsl(var(--accent))";
+const ORG_ACCENT_SOFT = "hsl(var(--accent) / 0.12)";
+const ORG_ACCENT_RING = "hsl(var(--accent) / 0.4)";
+const ORG_GRADIENT = `linear-gradient(135deg, ${ORG_PRIMARY} 0%, ${ORG_ACCENT} 100%)`;
 
 function EmployeesShowcase({
   employees,
@@ -1117,6 +1117,7 @@ function EmployeesShowcase({
   setEmpSearch: (v: string) => void;
   orgSlug: string | undefined;
 }) {
+  const branding = useOrgBranding();
   const filtered = employees.filter((e) => {
     if (!empSearch.trim()) return true;
     const q = empSearch.trim().toLowerCase();
@@ -1136,28 +1137,30 @@ function EmployeesShowcase({
 
   return (
     <div className="space-y-6">
-      {/* Hero — هوية جمعية حرف الزيتونية */}
+      {/* Hero */}
       <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
         <div
           className="absolute inset-0"
-          style={{ background: `linear-gradient(to left, ${HARF.primary}0D, transparent, ${HARF.accent}14)` }}
+          style={{ background: `linear-gradient(to left, ${ORG_PRIMARY_TINT}, transparent, ${ORG_ACCENT_SOFT})` }}
         />
         <div
           className="absolute -top-24 -left-24 h-64 w-64 rounded-full blur-3xl"
-          style={{ backgroundColor: `${HARF.accent}26` }}
+          style={{ backgroundColor: ORG_ACCENT_SOFT }}
         />
         <div
           className="absolute -bottom-24 -right-10 h-72 w-72 rounded-full blur-3xl"
-          style={{ backgroundColor: `${HARF.primary}26` }}
+          style={{ backgroundColor: ORG_PRIMARY_SOFT }}
         />
         <div className="relative flex flex-wrap items-end justify-between gap-6">
           <div className="min-w-0">
             <div
               className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ring-1"
-              style={{ backgroundColor: `${HARF.primary}1A`, color: HARF.primaryDark, borderColor: `${HARF.primary}33` }}
+              style={{ backgroundColor: ORG_PRIMARY_SOFT, color: ORG_PRIMARY, borderColor: ORG_PRIMARY_RING }}
             >
-              <Users className="h-3.5 w-3.5" />
-              فريق العمل
+              <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-background/80 ring-1 ring-border">
+                {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.orgName || "الجمعية"} className="h-full w-full object-contain" /> : <Users className="h-3.5 w-3.5" />}
+              </span>
+              {branding.orgName || "فريق العمل"}
             </div>
             <h2 className="mt-3 text-3xl font-bold text-foreground">طاقم الموظفين</h2>
             <p className="mt-1 text-muted-foreground">منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة</p>
