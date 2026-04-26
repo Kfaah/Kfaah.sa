@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +68,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
 import { useScopedView } from "@/hooks/useScopedView";
 import { ScopeToggle } from "@/components/scope/ScopeToggle";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Employee {
   id: string;
@@ -124,6 +126,14 @@ const MONTHS_AR = [
 ];
 
 const WEEKDAYS_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+
+const QUERY_CHUNK_SIZE = 80;
+
+function chunkArray<T>(items: T[], size = QUERY_CHUNK_SIZE): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
+  return chunks;
+}
 
 const HIJRI_MONTHS = [
   "محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة",
