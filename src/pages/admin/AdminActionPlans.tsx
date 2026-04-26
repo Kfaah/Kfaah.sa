@@ -142,7 +142,10 @@ export default function AdminActionPlans() {
         icon={<ListChecks className="w-7 h-7" />}
         title="الخطط من التوصيات"
         subtitle="حوّل توصيات التحليل الذكي إلى خطة عمل مزمنة، مكلَّفة، وقابلة للمتابعة"
-        className="!bg-none [background:linear-gradient(to_left,hsl(170_55%_28%)_0%,hsl(180_50%_30%)_45%,hsl(205_55%_45%)_100%)]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to left, hsl(165 50% 32%) 0%, hsl(185 55% 40%) 55%, hsl(210 65% 55%) 100%)",
+        }}
         actions={
           <Button onClick={() => setDialogOpen(true)} className="gap-2 bg-white text-[hsl(170_55%_28%)] hover:bg-white/90 font-bold">
             <Sparkles className="w-4 h-4" />
