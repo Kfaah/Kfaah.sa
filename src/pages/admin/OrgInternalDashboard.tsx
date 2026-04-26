@@ -383,11 +383,11 @@ export default function OrgInternalDashboard({
             </div>
           )}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.9fr)]">
-            <Card className="order-1 border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background" dir="rtl">
+            <Card className="order-1 border-border bg-card" dir="rtl">
               <CardHeader className="text-right">
                 <CardTitle className="flex items-center justify-start gap-2 text-right">
                   <span>التقييم العام</span>
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-5 w-5 text-muted-foreground" />
                 </CardTitle>
                 <CardDescription className="text-right">
                   {analysis?.completed_at ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}` : "لم يتم تشغيل التحليل بعد"}
@@ -405,7 +405,7 @@ export default function OrgInternalDashboard({
             <Card className="order-2" dir="rtl">
               <CardHeader className="text-right">
                 <CardTitle className="flex items-center justify-start gap-2 text-right">
-                  <Building2 className="h-5 w-5 text-primary" /> المصادر
+                  <Building2 className="h-5 w-5 text-muted-foreground" /> المصادر
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-right text-sm" dir="rtl">
@@ -421,11 +421,11 @@ export default function OrgInternalDashboard({
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            <ListCard title="نقاط القوة" items={analysis?.strengths ?? []} icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />} emptyText="لا توجد بعد" tone="emerald" />
-            <ListCard title="الفجوات الحرجة" items={analysis?.gaps ?? []} icon={<AlertTriangle className="w-5 h-5 text-amber-500" />} emptyText="لا توجد فجوات مرصودة" tone="amber" />
+            <ListCard title="نقاط القوة" items={analysis?.strengths ?? []} icon={<CheckCircle2 className="w-5 h-5 text-muted-foreground" />} emptyText="لا توجد بعد" />
+            <ListCard title="الفجوات الحرجة" items={analysis?.gaps ?? []} icon={<AlertTriangle className="w-5 h-5 text-muted-foreground" />} emptyText="لا توجد فجوات مرصودة" />
           </div>
 
-          <ListCard title="التوصيات التنفيذية" items={analysis?.recommendations ?? []} icon={<Target className="w-5 h-5 text-orange-400" />} emptyText="لا توجد توصيات بعد" tone="primary" />
+          <ListCard title="التوصيات التنفيذية" items={analysis?.recommendations ?? []} icon={<Target className="w-5 h-5 text-muted-foreground" />} emptyText="لا توجد توصيات بعد" />
         </TabsContent>
 
         {/* ANALYSIS */}
