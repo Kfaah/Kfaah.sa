@@ -343,21 +343,12 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center gap-3 rounded-l-2xl rounded-r-none border px-3 py-2 shadow-sm transition-all duration-150",
+          "group/nav flex h-14 items-center gap-3 rounded-l-[28px] rounded-r-none pr-5 pl-2 py-2 shadow-md transition-all duration-150",
           isActive
-            ? "bg-white border-white shadow-lg scale-[1.02]"
-            : "bg-white/95 border-white/80 hover:bg-white hover:shadow-md"
+            ? "bg-white shadow-lg scale-[1.02]"
+            : "bg-white hover:shadow-lg"
         )}
       >
-        <div
-          className={cn(
-            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-colors",
-            "text-white shadow-sm"
-          )}
-          style={branding.primary ? { backgroundColor: branding.primary } : undefined}
-        >
-          <item.icon className="w-5 h-5" />
-        </div>
         {!collapsed && (
           <>
             <span
@@ -375,6 +366,15 @@ export function Sidebar() {
             )}
           </>
         )}
+        <div
+          className={cn(
+            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-colors",
+            "text-white shadow-sm"
+          )}
+          style={branding.primary ? { backgroundColor: branding.primary } : undefined}
+        >
+          <item.icon className="w-5 h-5" />
+        </div>
       </Link>
     );
   };
