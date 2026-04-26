@@ -402,22 +402,22 @@ export function Sidebar() {
             className="relative mb-3 group cursor-pointer animate-scale-in"
             title="العودة للصفحة الرئيسية"
           >
-            <div className="absolute inset-[-16px] rounded-full border-2 border-white/45 pointer-events-none animate-pulse" />
-            <div className="absolute inset-[-32px] rounded-full bg-white/20 blur-2xl pointer-events-none" />
-            <div className="relative w-60 h-60 rounded-full bg-white flex items-center justify-center shadow-2xl overflow-hidden ring-4 ring-white/35 transition-transform duration-500 group-hover:scale-105">
+            <div className="absolute inset-[-12px] rounded-full border-2 border-white/45 pointer-events-none animate-pulse" />
+            <div className="absolute inset-[-24px] rounded-full bg-white/20 blur-2xl pointer-events-none" />
+            <div className="relative w-44 h-44 rounded-full bg-white flex items-center justify-center shadow-2xl overflow-hidden ring-4 ring-white/35 transition-transform duration-500 group-hover:scale-105 shrink-0">
               {branding.loading ? (
-                <div className="w-52 h-52 rounded-full bg-slate-100 animate-pulse" />
+                <div className="w-40 h-40 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
                   src={branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-56 h-56 object-contain p-1 drop-shadow-xl"
+                  className="w-40 h-40 object-contain p-1 drop-shadow-xl"
                 />
               ) : (
                 <img
                   src={atefLogoIcon}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-56 h-56 object-contain p-1 drop-shadow-xl"
+                  className="w-40 h-40 object-contain p-1 drop-shadow-xl"
                 />
               )}
             </div>
