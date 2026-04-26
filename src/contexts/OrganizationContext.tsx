@@ -69,7 +69,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       const list = (orgs as Organization[]) || [];
       setAvailableOrgs(list);
 
-      const routeSlug = location.pathname.split("/").filter(Boolean)[0] || null;
+      const segments = location.pathname.split("/").filter(Boolean);
+      let routeSlug: string | null = null;
+      if (segments[0] === "admin" && segments.length >= 3 && /^orgs?$|^organizations?$/.test(segments[1])) {
+        routeSlug = segments[2];
+      } else if (segments[0] && segments[0] !== "admin") {
+        routeSlug = segments[0];
+      }
       const slugMatch = routeSlug ? list.find((o) => o.slug === routeSlug) : null;
       const stored = localStorage.getItem(STORAGE_KEY);
       const preferred = stored ? list.find((o) => o.id === stored) : null;
@@ -92,7 +98,15 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!availableOrgs.length) return;
 
-    const routeSlug = location.pathname.split("/").filter(Boolean)[0] || null;
+    // Resolve the org slug from either the first path segment (/sakinah/...)
+    // or from admin org-scoped routes (/admin/orgs/:slug/..., /admin/organizations/:slug/...).
+    const segments = location.pathname.split("/").filter(Boolean);
+    let routeSlug: string | null = null;
+    if (segments[0] === "admin" && segments.length >= 3 && /^orgs?$|^organizations?$/.test(segments[1])) {
+      routeSlug = segments[2];
+    } else if (segments[0] && segments[0] !== "admin") {
+      routeSlug = segments[0];
+    }
     if (!routeSlug) return;
 
     const slugMatch = availableOrgs.find((org) => org.slug === routeSlug);

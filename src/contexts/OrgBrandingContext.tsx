@@ -111,15 +111,22 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   }, [currentOrg]);
 
   useEffect(() => {
-    const isAdminRoute = location.pathname.startsWith("/admin");
-    applyBrandingToDocument(isAdminRoute ? { primary: null, secondary: null, accent: null } : branding);
+    // Admin routes normally use the neutral admin theme. However, when an
+    // admin is browsing inside a specific organization (e.g. /admin/orgs/:slug
+    // or any /admin/.../<slug>/... route), apply that organization's branding
+    // so internal pages (employees, plans, ...) match the org identity.
+    const path = location.pathname;
+    const isAdminRoute = path.startsWith("/admin");
+    const isAdminOrgScopedRoute = isAdminRoute && /\/admin\/(orgs?|organizations?)\//.test(path);
+    const useOrgBranding = !isAdminRoute || isAdminOrgScopedRoute;
+    applyBrandingToDocument(useOrgBranding ? branding : { primary: null, secondary: null, accent: null });
 
     // Mark <html> with data-org-branded so the global CSS override layer
     // (in index.css) re-routes hardcoded Tailwind color classes
     // (blue/cyan/teal/emerald/...) to the org's primary/accent.
     const root = document.documentElement;
     const hasOrgColors =
-      !isAdminRoute && (!!branding.primary || !!branding.accent);
+      useOrgBranding && (!!branding.primary || !!branding.accent);
     if (hasOrgColors) {
       root.setAttribute("data-org-branded", "true");
     } else {
