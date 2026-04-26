@@ -226,19 +226,25 @@ export default function OrgInternalDashboard({
 
           <div className="relative flex flex-wrap items-center justify-between gap-6 p-6">
             {/* Right: Identity */}
-            <div className="flex min-w-0 items-center gap-5">
+            <div className="flex min-w-0 flex-col items-center gap-3 sm:items-start">
+              {/* Logo on top, full and untrimmed */}
               <div
-                className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-background shadow-md ring-1"
+                className="flex h-24 min-w-[6rem] max-w-[18rem] items-center justify-center overflow-hidden rounded-2xl bg-background px-4 py-2 shadow-md ring-1"
                 style={{ ['--tw-ring-color' as string]: ORG_PRIMARY_RING, boxShadow: `0 4px 14px ${ORG_PRIMARY_SOFT}` }}
               >
                 {org?.logo_url ? (
-                  <img src={org.logo_url} alt={org.name} className="h-full w-full object-contain p-1" />
+                  <img
+                    src={org.logo_url}
+                    alt={org.name}
+                    className="h-full w-auto max-w-full object-contain"
+                  />
                 ) : (
-                  <Building2 className="h-8 w-8" style={{ color: ORG_PRIMARY }} />
+                  <Building2 className="h-10 w-10" style={{ color: ORG_PRIMARY }} />
                 )}
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
+              {/* Name below the logo */}
+              <div className="min-w-0 text-center sm:text-start">
+                <div className="flex items-center justify-center gap-2 sm:justify-start">
                   <span
                     className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide"
                     style={{ backgroundColor: ORG_ACCENT_SOFT, color: ORG_PRIMARY, border: `1px solid ${ORG_ACCENT_RING}` }}
