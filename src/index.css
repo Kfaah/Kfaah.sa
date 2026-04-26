@@ -233,6 +233,11 @@
     background-image: linear-gradient(135deg, hsl(215 22% 47%), hsl(215 25% 27%));
   }
 
+  .sidebar-reference-icon {
+    background-image: linear-gradient(135deg, hsl(var(--sidebar-icon-start)), hsl(var(--sidebar-icon-end)));
+    box-shadow: 0 6px 10px hsl(var(--sidebar-item-shadow));
+  }
+
   /* Custom scrollbar */
   .scrollbar-thin {
     scrollbar-width: thin;
