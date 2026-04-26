@@ -140,6 +140,9 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
       // Don't write anything until we actually have new values to apply,
       // otherwise we'd briefly clear the current colors and flash the
       // default theme before loading completes.
+      if (branding.loading) {
+        applyBrandingToDocument(FALLBACK_BRANDING);
+      }
       if (!branding.loading && (branding.primary || branding.accent || branding.secondary)) {
         applyBrandingToDocument(branding);
         setAppliedOrgId(currentOrg?.id ?? null);
