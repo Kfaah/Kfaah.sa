@@ -1377,8 +1377,7 @@ function EmployeesShowcase({
                   {isLeader && (
                     <Badge
                       variant="outline"
-                      className="gap-1 self-center shadow-sm backdrop-blur-sm"
-                      style={{ borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.85)', color: ORG_PRIMARY }}
+                      className="gap-1 self-center border-border bg-muted text-muted-foreground shadow-sm"
                     >
                       <Crown className="h-3 w-3" /> قيادي
                     </Badge>
@@ -1387,19 +1386,17 @@ function EmployeesShowcase({
                     <Link
                       to={editHref}
                       title="تعديل"
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/80 text-muted-foreground shadow-sm opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm opacity-0 transition-all hover:bg-muted group-hover:opacity-100"
                       style={{ ['--tw-text-opacity' as string]: 1 }}
-                      onMouseEnter={(ev) => { ev.currentTarget.style.color = ORG_PRIMARY; ev.currentTarget.style.borderColor = ORG_PRIMARY_RING; }}
-                      onMouseLeave={(ev) => { ev.currentTarget.style.color = ''; ev.currentTarget.style.borderColor = ''; }}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Link>
                   </div>
                 </div>
-                <div className="relative mt-10">
+                <div className="relative mt-4">
                   <h3 className="truncate text-base font-bold text-foreground">{e.full_name}</h3>
                   {e.title && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs" style={{ color: ORG_PRIMARY }}>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                       <Sparkles className="h-3 w-3" />
                       {e.title}
                     </p>
@@ -1423,13 +1420,13 @@ function EmployeesShowcase({
                 </div>
                 <div className="relative mt-4 flex items-center justify-between border-t border-border pt-3">
                   <div className="flex items-center gap-1.5 text-xs">
-                    <ShieldAlert className="h-3.5 w-3.5" style={{ color: ORG_PRIMARY }} />
+                    <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-muted-foreground">المساءلات:</span>
                     <span
                       className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-semibold ring-1"
                       style={
                         qCount > 0
-                          ? { backgroundColor: ORG_PRIMARY_SOFT, color: ORG_PRIMARY, borderColor: ORG_PRIMARY_RING }
+                          ? { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--foreground))', borderColor: 'hsl(var(--border))' }
                           : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))', borderColor: 'hsl(var(--border))' }
                       }
                     >
@@ -1439,9 +1436,7 @@ function EmployeesShowcase({
                   <Link
                     to={editHref}
                     className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] transition-colors"
-                    style={{ color: ORG_PRIMARY }}
-                    onMouseEnter={(ev) => { ev.currentTarget.style.backgroundColor = ORG_PRIMARY_TINT; }}
-                    onMouseLeave={(ev) => { ev.currentTarget.style.backgroundColor = ''; }}
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     <Pencil className="h-3 w-3" />
                     تعديل
