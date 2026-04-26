@@ -137,7 +137,7 @@ export default function AdminActionPlans() {
   }, [plans]);
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] p-6 space-y-6">
+    <div className={`${isEmbedded ? "" : "mx-auto max-w-[1280px] p-6"} w-full space-y-6`}>
       <PageHeader
         icon={<ListChecks className="w-6 h-6" />}
         title="الخطط من التوصيات"
