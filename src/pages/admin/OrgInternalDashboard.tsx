@@ -336,16 +336,22 @@ export default function OrgInternalDashboard({
         <TabsContent value="overview" className="mt-6 space-y-4" dir="rtl">
           {standaloneTab && (
             <div
-              className="relative overflow-hidden rounded-2xl border-2 bg-card shadow-sm"
-              style={{ borderColor: ORG_PRIMARY_RING, borderTopWidth: 4, borderTopColor: ORG_PRIMARY }}
+              className="relative overflow-hidden rounded-2xl shadow-xl"
+              style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
               dir="rtl"
             >
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+              <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.08]"
+                style={{
+                  backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                  backgroundSize: "22px 22px",
+                }}
+              />
               <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4 min-w-0">
-                  <div
-                    className="flex h-24 w-24 sm:h-28 sm:w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-background p-2"
-                    style={{ borderColor: ORG_PRIMARY_RING }}
-                  >
+                  <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-white/40 p-2">
                     {org?.logo_url ? (
                       <img src={org.logo_url} alt={org.name} className="h-full w-full object-contain" />
                     ) : (
@@ -353,10 +359,10 @@ export default function OrgInternalDashboard({
                     )}
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                    <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
                       {org?.name ?? "نظرة عامة"}
                     </h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="mt-1 text-sm text-white/85">
                       رؤية شاملة · تقييم ذكي · مساءلات ذكية
                     </p>
                   </div>
@@ -366,8 +372,8 @@ export default function OrgInternalDashboard({
                     onClick={runDeepAnalysis}
                     disabled={analyzing}
                     size="lg"
-                    className="gap-2 text-white shadow-md hover:opacity-95"
-                    style={{ background: ORG_PRIMARY }}
+                    className="gap-2 bg-white shadow-md hover:bg-white/90"
+                    style={{ color: ORG_PRIMARY }}
                   >
                     {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     تشغيل التحليل الذكي
@@ -426,16 +432,22 @@ export default function OrgInternalDashboard({
         <TabsContent value="analysis" className="space-y-4 mt-6" dir="rtl">
           {standaloneTab && (
             <div
-              className="relative overflow-hidden rounded-2xl border-2 bg-card shadow-sm"
-              style={{ borderColor: ORG_PRIMARY_RING, borderTopWidth: 4, borderTopColor: ORG_PRIMARY }}
+              className="relative overflow-hidden rounded-2xl shadow-xl"
+              style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
               dir="rtl"
             >
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+              <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.08]"
+                style={{
+                  backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                  backgroundSize: "22px 22px",
+                }}
+              />
               <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4 min-w-0">
-                  <div
-                    className="flex h-24 w-24 sm:h-28 sm:w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-background p-2"
-                    style={{ borderColor: ORG_PRIMARY_RING }}
-                  >
+                  <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-white/40 p-2">
                     {org?.logo_url ? (
                       <img src={org.logo_url} alt={org.name} className="h-full w-full object-contain" />
                     ) : (
@@ -443,10 +455,10 @@ export default function OrgInternalDashboard({
                     )}
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                    <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
                       التحليل الذكي
                     </h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="mt-1 text-sm text-white/85">
                       {org?.name ? `${org.name} · ` : ""}يعتمد التحليل على آخر الملفات المرفوعة لهذه الجمعية ومصادرها الرقمية
                     </p>
                   </div>
@@ -456,8 +468,8 @@ export default function OrgInternalDashboard({
                     onClick={runDeepAnalysis}
                     disabled={analyzing}
                     size="lg"
-                    className="gap-2 text-white shadow-md hover:opacity-95"
-                    style={{ background: ORG_PRIMARY }}
+                    className="gap-2 bg-white shadow-md hover:bg-white/90"
+                    style={{ color: ORG_PRIMARY }}
                   >
                     {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     {analysis ? "إعادة تشغيل التحليل" : "تشغيل التحليل الذكي"}
@@ -621,17 +633,25 @@ export default function OrgInternalDashboard({
 function KpiCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
     <Card
-      className="overflow-hidden border-border bg-card"
-      style={{ borderRightWidth: 3, borderRightColor: ORG_PRIMARY }}
+      className="relative overflow-hidden border-border"
+      style={{
+        background: `linear-gradient(135deg, ${ORG_PRIMARY_TINT} 0%, hsl(var(--card)) 60%, ${ORG_ACCENT_SOFT} 100%)`,
+        borderRightWidth: 3,
+        borderRightColor: ORG_PRIMARY,
+      }}
     >
+      <div
+        className="pointer-events-none absolute -left-8 -top-8 h-20 w-20 rounded-full opacity-30 blur-2xl"
+        style={{ background: ORG_ACCENT }}
+      />
       <CardContent className="flex items-center justify-between gap-3 p-4 text-right" dir="rtl">
         <div className="min-w-0 flex-1">
           <div className="text-2xl font-bold leading-none text-foreground">{value}</div>
           <div className="mt-1 text-xs text-muted-foreground">{label}</div>
         </div>
         <div
-          className="flex h-10 w-10 items-center justify-center rounded-lg border bg-background"
-          style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-md"
+          style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
         >
           {icon}
         </div>
@@ -648,9 +668,19 @@ function ListCard({ title, items, icon, emptyText }: { title: string; items: str
       className="relative overflow-hidden border-border bg-card shadow-sm"
       style={{ borderRightWidth: 3, borderRightColor: ORG_PRIMARY }}
     >
-      <CardHeader className="text-right">
+      <div
+        className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl"
+        style={{ background: ORG_ACCENT }}
+      />
+      <CardHeader
+        className="text-right"
+        style={{
+          background: `linear-gradient(to left, ${ORG_PRIMARY_TINT}, transparent)`,
+          borderBottom: `1px solid ${ORG_PRIMARY_RING}`,
+        }}
+      >
         <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-foreground">
-          {icon}
+          <span style={{ color: ORG_PRIMARY }}>{icon}</span>
           <span>{title}</span>
         </CardTitle>
       </CardHeader>
@@ -662,8 +692,12 @@ function ListCard({ title, items, icon, emptyText }: { title: string; items: str
             {items.map((s, i) => (
               <li
                 key={i}
-                className="flex items-start justify-start gap-2 rounded-lg border border-border bg-background p-3 text-right text-sm leading-relaxed text-foreground"
-                style={{ borderRightWidth: 2, borderRightColor: ORG_PRIMARY_RING }}
+                className="flex items-start justify-start gap-2 rounded-lg border border-border p-3 text-right text-sm leading-relaxed text-foreground transition-colors hover:shadow-sm"
+                style={{
+                  background: `linear-gradient(to left, ${ORG_PRIMARY_TINT}, transparent)`,
+                  borderRightWidth: 2,
+                  borderRightColor: ORG_PRIMARY,
+                }}
               >
                 <span className="mt-1 flex-shrink-0" style={{ color: ORG_PRIMARY }}>•</span>
                 <span className="flex-1">{s}</span>
@@ -1258,53 +1292,59 @@ function EmployeesShowcase({
     <div className="space-y-6">
       {/* Hero - Brand-dominant header */}
       <div
-        className="relative overflow-hidden rounded-2xl border-2 bg-card shadow-sm"
-        style={{ borderColor: ORG_PRIMARY_RING, borderTopWidth: 4, borderTopColor: ORG_PRIMARY }}
+        className="relative overflow-hidden rounded-2xl shadow-xl"
+        style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
         dir="rtl"
       >
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+        <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+            backgroundSize: "22px 22px",
+          }}
+        />
         <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 min-w-0">
-            <div
-              className="flex h-24 w-24 sm:h-28 sm:w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-background p-2"
-              style={{ borderColor: ORG_PRIMARY_RING }}
-            >
+            <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-white/40 p-2">
               {branding.logoUrl ? (
                 <img src={branding.logoUrl} alt={branding.orgName || "الجمعية"} className="h-full w-full object-contain" />
               ) : (
-                <Users className="h-10 w-10" style={{ color: ORG_PRIMARY }} />
+                <Users className="h-10 w-10 text-primary" />
               )}
             </div>
             <div className="min-w-0">
-              <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+              <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
                 طاقم الموظفين
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-white/85">
                 منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-2xl border border-border bg-muted/30 px-4 py-2">
-              <div className="text-2xl font-bold leading-none text-foreground">{employees.length}</div>
-              <div className="mt-1 text-[11px] text-muted-foreground">إجمالي الموظفين</div>
+            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
+              <div className="text-2xl font-bold leading-none text-white">{employees.length}</div>
+              <div className="mt-1 text-[11px] text-white/80">إجمالي الموظفين</div>
             </div>
-            <div className="rounded-2xl border border-border bg-muted/30 px-4 py-2">
-              <div className="flex items-center gap-1 text-2xl font-bold leading-none text-foreground">
+            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
+              <div className="flex items-center gap-1 text-2xl font-bold leading-none text-white">
                 <Crown className="h-5 w-5" />
                 {managersCount}
               </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">قيادات</div>
+              <div className="mt-1 text-[11px] text-white/80">قيادات</div>
             </div>
-            <div className="rounded-2xl border border-border bg-muted/30 px-4 py-2">
-              <div className="text-2xl font-bold leading-none text-foreground">{totalQuestions}</div>
-              <div className="mt-1 text-[11px] text-muted-foreground">مساءلات نشطة</div>
+            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
+              <div className="text-2xl font-bold leading-none text-white">{totalQuestions}</div>
+              <div className="mt-1 text-[11px] text-white/80">مساءلات نشطة</div>
             </div>
             <Link to={addEmployeeHref}>
               <Button
                 size="lg"
-                className="gap-2 text-white shadow-md hover:opacity-95"
-                style={{ background: ORG_PRIMARY }}
+                className="gap-2 bg-white text-primary shadow-md hover:bg-white/90"
+                style={{ color: ORG_PRIMARY }}
               >
                 <UserPlus className="h-5 w-5" />
                 إضافة موظف جديد
@@ -1353,13 +1393,25 @@ function EmployeesShowcase({
             return (
               <div
                 key={e.id}
-                className="group relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:shadow-md"
-                style={{ borderColor: 'hsl(var(--border))', borderTopWidth: 3, borderTopColor: ORG_PRIMARY }}
+                className="group relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
+                style={{
+                  borderColor: 'hsl(var(--border))',
+                  background: `linear-gradient(180deg, ${ORG_PRIMARY_TINT} 0%, hsl(var(--card)) 35%)`,
+                }}
               >
+                {/* شريط هوية علوي بتدرج */}
+                <div
+                  className="absolute inset-x-0 top-0 h-1.5"
+                  style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
+                />
+                <div
+                  className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full opacity-25 blur-2xl"
+                  style={{ background: ORG_ACCENT }}
+                />
                 <div className="relative flex items-start gap-3">
                   <div
-                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 bg-background text-xl font-bold"
-                    style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
+                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white shadow-md ring-2 ring-white/60"
+                    style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
                   >
                     {e.avatar_url ? (
                       <img src={e.avatar_url} alt={e.full_name} className="h-full w-full object-cover" />

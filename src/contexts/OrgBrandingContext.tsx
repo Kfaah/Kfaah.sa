@@ -239,18 +239,22 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
           loading: false,
         });
       } else {
-        // No cache yet for this org: never keep the previous org identity in
-        // React state. The head pre-hydration gate keeps first paint hidden
-        // until real branding arrives, and client-side switches show a neutral
-        // loading state rather than the wrong association colors/logo.
-        setBranding({
-          logoUrl: currentOrg.logo_url ?? null,
+        // No cache yet for this org. CRITICAL: never set primary/accent to
+        // null while loading — that would force a re-render where the entire
+        // page repaints with the default theme, then repaints again with the
+        // org colors when the API responds (the visible "shake" / flicker
+        // under the header). Instead, KEEP the currently-applied CSS
+        // variables intact and only update the org name + logo. The colors
+        // will be replaced atomically in a single repaint when the API
+        // returns the real branding below.
+        setBranding((prev) => ({
+          logoUrl: currentOrg.logo_url ?? prev.logoUrl ?? null,
           orgName: currentOrg.name,
-          primary: null,
-          secondary: null,
-          accent: null,
+          primary: prev.primary,
+          secondary: prev.secondary,
+          accent: prev.accent,
           loading: true,
-        });
+        }));
       }
 
       // 2) Then fetch the latest from the database in the background and

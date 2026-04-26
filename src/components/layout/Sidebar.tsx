@@ -343,16 +343,16 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center gap-3 rounded-l-xl rounded-r-none border border-white/0 bg-white/95 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-150",
+          "group/nav flex h-14 items-center gap-3 rounded-l-2xl rounded-r-none border px-3 py-2 text-white shadow-sm transition-colors duration-150 backdrop-blur-sm",
           isActive
-            ? "border-white bg-white text-slate-900 shadow-md"
-            : "hover:bg-white hover:text-slate-900"
+            ? "border-white/60 bg-white/25 text-white shadow-md"
+            : "border-white/15 bg-white/5 hover:bg-white/15"
         )}
       >
         <div
           className={cn(
-            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white shadow-md ring-1 ring-white/40",
-            item.iconBg
+            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/30 transition-colors",
+            isActive && "bg-white/30 ring-white/60"
           )}
         >
           <item.icon className="w-5 h-5" />
@@ -360,8 +360,7 @@ export function Sidebar() {
         {!collapsed && (
           <>
             <span className={cn(
-              "font-bold text-base flex-1 text-right transition-colors duration-150",
-              isActive ? "text-slate-900" : "text-slate-800"
+              "font-bold text-base flex-1 text-right transition-colors duration-150 text-white"
             )}>
               {item.title}
             </span>

@@ -96,15 +96,6 @@
           else if (seg[0] === "admin" && seg.length >= 3 && /^orgs?$|^organizations?$/.test(seg[1])) slug = seg[2];
           else if (seg[0] && seg[0] !== "admin") slug = seg[0];
 
-          // Keep the app hidden until either cached/API branding is applied
-          // or React's branding provider takes over. This is intentionally
-          // before any cache lookup so even icon gradients never paint with
-          // the old/default palette.
-          var styleEl = document.createElement("style");
-          styleEl.id = "__branding_gate__";
-          styleEl.textContent = "body{visibility:hidden!important}";
-          if (slug) document.head.appendChild(styleEl);
-
           var hasAppliedBranding = false;
 
           // 1) Try slug-keyed cache FIRST (synchronous, no flash).
@@ -114,12 +105,21 @@
             var parsedCache = JSON.parse(rawSlug);
             hasAppliedBranding = applyBranding(parsedCache) || hasAppliedBranding;
             cachedVersion = hasAppliedBranding && parsedCache && parsedCache.updatedAt ? parsedCache.updatedAt : null;
-            if (hasAppliedBranding) {
-              var cachedGate = document.getElementById("__branding_gate__");
-              if (cachedGate && cachedGate.parentNode) cachedGate.parentNode.removeChild(cachedGate);
-            }
             // Continue to background-revalidate against the API so stale
             // colors/logos are updated automatically (versioned by updated_at).
+          }
+
+          // ONLY gate the very first paint when we have ZERO cached branding
+          // for this slug — otherwise the cached values already painted the
+          // correct colors and any further hide/show would cause the page
+          // content to "shake" (the exact flicker users are reporting under
+          // the header). With cache present, we never gate and never repaint
+          // until the API confirms a version mismatch.
+          if (slug && !hasAppliedBranding) {
+            var styleEl = document.createElement("style");
+            styleEl.id = "__branding_gate__";
+            styleEl.textContent = "body{visibility:hidden!important}";
+            document.head.appendChild(styleEl);
           }
 
           // 2) If we have a slug and no valid slug-cache, fetch from REST API
@@ -133,6 +133,9 @@
             var el = document.getElementById("__branding_gate__");
             if (el && el.parentNode) el.parentNode.removeChild(el);
           }
+          // If we already painted from cache, mark as revealed so the API
+          // response never re-triggers any visibility change.
+          if (hasAppliedBranding) revealed = true;
           var timeoutId = setTimeout(function () {
             if (hasAppliedBranding || document.documentElement.getAttribute("data-org-branded") === "true") reveal();
           }, 4000);
