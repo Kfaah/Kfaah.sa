@@ -17,6 +17,10 @@ interface CachedBranding {
   primary: string | null;
   secondary: string | null;
   accent: string | null;
+  /** Version key — usually organization_profiles.updated_at. Used to
+   * invalidate stale cache entries automatically when an org updates
+   * its colors/logo, without requiring a manual localStorage clear. */
+  updatedAt?: string | null;
 }
 
 function readCache(orgId: string): CachedBranding | null {
@@ -219,10 +223,18 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
       //    update both state and cache if anything changed.
       const { data } = await supabase
         .from("organization_profiles")
-        .select("logo_url, primary_color, secondary_color, accent_color")
+        .select("logo_url, primary_color, secondary_color, accent_color, updated_at")
         .eq("organization_id", currentOrg.id)
         .maybeSingle();
       if (cancelled) return;
+      const fetchedVersion =
+        (data as Record<string, string | null> | null)?.updated_at || null;
+      // If cache version matches DB version, skip the state update entirely
+      // — there's nothing new to paint and we avoid an unnecessary re-render.
+      if (cached && cached.updatedAt && fetchedVersion && cached.updatedAt === fetchedVersion) {
+        setBranding((prev) => (prev.loading ? { ...prev, loading: false } : prev));
+        return;
+      }
       const next: Branding = {
         logoUrl: data?.logo_url || currentOrg.logo_url || null,
         orgName: currentOrg.name,
@@ -236,6 +248,7 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
         primary: next.primary,
         secondary: next.secondary,
         accent: next.accent,
+        updatedAt: fetchedVersion,
       });
       if (currentOrg.slug) {
         writeSlugCache(currentOrg.slug, {
@@ -243,6 +256,7 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
           primary: next.primary,
           secondary: next.secondary,
           accent: next.accent,
+          updatedAt: fetchedVersion,
         });
       }
       setBranding((prev) => {
