@@ -113,7 +113,7 @@
           if (rawSlug) {
             var parsedCache = JSON.parse(rawSlug);
             hasAppliedBranding = applyBranding(parsedCache) || hasAppliedBranding;
-            cachedVersion = parsedCache && parsedCache.updatedAt ? parsedCache.updatedAt : null;
+            cachedVersion = hasAppliedBranding && parsedCache && parsedCache.updatedAt ? parsedCache.updatedAt : null;
             if (hasAppliedBranding) {
               var cachedGate = document.getElementById("__branding_gate__");
               if (cachedGate && cachedGate.parentNode) cachedGate.parentNode.removeChild(cachedGate);
