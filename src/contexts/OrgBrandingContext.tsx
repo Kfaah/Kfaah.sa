@@ -38,19 +38,28 @@ function hexToHslTokens(hex: string): string | null {
   return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
-function applyBrandingToDocument(b: { primary: string | null; secondary: string | null; accent: string | null }) {
+function applyBrandingToDocument(
+  b: { primary: string | null; secondary: string | null; accent: string | null },
+  options: { reset?: boolean } = {},
+) {
   const root = document.documentElement;
-  // Remove previously set vars first to support resetting back to defaults
-  const VARS = [
-    "--primary", "--ring", "--sidebar-primary", "--sidebar-ring",
-    "--accent", "--secondary",
-    "--gradient-primary", "--gradient-accent",
-  ];
-  for (const v of VARS) root.style.removeProperty(v);
-
   const primary = b.primary ? hexToHslTokens(b.primary) : null;
   const accent = b.accent ? hexToHslTokens(b.accent) : null;
   const secondary = b.secondary ? hexToHslTokens(b.secondary) : null;
+
+  // Only clear previously-set vars when we're explicitly resetting
+  // (e.g. switching to a neutral admin route). Otherwise we keep the
+  // current values in place to avoid a flash of the default theme
+  // before the new org branding loads.
+  if (options.reset) {
+    const VARS = [
+      "--primary", "--ring", "--sidebar-primary", "--sidebar-ring",
+      "--accent", "--secondary",
+      "--gradient-primary", "--gradient-accent",
+    ];
+    for (const v of VARS) root.style.removeProperty(v);
+    return;
+  }
 
   if (primary) {
     root.style.setProperty("--primary", primary);
@@ -119,7 +128,16 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     const isAdminRoute = path.startsWith("/admin");
     const isAdminOrgScopedRoute = isAdminRoute && /\/admin\/(orgs?|organizations?)\//.test(path);
     const useOrgBranding = !isAdminRoute || isAdminOrgScopedRoute;
-    applyBrandingToDocument(useOrgBranding ? branding : { primary: null, secondary: null, accent: null });
+    if (useOrgBranding) {
+      // Don't write anything until we actually have new values to apply,
+      // otherwise we'd briefly clear the current colors and flash the
+      // default theme before loading completes.
+      if (!branding.loading && (branding.primary || branding.accent || branding.secondary)) {
+        applyBrandingToDocument(branding);
+      }
+    } else {
+      applyBrandingToDocument({ primary: null, secondary: null, accent: null }, { reset: true });
+    }
 
     // Mark <html> with data-org-branded so the global CSS override layer
     // (in index.css) re-routes hardcoded Tailwind color classes
