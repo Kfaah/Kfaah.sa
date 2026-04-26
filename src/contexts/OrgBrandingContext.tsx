@@ -304,20 +304,26 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     }
   }, [branding, routeUsesOrgBranding, currentOrg?.id, appliedOrgId]);
 
-  const holdForBranding =
-    routeUsesOrgBranding &&
-    (orgLoading || (!!currentOrg && (branding.loading || (!branding.primary && !branding.accent))));
-
+  // The branding "gate" exists ONLY for the very first paint, to prevent
+  // a flash of the default theme before any org colors are applied. As
+  // soon as we have applied any colors (from cache OR API), we remove
+  // the gate and never re-introduce one — otherwise route changes would
+  // make the page appear to shake (hide → show → hide → show).
   useLayoutEffect(() => {
-    if (holdForBranding) return;
+    const hasAppliedColors =
+      document.documentElement.getAttribute("data-org-branded") === "true" ||
+      !!branding.primary ||
+      !!branding.accent ||
+      !routeUsesOrgBranding;
+    if (!hasAppliedColors) return;
     const gate = document.getElementById("__branding_gate__");
     if (gate?.parentNode) gate.parentNode.removeChild(gate);
-  }, [holdForBranding]);
+  }, [branding.primary, branding.accent, routeUsesOrgBranding]);
 
   const value = useMemo(() => branding, [branding]);
   return (
     <Ctx.Provider value={value}>
-      <div style={holdForBranding ? { visibility: "hidden" } : undefined}>{children}</div>
+      {children}
     </Ctx.Provider>
   );
 }
