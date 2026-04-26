@@ -945,7 +945,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       <div className="space-y-6">
         {/* Header */}
         <PageHeader
-          icon={<Calendar className="h-7 w-7" />}
+          icon={<Calendar className="w-6 h-6" />}
           title="الخطط التنفيذية"
           subtitle="توزيع المستهدفات الشهرية على أيام محددة"
           actions={

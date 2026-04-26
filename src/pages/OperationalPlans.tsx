@@ -1445,7 +1445,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
       <div className="space-y-6">
         {/* Header */}
         <PageHeader
-          icon={<Target className="h-7 w-7" />}
+          icon={<Target className="w-6 h-6" />}
           title={isAdmin ? "الخطط التشغيلية" : "الخطة التشغيلية"}
           subtitle={isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
           actions={

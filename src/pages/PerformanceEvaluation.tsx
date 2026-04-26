@@ -323,15 +323,10 @@ export default function PerformanceEvaluation() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto py-6 space-y-6" dir="rtl">
+      <div className="space-y-6" dir="rtl">
         <PageHeader
-          icon={<Award className="w-7 h-7" />}
-          title={
-            <span className="flex items-center gap-2">
-              تقييم الأداء
-              <Sparkles className="w-5 h-5 text-white/80" />
-            </span>
-          }
+          icon={<Award className="w-6 h-6" />}
+          title="تقييم الأداء"
           subtitle="متوسط درجات الموظفين على معايير التقييم — التقييم النهائي = متوسط جميع المعايير"
           actions={
             <>
