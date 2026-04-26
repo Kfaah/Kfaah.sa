@@ -336,16 +336,22 @@ export default function OrgInternalDashboard({
         <TabsContent value="overview" className="mt-6 space-y-4" dir="rtl">
           {standaloneTab && (
             <div
-              className="relative overflow-hidden rounded-2xl border-2 bg-card shadow-sm"
-              style={{ borderColor: ORG_PRIMARY_RING, borderTopWidth: 4, borderTopColor: ORG_PRIMARY }}
+              className="relative overflow-hidden rounded-2xl shadow-xl"
+              style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
               dir="rtl"
             >
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+              <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.08]"
+                style={{
+                  backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                  backgroundSize: "22px 22px",
+                }}
+              />
               <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4 min-w-0">
-                  <div
-                    className="flex h-24 w-24 sm:h-28 sm:w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-background p-2"
-                    style={{ borderColor: ORG_PRIMARY_RING }}
-                  >
+                  <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-white/40 p-2">
                     {org?.logo_url ? (
                       <img src={org.logo_url} alt={org.name} className="h-full w-full object-contain" />
                     ) : (
@@ -353,10 +359,10 @@ export default function OrgInternalDashboard({
                     )}
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                    <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
                       {org?.name ?? "نظرة عامة"}
                     </h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="mt-1 text-sm text-white/85">
                       رؤية شاملة · تقييم ذكي · مساءلات ذكية
                     </p>
                   </div>
@@ -366,8 +372,8 @@ export default function OrgInternalDashboard({
                     onClick={runDeepAnalysis}
                     disabled={analyzing}
                     size="lg"
-                    className="gap-2 text-white shadow-md hover:opacity-95"
-                    style={{ background: ORG_PRIMARY }}
+                    className="gap-2 bg-white shadow-md hover:bg-white/90"
+                    style={{ color: ORG_PRIMARY }}
                   >
                     {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     تشغيل التحليل الذكي
