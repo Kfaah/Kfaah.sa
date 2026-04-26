@@ -135,7 +135,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     .join("")
     .toUpperCase() || "م";
 
-  const handleSignOut = async () => { await signOut(); navigate("/"); };
+  const handleSignOut = async () => { await signOut(); navigate("/organizations"); };
 
   if (isEmbedded) {
     return (
