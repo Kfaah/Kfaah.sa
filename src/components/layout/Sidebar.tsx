@@ -352,17 +352,16 @@ export function Sidebar() {
         <div
           className={cn(
             "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-colors",
-            "bg-transparent ring-0"
+            "text-white shadow-sm"
           )}
-          style={branding.primary ? { color: branding.primary } : undefined}
+          style={branding.primary ? { backgroundColor: branding.primary } : undefined}
         >
           <item.icon className="w-5 h-5" />
         </div>
         {!collapsed && (
           <>
             <span
-              className="font-bold text-base flex-1 text-right transition-colors duration-150"
-              style={branding.primary ? { color: branding.primary } : undefined}
+              className="font-bold text-base flex-1 text-right transition-colors duration-150 text-slate-800"
             >
               {item.title}
             </span>
