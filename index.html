@@ -105,12 +105,14 @@
           styleEl.textContent = "body{visibility:hidden!important}";
           if (slug) document.head.appendChild(styleEl);
 
+          var hasAppliedBranding = false;
+
           // 1) Try slug-keyed cache FIRST (synchronous, no flash).
           var rawSlug = slug ? localStorage.getItem("org_branding_slug_v1:" + slug) : null;
           var cachedVersion = null;
           if (rawSlug) {
             var parsedCache = JSON.parse(rawSlug);
-            applyBranding(parsedCache);
+            hasAppliedBranding = applyBranding(parsedCache) || hasAppliedBranding;
             cachedVersion = parsedCache && parsedCache.updatedAt ? parsedCache.updatedAt : null;
             var cachedGate = document.getElementById("__branding_gate__");
             if (cachedGate && cachedGate.parentNode) cachedGate.parentNode.removeChild(cachedGate);
@@ -138,8 +140,6 @@
           // 3) If we have a slug and no slug-cache, fetch from REST API
           //    while the body is blocked so the user never sees wrong colors.
           if (!slug) return;
-
-          var hasAppliedBranding = !!cachedVersion;
 
           var revealed = false;
           function reveal() {
