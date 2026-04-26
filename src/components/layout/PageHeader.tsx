@@ -20,10 +20,12 @@ export function PageHeader({ icon, title, subtitle, actions, className, style }:
   return (
     <div
       dir="rtl"
-      style={style}
+      style={{
+        background: "linear-gradient(to left, hsl(var(--primary)) 0%, hsl(var(--primary)) 72%, hsl(var(--accent)) 100%)",
+        ...style,
+      }}
       className={cn(
         "relative overflow-hidden rounded-2xl shadow-xl",
-        "bg-gradient-to-l from-primary via-primary to-accent",
         className
       )}
     >
