@@ -28,47 +28,40 @@
   <body>
     <div id="root"></div>
     <script>
-      // Pre-hydrate org branding from localStorage BEFORE React mounts.
-      // This eliminates the "flash of default theme" on first paint when
-      // navigating into an organization-scoped route (e.g. /atff/...).
+      // Pre-hydrate org branding BEFORE React mounts to eliminate any
+      // flash of the default theme on first paint when navigating into
+      // an organization-scoped route (e.g. /atff/...).
+      //
+      // Strategy:
+      //   1) Resolve the org slug from the URL.
+      //   2) Apply slug-keyed cache synchronously if present.
+      //   3) Otherwise hide <body> very briefly and fetch branding from
+      //      Supabase REST in parallel — apply, cache, then reveal.
+      //   4) Hard timeout (350ms) so the UI is never stuck blank.
       (function () {
-        try {
-          var path = window.location.pathname || "";
-          var search = window.location.search || "";
-          var seg = path.split("/").filter(Boolean);
-          var slug = null;
-          var qs = new URLSearchParams(search).get("org");
-          if (qs) slug = qs;
-          else if (seg[0] === "admin" && seg.length >= 3 && /^orgs?$|^organizations?$/.test(seg[1])) slug = seg[2];
-          else if (seg[0] && seg[0] !== "admin") slug = seg[0];
-          // Try slug-keyed cache FIRST (matches the URL exactly, so we never
-          // apply the wrong org's colors when navigating between orgs).
-          var raw = null;
-          if (slug) raw = localStorage.getItem("org_branding_slug_v1:" + slug);
-          // Fallback: last active org id (for non-org-scoped routes like /admin).
-          if (!raw) {
-            var activeOrgId = localStorage.getItem("active_organization_id");
-            if (activeOrgId) raw = localStorage.getItem("org_branding_v1:" + activeOrgId);
+        var SUPABASE_URL = "https://jopvcsrmccoulujeyjvw.supabase.co";
+        var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHZjc3JtY2NvdWx1amV5anZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjU1MjAsImV4cCI6MjA5MjIwMTUyMH0.s3R2dRBKi_S7iS4y5CjAe-hr6hYJwivOSNNeekqC2wE";
+
+        function hexToHsl(hex) {
+          var m = /^#?([0-9a-f]{6})$/i.exec((hex || "").trim());
+          if (!m) return null;
+          var n = parseInt(m[1], 16);
+          var r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, bl = (n & 255) / 255;
+          var mx = Math.max(r, g, bl), mn = Math.min(r, g, bl);
+          var h = 0, s = 0, l = (mx + mn) / 2;
+          if (mx !== mn) {
+            var d = mx - mn;
+            s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+            if (mx === r) h = ((g - bl) / d + (g < bl ? 6 : 0));
+            else if (mx === g) h = ((bl - r) / d + 2);
+            else h = ((r - g) / d + 4);
+            h *= 60;
           }
-          if (!raw) return;
-          var b = JSON.parse(raw);
-          function hexToHsl(hex) {
-            var m = /^#?([0-9a-f]{6})$/i.exec((hex || "").trim());
-            if (!m) return null;
-            var n = parseInt(m[1], 16);
-            var r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, bl = (n & 255) / 255;
-            var mx = Math.max(r, g, bl), mn = Math.min(r, g, bl);
-            var h = 0, s = 0, l = (mx + mn) / 2;
-            if (mx !== mn) {
-              var d = mx - mn;
-              s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
-              if (mx === r) h = ((g - bl) / d + (g < bl ? 6 : 0));
-              else if (mx === g) h = ((bl - r) / d + 2);
-              else h = ((r - g) / d + 4);
-              h *= 60;
-            }
-            return Math.round(h) + " " + Math.round(s * 100) + "% " + Math.round(l * 100) + "%";
-          }
+          return Math.round(h) + " " + Math.round(s * 100) + "% " + Math.round(l * 100) + "%";
+        }
+
+        function applyBranding(b) {
+          if (!b) return false;
           var root = document.documentElement;
           var p = hexToHsl(b.primary), a = hexToHsl(b.accent), s2 = hexToHsl(b.secondary);
           if (p) {
@@ -84,7 +77,95 @@
           }
           if (s2) root.style.setProperty("--secondary", s2);
           if (p || a) root.setAttribute("data-org-branded", "true");
-        } catch (e) { /* noop */ }
+          return !!(p || a);
+        }
+
+        try {
+          var path = window.location.pathname || "";
+          var search = window.location.search || "";
+          var seg = path.split("/").filter(Boolean);
+          var slug = null;
+          var qs = new URLSearchParams(search).get("org");
+          if (qs) slug = qs;
+          else if (seg[0] === "admin" && seg.length >= 3 && /^orgs?$|^organizations?$/.test(seg[1])) slug = seg[2];
+          else if (seg[0] && seg[0] !== "admin") slug = seg[0];
+
+          // 1) Try slug-keyed cache FIRST (synchronous, no flash).
+          var rawSlug = slug ? localStorage.getItem("org_branding_slug_v1:" + slug) : null;
+          if (rawSlug) {
+            applyBranding(JSON.parse(rawSlug));
+            return;
+          }
+
+          // 2) Fallback to id-keyed cache from previous session.
+          var activeOrgId = localStorage.getItem("active_organization_id");
+          if (activeOrgId) {
+            var rawId = localStorage.getItem("org_branding_v1:" + activeOrgId);
+            if (rawId) {
+              applyBranding(JSON.parse(rawId));
+              // If we have a slug too, also fetch in background to overwrite
+              // with the correct org's colors (without blocking).
+            }
+          }
+
+          // 3) If we have a slug and no slug-cache, fetch from REST API
+          //    and BLOCK the body briefly so the user never sees the
+          //    wrong colors. Hard 350ms timeout for safety.
+          if (!slug) return;
+
+          var styleEl = document.createElement("style");
+          styleEl.id = "__branding_gate__";
+          styleEl.textContent = "body{visibility:hidden!important}";
+          document.head.appendChild(styleEl);
+
+          var revealed = false;
+          function reveal() {
+            if (revealed) return;
+            revealed = true;
+            var el = document.getElementById("__branding_gate__");
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+          }
+          var timeoutId = setTimeout(reveal, 350);
+
+          // Fetch organization_profiles via REST joined with organizations(slug).
+          var url = SUPABASE_URL + "/rest/v1/organizations?slug=eq."
+            + encodeURIComponent(slug)
+            + "&select=id,logo_url,organization_profiles(primary_color,secondary_color,accent_color,logo_url)&limit=1";
+          fetch(url, {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: "Bearer " + SUPABASE_KEY,
+            },
+          })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (rows) {
+              if (!rows || !rows.length) return;
+              var row = rows[0];
+              var prof = (row.organization_profiles && row.organization_profiles[0]) || {};
+              var b = {
+                logoUrl: prof.logo_url || row.logo_url || null,
+                primary: prof.primary_color || null,
+                secondary: prof.secondary_color || null,
+                accent: prof.accent_color || null,
+              };
+              applyBranding(b);
+              try {
+                localStorage.setItem("org_branding_slug_v1:" + slug, JSON.stringify(b));
+                if (row.id) {
+                  localStorage.setItem("org_branding_v1:" + row.id, JSON.stringify(b));
+                  localStorage.setItem("active_organization_id", row.id);
+                }
+              } catch (e) { /* noop */ }
+            })
+            .catch(function () { /* noop */ })
+            .finally(function () {
+              clearTimeout(timeoutId);
+              reveal();
+            });
+        } catch (e) {
+          var el = document.getElementById("__branding_gate__");
+          if (el && el.parentNode) el.parentNode.removeChild(el);
+        }
       })();
     </script>
     <script type="module" src="/src/main.tsx"></script>
