@@ -196,6 +196,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
       {/* Public marketing/landing + system-admin login */}
       <Route path="/" element={<PublicLanding />} />
@@ -300,6 +301,7 @@ function AppRoutes() {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 }
 
