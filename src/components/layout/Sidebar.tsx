@@ -443,11 +443,24 @@ export function Sidebar() {
           {!collapsed && (
             <div className="text-center space-y-1">
               <div className="relative">
-                {branding.orgName && (
-                  <p className="text-base font-bold text-white drop-shadow-sm">
-                    {branding.orgName}
-                  </p>
-                )}
+                {branding.orgName && (() => {
+                  const short = getShortOrgName(branding.orgName);
+                  if (short) {
+                    return (
+                      <div className="text-white drop-shadow-sm leading-tight">
+                        <p className="text-base font-bold">{short[0]}</p>
+                        {short[1] && (
+                          <p className="text-sm font-semibold opacity-95">{short[1]}</p>
+                        )}
+                      </div>
+                    );
+                  }
+                  return (
+                    <p className="text-base font-bold text-white drop-shadow-sm">
+                      {branding.orgName}
+                    </p>
+                  );
+                })()}
                 <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-white/70 to-transparent rounded-full" />
                 <p className="text-sm font-semibold text-white/90">
                   نظام إدارة التسويق الإلكتروني
