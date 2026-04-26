@@ -43,6 +43,27 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
+// اسم الجمعية المختصر (سطران × 3-4 كلمات) للعرض في الشريط الجانبي
+// المطابقة تتم بمقاطع من الاسم الرسمي الكامل المخزن في DB
+const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: [string, string] }> = [
+  { match: /سكينة/, lines: ["جمعية سكينة", "لبناء وترميم المساجد"] },
+  { match: /عطاء الخير/, lines: ["جمعية عطاء الخير", "لرعاية الأيتام وأسرهم"] },
+  { match: /عطف/, lines: ["جمعية عطف", "لرعاية الأيتام بلقرن"] },
+  { match: /نجباء/, lines: ["جمعية نجباء", "لرعاية الأيتام بالفرشة"] },
+  { match: /صواب/, lines: ["جمعية صواب", "لتأهيل المتعافين من الإدمان"] },
+  { match: /مآثر/, lines: ["جمعية مآثر للدعوة", "وتوعية الجاليات بالعارضة"] },
+  { match: /القصبة/, lines: ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بالقصبة"] },
+  { match: /حرف/, lines: ["جمعية حرف", ""] },
+];
+
+function getShortOrgName(fullName: string): [string, string] | null {
+  if (!fullName) return null;
+  for (const entry of ORG_SHORT_NAME_BY_KEYWORD) {
+    if (entry.match.test(fullName)) return entry.lines;
+  }
+  return null;
+}
+
 interface NavItem {
   title: string;
   href: string;
