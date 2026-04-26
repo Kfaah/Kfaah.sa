@@ -125,7 +125,7 @@ const Intelligence = () => {
       <div className="space-y-6" dir="rtl">
         <PageHeader
           icon={<Brain className="w-6 h-6" />}
-          title={<span className="flex items-center gap-2">التحليل الذكي <Sparkles className="w-5 h-5 text-yellow-300" /></span>}
+          title="التحليل الذكي"
           subtitle="رؤى ذكية، مهام ذكية، وأفكار إبداعية مولّدة من بيانات جمعيتك"
           actions={
             <Button size="lg" onClick={runAnalysis} disabled={running} className="gap-2 shadow-lg">
