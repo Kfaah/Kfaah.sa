@@ -370,9 +370,9 @@ export default function PerformanceEvaluation() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         {/* Filters */}
         <Card className="border-0 shadow-md">
