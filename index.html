@@ -90,10 +90,21 @@
           else if (seg[0] === "admin" && seg.length >= 3 && /^orgs?$|^organizations?$/.test(seg[1])) slug = seg[2];
           else if (seg[0] && seg[0] !== "admin") slug = seg[0];
 
+          // Keep the app hidden until either cached/API branding is applied
+          // or React's branding provider takes over. This is intentionally
+          // before any cache lookup so even icon gradients never paint with
+          // the old/default palette.
+          var styleEl = document.createElement("style");
+          styleEl.id = "__branding_gate__";
+          styleEl.textContent = "body{visibility:hidden!important}";
+          if (slug) document.head.appendChild(styleEl);
+
           // 1) Try slug-keyed cache FIRST (synchronous, no flash).
           var rawSlug = slug ? localStorage.getItem("org_branding_slug_v1:" + slug) : null;
           if (rawSlug) {
             applyBranding(JSON.parse(rawSlug));
+            var cachedGate = document.getElementById("__branding_gate__");
+            if (cachedGate && cachedGate.parentNode) cachedGate.parentNode.removeChild(cachedGate);
             return;
           }
 
@@ -109,14 +120,8 @@
           }
 
           // 3) If we have a slug and no slug-cache, fetch from REST API
-          //    and BLOCK the body briefly so the user never sees the
-          //    wrong colors. Hard 350ms timeout for safety.
+          //    while the body is blocked so the user never sees wrong colors.
           if (!slug) return;
-
-          var styleEl = document.createElement("style");
-          styleEl.id = "__branding_gate__";
-          styleEl.textContent = "body{visibility:hidden!important}";
-          document.head.appendChild(styleEl);
 
           var revealed = false;
           function reveal() {
@@ -125,7 +130,7 @@
             var el = document.getElementById("__branding_gate__");
             if (el && el.parentNode) el.parentNode.removeChild(el);
           }
-          var timeoutId = setTimeout(reveal, 350);
+          var timeoutId = setTimeout(reveal, 1200);
 
           // Fetch organization_profiles via REST joined with organizations(slug).
           var url = SUPABASE_URL + "/rest/v1/organizations?slug=eq."
