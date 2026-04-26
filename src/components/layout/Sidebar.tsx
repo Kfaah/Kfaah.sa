@@ -343,25 +343,27 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center gap-3 rounded-l-2xl rounded-r-none border px-3 py-2 text-white shadow-sm transition-colors duration-150 backdrop-blur-sm",
+          "group/nav flex h-14 items-center gap-3 rounded-l-2xl rounded-r-none border px-3 py-2 shadow-sm transition-all duration-150",
           isActive
-            ? "border-white/60 bg-white/25 text-white shadow-md"
-            : "border-white/15 bg-white/5 hover:bg-white/15"
+            ? "bg-white border-white shadow-lg scale-[1.02]"
+            : "bg-white/95 border-white/80 hover:bg-white hover:shadow-md"
         )}
       >
         <div
           className={cn(
-            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/30 transition-colors",
-            isActive && "bg-white/30 ring-white/60"
+            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-colors",
+            "bg-transparent ring-0"
           )}
+          style={branding.primary ? { color: branding.primary } : undefined}
         >
           <item.icon className="w-5 h-5" />
         </div>
         {!collapsed && (
           <>
-            <span className={cn(
-              "font-bold text-base flex-1 text-right transition-colors duration-150 text-white"
-            )}>
+            <span
+              className="font-bold text-base flex-1 text-right transition-colors duration-150"
+              style={branding.primary ? { color: branding.primary } : undefined}
+            >
               {item.title}
             </span>
             {badgeCount && badgeCount > 0 && (
