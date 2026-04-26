@@ -535,19 +535,19 @@ export default function OrgInternalDashboard({
         </TabsContent>
 
         {/* TASKS / REPORTS / INNOVATION / UPLOADS / DONORS - placeholder summaries linking to existing pages */}
-        <TabsContent value="tasks" className={standaloneTab ? "" : "mt-6"} dir="rtl">
+        <TabsContent value="tasks" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/tasks" title="المهام" />
         </TabsContent>
-        <TabsContent value="reports" className={standaloneTab ? "" : "mt-6"} dir="rtl">
+        <TabsContent value="reports" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/admin/reports" title="التقارير" embedSlug={false} />
         </TabsContent>
-        <TabsContent value="innovation" className={standaloneTab ? "" : "mt-6"} dir="rtl">
+        <TabsContent value="innovation" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/admin/innovation" title="الابتكار والتحديث" embedSlug={false} />
         </TabsContent>
-        <TabsContent value="uploads" className={standaloneTab ? "" : "mt-6"} dir="rtl">
+        <TabsContent value="uploads" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
         </TabsContent>
-        <TabsContent value="operational-plans" className={standaloneTab ? "" : "mt-6"} dir="rtl">
+        <TabsContent value="operational-plans" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/admin/action-plans" title="الخطط من التوصيات" embedSlug={false} />
         </TabsContent>
         <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
