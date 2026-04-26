@@ -178,19 +178,22 @@ export default function AdminInnovation() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between mb-2 animate-fade-in flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+      <PageHeader
+        icon={<Lightbulb className="w-7 h-7" />}
+        title={
+          <span className="flex items-center gap-2">
             الابتكار والتحديث
-            <Badge className="bg-accent/15 text-accent border-accent/30">جديد</Badge>
-          </h1>
-          <p className="text-muted-foreground mt-1">يحلّل الذكاء الاصطناعي بياناتك ويقترح ابتكارات لم تخطر على بالك — تُناقشها معه ثم تقبلها أو ترفضها.</p>
-        </div>
-        <Button onClick={generate} disabled={!selected || generating} className="gap-2 rounded-2xl">
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          توليد أفكار ابتكارية
-        </Button>
-      </div>
+            <Badge className="bg-white/20 text-white border-white/40">جديد</Badge>
+          </span>
+        }
+        subtitle="يحلّل الذكاء الاصطناعي بياناتك ويقترح ابتكارات لم تخطر على بالك — تُناقشها معه ثم تقبلها أو ترفضها."
+        actions={
+          <Button onClick={generate} disabled={!selected || generating} className="gap-2 bg-white text-primary hover:bg-white/90 disabled:bg-white/60">
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            توليد أفكار ابتكارية
+          </Button>
+        }
+      />
 
       {/* Export accepted ideas */}
       {stats.accepted > 0 && selected && (
