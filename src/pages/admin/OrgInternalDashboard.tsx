@@ -551,10 +551,14 @@ export default function OrgInternalDashboard({
           <EmbeddedOrgPage slug={org?.slug} path="/admin/action-plans" title="الخطط من التوصيات" embedSlug={false} />
         </TabsContent>
         <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
-          <OperationalPlans embedded />
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            <OperationalPlans embedded />
+          </Suspense>
         </TabsContent>
         <TabsContent value="executive-plans" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
-          <ExecutivePlans embedded />
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            <ExecutivePlans embedded />
+          </Suspense>
         </TabsContent>
         <TabsContent value="performance" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/performance" title="تقييم الأداء" />
