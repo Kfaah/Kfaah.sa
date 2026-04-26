@@ -140,13 +140,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   if (isEmbedded) {
     return (
       <div
-        className="min-h-screen"
+        className="min-h-screen bg-transparent"
         dir="rtl"
-        style={{
-          background:
-            orgBgStyle ||
-            "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
-        }}
       >
         <div className="relative z-10 admin-soft-surface">{children}</div>
       </div>
