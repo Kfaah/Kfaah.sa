@@ -429,6 +429,54 @@ export default function OrgInternalDashboard({
 
         {/* ANALYSIS */}
         <TabsContent value="analysis" className="space-y-4 mt-6" dir="rtl">
+          {standaloneTab && (
+            <div
+              className="relative overflow-hidden rounded-2xl shadow-xl"
+              style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
+              dir="rtl"
+            >
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+              <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.08]"
+                style={{
+                  backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                  backgroundSize: "22px 22px",
+                }}
+              />
+              <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-white/40 p-2">
+                    {org?.logo_url ? (
+                      <img src={org.logo_url} alt={org.name} className="h-full w-full object-contain" />
+                    ) : (
+                      <Sparkles className="h-10 w-10" style={{ color: ORG_PRIMARY }} />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
+                      التحليل الذكي
+                    </h2>
+                    <p className="mt-1 text-sm text-white/85">
+                      {org?.name ? `${org.name} · ` : ""}رؤى مولّدة من الملفات والمصادر الرقمية
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    onClick={runDeepAnalysis}
+                    disabled={analyzing}
+                    size="lg"
+                    className="gap-2 bg-white shadow-md hover:bg-white/90"
+                    style={{ color: ORG_PRIMARY }}
+                  >
+                    {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {analysis ? "إعادة تشغيل التحليل" : "تشغيل التحليل الذكي"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           <Card className="border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background">
             <CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
               <div className="text-right">
