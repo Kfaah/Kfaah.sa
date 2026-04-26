@@ -458,7 +458,7 @@ export default function OrgInternalDashboard({
                       التحليل الذكي
                     </h2>
                     <p className="mt-1 text-sm text-white/85">
-                      {org?.name ? `${org.name} · ` : ""}رؤى مولّدة من الملفات والمصادر الرقمية
+                      {org?.name ? `${org.name} · ` : ""}يعتمد التحليل على آخر الملفات المرفوعة لهذه الجمعية ومصادرها الرقمية
                     </p>
                   </div>
                 </div>
@@ -477,20 +477,6 @@ export default function OrgInternalDashboard({
               </div>
             </div>
           )}
-          <Card className="border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background">
-            <CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-right">
-                <p className="font-semibold">تشغيل التحليل الذكي</p>
-                <p className="text-sm text-muted-foreground">
-                  يعتمد التحليل على آخر الملفات المرفوعة لهذه الجمعية ومصادرها الرقمية.
-                </p>
-              </div>
-              <Button onClick={runDeepAnalysis} disabled={analyzing} size="lg" className="gap-2">
-                {analyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                {analysis ? "إعادة تشغيل التحليل" : "تشغيل التحليل الذكي"}
-              </Button>
-            </CardContent>
-          </Card>
           {!analysis ? (
             <Card>
               <CardContent className="py-12">
