@@ -229,7 +229,7 @@ export default function OrgInternalDashboard({
             <div className="flex min-w-0 flex-col items-center gap-3 sm:items-start">
               {/* Logo on top, full and untrimmed */}
               <div
-                className="flex h-24 min-w-[6rem] max-w-[18rem] items-center justify-center overflow-hidden rounded-2xl bg-background px-4 py-2 shadow-md ring-1"
+                className="flex h-36 min-w-[8rem] max-w-[22rem] items-center justify-center overflow-hidden rounded-2xl bg-background px-5 py-3 shadow-md ring-1"
                 style={{ ['--tw-ring-color' as string]: ORG_PRIMARY_RING, boxShadow: `0 4px 14px ${ORG_PRIMARY_SOFT}` }}
               >
                 {org?.logo_url ? (
@@ -242,7 +242,7 @@ export default function OrgInternalDashboard({
                   <Building2 className="h-10 w-10" style={{ color: ORG_PRIMARY }} />
                 )}
               </div>
-              {/* Name below the logo */}
+              {/* Subtitle pill below the logo (the org name is already part of the logo image) */}
               <div className="min-w-0 text-center sm:text-start">
                 <div className="flex items-center justify-center gap-2 sm:justify-start">
                   <span
@@ -253,13 +253,8 @@ export default function OrgInternalDashboard({
                     اللوحة الداخلية
                   </span>
                 </div>
-                <h1
-                  className="mt-1.5 truncate text-2xl font-extrabold leading-tight md:text-3xl"
-                  style={{ color: ORG_PRIMARY }}
-                >
-                  {org?.name ?? "الجمعية"}
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h1 className="sr-only">{org?.name ?? "الجمعية"}</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
                   رؤية شاملة · تقييم ذكي · مساءلات ذكية
                 </p>
               </div>
