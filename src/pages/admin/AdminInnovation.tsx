@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { exportInnovationPpt } from "@/utils/exportInnovationPpt";
 import { Download } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 type Category = "content" | "analytics" | "feature" | "ux" | "automation" | "growth" | "data";
 type Status = "new" | "discussing" | "accepted" | "dismissed" | "implemented";
@@ -177,27 +178,22 @@ export default function AdminInnovation() {
 
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-4">
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 text-white flex items-center justify-center shadow-lg">
-            <Lightbulb className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-              الابتكار والتحديث
-              <Badge className="bg-amber-400/20 text-amber-200 border-amber-400/40">جديد</Badge>
-            </h1>
-            <p className="text-white/85 mt-1">
-              يحلّل الذكاء الاصطناعي بياناتك ويقترح ابتكارات لم تخطر على بالك — تُناقشها معه ثم تقبلها أو ترفضها.
-            </p>
-          </div>
-        </div>
-        <Button onClick={generate} disabled={!selected || generating} className="gap-2 bg-amber-500 text-white hover:bg-amber-600">
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          توليد أفكار ابتكارية
-        </Button>
-      </div>
+      <PageHeader
+        icon={<Lightbulb className="w-7 h-7" />}
+        title={
+          <span className="flex items-center gap-2">
+            الابتكار والتحديث
+            <Badge className="bg-white/20 text-white border-white/40">جديد</Badge>
+          </span>
+        }
+        subtitle="يحلّل الذكاء الاصطناعي بياناتك ويقترح ابتكارات لم تخطر على بالك — تُناقشها معه ثم تقبلها أو ترفضها."
+        actions={
+          <Button onClick={generate} disabled={!selected || generating} className="gap-2 bg-white text-primary hover:bg-white/90 font-bold">
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            توليد أفكار ابتكارية
+          </Button>
+        }
+      />
 
       {/* Export accepted ideas */}
       {stats.accepted > 0 && selected && (
