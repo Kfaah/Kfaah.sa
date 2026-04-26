@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -139,22 +140,25 @@ export default function OperationalPlanDetails() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => navigate("/operational-plans")}
-            >
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">تفاصيل الخطة التشغيلية</h1>
-              <p className="text-muted-foreground">عرض كامل للخطة وتوزيع المستهدفات</p>
-            </div>
-          </div>
-          {getStatusBadge(plan.status)}
-        </div>
+        <PageHeader
+          icon={<Target className="h-7 w-7" />}
+          title="تفاصيل الخطة التشغيلية"
+          subtitle="عرض كامل للخطة وتوزيع المستهدفات"
+          actions={
+            <>
+              <div className="rounded-lg bg-white/15 px-3 py-1.5 backdrop-blur-sm border border-white/30">
+                {getStatusBadge(plan.status)}
+              </div>
+              <Button
+                onClick={() => navigate("/operational-plans")}
+                className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+              >
+                <ArrowRight className="w-4 h-4" />
+                العودة
+              </Button>
+            </>
+          }
+        />
 
         {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
