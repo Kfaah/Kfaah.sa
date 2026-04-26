@@ -41,12 +41,15 @@
           if (qs) slug = qs;
           else if (seg[0] === "admin" && seg.length >= 3 && /^orgs?$|^organizations?$/.test(seg[1])) slug = seg[2];
           else if (seg[0] && seg[0] !== "admin") slug = seg[0];
-          // Find any cached branding for this slug → org id mapping is unknown
-          // here, so iterate cache keys and use the most recently stored one
-          // matching the active org id (saved separately by the app).
-          var activeOrgId = localStorage.getItem("active_organization_id");
-          if (!activeOrgId) return;
-          var raw = localStorage.getItem("org_branding_v1:" + activeOrgId);
+          // Try slug-keyed cache FIRST (matches the URL exactly, so we never
+          // apply the wrong org's colors when navigating between orgs).
+          var raw = null;
+          if (slug) raw = localStorage.getItem("org_branding_slug_v1:" + slug);
+          // Fallback: last active org id (for non-org-scoped routes like /admin).
+          if (!raw) {
+            var activeOrgId = localStorage.getItem("active_organization_id");
+            if (activeOrgId) raw = localStorage.getItem("org_branding_v1:" + activeOrgId);
+          }
           if (!raw) return;
           var b = JSON.parse(raw);
           function hexToHsl(hex) {
