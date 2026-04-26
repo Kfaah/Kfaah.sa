@@ -605,10 +605,11 @@ function ListCard({ title, items, icon, emptyText, tone }: { title: string; item
   return (
     <Card
       dir="rtl"
-      className="relative overflow-hidden border border-amber-300/40 ring-1 ring-amber-300/20 text-white shadow-lg backdrop-blur-sm"
+      className="relative overflow-hidden text-white shadow-lg backdrop-blur-sm"
       style={{
-        background:
-          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+        background: `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.92) 55%, hsl(var(--accent)) 100%)`,
+        border: `1px solid hsl(var(--accent) / 0.45)`,
+        boxShadow: `0 10px 30px -12px hsl(var(--primary) / 0.45)`,
       }}
     >
       <CardHeader className="text-right">
@@ -624,7 +625,7 @@ function ListCard({ title, items, icon, emptyText, tone }: { title: string; item
           <ul className="space-y-2">
             {items.map((s, i) => (
               <li key={i} className="flex items-start justify-start gap-2 text-right text-sm leading-relaxed text-white">
-                <span className="mt-1 flex-shrink-0 text-amber-200">•</span>
+                <span className="mt-1 flex-shrink-0" style={{ color: "hsl(var(--accent))" }}>•</span>
                 <span className="flex-1">{s}</span>
               </li>
             ))}
