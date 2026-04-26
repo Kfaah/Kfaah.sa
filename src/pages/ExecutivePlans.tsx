@@ -469,32 +469,37 @@ export default function ExecutivePlans() {
         
         // جلب الخطط حسب user_id (المنشئ)
         if (validUserIds.length > 0) {
-          const { data: plansByUser, error: userError } = await supabase
-            .from("operational_plans")
-            .select("*")
-            .in("user_id", validUserIds)
-            .eq("year", selectedYear);
-          
-          if (userError) throw userError;
-          if (plansByUser) allPlans = [...plansByUser];
+          for (const ids of chunkArray(validUserIds)) {
+            let query = supabase
+              .from("operational_plans")
+              .select("*")
+              .in("user_id", ids)
+              .eq("year", selectedYear);
+            if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+            const { data: plansByUser, error: userError } = await query;
+            
+            if (userError) throw userError;
+            if (plansByUser) allPlans = [...allPlans, ...plansByUser];
+          }
         }
         
         // جلب الخطط حسب responsible_employee_id (المسؤول عن التنفيذ)
         if (validEmployeeIds.length > 0) {
-          const { data: plansByEmployee, error: empError } = await supabase
-            .from("operational_plans")
-            .select("*")
-            .in("responsible_employee_id", validEmployeeIds)
-            .eq("year", selectedYear);
-          
-          if (empError) throw empError;
-          if (plansByEmployee) {
-            // دمج مع إزالة التكرار
-            const existingIds = new Set(allPlans.map(p => p.id));
-            const newPlans = plansByEmployee.filter(p => !existingIds.has(p.id));
-            allPlans = [...allPlans, ...newPlans];
+          for (const ids of chunkArray(validEmployeeIds)) {
+            let query = supabase
+              .from("operational_plans")
+              .select("*")
+              .in("responsible_employee_id", ids)
+              .eq("year", selectedYear);
+            if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+            const { data: plansByEmployee, error: empError } = await query;
+            
+            if (empError) throw empError;
+            if (plansByEmployee) allPlans = [...allPlans, ...plansByEmployee];
           }
         }
+
+        allPlans = Array.from(new Map(allPlans.map((p) => [p.id, p])).values());
         
         setOperationalPlans(allPlans);
         
