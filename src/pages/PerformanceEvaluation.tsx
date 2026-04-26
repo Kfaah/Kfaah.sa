@@ -19,6 +19,7 @@ import {
   TrendingUp, CheckCircle2, Star, Clock, Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 type Criterion = {
   id: string;
@@ -323,39 +324,24 @@ export default function PerformanceEvaluation() {
   return (
     <DashboardLayout>
       <div className="container mx-auto py-6 space-y-6" dir="rtl">
-        {/* Hero header */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-6 text-white shadow-lg"
-          style={{
-            background:
-              "linear-gradient(135deg, hsl(160 50% 25%) 0%, hsl(170 45% 30%) 50%, hsl(45 65% 45%) 100%)",
-          }}
-        >
-          <div className="absolute -left-10 -top-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute right-0 bottom-0 w-32 h-32 rounded-full bg-yellow-300/20 blur-2xl" />
-          <div className="relative flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center ring-1 ring-white/40">
-                <Award className="w-7 h-7" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-                  تقييم الأداء
-                  <Sparkles className="w-5 h-5 text-yellow-200" />
-                </h1>
-                <p className="text-sm text-white/80 mt-1">
-                  متوسط درجات الموظفين على معايير التقييم — التقييم النهائي = متوسط جميع المعايير
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
+        <PageHeader
+          icon={<Award className="w-7 h-7" />}
+          title={
+            <span className="flex items-center gap-2">
+              تقييم الأداء
+              <Sparkles className="w-5 h-5 text-white/80" />
+            </span>
+          }
+          subtitle="متوسط درجات الموظفين على معايير التقييم — التقييم النهائي = متوسط جميع المعايير"
+          actions={
+            <>
               <StatPill label="متوسط الجمعية" value={orgAverage} icon={<TrendingUp className="w-4 h-4" />} />
               {topEmployee && topEmployee.score > 0 && (
                 <StatPill label={`الأعلى: ${topEmployee.name}`} value={topEmployee.score} icon={<Star className="w-4 h-4" />} />
               )}
               <Dialog open={openCriterion} onOpenChange={setOpenCriterion}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2 bg-white text-emerald-800 hover:bg-white/90 font-bold">
+                  <Button className="gap-2 bg-white text-primary hover:bg-white/90 font-bold">
                     <Plus className="w-4 h-4" />
                     إضافة معيار
                   </Button>
@@ -384,9 +370,9 @@ export default function PerformanceEvaluation() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         {/* Filters */}
         <Card className="border-0 shadow-md">
