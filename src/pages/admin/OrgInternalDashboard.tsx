@@ -1361,33 +1361,12 @@ function EmployeesShowcase({
             return (
               <div
                 key={e.id}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
                 style={{ ['--org-hover' as string]: ORG_PRIMARY }}
               >
-                <div
-                  className="absolute inset-x-0 top-0 h-24"
-                  style={{ background: ORG_GRADIENT }}
-                />
-                {/* Decorative pattern overlay for richness */}
-                <div
-                  className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-25"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-                    backgroundSize: "14px 14px",
-                  }}
-                />
-                {/* Soft glow accent */}
-                <div
-                  className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-40 blur-2xl"
-                  style={{ background: ORG_ACCENT_RING }}
-                />
-                {/* Bottom fade for crisp separation from card body */}
-                <div className="pointer-events-none absolute inset-x-0 top-20 h-6 bg-gradient-to-b from-transparent to-card" />
                 <div className="relative flex items-start gap-3">
                   <div
-                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white shadow-lg ring-4 ring-card"
-                    style={{ background: ORG_GRADIENT }}
+                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-border bg-muted text-xl font-bold text-foreground"
                   >
                     {e.avatar_url ? (
                       <img src={e.avatar_url} alt={e.full_name} className="h-full w-full object-cover" />
