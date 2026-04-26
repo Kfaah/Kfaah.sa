@@ -23,7 +23,7 @@ export function PageHeader({ icon, title, subtitle, actions, className, style }:
       style={style}
       className={cn(
         "relative overflow-hidden rounded-2xl shadow-xl",
-        "bg-gradient-to-r from-primary via-primary to-accent",
+        "bg-gradient-to-l from-primary via-primary to-accent",
         className
       )}
     >
