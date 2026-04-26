@@ -142,6 +142,7 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
       // default theme before loading completes.
       if (branding.loading) {
         applyBrandingToDocument(FALLBACK_BRANDING);
+        setAppliedOrgId((prev) => prev ?? "__fallback__");
       }
       if (!branding.loading && (branding.primary || branding.accent || branding.secondary)) {
         applyBrandingToDocument(branding);
