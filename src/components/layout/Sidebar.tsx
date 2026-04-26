@@ -345,28 +345,20 @@ export function Sidebar() {
         className={cn(
           "group/nav flex h-14 items-center gap-3 rounded-l-xl rounded-r-none border border-white/0 bg-white/95 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-150",
           isActive
-            ? "border-white bg-white text-[hsl(var(--primary))] shadow-md"
-            : "hover:bg-white hover:text-[hsl(var(--primary))]"
+            ? "border-white bg-white text-slate-900 shadow-md"
+            : "hover:bg-white hover:text-slate-900"
         )}
       >
         <div
-          className={cn(
-            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl shadow-md",
-            item.iconBg
-          )}
-          style={
-            branding.primary
-              ? { backgroundImage: `linear-gradient(135deg, ${branding.primary} 0%, ${branding.accent || branding.primary} 100%)` }
-              : undefined
-          }
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 shadow-sm"
         >
-          <item.icon className="w-5 h-5 text-white" />
+          <item.icon className="w-5 h-5" />
         </div>
         {!collapsed && (
           <>
             <span className={cn(
               "font-bold text-base flex-1 text-right transition-colors duration-150",
-              isActive ? "text-[hsl(var(--primary))]" : "text-slate-700"
+              isActive ? "text-slate-900" : "text-slate-700"
             )}>
               {item.title}
             </span>
@@ -453,10 +445,7 @@ export function Sidebar() {
             <div className="bg-white rounded-2xl p-3 shadow-lg relative z-20">
               <div className="flex items-center gap-3">
                 {/* Avatar - Left side, larger with cyan border */}
-                <div
-                  className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-[hsl(var(--accent))] shadow-md flex-shrink-0"
-                  style={branding.primary ? { borderColor: branding.accent || branding.primary } : undefined}
-                >
+                <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-slate-200 shadow-md flex-shrink-0">
                   {user.profileImage ? (
                     <img
                       src={user.profileImage}
@@ -464,14 +453,7 @@ export function Sidebar() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div
-                      className="w-full h-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center text-xl font-bold text-white"
-                      style={
-                        branding.primary
-                          ? { backgroundImage: `linear-gradient(135deg, ${branding.primary}, ${branding.accent || branding.primary})` }
-                          : undefined
-                      }
-                    >
+                    <div className="w-full h-full bg-slate-700 flex items-center justify-center text-xl font-bold text-white">
                       {user.firstName.charAt(0)}
                     </div>
                   )}
@@ -480,14 +462,7 @@ export function Sidebar() {
                 {/* Name and Role - Right side, centered vertically */}
                 <div className="flex-1 flex flex-col items-center justify-center gap-2">
                   <h3 className="font-bold text-slate-800 text-base">{user.firstName} {user.lastName}</h3>
-                  <span
-                    className="text-xs font-semibold rounded-full px-3 py-1 border"
-                    style={{
-                      color: branding.primary || 'hsl(var(--primary))',
-                      backgroundColor: `${branding.primary || 'hsl(var(--primary))'}14`,
-                      borderColor: `${branding.primary || 'hsl(var(--primary))'}33`,
-                    }}
-                  >
+                  <span className="text-xs font-semibold rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600">
                     {user.role}
                   </span>
                 </div>
@@ -499,15 +474,8 @@ export function Sidebar() {
               to="/profile"
               className="w-full bg-white/90 hover:bg-white rounded-xl p-3 shadow-md flex items-center gap-3 group relative"
             >
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-transform duration-200 group-hover:scale-[1.04] relative"
-                style={{
-                  backgroundImage: branding.primary
-                    ? `linear-gradient(135deg, ${branding.primary}, ${branding.accent || branding.primary})`
-                    : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))',
-                }}
-              >
-                <User className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-200 bg-slate-50 text-slate-600 shadow-sm transition-transform duration-200 group-hover:scale-[1.04] relative">
+                <User className="w-5 h-5" />
               </div>
               <div className="flex-1 text-right">
                 <span className="text-sm font-semibold text-slate-700">الملف الشخصي</span>

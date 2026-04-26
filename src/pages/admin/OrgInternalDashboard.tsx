@@ -288,12 +288,12 @@ export default function OrgInternalDashboard({
 
       {/* KPI Strip */}
       {!standaloneTab && <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <KpiCard label="موظفون" value={counts.employees} icon={<Users className="w-4 h-4" />} color="from-indigo-500 to-violet-600" />
-        <KpiCard label="مهام" value={counts.tasks} icon={<ListChecks className="w-4 h-4" />} color="from-cyan-500 to-blue-600" />
-        <KpiCard label="تبرعات" value={counts.donations} icon={<HeartHandshake className="w-4 h-4" />} color="from-rose-500 to-pink-600" />
-        <KpiCard label="حملات" value={counts.campaigns} icon={<Target className="w-4 h-4" />} color="from-amber-500 to-orange-600" />
-        <KpiCard label="مساءلات" value={questions.length} icon={<ShieldAlert className="w-4 h-4" />} color="from-fuchsia-500 to-purple-600" />
-        <KpiCard label="مهام مساءلة" value={aTasks.length} icon={<AlertTriangle className="w-4 h-4" />} color="from-emerald-500 to-teal-600" />
+        <KpiCard label="موظفون" value={counts.employees} icon={<Users className="w-4 h-4" />} />
+        <KpiCard label="مهام" value={counts.tasks} icon={<ListChecks className="w-4 h-4" />} />
+        <KpiCard label="تبرعات" value={counts.donations} icon={<HeartHandshake className="w-4 h-4" />} />
+        <KpiCard label="حملات" value={counts.campaigns} icon={<Target className="w-4 h-4" />} />
+        <KpiCard label="مساءلات" value={questions.length} icon={<ShieldAlert className="w-4 h-4" />} />
+        <KpiCard label="مهام مساءلة" value={aTasks.length} icon={<AlertTriangle className="w-4 h-4" />} />
       </div>}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -383,11 +383,11 @@ export default function OrgInternalDashboard({
             </div>
           )}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.9fr)]">
-            <Card className="order-1 border-primary/20 bg-gradient-to-bl from-primary/5 via-background to-background" dir="rtl">
+            <Card className="order-1 border-border bg-card" dir="rtl">
               <CardHeader className="text-right">
                 <CardTitle className="flex items-center justify-start gap-2 text-right">
                   <span>التقييم العام</span>
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-5 w-5 text-muted-foreground" />
                 </CardTitle>
                 <CardDescription className="text-right">
                   {analysis?.completed_at ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}` : "لم يتم تشغيل التحليل بعد"}
@@ -405,7 +405,7 @@ export default function OrgInternalDashboard({
             <Card className="order-2" dir="rtl">
               <CardHeader className="text-right">
                 <CardTitle className="flex items-center justify-start gap-2 text-right">
-                  <Building2 className="h-5 w-5 text-primary" /> المصادر
+                  <Building2 className="h-5 w-5 text-muted-foreground" /> المصادر
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-right text-sm" dir="rtl">
@@ -421,11 +421,11 @@ export default function OrgInternalDashboard({
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            <ListCard title="نقاط القوة" items={analysis?.strengths ?? []} icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />} emptyText="لا توجد بعد" tone="emerald" />
-            <ListCard title="الفجوات الحرجة" items={analysis?.gaps ?? []} icon={<AlertTriangle className="w-5 h-5 text-amber-500" />} emptyText="لا توجد فجوات مرصودة" tone="amber" />
+            <ListCard title="نقاط القوة" items={analysis?.strengths ?? []} icon={<CheckCircle2 className="w-5 h-5 text-muted-foreground" />} emptyText="لا توجد بعد" />
+            <ListCard title="الفجوات الحرجة" items={analysis?.gaps ?? []} icon={<AlertTriangle className="w-5 h-5 text-muted-foreground" />} emptyText="لا توجد فجوات مرصودة" />
           </div>
 
-          <ListCard title="التوصيات التنفيذية" items={analysis?.recommendations ?? []} icon={<Target className="w-5 h-5 text-orange-400" />} emptyText="لا توجد توصيات بعد" tone="primary" />
+          <ListCard title="التوصيات التنفيذية" items={analysis?.recommendations ?? []} icon={<Target className="w-5 h-5 text-muted-foreground" />} emptyText="لا توجد توصيات بعد" />
         </TabsContent>
 
         {/* ANALYSIS */}
@@ -630,7 +630,7 @@ export default function OrgInternalDashboard({
 
 /* ---------- subcomponents ---------- */
 
-function KpiCard({ label, value, icon, color }: { label: string; value: number; icon: React.ReactNode; color: string }) {
+function KpiCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="flex items-center justify-between gap-3 p-4 text-right" dir="rtl">
@@ -638,7 +638,7 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
           <div className="text-2xl font-bold leading-none">{value}</div>
           <div className="mt-1 text-xs text-muted-foreground">{label}</div>
         </div>
-        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white shadow`}>
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground">
           {icon}
         </div>
       </CardContent>
@@ -647,31 +647,26 @@ function KpiCard({ label, value, icon, color }: { label: string; value: number; 
 }
 
 
-function ListCard({ title, items, icon, emptyText, tone }: { title: string; items: string[]; icon: React.ReactNode; emptyText: string; tone: "emerald" | "amber" | "primary" }) {
+function ListCard({ title, items, icon, emptyText }: { title: string; items: string[]; icon: React.ReactNode; emptyText: string }) {
   return (
     <Card
       dir="rtl"
-      className="relative overflow-hidden text-white shadow-lg backdrop-blur-sm"
-      style={{
-        background: `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.92) 55%, hsl(var(--accent)) 100%)`,
-        border: `1px solid hsl(var(--accent) / 0.45)`,
-        boxShadow: `0 10px 30px -12px hsl(var(--primary) / 0.45)`,
-      }}
+      className="relative overflow-hidden border-border bg-card shadow-sm"
     >
       <CardHeader className="text-right">
-        <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-white">
+        <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-foreground">
           {icon}
           <span>{title}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="text-right">
         {items.length === 0 ? (
-          <p className="text-sm text-white/80">{emptyText}</p>
+          <p className="text-sm text-muted-foreground">{emptyText}</p>
         ) : (
           <ul className="space-y-2">
             {items.map((s, i) => (
-              <li key={i} className="flex items-start justify-start gap-2 text-right text-sm leading-relaxed text-white">
-                <span className="mt-1 flex-shrink-0" style={{ color: "hsl(var(--accent))" }}>•</span>
+              <li key={i} className="flex items-start justify-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-right text-sm leading-relaxed text-foreground">
+                <span className="mt-1 flex-shrink-0 text-muted-foreground">•</span>
                 <span className="flex-1">{s}</span>
               </li>
             ))}
@@ -1366,33 +1361,12 @@ function EmployeesShowcase({
             return (
               <div
                 key={e.id}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
                 style={{ ['--org-hover' as string]: ORG_PRIMARY }}
               >
-                <div
-                  className="absolute inset-x-0 top-0 h-24"
-                  style={{ background: ORG_GRADIENT }}
-                />
-                {/* Decorative pattern overlay for richness */}
-                <div
-                  className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-25"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-                    backgroundSize: "14px 14px",
-                  }}
-                />
-                {/* Soft glow accent */}
-                <div
-                  className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-40 blur-2xl"
-                  style={{ background: ORG_ACCENT_RING }}
-                />
-                {/* Bottom fade for crisp separation from card body */}
-                <div className="pointer-events-none absolute inset-x-0 top-20 h-6 bg-gradient-to-b from-transparent to-card" />
                 <div className="relative flex items-start gap-3">
                   <div
-                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white shadow-lg ring-4 ring-card"
-                    style={{ background: ORG_GRADIENT }}
+                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-border bg-muted text-xl font-bold text-foreground"
                   >
                     {e.avatar_url ? (
                       <img src={e.avatar_url} alt={e.full_name} className="h-full w-full object-cover" />
@@ -1403,8 +1377,7 @@ function EmployeesShowcase({
                   {isLeader && (
                     <Badge
                       variant="outline"
-                      className="gap-1 self-center shadow-sm backdrop-blur-sm"
-                      style={{ borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.85)', color: ORG_PRIMARY }}
+                      className="gap-1 self-center border-border bg-muted text-muted-foreground shadow-sm"
                     >
                       <Crown className="h-3 w-3" /> قيادي
                     </Badge>
@@ -1413,19 +1386,17 @@ function EmployeesShowcase({
                     <Link
                       to={editHref}
                       title="تعديل"
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/80 text-muted-foreground shadow-sm opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm opacity-0 transition-all hover:bg-muted group-hover:opacity-100"
                       style={{ ['--tw-text-opacity' as string]: 1 }}
-                      onMouseEnter={(ev) => { ev.currentTarget.style.color = ORG_PRIMARY; ev.currentTarget.style.borderColor = ORG_PRIMARY_RING; }}
-                      onMouseLeave={(ev) => { ev.currentTarget.style.color = ''; ev.currentTarget.style.borderColor = ''; }}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Link>
                   </div>
                 </div>
-                <div className="relative mt-10">
+                <div className="relative mt-4">
                   <h3 className="truncate text-base font-bold text-foreground">{e.full_name}</h3>
                   {e.title && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs" style={{ color: ORG_PRIMARY }}>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                       <Sparkles className="h-3 w-3" />
                       {e.title}
                     </p>
@@ -1449,13 +1420,13 @@ function EmployeesShowcase({
                 </div>
                 <div className="relative mt-4 flex items-center justify-between border-t border-border pt-3">
                   <div className="flex items-center gap-1.5 text-xs">
-                    <ShieldAlert className="h-3.5 w-3.5" style={{ color: ORG_PRIMARY }} />
+                    <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-muted-foreground">المساءلات:</span>
                     <span
                       className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-semibold ring-1"
                       style={
                         qCount > 0
-                          ? { backgroundColor: ORG_PRIMARY_SOFT, color: ORG_PRIMARY, borderColor: ORG_PRIMARY_RING }
+                          ? { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--foreground))', borderColor: 'hsl(var(--border))' }
                           : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))', borderColor: 'hsl(var(--border))' }
                       }
                     >
@@ -1464,10 +1435,7 @@ function EmployeesShowcase({
                   </div>
                   <Link
                     to={editHref}
-                    className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] transition-colors"
-                    style={{ color: ORG_PRIMARY }}
-                    onMouseEnter={(ev) => { ev.currentTarget.style.backgroundColor = ORG_PRIMARY_TINT; }}
-                    onMouseLeave={(ev) => { ev.currentTarget.style.backgroundColor = ''; }}
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     <Pencil className="h-3 w-3" />
                     تعديل

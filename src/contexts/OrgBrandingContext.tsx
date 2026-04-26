@@ -239,14 +239,18 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
           loading: false,
         });
       } else {
-        // No cache yet for this org — keep current colors in place and
-        // just update the org name. We intentionally do NOT clear logo
-        // or colors here, to avoid any visible "reset" between orgs.
-        setBranding((prev) => ({
-          ...prev,
+        // No cache yet for this org: never keep the previous org identity in
+        // React state. The head pre-hydration gate keeps first paint hidden
+        // until real branding arrives, and client-side switches show a neutral
+        // loading state rather than the wrong association colors/logo.
+        setBranding({
+          logoUrl: currentOrg.logo_url ?? null,
           orgName: currentOrg.name,
+          primary: null,
+          secondary: null,
+          accent: null,
           loading: true,
-        }));
+        });
       }
 
       // 2) Then fetch the latest from the database in the background and
@@ -322,11 +326,6 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
       if (branding.primary || branding.accent || branding.secondary) {
         applyBrandingToDocument(branding);
         setAppliedOrgId(currentOrg?.id ?? null);
-      } else if (!appliedOrgId) {
-        // Very first paint with no cache and no current colors — fall
-        // back to defaults so the UI isn't unstyled.
-        applyBrandingToDocument(FALLBACK_BRANDING);
-        setAppliedOrgId("__fallback__");
       }
       // Warm the image cache for the active logo so the header swap is
       // smooth — even if the URL just changed via the background API
