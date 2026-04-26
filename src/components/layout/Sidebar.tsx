@@ -330,8 +330,16 @@ export function Sidebar() {
 
   const handleSignOut = async () => {
     setPreviewAsEmployee(false);
+    // وجهة العودة بعد تسجيل الخروج:
+    // - مدير النظام (super-admin) → الصفحة الرئيسية للنظام
+    // - أي حساب آخر (مدير جمعية / مدير تسويق / موظف) → صفحة دخول جمعيته
+    const redirectTo = isActuallyAdmin
+      ? "/"
+      : currentOrg?.slug
+        ? `/${currentOrg.slug}`
+        : "/";
     await signOut();
-    navigate("/", { replace: true });
+    navigate(redirectTo, { replace: true });
   };
 
   const NavLink = ({ item }: { item: NavItem }) => {
