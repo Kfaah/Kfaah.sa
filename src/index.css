@@ -498,3 +498,53 @@ html[data-org-branded="true"] {
   }
 }
 
+/* ============================================================
+   Override hardcoded Harf-teal arbitrary-hex Tailwind classes
+   (#3d9aa8 / #2d7a85 / #4A9BA8 / #2d8090) to use the active
+   organization's brand colors. These classes are scattered across
+   legacy pages (Employees, ExecutivePlans, OperationalPlans, ...).
+   ============================================================ */
+html[data-org-branded="true"] {
+  /* Backgrounds — solid */
+  .bg-\[\#3d9aa8\], .bg-\[\#4A9BA8\], .bg-\[\#2d8090\], .bg-\[\#2d7a85\] {
+    background-color: hsl(var(--primary)) !important;
+  }
+  /* Backgrounds — translucent (e.g. bg-[#3d9aa8]/10, /20, /5) */
+  [class*="bg-[#3d9aa8]/"], [class*="bg-[#4A9BA8]/"],
+  [class*="bg-[#2d8090]/"], [class*="bg-[#2d7a85]/"] {
+    background-color: hsl(var(--accent) / 0.12) !important;
+  }
+  /* Text */
+  .text-\[\#3d9aa8\], .text-\[\#4A9BA8\], .text-\[\#2d8090\], .text-\[\#2d7a85\] {
+    color: hsl(var(--primary)) !important;
+  }
+  /* Borders — solid + opacity variants */
+  .border-\[\#3d9aa8\], .border-\[\#4A9BA8\], .border-\[\#2d8090\], .border-\[\#2d7a85\],
+  [class*="border-[#3d9aa8]/"], [class*="border-[#4A9BA8]/"],
+  [class*="border-[#2d8090]/"], [class*="border-[#2d7a85]/"] {
+    border-color: hsl(var(--accent) / 0.45) !important;
+  }
+  /* Gradients */
+  [class*="from-[#3d9aa8]"], [class*="from-[#4A9BA8]"],
+  [class*="from-[#2d8090]"], [class*="from-[#2d7a85]"] {
+    --tw-gradient-from: hsl(var(--primary)) var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: hsl(var(--primary) / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  [class*="via-[#3d9aa8]"], [class*="via-[#4A9BA8]"],
+  [class*="via-[#2d8090]"], [class*="via-[#2d7a85]"] {
+    --tw-gradient-via: hsl(var(--accent)) var(--tw-gradient-via-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to) !important;
+  }
+  [class*="to-[#3d9aa8]"], [class*="to-[#4A9BA8]"],
+  [class*="to-[#2d8090]"], [class*="to-[#2d7a85]"] {
+    --tw-gradient-to: hsl(var(--accent)) var(--tw-gradient-to-position) !important;
+  }
+  /* Shadow tints (e.g. shadow-[#3d9aa8]/25) — neutralize to brand */
+  [class*="shadow-[#3d9aa8]"], [class*="shadow-[#4A9BA8]"],
+  [class*="shadow-[#2d8090]"], [class*="shadow-[#2d7a85]"] {
+    --tw-shadow-color: hsl(var(--primary) / 0.25) !important;
+    --tw-shadow: var(--tw-shadow-colored) !important;
+  }
+}
+
