@@ -574,7 +574,7 @@ export default function ExecutivePlans() {
     };
     
     fetchAllPlans();
-  }, [selectedEmployeeId, selectedYear, employees]);
+  }, [selectedEmployeeId, selectedYear, employees, activeOrgId]);
 
   // تجميع الخطط التنفيذية حسب الشهر والمهمة
   const groupedPlans = useMemo(() => {
