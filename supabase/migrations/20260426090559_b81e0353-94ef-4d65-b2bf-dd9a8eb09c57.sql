@@ -1,0 +1,2 @@
+UPDATE public.organizations SET logo_url='https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/avatars/org-logos%2Fatff-full-v2.png' WHERE id='5f03e7fe-89ee-417f-b097-6fc71d54b2e9';
+UPDATE public.organization_profiles SET logo_url='https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/avatars/org-logos%2Fatff-full-v2.png' WHERE organization_id='5f03e7fe-89ee-417f-b097-6fc71d54b2e9';
