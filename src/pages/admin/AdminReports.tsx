@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import { exportExecutiveReportPpt, type ExecReport } from "@/utils/exportExecutiveReportPpt";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 type ThemeKey =
   | "donors" | "campaigns" | "abandoned" | "team" | "fundraising"
@@ -153,19 +154,16 @@ export default function AdminReports() {
 
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <FileBarChart2 className="w-8 h-8 text-accent" />
-            التقارير
-          </h1>
-          <p className="text-white/85 mt-1">تقارير موضوعية متخصصة + تقارير تنفيذية سردية للمجلس والجهات الرسمية، قابلة للتصدير PDF</p>
-        </div>
-        <Button onClick={exportPDF} disabled={!selected} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
-          <Download className="w-4 h-4" /> تصدير PDF
-        </Button>
-      </div>
+      <PageHeader
+        icon={<FileBarChart2 className="w-7 h-7" />}
+        title="التقارير"
+        subtitle="تقارير موضوعية متخصصة + تقارير تنفيذية سردية للمجلس والجهات الرسمية، قابلة للتصدير PDF"
+        actions={
+          <Button onClick={exportPDF} disabled={!selected} className="gap-2 bg-white text-primary hover:bg-white/90 font-bold">
+            <Download className="w-4 h-4" /> تصدير PDF
+          </Button>
+        }
+      />
 
       {/* Mode tabs */}
       <div className="grid md:grid-cols-2 gap-3">
