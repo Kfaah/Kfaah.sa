@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,18 +116,12 @@ export default function MyAccountability() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6 max-w-[1400px] mx-auto" dir="rtl">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 flex items-center justify-center text-white shadow-lg">
-            <ShieldAlert className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">مساءلاتي</h1>
-            <p className="text-sm text-muted-foreground">
-              الأسئلة المُولّدة من تحليل الجمعية والموجَّهة إليك. أجب وارفع رابط الإثبات — يفحص النظام صحة الإثبات تلقائيًا.
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6" dir="rtl">
+        <PageHeader
+          icon={<ShieldAlert className="w-6 h-6" />}
+          title="مساءلاتي"
+          subtitle="الأسئلة المُولّدة من تحليل الجمعية والموجَّهة إليك. أجب وارفع رابط الإثبات — يفحص النظام صحة الإثبات تلقائيًا."
+        />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiCard label="مفتوحة" value={open.length} tone="amber" icon={<ShieldAlert className="w-4 h-4" />} />

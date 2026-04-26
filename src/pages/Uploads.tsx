@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -362,32 +363,11 @@ export default function Uploads() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header — بانر زخرفي هادئ بهوية الجمعية */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-l from-[hsl(var(--primary))] via-[hsl(var(--primary))] to-[hsl(var(--accent))] p-6 shadow-lg">
-          {/* دوائر زخرفية ناعمة */}
-          <div className="pointer-events-none absolute -top-16 -left-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-20 right-1/4 h-48 w-48 rounded-full bg-[hsl(38_85%_55%)]/20 blur-3xl" />
-          <div className="pointer-events-none absolute top-4 left-1/3 h-2 w-2 rounded-full bg-white/40" />
-          <div className="pointer-events-none absolute bottom-6 left-1/4 h-1.5 w-1.5 rounded-full bg-white/30" />
-
-          <div className="relative flex items-center justify-between gap-6">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold flex items-center gap-3 text-white">
-                <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-lg">
-                  <Upload className="w-6 h-6 text-white" />
-                </div>
-                رفع الملفات
-              </h1>
-              <p className="text-white/85 mt-2 max-w-3xl text-sm leading-relaxed">
-                مكان موحّد لرفع جميع ملفات الجمعية — اختر الفئة وسيقوم النظام بالقراءة، الربط، والتحليل تلقائياً (تبرعات المتجر، مهام الموظفين، تقارير، ملفات تعريفية…)
-              </p>
-            </div>
-            {/* أيقونة زخرفية كبيرة على اليسار */}
-            <div className="hidden md:flex shrink-0 w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 items-center justify-center">
-              <FolderOpen className="w-10 h-10 text-white/80" strokeWidth={1.5} />
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          icon={<Upload className="w-6 h-6" />}
+          title="رفع الملفات"
+          subtitle="مكان موحّد لرفع جميع ملفات الجمعية — اختر الفئة وسيقوم النظام بالقراءة، الربط، والتحليل تلقائياً"
+        />
 
         {/* Category selector */}
         <Card>

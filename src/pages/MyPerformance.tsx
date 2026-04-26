@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -78,16 +79,12 @@ export default function MyPerformance() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6 max-w-[1400px] mx-auto" dir="rtl">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg">
-            <Award className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">أدائي</h1>
-            <p className="text-sm text-muted-foreground">{employee?.full_name} — {employee?.job_role}</p>
-          </div>
-        </div>
+      <div className="space-y-6" dir="rtl">
+        <PageHeader
+          icon={<Award className="w-6 h-6" />}
+          title="أدائي"
+          subtitle={`${employee?.full_name ?? ""}${employee?.job_role ? " — " + employee.job_role : ""}`}
+        />
 
         {/* Top KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

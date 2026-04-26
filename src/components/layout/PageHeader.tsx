@@ -41,19 +41,19 @@ export function PageHeader({ icon, title, subtitle, actions, className, style }:
         }}
       />
 
-      <div className="relative flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+      <div className="relative flex min-h-[112px] flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
         <div className="flex items-center gap-4 min-w-0">
           {icon && (
-            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-sm">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-sm">
               {icon}
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
+            <h1 className="truncate text-2xl font-extrabold tracking-tight text-white drop-shadow-sm">
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-1 text-sm text-white/85 sm:text-base">{subtitle}</p>
+              <p className="mt-1 text-sm text-white/85">{subtitle}</p>
             )}
           </div>
         </div>

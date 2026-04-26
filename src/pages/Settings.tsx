@@ -1,4 +1,5 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings as SettingsIcon, Palette, Bell, Shield, Database, FileDown } from "lucide-react";
@@ -28,16 +29,11 @@ export default function Settings() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg">
-            <SettingsIcon className="w-7 h-7 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">الإعدادات</h1>
-            <p className="text-muted-foreground">إدارة إعدادات النظام</p>
-          </div>
-        </div>
+        <PageHeader
+          icon={<SettingsIcon className="w-6 h-6" />}
+          title="الإعدادات"
+          subtitle="إدارة إعدادات النظام"
+        />
 
         {/* Settings Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
