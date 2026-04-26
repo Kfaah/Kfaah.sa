@@ -1236,7 +1236,7 @@ function EmployeesShowcase({
   return (
     <div className="space-y-6">
       <PageHeader
-        icon={<Users className="w-6 h-6" />}
+        icon={<Users />}
         title="طاقم الموظفين"
         subtitle="منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة"
         actions={
