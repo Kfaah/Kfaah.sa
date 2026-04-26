@@ -336,10 +336,10 @@ export default function OrgInternalDashboard({
         </TabsList>}
 
         {/* OVERVIEW */}
-        <TabsContent value="overview" className="mt-6 space-y-4" dir="rtl">
+        <TabsContent value="overview" className={standaloneTab ? "mt-0 space-y-4" : "mt-6 space-y-4"} dir="rtl">
           {standaloneTab && (
             <PageHeader
-              icon={<LayoutDashboard className="w-6 h-6" />}
+              icon={<LayoutDashboard />}
               title="نظرة عامة"
               subtitle="رؤية شاملة · تقييم ذكي · مساءلات ذكية"
               actions={
@@ -403,10 +403,10 @@ export default function OrgInternalDashboard({
         </TabsContent>
 
         {/* ANALYSIS */}
-        <TabsContent value="analysis" className="space-y-4 mt-6" dir="rtl">
+        <TabsContent value="analysis" className={standaloneTab ? "mt-0 space-y-4" : "mt-6 space-y-4"} dir="rtl">
           {standaloneTab && (
             <PageHeader
-              icon={<Sparkles className="w-6 h-6" />}
+              icon={<Sparkles />}
               title="التحليل الذكي"
               subtitle="يعتمد التحليل على آخر الملفات المرفوعة ومصادرها الرقمية"
               actions={
@@ -442,9 +442,9 @@ export default function OrgInternalDashboard({
         </TabsContent>
 
         {/* ACCOUNTABILITY */}
-        <TabsContent value="accountability" className="space-y-4 mt-6" dir="rtl">
+        <TabsContent value="accountability" className={standaloneTab ? "mt-0 space-y-4" : "mt-6 space-y-4"} dir="rtl">
           <PageHeader
-            icon={<ShieldAlert className="w-7 h-7" />}
+            icon={<ShieldAlert />}
             title="مساءلات الموظفين"
             subtitle="أسئلة مولّدة من التحليل الذكي ومُوزّعة بحسب الدور الوظيفي"
           />
@@ -535,34 +535,34 @@ export default function OrgInternalDashboard({
         </TabsContent>
 
         {/* TASKS / REPORTS / INNOVATION / UPLOADS / DONORS - placeholder summaries linking to existing pages */}
-        <TabsContent value="tasks" className="mt-6" dir="rtl">
+        <TabsContent value="tasks" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/tasks" title="المهام" />
         </TabsContent>
-        <TabsContent value="reports" className="mt-6" dir="rtl">
+        <TabsContent value="reports" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/admin/reports" title="التقارير" embedSlug={false} />
         </TabsContent>
-        <TabsContent value="innovation" className="mt-6" dir="rtl">
+        <TabsContent value="innovation" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/admin/innovation" title="الابتكار والتحديث" embedSlug={false} />
         </TabsContent>
-        <TabsContent value="uploads" className="mt-6" dir="rtl">
+        <TabsContent value="uploads" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
         </TabsContent>
-        <TabsContent value="operational-plans" className="mt-6" dir="rtl">
+        <TabsContent value="operational-plans" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/admin/action-plans" title="الخطط من التوصيات" embedSlug={false} />
         </TabsContent>
-        <TabsContent value="operational-plans-main" forceMount className="mt-6 data-[state=inactive]:hidden" dir="rtl">
+        <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
           <OperationalPlans embedded />
         </TabsContent>
-        <TabsContent value="executive-plans" forceMount className="mt-6 data-[state=inactive]:hidden" dir="rtl">
+        <TabsContent value="executive-plans" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
           <ExecutivePlans embedded />
         </TabsContent>
-        <TabsContent value="performance" className="mt-6" dir="rtl">
+        <TabsContent value="performance" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/performance" title="تقييم الأداء" />
         </TabsContent>
-        <TabsContent value="donors" className="mt-6" dir="rtl">
+        <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <div className="space-y-4">
             <PageHeader
-              icon={<HeartHandshake className="w-7 h-7" />}
+              icon={<HeartHandshake />}
               title="المتبرعون"
               subtitle={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`}
             />
@@ -736,7 +736,7 @@ const EmbeddedOrgPage = forwardRef<HTMLDivElement, {
   }
   const src = embedSlug ? `/${slug}${path}?embedded=1` : `${path}?embedded=1&org=${slug}`;
   return (
-    <div ref={ref} className="w-full -mx-2">
+    <div ref={ref} className="w-full">
       <iframe
         src={src}
         title={title}
@@ -1236,7 +1236,7 @@ function EmployeesShowcase({
   return (
     <div className="space-y-6">
       <PageHeader
-        icon={<Users className="w-6 h-6" />}
+        icon={<Users />}
         title="طاقم الموظفين"
         subtitle="منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة"
         actions={

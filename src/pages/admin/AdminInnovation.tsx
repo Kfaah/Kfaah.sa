@@ -177,7 +177,7 @@ export default function AdminInnovation() {
   }), [suggestions]);
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] p-6 space-y-6">
+    <div className={`${isEmbedded ? "" : "mx-auto max-w-[1280px] p-6"} w-full space-y-6`}>
       <PageHeader
         icon={<Lightbulb className="w-6 h-6" />}
         title="الابتكار والتحديث"
