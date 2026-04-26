@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +68,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
 import { useScopedView } from "@/hooks/useScopedView";
 import { ScopeToggle } from "@/components/scope/ScopeToggle";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Employee {
   id: string;
@@ -124,6 +126,14 @@ const MONTHS_AR = [
 ];
 
 const WEEKDAYS_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+
+const QUERY_CHUNK_SIZE = 80;
+
+function chunkArray<T>(items: T[], size = QUERY_CHUNK_SIZE): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
+  return chunks;
+}
 
 const HIJRI_MONTHS = [
   "محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة",
@@ -236,8 +246,11 @@ function wrapTextByChars(text: string, maxChars = 30): string {
 export default function ExecutivePlans() {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
+  const { slug } = useParams<{ slug?: string }>();
+  const { currentOrg } = useOrganization();
   const scopedView = useScopedView("scope:executive-plans");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [routeOrgId, setRouteOrgId] = useState<string | null>(null);
   
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
@@ -267,6 +280,7 @@ export default function ExecutivePlans() {
   const [selectedPlanMonthId, setSelectedPlanMonthId] = useState<string>("");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [addingMonth, setAddingMonth] = useState<number>(1);
+  const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
 
   // التحقق من صلاحية المدير
   useEffect(() => {
@@ -278,28 +292,54 @@ export default function ExecutivePlans() {
     checkAdmin();
   }, [authUser]);
 
+  useEffect(() => {
+    const resolveRouteOrg = async () => {
+      if (!slug) {
+        setRouteOrgId(null);
+        return;
+      }
+      if (currentOrg?.slug === slug) {
+        setRouteOrgId(currentOrg.id);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+      setRouteOrgId(data?.id ?? null);
+    };
+
+    resolveRouteOrg();
+  }, [slug, currentOrg?.id, currentOrg?.slug]);
+
   // جلب الأقسام
   useEffect(() => {
     const fetchDepartments = async () => {
-      const { data, error } = await supabase
+      if (slug && !activeOrgId) return;
+      let query = supabase
         .from("departments")
         .select("id, name")
         .order("name");
+      if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+      const { data, error } = await query;
       
       if (!error && data) {
         setDepartments(data);
       }
     };
     fetchDepartments();
-  }, []);
+  }, [activeOrgId]);
 
   // جلب الموظفين
   useEffect(() => {
     const fetchEmployees = async () => {
       if (!authUser) return;
+      if (slug && !activeOrgId) return;
       
       // جلب قائمة الموظفين للجميع (للبحث عن employee.id)
-      const { data, error } = await supabase
+      let query = supabase
         .from("employees")
         .select(`
           id, 
@@ -310,6 +350,8 @@ export default function ExecutivePlans() {
           departments:department_id (name)
         `)
         .eq("status", "active");
+      if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+      const { data, error } = await query;
       
       if (error) {
         toast({ title: "خطأ", description: "فشل في جلب الموظفين", variant: "destructive" });
@@ -337,7 +379,7 @@ export default function ExecutivePlans() {
     };
     
     fetchEmployees();
-  }, [isAdmin, authUser]);
+  }, [isAdmin, authUser, activeOrgId]);
 
   // تحديد المستخدمين المختارين بناءً على الفلتر
   // ملاحظة: الخطط التشغيلية مرتبطة بـ user_id (معرّف حساب المستخدم)، وليس employee.id
@@ -427,32 +469,37 @@ export default function ExecutivePlans() {
         
         // جلب الخطط حسب user_id (المنشئ)
         if (validUserIds.length > 0) {
-          const { data: plansByUser, error: userError } = await supabase
-            .from("operational_plans")
-            .select("*")
-            .in("user_id", validUserIds)
-            .eq("year", selectedYear);
-          
-          if (userError) throw userError;
-          if (plansByUser) allPlans = [...plansByUser];
+          for (const ids of chunkArray(validUserIds)) {
+            let query = supabase
+              .from("operational_plans")
+              .select("*")
+              .in("user_id", ids)
+              .eq("year", selectedYear);
+            if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+            const { data: plansByUser, error: userError } = await query;
+            
+            if (userError) throw userError;
+            if (plansByUser) allPlans = [...allPlans, ...plansByUser];
+          }
         }
         
         // جلب الخطط حسب responsible_employee_id (المسؤول عن التنفيذ)
         if (validEmployeeIds.length > 0) {
-          const { data: plansByEmployee, error: empError } = await supabase
-            .from("operational_plans")
-            .select("*")
-            .in("responsible_employee_id", validEmployeeIds)
-            .eq("year", selectedYear);
-          
-          if (empError) throw empError;
-          if (plansByEmployee) {
-            // دمج مع إزالة التكرار
-            const existingIds = new Set(allPlans.map(p => p.id));
-            const newPlans = plansByEmployee.filter(p => !existingIds.has(p.id));
-            allPlans = [...allPlans, ...newPlans];
+          for (const ids of chunkArray(validEmployeeIds)) {
+            let query = supabase
+              .from("operational_plans")
+              .select("*")
+              .in("responsible_employee_id", ids)
+              .eq("year", selectedYear);
+            if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+            const { data: plansByEmployee, error: empError } = await query;
+            
+            if (empError) throw empError;
+            if (plansByEmployee) allPlans = [...allPlans, ...plansByEmployee];
           }
         }
+
+        allPlans = Array.from(new Map(allPlans.map((p) => [p.id, p])).values());
         
         setOperationalPlans(allPlans);
         
@@ -465,38 +512,53 @@ export default function ExecutivePlans() {
         
         // جلب جميع أشهر الخطط
         const planIds = allPlans.map(p => p.id);
-        const { data: months, error: monthsError } = await supabase
-          .from("operational_plan_months")
-          .select("*")
-          .in("operational_plan_id", planIds)
-          .order("month", { ascending: true });
-        
-        if (monthsError) throw monthsError;
-        setPlanMonths(months || []);
+        const months: OperationalPlanMonth[] = [];
+        for (const ids of chunkArray(planIds)) {
+          let query = supabase
+            .from("operational_plan_months")
+            .select("*")
+            .in("operational_plan_id", ids)
+            .order("month", { ascending: true });
+          if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+          const { data: monthChunk, error: monthsError } = await query;
+          if (monthsError) throw monthsError;
+          if (monthChunk) months.push(...monthChunk);
+        }
+        months.sort((a, b) => a.month - b.month);
+        setPlanMonths(months);
         
         // جلب الخطط التنفيذية
-        if (months && months.length > 0) {
+        if (months.length > 0) {
           const monthIds = months.map(m => m.id);
-          const { data: executive, error: execError } = await supabase
-            .from("executive_plans")
-            .select("*")
-            .in("operational_plan_month_id", monthIds)
-            .order("day", { ascending: true });
-          
-          if (execError) throw execError;
-          setExecutivePlans(executive || []);
+          const executive: ExecutivePlan[] = [];
+          for (const ids of chunkArray(monthIds)) {
+            let query = supabase
+              .from("executive_plans")
+              .select("*")
+              .in("operational_plan_month_id", ids)
+              .order("day", { ascending: true });
+            if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+            const { data: executiveChunk, error: execError } = await query;
+            if (execError) throw execError;
+            if (executiveChunk) executive.push(...executiveChunk);
+          }
+          executive.sort((a, b) => a.day - b.day);
+          setExecutivePlans(executive);
           
           // جلب المهام المرتبطة بالخطط التنفيذية
-          if (executive && executive.length > 0) {
+          if (executive.length > 0) {
             const execIds = executive.map(e => e.id);
-            const { data: tasksData, error: tasksError } = await supabase
-              .from("tasks")
-              .select("id, title, status, priority, executive_plan_id, category")
-              .in("executive_plan_id", execIds);
-            
-            if (!tasksError && tasksData) {
-              setTasks(tasksData);
+            const nextTasks: Task[] = [];
+            for (const ids of chunkArray(execIds)) {
+              let query = supabase
+                .from("tasks")
+                .select("id, title, status, priority, executive_plan_id, category")
+                .in("executive_plan_id", ids);
+              if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+              const { data: tasksData, error: tasksError } = await query;
+              if (!tasksError && tasksData) nextTasks.push(...tasksData);
             }
+            setTasks(nextTasks);
           } else {
             setTasks([]);
           }
@@ -512,7 +574,7 @@ export default function ExecutivePlans() {
     };
     
     fetchAllPlans();
-  }, [selectedEmployeeId, selectedYear, employees]);
+  }, [selectedEmployeeId, selectedYear, employees, activeOrgId]);
 
   // تجميع الخطط التنفيذية حسب الشهر والمهمة
   const groupedPlans = useMemo(() => {
