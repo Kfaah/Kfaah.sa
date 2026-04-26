@@ -54,6 +54,11 @@
     --sidebar-accent-foreground: 210 50% 15%;
     --sidebar-border: 195 20% 90%;
     --sidebar-ring: 174 52% 52%;
+    --sidebar-item: 180 8% 95%;
+    --sidebar-item-foreground: 214 31% 25%;
+    --sidebar-item-shadow: 155 38% 13% / 0.24;
+    --sidebar-icon-start: 145 26% 37%;
+    --sidebar-icon-end: 47 39% 40%;
     --admin-hub-primary: 210 60% 28%;
     --admin-hub-accent: 174 52% 52%;
     --admin-hub-foreground: 210 50% 15%;
@@ -111,6 +116,11 @@
     --sidebar-accent-foreground: 195 20% 96%;
     --sidebar-border: 210 40% 18%;
     --sidebar-ring: 174 52% 52%;
+    --sidebar-item: 180 8% 95%;
+    --sidebar-item-foreground: 214 31% 25%;
+    --sidebar-item-shadow: 155 38% 13% / 0.24;
+    --sidebar-icon-start: 145 26% 37%;
+    --sidebar-icon-end: 47 39% 40%;
     --admin-hub-primary: 210 60% 28%;
     --admin-hub-accent: 174 52% 52%;
     --admin-hub-foreground: 195 20% 96%;
@@ -221,6 +231,11 @@
 
   .nav-icon-settings {
     background-image: linear-gradient(135deg, hsl(215 22% 47%), hsl(215 25% 27%));
+  }
+
+  .sidebar-reference-icon {
+    background-image: linear-gradient(135deg, hsl(var(--sidebar-icon-start)), hsl(var(--sidebar-icon-end)));
+    box-shadow: 0 6px 10px hsl(var(--sidebar-item-shadow));
   }
 
   /* Custom scrollbar */

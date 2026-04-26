@@ -67,6 +67,8 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+          item: "hsl(var(--sidebar-item))",
+          "item-foreground": "hsl(var(--sidebar-item-foreground))",
         },
         "admin-hub": {
           DEFAULT: "hsl(var(--admin-hub-primary))",
