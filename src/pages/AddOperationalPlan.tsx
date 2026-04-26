@@ -1737,7 +1737,7 @@ const AddOperationalPlan = () => {
         if (goal.isNew) {
           const { data: newGoal, error: goalError } = await supabase
             .from("strategic_goals")
-            .insert({ name: goal.name, year, color: "#3d9aa8" })
+            .insert({ name: goal.name, year, color: "hsl(var(--primary))" })
             .select()
             .single();
 

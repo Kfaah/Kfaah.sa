@@ -1811,7 +1811,7 @@ export default function OperationalPlans() {
                 <table className="w-full">
                   {/* رأس الجدول */}
                   <thead>
-                    <tr className="bg-[#3d9aa8]">
+                    <tr className="bg-[hsl(var(--primary))]">
                       {/* عرض الأعمدة حسب الترتيب من columnOrder */}
                       {columnOrder.filter(c => c.is_visible).map((col, idx) => {
                         // تحديد خصائص العمود
@@ -2112,7 +2112,7 @@ export default function OperationalPlans() {
                                   if (col.column_key === 'monthly_average') {
                                     return (
                                       <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
-                                        <span className="text-lg font-bold text-[#3d9aa8]">
+                                        <span className="text-lg font-bold text-[hsl(var(--primary))]">
                                           {formatNumber(Math.round(plan.annual_target / 12))}
                                         </span>
                                       </td>
@@ -2170,7 +2170,7 @@ export default function OperationalPlans() {
                               <tr key={`${plan.id}-expanded`} className="bg-white">
                                 {/* الخلية الموسعة - تمتد على الأعمدة المتبقية (بدون الهدف والمبادرة) */}
                                 <td colSpan={expandedColSpan} className="p-0 border-l-2 border-gray-200">
-                                  <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[#3d9aa8]/20 animate-in slide-in-from-top-2 duration-200">
+                                  <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[hsl(var(--primary)/0.2)] animate-in slide-in-from-top-2 duration-200">
                                     {/* أزرار التحكم - تظهر فقط في وضع التعديل */}
                                     {isEditMode && (
                                       <div className="flex justify-end mb-3 gap-2">
@@ -2206,7 +2206,7 @@ export default function OperationalPlans() {
                                           <Button
                                             size="sm"
                                             variant="outline"
-                                            className="text-[#3d9aa8] border-[#3d9aa8]/30 hover:bg-[#3d9aa8]/10"
+                                            className="text-[hsl(var(--primary))] border-[hsl(var(--primary)/0.3)] hover:bg-[hsl(var(--primary)/0.1)]"
                                             onClick={() => handleStartEditMonths(plan)}
                                           >
                                             <Pencil className="w-4 h-4 ml-1" />
@@ -2216,10 +2216,10 @@ export default function OperationalPlans() {
                                       </div>
                                     )}
                                     
-                                    <div className="overflow-x-auto rounded-xl border border-[#3d9aa8]/20 shadow-sm">
+                                    <div className="overflow-x-auto rounded-xl border border-[hsl(var(--primary)/0.2)] shadow-sm">
                                       <Table>
                                         <TableHeader>
-                                          <TableRow className="bg-gradient-to-r from-[#3d9aa8] to-[#4A9BA8]">
+                                          <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
                                             {MONTHS_AR.map((month, index) => (
                                               <TableHead 
                                                 key={index} 
@@ -2228,13 +2228,13 @@ export default function OperationalPlans() {
                                                 {month}
                                               </TableHead>
                                             ))}
-                                            <TableHead className="text-center font-bold text-white bg-[#2d7a85] min-w-[80px]">
+                                            <TableHead className="text-center font-bold text-white bg-[hsl(var(--primary))] min-w-[80px]">
                                               المجموع
                                             </TableHead>
                                           </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                          <TableRow className="hover:bg-[#3d9aa8]/5">
+                                          <TableRow className="hover:bg-[hsl(var(--primary)/0.05)]">
                                             {MONTHS_AR.map((_, index) => {
                                               const monthData = plan.months?.find(m => m.month === index + 1);
                                               const target = isEditingThisMonth 
@@ -2244,7 +2244,7 @@ export default function OperationalPlans() {
                                               return (
                                                 <TableCell 
                                                   key={index} 
-                                                  className="text-center border-l border-[#3d9aa8]/10 p-1"
+                                                  className="text-center border-l border-[hsl(var(--primary)/0.1)] p-1"
                                                 >
                                                   {isEditingThisMonth ? (
                                                     <Input
@@ -2255,15 +2255,15 @@ export default function OperationalPlans() {
                                                       className="w-16 h-8 text-center text-sm font-bold mx-auto"
                                                     />
                                                   ) : (
-                                                    <span className={`text-lg font-bold ${target > 0 ? 'text-[#3d9aa8]' : 'text-muted-foreground'}`}>
+                                                    <span className={`text-lg font-bold ${target > 0 ? 'text-[hsl(var(--primary))]' : 'text-muted-foreground'}`}>
                                                       {target}
                                                     </span>
                                                   )}
                                                 </TableCell>
                                               );
                                             })}
-                                            <TableCell className="text-center bg-[#3d9aa8]/20">
-                                              <span className="text-xl font-bold text-[#2d7a85]">
+                                            <TableCell className="text-center bg-[hsl(var(--primary)/0.2)]">
+                                              <span className="text-xl font-bold text-[hsl(var(--primary))]">
                                                 {isEditingThisMonth 
                                                   ? currentMonthlyValues.reduce((sum, val) => sum + (val || 0), 0)
                                                   : plan.annual_target
