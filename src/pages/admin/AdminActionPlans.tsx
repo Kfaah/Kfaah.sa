@@ -138,21 +138,16 @@ export default function AdminActionPlans() {
 
   return (
     <div className="p-8 space-y-6">
-      <PageHeader
-        icon={<ListChecks className="w-7 h-7" />}
-        title="الخطط من التوصيات"
-        subtitle="حوّل توصيات التحليل الذكي إلى خطة عمل مزمنة، مكلَّفة، وقابلة للمتابعة"
-        style={{
-          backgroundImage:
-            "linear-gradient(to left, hsl(165 50% 32%) 0%, hsl(185 55% 40%) 55%, hsl(210 65% 55%) 100%)",
-        }}
-        actions={
-          <Button onClick={() => setDialogOpen(true)} className="gap-2 bg-white text-[hsl(170_55%_28%)] hover:bg-white/90 font-bold">
-            <Sparkles className="w-4 h-4" />
-            توليد خطة جديدة من آخر تحليل
-          </Button>
-        }
-      />
+      <div className="flex items-center justify-between mb-2 animate-fade-in flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">الخطط من التوصيات</h1>
+          <p className="text-muted-foreground mt-1">حوّل توصيات التحليل الذكي إلى خطة عمل مزمنة، مكلَّفة، وقابلة للمتابعة</p>
+        </div>
+        <Button onClick={() => setDialogOpen(true)} className="gap-2 rounded-2xl">
+          <Sparkles className="w-4 h-4" />
+          توليد خطة جديدة من آخر تحليل
+        </Button>
+      </div>
 
       {loading ? (
         <Card className="p-12 text-center bg-card border-border text-muted-foreground">جاري التحميل...</Card>
