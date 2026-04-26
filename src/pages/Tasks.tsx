@@ -863,7 +863,7 @@ const Tasks = () => {
 
         {/* Header */}
         <PageHeader
-          icon={<Target className="h-7 w-7" />}
+          icon={<Target className="w-6 h-6" />}
           title="المهام"
           subtitle="إدارة ومتابعة المهام"
           actions={

@@ -137,9 +137,9 @@ export default function AdminActionPlans() {
   }, [plans]);
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-6 space-y-6">
       <PageHeader
-        icon={<ListChecks className="w-7 h-7" />}
+        icon={<ListChecks className="w-6 h-6" />}
         title="الخطط من التوصيات"
         subtitle="حوّل توصيات التحليل الذكي إلى خطة عمل مزمنة، مكلَّفة، وقابلة للمتابعة"
         actions={

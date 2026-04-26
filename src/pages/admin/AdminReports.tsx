@@ -153,9 +153,9 @@ export default function AdminReports() {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-6 space-y-6">
       <PageHeader
-        icon={<FileBarChart2 className="w-7 h-7" />}
+        icon={<FileBarChart2 className="w-6 h-6" />}
         title="التقارير"
         subtitle="تقارير موضوعية متخصصة + تقارير تنفيذية سردية للمجلس والجهات الرسمية، قابلة للتصدير PDF"
         actions={

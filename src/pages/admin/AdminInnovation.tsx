@@ -177,15 +177,10 @@ export default function AdminInnovation() {
   }), [suggestions]);
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-6 space-y-6">
       <PageHeader
-        icon={<Lightbulb className="w-7 h-7" />}
-        title={
-          <span className="flex items-center gap-2">
-            الابتكار والتحديث
-            <Badge className="bg-white/20 text-white border-white/40">جديد</Badge>
-          </span>
-        }
+        icon={<Lightbulb className="w-6 h-6" />}
+        title="الابتكار والتحديث"
         subtitle="يحلّل الذكاء الاصطناعي بياناتك ويقترح ابتكارات لم تخطر على بالك — تُناقشها معه ثم تقبلها أو ترفضها."
         actions={
           <Button onClick={generate} disabled={!selected || generating} className="gap-2 bg-white text-primary hover:bg-white/90 disabled:bg-white/60">
