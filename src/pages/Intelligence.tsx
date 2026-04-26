@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -121,26 +122,18 @@ const Intelligence = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6" dir="rtl">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-lg">
-              <Brain className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                التحليل الذكي
-                <Sparkles className="w-5 h-5 text-yellow-500" />
-              </h1>
-              <p className="text-muted-foreground">رؤى ذكية، مهام ذكية، وأفكار إبداعية مولّدة من بيانات جمعيتك</p>
-            </div>
-          </div>
-          <Button size="lg" onClick={runAnalysis} disabled={running} className="gap-2 shadow-lg">
-            <RefreshCcw className={`w-4 h-4 ${running ? "animate-spin" : ""}`} />
-            {running ? "جاري التحليل..." : "تشغيل تحليل ذكي الآن"}
-          </Button>
-        </div>
+      <div className="space-y-6" dir="rtl">
+        <PageHeader
+          icon={<Brain className="w-6 h-6" />}
+          title={<span className="flex items-center gap-2">التحليل الذكي <Sparkles className="w-5 h-5 text-yellow-300" /></span>}
+          subtitle="رؤى ذكية، مهام ذكية، وأفكار إبداعية مولّدة من بيانات جمعيتك"
+          actions={
+            <Button size="lg" onClick={runAnalysis} disabled={running} className="gap-2 shadow-lg">
+              <RefreshCcw className={`w-4 h-4 ${running ? "animate-spin" : ""}`} />
+              {running ? "جاري التحليل..." : "تشغيل تحليل ذكي الآن"}
+            </Button>
+          }
+        />
 
         {/* آخر تشغيل */}
         {lastRun && (
