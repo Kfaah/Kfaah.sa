@@ -129,26 +129,20 @@ const AddTask = () => {
     <DashboardLayout>
       <div className="p-6 space-y-6 max-w-4xl mx-auto" dir="rtl">
         {/* رأس الصفحة */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <PageHeader
+          icon={<Plus className="h-7 w-7" />}
+          title="إضافة مهمة جديدة"
+          subtitle="إنشاء مهمة جديدة وتعيينها للموظفين"
+          actions={
             <Button
-              variant="ghost"
-              size="sm"
               onClick={() => navigate("/tasks")}
-              className="gap-2"
+              className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
             >
               <ArrowRight className="w-4 h-4" />
               العودة
             </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center">
-                <Plus className="w-5 h-5 text-white" />
-              </div>
-              إضافة مهمة جديدة
-            </h1>
-          </div>
-        </div>
+          }
+        />
 
         {/* البطاقة الرئيسية */}
         <Card className="border-[hsl(var(--primary)/0.2)] shadow-lg overflow-hidden">
