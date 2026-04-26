@@ -369,9 +369,8 @@ export function Sidebar() {
         <div
           className={cn(
             "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-colors",
-            "text-white shadow-sm"
+            "text-white shadow-sm bg-[hsl(155,55%,28%)]"
           )}
-          style={branding.primary ? { backgroundColor: branding.primary } : undefined}
         >
           <item.icon className="w-5 h-5" />
         </div>
