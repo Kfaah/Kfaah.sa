@@ -892,33 +892,29 @@ const Tasks = () => {
         )}
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
-                <Target className="w-6 h-6 text-white" />
-              </div>
-              المهام
-            </h1>
-            <p className="text-muted-foreground mt-2">إدارة ومتابعة المهام</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setIsGenerateDialogOpen(true)}
-              className="gap-2 bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 text-white"
-            >
-              <Sparkles className="w-5 h-5" />
-              توليد بالذكاء الاصطناعي
-            </Button>
-            <Button 
-              onClick={() => navigate("/tasks/add")}
-              className="gap-2 bg-primary hover:bg-primary/90"
-            >
-              <Plus className="w-4 h-4" />
-              إضافة مهمة
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          icon={<Target className="h-7 w-7" />}
+          title="المهام"
+          subtitle="إدارة ومتابعة المهام"
+          actions={
+            <>
+              <Button
+                onClick={() => setIsGenerateDialogOpen(true)}
+                className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+              >
+                <Sparkles className="w-5 h-5" />
+                توليد بالذكاء الاصطناعي
+              </Button>
+              <Button
+                onClick={() => navigate("/tasks/add")}
+                className="gap-2 bg-white text-primary hover:bg-white/90"
+              >
+                <Plus className="w-4 h-4" />
+                إضافة مهمة
+              </Button>
+            </>
+          }
+        />
 
         {/* إحصائيات */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
