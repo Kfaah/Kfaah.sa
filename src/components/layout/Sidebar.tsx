@@ -334,10 +334,10 @@ export function Sidebar() {
     // - مدير النظام (super-admin) → الصفحة الرئيسية للنظام
     // - أي حساب آخر (مدير جمعية / مدير تسويق / موظف) → صفحة دخول جمعيته
     const redirectTo = isActuallyAdmin
-      ? "/"
+      ? "/organizations"
       : currentOrg?.slug
         ? `/${currentOrg.slug}`
-        : "/";
+        : "/organizations";
     await signOut();
     navigate(redirectTo, { replace: true });
   };
