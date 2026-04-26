@@ -153,7 +153,7 @@ export default function AdminReports() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="mx-auto w-full max-w-[1280px] p-6 space-y-6">
       <PageHeader
         icon={<FileBarChart2 className="w-6 h-6" />}
         title="التقارير"
