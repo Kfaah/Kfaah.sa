@@ -246,8 +246,11 @@ function wrapTextByChars(text: string, maxChars = 30): string {
 export default function ExecutivePlans() {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
+  const { slug } = useParams<{ slug?: string }>();
+  const { currentOrg } = useOrganization();
   const scopedView = useScopedView("scope:executive-plans");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [routeOrgId, setRouteOrgId] = useState<string | null>(null);
   
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
@@ -277,6 +280,7 @@ export default function ExecutivePlans() {
   const [selectedPlanMonthId, setSelectedPlanMonthId] = useState<string>("");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [addingMonth, setAddingMonth] = useState<number>(1);
+  const activeOrgId = routeOrgId ?? currentOrg?.id ?? null;
 
   // التحقق من صلاحية المدير
   useEffect(() => {
@@ -288,20 +292,44 @@ export default function ExecutivePlans() {
     checkAdmin();
   }, [authUser]);
 
+  useEffect(() => {
+    const resolveRouteOrg = async () => {
+      if (!slug) {
+        setRouteOrgId(null);
+        return;
+      }
+      if (currentOrg?.slug === slug) {
+        setRouteOrgId(currentOrg.id);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+      setRouteOrgId(data?.id ?? null);
+    };
+
+    resolveRouteOrg();
+  }, [slug, currentOrg?.id, currentOrg?.slug]);
+
   // جلب الأقسام
   useEffect(() => {
     const fetchDepartments = async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("departments")
         .select("id, name")
         .order("name");
+      if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+      const { data, error } = await query;
       
       if (!error && data) {
         setDepartments(data);
       }
     };
     fetchDepartments();
-  }, []);
+  }, [activeOrgId]);
 
   // جلب الموظفين
   useEffect(() => {
