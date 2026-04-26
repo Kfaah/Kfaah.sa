@@ -1155,7 +1155,7 @@ export default function ExecutivePlans() {
             </div>
             
             {/* المهام المرتبطة */}
-            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-3 text-white shadow-md">
+            <div className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.8)] rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/80 text-xs font-medium">المهام</p>
