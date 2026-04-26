@@ -1,4 +1,4 @@
-import { ReactNode, forwardRef } from "react";
+import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
@@ -16,13 +16,9 @@ interface PageHeaderProps {
  * Uses the active organization branding (primary/accent) as a bold gradient banner,
  * making the brand color the dominant visual on every internal page.
  */
-export const PageHeader = forwardRef<HTMLDivElement, PageHeaderProps>(function PageHeader(
-  { icon, title, subtitle, actions, className, style },
-  ref,
-) {
+export function PageHeader({ icon, title, subtitle, actions, className, style }: PageHeaderProps) {
   return (
     <div
-      ref={ref}
       dir="rtl"
       style={{
         background: "linear-gradient(to left, hsl(var(--primary)) 0%, hsl(var(--primary)) 72%, hsl(var(--accent)) 100%)",
@@ -67,6 +63,6 @@ export const PageHeader = forwardRef<HTMLDivElement, PageHeaderProps>(function P
       </div>
     </div>
   );
-});
+}
 
 export default PageHeader;
