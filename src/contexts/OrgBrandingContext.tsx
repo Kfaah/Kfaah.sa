@@ -9,6 +9,32 @@ const FALLBACK_BRANDING = {
   accent: "#2563eb",
 };
 
+const BRANDING_CACHE_PREFIX = "org_branding_v1:";
+
+interface CachedBranding {
+  logoUrl: string | null;
+  primary: string | null;
+  secondary: string | null;
+  accent: string | null;
+}
+
+function readCache(orgId: string): CachedBranding | null {
+  try {
+    const raw = localStorage.getItem(BRANDING_CACHE_PREFIX + orgId);
+    return raw ? (JSON.parse(raw) as CachedBranding) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(orgId: string, b: CachedBranding) {
+  try {
+    localStorage.setItem(BRANDING_CACHE_PREFIX + orgId, JSON.stringify(b));
+  } catch {
+    /* noop */
+  }
+}
+
 interface Branding {
   logoUrl: string | null;
   orgName: string;
@@ -93,9 +119,14 @@ function applyBrandingToDocument(
 export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   const { currentOrg } = useOrganization();
   const location = useLocation();
-  const [branding, setBranding] = useState<Branding>({
-    logoUrl: null, orgName: "", primary: null, secondary: null, accent: null, loading: true,
-  });
+  const [branding, setBranding] = useState<Branding>(() => ({
+    logoUrl: null,
+    orgName: "",
+    primary: null,
+    secondary: null,
+    accent: null,
+    loading: true,
+  }));
   const [appliedOrgId, setAppliedOrgId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -105,8 +136,32 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
         setBranding({ logoUrl: null, orgName: "", primary: null, secondary: null, accent: null, loading: false });
         return;
       }
-      // Mark as loading and clear the previous org's logo immediately to avoid flashing the old logo
-      setBranding((prev) => ({ ...prev, logoUrl: null, orgName: currentOrg.name, loading: true }));
+      // 1) Hydrate immediately from cache (synchronous) so the new org's
+      //    branding is applied on the very first paint — no flash, no
+    //    flicker of the previous org or the default theme.
+      const cached = readCache(currentOrg.id);
+      if (cached) {
+        setBranding({
+          logoUrl: cached.logoUrl ?? currentOrg.logo_url ?? null,
+          orgName: currentOrg.name,
+          primary: cached.primary,
+          secondary: cached.secondary,
+          accent: cached.accent,
+          loading: false,
+        });
+      } else {
+        // No cache yet for this org — keep current colors in place and
+        // just update the org name. We intentionally do NOT clear logo
+        // or colors here, to avoid any visible "reset" between orgs.
+        setBranding((prev) => ({
+          ...prev,
+          orgName: currentOrg.name,
+          loading: true,
+        }));
+      }
+
+      // 2) Then fetch the latest from the database in the background and
+      //    update both state and cache if anything changed.
       const { data } = await supabase
         .from("organization_profiles")
         .select("logo_url, primary_color, secondary_color, accent_color")
@@ -121,7 +176,28 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
         accent: (data as Record<string, string | null> | null)?.accent_color || FALLBACK_BRANDING.accent,
         loading: false,
       };
-      setBranding(next);
+      writeCache(currentOrg.id, {
+        logoUrl: next.logoUrl,
+        primary: next.primary,
+        secondary: next.secondary,
+        accent: next.accent,
+      });
+      setBranding((prev) => {
+        // Avoid a needless re-render (and any chance of repaint) when the
+        // freshly-fetched values are identical to what we already applied
+        // from cache.
+        if (
+          prev.primary === next.primary &&
+          prev.accent === next.accent &&
+          prev.secondary === next.secondary &&
+          prev.logoUrl === next.logoUrl &&
+          prev.orgName === next.orgName &&
+          !prev.loading
+        ) {
+          return prev;
+        }
+        return next;
+      });
     })();
     return () => { cancelled = true; };
   }, [currentOrg]);
@@ -137,16 +213,18 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     const isAdminOrgScopedRoute = isAdminRoute && /\/admin\/(orgs?|organizations?)\//.test(path);
     const useOrgBranding = !isAdminRoute || isAdminOrgScopedRoute || Boolean(searchOrgSlug);
     if (useOrgBranding) {
-      // Don't write anything until we actually have new values to apply,
-      // otherwise we'd briefly clear the current colors and flash the
-      // default theme before loading completes.
-      if (branding.loading) {
-        applyBrandingToDocument(FALLBACK_BRANDING);
-        setAppliedOrgId((prev) => prev ?? "__fallback__");
-      }
-      if (!branding.loading && (branding.primary || branding.accent || branding.secondary)) {
+      // Apply whatever colors we currently have — these come from either
+      // the synchronous cache (no network) or the freshly fetched data.
+      // We never clear vars here, so the previous org's colors stay on
+      // screen until the new ones overwrite them in a single repaint.
+      if (branding.primary || branding.accent || branding.secondary) {
         applyBrandingToDocument(branding);
         setAppliedOrgId(currentOrg?.id ?? null);
+      } else if (!appliedOrgId) {
+        // Very first paint with no cache and no current colors — fall
+        // back to defaults so the UI isn't unstyled.
+        applyBrandingToDocument(FALLBACK_BRANDING);
+        setAppliedOrgId("__fallback__");
       }
     } else {
       if (appliedOrgId) {
@@ -160,7 +238,7 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     // (blue/cyan/teal/emerald/...) to the org's primary/accent.
     const root = document.documentElement;
     const hasOrgColors =
-      useOrgBranding && !branding.loading && (!!branding.primary || !!branding.accent);
+      useOrgBranding && (!!branding.primary || !!branding.accent);
     if (hasOrgColors) {
       root.setAttribute("data-org-branded", "true");
     } else {
