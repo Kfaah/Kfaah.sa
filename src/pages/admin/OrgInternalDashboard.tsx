@@ -24,6 +24,18 @@ import { PageHeader } from "@/components/layout/PageHeader";
 const OperationalPlans = lazy(() => import("@/pages/OperationalPlans"));
 const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 
+// اسم مختصر لكل جمعية (سطران × 3-4 كلمات) للعرض في رأس اللوحة الداخلية
+const ORG_SHORT_NAME: Record<string, [string, string]> = {
+  sakinah: ["جمعية سكينة", "لبناء وترميم المساجد"],
+  ataa: ["جمعية عطاء الخير", "لرعاية الأيتام وأسرهم"],
+  atff: ["جمعية عطف", "لرعاية الأيتام بلقرن"],
+  nujabaa: ["جمعية نجباء", "لرعاية الأيتام بالفرشة"],
+  sawab: ["جمعية صواب", "لتأهيل المتعافين من الإدمان"],
+  maather: ["جمعية مآثر للدعوة", "وتوعية الجاليات بالعارضة"],
+  "d-alqasaba": ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بالقصبة"],
+  harf: ["جمعية حرف", ""],
+};
+
 interface OrgInfo {
   id: string;
   name: string;
