@@ -350,7 +350,10 @@ export function Sidebar() {
         )}
       >
         <div
-          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 shadow-sm"
+          className={cn(
+            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white shadow-md ring-1 ring-white/40",
+            item.iconBg
+          )}
         >
           <item.icon className="w-5 h-5" />
         </div>
@@ -358,7 +361,7 @@ export function Sidebar() {
           <>
             <span className={cn(
               "font-bold text-base flex-1 text-right transition-colors duration-150",
-              isActive ? "text-slate-900" : "text-slate-700"
+              isActive ? "text-slate-900" : "text-slate-800"
             )}>
               {item.title}
             </span>
