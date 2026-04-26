@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { SourceLink } from "@/components/admin/SourceLink";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { PageHeader } from "@/components/layout/PageHeader";
+import OperationalPlans from "@/pages/OperationalPlans";
+import ExecutivePlans from "@/pages/ExecutivePlans";
 
 interface OrgInfo {
   id: string;
@@ -135,6 +137,7 @@ export default function OrgInternalDashboard({
     employees: 0, tasks: 0, donations: 0, campaigns: 0,
   });
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = Boolean(org);
   const [analyzing, setAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(initialTab ?? "overview");
 
@@ -144,7 +147,7 @@ export default function OrgInternalDashboard({
 
   const loadAll = async () => {
     if (!orgId) return;
-    setLoading(true);
+    if (!hasLoadedOnce) setLoading(true);
     try {
       const [orgRes, profRes, analysisRes, qRes, tRes, empRes, donCount, campCount, taskCount] = await Promise.all([
         supabase.from("organizations").select("id,name,slug,logo_url").eq("id", orgId).maybeSingle(),
@@ -198,7 +201,7 @@ export default function OrgInternalDashboard({
 
   const empMap = new Map(employees.map((e) => [e.id, e]));
 
-  if (loading) {
+  if (loading && !hasLoadedOnce) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -605,11 +608,11 @@ export default function OrgInternalDashboard({
         <TabsContent value="operational-plans" className="mt-6" dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/admin/action-plans" title="الخطط من التوصيات" embedSlug={false} />
         </TabsContent>
-        <TabsContent value="operational-plans-main" className="mt-6" dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/operational-plans" title="الخطط التشغيلية" />
+        <TabsContent value="operational-plans-main" forceMount className="mt-6 data-[state=inactive]:hidden" dir="rtl">
+          <OperationalPlans embedded />
         </TabsContent>
-        <TabsContent value="executive-plans" className="mt-6" dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/executive-plans" title="الخطط التنفيذية" />
+        <TabsContent value="executive-plans" forceMount className="mt-6 data-[state=inactive]:hidden" dir="rtl">
+          <ExecutivePlans embedded />
         </TabsContent>
         <TabsContent value="performance" className="mt-6" dir="rtl">
           <EmbeddedOrgPage slug={org?.slug} path="/performance" title="تقييم الأداء" />
