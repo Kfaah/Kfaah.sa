@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -385,54 +386,57 @@ const TaskDetails = () => {
     <DashboardLayout>
       <div className="p-6 space-y-6" dir="rtl">
         {/* رأس الصفحة */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/tasks")}
-              className="gap-2"
-            >
-              <ArrowRight className="w-4 h-4" />
-              العودة
-            </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <h1 className="text-2xl font-bold text-foreground">تفاصيل المهمة</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              className="gap-2 border-[hsl(var(--primary))] text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.1)]"
-              onClick={() => setIsCommunicationDialogOpen(true)}
-            >
-              <MessageSquare className="w-4 h-4" />
-              التواصل والمرفقات
-            </Button>
-
-            {isAdmin && !isEditMode && (
+        <PageHeader
+          icon={<ClipboardList className="h-7 w-7" />}
+          title="تفاصيل المهمة"
+          subtitle="عرض وتعديل تفاصيل المهمة والتواصل بشأنها"
+          actions={
+            <>
               <Button
-                variant="default"
-                className="gap-2 bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.9)]"
-                onClick={startEdit}
+                onClick={() => navigate("/tasks")}
+                className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
               >
-                <Edit className="w-4 h-4" />
-                تعديل
+                <ArrowRight className="w-4 h-4" />
+                العودة
               </Button>
-            )}
-
-            {isAdmin && isEditMode && (
-              <>
-                <Button variant="outline" onClick={cancelEdit} disabled={isSaving}>
-                  إلغاء
+              <Button
+                onClick={() => setIsCommunicationDialogOpen(true)}
+                className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+              >
+                <MessageSquare className="w-4 h-4" />
+                التواصل والمرفقات
+              </Button>
+              {isAdmin && !isEditMode && (
+                <Button
+                  onClick={startEdit}
+                  className="gap-2 bg-white text-primary hover:bg-white/90"
+                >
+                  <Edit className="w-4 h-4" />
+                  تعديل
                 </Button>
-                <Button onClick={saveEdits} disabled={isSaving} className="gap-2">
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  حفظ
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+              )}
+              {isAdmin && isEditMode && (
+                <>
+                  <Button
+                    onClick={cancelEdit}
+                    disabled={isSaving}
+                    className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                  >
+                    إلغاء
+                  </Button>
+                  <Button
+                    onClick={saveEdits}
+                    disabled={isSaving}
+                    className="gap-2 bg-white text-primary hover:bg-white/90"
+                  >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    حفظ
+                  </Button>
+                </>
+              )}
+            </>
+          }
+        />
 
         {/* البطاقة الرئيسية */}
         <Card className="border-[hsl(var(--primary)/0.2)] shadow-lg">
