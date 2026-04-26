@@ -142,7 +142,7 @@ const AddTask = () => {
             </Button>
             <Separator orientation="vertical" className="h-6" />
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3d9aa8] to-[#2d7a85] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center">
                 <Plus className="w-5 h-5 text-white" />
               </div>
               إضافة مهمة جديدة
@@ -151,10 +151,10 @@ const AddTask = () => {
         </div>
 
         {/* البطاقة الرئيسية */}
-        <Card className="border-[#3d9aa8]/20 shadow-lg overflow-hidden">
-          <CardHeader className="bg-gradient-to-l from-[#3d9aa8]/10 to-transparent border-b">
+        <Card className="border-[hsl(var(--primary))]/20 shadow-lg overflow-hidden">
+          <CardHeader className="bg-gradient-to-l from-[hsl(var(--primary))]/10 to-transparent border-b">
             <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <FileText className="w-5 h-5 text-[#3d9aa8]" />
+              <FileText className="w-5 h-5 text-[hsl(var(--primary))]" />
               بيانات المهمة
             </CardTitle>
           </CardHeader>
@@ -162,7 +162,7 @@ const AddTask = () => {
             {/* عنوان المهمة */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
+                <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
                 <Label className="font-semibold text-foreground">عنوان المهمة *</Label>
               </div>
               <Input
@@ -185,7 +185,7 @@ const AddTask = () => {
             {/* التفاصيل */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
+                <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
                 <Label className="font-semibold text-foreground">التفاصيل</Label>
               </div>
               <Textarea
@@ -202,9 +202,9 @@ const AddTask = () => {
             {/* المنفذ */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
+                <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
                 <Label className="font-semibold text-foreground flex items-center gap-2">
-                  <User className="w-4 h-4 text-[#3d9aa8]" />
+                  <User className="w-4 h-4 text-[hsl(var(--primary))]" />
                   المنفذ *
                 </Label>
               </div>
@@ -250,9 +250,9 @@ const AddTask = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#3d9aa8]" />
+                    <Calendar className="w-4 h-4 text-[hsl(var(--primary))]" />
                     تاريخ التنفيذ
                   </Label>
                 </div>
@@ -265,9 +265,9 @@ const AddTask = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Target className="w-4 h-4 text-[#3d9aa8]" />
+                    <Target className="w-4 h-4 text-[hsl(var(--primary))]" />
                     الأولوية
                   </Label>
                 </div>
@@ -307,9 +307,9 @@ const AddTask = () => {
             {/* الوقت المقدر */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-1 h-5 bg-[#3d9aa8] rounded-full" />
+                <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
                 <Label className="font-semibold text-foreground flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#3d9aa8]" />
+                  <Clock className="w-4 h-4 text-[hsl(var(--primary))]" />
                   الوقت المقدر (بالدقائق)
                 </Label>
               </div>
@@ -340,7 +340,7 @@ const AddTask = () => {
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="gap-2 bg-[#3d9aa8] hover:bg-[#3d9aa8]/90 min-w-[120px]"
+                className="gap-2 bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 min-w-[120px]"
               >
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
