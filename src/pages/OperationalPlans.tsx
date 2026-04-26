@@ -152,6 +152,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   const scopedView = useScopedView("scope:operational-plans");
   const [plans, setPlans] = useState<OperationalPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [plansLoaded, setPlansLoaded] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false); // وضع التعديل الشامل
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
@@ -510,7 +511,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   const fetchPlans = async () => {
     if (!authUser) return;
     
-    setLoading(true);
+    if (!plansLoaded) setLoading(true);
     try {
       const { data: plansData, error } = await supabase
         .from("operational_plans")
@@ -519,34 +520,45 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
 
       if (error) throw error;
 
-      // Fetch months for each plan
-      const plansWithMonths = await Promise.all(
-        (plansData || []).map(async (plan) => {
-          const { data: monthsData } = await supabase
-            .from("operational_plan_months")
-            .select("*")
-            .eq("operational_plan_id", plan.id)
-            .order("month", { ascending: true });
+      const planRows = plansData || [];
+      const planIds = planRows.map((plan) => plan.id);
+      const userIds = Array.from(new Set(planRows.map((plan) => plan.user_id).filter(Boolean)));
 
-          // Get employee name if admin
-          let employee_name = "";
-          if (isAdmin && plan.user_id !== authUser.id) {
-            const { data: empData } = await supabase
+      const [monthsRes, employeeNamesRes] = await Promise.all([
+        planIds.length
+          ? supabase
+              .from("operational_plan_months")
+              .select("*")
+              .in("operational_plan_id", planIds)
+              .order("month", { ascending: true })
+          : Promise.resolve({ data: [], error: null }),
+        isAdmin && userIds.length
+          ? supabase
               .from("employees")
-              .select("full_name")
-              .eq("user_id", plan.user_id)
-              .single();
-            employee_name = empData?.full_name || "";
-          }
+              .select("user_id, full_name")
+              .in("user_id", userIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
 
-          return {
-            ...plan,
-            months: monthsData || [],
-            employee_name,
-            responsible_employee_name: (plan.responsible_employee as any)?.full_name || null
-          };
-        })
+      if (monthsRes.error) throw monthsRes.error;
+      if (employeeNamesRes.error) throw employeeNamesRes.error;
+
+      const monthsByPlan = new Map<string, OperationalPlanMonth[]>();
+      (monthsRes.data || []).forEach((month) => {
+        const prev = monthsByPlan.get(month.operational_plan_id) || [];
+        monthsByPlan.set(month.operational_plan_id, [...prev, month as OperationalPlanMonth]);
+      });
+
+      const employeeNameByUser = new Map(
+        (employeeNamesRes.data || []).map((employee: any) => [employee.user_id, employee.full_name])
       );
+
+      const plansWithMonths = planRows.map((plan) => ({
+        ...plan,
+        months: monthsByPlan.get(plan.id) || [],
+        employee_name: isAdmin && plan.user_id !== authUser.id ? employeeNameByUser.get(plan.user_id) || "" : "",
+        responsible_employee_name: (plan.responsible_employee as any)?.full_name || null,
+      }));
 
       setPlans(plansWithMonths);
     } catch (error: any) {
@@ -556,6 +568,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
         variant: "destructive",
       });
     } finally {
+      setPlansLoaded(true);
       setLoading(false);
     }
   };
