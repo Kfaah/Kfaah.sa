@@ -343,8 +343,8 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center rounded-l-2xl rounded-r-none bg-sidebar-item py-2 -ml-3 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
-          collapsed ? "justify-center px-0" : "gap-3 pr-4 pl-6",
+          "group/nav flex h-14 items-center rounded-l-2xl rounded-r-none bg-sidebar-item py-2 -ml-6 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
+          collapsed ? "justify-center px-0" : "gap-3 pr-4 pl-10",
           isActive ? "shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]" : "hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
         )}
       >
@@ -376,7 +376,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 overflow-hidden",
-        collapsed ? "w-20" : "w-[253px]"
+        collapsed ? "w-20" : "w-[280px]"
       )}
     >
       {/* خلفية القائمة — لون واحد ثابت بهوية الجمعية */}
@@ -438,10 +438,10 @@ export function Sidebar() {
         {!collapsed && (
           <div className="mb-4 flex-shrink-0 space-y-2">
             {/* Main Profile Card - Matching design */}
-            <div className="relative z-20 -ml-3 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-5 shadow-[0_5px_14px_hsl(var(--sidebar-item-shadow))]">
+            <div className="relative z-20 -ml-6 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-8 shadow-[0_5px_14px_hsl(var(--sidebar-item-shadow))]">
               <div className="flex items-center gap-3">
                 {/* Avatar - Left side, larger with cyan border */}
-                <div className="w-20 h-20 rounded-full overflow-hidden border-[4px] border-[hsl(var(--sidebar-icon-start))] shadow-[0_0_0_3px_hsl(var(--sidebar-item)),0_6px_14px_hsl(var(--sidebar-item-shadow))] ring-2 ring-[hsl(var(--sidebar-icon-end))] flex-shrink-0">
+                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[hsl(var(--sidebar-icon-start))] shadow-[0_0_0_1.5px_hsl(var(--sidebar-item)),0_6px_14px_hsl(var(--sidebar-item-shadow))] ring-1 ring-[hsl(var(--sidebar-icon-end))] flex-shrink-0">
                   {user.profileImage ? (
                     <img
                       src={user.profileImage}
@@ -468,7 +468,7 @@ export function Sidebar() {
             {/* Profile Icon Button */}
             <Link
               to="/profile"
-              className="group relative flex w-full items-center gap-3 -ml-3 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-5 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
+              className="group relative flex w-full items-center gap-3 -ml-6 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-8 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
             >
               <div className="sidebar-reference-icon relative flex h-10 w-10 items-center justify-center rounded-full text-sidebar-primary-foreground transition-transform duration-200 group-hover:scale-[1.04]">
                 <User className="w-5 h-5" />
