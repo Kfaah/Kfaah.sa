@@ -349,10 +349,17 @@ export function Sidebar() {
             : "hover:bg-white hover:text-[hsl(var(--primary))]"
         )}
       >
-        <div className={cn(
-          "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl shadow-md",
-          item.iconBg
-        )}>
+        <div
+          className={cn(
+            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl shadow-md",
+            item.iconBg
+          )}
+          style={
+            branding.primary
+              ? { backgroundImage: `linear-gradient(135deg, ${branding.primary} 0%, ${branding.accent || branding.primary} 100%)` }
+              : undefined
+          }
+        >
           <item.icon className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
