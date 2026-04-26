@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate, BrowserRouter, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { UserProvider } from "@/contexts/UserContext";
@@ -11,52 +11,73 @@ import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeConte
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { OrgBrandingProvider } from "@/contexts/OrgBrandingContext";
 import { PreviewModeBanner } from "@/components/preview/PreviewModeBanner";
-import Index from "./pages/Index";
-import Employees from "./pages/Employees";
-import AddEmployee from "./pages/AddEmployee";
-import EditEmployee from "./pages/EditEmployee";
-import Roles from "./pages/Roles";
-import Tasks from "./pages/Tasks";
-import AddTask from "./pages/AddTask";
-import TaskDetails from "./pages/TaskDetails";
-import Plans from "./pages/Plans";
-import ExecutivePlans from "./pages/ExecutivePlans";
-import Profile from "./pages/Profile";
-import OperationalPlans from "./pages/OperationalPlans";
-import AddOperationalPlan from "./pages/AddOperationalPlan";
-import OperationalPlanDetails from "./pages/OperationalPlanDetails";
-import Auth from "./pages/Auth";
+// Eagerly-loaded shells (small + likely needed immediately)
 import PublicLanding from "./pages/PublicLanding";
 import OrgAuth from "./pages/OrgAuth";
-import Settings from "./pages/Settings";
-import Uploads from "./pages/Uploads";
-import Organizations from "./pages/Organizations";
-import AdminHub from "./pages/AdminHub";
-import Intelligence from "./pages/Intelligence";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import AdminOverview from "./pages/admin/AdminOverview";
-import AdminCompare from "./pages/admin/AdminCompare";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminReports from "./pages/admin/AdminReports";
-import AdminInnovation from "./pages/admin/AdminInnovation";
-import AdminActionPlans from "./pages/admin/AdminActionPlans";
-import AdminActionPlanDetails from "./pages/admin/AdminActionPlanDetails";
-import AdminOrganizations from "./pages/admin/AdminOrganizations";
-import AdminSettings from "./pages/admin/AdminSettings";
-import OrgInternalDashboard from "./pages/admin/OrgInternalDashboard";
-import SourcesRtlTest from "./pages/admin/SourcesRtlTest";
-import InternalDashboard from "./pages/InternalDashboard";
-import MyAccountability from "./pages/MyAccountability";
-import MyPerformance from "./pages/MyPerformance";
-import NotFound from "./pages/NotFound";
-import OrganizationProfile from "./pages/OrganizationProfile";
-import EmployeeOnboarding from "./pages/EmployeeOnboarding";
-import StaffDutiesUpload from "./pages/StaffDutiesUpload";
-import MyAssistant from "./pages/MyAssistant";
-import PerformanceEvaluation from "./pages/PerformanceEvaluation";
+
+// Lazy-loaded route pages — split into separate chunks to make navigation snappy
+const Index = lazy(() => import("./pages/Index"));
+const Employees = lazy(() => import("./pages/Employees"));
+const AddEmployee = lazy(() => import("./pages/AddEmployee"));
+const EditEmployee = lazy(() => import("./pages/EditEmployee"));
+const Roles = lazy(() => import("./pages/Roles"));
+const Tasks = lazy(() => import("./pages/Tasks"));
+const AddTask = lazy(() => import("./pages/AddTask"));
+const TaskDetails = lazy(() => import("./pages/TaskDetails"));
+const Plans = lazy(() => import("./pages/Plans"));
+const ExecutivePlans = lazy(() => import("./pages/ExecutivePlans"));
+const Profile = lazy(() => import("./pages/Profile"));
+const OperationalPlans = lazy(() => import("./pages/OperationalPlans"));
+const AddOperationalPlan = lazy(() => import("./pages/AddOperationalPlan"));
+const OperationalPlanDetails = lazy(() => import("./pages/OperationalPlanDetails"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Uploads = lazy(() => import("./pages/Uploads"));
+const Organizations = lazy(() => import("./pages/Organizations"));
+const Intelligence = lazy(() => import("./pages/Intelligence"));
+const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
+const AdminCompare = lazy(() => import("./pages/admin/AdminCompare"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
+const AdminInnovation = lazy(() => import("./pages/admin/AdminInnovation"));
+const AdminActionPlans = lazy(() => import("./pages/admin/AdminActionPlans"));
+const AdminActionPlanDetails = lazy(() => import("./pages/admin/AdminActionPlanDetails"));
+const AdminOrganizations = lazy(() => import("./pages/admin/AdminOrganizations"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const OrgInternalDashboard = lazy(() => import("./pages/admin/OrgInternalDashboard"));
+const SourcesRtlTest = lazy(() => import("./pages/admin/SourcesRtlTest"));
+const InternalDashboard = lazy(() => import("./pages/InternalDashboard"));
+const MyAccountability = lazy(() => import("./pages/MyAccountability"));
+const MyPerformance = lazy(() => import("./pages/MyPerformance"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const OrganizationProfile = lazy(() => import("./pages/OrganizationProfile"));
+const EmployeeOnboarding = lazy(() => import("./pages/EmployeeOnboarding"));
+const StaffDutiesUpload = lazy(() => import("./pages/StaffDutiesUpload"));
+const MyAssistant = lazy(() => import("./pages/MyAssistant"));
+const PerformanceEvaluation = lazy(() => import("./pages/PerformanceEvaluation"));
 import { AssistantFab } from "@/components/assistant/AssistantFab";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Cache aggressively so revisiting a page is near-instant.
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+    },
+  },
+});
+
+function RouteFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="animate-spin w-6 h-6 border-2 border-accent border-t-transparent rounded-full" />
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -175,6 +196,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
       {/* Public marketing/landing + system-admin login */}
       <Route path="/" element={<PublicLanding />} />
@@ -279,6 +301,7 @@ function AppRoutes() {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 }
 
