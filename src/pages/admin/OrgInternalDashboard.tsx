@@ -647,31 +647,26 @@ function KpiCard({ label, value, icon }: { label: string; value: number; icon: R
 }
 
 
-function ListCard({ title, items, icon, emptyText, tone }: { title: string; items: string[]; icon: React.ReactNode; emptyText: string; tone: "emerald" | "amber" | "primary" }) {
+function ListCard({ title, items, icon, emptyText }: { title: string; items: string[]; icon: React.ReactNode; emptyText: string }) {
   return (
     <Card
       dir="rtl"
-      className="relative overflow-hidden text-white shadow-lg backdrop-blur-sm"
-      style={{
-        background: `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.92) 55%, hsl(var(--accent)) 100%)`,
-        border: `1px solid hsl(var(--accent) / 0.45)`,
-        boxShadow: `0 10px 30px -12px hsl(var(--primary) / 0.45)`,
-      }}
+      className="relative overflow-hidden border-border bg-card shadow-sm"
     >
       <CardHeader className="text-right">
-        <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-white">
+        <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-foreground">
           {icon}
           <span>{title}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="text-right">
         {items.length === 0 ? (
-          <p className="text-sm text-white/80">{emptyText}</p>
+          <p className="text-sm text-muted-foreground">{emptyText}</p>
         ) : (
           <ul className="space-y-2">
             {items.map((s, i) => (
-              <li key={i} className="flex items-start justify-start gap-2 text-right text-sm leading-relaxed text-white">
-                <span className="mt-1 flex-shrink-0" style={{ color: "hsl(var(--accent))" }}>•</span>
+              <li key={i} className="flex items-start justify-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-right text-sm leading-relaxed text-foreground">
+                <span className="mt-1 flex-shrink-0 text-muted-foreground">•</span>
                 <span className="flex-1">{s}</span>
               </li>
             ))}
