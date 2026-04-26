@@ -339,7 +339,7 @@ const EditEmployee = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[hsl(var(--primary))]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[hsl(var(--primary)/<alpha-value>)]" />
         </div>
       </DashboardLayout>
     );
@@ -362,7 +362,7 @@ const EditEmployee = () => {
             </Button>
             <Separator orientation="vertical" className="h-6" />
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] flex items-center justify-center">
                 <BadgeCheck className="w-5 h-5 text-white" />
               </div>
               تعديل بيانات الموظف
@@ -371,10 +371,10 @@ const EditEmployee = () => {
         </div>
 
         {/* البطاقة الرئيسية */}
-        <Card className="border-[hsl(var(--primary))]/20 shadow-lg overflow-hidden">
-          <CardHeader className="bg-gradient-to-l from-[hsl(var(--primary))]/10 to-transparent border-b">
+        <Card className="border-[hsl(var(--primary)/<alpha-value>)]/20 shadow-lg overflow-hidden">
+          <CardHeader className="bg-gradient-to-l from-[hsl(var(--primary)/<alpha-value>)]/10 to-transparent border-b">
             <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <User className="w-5 h-5 text-[hsl(var(--primary))]" />
+              <User className="w-5 h-5 text-[hsl(var(--primary)/<alpha-value>)]" />
               بيانات الموظف
             </CardTitle>
           </CardHeader>
@@ -382,9 +382,9 @@ const EditEmployee = () => {
             {/* صورة الموظف */}
             <div className="flex justify-center">
               <div className="relative">
-                <Avatar className="w-28 h-28 border-4 border-[hsl(var(--primary))]/20">
+                <Avatar className="w-28 h-28 border-4 border-[hsl(var(--primary)/<alpha-value>)]/20">
                   <AvatarImage src={form.avatar_url} />
-                  <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] text-white text-3xl">
+                  <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] text-white text-3xl">
                     {form.full_name ? form.full_name.charAt(0) : <User className="w-10 h-10" />}
                   </AvatarFallback>
                 </Avatar>
@@ -398,7 +398,7 @@ const EditEmployee = () => {
                     <X className="w-4 h-4" />
                   </Button>
                 ) : (
-                  <label className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-[hsl(var(--primary))] flex items-center justify-center cursor-pointer hover:bg-[hsl(var(--primary))]/80 transition-colors">
+                  <label className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-[hsl(var(--primary)/<alpha-value>)] flex items-center justify-center cursor-pointer hover:bg-[hsl(var(--primary)/<alpha-value>)]/80 transition-colors">
                     <Camera className="w-4 h-4 text-white" />
                     <input
                       type="file"
@@ -413,7 +413,7 @@ const EditEmployee = () => {
                 )}
                 {isUploadingImage && (
                   <div className="absolute inset-0 bg-background/80 rounded-full flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--primary))]" />
+                    <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--primary)/<alpha-value>)]" />
                   </div>
                 )}
               </div>
@@ -425,9 +425,9 @@ const EditEmployee = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <User className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <User className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
                     الاسم الكامل *
                   </Label>
                 </div>
@@ -450,7 +450,7 @@ const EditEmployee = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground">المسمى الوظيفي</Label>
                 </div>
                 <Input
@@ -465,7 +465,7 @@ const EditEmployee = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground">رقم الهوية (اسم المستخدم) *</Label>
                 </div>
                 <Input
@@ -489,9 +489,9 @@ const EditEmployee = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <Lock className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
                     كلمة المرور الجديدة
                   </Label>
                 </div>
@@ -537,9 +537,9 @@ const EditEmployee = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <Mail className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
                     البريد الإلكتروني *
                   </Label>
                 </div>
@@ -564,9 +564,9 @@ const EditEmployee = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <Phone className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
                     رقم الجوال *
                   </Label>
                 </div>
@@ -595,9 +595,9 @@ const EditEmployee = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Building className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <Building className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
                     القسم *
                   </Label>
                 </div>
@@ -629,9 +629,9 @@ const EditEmployee = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <Briefcase className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
                     الدور الوظيفي *
                   </Label>
                 </div>
@@ -663,7 +663,7 @@ const EditEmployee = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground">الحالة</Label>
                 </div>
                 <Select
@@ -705,9 +705,9 @@ const EditEmployee = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <Users className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
                     المدير المباشر
                   </Label>
                 </div>
@@ -731,9 +731,9 @@ const EditEmployee = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                  <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                   <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    <Users className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
                     المدير التنفيذي
                   </Label>
                 </div>
@@ -769,9 +769,9 @@ const EditEmployee = () => {
             {/* مستوى الصلاحية الإدارية */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                <div className="w-1 h-5 bg-[hsl(var(--primary)/<alpha-value>)] rounded-full" />
                 <Label className="font-semibold text-foreground flex items-center gap-2">
-                  <BadgeCheck className="w-4 h-4 text-[hsl(var(--primary))]" />
+                  <BadgeCheck className="w-4 h-4 text-[hsl(var(--primary)/<alpha-value>)]" />
                   مستوى الصلاحية الإدارية *
                 </Label>
               </div>
@@ -815,7 +815,7 @@ const EditEmployee = () => {
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="gap-2 bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 min-w-[120px]"
+                className="gap-2 bg-[hsl(var(--primary)/<alpha-value>)] hover:bg-[hsl(var(--primary)/<alpha-value>)]/90 min-w-[120px]"
               >
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

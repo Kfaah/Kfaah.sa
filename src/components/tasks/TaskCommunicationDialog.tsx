@@ -381,7 +381,7 @@ export function TaskCommunicationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0 [&>button]:hidden overflow-hidden bg-gradient-to-b from-slate-50 to-white">
         {/* Header مودرن */}
-        <DialogHeader className="p-5 border-b bg-gradient-to-l from-[hsl(var(--primary))] via-[hsl(var(--primary))]/90 to-[hsl(var(--primary))] relative">
+        <DialogHeader className="p-5 border-b bg-gradient-to-l from-[hsl(var(--primary)/<alpha-value>)] via-[hsl(var(--primary)/<alpha-value>)]/90 to-[hsl(var(--primary)/<alpha-value>)] relative">
           <DialogClose className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full w-9 h-9 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white transition-all backdrop-blur-sm">
             <X className="h-5 w-5" />
             <span className="sr-only">إغلاق</span>
@@ -399,21 +399,21 @@ export function TaskCommunicationDialog({
 
         {/* اختيار المستلم للموظف */}
         {!isAdmin && admins.length > 0 && (
-          <div className="px-5 py-4 border-b bg-gradient-to-l from-[hsl(var(--primary))]/5 to-transparent">
+          <div className="px-5 py-4 border-b bg-gradient-to-l from-[hsl(var(--primary)/<alpha-value>)]/5 to-transparent">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-[hsl(var(--primary))] font-medium">
-                <div className="w-8 h-8 rounded-full bg-[hsl(var(--primary))]/10 flex items-center justify-center">
-                  <UserCircle className="w-5 h-5 text-[hsl(var(--primary))]" />
+              <div className="flex items-center gap-2 text-sm text-[hsl(var(--primary)/<alpha-value>)] font-medium">
+                <div className="w-8 h-8 rounded-full bg-[hsl(var(--primary)/<alpha-value>)]/10 flex items-center justify-center">
+                  <UserCircle className="w-5 h-5 text-[hsl(var(--primary)/<alpha-value>)]" />
                 </div>
                 <span>إرسال إلى:</span>
               </div>
               <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
-                <SelectTrigger className="w-[200px] bg-white border-[hsl(var(--primary))]/20 shadow-sm hover:border-[hsl(var(--primary))]/40 transition-colors">
+                <SelectTrigger className="w-[200px] bg-white border-[hsl(var(--primary)/<alpha-value>)]/20 shadow-sm hover:border-[hsl(var(--primary)/<alpha-value>)]/40 transition-colors">
                   <SelectValue placeholder="اختر المستلم" />
                 </SelectTrigger>
-                <SelectContent className="bg-white z-50 shadow-xl border-[hsl(var(--primary))]/20">
+                <SelectContent className="bg-white z-50 shadow-xl border-[hsl(var(--primary)/<alpha-value>)]/20">
                   {admins.map((admin) => (
-                    <SelectItem key={admin.user_id} value={admin.user_id} className="hover:bg-[hsl(var(--primary))]/10">
+                    <SelectItem key={admin.user_id} value={admin.user_id} className="hover:bg-[hsl(var(--primary)/<alpha-value>)]/10">
                       {admin.full_name}
                     </SelectItem>
                   ))}
@@ -427,15 +427,15 @@ export function TaskCommunicationDialog({
         <ScrollArea className="flex-1 px-5 py-4" ref={scrollRef}>
           {loading ? (
             <div className="flex flex-col items-center justify-center h-40 gap-3">
-              <div className="w-12 h-12 rounded-full bg-[hsl(var(--primary))]/10 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--primary))]" />
+              <div className="w-12 h-12 rounded-full bg-[hsl(var(--primary)/<alpha-value>)]/10 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--primary)/<alpha-value>)]" />
               </div>
               <span className="text-sm text-muted-foreground">جاري تحميل الرسائل...</span>
             </div>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(var(--primary))]/20 to-[hsl(var(--primary))]/5 flex items-center justify-center">
-                <Send className="w-7 h-7 text-[hsl(var(--primary))]" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)]/20 to-[hsl(var(--primary)/<alpha-value>)]/5 flex items-center justify-center">
+                <Send className="w-7 h-7 text-[hsl(var(--primary)/<alpha-value>)]" />
               </div>
               <div>
                 <p className="text-muted-foreground font-medium">لا توجد رسائل بعد</p>
@@ -464,9 +464,9 @@ export function TaskCommunicationDialog({
                       <div className={cn(
                         "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shadow-md",
                         isOwn 
-                          ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] text-white"
+                          ? "bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] text-white"
                           : isFromAdmin 
-                            ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[#1a5a63] text-white"
+                            ? "bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[#1a5a63] text-white"
                             : "bg-gradient-to-br from-slate-400 to-slate-500 text-white"
                       )}>
                         {(msg.sender_name || "؟")[0]}
@@ -483,12 +483,12 @@ export function TaskCommunicationDialog({
                         )}>
                           <span className={cn(
                             "text-xs font-semibold",
-                            isOwn ? "text-[hsl(var(--primary))]" : isFromAdmin ? "text-[hsl(var(--primary))]" : "text-slate-600"
+                            isOwn ? "text-[hsl(var(--primary)/<alpha-value>)]" : isFromAdmin ? "text-[hsl(var(--primary)/<alpha-value>)]" : "text-slate-600"
                           )}>
                             {msg.sender_name || "غير معروف"}
                           </span>
                           {msg.is_admin && (
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] border-0">
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-[hsl(var(--primary)/<alpha-value>)]/10 text-[hsl(var(--primary)/<alpha-value>)] border-0">
                               مدير النظام
                             </Badge>
                           )}
@@ -500,9 +500,9 @@ export function TaskCommunicationDialog({
                         className={cn(
                           "relative group rounded-2xl p-4 shadow-sm transition-all hover:shadow-md",
                           isOwn
-                            ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] text-white rounded-tr-md"
+                            ? "bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] text-white rounded-tr-md"
                             : isFromAdmin
-                              ? "bg-white border border-[hsl(var(--primary))]/20 text-slate-800 rounded-tl-md shadow-[0_2px_8px_rgba(61,154,168,0.08)]"
+                              ? "bg-white border border-[hsl(var(--primary)/<alpha-value>)]/20 text-slate-800 rounded-tl-md shadow-[0_2px_8px_rgba(61,154,168,0.08)]"
                               : "bg-white border border-slate-200 text-slate-800 rounded-tl-md"
                         )}
                       >
@@ -550,7 +550,7 @@ export function TaskCommunicationDialog({
                               >
                                 <div className={cn(
                                   "w-10 h-10 rounded-lg flex items-center justify-center",
-                                  isOwn ? "bg-white/20" : "bg-[hsl(var(--primary))]/10"
+                                  isOwn ? "bg-white/20" : "bg-[hsl(var(--primary)/<alpha-value>)]/10"
                                 )}>
                                   {getAttachmentIcon(msg.attachment_type)}
                                 </div>
@@ -626,10 +626,10 @@ export function TaskCommunicationDialog({
               size="icon"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="flex-shrink-0 h-11 w-11 rounded-xl border-slate-200 hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/5 transition-colors"
+              className="flex-shrink-0 h-11 w-11 rounded-xl border-slate-200 hover:border-[hsl(var(--primary)/<alpha-value>)] hover:bg-[hsl(var(--primary)/<alpha-value>)]/5 transition-colors"
             >
               {uploading ? (
-                <Loader2 className="w-5 h-5 animate-spin text-[hsl(var(--primary))]" />
+                <Loader2 className="w-5 h-5 animate-spin text-[hsl(var(--primary)/<alpha-value>)]" />
               ) : (
                 <Paperclip className="w-5 h-5 text-slate-500" />
               )}
@@ -645,13 +645,13 @@ export function TaskCommunicationDialog({
                     sendMessage();
                   }
                 }}
-                className="h-11 rounded-xl border-slate-200 focus:border-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]/20 pr-4 pl-4 text-sm"
+                className="h-11 rounded-xl border-slate-200 focus:border-[hsl(var(--primary)/<alpha-value>)] focus:ring-[hsl(var(--primary)/<alpha-value>)]/20 pr-4 pl-4 text-sm"
               />
             </div>
             <Button
               onClick={() => sendMessage()}
               disabled={sending || (!newMessage.trim())}
-              className="flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] hover:from-[hsl(var(--primary))] hover:to-[#1a5a63] shadow-lg shadow-[hsl(var(--primary))]/25 transition-all disabled:opacity-50 disabled:shadow-none"
+              className="flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-[hsl(var(--primary)/<alpha-value>)] to-[hsl(var(--primary)/<alpha-value>)] hover:from-[hsl(var(--primary)/<alpha-value>)] hover:to-[#1a5a63] shadow-lg shadow-[hsl(var(--primary)/<alpha-value>)]/25 transition-all disabled:opacity-50 disabled:shadow-none"
             >
               {sending ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
