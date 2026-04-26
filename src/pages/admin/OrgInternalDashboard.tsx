@@ -1188,9 +1188,9 @@ function EmployeesShowcase({
           }}
         />
 
-        <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-white shadow-xl ring-1 ring-white/40 p-2">
+        <div className="relative flex flex-col items-center gap-5 p-7 text-center">
+          <div className="flex min-w-0 flex-col items-center gap-3">
+            <div className="flex h-28 w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-white shadow-xl ring-1 ring-white/40 p-2 sm:h-32 sm:w-32">
               {branding.logoUrl ? (
                 <img src={branding.logoUrl} alt={branding.orgName || "الجمعية"} className="h-full w-full object-contain" />
               ) : (
@@ -1198,16 +1198,17 @@ function EmployeesShowcase({
               )}
             </div>
             <div className="min-w-0">
-              <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
+              <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">{branding.orgName || "جمعية عطف الأيتام"}</h2>
+              <div className="mt-2 inline-flex items-center justify-center rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-sm">
                 طاقم الموظفين
-              </h2>
+              </div>
               <p className="mt-1 text-sm text-white/85">
                 منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
               <div className="text-2xl font-bold leading-none text-white">{employees.length}</div>
               <div className="mt-1 text-[11px] text-white/80">إجمالي الموظفين</div>
