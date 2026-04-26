@@ -13,6 +13,7 @@ import {
 import { ListChecks, Loader2, Sparkles, Plus, Calendar, Users, ArrowLeftCircle, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 interface OrgRow { id: string; name: string; slug?: string | null; }
 interface PlanRow {
@@ -137,20 +138,17 @@ export default function AdminActionPlans() {
 
   return (
     <div className="p-8 space-y-6">
-      {/* Hero */}
-      <div className="flex items-end justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <ListChecks className="w-8 h-8 text-accent" />
-            الخطط من التوصيات
-          </h1>
-          <p className="text-white/85 mt-1">حوّل توصيات التحليل الذكي إلى خطة عمل مزمنة، مكلَّفة، وقابلة للمتابعة</p>
-        </div>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
-          <Sparkles className="w-4 h-4" />
-          توليد خطة جديدة من آخر تحليل
-        </Button>
-      </div>
+      <PageHeader
+        icon={<ListChecks className="w-7 h-7" />}
+        title="الخطط من التوصيات"
+        subtitle="حوّل توصيات التحليل الذكي إلى خطة عمل مزمنة، مكلَّفة، وقابلة للمتابعة"
+        actions={
+          <Button onClick={() => setDialogOpen(true)} className="gap-2 bg-white text-primary hover:bg-white/90 font-bold">
+            <Sparkles className="w-4 h-4" />
+            توليد خطة جديدة من آخر تحليل
+          </Button>
+        }
+      />
 
       {loading ? (
         <Card className="p-12 text-center bg-card border-border text-muted-foreground">جاري التحميل...</Card>
