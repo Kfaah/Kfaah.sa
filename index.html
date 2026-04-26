@@ -7,26 +7,6 @@
     <meta name="description" content="منصة متكاملة لإدارة علاقات المتبرعين والتسويق الالكتروني">
     <meta name="author" content="جمعية عطف" />
 
-    
-    
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f21db08e-b7d0-4bbf-9e01-2c37cf2cb856/id-preview-711d4e36--d89a68c4-17de-485f-8e93-7eabdfb68015.lovable.app-1776664801534.png">
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f21db08e-b7d0-4bbf-9e01-2c37cf2cb856/id-preview-711d4e36--d89a68c4-17de-485f-8e93-7eabdfb68015.lovable.app-1776664801534.png">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <meta property="og:title" content="منصة إدارة التسويق الالكتروني">
-  <meta name="twitter:title" content="منصة إدارة التسويق الالكتروني">
-  <meta property="og:description" content="منصة متكاملة لإدارة علاقات المتبرعين والتسويق الالكتروني">
-  <meta name="twitter:description" content="منصة متكاملة لإدارة علاقات المتبرعين والتسويق الالكتروني">
-</head>
-
-  <body>
-    <div id="root"></div>
     <script>
       // Pre-hydrate org branding BEFORE React mounts to eliminate any
       // flash of the default theme on first paint when navigating into
@@ -35,9 +15,9 @@
       // Strategy:
       //   1) Resolve the org slug from the URL.
       //   2) Apply slug-keyed cache synchronously if present.
-      //   3) Otherwise hide <body> very briefly and fetch branding from
-      //      Supabase REST in parallel — apply, cache, then reveal.
-      //   4) Hard timeout (350ms) so the UI is never stuck blank.
+      //   3) Otherwise gate first paint and fetch branding from REST.
+      //      The UI is revealed ONLY after real org branding is applied.
+      //      This avoids published-site flicker on empty cache / slow networks.
       (function () {
         var SUPABASE_URL = "https://jopvcsrmccoulujeyjvw.supabase.co";
         var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHZjc3JtY2NvdWx1amV5anZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjU1MjAsImV4cCI6MjA5MjIwMTUyMH0.s3R2dRBKi_S7iS4y5CjAe-hr6hYJwivOSNNeekqC2wE";
@@ -145,8 +125,12 @@
               var rawId = localStorage.getItem("org_branding_v1:" + activeOrgId);
               if (rawId) {
                 var parsedId = JSON.parse(rawId);
-                applyBranding(parsedId);
-                cachedVersion = parsedId && parsedId.updatedAt ? parsedId.updatedAt : cachedVersion;
+                if (applyBranding(parsedId)) {
+                  cachedVersion = parsedId && parsedId.updatedAt ? parsedId.updatedAt : cachedVersion;
+                  hasAppliedBranding = true;
+                  var idGate = document.getElementById("__branding_gate__");
+                  if (idGate && idGate.parentNode) idGate.parentNode.removeChild(idGate);
+                }
               }
             }
           }
@@ -155,6 +139,8 @@
           //    while the body is blocked so the user never sees wrong colors.
           if (!slug) return;
 
+          var hasAppliedBranding = !!cachedVersion;
+
           var revealed = false;
           function reveal() {
             if (revealed) return;
@@ -162,7 +148,9 @@
             var el = document.getElementById("__branding_gate__");
             if (el && el.parentNode) el.parentNode.removeChild(el);
           }
-          var timeoutId = setTimeout(reveal, 600);
+          var timeoutId = setTimeout(function () {
+            if (hasAppliedBranding || document.documentElement.getAttribute("data-org-branded") === "true") reveal();
+          }, 4000);
 
           // Fetch organization_profiles via REST joined with organizations(slug).
           var url = SUPABASE_URL + "/rest/v1/organizations?slug=eq."
@@ -191,7 +179,7 @@
                 accent: prof.accent_color || null,
                 updatedAt: version,
               };
-              applyBranding(b);
+              hasAppliedBranding = applyBranding(b) || hasAppliedBranding;
               try {
                 localStorage.setItem("org_branding_slug_v1:" + slug, JSON.stringify(b));
                 if (row.id) {
@@ -203,7 +191,7 @@
             .catch(function () { /* noop */ })
             .finally(function () {
               clearTimeout(timeoutId);
-              reveal();
+              if (hasAppliedBranding || document.documentElement.getAttribute("data-org-branded") === "true") reveal();
             });
         } catch (e) {
           var el = document.getElementById("__branding_gate__");
@@ -211,6 +199,27 @@
         }
       })();
     </script>
+
+    
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f21db08e-b7d0-4bbf-9e01-2c37cf2cb856/id-preview-711d4e36--d89a68c4-17de-485f-8e93-7eabdfb68015.lovable.app-1776664801534.png">
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f21db08e-b7d0-4bbf-9e01-2c37cf2cb856/id-preview-711d4e36--d89a68c4-17de-485f-8e93-7eabdfb68015.lovable.app-1776664801534.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <meta property="og:title" content="منصة إدارة التسويق الالكتروني">
+  <meta name="twitter:title" content="منصة إدارة التسويق الالكتروني">
+  <meta property="og:description" content="منصة متكاملة لإدارة علاقات المتبرعين والتسويق الالكتروني">
+  <meta name="twitter:description" content="منصة متكاملة لإدارة علاقات المتبرعين والتسويق الالكتروني">
+</head>
+
+  <body>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
