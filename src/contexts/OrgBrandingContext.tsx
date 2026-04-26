@@ -3,6 +3,12 @@ import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
+const FALLBACK_BRANDING = {
+  primary: "#2f8e8c",
+  secondary: "#eef7f7",
+  accent: "#2563eb",
+};
+
 interface Branding {
   logoUrl: string | null;
   orgName: string;
@@ -90,6 +96,7 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   const [branding, setBranding] = useState<Branding>({
     logoUrl: null, orgName: "", primary: null, secondary: null, accent: null, loading: true,
   });
+  const [appliedOrgId, setAppliedOrgId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,9 +116,9 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
       const next: Branding = {
         logoUrl: data?.logo_url || currentOrg.logo_url || null,
         orgName: currentOrg.name,
-        primary: (data as Record<string, string | null> | null)?.primary_color || null,
-        secondary: (data as Record<string, string | null> | null)?.secondary_color || null,
-        accent: (data as Record<string, string | null> | null)?.accent_color || null,
+        primary: (data as Record<string, string | null> | null)?.primary_color || FALLBACK_BRANDING.primary,
+        secondary: (data as Record<string, string | null> | null)?.secondary_color || FALLBACK_BRANDING.secondary,
+        accent: (data as Record<string, string | null> | null)?.accent_color || FALLBACK_BRANDING.accent,
         loading: false,
       };
       setBranding(next);
@@ -126,17 +133,26 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     // so internal pages (employees, plans, ...) match the org identity.
     const path = location.pathname;
     const isAdminRoute = path.startsWith("/admin");
+    const searchOrgSlug = new URLSearchParams(location.search).get("org");
     const isAdminOrgScopedRoute = isAdminRoute && /\/admin\/(orgs?|organizations?)\//.test(path);
-    const useOrgBranding = !isAdminRoute || isAdminOrgScopedRoute;
+    const useOrgBranding = !isAdminRoute || isAdminOrgScopedRoute || Boolean(searchOrgSlug);
     if (useOrgBranding) {
       // Don't write anything until we actually have new values to apply,
       // otherwise we'd briefly clear the current colors and flash the
       // default theme before loading completes.
+      if (branding.loading) {
+        applyBrandingToDocument(FALLBACK_BRANDING);
+        setAppliedOrgId((prev) => prev ?? "__fallback__");
+      }
       if (!branding.loading && (branding.primary || branding.accent || branding.secondary)) {
         applyBrandingToDocument(branding);
+        setAppliedOrgId(currentOrg?.id ?? null);
       }
     } else {
-      applyBrandingToDocument({ primary: null, secondary: null, accent: null }, { reset: true });
+      if (appliedOrgId) {
+        applyBrandingToDocument({ primary: null, secondary: null, accent: null }, { reset: true });
+        setAppliedOrgId(null);
+      }
     }
 
     // Mark <html> with data-org-branded so the global CSS override layer
@@ -144,13 +160,13 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     // (blue/cyan/teal/emerald/...) to the org's primary/accent.
     const root = document.documentElement;
     const hasOrgColors =
-      useOrgBranding && (!!branding.primary || !!branding.accent);
+      useOrgBranding && !branding.loading && (!!branding.primary || !!branding.accent);
     if (hasOrgColors) {
       root.setAttribute("data-org-branded", "true");
     } else {
       root.removeAttribute("data-org-branded");
     }
-  }, [branding, location.pathname]);
+  }, [branding, location.pathname, currentOrg?.id, appliedOrgId]);
 
   const value = useMemo(() => branding, [branding]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

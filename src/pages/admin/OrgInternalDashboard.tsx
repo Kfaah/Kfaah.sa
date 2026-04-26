@@ -337,7 +337,7 @@ export default function OrgInternalDashboard({
           {standaloneTab && (
             <div
               className="relative overflow-hidden rounded-2xl shadow-xl"
-              style={{ background: `linear-gradient(to right, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
+              style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
               dir="rtl"
             >
               <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
@@ -433,7 +433,7 @@ export default function OrgInternalDashboard({
           {standaloneTab && (
             <div
               className="relative overflow-hidden rounded-2xl shadow-xl"
-              style={{ background: `linear-gradient(to right, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
+              style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
               dir="rtl"
             >
               <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
@@ -1227,7 +1227,7 @@ const ORG_PRIMARY_RING = "hsl(var(--primary) / 0.28)";
 const ORG_ACCENT = "hsl(var(--accent))";
 const ORG_ACCENT_SOFT = "hsl(var(--accent) / 0.12)";
 const ORG_ACCENT_RING = "hsl(var(--accent) / 0.4)";
-const ORG_GRADIENT = `linear-gradient(135deg, ${ORG_PRIMARY} 0%, ${ORG_ACCENT} 100%)`;
+const ORG_GRADIENT = `linear-gradient(to left, ${ORG_PRIMARY} 0%, ${ORG_PRIMARY} 68%, ${ORG_ACCENT} 100%)`;
 
 function EmployeesShowcase({
   employees,
@@ -1265,7 +1265,7 @@ function EmployeesShowcase({
       {/* Hero - Brand-dominant header */}
       <div
         className="relative overflow-hidden rounded-2xl shadow-xl"
-        style={{ background: `linear-gradient(to right, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
+        style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
         dir="rtl"
       >
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
