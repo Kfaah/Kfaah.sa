@@ -404,21 +404,26 @@ export function Sidebar() {
           >
             <div className="absolute inset-[-12px] rounded-full border-2 border-white/45 pointer-events-none animate-pulse" />
             <div className="absolute inset-[-24px] rounded-full bg-white/20 blur-2xl pointer-events-none" />
-            <div className="relative w-44 h-44 rounded-full bg-white flex items-center justify-center shadow-2xl overflow-hidden ring-4 ring-white/35 transition-transform duration-500 group-hover:scale-105 shrink-0">
+            <div className="relative w-44 h-44 rounded-full bg-white flex flex-col items-center justify-center gap-1 px-3 py-5 text-center shadow-2xl overflow-hidden ring-4 ring-white/35 transition-transform duration-500 group-hover:scale-105 shrink-0">
               {branding.loading ? (
-                <div className="w-40 h-40 rounded-full bg-slate-100 animate-pulse" />
+                <div className="w-28 h-28 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
                   src={branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-40 h-40 object-contain p-1 drop-shadow-xl"
+                  className="h-24 w-32 object-contain drop-shadow-xl"
                 />
               ) : (
                 <img
                   src={atefLogoIcon}
                   alt={branding.orgName || "الجمعية"}
-                  className="w-40 h-40 object-contain p-1 drop-shadow-xl"
+                  className="h-24 w-32 object-contain drop-shadow-xl"
                 />
+              )}
+              {!collapsed && !branding.loading && (
+                <span className="max-w-[8.5rem] text-center text-sm font-extrabold leading-snug text-[hsl(var(--primary))]">
+                  {branding.orgName || "الجمعية"}
+                </span>
               )}
             </div>
           </Link>
@@ -426,9 +431,6 @@ export function Sidebar() {
           {/* Text under logo */}
           {!collapsed && (
             <div className="text-center space-y-1">
-              <h1 className="text-xl font-bold text-white whitespace-nowrap tracking-wide drop-shadow">
-                {branding.orgName || "الجمعية"}
-              </h1>
               <div className="relative">
                 <p className="text-sm font-semibold text-white/90">
                   نظام إدارة التسويق الإلكتروني
