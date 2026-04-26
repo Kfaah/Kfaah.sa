@@ -343,16 +343,24 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center gap-3 rounded-l-[28px] rounded-r-none pr-5 pl-2 py-2 shadow-md transition-all duration-150",
+          "group/nav flex h-14 items-center gap-3 rounded-l-[28px] rounded-r-none pr-2 pl-5 py-2 shadow-md transition-all duration-150",
           isActive
             ? "bg-white shadow-lg scale-[1.02]"
             : "bg-white hover:shadow-lg"
         )}
       >
+        <div
+          className={cn(
+            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-colors",
+            "text-white shadow-sm bg-[hsl(155,55%,28%)]"
+          )}
+        >
+          <item.icon className="w-5 h-5" />
+        </div>
         {!collapsed && (
           <>
             <span
-              className="font-bold text-base flex-1 text-right transition-colors duration-150 text-slate-800"
+              className="font-bold text-base flex-1 text-left transition-colors duration-150 text-slate-800"
             >
               {item.title}
             </span>
@@ -366,15 +374,6 @@ export function Sidebar() {
             )}
           </>
         )}
-        <div
-          className={cn(
-            "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-colors",
-            "text-white shadow-sm"
-          )}
-          style={branding.primary ? { backgroundColor: branding.primary } : undefined}
-        >
-          <item.icon className="w-5 h-5" />
-        </div>
       </Link>
     );
   };
