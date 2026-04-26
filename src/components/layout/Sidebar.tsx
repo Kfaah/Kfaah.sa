@@ -343,8 +343,8 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center rounded-l-2xl rounded-r-none bg-sidebar-item py-2 -ml-6 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
-          collapsed ? "justify-center px-0" : "gap-3 pr-4 pl-10",
+          "group/nav flex h-14 items-center rounded-2xl bg-sidebar-item py-2 ml-3 mr-2 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
+          collapsed ? "justify-center px-0" : "gap-3 pr-4 pl-4",
           isActive ? "shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]" : "hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
         )}
       >
@@ -438,7 +438,7 @@ export function Sidebar() {
         {!collapsed && (
           <div className="mb-4 flex-shrink-0 space-y-2">
             {/* Main Profile Card - Matching design */}
-            <div className="relative z-20 -ml-6 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-8 shadow-[0_5px_14px_hsl(var(--sidebar-item-shadow))]">
+            <div className="relative z-20 ml-3 mr-2 rounded-2xl bg-sidebar-item p-3 shadow-[0_5px_14px_hsl(var(--sidebar-item-shadow))]">
               <div className="flex items-center gap-3">
                 {/* Avatar - Left side, larger with cyan border */}
                 <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[hsl(var(--sidebar-icon-start))] shadow-[0_0_0_1.5px_hsl(var(--sidebar-item)),0_6px_14px_hsl(var(--sidebar-item-shadow))] ring-1 ring-[hsl(var(--sidebar-icon-end))] flex-shrink-0">
@@ -468,7 +468,7 @@ export function Sidebar() {
             {/* Profile Icon Button */}
             <Link
               to="/profile"
-              className="group relative flex w-full items-center gap-3 -ml-6 rounded-l-2xl rounded-r-none bg-sidebar-item p-3 pl-8 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
+              className="group relative flex items-center gap-3 ml-3 mr-2 rounded-2xl bg-sidebar-item p-3 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
             >
               <div className="sidebar-reference-icon relative flex h-10 w-10 items-center justify-center rounded-full text-sidebar-primary-foreground transition-transform duration-200 group-hover:scale-[1.04]">
                 <User className="w-5 h-5" />
