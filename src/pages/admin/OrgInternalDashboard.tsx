@@ -736,7 +736,7 @@ const EmbeddedOrgPage = forwardRef<HTMLDivElement, {
   }
   const src = embedSlug ? `/${slug}${path}?embedded=1` : `${path}?embedded=1&org=${slug}`;
   return (
-    <div ref={ref} className="w-full -mx-2">
+    <div ref={ref} className="w-full">
       <iframe
         src={src}
         title={title}
