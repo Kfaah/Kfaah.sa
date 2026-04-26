@@ -144,7 +144,7 @@ interface GroupedPlans {
   }[];
 }
 
-export default function OperationalPlans() {
+export default function OperationalPlans({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const { user, previewAsEmployee } = useUser();
@@ -1428,7 +1428,7 @@ export default function OperationalPlans() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout embedded={embedded}>
       <div className="space-y-6">
         {/* Header */}
         <PageHeader
