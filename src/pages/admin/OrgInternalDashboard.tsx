@@ -1270,53 +1270,59 @@ function EmployeesShowcase({
     <div className="space-y-6">
       {/* Hero - Brand-dominant header */}
       <div
-        className="relative overflow-hidden rounded-2xl border-2 bg-card shadow-sm"
-        style={{ borderColor: ORG_PRIMARY_RING, borderTopWidth: 4, borderTopColor: ORG_PRIMARY }}
+        className="relative overflow-hidden rounded-2xl shadow-xl"
+        style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
         dir="rtl"
       >
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+        <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+            backgroundSize: "22px 22px",
+          }}
+        />
         <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 min-w-0">
-            <div
-              className="flex h-24 w-24 sm:h-28 sm:w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-background p-2"
-              style={{ borderColor: ORG_PRIMARY_RING }}
-            >
+            <div className="flex h-28 w-28 sm:h-32 sm:w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-white/40 p-2">
               {branding.logoUrl ? (
                 <img src={branding.logoUrl} alt={branding.orgName || "الجمعية"} className="h-full w-full object-contain" />
               ) : (
-                <Users className="h-10 w-10" style={{ color: ORG_PRIMARY }} />
+                <Users className="h-10 w-10 text-primary" />
               )}
             </div>
             <div className="min-w-0">
-              <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+              <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
                 طاقم الموظفين
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-white/85">
                 منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-2xl border border-border bg-muted/30 px-4 py-2">
-              <div className="text-2xl font-bold leading-none text-foreground">{employees.length}</div>
-              <div className="mt-1 text-[11px] text-muted-foreground">إجمالي الموظفين</div>
+            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
+              <div className="text-2xl font-bold leading-none text-white">{employees.length}</div>
+              <div className="mt-1 text-[11px] text-white/80">إجمالي الموظفين</div>
             </div>
-            <div className="rounded-2xl border border-border bg-muted/30 px-4 py-2">
-              <div className="flex items-center gap-1 text-2xl font-bold leading-none text-foreground">
+            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
+              <div className="flex items-center gap-1 text-2xl font-bold leading-none text-white">
                 <Crown className="h-5 w-5" />
                 {managersCount}
               </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">قيادات</div>
+              <div className="mt-1 text-[11px] text-white/80">قيادات</div>
             </div>
-            <div className="rounded-2xl border border-border bg-muted/30 px-4 py-2">
-              <div className="text-2xl font-bold leading-none text-foreground">{totalQuestions}</div>
-              <div className="mt-1 text-[11px] text-muted-foreground">مساءلات نشطة</div>
+            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
+              <div className="text-2xl font-bold leading-none text-white">{totalQuestions}</div>
+              <div className="mt-1 text-[11px] text-white/80">مساءلات نشطة</div>
             </div>
             <Link to={addEmployeeHref}>
               <Button
                 size="lg"
-                className="gap-2 text-white shadow-md hover:opacity-95"
-                style={{ background: ORG_PRIMARY }}
+                className="gap-2 bg-white text-primary shadow-md hover:bg-white/90"
+                style={{ color: ORG_PRIMARY }}
               >
                 <UserPlus className="h-5 w-5" />
                 إضافة موظف جديد
