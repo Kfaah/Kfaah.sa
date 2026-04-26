@@ -43,6 +43,27 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
+// اسم الجمعية المختصر (سطران × 3-4 كلمات) للعرض في الشريط الجانبي
+// المطابقة تتم بمقاطع من الاسم الرسمي الكامل المخزن في DB
+const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: [string, string] }> = [
+  { match: /سكينة/, lines: ["جمعية سكينة", "لبناء وترميم المساجد"] },
+  { match: /عطاء الخير/, lines: ["جمعية عطاء الخير", "لرعاية الأيتام وأسرهم"] },
+  { match: /عطف/, lines: ["جمعية عطف", "لرعاية الأيتام بلقرن"] },
+  { match: /نجباء/, lines: ["جمعية نجباء", "لرعاية الأيتام بالفرشة"] },
+  { match: /صواب/, lines: ["جمعية صواب", "لتأهيل المتعافين من الإدمان"] },
+  { match: /مآثر/, lines: ["جمعية مآثر للدعوة", "وتوعية الجاليات بالعارضة"] },
+  { match: /القصبة/, lines: ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بالقصبة"] },
+  { match: /حرف/, lines: ["جمعية حرف", ""] },
+];
+
+function getShortOrgName(fullName: string): [string, string] | null {
+  if (!fullName) return null;
+  for (const entry of ORG_SHORT_NAME_BY_KEYWORD) {
+    if (entry.match.test(fullName)) return entry.lines;
+  }
+  return null;
+}
+
 interface NavItem {
   title: string;
   href: string;
@@ -422,11 +443,24 @@ export function Sidebar() {
           {!collapsed && (
             <div className="text-center space-y-1">
               <div className="relative">
-                {branding.orgName && (
-                  <p className="text-base font-bold text-white drop-shadow-sm">
-                    {branding.orgName}
-                  </p>
-                )}
+                {branding.orgName && (() => {
+                  const short = getShortOrgName(branding.orgName);
+                  if (short) {
+                    return (
+                      <div className="text-white drop-shadow-sm leading-tight">
+                        <p className="text-base font-bold">{short[0]}</p>
+                        {short[1] && (
+                          <p className="text-sm font-semibold opacity-95">{short[1]}</p>
+                        )}
+                      </div>
+                    );
+                  }
+                  return (
+                    <p className="text-base font-bold text-white drop-shadow-sm">
+                      {branding.orgName}
+                    </p>
+                  );
+                })()}
                 <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-white/70 to-transparent rounded-full" />
                 <p className="text-sm font-semibold text-white/90">
                   نظام إدارة التسويق الإلكتروني
