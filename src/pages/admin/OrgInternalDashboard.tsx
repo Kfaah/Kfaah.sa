@@ -1435,7 +1435,6 @@ function EmployeesShowcase({
                   </div>
                   <Link
                     to={editHref}
-                    className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] transition-colors"
                     className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     <Pencil className="h-3 w-3" />
