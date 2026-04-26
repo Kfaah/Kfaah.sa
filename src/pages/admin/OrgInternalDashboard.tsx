@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, forwardRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowRight, LayoutDashboard, Users, ListChecks, FileBarChart2,
@@ -733,20 +733,15 @@ function PlaceholderTab({ title, desc, linkTo, linkLabel }: { title: string; des
   );
 }
 
-function EmbeddedOrgPage({
-  slug,
-  path,
-  title,
-  embedSlug = true,
-}: {
+const EmbeddedOrgPage = forwardRef<HTMLDivElement, {
   slug?: string | null;
   path: string;
   title: string;
   embedSlug?: boolean;
-}) {
+}>(function EmbeddedOrgPage({ slug, path, title, embedSlug = true }, ref) {
   if (!slug) {
     return (
-      <Card>
+      <Card ref={ref}>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
           <CardDescription>جارٍ تحميل بيانات الجمعية…</CardDescription>
@@ -756,7 +751,7 @@ function EmbeddedOrgPage({
   }
   const src = embedSlug ? `/${slug}${path}?embedded=1` : `${path}?embedded=1&org=${slug}`;
   return (
-    <div className="w-full -mx-2">
+    <div ref={ref} className="w-full -mx-2">
       <iframe
         src={src}
         title={title}
@@ -765,7 +760,7 @@ function EmbeddedOrgPage({
       />
     </div>
   );
-}
+});
 
 /* ---------- inline uploader for admin (org-scoped) ---------- */
 
