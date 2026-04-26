@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -273,26 +274,20 @@ const AddEmployee = () => {
     <DashboardLayout>
       <div className="p-6 space-y-6 max-w-4xl mx-auto" dir="rtl">
         {/* رأس الصفحة */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <PageHeader
+          icon={<Plus className="h-7 w-7" />}
+          title="إضافة موظف جديد"
+          subtitle="إنشاء بيانات موظف جديد ضمن الجمعية"
+          actions={
             <Button
-              variant="ghost"
-              size="sm"
               onClick={() => navigate("/employees")}
-              className="gap-2"
+              className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
             >
               <ArrowRight className="w-4 h-4" />
               العودة
             </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center">
-                <Plus className="w-5 h-5 text-white" />
-              </div>
-              إضافة موظف جديد
-            </h1>
-          </div>
-        </div>
+          }
+        />
 
         {/* البطاقة الرئيسية */}
         <Card className="border-[hsl(var(--primary)/0.2)] shadow-lg overflow-hidden">

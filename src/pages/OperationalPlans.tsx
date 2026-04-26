@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1430,67 +1431,80 @@ export default function OperationalPlans() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between flex-row-reverse">
-          <div className="flex gap-3">
-            {/* زر توليد AI */}
-            {isAdmin && (
-              <Button 
-                className="gap-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg shadow-purple-500/25 border-0"
-                onClick={() => setIsAIDialogOpen(true)}
-                disabled={isAIGenerating}
-              >
-                {isAIGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4" />
-                )}
-                توليد الخطط بالذكاء الاصطناعي
-              </Button>
-            )}
-            
-            <Button 
-              className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25 border-0" 
-              onClick={() => navigate("/operational-plans/add")}
-            >
-              <Plus className="w-4 h-4" />
-              إضافة خطة
-            </Button>
-            
-            {/* زر وضع التعديل */}
-            <Button 
-              className={`gap-2 shadow-lg ${isEditMode 
-                ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-orange-500/25' 
-                : 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 shadow-slate-500/25'
-              } text-white border-0`}
-              onClick={() => {
-                if (isEditMode) {
-                  setIsEditMode(false);
-                  setEditingPlanId(null);
-                  setEditFormData(null);
-                  setIsEditingMonths(null);
-                  setEditingMonthlyTargets({});
-                  setAddingActivityUnder(null);
-                  setNewActivityName("");
-                  setNewActivityTarget("");
-                } else {
-                  setIsEditMode(true);
-                }
-              }}
-            >
-              {isEditMode ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  إنهاء التعديل
-                </>
-              ) : (
-                <>
-                  <Pencil className="w-4 h-4" />
-                  التعديل على الخطة
-                </>
+        <PageHeader
+          icon={<Target className="h-7 w-7" />}
+          title={isAdmin ? "الخطط التشغيلية" : "الخطة التشغيلية"}
+          subtitle={isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
+          actions={
+            <>
+              {isAdmin && (
+                <Button
+                  className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                  onClick={() => setIsAIDialogOpen(true)}
+                  disabled={isAIGenerating}
+                >
+                  {isAIGenerating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  توليد الخطط بالذكاء الاصطناعي
+                </Button>
               )}
-            </Button>
-          </div>
-          
+              <Button
+                className="gap-2 bg-white text-primary hover:bg-white/90"
+                onClick={() => navigate("/operational-plans/add")}
+              >
+                <Plus className="w-4 h-4" />
+                إضافة خطة
+              </Button>
+              <Button
+                className={`gap-2 border ${
+                  isEditMode
+                    ? "bg-white text-primary border-white"
+                    : "bg-white/15 text-white border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                }`}
+                onClick={() => {
+                  if (isEditMode) {
+                    setIsEditMode(false);
+                    setEditingPlanId(null);
+                    setEditFormData(null);
+                    setIsEditingMonths(null);
+                    setEditingMonthlyTargets({});
+                    setAddingActivityUnder(null);
+                    setNewActivityName("");
+                    setNewActivityTarget("");
+                  } else {
+                    setIsEditMode(true);
+                  }
+                }}
+              >
+                {isEditMode ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    إنهاء التعديل
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="w-4 h-4" />
+                    التعديل على الخطة
+                  </>
+                )}
+              </Button>
+            </>
+          }
+        />
+
+        <div className="flex justify-end">
+          <ScopeToggle
+            scope={scopedView.scope}
+            onChange={scopedView.setScope}
+            roleLevel={scopedView.roleLevel}
+            teamCount={scopedView.subordinateEmployeeIds.length}
+          />
+        </div>
+
+        <div>
           <AddOperationalPlanDialog
             open={isAddDialogOpen}
             onOpenChange={setIsAddDialogOpen}
@@ -1559,23 +1573,6 @@ export default function OperationalPlans() {
               )}
             </div>
           )}
-          
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                {isAdmin ? "الخطط التشغيلية" : "الخطة التشغيلية"}
-              </h1>
-              <p className="text-muted-foreground">
-                {isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
-              </p>
-            </div>
-            <ScopeToggle
-              scope={scopedView.scope}
-              onChange={scopedView.setScope}
-              roleLevel={scopedView.roleLevel}
-              teamCount={scopedView.subordinateEmployeeIds.length}
-            />
-          </div>
         </div>
         
         {/* شريط الفلاتر */}
