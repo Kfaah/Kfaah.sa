@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef } from "react";
+import { useEffect, useState, forwardRef, lazy, Suspense } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowRight, LayoutDashboard, Users, ListChecks, FileBarChart2,
@@ -21,8 +21,8 @@ import { toast } from "sonner";
 import { SourceLink } from "@/components/admin/SourceLink";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { PageHeader } from "@/components/layout/PageHeader";
-import OperationalPlans from "@/pages/OperationalPlans";
-import ExecutivePlans from "@/pages/ExecutivePlans";
+const OperationalPlans = lazy(() => import("@/pages/OperationalPlans"));
+const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 
 interface OrgInfo {
   id: string;
