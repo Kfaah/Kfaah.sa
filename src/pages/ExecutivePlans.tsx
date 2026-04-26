@@ -280,7 +280,7 @@ export default function ExecutivePlans() {
   const [selectedPlanMonthId, setSelectedPlanMonthId] = useState<string>("");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [addingMonth, setAddingMonth] = useState<number>(1);
-  const activeOrgId = routeOrgId ?? currentOrg?.id ?? null;
+  const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
 
   // التحقق من صلاحية المدير
   useEffect(() => {
