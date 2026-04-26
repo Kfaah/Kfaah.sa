@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -135,8 +135,15 @@ function applyBrandingToDocument(
 }
 
 export function OrgBrandingProvider({ children }: { children: ReactNode }) {
-  const { currentOrg } = useOrganization();
+  const { currentOrg, loading: orgLoading } = useOrganization();
   const location = useLocation();
+  const routeUsesOrgBranding = useMemo(() => {
+    const path = location.pathname;
+    const isAdminRoute = path.startsWith("/admin");
+    const searchOrgSlug = new URLSearchParams(location.search).get("org");
+    const isAdminOrgScopedRoute = isAdminRoute && /\/admin\/(orgs?|organizations?)\//.test(path);
+    return !isAdminRoute || isAdminOrgScopedRoute || Boolean(searchOrgSlug);
+  }, [location.pathname, location.search]);
   const [branding, setBranding] = useState<Branding>(() => {
     // Synchronously hydrate from slug-keyed cache on first render so the
     // very first paint already has the correct org colors — no flicker.
@@ -177,6 +184,9 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (orgLoading) {
+        return;
+      }
       if (!currentOrg) {
         setBranding({ logoUrl: null, orgName: "", primary: null, secondary: null, accent: null, loading: false });
         return;
@@ -253,19 +263,14 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
       });
     })();
     return () => { cancelled = true; };
-  }, [currentOrg]);
+  }, [currentOrg, orgLoading]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Admin routes normally use the neutral admin theme. However, when an
     // admin is browsing inside a specific organization (e.g. /admin/orgs/:slug
     // or any /admin/.../<slug>/... route), apply that organization's branding
     // so internal pages (employees, plans, ...) match the org identity.
-    const path = location.pathname;
-    const isAdminRoute = path.startsWith("/admin");
-    const searchOrgSlug = new URLSearchParams(location.search).get("org");
-    const isAdminOrgScopedRoute = isAdminRoute && /\/admin\/(orgs?|organizations?)\//.test(path);
-    const useOrgBranding = !isAdminRoute || isAdminOrgScopedRoute || Boolean(searchOrgSlug);
-    if (useOrgBranding) {
+    if (routeUsesOrgBranding) {
       // Apply whatever colors we currently have — these come from either
       // the synchronous cache (no network) or the freshly fetched data.
       // We never clear vars here, so the previous org's colors stay on
@@ -290,17 +295,31 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     // (in index.css) re-routes hardcoded Tailwind color classes
     // (blue/cyan/teal/emerald/...) to the org's primary/accent.
     const root = document.documentElement;
-    const hasOrgColors =
-      useOrgBranding && (!!branding.primary || !!branding.accent);
+      const hasOrgColors =
+      routeUsesOrgBranding && (!!branding.primary || !!branding.accent);
     if (hasOrgColors) {
       root.setAttribute("data-org-branded", "true");
     } else {
       root.removeAttribute("data-org-branded");
     }
-  }, [branding, location.pathname, currentOrg?.id, appliedOrgId]);
+  }, [branding, routeUsesOrgBranding, currentOrg?.id, appliedOrgId]);
+
+  const holdForBranding =
+    routeUsesOrgBranding &&
+    (orgLoading || (!!currentOrg && (branding.loading || (!branding.primary && !branding.accent))));
+
+  useLayoutEffect(() => {
+    if (holdForBranding) return;
+    const gate = document.getElementById("__branding_gate__");
+    if (gate?.parentNode) gate.parentNode.removeChild(gate);
+  }, [holdForBranding]);
 
   const value = useMemo(() => branding, [branding]);
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      <div style={holdForBranding ? { visibility: "hidden" } : undefined}>{children}</div>
+    </Ctx.Provider>
+  );
 }
 
 export function useOrgBranding() {
