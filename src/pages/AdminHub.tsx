@@ -16,7 +16,6 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization, type Organization } from "@/contexts/OrganizationContext";
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 type OrgWithCounts = Organization & { member_count?: number };
@@ -149,7 +148,7 @@ export default function AdminHub() {
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
-  const handleSignOut = async () => { await signOut(); navigate("/"); };
+  const handleSignOut = () => { navigate("/admin/organizations", { replace: true }); };
 
   return (
     <div className="min-h-screen" dir="rtl">
