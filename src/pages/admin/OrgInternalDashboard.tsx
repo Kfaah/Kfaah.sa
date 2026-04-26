@@ -24,6 +24,18 @@ import { PageHeader } from "@/components/layout/PageHeader";
 const OperationalPlans = lazy(() => import("@/pages/OperationalPlans"));
 const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 
+// اسم مختصر لكل جمعية (سطران × 3-4 كلمات) للعرض في رأس اللوحة الداخلية
+const ORG_SHORT_NAME: Record<string, [string, string]> = {
+  sakinah: ["جمعية سكينة", "لبناء وترميم المساجد"],
+  ataa: ["جمعية عطاء الخير", "لرعاية الأيتام وأسرهم"],
+  atff: ["جمعية عطف", "لرعاية الأيتام بلقرن"],
+  nujabaa: ["جمعية نجباء", "لرعاية الأيتام بالفرشة"],
+  sawab: ["جمعية صواب", "لتأهيل المتعافين من الإدمان"],
+  maather: ["جمعية مآثر للدعوة", "وتوعية الجاليات بالعارضة"],
+  "d-alqasaba": ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بالقصبة"],
+  harf: ["جمعية حرف", ""],
+};
+
 interface OrgInfo {
   id: string;
   name: string;
@@ -258,6 +270,19 @@ export default function OrgInternalDashboard({
                   </span>
                 </div>
                 <h1 className="sr-only">{org?.name ?? "الجمعية"}</h1>
+                {org?.slug && ORG_SHORT_NAME[org.slug] && (
+                  <div
+                    className="mt-2 text-center sm:text-start font-extrabold leading-tight tracking-tight"
+                    style={{ color: ORG_PRIMARY }}
+                  >
+                    <div className="text-lg sm:text-xl">{ORG_SHORT_NAME[org.slug][0]}</div>
+                    {ORG_SHORT_NAME[org.slug][1] && (
+                      <div className="text-base sm:text-lg text-foreground/80">
+                        {ORG_SHORT_NAME[org.slug][1]}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <p className="mt-2 text-sm text-muted-foreground">
                   رؤية شاملة · تقييم ذكي · مساءلات ذكية
                 </p>
