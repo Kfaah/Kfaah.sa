@@ -1,7 +1,9 @@
 # Project Memory
 
 ## Core
-جمعية حرف (slug=harf) هويتها: تركوازي بحري داكن وفاتح من الشعار. Primary #057D87 + Accent #2BA0B5. الألوان محفوظة في organization_profiles وتُطبَّق تلقائياً عبر OrgBrandingContext على كل صفحات /harf/*. لا تُضِف ألواناً عشوائية (cyan/teal/emerald hardcoded) — استخدم hsl(var(--primary)) و hsl(var(--accent)). القائمة الجانبية بدون animations مزعجة (لا spin/float/shimmer/pulse) — هادئة ورسمية وثابتة.
+جميع الجمعيات لها هوية بصرية مخصصة في organization_profiles (primary_color, accent_color, secondary_color) تُطبَّق تلقائياً على كل صفحات نظام الجمعية عبر OrgBrandingContext. لا تستخدم ألواناً مكوّدة عشوائية (blue/cyan/teal/emerald/indigo/purple/pink hardcoded) — استخدم hsl(var(--primary)) و hsl(var(--accent)). الألوان المكوّدة من tailwind للعائلات المذكورة تُترجم تلقائياً عبر CSS override layer في index.css تحت html[data-org-branded="true"].
+أسماء الجمعيات المختصرة (سطران) معرّفة في src/components/layout/Sidebar.tsx (ORG_SHORT_NAME_BY_KEYWORD) و src/pages/admin/OrgInternalDashboard.tsx (ORG_SHORT_NAME) — يجب أن تتطابق مع الاسم الرسمي في DB. عطف=بمحافظة العارضة، القصبة=بمركز القصبة، نجباء=بالفرشة، سكينة=بجازان.
+القائمة الجانبية بدون animations مزعجة (لا spin/float/shimmer/pulse) — هادئة ورسمية وثابتة.
 
 ## Memories
 - [Harf brand](mem://design/harf-brand) — Olive palette, gradient and usage example in EmployeesShowcase
