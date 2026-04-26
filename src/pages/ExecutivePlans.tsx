@@ -512,38 +512,53 @@ export default function ExecutivePlans() {
         
         // جلب جميع أشهر الخطط
         const planIds = allPlans.map(p => p.id);
-        const { data: months, error: monthsError } = await supabase
-          .from("operational_plan_months")
-          .select("*")
-          .in("operational_plan_id", planIds)
-          .order("month", { ascending: true });
-        
-        if (monthsError) throw monthsError;
-        setPlanMonths(months || []);
+        const months: OperationalPlanMonth[] = [];
+        for (const ids of chunkArray(planIds)) {
+          let query = supabase
+            .from("operational_plan_months")
+            .select("*")
+            .in("operational_plan_id", ids)
+            .order("month", { ascending: true });
+          if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+          const { data: monthChunk, error: monthsError } = await query;
+          if (monthsError) throw monthsError;
+          if (monthChunk) months.push(...monthChunk);
+        }
+        months.sort((a, b) => a.month - b.month);
+        setPlanMonths(months);
         
         // جلب الخطط التنفيذية
-        if (months && months.length > 0) {
+        if (months.length > 0) {
           const monthIds = months.map(m => m.id);
-          const { data: executive, error: execError } = await supabase
-            .from("executive_plans")
-            .select("*")
-            .in("operational_plan_month_id", monthIds)
-            .order("day", { ascending: true });
-          
-          if (execError) throw execError;
-          setExecutivePlans(executive || []);
+          const executive: ExecutivePlan[] = [];
+          for (const ids of chunkArray(monthIds)) {
+            let query = supabase
+              .from("executive_plans")
+              .select("*")
+              .in("operational_plan_month_id", ids)
+              .order("day", { ascending: true });
+            if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+            const { data: executiveChunk, error: execError } = await query;
+            if (execError) throw execError;
+            if (executiveChunk) executive.push(...executiveChunk);
+          }
+          executive.sort((a, b) => a.day - b.day);
+          setExecutivePlans(executive);
           
           // جلب المهام المرتبطة بالخطط التنفيذية
-          if (executive && executive.length > 0) {
+          if (executive.length > 0) {
             const execIds = executive.map(e => e.id);
-            const { data: tasksData, error: tasksError } = await supabase
-              .from("tasks")
-              .select("id, title, status, priority, executive_plan_id, category")
-              .in("executive_plan_id", execIds);
-            
-            if (!tasksError && tasksData) {
-              setTasks(tasksData);
+            const nextTasks: Task[] = [];
+            for (const ids of chunkArray(execIds)) {
+              let query = supabase
+                .from("tasks")
+                .select("id, title, status, priority, executive_plan_id, category")
+                .in("executive_plan_id", ids);
+              if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+              const { data: tasksData, error: tasksError } = await query;
+              if (!tasksError && tasksData) nextTasks.push(...tasksData);
             }
+            setTasks(nextTasks);
           } else {
             setTasks([]);
           }
