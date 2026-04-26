@@ -1353,12 +1353,13 @@ function EmployeesShowcase({
             return (
               <div
                 key={e.id}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
-                style={{ ['--org-hover' as string]: ORG_PRIMARY }}
+                className="group relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:shadow-md"
+                style={{ borderColor: 'hsl(var(--border))', borderTopWidth: 3, borderTopColor: ORG_PRIMARY }}
               >
                 <div className="relative flex items-start gap-3">
                   <div
-                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-border bg-muted text-xl font-bold text-foreground"
+                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 bg-background text-xl font-bold"
+                    style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
                   >
                     {e.avatar_url ? (
                       <img src={e.avatar_url} alt={e.full_name} className="h-full w-full object-cover" />
@@ -1369,7 +1370,8 @@ function EmployeesShowcase({
                   {isLeader && (
                     <Badge
                       variant="outline"
-                      className="gap-1 self-center border-border bg-muted text-muted-foreground shadow-sm"
+                      className="gap-1 self-center bg-background shadow-sm"
+                      style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
                     >
                       <Crown className="h-3 w-3" /> قيادي
                     </Badge>
