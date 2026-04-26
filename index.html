@@ -141,7 +141,8 @@
             .then(function (rows) {
               if (!rows || !rows.length) return;
               var row = rows[0];
-              var prof = (row.organization_profiles && row.organization_profiles[0]) || {};
+              var prof = row.organization_profiles || {};
+              if (Array.isArray(prof)) prof = prof[0] || {};
               var b = {
                 logoUrl: prof.logo_url || row.logo_url || null,
                 primary: prof.primary_color || null,
