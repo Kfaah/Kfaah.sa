@@ -1278,13 +1278,29 @@ function EmployeesShowcase({
             return (
               <div
                 key={e.id}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
                 style={{ ['--org-hover' as string]: ORG_PRIMARY }}
               >
                 <div
-                  className="absolute inset-x-0 top-0 h-20 opacity-20"
+                  className="absolute inset-x-0 top-0 h-24"
                   style={{ background: ORG_GRADIENT }}
                 />
+                {/* Decorative pattern overlay for richness */}
+                <div
+                  className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-25"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                    backgroundSize: "14px 14px",
+                  }}
+                />
+                {/* Soft glow accent */}
+                <div
+                  className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-40 blur-2xl"
+                  style={{ background: ORG_ACCENT_RING }}
+                />
+                {/* Bottom fade for crisp separation from card body */}
+                <div className="pointer-events-none absolute inset-x-0 top-20 h-6 bg-gradient-to-b from-transparent to-card" />
                 <div className="relative flex items-start gap-3">
                   <div
                     className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white shadow-lg ring-4 ring-card"
@@ -1299,8 +1315,8 @@ function EmployeesShowcase({
                   {isLeader && (
                     <Badge
                       variant="outline"
-                      className="gap-1 self-center"
-                      style={{ borderColor: ORG_ACCENT_RING, backgroundColor: ORG_ACCENT_SOFT, color: ORG_PRIMARY }}
+                      className="gap-1 self-center shadow-sm backdrop-blur-sm"
+                      style={{ borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.85)', color: ORG_PRIMARY }}
                     >
                       <Crown className="h-3 w-3" /> قيادي
                     </Badge>
@@ -1309,7 +1325,7 @@ function EmployeesShowcase({
                     <Link
                       to={editHref}
                       title="تعديل"
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 text-muted-foreground opacity-0 transition-all group-hover:opacity-100"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/80 text-muted-foreground shadow-sm opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100"
                       style={{ ['--tw-text-opacity' as string]: 1 }}
                       onMouseEnter={(ev) => { ev.currentTarget.style.color = ORG_PRIMARY; ev.currentTarget.style.borderColor = ORG_PRIMARY_RING; }}
                       onMouseLeave={(ev) => { ev.currentTarget.style.color = ''; ev.currentTarget.style.borderColor = ''; }}
