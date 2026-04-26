@@ -336,7 +336,7 @@ export default function OrgInternalDashboard({
         </TabsList>}
 
         {/* OVERVIEW */}
-        <TabsContent value="overview" className="mt-6 space-y-4" dir="rtl">
+        <TabsContent value="overview" className={standaloneTab ? "space-y-4" : "mt-6 space-y-4"} dir="rtl">
           {standaloneTab && (
             <PageHeader
               icon={<LayoutDashboard className="w-6 h-6" />}
@@ -403,7 +403,7 @@ export default function OrgInternalDashboard({
         </TabsContent>
 
         {/* ANALYSIS */}
-        <TabsContent value="analysis" className="space-y-4 mt-6" dir="rtl">
+        <TabsContent value="analysis" className={standaloneTab ? "space-y-4" : "mt-6 space-y-4"} dir="rtl">
           {standaloneTab && (
             <PageHeader
               icon={<Sparkles className="w-6 h-6" />}
@@ -442,7 +442,7 @@ export default function OrgInternalDashboard({
         </TabsContent>
 
         {/* ACCOUNTABILITY */}
-        <TabsContent value="accountability" className="space-y-4 mt-6" dir="rtl">
+        <TabsContent value="accountability" className={standaloneTab ? "space-y-4" : "mt-6 space-y-4"} dir="rtl">
           <PageHeader
             icon={<ShieldAlert className="w-7 h-7" />}
             title="مساءلات الموظفين"
