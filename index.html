@@ -27,6 +27,63 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Pre-hydrate org branding from localStorage BEFORE React mounts.
+      // This eliminates the "flash of default theme" on first paint when
+      // navigating into an organization-scoped route (e.g. /atff/...).
+      (function () {
+        try {
+          var path = window.location.pathname || "";
+          var search = window.location.search || "";
+          var seg = path.split("/").filter(Boolean);
+          var slug = null;
+          var qs = new URLSearchParams(search).get("org");
+          if (qs) slug = qs;
+          else if (seg[0] === "admin" && seg.length >= 3 && /^orgs?$|^organizations?$/.test(seg[1])) slug = seg[2];
+          else if (seg[0] && seg[0] !== "admin") slug = seg[0];
+          // Find any cached branding for this slug → org id mapping is unknown
+          // here, so iterate cache keys and use the most recently stored one
+          // matching the active org id (saved separately by the app).
+          var activeOrgId = localStorage.getItem("active_organization_id");
+          if (!activeOrgId) return;
+          var raw = localStorage.getItem("org_branding_v1:" + activeOrgId);
+          if (!raw) return;
+          var b = JSON.parse(raw);
+          function hexToHsl(hex) {
+            var m = /^#?([0-9a-f]{6})$/i.exec((hex || "").trim());
+            if (!m) return null;
+            var n = parseInt(m[1], 16);
+            var r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, bl = (n & 255) / 255;
+            var mx = Math.max(r, g, bl), mn = Math.min(r, g, bl);
+            var h = 0, s = 0, l = (mx + mn) / 2;
+            if (mx !== mn) {
+              var d = mx - mn;
+              s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+              if (mx === r) h = ((g - bl) / d + (g < bl ? 6 : 0));
+              else if (mx === g) h = ((bl - r) / d + 2);
+              else h = ((r - g) / d + 4);
+              h *= 60;
+            }
+            return Math.round(h) + " " + Math.round(s * 100) + "% " + Math.round(l * 100) + "%";
+          }
+          var root = document.documentElement;
+          var p = hexToHsl(b.primary), a = hexToHsl(b.accent), s2 = hexToHsl(b.secondary);
+          if (p) {
+            root.style.setProperty("--primary", p);
+            root.style.setProperty("--sidebar-primary", p);
+            root.style.setProperty("--ring", p);
+            root.style.setProperty("--sidebar-ring", p);
+            root.style.setProperty("--gradient-primary", "linear-gradient(135deg, hsl(" + p + ") 0%, hsl(" + p + " / 0.85) 100%)");
+          }
+          if (a) {
+            root.style.setProperty("--accent", a);
+            root.style.setProperty("--gradient-accent", "linear-gradient(135deg, hsl(" + a + ") 0%, hsl(" + a + " / 0.85) 100%)");
+          }
+          if (s2) root.style.setProperty("--secondary", s2);
+          if (p || a) root.setAttribute("data-org-branded", "true");
+        } catch (e) { /* noop */ }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
