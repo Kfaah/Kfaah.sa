@@ -317,7 +317,7 @@ export default function EmployeeOnboarding() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6 max-w-4xl mx-auto" dir="rtl">
+      <div className="space-y-6 p-6 max-w-7xl mx-auto" dir="rtl">
         {/* Header */}
         <Card className="overflow-hidden border-0 shadow-xl">
           <div className="bg-gradient-to-l from-primary via-primary to-primary/80 p-6 text-primary-foreground">
