@@ -77,6 +77,32 @@
           }
           if (s2) root.style.setProperty("--secondary", s2);
           if (p || a) root.setAttribute("data-org-branded", "true");
+          // Preload the org logo as soon as branding resolves so the
+          // header <img> can paint instantly from the HTTP cache when
+          // React mounts (no flash, no layout gap on logo swap).
+          if (b.logoUrl) {
+            try {
+              var existing = document.querySelector(
+                'link[rel="preload"][as="image"][data-branding-logo="true"]'
+              );
+              if (!existing || existing.getAttribute("href") !== b.logoUrl) {
+                if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+                var link = document.createElement("link");
+                link.rel = "preload";
+                link.as = "image";
+                link.href = b.logoUrl;
+                link.setAttribute("data-branding-logo", "true");
+                link.setAttribute("fetchpriority", "high");
+                document.head.appendChild(link);
+              }
+              // Also kick off an Image() fetch so the browser starts
+              // decoding the bitmap immediately, even on browsers that
+              // ignore <link rel="preload" as="image">.
+              var img = new Image();
+              img.decoding = "async";
+              img.src = b.logoUrl;
+            } catch (e) { /* noop */ }
+          }
           return !!(p || a);
         }
 
