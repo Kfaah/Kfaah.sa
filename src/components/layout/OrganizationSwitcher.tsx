@@ -34,11 +34,11 @@ export function OrganizationSwitcher({ collapsed }: Props) {
             )}
             title={currentOrg.name}
           >
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow flex-shrink-0 overflow-hidden">
+            <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow flex-shrink-0 overflow-hidden p-0.5">
               {currentOrg.logo_url ? (
-                <img src={currentOrg.logo_url} alt={currentOrg.name} className="w-full h-full object-cover" />
+                <img src={currentOrg.logo_url} alt={currentOrg.name} className="w-full h-full object-contain" />
               ) : (
-                <Building2 className="w-4 h-4 text-white" />
+                <Building2 className="w-4 h-4 text-slate-400" />
               )}
             </div>
             {!collapsed && (
@@ -67,11 +67,11 @@ export function OrganizationSwitcher({ collapsed }: Props) {
                   onSelect={() => switchOrg(org.id)}
                   className="gap-2 cursor-pointer py-2"
                 >
-                  <div className="w-8 h-8 rounded-md bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 overflow-hidden p-0.5">
                     {org.logo_url ? (
-                      <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
+                      <img src={org.logo_url} alt={org.name} className="w-full h-full object-contain" />
                     ) : (
-                      <Building2 className="w-4 h-4 text-white" />
+                      <Building2 className="w-4 h-4 text-slate-400" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
