@@ -145,7 +145,7 @@ export default function AdminActionPlans() {
         className="!bg-none"
         style={{
           background:
-            "linear-gradient(to left, hsl(170 55% 28%) 0%, hsl(180 50% 32%) 50%, hsl(205 55% 48%) 100%)",
+            "linear-gradient(to left, hsl(165 45% 35%) 0%, hsl(185 45% 42%) 55%, hsl(210 55% 55%) 100%)",
         }}
         actions={
           <Button onClick={() => setDialogOpen(true)} className="gap-2 bg-white text-[hsl(170_55%_28%)] hover:bg-white/90 font-bold">
