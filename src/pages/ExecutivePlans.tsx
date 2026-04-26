@@ -878,53 +878,43 @@ export default function ExecutivePlans() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              الخطط التنفيذية
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              توزيع المستهدفات الشهرية على أيام محددة
-            </p>
-            <div className="mt-3">
-              <ScopeToggle
-                scope={scopedView.scope}
-                onChange={scopedView.setScope}
-                roleLevel={scopedView.roleLevel}
-                teamCount={scopedView.subordinateEmployeeIds.length}
-              />
-            </div>
-          </div>
-          
-          <div className="flex gap-2">
-            {/* زر التوليد بالذكاء الاصطناعي */}
-            {isAdmin && (
+        <PageHeader
+          icon={<Calendar className="h-7 w-7" />}
+          title="الخطط التنفيذية"
+          subtitle="توزيع المستهدفات الشهرية على أيام محددة"
+          actions={
+            <>
+              {isAdmin && (
+                <Button
+                  onClick={() => setIsAIDialogOpen(true)}
+                  className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  توليد بالذكاء الاصطناعي
+                </Button>
+              )}
               <Button
-                onClick={() => setIsAIDialogOpen(true)}
-                variant="outline"
-                className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800"
+                onClick={() => {
+                  setIsDialogOpen(true);
+                  setSelectedPlanMonthId("");
+                  setSelectedDays([]);
+                  setAddingMonth(new Date().getMonth() + 1);
+                }}
+                className="gap-2 bg-white text-primary hover:bg-white/90"
               >
-                <Sparkles className="w-5 h-5" />
-                توليد بالذكاء الاصطناعي
+                <Plus className="w-5 h-5" />
+                إضافة خطة تنفيذية
               </Button>
-            )}
-            
-            <Button
-              onClick={() => {
-                setIsDialogOpen(true);
-                setSelectedPlanMonthId("");
-                setSelectedDays([]);
-                setAddingMonth(new Date().getMonth() + 1);
-              }}
-              className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-            >
-              <Plus className="w-5 h-5" />
-              إضافة خطة تنفيذية
-            </Button>
-          </div>
+            </>
+          }
+        />
+        <div>
+          <ScopeToggle
+            scope={scopedView.scope}
+            onChange={scopedView.setScope}
+            roleLevel={scopedView.roleLevel}
+            teamCount={scopedView.subordinateEmployeeIds.length}
+          />
         </div>
 
         {/* الفلاتر */}
