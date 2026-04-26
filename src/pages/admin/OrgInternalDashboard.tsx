@@ -1171,61 +1171,71 @@ function EmployeesShowcase({
 
   return (
     <div className="space-y-6">
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
+      {/* Hero - Brand-dominant header */}
+      <div
+        className="relative overflow-hidden rounded-2xl shadow-xl"
+        style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
+        dir="rtl"
+      >
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+        <div className="pointer-events-none absolute -left-32 -bottom-32 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
         <div
-          className="absolute inset-0"
-          style={{ background: `linear-gradient(to left, ${ORG_PRIMARY_TINT}, transparent, ${ORG_ACCENT_SOFT})` }}
+          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+            backgroundSize: "22px 22px",
+          }}
         />
-        <div
-          className="absolute -top-24 -left-24 h-64 w-64 rounded-full blur-3xl"
-          style={{ backgroundColor: ORG_ACCENT_SOFT }}
-        />
-        <div
-          className="absolute -bottom-24 -right-10 h-72 w-72 rounded-full blur-3xl"
-          style={{ backgroundColor: ORG_PRIMARY_SOFT }}
-        />
-        <div className="relative flex flex-wrap items-end justify-between gap-6">
-          <div className="min-w-0">
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ring-1"
-              style={{ backgroundColor: ORG_PRIMARY_SOFT, color: ORG_PRIMARY, borderColor: ORG_PRIMARY_RING }}
-            >
-              <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-background/80 ring-1 ring-border">
-                {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.orgName || "الجمعية"} className="h-full w-full object-contain" /> : <Users className="h-3.5 w-3.5" />}
-              </span>
-              {branding.orgName || "فريق العمل"}
+
+        <div className="relative flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-sm">
+              {branding.logoUrl ? (
+                <img src={branding.logoUrl} alt={branding.orgName || "الجمعية"} className="h-full w-full object-contain p-1" />
+              ) : (
+                <Users className="h-7 w-7" />
+              )}
             </div>
-            <h2 className="mt-3 text-3xl font-bold text-foreground">طاقم الموظفين</h2>
-            <p className="mt-1 text-muted-foreground">منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة</p>
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <div className="rounded-2xl border border-border bg-background/60 px-4 py-2 backdrop-blur">
-                <div className="text-2xl font-bold leading-none" style={{ color: ORG_PRIMARY }}>{employees.length}</div>
-                <div className="mt-1 text-[11px] text-muted-foreground">إجمالي الموظفين</div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-white/85">
+                {branding.orgName || "الجمعية"}
               </div>
-              <div className="rounded-2xl border border-border bg-background/60 px-4 py-2 backdrop-blur">
-                <div className="flex items-center gap-1 text-2xl font-bold leading-none" style={{ color: ORG_ACCENT }}>
-                  <Crown className="h-5 w-5" />
-                  {managersCount}
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">قيادات</div>
-              </div>
-              <div className="rounded-2xl border border-border bg-background/60 px-4 py-2 backdrop-blur">
-                <div className="text-2xl font-bold leading-none" style={{ color: ORG_PRIMARY }}>{totalQuestions}</div>
-                <div className="mt-1 text-[11px] text-muted-foreground">مساءلات نشطة</div>
-              </div>
+              <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-3xl">
+                طاقم الموظفين
+              </h2>
+              <p className="mt-1 text-sm text-white/85">
+                منظومة بشرية متكاملة · إدارة ذكية · مساءلة عادلة
+              </p>
             </div>
           </div>
-          <Link to={addEmployeeHref}>
-            <Button
-              size="lg"
-              className="gap-2 text-white shadow-md hover:opacity-90"
-              style={{ backgroundColor: ORG_PRIMARY }}
-            >
-              <UserPlus className="h-5 w-5" />
-              إضافة موظف جديد
-            </Button>
-          </Link>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
+              <div className="text-2xl font-bold leading-none text-white">{employees.length}</div>
+              <div className="mt-1 text-[11px] text-white/80">إجمالي الموظفين</div>
+            </div>
+            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
+              <div className="flex items-center gap-1 text-2xl font-bold leading-none text-white">
+                <Crown className="h-5 w-5" />
+                {managersCount}
+              </div>
+              <div className="mt-1 text-[11px] text-white/80">قيادات</div>
+            </div>
+            <div className="rounded-2xl border border-white/30 bg-white/15 px-4 py-2 backdrop-blur-sm">
+              <div className="text-2xl font-bold leading-none text-white">{totalQuestions}</div>
+              <div className="mt-1 text-[11px] text-white/80">مساءلات نشطة</div>
+            </div>
+            <Link to={addEmployeeHref}>
+              <Button
+                size="lg"
+                className="gap-2 bg-white text-primary shadow-md hover:bg-white/90"
+                style={{ color: ORG_PRIMARY }}
+              >
+                <UserPlus className="h-5 w-5" />
+                إضافة موظف جديد
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
