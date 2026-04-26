@@ -317,6 +317,7 @@ export default function ExecutivePlans() {
   // جلب الأقسام
   useEffect(() => {
     const fetchDepartments = async () => {
+      if (slug && !activeOrgId) return;
       let query = supabase
         .from("departments")
         .select("id, name")
@@ -335,6 +336,7 @@ export default function ExecutivePlans() {
   useEffect(() => {
     const fetchEmployees = async () => {
       if (!authUser) return;
+      if (slug && !activeOrgId) return;
       
       // جلب قائمة الموظفين للجميع (للبحث عن employee.id)
       let query = supabase
