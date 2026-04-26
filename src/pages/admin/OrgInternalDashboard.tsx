@@ -1252,16 +1252,16 @@ function EmployeesShowcase({
                       <span>{getInitials(e.full_name)}</span>
                     )}
                   </div>
+                  {isLeader && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 self-center"
+                      style={{ borderColor: ORG_ACCENT_RING, backgroundColor: ORG_ACCENT_SOFT, color: ORG_PRIMARY }}
+                    >
+                      <Crown className="h-3 w-3" /> قيادي
+                    </Badge>
+                  )}
                   <div className="ms-auto flex items-center gap-2">
-                    {isLeader && (
-                      <Badge
-                        variant="outline"
-                        className="gap-1"
-                        style={{ borderColor: ORG_ACCENT_RING, backgroundColor: ORG_ACCENT_SOFT, color: ORG_PRIMARY }}
-                      >
-                        <Crown className="h-3 w-3" /> قيادي
-                      </Badge>
-                    )}
                     <Link
                       to={editHref}
                       title="تعديل"
