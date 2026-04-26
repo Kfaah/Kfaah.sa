@@ -270,6 +270,19 @@ export default function OrgInternalDashboard({
                   </span>
                 </div>
                 <h1 className="sr-only">{org?.name ?? "الجمعية"}</h1>
+                {org?.slug && ORG_SHORT_NAME[org.slug] && (
+                  <div
+                    className="mt-2 text-center sm:text-start font-extrabold leading-tight tracking-tight"
+                    style={{ color: ORG_PRIMARY }}
+                  >
+                    <div className="text-lg sm:text-xl">{ORG_SHORT_NAME[org.slug][0]}</div>
+                    {ORG_SHORT_NAME[org.slug][1] && (
+                      <div className="text-base sm:text-lg text-foreground/80">
+                        {ORG_SHORT_NAME[org.slug][1]}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <p className="mt-2 text-sm text-muted-foreground">
                   رؤية شاملة · تقييم ذكي · مساءلات ذكية
                 </p>
