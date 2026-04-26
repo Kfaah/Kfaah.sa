@@ -169,10 +169,10 @@ export default function AdminActionPlans() {
             const orgName = orgPlans[0].org_name || "—";
             return (
               <div key={orgId} className="space-y-3">
-                <div className="flex items-center gap-2 text-white">
-                  <Building2 className="w-5 h-5 text-accent" />
+                <div className="flex items-center gap-2 text-foreground">
+                  <Building2 className="w-5 h-5 text-primary" />
                   <h2 className="font-bold text-lg">{orgName}</h2>
-                  <Badge className="bg-white/15 text-white border-white/30">{orgPlans.length} خطة</Badge>
+                  <Badge variant="secondary">{orgPlans.length} خطة</Badge>
                 </div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {orgPlans.map(p => (
