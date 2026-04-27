@@ -1848,6 +1848,51 @@ const AddOperationalPlan = () => {
     return Array.from(goalsMap.values());
   };
 
+  const getFlexibleCellValue = (row: TableRowData, col: ColumnDef): string => {
+    if (col.id === 'strategicGoal') return row.strategicGoal;
+    if (col.id === 'initiative') return row.initiative;
+    if (col.id === 'activity') return row.activity;
+    if (col.id === 'annualTarget') return row.annualTarget > 0 ? String(row.annualTarget) : '';
+    if (col.id === 'monthlyAverage') return row.monthlyAverage > 0 ? String(row.monthlyAverage) : '';
+    if (col.id === 'responsibleEmployee') return row.responsibleEmployeeName || employees.find(e => e.id === row.responsibleEmployeeId)?.full_name || '';
+    if (col.id === 'goalOwner') return row.goalOwnerDepartmentIds.map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join('، ');
+    if (col.id === 'initiativeOwner') return row.initiativeOwnerDepartmentIds.map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join('، ');
+
+    const rawValue = row.customColumns?.[col.id] ?? '';
+    if (col.contentType === 'employee' || col.contentType === 'employee_department') {
+      return employees.find(e => e.id === rawValue)?.full_name || rawValue;
+    }
+    return String(rawValue);
+  };
+
+  const buildFlexiblePlanPayload = () => {
+    const dataColumns = columns.filter(col => col.id !== 'rowNumber' && col.id !== 'action');
+    const labelCounts = new Map<string, number>();
+    const columnLabels = dataColumns.map((col) => {
+      const baseLabel = col.label.trim() || 'عمود';
+      const count = labelCounts.get(baseLabel) || 0;
+      labelCounts.set(baseLabel, count + 1);
+      return count === 0 ? baseLabel : `${baseLabel} (${count + 1})`;
+    });
+
+    const flexibleRows = rows
+      .map((row) => {
+        const output: Record<string, string> = {};
+        let hasContent = false;
+
+        dataColumns.forEach((col, index) => {
+          const value = getFlexibleCellValue(row, col).trim();
+          output[columnLabels[index]] = value;
+          if (value) hasContent = true;
+        });
+
+        return hasContent ? output : null;
+      })
+      .filter((row): row is Record<string, string> => Boolean(row));
+
+    return { columns: columnLabels, rows: flexibleRows };
+  };
+
   const canSubmit = () => {
     if (rows.length === 0) return false;
 
@@ -1883,12 +1928,35 @@ const AddOperationalPlan = () => {
       );
 
       if (totalActivities === 0) {
-        toast({
-          title: "لا توجد أنشطة للحفظ",
-          description: "يجب إدخال هدف استراتيجي ومبادرة ونشاط على الأقل لحفظ الخطة",
-          variant: "destructive",
+        const flexiblePlan = buildFlexiblePlanPayload();
+
+        if (flexiblePlan.columns.length === 0 || flexiblePlan.rows.length === 0) {
+          toast({
+            title: "لا توجد بيانات للحفظ",
+            description: "أضف عمودًا واحدًا وصفًا يحتوي على بيانات على الأقل",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        const { error: flexibleError } = await supabase.from("excel_plans" as any).insert({
+          plan_name: planName?.trim() || "الخطة",
+          year,
+          sheet_name: "إدخال يدوي",
+          columns: flexiblePlan.columns as any,
+          rows: flexiblePlan.rows as any,
+          use_for_ai: false,
+          source_filename: "إدخال يدوي من جدول حر",
+          user_id: authUser.id,
         });
-        setIsLoading(false);
+
+        if (flexibleError) throw flexibleError;
+
+        toast({
+          title: `تم حفظ ${flexiblePlan.rows.length} صف ضمن "${planName?.trim() || "الخطة"}" بنجاح`,
+        });
+        navigate("/operational-plans");
         return;
       }
 
