@@ -1401,7 +1401,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           الموظف
                         </TableHead>
                         <TableHead className="text-right font-bold text-white min-w-[320px]">
-                          المهام
+                          الأنشطة
                         </TableHead>
                       </TableRow>
                     </TableHeader>
