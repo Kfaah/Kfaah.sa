@@ -2198,12 +2198,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                       </div>
                                     )}
                                   </td>
-                                  {/* الحمل الشهري المتوسط */}
-                                  <td className="w-28 py-4 px-3 text-center border-l-2 border-gray-200 align-top">
-                                    <span className="text-lg font-bold text-[hsl(var(--primary))]">
-                                      {annualNum > 0 ? formatNumber(Math.round(annualNum / 12)) : "—"}
-                                    </span>
-                                  </td>
                                   {/* التكلفة التقديرية */}
                                   {costCol && (
                                     <td className="w-32 py-4 px-3 text-center border-l-2 border-gray-200 align-top">
@@ -2226,7 +2220,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           { label: "النشاط", cls: "py-4 px-5 text-right border-r border-white/20" },
                           { label: "مسؤول التنفيذ", cls: "py-4 px-5 text-right border-r border-white/20" },
                           { label: "المستهدف السنوي", cls: "py-4 px-3 text-center border-r border-white/20 w-40" },
-                          { label: "الحمل الشهري المتوسط", cls: "py-4 px-3 text-center border-r border-white/20 w-28" },
                         ];
                         if (costCol) headers.push({ label: "التكلفة التقديرية", cls: "py-4 px-3 text-center border-r border-white/20 w-32" });
 
