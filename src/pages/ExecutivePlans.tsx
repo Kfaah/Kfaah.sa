@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,8 @@ import {
   Upload,
   ChevronUp,
   Check,
+  Layers,
+  Save,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -91,6 +94,7 @@ interface OperationalPlan {
   initiative: string | null;
   sub_initiative: string | null;
   responsible_employee_id?: string | null;
+  plan_name?: string | null;
 }
 
 interface OperationalPlanMonth {
