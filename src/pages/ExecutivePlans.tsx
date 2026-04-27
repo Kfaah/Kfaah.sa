@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +61,9 @@ import {
   BarChart3,
   Activity,
   Zap,
+  FileSpreadsheet,
+  Upload,
+  ChevronUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -246,6 +249,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const { toast } = useToast();
   const { user: authUser } = useAuth();
   const { slug } = useParams<{ slug?: string }>();
+  const navigate = useNavigate();
+  const makeOrgUrl = (path: string) => (slug ? `/${slug}${path}` : path);
   const { currentOrg } = useOrganization();
   const scopedView = useScopedView("scope:executive-plans");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -269,6 +274,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     { current: number; total: number; month: number | null } | null
   >(null);
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
+  const [isAIChoiceDialogOpen, setIsAIChoiceDialogOpen] = useState(false);
   const [aiSelectedMonths, setAiSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
   // فلاتر إضافية
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
@@ -949,15 +955,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           subtitle="توزيع المستهدفات الشهرية على أيام محددة"
           actions={
             <>
-              {isAdmin && (
-                <Button
-                  onClick={() => setIsAIDialogOpen(true)}
-                  className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  توليد بالذكاء الاصطناعي
-                </Button>
-              )}
               <Button
                 onClick={() => {
                   setIsDialogOpen(true);
@@ -967,9 +964,30 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 }}
                 className="gap-2 bg-white text-primary hover:bg-white/90"
               >
-                <Plus className="w-5 h-5" />
-                إضافة خطة تنفيذية
+                <Plus className="w-4 h-4" />
+                إضافة خطة يدوياً
               </Button>
+              <Button
+                className="gap-2 bg-emerald-500 text-white hover:bg-emerald-600 border border-emerald-400"
+                onClick={() => navigate(makeOrgUrl("/executive-plans/upload"))}
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                رفع ملف Excel
+              </Button>
+              {isAdmin && (
+                <Button
+                  className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                  onClick={() => setIsAIChoiceDialogOpen(true)}
+                  disabled={isAIGenerating}
+                >
+                  {isAIGenerating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  توليد بالذكاء الاصطناعي
+                </Button>
+              )}
             </>
           }
         />
@@ -2015,6 +2033,85 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         </Dialog>
 
         {/* نافذة التوليد بالذكاء الاصطناعي */}
+        {/* Dialog اختيار طريقة التوليد بالذكاء الاصطناعي - خياران */}
+        {isAdmin && isAIChoiceDialogOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setIsAIChoiceDialogOpen(false)}
+          >
+            <div
+              className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-2xl border border-purple-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
+                  <Sparkles className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                    توليد الخطط التنفيذية بالذكاء الاصطناعي
+                  </h3>
+                  <p className="text-sm text-gray-500">اختر الطريقة المناسبة لتوليد الخطط التنفيذية</p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAIChoiceDialogOpen(false);
+                    setIsAIDialogOpen(true);
+                  }}
+                  className="group text-right p-5 rounded-xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-white hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 transition-all"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                    <Zap className="w-6 h-6 text-white" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 mb-1.5">توليد فوري</h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    يقوم الذكاء الاصطناعي بتحليل الخطط التشغيلية الحالية وتوزيع المستهدفات على أيام العمل تلقائياً.
+                  </p>
+                  <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-violet-700 group-hover:gap-2 transition-all">
+                    اختر الأشهر وابدأ
+                    <ChevronUp className="w-3 h-3 -rotate-90" />
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAIChoiceDialogOpen(false);
+                    navigate(makeOrgUrl("/executive-plans/ai-generate?withFiles=1"));
+                  }}
+                  className="group text-right p-5 rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 transition-all"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                    <Upload className="w-6 h-6 text-white" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 mb-1.5">توليد بناءً على ملفات</h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    ارفع نماذج خطط سابقة، تقارير، أو مستندات مرجعية، ليدرسها الذكاء الاصطناعي ويبني خطة تنفيذية مبنية عليها.
+                  </p>
+                  <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 group-hover:gap-2 transition-all">
+                    ارفع الملفات
+                    <ChevronUp className="w-3 h-3 -rotate-90" />
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex justify-end mt-5">
+                <Button
+                  variant="outline"
+                  className="border-gray-300"
+                  onClick={() => setIsAIChoiceDialogOpen(false)}
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
           <DialogContent className="max-w-xl">
             <DialogHeader>

@@ -34,6 +34,8 @@ const AddOperationalPlan = lazy(() => import("./pages/AddOperationalPlan"));
 const OperationalPlanDetails = lazy(() => import("./pages/OperationalPlanDetails"));
 const UploadExcelPlan = lazy(() => import("./pages/UploadExcelPlan"));
 const AIGeneratePlan = lazy(() => import("./pages/AIGeneratePlan"));
+const UploadExecutiveExcel = lazy(() => import("./pages/UploadExecutiveExcel"));
+const AIGenerateExecutivePlan = lazy(() => import("./pages/AIGenerateExecutivePlan"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Uploads = lazy(() => import("./pages/Uploads"));
@@ -257,6 +259,8 @@ function AppRoutes() {
       <Route path="/tasks/:taskId" element={<ProtectedRoute><TaskDetails /></ProtectedRoute>} />
       <Route path="/plans" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
       <Route path="/executive-plans" element={<ProtectedRoute><ExecutivePlans /></ProtectedRoute>} />
+      <Route path="/executive-plans/upload" element={<ProtectedRoute><UploadExecutiveExcel /></ProtectedRoute>} />
+      <Route path="/executive-plans/ai-generate" element={<ProtectedRoute><AIGenerateExecutivePlan /></ProtectedRoute>} />
       <Route path="/operational-plans" element={<ProtectedRoute><OperationalPlans /></ProtectedRoute>} />
       <Route path="/operational-plans/add" element={<ProtectedRoute><AddOperationalPlan /></ProtectedRoute>} />
       <Route path="/operational-plans/upload" element={<ProtectedRoute><UploadExcelPlan /></ProtectedRoute>} />
@@ -286,6 +290,8 @@ function AppRoutes() {
       <Route path="/:slug/tasks/:taskId" element={<ProtectedRoute><TaskDetails /></ProtectedRoute>} />
       <Route path="/:slug/plans" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
       <Route path="/:slug/executive-plans" element={<ProtectedRoute><ExecutivePlans /></ProtectedRoute>} />
+      <Route path="/:slug/executive-plans/upload" element={<ProtectedRoute><UploadExecutiveExcel /></ProtectedRoute>} />
+      <Route path="/:slug/executive-plans/ai-generate" element={<ProtectedRoute><AIGenerateExecutivePlan /></ProtectedRoute>} />
       <Route path="/:slug/operational-plans" element={<ProtectedRoute><OperationalPlans /></ProtectedRoute>} />
       <Route path="/:slug/operational-plans/add" element={<ProtectedRoute><AddOperationalPlan /></ProtectedRoute>} />
       <Route path="/:slug/operational-plans/upload" element={<ProtectedRoute><UploadExcelPlan /></ProtectedRoute>} />
