@@ -1315,100 +1315,20 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           </div>
         </div>
 
-        {/* بطاقات الخطط */}
-        {!loading && availablePlans.length > 0 && (
-          <div className="bg-gradient-to-br from-white via-slate-50 to-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-md">
-                  <Layers className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">الخطط المتاحة</h3>
-                  <p className="text-[11px] text-slate-500">اختر خطة لعرض تفاصيلها أو دع الكل لعرضها مجتمعة</p>
-                </div>
-              </div>
-              {selectedPlanNames.size > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedPlanNames(new Set())}
-                  className="text-xs text-slate-600 hover:text-slate-900"
-                >
-                  <X className="w-3.5 h-3.5 ml-1" />
-                  عرض الكل
-                </Button>
-              )}
+        {/* شريط وضع التعديل */}
+        {isEditMode && (
+          <div className="flex items-center gap-3 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300 rounded-xl px-4 py-3 shadow-sm">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow">
+              <Pencil className="w-4 h-4 text-white" />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {/* بطاقة "الكل" */}
-              <button
-                onClick={() => setSelectedPlanNames(new Set())}
-                className={cn(
-                  "group relative overflow-hidden rounded-xl p-3 text-right transition-all border-2",
-                  selectedPlanNames.size === 0
-                    ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] border-transparent text-white shadow-lg shadow-[hsl(var(--primary)/0.25)]"
-                    : "bg-white border-slate-200 hover:border-[hsl(var(--primary)/0.5)] hover:shadow-md text-slate-700"
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className={cn("text-[11px] font-medium mb-0.5", selectedPlanNames.size === 0 ? "text-white/80" : "text-slate-500")}>
-                      عرض شامل
-                    </p>
-                    <p className="text-sm font-bold truncate">جميع الخطط</p>
-                  </div>
-                  <div className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                    selectedPlanNames.size === 0 ? "bg-white/20" : "bg-slate-100 group-hover:bg-[hsl(var(--primary)/0.1)]"
-                  )}>
-                    <Layers className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className={cn("text-[10px] mt-2", selectedPlanNames.size === 0 ? "text-white/70" : "text-slate-500")}>
-                  {availablePlans.length} {pluralAr(availablePlans.length, "خطة", "خطط")}
-                </div>
-              </button>
-
-              {availablePlans.map((p) => {
-                const isSelected = selectedPlanNames.has(p.name);
-                return (
-                  <button
-                    key={p.name}
-                    onClick={() => togglePlanSelection(p.name)}
-                    className={cn(
-                      "group relative overflow-hidden rounded-xl p-3 text-right transition-all border-2",
-                      isSelected
-                        ? "bg-gradient-to-br from-emerald-500 to-teal-600 border-transparent text-white shadow-lg shadow-emerald-500/25"
-                        : "bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md text-slate-700"
-                    )}
-                  >
-                    {isSelected && (
-                      <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-white/25 flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-[11px] font-medium mb-0.5", isSelected ? "text-white/80" : "text-slate-500")}>
-                          خطة تشغيلية
-                        </p>
-                        <p className="text-sm font-bold truncate">{p.name}</p>
-                      </div>
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                        isSelected ? "bg-white/20" : "bg-emerald-50 group-hover:bg-emerald-100"
-                      )}>
-                        <Target className={cn("w-4 h-4", isSelected ? "text-white" : "text-emerald-600")} />
-                      </div>
-                    </div>
-                    <div className={cn("text-[10px] mt-2", isSelected ? "text-white/70" : "text-slate-500")}>
-                      {activityCount(p.activitiesCount)}
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-900">وضع التعديل مفعّل</p>
+              <p className="text-xs text-amber-700">انقر على أي نشاط في الجدول لتعديل الهدف اليومي والمنجز</p>
             </div>
+            <Button size="sm" variant="ghost" onClick={() => setIsEditMode(false)} className="text-amber-700 hover:bg-amber-100">
+              <X className="w-4 h-4 ml-1" />
+              إنهاء
+            </Button>
           </div>
         )}
 
