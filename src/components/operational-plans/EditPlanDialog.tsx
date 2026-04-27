@@ -60,8 +60,10 @@ interface OperationalPlan {
   activity_name: string;
   strategic_goal: string | null;
   initiative: string | null;
+  sub_initiative?: string | null;
   strategic_goal_id: string | null;
   initiative_id: string | null;
+  sub_initiative_id?: string | null;
   annual_target: number;
   year: number;
   status: string;
@@ -118,6 +120,7 @@ export function EditPlanDialog({
   const [activityName, setActivityName] = useState("");
   const [annualTarget, setAnnualTarget] = useState<number>(0);
   const [responsibleEmployeeId, setResponsibleEmployeeId] = useState<string>("none");
+  const [subInitiative, setSubInitiative] = useState<string>("");
 
   // تحميل الأقسام المرتبطة
   const loadGoalDepartments = async (goalId: string) => {
@@ -171,6 +174,7 @@ export function EditPlanDialog({
         setActivityName(plan.activity_name);
         setAnnualTarget(plan.annual_target);
         setResponsibleEmployeeId(plan.responsible_employee_id || "none");
+        setSubInitiative(plan.sub_initiative || "");
       }
     }
   }, [open, editType, plan, strategicGoalName, initiativeName, strategicGoals, initiatives]);
@@ -318,6 +322,7 @@ export function EditPlanDialog({
             activity_name: activityName,
             annual_target: annualTarget,
             responsible_employee_id: responsibleEmployeeId === "none" ? null : responsibleEmployeeId,
+            sub_initiative: subInitiative.trim() || null,
           })
           .eq("id", plan.id);
         if (error) throw error;
