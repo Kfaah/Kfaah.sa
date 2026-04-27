@@ -1840,17 +1840,91 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   </TableCell>
                                   <TableCell className="align-top py-2">
                                     <div className="flex flex-col gap-1">
-                                      {l.acts.map((act, i) => (
-                                        <div
-                                          key={act.id}
-                                          className="flex items-start gap-2 px-2 py-1 rounded-md text-xs bg-emerald-50 border border-emerald-100 text-slate-800"
-                                        >
-                                          <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
-                                            <span className="text-[9px] font-bold">{i + 1}</span>
+                                      {l.acts.map((act, i) => {
+                                        const isEditingThis = isEditMode && editingExecPlanId === act.id;
+                                        return (
+                                          <div
+                                            key={act.id}
+                                            className={cn(
+                                              "flex items-start gap-2 px-2 py-1 rounded-md text-xs border text-slate-800 transition-all",
+                                              isEditingThis
+                                                ? "bg-amber-50 border-amber-300 ring-1 ring-amber-200"
+                                                : isEditMode
+                                                ? "bg-emerald-50 border-emerald-100 hover:bg-amber-50 hover:border-amber-300 cursor-pointer"
+                                                : "bg-emerald-50 border-emerald-100"
+                                            )}
+                                            onClick={() => {
+                                              if (!isEditMode || isEditingThis) return;
+                                              setEditingExecPlanId(act.id);
+                                              setEditingValues({
+                                                daily_target: String(act.dailyTarget ?? 0),
+                                                achieved: String(act.achieved ?? 0),
+                                              });
+                                            }}
+                                          >
+                                            <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                              <span className="text-[9px] font-bold">{i + 1}</span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="font-medium leading-snug">{act.activityName}</div>
+                                              {isEditingThis ? (
+                                                <div
+                                                  className="mt-2 flex items-center gap-2"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                >
+                                                  <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[9px] text-slate-500">الهدف اليومي</span>
+                                                    <Input
+                                                      type="number"
+                                                      min="0"
+                                                      value={editingValues.daily_target}
+                                                      onChange={(e) => setEditingValues(v => ({ ...v, daily_target: e.target.value }))}
+                                                      className="h-7 w-20 text-xs"
+                                                    />
+                                                  </div>
+                                                  <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[9px] text-slate-500">المنجز</span>
+                                                    <Input
+                                                      type="number"
+                                                      min="0"
+                                                      value={editingValues.achieved}
+                                                      onChange={(e) => setEditingValues(v => ({ ...v, achieved: e.target.value }))}
+                                                      className="h-7 w-20 text-xs"
+                                                    />
+                                                  </div>
+                                                  <div className="flex items-center gap-1 mt-3.5">
+                                                    <Button
+                                                      size="sm"
+                                                      onClick={() => saveExecPlanEdit(act.id)}
+                                                      disabled={savingEdit}
+                                                      className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                    >
+                                                      {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      onClick={() => setEditingExecPlanId(null)}
+                                                      className="h-7 px-2"
+                                                    >
+                                                      <X className="w-3 h-3" />
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                isEditMode && (
+                                                  <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-500">
+                                                    <span>الهدف: <span className="font-semibold text-slate-700">{act.dailyTarget}</span></span>
+                                                    <span>•</span>
+                                                    <span>المنجز: <span className="font-semibold text-slate-700">{act.achieved}</span></span>
+                                                    <Pencil className="w-3 h-3 text-amber-600 mr-auto" />
+                                                  </div>
+                                                )
+                                              )}
+                                            </div>
                                           </div>
-                                          <span className="font-medium leading-snug">{act.activityName}</span>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </TableCell>
                                   </>
