@@ -208,11 +208,15 @@ export default function Organizations() {
 
                 <div className="relative flex items-start gap-3">
                   <div className="w-14 h-14 rounded-xl bg-white border border-border flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
-                    {o.logo_url ? (
-                      <img src={o.logo_url} alt={o.name} className="w-full h-full object-contain p-1" />
-                    ) : (
-                      <Building2 className="w-7 h-7 text-muted-foreground" />
-                    )}
+                    {(() => {
+                      const isSawab = /sawab|صواب/i.test(`${o.slug ?? ""} ${o.name ?? ""}`);
+                      const src = isSawab ? "/sawab-sidebar-logo-v10.png" : o.logo_url;
+                      return src ? (
+                        <img src={src} alt={o.name} className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <Building2 className="w-7 h-7 text-muted-foreground" />
+                      );
+                    })()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
