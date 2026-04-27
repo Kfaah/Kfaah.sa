@@ -1678,12 +1678,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     
                     <div className="bg-purple-50 rounded-xl p-4 mb-4 border border-purple-200">
                       <p className="text-sm font-medium text-purple-900 leading-relaxed">
-                        سيتم توليد خطط تشغيلية بناءً على الأهداف الاستراتيجية والمبادرات والمستهدفات المحددة.
+                        لتوليد خطة بالذكاء الاصطناعي، ارفع ملف Excel (حتى لو كان مختصراً)، وسيستنتج الذكاء الاصطناعي الهدف ويبني خطة تشغيلية كاملة.
                       </p>
-                    </div>
-
-                    <div className="text-center text-sm font-medium text-amber-900 mb-4 bg-amber-50 rounded-lg p-3 border border-amber-200">
-                      <span className="text-amber-700">⏳</span> هذه الميزة ستكون متاحة في التحديث القادم
                     </div>
                     
                     <div className="flex gap-2 justify-end">
