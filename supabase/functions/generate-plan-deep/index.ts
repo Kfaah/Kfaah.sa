@@ -254,7 +254,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        const verdict = await classifyFileRelevance(LOVABLE_AI_URL && LOVABLE_API_KEY, path, textPreview, imageDataUrl);
+        const verdict = await classifyFileRelevance(LOVABLE_API_KEY, path, textPreview, imageDataUrl);
 
         if (!verdict.is_relevant) {
           rejectedFiles.push({ path, category: verdict.category, reason: verdict.reason });
