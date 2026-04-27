@@ -901,7 +901,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout embedded={embedded}>
       <div className="space-y-6">
 
         {/* شريط المهمة النشطة */}
@@ -1135,10 +1135,14 @@ const Tasks = ({ embedded = false }: TasksProps) => {
         </Card>
 
         {/* جدول المهام */}
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full" />
-          </div>
+        {!hasFetchedTasks && tasks.length === 0 ? (
+          <Card className="py-16">
+            <CardContent className="text-center">
+              <Target className="w-14 h-14 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">جاري تجهيز المهام</h3>
+              <p className="text-muted-foreground">ستظهر البيانات فور وصولها بدون شاشة انتظار.</p>
+            </CardContent>
+          </Card>
         ) : filteredTasks.length === 0 ? (
           <Card className="py-20">
             <CardContent className="text-center">
