@@ -7,10 +7,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useAdminAggregates } from "@/hooks/useAdminAggregates";
-import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-  PieChart, Pie, Cell, Legend,
-} from "recharts";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 0 }).format(n);
@@ -123,28 +119,7 @@ export default function AdminOverview() {
             </div>
             <Badge variant="outline" className="border-accent/40 text-accent">SAR</Badge>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={revenueByOrg}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 14, fontWeight: 600 }} interval={0} />
-              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
-              <Tooltip
-                contentStyle={{
-                  background: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: 8,
-                  color: "hsl(var(--foreground))",
-                }}
-              />
-              <Bar dataKey="revenue" fill="url(#revGrad)" radius={[8, 8, 0, 0]} />
-              <defs>
-                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={ACCENT} />
-                  <stop offset="100%" stopColor={PRIMARY} />
-                </linearGradient>
-              </defs>
-            </BarChart>
-          </ResponsiveContainer>
+          <RevenueBarChart data={revenueByOrg} />
         </Card>
 
         <Card className="bg-card border-border p-5 shadow-sm">
@@ -199,6 +174,63 @@ export default function AdminOverview() {
         <div className="text-center py-8 text-muted-foreground">جاري تجميع البيانات…</div>
       )}
     </div>
+  );
+}
+
+function RevenueBarChart({ data }: { data: { name: string; revenue: number; donors: number }[] }) {
+  const W = 760;
+  const H = 300;
+  const padX = 44;
+  const padTop = 22;
+  const padBottom = 54;
+  const chartW = W - padX * 2;
+  const chartH = H - padTop - padBottom;
+  const max = Math.max(...data.map((item) => item.revenue), 1);
+  const slot = chartW / Math.max(data.length, 1);
+  const barW = Math.min(52, slot * 0.56);
+  const ticks = [0.25, 0.5, 0.75, 1];
+
+  if (!data.length) {
+    return <div className="h-[300px] flex items-center justify-center text-muted-foreground">لا توجد بيانات إيرادات بعد</div>;
+  }
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[300px]" role="img" aria-label="إيرادات الجمعيات">
+      <defs>
+        <linearGradient id="adminRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={ACCENT} />
+          <stop offset="100%" stopColor={PRIMARY} />
+        </linearGradient>
+      </defs>
+      {ticks.map((tick) => {
+        const y = padTop + chartH * (1 - tick);
+        return (
+          <g key={tick}>
+            <line x1={padX} y1={y} x2={W - padX} y2={y} stroke="hsl(var(--border))" strokeDasharray="4 4" />
+            <text x={padX - 10} y={y + 4} textAnchor="end" fontSize="11" fill="hsl(var(--muted-foreground))">
+              {fmt(Math.round(max * tick))}
+            </text>
+          </g>
+        );
+      })}
+      {data.map((item, index) => {
+        const valueH = Math.max(4, (item.revenue / max) * chartH);
+        const x = padX + slot * index + (slot - barW) / 2;
+        const y = padTop + chartH - valueH;
+        return (
+          <g key={item.name}>
+            <title>{`${item.name}: ${fmtSAR(item.revenue)} · ${fmt(item.donors)} متبرع`}</title>
+            <rect x={x} y={y} width={barW} height={valueH} rx="8" fill="url(#adminRevenueGrad)" />
+            <text x={x + barW / 2} y={Math.max(14, y - 8)} textAnchor="middle" fontSize="11" fontWeight="700" fill="hsl(var(--foreground))">
+              {fmt(item.revenue)}
+            </text>
+            <text x={x + barW / 2} y={H - 18} textAnchor="middle" fontSize="12" fontWeight="700" fill="hsl(var(--muted-foreground))">
+              {item.name}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
