@@ -2155,11 +2155,9 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     )}
                                     {/* النشاط */}
                                     <td colSpan={initiativeHasNoSub ? 2 : 1} className="py-4 px-5 border-l-2 border-gray-200 align-middle text-center">
-                                      <div className="min-w-[320px] max-w-[560px] mx-auto">
-                                        <p className="text-sm leading-relaxed text-center text-gray-700">
-                                          {activityCol ? String(row[activityCol] ?? "") : ""}
-                                        </p>
-                                      </div>
+                                      <p className="text-sm leading-relaxed text-center text-gray-700 break-words">
+                                        {activityCol ? String(row[activityCol] ?? "") : ""}
+                                      </p>
                                     </td>
                                     {/* مسؤول التنفيذ */}
                                     <td className="py-4 px-5 border-l-2 border-gray-200 align-middle text-center">
@@ -2207,11 +2205,20 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                       )}
                                     </td>
                                     {/* التكلفة التقديرية */}
-                                    {costCol && (
-                                      <td className="w-32 py-4 px-3 text-center border-l-2 border-gray-200 align-middle">
-                                        <span className="text-sm text-gray-700">{String(row[costCol] ?? "—")}</span>
-                                      </td>
-                                    )}
+                                    {costCol && (() => {
+                                      const rawCost = row[costCol];
+                                      const numCost = Number(String(rawCost ?? "").replace(/[^\d.-]/g, ""));
+                                      const display = rawCost === undefined || rawCost === null || rawCost === ""
+                                        ? "—"
+                                        : Number.isFinite(numCost) && numCost !== 0
+                                          ? numCost.toLocaleString("en-US")
+                                          : String(rawCost);
+                                      return (
+                                        <td className="w-32 py-4 px-3 text-center border-l-2 border-gray-200 align-middle">
+                                          <span className="text-sm text-gray-700" style={{ fontFamily: 'Arial, sans-serif' }}>{display}</span>
+                                        </td>
+                                      );
+                                    })()}
                                   </tr>
                                 );
                                 goalRendered = true;
