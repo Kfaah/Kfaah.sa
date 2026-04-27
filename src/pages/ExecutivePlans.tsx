@@ -1484,10 +1484,28 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           subKey: string; subName: string;
                           empKey: string; empName: string;
                           acts: typeof monthGroup.dateGroups[0]["activities"];
+                          collapsed: boolean;
+                          dayActivitiesCount: number;
                         };
                         const leaves: Leaf[] = [];
                         monthGroup.dateGroups.forEach((dg, dayIdx) => {
+                          const dayKey = `day-${monthGroup.month}-${dg.day}`;
+                          const isDayExpanded = expandedDays.has(dayKey);
                           const date = new Date(selectedYear, monthGroup.month - 1, dg.day);
+                          if (!isDayExpanded) {
+                            // صف واحد فقط (مطوي) لهذا اليوم
+                            leaves.push({
+                              dayIdx, day: dg.day, date,
+                              deptKey: `${dayIdx}|_collapsed`, deptName: "",
+                              initKey: `${dayIdx}|_collapsed`, initName: "",
+                              subKey: `${dayIdx}|_collapsed`, subName: "",
+                              empKey: `${dayIdx}|_collapsed`, empName: "",
+                              acts: [],
+                              collapsed: true,
+                              dayActivitiesCount: dg.activities.length,
+                            });
+                            return;
+                          }
                           // group: dept → init → sub → emp → acts
                           const deptMap = new Map<string, Map<string, Map<string, Map<string, { name: string; initName: string; subName: string; empName: string; acts: typeof dg.activities }>>>>();
                           const deptNames = new Map<string, string>();
@@ -1517,6 +1535,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     subKey: `${dayIdx}|${dKey}|${iKey}|${sKey}`, subName: leaf.subName,
                                     empKey: `${dayIdx}|${dKey}|${iKey}|${sKey}|${eKey}`, empName: leaf.empName,
                                     acts: leaf.acts,
+                                    collapsed: false,
+                                    dayActivitiesCount: dg.activities.length,
                                   });
                                 }
                               }
@@ -1547,9 +1567,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                             {leaves.map((l, idx) => {
                               const showMonth = !seenMonth.v; if (showMonth) seenMonth.v = true;
                               const showDay = !seenDay.has(l.day); if (showDay) seenDay.add(l.day);
-                              const showDept = !seenDept.has(l.deptKey); if (showDept) seenDept.add(l.deptKey);
-                              const showInit = !seenInit.has(l.initKey); if (showInit) seenInit.add(l.initKey);
-                              const showSub = !seenSub.has(l.subKey); if (showSub) seenSub.add(l.subKey);
+                              const showDept = !l.collapsed && !seenDept.has(l.deptKey); if (showDept) seenDept.add(l.deptKey);
+                              const showInit = !l.collapsed && !seenInit.has(l.initKey); if (showInit) seenInit.add(l.initKey);
+                              const showSub = !l.collapsed && !seenSub.has(l.subKey); if (showSub) seenSub.add(l.subKey);
+                              const dayKey = `day-${monthGroup.month}-${l.day}`;
+                              const isDayExpanded = !l.collapsed;
                               return (
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
@@ -1578,17 +1600,44 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     </TableCell>
                                   )}
                                   {showDay && (
-                                    <TableCell rowSpan={daySpan.get(l.day) ?? 1} className="border-l border-gray-200 align-top py-3">
-                                      <div className="flex flex-col items-start gap-1">
-                                        <div className="flex items-center gap-1.5">
-                                          <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))]" />
-                                          <span className="font-bold text-sm text-gray-800">{WEEKDAYS_AR[l.date.getDay()]}</span>
+                                    <TableCell
+                                      rowSpan={daySpan.get(l.day) ?? 1}
+                                      className="border-l border-gray-200 align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors"
+                                      onClick={() => toggleDay(dayKey)}
+                                    >
+                                      <div className="flex items-start gap-2">
+                                        <ChevronDown
+                                          className={cn(
+                                            "w-4 h-4 text-[hsl(var(--primary))] transition-transform mt-0.5 shrink-0",
+                                            !isDayExpanded && "-rotate-90"
+                                          )}
+                                        />
+                                        <div className="flex flex-col items-start gap-1 flex-1">
+                                          <div className="flex items-center gap-1.5">
+                                            <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                            <span className="font-bold text-sm text-gray-800">{WEEKDAYS_AR[l.date.getDay()]}</span>
+                                          </div>
+                                          <div className="text-xs text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatGregorianDate(l.date)}</div>
+                                          <div className="text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>{formatHijriDate(l.date)}</div>
                                         </div>
-                                        <div className="text-xs text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatGregorianDate(l.date)}</div>
-                                        <div className="text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>{formatHijriDate(l.date)}</div>
                                       </div>
                                     </TableCell>
                                   )}
+                                  {l.collapsed ? (
+                                    <TableCell
+                                      colSpan={5}
+                                      className="bg-slate-50/60 border-l border-gray-200 align-middle py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.04)] transition-colors"
+                                      onClick={() => toggleDay(dayKey)}
+                                    >
+                                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                                        <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))]">
+                                          {activityCount(l.dayActivitiesCount)}
+                                        </Badge>
+                                        <span className="text-xs text-slate-500">— انقر لعرض التفاصيل</span>
+                                      </div>
+                                    </TableCell>
+                                  ) : (
+                                  <>
                                   {showDept && (
                                     <TableCell rowSpan={deptSpan.get(l.deptKey) ?? 1} className="border-l border-gray-200 align-top py-3 bg-[hsl(var(--primary)/0.06)]">
                                       <div className="flex items-center gap-2">
@@ -1609,7 +1658,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   )}
                                   {showSub && (
                                     <TableCell rowSpan={subSpan.get(l.subKey) ?? 1} className="border-l border-gray-200 align-top py-3">
-                                      <span className="text-xs text-purple-700 leading-snug">
+                                      <span className="text-xs font-semibold text-blue-900 leading-snug">
                                         {l.subName === "_no_sub" ? <span className="text-slate-300">—</span> : l.subName}
                                       </span>
                                     </TableCell>
@@ -1635,6 +1684,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       ))}
                                     </div>
                                   </TableCell>
+                                  </>
+                                  )}
                                 </TableRow>
                               );
                             })}
