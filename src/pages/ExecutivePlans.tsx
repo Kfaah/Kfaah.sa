@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,8 @@ import {
   Upload,
   ChevronUp,
   Check,
+  Layers,
+  Save,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -91,6 +94,7 @@ interface OperationalPlan {
   initiative: string | null;
   sub_initiative: string | null;
   responsible_employee_id?: string | null;
+  plan_name?: string | null;
 }
 
 interface OperationalPlanMonth {
@@ -295,6 +299,12 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [isAIChoiceDialogOpen, setIsAIChoiceDialogOpen] = useState(false);
   const [aiSelectedMonths, setAiSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
   const [isEditMode, setIsEditMode] = useState(false);
+  // فلترة الخطط المختارة (فارغة = الكل)
+  const [selectedPlanNames, setSelectedPlanNames] = useState<Set<string>>(new Set());
+  // تحرير مضمّن للخلية النشطة في وضع التعديل
+  const [editingExecPlanId, setEditingExecPlanId] = useState<string | null>(null);
+  const [editingValues, setEditingValues] = useState<{ daily_target: string; achieved: string }>({ daily_target: "", achieved: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
   // فلاتر إضافية
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
@@ -652,6 +662,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       planMonths.filter(pm => pm.month === month).forEach(pm => {
         const plan = operationalPlans.find(p => p.id === pm.operational_plan_id);
         if (!plan) return;
+        // فلترة بحسب الخطط المختارة
+        if (selectedPlanNames.size > 0) {
+          const pname = plan.plan_name || "الخطة الأولى";
+          if (!selectedPlanNames.has(pname)) return;
+        }
 
         // تحديد الموظف المسؤول عن هذا النشاط (responsible_employee_id أولاً، وإلا مالك الخطة)
         const respEmp = plan.responsible_employee_id
@@ -726,7 +741,56 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     }
     
     return groups;
-  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths]);
+  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames]);
+
+  // قائمة الخطط الفريدة المتاحة (مع عدد الأنشطة لكل خطة)
+  const availablePlans = useMemo(() => {
+    const map = new Map<string, { name: string; activitiesCount: number; planIds: Set<string> }>();
+    for (const p of operationalPlans) {
+      const key = p.plan_name || "الخطة الأولى";
+      if (!map.has(key)) map.set(key, { name: key, activitiesCount: 0, planIds: new Set() });
+      const entry = map.get(key)!;
+      entry.activitiesCount += 1;
+      entry.planIds.add(p.id);
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "ar"));
+  }, [operationalPlans]);
+
+  const togglePlanSelection = (planName: string) => {
+    setSelectedPlanNames(prev => {
+      const next = new Set(prev);
+      if (next.has(planName)) next.delete(planName);
+      else next.add(planName);
+      return next;
+    });
+  };
+
+  // حفظ تعديل خلية (الهدف اليومي والمنجز)
+  const saveExecPlanEdit = async (execPlanId: string) => {
+    const dt = parseFloat(editingValues.daily_target);
+    const ach = parseFloat(editingValues.achieved);
+    if (Number.isNaN(dt) || dt < 0) {
+      toast({ title: "قيمة غير صالحة", description: "الهدف اليومي يجب أن يكون رقمًا موجبًا", variant: "destructive" });
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const updates: any = { daily_target: dt };
+      if (!Number.isNaN(ach) && ach >= 0) updates.achieved = ach;
+      const { error } = await supabase
+        .from("executive_plans")
+        .update(updates)
+        .eq("id", execPlanId);
+      if (error) throw error;
+      setExecutivePlans(prev => prev.map(ep => ep.id === execPlanId ? { ...ep, ...updates } : ep));
+      setEditingExecPlanId(null);
+      toast({ title: "تم الحفظ", description: "تم تحديث بيانات النشاط" });
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   // الحصول على وضع العرض (الآن موحد للصفحة كلها)
   const getViewMode = (): "tasks" | "dates" => {
@@ -1251,6 +1315,103 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           </div>
         </div>
 
+        {/* بطاقات الخطط */}
+        {!loading && availablePlans.length > 0 && (
+          <div className="bg-gradient-to-br from-white via-slate-50 to-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-md">
+                  <Layers className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">الخطط المتاحة</h3>
+                  <p className="text-[11px] text-slate-500">اختر خطة لعرض تفاصيلها أو دع الكل لعرضها مجتمعة</p>
+                </div>
+              </div>
+              {selectedPlanNames.size > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedPlanNames(new Set())}
+                  className="text-xs text-slate-600 hover:text-slate-900"
+                >
+                  <X className="w-3.5 h-3.5 ml-1" />
+                  عرض الكل
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {/* بطاقة "الكل" */}
+              <button
+                onClick={() => setSelectedPlanNames(new Set())}
+                className={cn(
+                  "group relative overflow-hidden rounded-xl p-3 text-right transition-all border-2",
+                  selectedPlanNames.size === 0
+                    ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] border-transparent text-white shadow-lg shadow-[hsl(var(--primary)/0.25)]"
+                    : "bg-white border-slate-200 hover:border-[hsl(var(--primary)/0.5)] hover:shadow-md text-slate-700"
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className={cn("text-[11px] font-medium mb-0.5", selectedPlanNames.size === 0 ? "text-white/80" : "text-slate-500")}>
+                      عرض شامل
+                    </p>
+                    <p className="text-sm font-bold truncate">جميع الخطط</p>
+                  </div>
+                  <div className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                    selectedPlanNames.size === 0 ? "bg-white/20" : "bg-slate-100 group-hover:bg-[hsl(var(--primary)/0.1)]"
+                  )}>
+                    <Layers className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className={cn("text-[10px] mt-2", selectedPlanNames.size === 0 ? "text-white/70" : "text-slate-500")}>
+                  {availablePlans.length} {pluralAr(availablePlans.length, "خطة", "خطط")}
+                </div>
+              </button>
+
+              {availablePlans.map((p) => {
+                const isSelected = selectedPlanNames.has(p.name);
+                return (
+                  <button
+                    key={p.name}
+                    onClick={() => togglePlanSelection(p.name)}
+                    className={cn(
+                      "group relative overflow-hidden rounded-xl p-3 text-right transition-all border-2",
+                      isSelected
+                        ? "bg-gradient-to-br from-emerald-500 to-teal-600 border-transparent text-white shadow-lg shadow-emerald-500/25"
+                        : "bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md text-slate-700"
+                    )}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-white/25 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className={cn("text-[11px] font-medium mb-0.5", isSelected ? "text-white/80" : "text-slate-500")}>
+                          خطة تشغيلية
+                        </p>
+                        <p className="text-sm font-bold truncate">{p.name}</p>
+                      </div>
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                        isSelected ? "bg-white/20" : "bg-emerald-50 group-hover:bg-emerald-100"
+                      )}>
+                        <Target className={cn("w-4 h-4", isSelected ? "text-white" : "text-emerald-600")} />
+                      </div>
+                    </div>
+                    <div className={cn("text-[10px] mt-2", isSelected ? "text-white/70" : "text-slate-500")}>
+                      {activityCount(p.activitiesCount)}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* إحصائيات سريعة */}
         {!loading && groupedPlans.length > 0 && (() => {
           const deptSet = new Set<string>();
@@ -1679,17 +1840,91 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   </TableCell>
                                   <TableCell className="align-top py-2">
                                     <div className="flex flex-col gap-1">
-                                      {l.acts.map((act, i) => (
-                                        <div
-                                          key={act.id}
-                                          className="flex items-start gap-2 px-2 py-1 rounded-md text-xs bg-emerald-50 border border-emerald-100 text-slate-800"
-                                        >
-                                          <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
-                                            <span className="text-[9px] font-bold">{i + 1}</span>
+                                      {l.acts.map((act, i) => {
+                                        const isEditingThis = isEditMode && editingExecPlanId === act.id;
+                                        return (
+                                          <div
+                                            key={act.id}
+                                            className={cn(
+                                              "flex items-start gap-2 px-2 py-1 rounded-md text-xs border text-slate-800 transition-all",
+                                              isEditingThis
+                                                ? "bg-amber-50 border-amber-300 ring-1 ring-amber-200"
+                                                : isEditMode
+                                                ? "bg-emerald-50 border-emerald-100 hover:bg-amber-50 hover:border-amber-300 cursor-pointer"
+                                                : "bg-emerald-50 border-emerald-100"
+                                            )}
+                                            onClick={() => {
+                                              if (!isEditMode || isEditingThis) return;
+                                              setEditingExecPlanId(act.id);
+                                              setEditingValues({
+                                                daily_target: String(act.dailyTarget ?? 0),
+                                                achieved: String(act.achieved ?? 0),
+                                              });
+                                            }}
+                                          >
+                                            <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                              <span className="text-[9px] font-bold">{i + 1}</span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="font-medium leading-snug">{act.activityName}</div>
+                                              {isEditingThis ? (
+                                                <div
+                                                  className="mt-2 flex items-center gap-2"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                >
+                                                  <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[9px] text-slate-500">الهدف اليومي</span>
+                                                    <Input
+                                                      type="number"
+                                                      min="0"
+                                                      value={editingValues.daily_target}
+                                                      onChange={(e) => setEditingValues(v => ({ ...v, daily_target: e.target.value }))}
+                                                      className="h-7 w-20 text-xs"
+                                                    />
+                                                  </div>
+                                                  <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[9px] text-slate-500">المنجز</span>
+                                                    <Input
+                                                      type="number"
+                                                      min="0"
+                                                      value={editingValues.achieved}
+                                                      onChange={(e) => setEditingValues(v => ({ ...v, achieved: e.target.value }))}
+                                                      className="h-7 w-20 text-xs"
+                                                    />
+                                                  </div>
+                                                  <div className="flex items-center gap-1 mt-3.5">
+                                                    <Button
+                                                      size="sm"
+                                                      onClick={() => saveExecPlanEdit(act.id)}
+                                                      disabled={savingEdit}
+                                                      className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                    >
+                                                      {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      onClick={() => setEditingExecPlanId(null)}
+                                                      className="h-7 px-2"
+                                                    >
+                                                      <X className="w-3 h-3" />
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                isEditMode && (
+                                                  <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-500">
+                                                    <span>الهدف: <span className="font-semibold text-slate-700">{act.dailyTarget}</span></span>
+                                                    <span>•</span>
+                                                    <span>المنجز: <span className="font-semibold text-slate-700">{act.achieved}</span></span>
+                                                    <Pencil className="w-3 h-3 text-amber-600 mr-auto" />
+                                                  </div>
+                                                )
+                                              )}
+                                            </div>
                                           </div>
-                                          <span className="font-medium leading-snug">{act.activityName}</span>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </TableCell>
                                   </>
