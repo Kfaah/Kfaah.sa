@@ -1562,349 +1562,138 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     </div>
                                   </TableCell>
                                   
-                                  {/* عمود الأنشطة */}
-                                  <TableCell className="py-2">
-                                    <div className="grid grid-cols-3 gap-1.5">
-                                      {dateGroup.activities.map((activity, activityIdx) => {
-                                        const activityTasks = getTasksForExecutivePlan(activity.id);
-                                        const completedTasks = activityTasks.filter(t => t.status === "completed").length;
-                                        const activityKey = `${monthGroup.month}-${dateGroup.day}-${activity.id}`;
-                                        const isActivityExpanded = expandedActivities.has(activityKey);
-                                        
-                                        // تحقق من وجود مهام لكل مرحلة
-                                        const hasPreTasks = activityTasks.some(t => t.category === "ما قبل");
-                                        const hasDuringTasks = activityTasks.some(t => t.category === "أثناء");
-                                        const hasPostTasks = activityTasks.some(t => t.category === "ما بعد");
-                                        const hasUncategorizedTasks = activityTasks.some(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category));
-                                        const hasPhases = hasPreTasks || hasDuringTasks || hasPostTasks;
-                                        
-                                        return (
-                                          <div key={activity.id} className="relative">
-                                            {isEditMode && (
-                                              <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  if (window.confirm(`حذف "${activity.activityName}" من هذا اليوم؟`)) {
-                                                    handleDeleteDay(activity.id);
-                                                  }
-                                                }}
-                                                className="absolute -top-1.5 -left-1.5 z-10 w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md ring-2 ring-white transition-transform hover:scale-110"
-                                                aria-label="حذف"
-                                              >
-                                                <X className="w-3 h-3" />
-                                              </button>
-                                            )}
-                                            <Popover>
-                                            <PopoverTrigger asChild>
-                                              <div
-                                                className={cn(
-                                                  "flex items-start gap-2 cursor-pointer px-2.5 py-2 rounded-lg transition-all hover:scale-[1.02] hover:shadow-lg",
-                                                  activity.status === "completed" 
-                                                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                                                    : activity.status === "in_progress"
-                                                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                                                    : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white",
-                                                  isEditMode && "ring-2 ring-red-300/60"
-                                                )}
-                                              >
-                                                {/* الرقم التسلسلي */}
-                                                <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                  <span className="text-xs font-bold">{activityIdx + 1}</span>
-                                                </div>
-                                                
-                                                {/* اسم النشاط */}
-                                                <span className="text-sm font-medium leading-snug flex-1">
-                                                  {activity.activityName}
-                                                </span>
-                                                
-                                                {/* عدد المهام */}
-                                                {activityTasks.length > 0 && (
-                                                  <Badge 
-                                                    variant="secondary" 
-                                                    className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0 bg-white/20 text-white border-0 mt-0.5"
-                                                  >
-                                                    {completedTasks}/{activityTasks.length}
-                                                  </Badge>
-                                                )}
-                                                
-                                                <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 opacity-70 mt-0.5" />
-                                              </div>
-                                            </PopoverTrigger>
-                                            <PopoverContent 
-                                              className="w-96 p-4 bg-white border-2 border-gray-200 shadow-2xl rounded-xl z-[100]" 
-                                              align="start"
-                                              side="bottom"
-                                              sideOffset={8}
+                                  {/* === عمود الأقسام === */}
+                                  <TableCell className="border-l border-gray-200 align-top py-2 bg-[hsl(var(--primary)/0.02)]">
+                                    {!isDayExpanded ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleSetKey(setExpandedDays, dayKey)}
+                                        className="text-xs text-muted-foreground hover:text-[hsl(var(--primary))] flex items-center gap-1.5"
+                                      >
+                                        <Building2 className="w-3.5 h-3.5" />
+                                        {deptList.length} قسم — اضغط للتوسيع
+                                      </button>
+                                    ) : (
+                                      <div className="flex flex-col gap-1.5">
+                                        {deptList.map(([dKey, dept]) => {
+                                          const deptKey = `${dayKey}|dept-${dKey}`;
+                                          const isDeptExpanded = expandedDayDepts.has(deptKey);
+                                          const empCount = dept.emps.size;
+                                          const totalActsInDept = Array.from(dept.emps.values()).reduce((s, e) => s + e.acts.length, 0);
+                                          return (
+                                            <button
+                                              key={`dept-${deptKey}`}
+                                              type="button"
+                                              onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
+                                              className={cn(
+                                                "flex items-center gap-2 px-2 py-1.5 rounded-md text-right transition-all border",
+                                                isDeptExpanded
+                                                  ? "bg-[hsl(var(--primary))] text-white border-[hsl(var(--primary))] shadow-sm"
+                                                  : "bg-white border-gray-200 text-gray-800 hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
+                                              )}
                                             >
-                                              <div className="space-y-4 max-h-[450px] overflow-y-auto">
-                                                {/* عنوان النشاط */}
-                                                <div className="font-bold text-base text-gray-900 border-b-2 border-[hsl(var(--primary))] pb-3">
-                                                  {activity.activityName}
-                                                </div>
-                                                
-                                                {activityTasks.length === 0 ? (
-                                                  <div className="py-6 text-center text-gray-500">
-                                                    <ListTodo className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                                                    <p className="text-base">لا توجد مهام مرتبطة</p>
-                                                  </div>
-                                                ) : (
-                                                  <>
-                                                    {/* عرض المراحل فقط إذا كانت موجودة */}
-                                                    {hasPhases && (
-                                                      <div className="space-y-3">
-                                                        {/* مرحلة ما قبل */}
-                                                        {hasPreTasks && (
-                                                          <div className="rounded-xl border-2 border-amber-300 p-3 bg-amber-50">
-                                                            <div className="flex items-center gap-2 mb-3">
-                                                              <div className="px-3 py-1.5 rounded-lg text-white text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 shadow-md">
-                                                                🔧 ما قبل
-                                                              </div>
-                                                              <span className="text-sm text-amber-700 font-medium">
-                                                                ({activityTasks.filter(t => t.category === "ما قبل").length} مهام)
-                                                              </span>
-                                                            </div>
-                                                            <div className="space-y-2">
-                                                              {activityTasks.filter(t => t.category === "ما قبل").map((task, taskIdx) => (
-                                                                <div 
-                                                                  key={task.id}
-                                                                  className="flex items-start gap-3 p-2.5 bg-white rounded-lg border border-amber-200 shadow-sm"
-                                                                >
-                                                                  <div className={cn(
-                                                                    "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
-                                                                    task.status === "completed" ? "bg-green-100 text-green-600" :
-                                                                    task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
-                                                                    "bg-gray-100 text-gray-500"
-                                                                  )}>
-                                                                    {task.status === "completed" ? (
-                                                                      <CheckCircle2 className="w-4 h-4" />
-                                                                    ) : task.status === "in_progress" ? (
-                                                                      <Clock className="w-4 h-4" />
-                                                                    ) : (
-                                                                      taskIdx + 1
-                                                                    )}
-                                                                  </div>
-                                                                  <p className="text-sm text-gray-800 flex-1 leading-relaxed">
-                                                                    {task.title}
-                                                                  </p>
-                                                                </div>
-                                                              ))}
-                                                            </div>
-                                                          </div>
-                                                        )}
-                                                        
-                                                        {/* مرحلة أثناء */}
-                                                        {hasDuringTasks && (
-                                                          <div className="rounded-xl border-2 border-blue-300 p-3 bg-blue-50">
-                                                            <div className="flex items-center gap-2 mb-3">
-                                                              <div className="px-3 py-1.5 rounded-lg text-white text-sm font-bold bg-gradient-to-r from-blue-500 to-indigo-500 shadow-md">
-                                                                ⚡ أثناء
-                                                              </div>
-                                                              <span className="text-sm text-blue-700 font-medium">
-                                                                ({activityTasks.filter(t => t.category === "أثناء").length} مهام)
-                                                              </span>
-                                                            </div>
-                                                            <div className="space-y-2">
-                                                              {activityTasks.filter(t => t.category === "أثناء").map((task, taskIdx) => (
-                                                                <div 
-                                                                  key={task.id}
-                                                                  className="flex items-start gap-3 p-2.5 bg-white rounded-lg border border-blue-200 shadow-sm"
-                                                                >
-                                                                  <div className={cn(
-                                                                    "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
-                                                                    task.status === "completed" ? "bg-green-100 text-green-600" :
-                                                                    task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
-                                                                    "bg-gray-100 text-gray-500"
-                                                                  )}>
-                                                                    {task.status === "completed" ? (
-                                                                      <CheckCircle2 className="w-4 h-4" />
-                                                                    ) : task.status === "in_progress" ? (
-                                                                      <Clock className="w-4 h-4" />
-                                                                    ) : (
-                                                                      taskIdx + 1
-                                                                    )}
-                                                                  </div>
-                                                                  <p className="text-sm text-gray-800 flex-1 leading-relaxed">
-                                                                    {task.title}
-                                                                  </p>
-                                                                </div>
-                                                              ))}
-                                                            </div>
-                                                          </div>
-                                                        )}
-                                                        
-                                                        {/* مرحلة ما بعد */}
-                                                        {hasPostTasks && (
-                                                          <div className="rounded-xl border-2 border-emerald-300 p-3 bg-emerald-50">
-                                                            <div className="flex items-center gap-2 mb-3">
-                                                              <div className="px-3 py-1.5 rounded-lg text-white text-sm font-bold bg-gradient-to-r from-emerald-500 to-teal-500 shadow-md">
-                                                                ✅ ما بعد
-                                                              </div>
-                                                              <span className="text-sm text-emerald-700 font-medium">
-                                                                ({activityTasks.filter(t => t.category === "ما بعد").length} مهام)
-                                                              </span>
-                                                            </div>
-                                                            <div className="space-y-2">
-                                                              {activityTasks.filter(t => t.category === "ما بعد").map((task, taskIdx) => (
-                                                                <div 
-                                                                  key={task.id}
-                                                                  className="flex items-start gap-3 p-2.5 bg-white rounded-lg border border-emerald-200 shadow-sm"
-                                                                >
-                                                                  <div className={cn(
-                                                                    "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
-                                                                    task.status === "completed" ? "bg-green-100 text-green-600" :
-                                                                    task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
-                                                                    "bg-gray-100 text-gray-500"
-                                                                  )}>
-                                                                    {task.status === "completed" ? (
-                                                                      <CheckCircle2 className="w-4 h-4" />
-                                                                    ) : task.status === "in_progress" ? (
-                                                                      <Clock className="w-4 h-4" />
-                                                                    ) : (
-                                                                      taskIdx + 1
-                                                                    )}
-                                                                  </div>
-                                                                  <p className="text-sm text-gray-800 flex-1 leading-relaxed">
-                                                                    {task.title}
-                                                                  </p>
-                                                                </div>
-                                                              ))}
-                                                            </div>
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                    )}
-                                                    
-                                                    {/* المهام بدون تصنيف - تظهر كقائمة بسيطة إذا لا توجد مراحل */}
-                                                    {hasUncategorizedTasks && (
-                                                      <div className={cn(
-                                                        "rounded-xl border-2 border-gray-300 p-3 bg-gray-50",
-                                                        hasPhases ? "mt-3" : ""
-                                                      )}>
-                                                        {hasPhases && (
-                                                          <div className="flex items-center gap-2 mb-3">
-                                                            <div className="px-3 py-1.5 rounded-lg text-white text-sm font-bold bg-gradient-to-r from-gray-500 to-gray-600 shadow-md">
-                                                              📋 مهام أخرى
-                                                            </div>
-                                                          </div>
-                                                        )}
-                                                        <div className="space-y-2">
-                                                          {activityTasks.filter(t => !t.category || !["ما قبل", "أثناء", "ما بعد"].includes(t.category)).map((task, taskIdx) => (
-                                                            <div 
-                                                              key={task.id}
-                                                              className="flex items-start gap-3 p-2.5 bg-white rounded-lg border border-gray-200 shadow-sm"
-                                                            >
-                                                              <div className={cn(
-                                                                "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
-                                                                task.status === "completed" ? "bg-green-100 text-green-600" :
-                                                                task.status === "in_progress" ? "bg-blue-100 text-blue-600" :
-                                                                "bg-gray-100 text-gray-500"
-                                                              )}>
-                                                                {task.status === "completed" ? (
-                                                                  <CheckCircle2 className="w-4 h-4" />
-                                                                ) : task.status === "in_progress" ? (
-                                                                  <Clock className="w-4 h-4" />
-                                                                ) : (
-                                                                  taskIdx + 1
-                                                                )}
-                                                              </div>
-                                                              <p className="text-sm text-gray-800 flex-1 leading-relaxed">
-                                                                {task.title}
-                                                              </p>
-                                                            </div>
-                                                          ))}
-                                                        </div>
-                                                      </div>
-                                                    )}
-                                                  </>
+                                              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isDeptExpanded ? "" : "-rotate-90")} />
+                                              <Building2 className="w-3.5 h-3.5" />
+                                              <span className="font-semibold text-xs flex-1">{dept.name}</span>
+                                              <Badge variant="secondary" className={cn("text-[9px] px-1 py-0 h-4", isDeptExpanded ? "bg-white/20 text-white border-0" : "")}>
+                                                {empCount}/{totalActsInDept}
+                                              </Badge>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </TableCell>
+
+                                  {/* === عمود الموظفين === */}
+                                  <TableCell className="border-l border-gray-200 align-top py-2 bg-[hsl(var(--accent)/0.02)]">
+                                    {!isDayExpanded ? (
+                                      <span className="text-xs text-gray-400">—</span>
+                                    ) : (
+                                      <div className="flex flex-col gap-1.5">
+                                        {deptList.flatMap(([dKey, dept]) => {
+                                          const deptKey = `${dayKey}|dept-${dKey}`;
+                                          if (!expandedDayDepts.has(deptKey)) return [];
+                                          return Array.from(dept.emps.entries()).map(([eKey, emp]) => {
+                                            const empKey = `${deptKey}|emp-${eKey}`;
+                                            const isEmpExpanded = expandedDayDeptEmps.has(empKey);
+                                            return (
+                                              <button
+                                                key={`emp-${empKey}`}
+                                                type="button"
+                                                onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
+                                                className={cn(
+                                                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-right transition-all border",
+                                                  isEmpExpanded
+                                                    ? "bg-[hsl(var(--accent))] text-white border-[hsl(var(--accent))] shadow-sm"
+                                                    : "bg-white border-gray-200 text-gray-800 hover:border-[hsl(var(--accent))] hover:bg-[hsl(var(--accent)/0.05)]"
                                                 )}
+                                              >
+                                                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isEmpExpanded ? "" : "-rotate-90")} />
+                                                <User className="w-3.5 h-3.5" />
+                                                <span className="font-medium text-xs flex-1">{emp.name}</span>
+                                                <Badge variant="secondary" className={cn("text-[9px] px-1 py-0 h-4", isEmpExpanded ? "bg-white/20 text-white border-0" : "")}>
+                                                  {emp.acts.length}
+                                                </Badge>
+                                              </button>
+                                            );
+                                          });
+                                        })}
+                                        {deptList.every(([dKey]) => !expandedDayDepts.has(`${dayKey}|dept-${dKey}`)) && (
+                                          <span className="text-xs text-gray-400">اختر قسماً لعرض موظفيه</span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </TableCell>
+
+                                  {/* === عمود المهام === */}
+                                  <TableCell className="align-top py-2 bg-gray-50/40">
+                                    {!isDayExpanded ? (
+                                      <span className="text-xs text-gray-400">—</span>
+                                    ) : (
+                                      <div className="flex flex-col gap-2">
+                                        {deptList.flatMap(([dKey, dept]) => {
+                                          const deptKey = `${dayKey}|dept-${dKey}`;
+                                          if (!expandedDayDepts.has(deptKey)) return [];
+                                          return Array.from(dept.emps.entries()).flatMap(([eKey, emp]) => {
+                                            const empKey = `${deptKey}|emp-${eKey}`;
+                                            if (!expandedDayDeptEmps.has(empKey)) return [];
+                                            return [(
+                                              <div key={`tasks-${empKey}`} className="rounded-md border-2 border-[hsl(var(--accent)/0.3)] p-2 bg-white">
+                                                <div className="text-[10px] text-muted-foreground mb-1.5 font-semibold flex items-center gap-1">
+                                                  <User className="w-3 h-3" /> {emp.name}
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-1.5">
+                                                  {emp.acts.map((act, idx) => (
+                                                    <div
+                                                      key={act.id}
+                                                      className={cn(
+                                                        "flex items-start gap-2 px-2 py-1.5 rounded-md text-xs",
+                                                        act.status === "completed"
+                                                          ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                                                          : act.status === "in_progress"
+                                                          ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                                                          : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
+                                                      )}
+                                                    >
+                                                      <div className="w-4 h-4 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                        <span className="text-[9px] font-bold">{idx + 1}</span>
+                                                      </div>
+                                                      <span className="font-medium leading-snug flex-1">{act.activityName}</span>
+                                                    </div>
+                                                  ))}
+                                                </div>
                                               </div>
-                                            </PopoverContent>
-                                          </Popover>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
+                                            )];
+                                          });
+                                        })}
+                                        {deptList.every(([dKey]) => !expandedDayDepts.has(`${dayKey}|dept-${dKey}`)) && (
+                                          <span className="text-xs text-gray-400">اختر قسماً ثم موظفاً لعرض مهامه</span>
+                                        )}
+                                      </div>
+                                    )}
                                   </TableCell>
                                 </TableRow>
-                                {isDayExpanded && deptList.map(([dKey, dept]) => {
-                                  const deptKey = `${dayKey}|dept-${dKey}`;
-                                  const isDeptExpanded = expandedDayDepts.has(deptKey);
-                                  const empList = Array.from(dept.emps.entries());
-                                  const totalActsInDept = empList.reduce((s, [, e]) => s + e.acts.length, 0);
-                                  return (
-                                    <React.Fragment key={`dept-frag-${deptKey}`}>
-                                      <TableRow className="bg-[hsl(var(--primary)/0.04)] hover:bg-[hsl(var(--primary)/0.08)] border-r-4 border-r-[hsl(var(--primary))]">
-                                        <TableCell colSpan={2} className="py-2 pr-8">
-                                          <button
-                                            type="button"
-                                            onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
-                                            className="flex items-center gap-2 w-full text-right"
-                                          >
-                                            <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDeptExpanded ? "" : "-rotate-90")} />
-                                            <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
-                                            <span className="font-semibold text-gray-800 text-sm">{dept.name}</span>
-                                            <Badge variant="outline" className="text-[10px] mr-auto border-[hsl(var(--primary))] text-[hsl(var(--primary))]">
-                                              {empList.length} موظف · {totalActsInDept} نشاط
-                                            </Badge>
-                                          </button>
-                                        </TableCell>
-                                      </TableRow>
-                                      {isDeptExpanded && empList.map(([eKey, emp]) => {
-                                        const empKey = `${deptKey}|emp-${eKey}`;
-                                        const isEmpExpanded = expandedDayDeptEmps.has(empKey);
-                                        return (
-                                          <React.Fragment key={`emp-frag-${empKey}`}>
-                                            <TableRow className="bg-white hover:bg-gray-50 border-r-[6px] border-r-[hsl(var(--accent))]">
-                                              <TableCell colSpan={2} className="py-2 pr-14">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
-                                                  className="flex items-center gap-2 w-full text-right"
-                                                >
-                                                  <ChevronDown className={cn("w-4 h-4 text-gray-600 transition-transform", isEmpExpanded ? "" : "-rotate-90")} />
-                                                  <User className="w-4 h-4 text-gray-600" />
-                                                  <span className="font-medium text-gray-800 text-sm">{emp.name}</span>
-                                                  <Badge variant="secondary" className="text-[10px] mr-auto">
-                                                    {emp.acts.length} نشاط
-                                                  </Badge>
-                                                </button>
-                                              </TableCell>
-                                            </TableRow>
-                                            {isEmpExpanded && (
-                                              <TableRow className="bg-gray-50/50 border-r-[6px] border-r-[hsl(var(--accent)/0.6)]">
-                                                <TableCell colSpan={2} className="py-3 pr-20">
-                                                  <div className="grid grid-cols-2 gap-2">
-                                                    {emp.acts.map((act, idx) => (
-                                                      <div
-                                                        key={act.id}
-                                                        className={cn(
-                                                          "flex items-start gap-2 px-2.5 py-2 rounded-lg",
-                                                          act.status === "completed"
-                                                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                                                            : act.status === "in_progress"
-                                                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                                                            : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
-                                                        )}
-                                                      >
-                                                        <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                          <span className="text-xs font-bold">{idx + 1}</span>
-                                                        </div>
-                                                        <span className="text-sm font-medium leading-snug flex-1">
-                                                          {act.activityName}
-                                                        </span>
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                </TableCell>
-                                              </TableRow>
-                                            )}
-                                          </React.Fragment>
-                                        );
-                                      })}
-                                    </React.Fragment>
-                                  );
-                                })}
                                 </React.Fragment>
                               );
                             })}
