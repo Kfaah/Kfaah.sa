@@ -1503,28 +1503,69 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   
                                   {/* عمود التاريخ */}
                                   <TableCell className="border-l border-gray-200 py-3">
-                                    <div className="flex flex-col items-start gap-1">
+                                    <div className="flex items-start justify-between gap-2">
+                                      {/* المحتوى يميناً (RTL) */}
+                                      <div className="flex flex-col items-start gap-1 flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))] flex-shrink-0" />
+                                          <span className="font-bold text-gray-800">{dateGroup.weekDay}</span>
+                                        </div>
+                                        <div className="text-sm text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                          {formatGregorianDate(date)}
+                                        </div>
+                                        <div className="text-xs text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                          {formatHijriDate(date)}
+                                        </div>
+                                        {isDayExpanded && (
+                                          <Badge variant="outline" className="text-[10px] mt-1 border-[hsl(var(--primary))] text-[hsl(var(--primary))]">
+                                            {deptList.length} قسم · {dateGroup.activities.length} نشاط
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      {/* السهم يساراً */}
                                       <button
                                         type="button"
-                                        onClick={(e) => { e.stopPropagation(); toggleSetKey(setExpandedDays, dayKey); }}
-                                        className="flex items-center gap-2 hover:bg-[hsl(var(--primary)/0.1)] rounded px-1 -mx-1 transition-colors"
-                                        aria-label="توسيع التفاصيل"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (isDayExpanded) {
+                                            // طي اليوم وكل ما تحته
+                                            setExpandedDays((prev) => { const n = new Set(prev); n.delete(dayKey); return n; });
+                                            setExpandedDayDepts((prev) => {
+                                              const n = new Set(prev);
+                                              for (const k of Array.from(n)) if (k.startsWith(dayKey + "|")) n.delete(k);
+                                              return n;
+                                            });
+                                            setExpandedDayDeptEmps((prev) => {
+                                              const n = new Set(prev);
+                                              for (const k of Array.from(n)) if (k.startsWith(dayKey + "|")) n.delete(k);
+                                              return n;
+                                            });
+                                          } else {
+                                            // توسيع اليوم وكل الأقسام والموظفين دفعة واحدة
+                                            setExpandedDays((prev) => new Set(prev).add(dayKey));
+                                            const newDepts = new Set(expandedDayDepts);
+                                            const newEmps = new Set(expandedDayDeptEmps);
+                                            for (const [dKey, dept] of deptList) {
+                                              const deptKey = `${dayKey}|dept-${dKey}`;
+                                              newDepts.add(deptKey);
+                                              for (const [eKey] of dept.emps) {
+                                                newEmps.add(`${deptKey}|emp-${eKey}`);
+                                              }
+                                            }
+                                            setExpandedDayDepts(newDepts);
+                                            setExpandedDayDeptEmps(newEmps);
+                                          }
+                                        }}
+                                        className={cn(
+                                          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm border-2",
+                                          isDayExpanded
+                                            ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white border-transparent shadow-md"
+                                            : "bg-white text-[hsl(var(--primary))] border-[hsl(var(--primary)/0.3)] hover:border-[hsl(var(--primary))] hover:shadow-md"
+                                        )}
+                                        aria-label={isDayExpanded ? "طي" : "توسيع الكل"}
                                       >
-                                        <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDayExpanded ? "" : "-rotate-90")} />
-                                        <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))] flex-shrink-0" />
-                                        <span className="font-bold text-gray-800">{dateGroup.weekDay}</span>
+                                        <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", isDayExpanded ? "rotate-0" : "rotate-90")} />
                                       </button>
-                                      <div className="text-sm text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                        {formatGregorianDate(date)}
-                                      </div>
-                                      <div className="text-xs text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                        {formatHijriDate(date)}
-                                      </div>
-                                      {isDayExpanded && (
-                                        <Badge variant="outline" className="text-[10px] mt-1 border-[hsl(var(--primary))] text-[hsl(var(--primary))]">
-                                          {deptList.length} قسم · {dateGroup.activities.length} نشاط
-                                        </Badge>
-                                      )}
                                     </div>
                                   </TableCell>
                                   
