@@ -2225,6 +2225,22 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 {/* الخلية الموسعة - تمتد على الأعمدة المتبقية (بدون الهدف والمبادرة) */}
                                 <td colSpan={expandedColSpan} className="p-0 border-l-2 border-gray-200">
                                   <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[hsl(var(--primary)/0.2)] animate-in slide-in-from-top-2 duration-200">
+                                    {/* زر إغلاق/طي الجدول الشهري — يظهر دائماً */}
+                                    <div className="flex justify-between items-center mb-3">
+                                      <span className="text-sm font-semibold text-[hsl(var(--primary))] flex items-center gap-2">
+                                        <Calendar className="w-4 h-4" />
+                                        التوزيع الشهري للنشاط
+                                      </span>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-gray-600 border-gray-300 hover:bg-gray-100 hover:text-gray-800 gap-1"
+                                        onClick={() => setExpandedPlanId(null)}
+                                      >
+                                        <X className="w-4 h-4" />
+                                        إغلاق
+                                      </Button>
+                                    </div>
                                     {/* أزرار التحكم - تظهر فقط في وضع التعديل */}
                                     {isEditMode && (
                                       <div className="flex justify-end mb-3 gap-2">
