@@ -1377,13 +1377,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                         <TableHead className="text-right font-bold text-white min-w-[180px] border-l border-white/20">
                           التاريخ
                         </TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[200px] border-l border-white/20">
-                          الأقسام
+                        <TableHead className="text-right font-bold text-white min-w-[220px] border-l border-white/20">
+                          القسم
                         </TableHead>
                         <TableHead className="text-right font-bold text-white min-w-[200px] border-l border-white/20">
-                          الموظفون
+                          الموظف
                         </TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[280px]">
+                        <TableHead className="text-right font-bold text-white min-w-[320px]">
                           المهام
                         </TableHead>
                       </TableRow>
