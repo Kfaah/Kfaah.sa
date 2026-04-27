@@ -1941,6 +1941,7 @@ const AddOperationalPlan = () => {
                 year,
                 responsible_employee_id: activity.responsibleEmployeeId || null,
                 status: "active",
+                plan_name: planName?.trim() || "الخطة الأولى",
               })
               .select()
               .single();
