@@ -417,10 +417,16 @@ export function Sidebar() {
         className={cn(
           "absolute inset-0",
           isSawabOrg
-            ? "bg-white"
+            ? ""
             : !branding.primary && "bg-[hsl(var(--primary))]"
         )}
-        style={isSawabOrg ? undefined : (branding.primary ? { backgroundColor: branding.primary } : undefined)}
+        style={
+          isSawabOrg
+            ? { backgroundColor: "#00508f" }
+            : branding.primary
+              ? { backgroundColor: branding.primary }
+              : undefined
+        }
       />
 
       {/* Header Section with Logo */}
