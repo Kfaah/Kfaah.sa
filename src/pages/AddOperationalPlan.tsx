@@ -978,7 +978,7 @@ function SortableRow({
                   value={cellValue}
                   onValueChange={(v) => updateCustomColumn(row.id, col.id, v)}
                 >
-                  <SelectTrigger className="h-8 text-xs border-0 bg-transparent hover:bg-muted/50 rounded-none pe-7">
+                  <SelectTrigger className="h-8 text-xs border-0 bg-transparent hover:bg-muted/50 rounded-none ps-7">
                     <SelectValue placeholder="اختر موظف...">
                       {selectedEmp?.full_name}
                     </SelectValue>
@@ -996,8 +996,10 @@ function SortableRow({
                 {cellValue && (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); updateCustomColumn(row.id, col.id, ""); }}
-                    className="absolute start-1 top-1/2 -translate-y-1/2 z-30 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                    onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCustomColumn(row.id, col.id, ""); }}
+                    className="absolute start-0.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded bg-background/80 hover:bg-destructive/10 text-muted-foreground hover:text-destructive shadow-sm"
                     aria-label="مسح"
                   >
                     <X className="w-3 h-3" />
@@ -1013,7 +1015,7 @@ function SortableRow({
                   value={cellValue}
                   onValueChange={(v) => updateCustomColumn(row.id, col.id, v)}
                 >
-                  <SelectTrigger className="h-8 text-xs border-0 bg-transparent hover:bg-muted/50 rounded-none pe-7">
+                  <SelectTrigger className="h-8 text-xs border-0 bg-transparent hover:bg-muted/50 rounded-none ps-7">
                     <SelectValue placeholder={col.label} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1029,8 +1031,10 @@ function SortableRow({
                 {cellValue && (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); updateCustomColumn(row.id, col.id, ""); }}
-                    className="absolute start-1 top-1/2 -translate-y-1/2 z-30 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                    onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCustomColumn(row.id, col.id, ""); }}
+                    className="absolute start-0.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded bg-background/80 hover:bg-destructive/10 text-muted-foreground hover:text-destructive shadow-sm"
                     aria-label="مسح"
                   >
                     <X className="w-3 h-3" />
