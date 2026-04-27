@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Upload, FileText, X, Loader2, Brain, ArrowRight, CheckCircle2, FileSpreadsheet, FileImage, Calendar } from "lucide-react";
+import { Sparkles, Upload, FileText, X, Loader2, Brain, ArrowRight, CheckCircle2, FileSpreadsheet, FileImage, Calendar, Building2, Users, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getAvailableYears, getCurrentYear } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
@@ -36,6 +37,8 @@ function fileIcon(name: string) {
 export default function AIGenerateExecutivePlan() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { slug } = useParams<{ slug?: string }>();
+  const { currentOrg } = useOrganization();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const withFiles = params.get("withFiles") === "1";
@@ -46,6 +49,58 @@ export default function AIGenerateExecutivePlan() {
   const [files, setFiles] = useState<File[]>([]);
   const [selectedMonths, setSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
   const [stage, setStage] = useState<"idle" | "uploading" | "analyzing" | "done">("idle");
+
+  // Scope filters
+  const [routeOrgId, setRouteOrgId] = useState<string | null>(null);
+  const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [employees, setEmployees] = useState<{ id: string; full_name: string; user_id: string | null; department_id: string | null }[]>([]);
+  const [departmentId, setDepartmentId] = useState<string>("all");
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]); // [] => all employees in scope
+
+  useEffect(() => {
+    const resolve = async () => {
+      if (!slug) { setRouteOrgId(null); return; }
+      if (currentOrg?.slug === slug) { setRouteOrgId(currentOrg.id); return; }
+      const { data } = await supabase.from("organizations").select("id").eq("slug", slug).maybeSingle();
+      setRouteOrgId(data?.id ?? null);
+    };
+    resolve();
+  }, [slug, currentOrg?.id, currentOrg?.slug]);
+
+  useEffect(() => {
+    const loadFilters = async () => {
+      if (slug && !activeOrgId) return;
+      let dq = supabase.from("departments").select("id, name").order("name");
+      let eq = supabase
+        .from("employees")
+        .select("id, full_name, user_id, department_id")
+        .eq("status", "active")
+        .order("full_name");
+      if (activeOrgId) {
+        dq = dq.eq("organization_id", activeOrgId);
+        eq = eq.eq("organization_id", activeOrgId);
+      }
+      const [{ data: deps }, { data: emps }] = await Promise.all([dq, eq]);
+      setDepartments(deps || []);
+      setEmployees((emps || []) as any);
+    };
+    loadFilters();
+  }, [activeOrgId, slug]);
+
+  const filteredEmployees = useMemo(() => {
+    if (departmentId === "all") return employees;
+    return employees.filter((e) => e.department_id === departmentId);
+  }, [employees, departmentId]);
+
+  // Effective userIds to send (undefined => no filter, generate for all)
+  const effectiveUserIds = useMemo(() => {
+    const pool = selectedEmployeeIds.length > 0
+      ? employees.filter((e) => selectedEmployeeIds.includes(e.id))
+      : filteredEmployees;
+    const ids = pool.map((e) => e.user_id).filter((v): v is string => !!v);
+    return ids;
+  }, [employees, filteredEmployees, selectedEmployeeIds]);
 
   const years = getAvailableYears();
 
@@ -118,6 +173,11 @@ export default function AIGenerateExecutivePlan() {
           plan_name: planName.trim() || undefined,
           user_brief: brief.trim() || undefined,
           reference_file_paths: uploadedPaths,
+          // Scope: only generate for these users (if any filter applied)
+          userIds:
+            departmentId !== "all" || selectedEmployeeIds.length > 0
+              ? effectiveUserIds
+              : undefined,
         },
       });
 
@@ -246,6 +306,84 @@ export default function AIGenerateExecutivePlan() {
                   <Checkbox checked={isSelected} className="pointer-events-none" />
                   <span className="text-sm font-medium">{month}</span>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* فلاتر الأقسام والموظفين */}
+        <div className="bg-white rounded-2xl border border-indigo-100 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-gray-900">نطاق التوليد</h3>
+                <p className="text-xs text-gray-500">حدد القسم والموظفين الذين سيتم توليد خططهم. اتركه فارغاً ليشمل الجميع.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label className="text-right block mb-2 flex items-center gap-1">
+                <Building2 className="w-4 h-4 text-emerald-600" /> القسم
+              </Label>
+              <Select value={departmentId} onValueChange={(v) => { setDepartmentId(v); setSelectedEmployeeIds([]); }} disabled={isWorking} dir="rtl">
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="all">كل الأقسام</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="text-sm text-gray-600">
+                {selectedEmployeeIds.length === 0
+                  ? `سيتم التوليد لجميع موظفي ${departmentId === "all" ? "الجمعية" : "هذا القسم"} (${filteredEmployees.length})`
+                  : `${selectedEmployeeIds.length} موظف مختار`}
+              </div>
+              <div className="mr-auto flex gap-2">
+                <Button type="button" size="sm" variant="outline" className="text-xs h-8" onClick={() => setSelectedEmployeeIds(filteredEmployees.map(e => e.id))} disabled={isWorking}>
+                  اختر الكل
+                </Button>
+                <Button type="button" size="sm" variant="outline" className="text-xs h-8" onClick={() => setSelectedEmployeeIds([])} disabled={isWorking}>
+                  مسح
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[260px] overflow-y-auto p-1">
+            {filteredEmployees.length === 0 ? (
+              <p className="col-span-full text-sm text-slate-500 text-center py-6 bg-slate-50 rounded-lg">
+                لا يوجد موظفون في هذا القسم
+              </p>
+            ) : filteredEmployees.map((emp) => {
+              const sel = selectedEmployeeIds.includes(emp.id);
+              return (
+                <button
+                  type="button"
+                  key={emp.id}
+                  onClick={() => setSelectedEmployeeIds(prev => prev.includes(emp.id) ? prev.filter(x => x !== emp.id) : [...prev, emp.id])}
+                  disabled={isWorking}
+                  className={cn(
+                    "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-right",
+                    sel
+                      ? "bg-indigo-50 border-indigo-400"
+                      : "bg-white border-slate-200 hover:border-indigo-200",
+                    isWorking && "opacity-50 cursor-not-allowed",
+                  )}
+                >
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", sel ? "bg-indigo-500 text-white" : "bg-slate-100 text-slate-500")}>
+                    <User className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-semibold text-slate-800 flex-1 truncate">{emp.full_name}</span>
+                  <Checkbox checked={sel} className="pointer-events-none" />
+                </button>
               );
             })}
           </div>

@@ -993,10 +993,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             <>
               <Button
                 onClick={() => {
-                  setIsDialogOpen(true);
-                  setSelectedPlanMonthId("");
-                  setSelectedDays([]);
-                  setAddingMonth(new Date().getMonth() + 1);
+                  navigate(makeOrgUrl("/executive-plans/add"));
                 }}
                 className="gap-2 bg-white text-primary hover:bg-white/90"
               >
@@ -1315,10 +1312,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 )}
                 <Button
                   onClick={() => {
-                    setIsDialogOpen(true);
-                    setSelectedPlanMonthId("");
-                    setSelectedDays([]);
-                    setAddingMonth(new Date().getMonth() + 1);
+                    navigate(makeOrgUrl("/executive-plans/add"));
                   }}
                   variant="outline"
                   className="gap-2"
@@ -2078,7 +2072,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   type="button"
                   onClick={() => {
                     setIsAIChoiceDialogOpen(false);
-                    setIsAIDialogOpen(true);
+                    navigate(makeOrgUrl("/executive-plans/ai-generate"));
                   }}
                   className="group text-right p-5 rounded-xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-white hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 transition-all"
                 >
