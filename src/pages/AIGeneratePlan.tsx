@@ -281,8 +281,8 @@ export default function AIGeneratePlan() {
         </div>
 
         {/* زر التوليد */}
-        <div className="flex items-center justify-between gap-3 sticky bottom-4 bg-white border border-violet-200 rounded-2xl p-4 shadow-lg">
-          <div className="text-sm text-gray-600">
+        <div className="flex items-center justify-between gap-3 sticky bottom-4 bg-gradient-to-r from-blue-600 to-blue-700 border border-blue-800 rounded-2xl p-4 shadow-xl shadow-blue-500/30">
+          <div className="text-sm text-white/95 font-medium">
             {stage === "uploading" && "جاري رفع الملفات..."}
             {stage === "analyzing" && "الذكاء الاصطناعي يدرس البيانات ويبني الخطة..."}
             {stage === "done" && "✓ تم التوليد بنجاح، جاري التحويل..."}
@@ -291,7 +291,7 @@ export default function AIGeneratePlan() {
           <Button
             onClick={handleGenerate}
             disabled={isWorking || stage === "done" || !planName.trim()}
-            className="gap-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg shadow-purple-500/25 px-6"
+            className="gap-2 bg-white text-blue-700 hover:bg-blue-50 font-bold shadow-lg px-6 disabled:bg-white/80 disabled:text-blue-700"
             size="lg"
           >
             {isWorking ? (
