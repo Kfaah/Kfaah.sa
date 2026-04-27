@@ -2208,7 +2208,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             // حساب عدد الأعمدة للصف الموسع
                             // الأعمدة المرئية بعد الهدف والمبادرة + (الإجراء في وضع التعديل)
                             const visibleMovableColumns = columnOrder.filter(c => c.is_visible && !['strategic_goal', 'initiative'].includes(c.column_key)).length;
-                            const expandedColSpan = visibleMovableColumns + (isEditMode ? 1 : 0);
+                            // +1 لعمود "المبادرة الفرعية" الثابت
+                            const expandedColSpan = visibleMovableColumns + 1 + (isEditMode ? 1 : 0);
                             
                             rows.push(
                               <tr key={`${plan.id}-expanded`} className="bg-white">
