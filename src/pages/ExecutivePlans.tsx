@@ -616,6 +616,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           dailyTarget: number;
           achieved: number;
           status: string;
+          employeeId: string | null;
+          employeeName: string;
+          departmentId: string | null;
+          departmentName: string;
         }[];
       }[];
     }[] = [];
