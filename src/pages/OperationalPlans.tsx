@@ -1654,7 +1654,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                 <Calendar className="w-4 h-4 text-white" />
               </div>
-              <Select value={filterYear.toString()} onValueChange={(val) => setFilterYear(parseInt(val))}>
+              <Select
+                dir="rtl"
+                value={filterYear.toString()}
+                onValueChange={(val) => {
+                  setFilterYear(parseInt(val));
+                  setFilterPlanName("all");
+                }}
+              >
                 <SelectTrigger className="w-[120px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="اختر السنة" />
                 </SelectTrigger>
@@ -1673,7 +1680,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
                 <Building2 className="w-4 h-4 text-white" />
               </div>
-              <Select value={filterDepartmentId} onValueChange={setFilterDepartmentId}>
+              <Select dir="rtl" value={filterDepartmentId} onValueChange={setFilterDepartmentId}>
                 <SelectTrigger className="w-[170px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="اختر القسم" />
                 </SelectTrigger>
@@ -1693,7 +1700,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
                 <Users className="w-4 h-4 text-white" />
               </div>
-              <Select value={filterEmployeeId} onValueChange={setFilterEmployeeId}>
+              <Select dir="rtl" value={filterEmployeeId} onValueChange={setFilterEmployeeId}>
                 <SelectTrigger className="w-[190px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="اختر مسؤول التنفيذ" />
                 </SelectTrigger>
@@ -1714,7 +1721,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
             </div>
             
             {/* زر إعادة تعيين الفلاتر */}
-            {(filterDepartmentId !== "all" || filterEmployeeId !== "all" || filterYear !== new Date().getFullYear()) && (
+            {(filterDepartmentId !== "all" || filterEmployeeId !== "all" || filterYear !== new Date().getFullYear() || filterPlanName !== "all") && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -1723,6 +1730,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                   setFilterDepartmentId("all");
                   setFilterEmployeeId("all");
                   setFilterYear(new Date().getFullYear());
+                  setFilterPlanName("all");
                 }}
               >
                 <X className="w-4 h-4 ml-1" />
@@ -1740,6 +1748,41 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <span className="text-sm text-slate-500">خطة</span>
             </div>
           </div>
+
+          {/* اختيار الخطة (عند وجود أكثر من خطة لنفس السنة) */}
+          {availablePlanNames.length > 0 && (
+            <div className="mt-4 flex items-center gap-2 flex-wrap pt-3 border-t border-slate-200">
+              <div className="flex items-center gap-1.5 text-slate-600 text-xs px-2">
+                <Target className="w-4 h-4" />
+                <span className="font-semibold">الخطة:</span>
+              </div>
+              {availablePlanNames.length > 1 && (
+                <button
+                  onClick={() => setFilterPlanName("all")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                    filterPlanName === "all"
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-white border-slate-200 text-slate-700 hover:border-primary/60 hover:bg-primary/5"
+                  }`}
+                >
+                  جميع الخطط
+                </button>
+              )}
+              {availablePlanNames.map((name) => (
+                <button
+                  key={name}
+                  onClick={() => setFilterPlanName(name)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                    filterPlanName === name || (availablePlanNames.length === 1 && filterPlanName === "all")
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-white border-slate-200 text-slate-700 hover:border-primary/60 hover:bg-primary/5"
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         
         {/* شريط وضع التعديل */}
