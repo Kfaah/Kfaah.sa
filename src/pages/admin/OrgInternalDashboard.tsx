@@ -24,6 +24,7 @@ import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { PageHeader } from "@/components/layout/PageHeader";
 const OperationalPlans = lazy(() => import("@/pages/OperationalPlans"));
 const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
+const TasksPage = lazy(() => import("@/pages/Tasks"));
 
 // اسم مختصر لكل جمعية (سطران × 3-4 كلمات) للعرض في رأس اللوحة الداخلية
 const ORG_SHORT_NAME: Record<string, [string, string]> = {
@@ -175,7 +176,7 @@ export default function OrgInternalDashboard({
   // after the dashboard shell is ready. This makes the first click on
   // these tabs feel instant because the iframe is already warmed up.
   useEffect(() => {
-    if (!org?.slug) return;
+    if (!org?.slug || standaloneTab) return;
     const t = setTimeout(() => {
       setVisitedTabs((prev) => {
         const next = new Set(prev);
@@ -200,6 +201,12 @@ export default function OrgInternalDashboard({
       setProfile((profRes.data as Profile) ?? null);
       setLoading(false); // hide the giant spinner ASAP
     });
+
+    const needsDashboardData = !standaloneTab || ["overview", "analysis", "accountability", "employees", "uploads", "donors"].includes(activeTab);
+    if (!needsDashboardData) {
+      await wave1;
+      return;
+    }
 
     // Wave 2 — counts (all `head:true`, very cheap).
     const wave2 = Promise.all([
