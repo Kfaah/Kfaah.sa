@@ -303,6 +303,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   }
   const [excelPlans, setExcelPlans] = useState<ExcelPlanRow[]>([]);
   const [expandedExcelPlanId, setExpandedExcelPlanId] = useState<string | null>(null);
+  const [expandedExcelRows, setExpandedExcelRows] = useState<Record<string, boolean>>({});
 
   // التحقق من دور المدير - نتحقق من role في user أو من user_roles
   const [userRole, setUserRole] = useState<string | null>(null);
