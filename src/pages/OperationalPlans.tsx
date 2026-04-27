@@ -473,6 +473,13 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
       return false;
     }
     
+    // فلتر اسم الخطة
+    if (filterPlanName !== "all") {
+      if ((plan.plan_name || "الخطة الأولى") !== filterPlanName) {
+        return false;
+      }
+    }
+
     // فلتر القسم
     if (filterDepartmentId !== "all") {
       const responsibleEmployee = employees.find(e => e.id === plan.responsible_employee_id);
@@ -490,6 +497,39 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     
     return true;
   });
+
+  // قائمة أسماء الخطط المتاحة في السنة الحالية
+  const availablePlanNames = Array.from(
+    new Set(
+      plans
+        .filter((p) => p.year === filterYear)
+        .map((p) => p.plan_name || "الخطة الأولى")
+    )
+  );
+
+  // إحصاءات الخطة المختارة (تعتمد على filteredPlans)
+  const selectedPlanStats = (() => {
+    const goalsSet = new Set<string>();
+    const initsSet = new Set<string>();
+    const subInitsSet = new Set<string>();
+    let totalTarget = 0;
+    let totalBudget = 0;
+    filteredPlans.forEach((p) => {
+      if (p.strategic_goal) goalsSet.add(p.strategic_goal_id || p.strategic_goal);
+      if (p.initiative) initsSet.add(p.initiative_id || p.initiative);
+      if (p.sub_initiative) subInitsSet.add(p.sub_initiative_id || p.sub_initiative);
+      totalTarget += Number(p.annual_target || 0);
+      totalBudget += Number(p.estimated_budget || 0);
+    });
+    return {
+      goals: goalsSet.size,
+      initiatives: initsSet.size,
+      subInitiatives: subInitsSet.size,
+      activities: filteredPlans.length,
+      totalTarget,
+      totalBudget,
+    };
+  })();
 
   // توليد AI للخطط التشغيلية
   const handleAIGeneratePlans = async () => {
