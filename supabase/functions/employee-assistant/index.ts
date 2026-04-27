@@ -45,6 +45,39 @@ serve(async (req) => {
       });
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // Smart model routing (داخل التطبيق فقط):
+    //   • Claude  → مهام برمجية / كود / SQL / debugging
+    //   • GPT-5   → تحليل عميق / حسابات / استدلال معقد / أرقام
+    //   • Gemini  → الافتراضي للنصوص العربية والمحادثة العامة
+    // يعتمد التوجيه على آخر رسالة من المستخدم.
+    // ──────────────────────────────────────────────────────────────
+    const lastUserMsg = [...messages]
+      .reverse()
+      .find((m: any) => m?.role === "user")?.content ?? "";
+    const text = String(lastUserMsg).toLowerCase();
+
+    const codeHints = [
+      "code", "كود", "برمج", "برمجة", "function", "دالة", "bug", "خطأ برمجي",
+      "sql", "typescript", "javascript", "react", "api", "endpoint", "regex",
+      "script", "سكربت", "debug", "تصحيح", "خوارزمية", "algorithm",
+    ];
+    const analysisHints = [
+      "حلل", "تحليل", "قارن", "مقارنة", "احسب", "حساب", "إحصاء", "إحصائي",
+      "analyze", "analysis", "compare", "calculate", "statistics", "metric",
+      "تقرير", "report", "kpi", "مؤشر", "أداء", "performance",
+    ];
+
+    let selectedModel = "google/gemini-2.5-flash"; // default: نصوص ومحادثة
+    let routedReason = "general_text";
+    if (codeHints.some((k) => text.includes(k))) {
+      selectedModel = "anthropic/claude-sonnet-4-5";
+      routedReason = "code";
+    } else if (analysisHints.some((k) => text.includes(k))) {
+      selectedModel = "openai/gpt-5";
+      routedReason = "analysis";
+    }
+
     // Pull a small employee context for the system prompt
     const { data: emp } = await supabase
       .from("employees")
@@ -68,7 +101,11 @@ serve(async (req) => {
         user_id: user.id,
         organization_id: emp?.organization_id ?? null,
         feature: "assistant_chat",
-        context: { conversation_id: conversationId ?? null },
+        context: {
+          conversation_id: conversationId ?? null,
+          model: selectedModel,
+          routed_reason: routedReason,
+        },
       });
     } catch (_) { /* ignore */ }
 
@@ -81,7 +118,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "anthropic/claude-sonnet-4-5",
+          model: selectedModel,
           messages: [{ role: "system", content: systemPrompt }, ...messages],
           stream: true,
         }),
