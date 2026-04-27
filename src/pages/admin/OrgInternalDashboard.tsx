@@ -752,7 +752,25 @@ const EmbeddedOrgPage = forwardRef<HTMLDivElement, {
   path: string;
   title: string;
   embedSlug?: boolean;
-}>(function EmbeddedOrgPage({ slug, path, title, embedSlug = true }, ref) {
+  /**
+   * When true, mount the iframe immediately even before the tab becomes
+   * visible. Useful for preloading the most-used tabs in the background
+   * so subsequent clicks render instantly.
+   */
+  preload?: boolean;
+  /**
+   * The currently-active tab value (if any). When provided, the iframe
+   * will lazy-mount on first activation and then remain mounted, so
+   * future visits to this tab are instant (no full reload).
+   */
+  isActive?: boolean;
+}>(function EmbeddedOrgPage({ slug, path, title, embedSlug = true, preload = false, isActive = true }, ref) {
+  // Once we have ever mounted the iframe, keep it mounted forever.
+  const [hasMounted, setHasMounted] = useState<boolean>(preload || isActive);
+  useEffect(() => {
+    if (preload || isActive) setHasMounted(true);
+  }, [preload, isActive]);
+
   if (!slug) {
     return (
       <Card ref={ref}>
@@ -764,6 +782,12 @@ const EmbeddedOrgPage = forwardRef<HTMLDivElement, {
     );
   }
   const src = embedSlug ? `/${slug}${path}?embedded=1` : `${path}?embedded=1&org=${slug}`;
+  if (!hasMounted) {
+    // Light placeholder until the tab is visited or preloaded.
+    return (
+      <div ref={ref} className="w-full" style={{ minHeight: 200 }} />
+    );
+  }
   return (
     <div ref={ref} className="w-full">
       <iframe
