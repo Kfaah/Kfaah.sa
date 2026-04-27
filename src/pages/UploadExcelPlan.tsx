@@ -26,8 +26,7 @@ export default function UploadExcelPlan() {
 
   const [planName, setPlanName] = useState("الخطة الأولى");
   const [year, setYear] = useState<number>(getCurrentYear());
-  const [useForAi, setUseForAi] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<null | "approve" | "ai">(null);
 
   const years = getAvailableYears();
 
@@ -79,7 +78,7 @@ export default function UploadExcelPlan() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSave = async () => {
+  const handleSave = async (mode: "approve" | "ai") => {
     if (rows.length === 0) {
       toast({ title: "لا توجد بيانات", description: "ارفع ملف Excel أولاً", variant: "destructive" });
       return;
@@ -88,7 +87,7 @@ export default function UploadExcelPlan() {
       toast({ title: "اسم الخطة مطلوب", variant: "destructive" });
       return;
     }
-    setSaving(true);
+    setSaving(mode);
     try {
       const { data: userRes } = await supabase.auth.getUser();
       const { error } = await supabase.from("excel_plans").insert({
@@ -97,18 +96,26 @@ export default function UploadExcelPlan() {
         sheet_name: sheetName,
         columns: columns as any,
         rows: rows as any,
-        use_for_ai: useForAi,
+        use_for_ai: mode === "ai",
         source_filename: fileName,
         user_id: userRes.user?.id ?? null,
       });
       if (error) throw error;
-      toast({ title: "تم حفظ الخطة بنجاح", description: `${rows.length} صف بـ ${columns.length} عمود` });
-      navigate("/operational-plans");
+      if (mode === "ai") {
+        toast({
+          title: "تم اعتماد الملف كمرجع للذكاء الاصطناعي",
+          description: "سيتم بناء خطة مقترحة بناءً على هذا الملف",
+        });
+        navigate("/operational-plans?aiGenerate=1");
+      } else {
+        toast({ title: "تم اعتماد الخطة بنجاح", description: `${rows.length} صف بـ ${columns.length} عمود` });
+        navigate("/operational-plans");
+      }
     } catch (err: any) {
       console.error(err);
       toast({ title: "فشل الحفظ", description: err?.message || "حدث خطأ", variant: "destructive" });
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   };
 
