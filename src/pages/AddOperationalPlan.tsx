@@ -888,8 +888,23 @@ function SortableRow({
                 onFocus={onBeforeEdit}
                 placeholder="المبادرة..."
                 list="initiatives-list"
-                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm pe-7"
               />
+              <button
+                type="button"
+                title="تعديل المبادرة"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const cell = (e.currentTarget.parentElement as HTMLElement) || null;
+                  const input = cell?.querySelector('input') as HTMLInputElement | null;
+                  input?.focus();
+                  input?.select();
+                }}
+                className="absolute end-1 top-1 z-30 p-1 rounded bg-background/90 border border-primary/30 shadow-sm opacity-0 group-hover/cell:opacity-100 hover:bg-accent/20 transition-opacity"
+              >
+                <Pencil className="w-3 h-3 text-primary" />
+              </button>
             </TableCell>
           );
         }
@@ -948,8 +963,23 @@ function SortableRow({
                 onFocus={onBeforeEdit}
                 placeholder="الهدف الاستراتيجي..."
                 list="goals-list"
-                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm pe-7"
               />
+              <button
+                type="button"
+                title="تعديل الهدف الاستراتيجي"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const cell = (e.currentTarget.parentElement as HTMLElement) || null;
+                  const input = cell?.querySelector('input') as HTMLInputElement | null;
+                  input?.focus();
+                  input?.select();
+                }}
+                className="absolute end-1 top-1 z-30 p-1 rounded bg-background/90 border border-primary/30 shadow-sm opacity-0 group-hover/cell:opacity-100 hover:bg-accent/20 transition-opacity"
+              >
+                <Pencil className="w-3 h-3 text-primary" />
+              </button>
             </TableCell>
           );
         }
