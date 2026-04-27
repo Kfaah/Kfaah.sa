@@ -90,25 +90,64 @@ export default function UploadExcelPlan() {
     setSaving(mode);
     try {
       const { data: userRes } = await supabase.auth.getUser();
-      const { error } = await supabase.from("excel_plans").insert({
-        plan_name: planName.trim(),
-        year,
-        sheet_name: sheetName,
-        columns: columns as any,
-        rows: rows as any,
-        use_for_ai: mode === "ai",
-        source_filename: fileName,
-        user_id: userRes.user?.id ?? null,
-      });
-      if (error) throw error;
-      if (mode === "ai") {
-        toast({
-          title: "تم اعتماد الملف كمرجع للذكاء الاصطناعي",
-          description: "سيتم بناء خطة مقترحة بناءً على هذا الملف",
+      if (mode === "approve") {
+        const { error } = await supabase.from("excel_plans").insert({
+          plan_name: planName.trim(),
+          year,
+          sheet_name: sheetName,
+          columns: columns as any,
+          rows: rows as any,
+          use_for_ai: false,
+          source_filename: fileName,
+          user_id: userRes.user?.id ?? null,
         });
-        navigate("/operational-plans?aiGenerate=1");
-      } else {
+        if (error) throw error;
         toast({ title: "تم اعتماد الخطة بنجاح", description: `${rows.length} صف بـ ${columns.length} عمود` });
+        navigate("/operational-plans");
+      } else {
+        // AI mode: call edge function to build a smart plan, then save it.
+        toast({
+          title: "جاري توليد الخطة بالذكاء الاصطناعي",
+          description: "قد تستغرق العملية حتى دقيقة...",
+        });
+        const { data: genData, error: genError } = await supabase.functions.invoke(
+          "generate-plan-from-excel",
+          {
+            body: {
+              plan_name: planName.trim(),
+              year,
+              columns,
+              rows,
+              source_filename: fileName,
+            },
+          },
+        );
+        if (genError) throw genError;
+        if (!genData || (genData as any).error) {
+          throw new Error((genData as any)?.error || "فشل التوليد");
+        }
+        const aiColumns: string[] = (genData as any).columns || [];
+        const aiRows: Record<string, any>[] = (genData as any).rows || [];
+        const inferredGoal: string = (genData as any).inferred_goal || "";
+
+        const generatedName = `${planName.trim()} — مقترح AI`;
+        const { error: insertError } = await supabase.from("excel_plans").insert({
+          plan_name: generatedName,
+          year,
+          sheet_name: sheetName || "AI Generated",
+          columns: aiColumns as any,
+          rows: aiRows as any,
+          use_for_ai: true,
+          source_filename: fileName ? `AI[${fileName}]` : "AI Generated",
+          user_id: userRes.user?.id ?? null,
+        });
+        if (insertError) throw insertError;
+        toast({
+          title: "تم توليد الخطة بنجاح ✨",
+          description: inferredGoal
+            ? `الهدف المستنتج: ${inferredGoal}`
+            : `${aiRows.length} نشاط في ${aiColumns.length} عمود`,
+        });
         navigate("/operational-plans");
       }
     } catch (err: any) {
