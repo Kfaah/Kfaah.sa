@@ -207,11 +207,11 @@ export default function Organizations() {
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/10 to-transparent rounded-bl-full" />
 
                 <div className="relative flex items-start gap-3">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
+                  <div className="w-14 h-14 rounded-xl bg-white border border-border flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
                     {o.logo_url ? (
-                      <img src={o.logo_url} alt={o.name} className="w-full h-full object-cover" />
+                      <img src={o.logo_url} alt={o.name} className="w-full h-full object-contain p-1" />
                     ) : (
-                      <Building2 className="w-7 h-7 text-white" />
+                      <Building2 className="w-7 h-7 text-muted-foreground" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
