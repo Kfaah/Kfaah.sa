@@ -249,6 +249,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const { toast } = useToast();
   const { user: authUser } = useAuth();
   const { slug } = useParams<{ slug?: string }>();
+  const navigate = useNavigate();
+  const makeOrgUrl = (path: string) => (slug ? `/${slug}${path}` : path);
   const { currentOrg } = useOrganization();
   const scopedView = useScopedView("scope:executive-plans");
   const [isAdmin, setIsAdmin] = useState(false);
