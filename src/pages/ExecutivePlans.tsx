@@ -64,6 +64,7 @@ import {
   FileSpreadsheet,
   Upload,
   ChevronUp,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -276,6 +277,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isAIChoiceDialogOpen, setIsAIChoiceDialogOpen] = useState(false);
   const [aiSelectedMonths, setAiSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
+  const [isEditMode, setIsEditMode] = useState(false);
   // فلاتر إضافية
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
@@ -988,6 +990,26 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   توليد بالذكاء الاصطناعي
                 </Button>
               )}
+              <Button
+                className={`gap-2 border ${
+                  isEditMode
+                    ? "bg-white text-primary border-white"
+                    : "bg-white/15 text-white border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                }`}
+                onClick={() => setIsEditMode(!isEditMode)}
+              >
+                {isEditMode ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    إنهاء التعديل
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="w-4 h-4" />
+                    التعديل على الخطة
+                  </>
+                )}
+              </Button>
             </>
           }
         />
@@ -1457,7 +1479,23 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         const hasPhases = hasPreTasks || hasDuringTasks || hasPostTasks;
                                         
                                         return (
-                                          <Popover key={activity.id}>
+                                          <div key={activity.id} className="relative">
+                                            {isEditMode && (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  if (window.confirm(`حذف "${activity.activityName}" من هذا اليوم؟`)) {
+                                                    handleDeleteDay(activity.id);
+                                                  }
+                                                }}
+                                                className="absolute -top-1.5 -left-1.5 z-10 w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md ring-2 ring-white transition-transform hover:scale-110"
+                                                aria-label="حذف"
+                                              >
+                                                <X className="w-3 h-3" />
+                                              </button>
+                                            )}
+                                            <Popover>
                                             <PopoverTrigger asChild>
                                               <div
                                                 className={cn(
@@ -1466,7 +1504,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                     ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
                                                     : activity.status === "in_progress"
                                                     ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                                                    : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
+                                                    : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white",
+                                                  isEditMode && "ring-2 ring-red-300/60"
                                                 )}
                                               >
                                                 {/* الرقم التسلسلي */}
@@ -1682,6 +1721,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               </div>
                                             </PopoverContent>
                                           </Popover>
+                                          </div>
                                         );
                                       })}
                                     </div>
