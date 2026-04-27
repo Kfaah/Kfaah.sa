@@ -243,13 +243,17 @@ const Tasks = () => {
   useEffect(() => {
     if (!authUser) return;
 
-    setLoading(true);
+    // PERF: Only show the blocking spinner on the *first* load. Re-fetches
+    // (e.g. when the auth user resolves a second time) keep the previous
+    // task list visible so the page never feels like it freezes again.
+    setLoading((prev) => (tasks.length === 0 ? true : prev));
 
     // جلب المهام (الأولوية القصوى — يحدد متى تختفي شاشة التحميل)
     const tasksPromise = supabase
       .from("tasks")
       .select("*")
       .order("due_date", { ascending: true })
+      .limit(500)
       .then(({ data, error }) => {
         if (error) {
           toast({ title: "خطأ", description: error.message, variant: "destructive" });
@@ -276,9 +280,12 @@ const Tasks = () => {
         if (!error) setEmployees((data as Employee[]) || []);
       });
 
-    const fetchActivities = async () => {
+    // PERF: The activities list is only used by the activity filter dropdown.
+    // Defer it slightly so it never competes with the critical task fetch
+    // and never blocks the table from appearing. Two-level inner joins on
+    // executive_plans are heavy — keep them off the critical path.
+    const activitiesTimer = setTimeout(async () => {
       if (!authUser) return;
-      
       try {
         const { data, error } = await supabase
           .from("executive_plans")
@@ -289,22 +296,19 @@ const Tasks = () => {
                 activity_name
               )
             )
-          `);
-        
+          `)
+          .limit(500);
         if (error) throw error;
-        
         const activitiesMap: ActivityInfo[] = (data || []).map((ep: any) => ({
           executive_plan_id: ep.id,
-          activity_name: ep.operational_plan_month?.operational_plan?.activity_name || "غير محدد"
+          activity_name: ep.operational_plan_month?.operational_plan?.activity_name || "غير محدد",
         }));
-        
         setActivities(activitiesMap);
       } catch (error: any) {
         console.error("Error fetching activities:", error);
       }
-    };
-    
-    fetchActivities();
+    }, 0);
+    return () => clearTimeout(activitiesTimer);
   }, [authUser]);
 
   // توليد المهام بالذكاء الاصطناعي لشهر كامل
