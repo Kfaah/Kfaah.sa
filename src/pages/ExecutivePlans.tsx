@@ -1404,46 +1404,35 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
-                        <TableHead className="text-right font-bold text-white min-w-[120px] border-l border-white/20">
-                          الشهر
-                        </TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[180px] border-l border-white/20">
-                          التاريخ
-                        </TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[220px] border-l border-white/20">
-                          القسم
-                        </TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[200px] border-l border-white/20">
-                          الموظف
-                        </TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[320px]">
-                          الأنشطة
-                        </TableHead>
+                        <TableHead className="text-right font-bold text-white min-w-[110px] border-l border-white/20">الشهر</TableHead>
+                        <TableHead className="text-right font-bold text-white min-w-[160px] border-l border-white/20">التاريخ</TableHead>
+                        <TableHead className="text-right font-bold text-white min-w-[170px] border-l border-white/20">القسم</TableHead>
+                        <TableHead className="text-right font-bold text-white min-w-[180px] border-l border-white/20">المبادرة</TableHead>
+                        <TableHead className="text-right font-bold text-white min-w-[170px] border-l border-white/20">المبادرة الفرعية</TableHead>
+                        <TableHead className="text-right font-bold text-white min-w-[170px] border-l border-white/20">الموظف</TableHead>
+                        <TableHead className="text-right font-bold text-white min-w-[280px]">الأنشطة</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {groupedPlans.map((monthGroup) => {
-                        const isExpanded = expandedMonths.has(`month-${monthGroup.month}`);
+                        const isMonthExpanded = expandedMonths.has(`month-${monthGroup.month}`);
                         const totalDays = monthGroup.dateGroups.length;
-                        
-                        // إذا لم تكن مفتوحة، نعرض صف واحد مع معلومات الشهر
-                        if (!isExpanded) {
+
+                        if (!isMonthExpanded) {
                           return (
-                            <TableRow 
+                            <TableRow
                               key={`collapsed-${monthGroup.month}`}
                               className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[hsl(var(--primary)/0.3)]"
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
-                              <TableCell colSpan={5} className="py-3">
+                              <TableCell colSpan={7} className="py-3">
                                 <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
                                   <span className="font-bold text-lg text-gray-800">
                                     {monthGroup.monthName} {selectedYear}
                                   </span>
-                                  <Badge className="bg-[hsl(var(--primary))] text-white">
-                                    {totalDays} يوم
-                                  </Badge>
+                                  <Badge className="bg-[hsl(var(--primary))] text-white">{totalDays} يوم</Badge>
                                   <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))]">
                                     {activityCount(monthGroup.activities.length)}
                                   </Badge>
@@ -1452,311 +1441,189 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                             </TableRow>
                           );
                         }
-                        
-                        // إذا كانت مفتوحة ولكن لا توجد تواريخ، نعرض صف فارغ
+
                         if (totalDays === 0) {
                           return (
-                            <TableRow 
+                            <TableRow
                               key={`empty-${monthGroup.month}`}
                               className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[hsl(var(--primary)/0.3)]"
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
-                              <TableCell colSpan={5} className="py-3">
+                              <TableCell colSpan={7} className="py-3">
                                 <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] rotate-180 transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
                                   <span className="font-bold text-lg text-gray-800">
                                     {monthGroup.monthName} {selectedYear}
                                   </span>
-                                  <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))]">
-                                    {activityCount(monthGroup.activities.length)}
-                                  </Badge>
                                   <span className="text-muted-foreground text-sm">- لا توجد تواريخ تنفيذ</span>
                                 </div>
                               </TableCell>
                             </TableRow>
                           );
                         }
-                        
-                         // حساب إجمالي عدد الصفوف الفعلية للشهر (لاستعمالها في rowSpan)
-                         let monthTotalRows = 0;
-                         for (const dg of monthGroup.dateGroups) {
-                           const dayKeyCalc = `day-${monthGroup.month}-${dg.day}`;
-                           monthTotalRows += 1; // صف اليوم نفسه
-                           if (expandedDays.has(dayKeyCalc)) {
-                             // أعد بناء deptMap للحساب
-                             const dMap = new Map<string, Map<string, number>>();
-                             for (const a of dg.activities) {
-                               const dK = a.departmentId ?? `_no_${a.departmentName}`;
-                               const eK = a.employeeId ?? `_no_${a.employeeName}`;
-                               if (!dMap.has(dK)) dMap.set(dK, new Map());
-                               dMap.get(dK)!.set(eK, (dMap.get(dK)!.get(eK) ?? 0) + 1);
-                             }
-                             for (const [dK, emps] of dMap) {
-                               monthTotalRows += 1; // صف رأس القسم
-                               const deptKeyCalc = `${dayKeyCalc}|dept-${dK}`;
-                               if (expandedDayDepts.has(deptKeyCalc)) {
-                                 monthTotalRows += emps.size; // صف لكل موظف
-                               }
-                             }
-                           }
-                         }
 
-                         // إذا كانت مفتوحة، نعرض الصفوف مع دمج عمود الشهر
-                        return (
-                          <React.Fragment key={`expanded-${monthGroup.month}`}>
-                            {monthGroup.dateGroups.map((dateGroup, dateIdx) => {
-                              const date = new Date(selectedYear, monthGroup.month - 1, dateGroup.day);
-                              const isFirstRow = dateIdx === 0;
-                              const dayKey = `day-${monthGroup.month}-${dateGroup.day}`;
-                              const isDayExpanded = expandedDays.has(dayKey);
-
-                              // تجميع أنشطة هذا اليوم حسب القسم → الموظف
-                              const deptMap = new Map<string, { id: string | null; name: string; emps: Map<string, { id: string | null; name: string; acts: typeof dateGroup.activities }> }>();
-                              for (const a of dateGroup.activities) {
-                                const dKey = a.departmentId ?? `_no_${a.departmentName}`;
-                                if (!deptMap.has(dKey)) deptMap.set(dKey, { id: a.departmentId, name: a.departmentName, emps: new Map() });
-                                const eKey = a.employeeId ?? `_no_${a.employeeName}`;
-                                const dept = deptMap.get(dKey)!;
-                                if (!dept.emps.has(eKey)) dept.emps.set(eKey, { id: a.employeeId, name: a.employeeName, acts: [] as typeof dateGroup.activities });
-                                dept.emps.get(eKey)!.acts.push(a);
-                              }
-                              const deptList = Array.from(deptMap.entries());
-
-                              // عدد الصفوف الفرعية لهذا اليوم (لاستخدامها في rowSpan لعمود التاريخ)
-                              let dayTotalRows = 1;
-                              if (isDayExpanded) {
-                                for (const [dKey, dept] of deptList) {
-                                  dayTotalRows += 1;
-                                  if (expandedDayDepts.has(`${dayKey}|dept-${dKey}`)) {
-                                    dayTotalRows += dept.emps.size;
-                                  }
+                        // بناء صفوف مسطّحة لكل (يوم → قسم → مبادرة → فرعية → موظف)
+                        // مع حساب rowSpan لكل عمود لإلغاء التكرار
+                        type Leaf = {
+                          dayIdx: number; day: number; date: Date;
+                          deptKey: string; deptName: string;
+                          initKey: string; initName: string;
+                          subKey: string; subName: string;
+                          empKey: string; empName: string;
+                          acts: typeof monthGroup.dateGroups[0]["activities"];
+                        };
+                        const leaves: Leaf[] = [];
+                        monthGroup.dateGroups.forEach((dg, dayIdx) => {
+                          const date = new Date(selectedYear, monthGroup.month - 1, dg.day);
+                          // group: dept → init → sub → emp → acts
+                          const deptMap = new Map<string, Map<string, Map<string, Map<string, { name: string; initName: string; subName: string; empName: string; acts: typeof dg.activities }>>>>();
+                          const deptNames = new Map<string, string>();
+                          for (const a of dg.activities) {
+                            const dKey = a.departmentId ?? `_d_${a.departmentName}`;
+                            const iKey = a.initiative ?? "_no_init";
+                            const sKey = a.subInitiative ?? "_no_sub";
+                            const eKey = a.employeeId ?? `_e_${a.employeeName}`;
+                            deptNames.set(dKey, a.departmentName);
+                            if (!deptMap.has(dKey)) deptMap.set(dKey, new Map());
+                            const initMap = deptMap.get(dKey)!;
+                            if (!initMap.has(iKey)) initMap.set(iKey, new Map());
+                            const subMap = initMap.get(iKey)!;
+                            if (!subMap.has(sKey)) subMap.set(sKey, new Map());
+                            const empMap = subMap.get(sKey)!;
+                            if (!empMap.has(eKey)) empMap.set(eKey, { name: a.departmentName, initName: a.initiative ?? "—", subName: a.subInitiative ?? "—", empName: a.employeeName, acts: [] as typeof dg.activities });
+                            empMap.get(eKey)!.acts.push(a);
+                          }
+                          for (const [dKey, initMap] of deptMap) {
+                            for (const [iKey, subMap] of initMap) {
+                              for (const [sKey, empMap] of subMap) {
+                                for (const [eKey, leaf] of empMap) {
+                                  leaves.push({
+                                    dayIdx, day: dg.day, date,
+                                    deptKey: `${dayIdx}|${dKey}`, deptName: deptNames.get(dKey) ?? leaf.name,
+                                    initKey: `${dayIdx}|${dKey}|${iKey}`, initName: leaf.initName,
+                                    subKey: `${dayIdx}|${dKey}|${iKey}|${sKey}`, subName: leaf.subName,
+                                    empKey: `${dayIdx}|${dKey}|${iKey}|${sKey}|${eKey}`, empName: leaf.empName,
+                                    acts: leaf.acts,
+                                  });
                                 }
                               }
-                              
+                            }
+                          }
+                        });
+
+                        // حساب rowSpan لكل عمود (الشهر / اليوم / القسم / المبادرة / الفرعية / الموظف)
+                        const monthSpan = leaves.length;
+                        const daySpan = new Map<number, number>();
+                        const deptSpan = new Map<string, number>();
+                        const initSpan = new Map<string, number>();
+                        const subSpan = new Map<string, number>();
+                        for (const l of leaves) {
+                          daySpan.set(l.day, (daySpan.get(l.day) ?? 0) + 1);
+                          deptSpan.set(l.deptKey, (deptSpan.get(l.deptKey) ?? 0) + 1);
+                          initSpan.set(l.initKey, (initSpan.get(l.initKey) ?? 0) + 1);
+                          subSpan.set(l.subKey, (subSpan.get(l.subKey) ?? 0) + 1);
+                        }
+                        const seenMonth = { v: false };
+                        const seenDay = new Set<number>();
+                        const seenDept = new Set<string>();
+                        const seenInit = new Set<string>();
+                        const seenSub = new Set<string>();
+
+                        return (
+                          <React.Fragment key={`expanded-${monthGroup.month}`}>
+                            {leaves.map((l, idx) => {
+                              const showMonth = !seenMonth.v; if (showMonth) seenMonth.v = true;
+                              const showDay = !seenDay.has(l.day); if (showDay) seenDay.add(l.day);
+                              const showDept = !seenDept.has(l.deptKey); if (showDept) seenDept.add(l.deptKey);
+                              const showInit = !seenInit.has(l.initKey); if (showInit) seenInit.add(l.initKey);
+                              const showSub = !seenSub.has(l.subKey); if (showSub) seenSub.add(l.subKey);
                               return (
-                                <React.Fragment key={`day-frag-${monthGroup.month}-${dateGroup.day}`}>
-                                <TableRow 
-                                  key={`${monthGroup.month}-${dateGroup.day}`}
+                                <TableRow
+                                  key={`leaf-${idx}-${l.empKey}`}
                                   className={cn(
-                                    dateIdx % 2 === 0 ? "bg-white" : "bg-[hsl(var(--primary)/0.1)]",
-                                    "transition-colors",
-                                    isFirstRow ? "border-t-2 border-[hsl(var(--primary)/0.3)]" : "",
-                                    dateIdx < monthGroup.dateGroups.length - 1 ? "border-b border-gray-200" : ""
+                                    "transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
+                                    idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
+                                    showDay && idx > 0 ? "border-t-2 border-[hsl(var(--primary)/0.25)]" : "",
                                   )}
                                 >
-                                  {/* عمود الشهر - مدمج لجميع الصفوف */}
-                                  {isFirstRow && (
-                                    <TableCell 
-                                      rowSpan={monthTotalRows} 
+                                  {showMonth && (
+                                    <TableCell
+                                      rowSpan={monthSpan}
                                       className="bg-gray-100 border-l border-gray-200 align-top cursor-pointer hover:bg-gray-200 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
-                                      <div className="flex flex-col items-center gap-2 py-2">
+                                      <div className="flex flex-col items-center gap-2 py-3 px-2">
                                         <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] rotate-180 transition-transform" />
                                         <Calendar className="w-6 h-6 text-[hsl(var(--primary))]" />
-                                        <span className="font-bold text-lg text-gray-800 text-center">
-                                          {monthGroup.monthName}
-                                        </span>
-                                        <span className="text-sm text-muted-foreground">{selectedYear}</span>
-                                        <Badge className="bg-[hsl(var(--primary))] text-white text-xs">
-                                          {totalDays} يوم
-                                        </Badge>
-                                        <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))] text-xs">
+                                        <span className="font-bold text-base text-gray-800 text-center">{monthGroup.monthName}</span>
+                                        <span className="text-xs text-muted-foreground">{selectedYear}</span>
+                                        <Badge className="bg-[hsl(var(--primary))] text-white text-[10px]">{totalDays} يوم</Badge>
+                                        <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))] text-[10px]">
                                           {activityCount(monthGroup.activities.length)}
                                         </Badge>
                                       </div>
                                     </TableCell>
                                   )}
-                                  
-                                  {/* عمود التاريخ */}
-                                  <TableCell rowSpan={dayTotalRows} className="border-l border-gray-200 py-3 align-top">
-                                    <div className="flex items-start justify-between gap-2">
-                                      {/* المحتوى يميناً (RTL) */}
-                                      <div className="flex flex-col items-start gap-1 flex-1">
-                                        <div className="flex items-center gap-2">
-                                          <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))] flex-shrink-0" />
-                                          <span className="font-bold text-gray-800">{dateGroup.weekDay}</span>
+                                  {showDay && (
+                                    <TableCell rowSpan={daySpan.get(l.day) ?? 1} className="border-l border-gray-200 align-top py-3">
+                                      <div className="flex flex-col items-start gap-1">
+                                        <div className="flex items-center gap-1.5">
+                                          <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                          <span className="font-bold text-sm text-gray-800">{WEEKDAYS_AR[l.date.getDay()]}</span>
                                         </div>
-                                        <div className="text-sm text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                          {formatGregorianDate(date)}
-                                        </div>
-                                        <div className="text-xs text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                          {formatHijriDate(date)}
-                                        </div>
-                                        {isDayExpanded && (
-                                          <Badge variant="outline" className="text-[10px] mt-1 border-[hsl(var(--primary))] text-[hsl(var(--primary))]">
-                                            {deptCount(deptList.length)} · {activityCount(dateGroup.activities.length)}
-                                          </Badge>
-                                        )}
+                                        <div className="text-xs text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatGregorianDate(l.date)}</div>
+                                        <div className="text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>{formatHijriDate(l.date)}</div>
                                       </div>
-                                      {/* السهم يساراً */}
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (isDayExpanded) {
-                                            // طي اليوم وكل ما تحته
-                                            setExpandedDays((prev) => { const n = new Set(prev); n.delete(dayKey); return n; });
-                                            setExpandedDayDepts((prev) => {
-                                              const n = new Set(prev);
-                                              for (const k of Array.from(n)) if (k.startsWith(dayKey + "|")) n.delete(k);
-                                              return n;
-                                            });
-                                            setExpandedDayDeptEmps((prev) => {
-                                              const n = new Set(prev);
-                                              for (const k of Array.from(n)) if (k.startsWith(dayKey + "|")) n.delete(k);
-                                              return n;
-                                            });
-                                          } else {
-                                            // توسيع اليوم وكل الأقسام والموظفين دفعة واحدة
-                                            setExpandedDays((prev) => new Set(prev).add(dayKey));
-                                            const newDepts = new Set(expandedDayDepts);
-                                            const newEmps = new Set(expandedDayDeptEmps);
-                                            for (const [dKey, dept] of deptList) {
-                                              const deptKey = `${dayKey}|dept-${dKey}`;
-                                              newDepts.add(deptKey);
-                                              for (const [eKey] of dept.emps) {
-                                                newEmps.add(`${deptKey}|emp-${eKey}`);
-                                              }
-                                            }
-                                            setExpandedDayDepts(newDepts);
-                                            setExpandedDayDeptEmps(newEmps);
-                                          }
-                                        }}
-                                        className={cn(
-                                          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm border-2",
-                                          isDayExpanded
-                                            ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white border-transparent shadow-md"
-                                            : "bg-white text-[hsl(var(--primary))] border-[hsl(var(--primary)/0.3)] hover:border-[hsl(var(--primary))] hover:shadow-md"
-                                        )}
-                                        aria-label={isDayExpanded ? "طي" : "توسيع الكل"}
-                                      >
-                                        <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", isDayExpanded ? "rotate-0" : "rotate-90")} />
-                                      </button>
+                                    </TableCell>
+                                  )}
+                                  {showDept && (
+                                    <TableCell rowSpan={deptSpan.get(l.deptKey) ?? 1} className="border-l border-gray-200 align-top py-3 bg-[hsl(var(--primary)/0.06)]">
+                                      <div className="flex items-center gap-2">
+                                        <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                        <span className="font-bold text-sm text-slate-800 truncate">{l.deptName}</span>
+                                      </div>
+                                    </TableCell>
+                                  )}
+                                  {showInit && (
+                                    <TableCell rowSpan={initSpan.get(l.initKey) ?? 1} className="border-l border-gray-200 align-top py-3">
+                                      <div className="flex items-center gap-1.5">
+                                        <Target className="w-3.5 h-3.5 text-[hsl(var(--primary))] shrink-0" />
+                                        <span className="text-xs font-semibold text-slate-700 leading-snug">
+                                          {l.initName === "_no_init" ? <span className="text-slate-300">—</span> : l.initName}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                  )}
+                                  {showSub && (
+                                    <TableCell rowSpan={subSpan.get(l.subKey) ?? 1} className="border-l border-gray-200 align-top py-3">
+                                      <span className="text-xs text-purple-700 leading-snug">
+                                        {l.subName === "_no_sub" ? <span className="text-slate-300">—</span> : l.subName}
+                                      </span>
+                                    </TableCell>
+                                  )}
+                                  <TableCell className="border-l border-gray-200 align-top py-2.5">
+                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200">
+                                      <User className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                                      <span className="font-semibold text-xs text-slate-800 truncate">{l.empName}</span>
                                     </div>
                                   </TableCell>
-                                  
-                                    {/* الحالة المطوية: زر التوسيع يحتل بقية الصف */}
-                                    {!isDayExpanded && (
-                                      <TableCell colSpan={3} className="align-top p-0">
-                                        <button
-                                          type="button"
-                                          onClick={() => toggleSetKey(setExpandedDays, dayKey)}
-                                          className="w-full text-right px-4 py-3 text-xs text-muted-foreground hover:text-[hsl(var(--primary))] flex items-center gap-2 transition-colors hover:bg-[hsl(var(--primary)/0.03)]"
+                                  <TableCell className="align-top py-2">
+                                    <div className="flex flex-col gap-1">
+                                      {l.acts.map((act, i) => (
+                                        <div
+                                          key={act.id}
+                                          className="flex items-start gap-2 px-2 py-1 rounded-md text-xs bg-emerald-50 border border-emerald-100 text-slate-800"
                                         >
-                                          <Building2 className="w-3.5 h-3.5" />
-                                          <span>{deptCount(deptList.length)} · {activityCount(dateGroup.activities.length)}</span>
-                                          <span className="text-[10px] mr-auto opacity-70">— اضغط السهم للتوسيع</span>
-                                        </button>
-                                      </TableCell>
-                                    )}
-                                  </TableRow>
-
-                                  {/* صفوف الأقسام والموظفين عند التوسيع — أعمدة فعلية متوافقة مع الترويسة */}
-                                  {isDayExpanded && deptList.map(([dKey, dept]) => {
-                                    const deptKey = `${dayKey}|dept-${dKey}`;
-                                    const isDeptExpanded = expandedDayDepts.has(deptKey);
-                                    const empCount = dept.emps.size;
-                                    const totalActsInDept = Array.from(dept.emps.values()).reduce((s, e) => s + e.acts.length, 0);
-                                    return (
-                                      <React.Fragment key={`dept-row-${deptKey}`}>
-                                        {/* صف رأس القسم — بهوية الجمعية الزرقاء */}
-                                        <TableRow
-                                          className="cursor-pointer transition-all border-t-2 border-[hsl(var(--primary))] bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.92)]"
-                                          onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
-                                        >
-                                          {/* عمود القسم */}
-                                          <TableCell className="border-l border-white/20 align-middle py-3">
-                                            <div className="flex items-center gap-2 pr-1">
-                                              <ChevronDown className={cn("w-4 h-4 text-white transition-transform", isDeptExpanded ? "" : "rotate-90")} />
-                                              <Building2 className="w-4 h-4 text-white/90" />
-                                              <span className="font-bold text-sm text-white truncate">{dept.name}</span>
-                                            </div>
-                                          </TableCell>
-                                          {/* عمود الموظف — عدّاد */}
-                                          <TableCell className="border-l border-white/20 align-middle py-3">
-                                            <span className="text-xs text-white/85 font-medium">{empCount} موظف</span>
-                                          </TableCell>
-                                          {/* عمود المهام — عدّاد */}
-                                          <TableCell className="align-middle py-3">
-                                            <span className="text-xs text-white/85 font-medium">{activityCount(totalActsInDept)}</span>
-                                          </TableCell>
-                                        </TableRow>
-
-                                        {/* صفوف الموظفين داخل القسم */}
-                                        {isDeptExpanded && Array.from(dept.emps.entries()).map(([eKey, emp]) => {
-                                          const empKey = `${deptKey}|emp-${eKey}`;
-                                          const isEmpExpanded = expandedDayDeptEmps.has(empKey);
-                                          return (
-                                            <TableRow key={`emp-row-${empKey}`} className="bg-white border-t border-gray-100 hover:bg-slate-50/40 transition-colors">
-                                              {/* عمود القسم — فارغ */}
-                                              <TableCell className="border-l border-gray-200 align-top py-2" />
-                                              {/* عمود الموظف */}
-                                              <TableCell
-                                                className="border-l border-gray-200 align-top py-2.5 cursor-pointer"
-                                                onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
-                                              >
-                                                <div className={cn(
-                                                  "flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all",
-                                                  isEmpExpanded
-                                                    ? "bg-[hsl(var(--primary)/0.06)] border-[hsl(var(--primary)/0.4)]"
-                                                    : "bg-white border-slate-200 hover:border-[hsl(var(--primary)/0.4)] hover:bg-[hsl(var(--primary)/0.03)]"
-                                                )}>
-                                                  <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isEmpExpanded ? "" : "rotate-90")} />
-                                                  <User className="w-4 h-4 text-[hsl(var(--primary))]" />
-                                                  <span className="font-bold text-sm text-slate-800 truncate flex-1">{emp.name}</span>
-                                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-[hsl(var(--primary)/0.4)] text-[hsl(var(--primary))]">
-                                                    {emp.acts.length}
-                                                  </Badge>
-                                                </div>
-                                              </TableCell>
-                                              {/* عمود المهام */}
-                                              <TableCell className="align-top py-2">
-                                                {isEmpExpanded ? (
-                                                  <div className="flex flex-col gap-1">
-                                                    {emp.acts.map((act, idx) => (
-                                                      <div
-                                                        key={act.id}
-                                                        className="flex items-start gap-2 px-2.5 py-1.5 rounded-md text-xs bg-emerald-50 border border-emerald-100 text-slate-800 hover:bg-emerald-100/70 transition-colors"
-                                                      >
-                                                        <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                          <span className="text-[9px] font-bold">{idx + 1}</span>
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                          {(act.initiative || act.subInitiative) && (
-                                                            <div className="flex flex-wrap items-center gap-1 mb-0.5">
-                                                              {act.initiative && (
-                                                                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))] border border-[hsl(var(--primary)/0.25)]">
-                                                                  <Target className="w-2.5 h-2.5" />
-                                                                  <span className="font-semibold">المبادرة:</span>
-                                                                  <span className="truncate max-w-[180px]">{act.initiative}</span>
-                                                                </span>
-                                                              )}
-                                                              {act.subInitiative && (
-                                                                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
-                                                                  <span className="font-semibold">فرعية:</span>
-                                                                  <span className="truncate max-w-[160px]">{act.subInitiative}</span>
-                                                                </span>
-                                                              )}
-                                                            </div>
-                                                          )}
-                                                          <span className="font-medium leading-snug">{act.activityName}</span>
-                                                        </div>
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                ) : (
-                                                  <span className="text-[11px] text-slate-400">— ({activityCount(emp.acts.length)})</span>
-                                                )}
-                                              </TableCell>
-                                            </TableRow>
-                                          );
-                                        })}
-                                      </React.Fragment>
-                                    );
-                                  })}
-                                </React.Fragment>
+                                          <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                            <span className="text-[9px] font-bold">{i + 1}</span>
+                                          </div>
+                                          <span className="font-medium leading-snug">{act.activityName}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
                               );
                             })}
                           </React.Fragment>
@@ -1767,6 +1634,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 </div>
               </Card>
             )}
+
 
             {/* عرض بحسب المهام */}
             {globalViewMode === "tasks" && (
