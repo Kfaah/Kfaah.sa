@@ -2526,15 +2526,15 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               >
                                 <div className="flex flex-col gap-3 min-w-[320px] max-w-[560px]">
                                   <div 
-                                    className="flex items-center gap-2 cursor-pointer group/activity"
+                                    className="flex items-center justify-between gap-2 cursor-pointer group/activity"
                                     onClick={() => handleViewPlan(plan)}
                                   >
-                                    <ChevronDown 
-                                      className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
-                                    />
                                     <div className="flex flex-col gap-1 min-w-0">
                                       <p className={`text-sm leading-relaxed ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
                                     </div>
+                                    <ChevronDown 
+                                      className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
+                                    />
                                   </div>
 
                                   {isExpanded && (
