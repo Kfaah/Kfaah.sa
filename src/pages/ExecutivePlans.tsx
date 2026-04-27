@@ -1266,7 +1266,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             </div>
 
             {/* 3. الأقسام */}
-            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-3 text-white shadow-md">
+            <div className="bg-gradient-to-br from-[hsl(var(--primary)/0.9)] to-[hsl(var(--primary))] rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/80 text-xs font-medium">الأقسام</p>
@@ -1664,7 +1664,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </TableCell>
                                           {/* عمود المهام — عدّاد */}
                                           <TableCell className="align-middle py-3">
-                                            <span className="text-xs text-white/85 font-medium">{totalActsInDept} مهمة</span>
+                                            <span className="text-xs text-white/85 font-medium">{totalActsInDept} نشاط</span>
                                           </TableCell>
                                         </TableRow>
 
@@ -1712,7 +1712,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                     ))}
                                                   </div>
                                                 ) : (
-                                                  <span className="text-[11px] text-slate-400">— ({emp.acts.length} مهمة)</span>
+                                                  <span className="text-[11px] text-slate-400">— ({emp.acts.length} نشاط)</span>
                                                 )}
                                               </TableCell>
                                             </TableRow>
