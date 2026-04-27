@@ -262,13 +262,10 @@ export default function OrgInternalDashboard({
 
   const empMap = new Map(employees.map((e) => [e.id, e]));
 
-  if (loading && !hasLoadedOnce) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // PERF: Render the page shell immediately. The header / KPI cards / tabs
+  // mount right away with placeholder values, and individual sections show
+  // their own lightweight loading state as their data streams in. This
+  // eliminates the large blocking spinner that previously hid the page.
 
   return (
     <div className={standaloneTab ? "space-y-6" : "space-y-6 p-8"} dir="rtl">
