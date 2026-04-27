@@ -2193,15 +2193,15 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                           </div>
                                           <div className="grid grid-cols-2 gap-1.5">
                                             {MONTHS_AR.map((month, mi) => (
-                                              <div key={mi} className="rounded-sm bg-muted/40 border border-gray-100 px-1.5 py-1 text-center min-h-[44px]">
-                                                <div className="text-[10px] text-muted-foreground leading-none mb-1">{month}</div>
-                                                <div className="text-xs font-semibold text-gray-700">{formatNumber(monthly[mi])}</div>
+                                              <div key={mi} className="rounded-sm bg-blue-50 border border-blue-100 px-1.5 py-1 text-center min-h-[44px]">
+                                                <div className="text-[10px] text-blue-600/70 leading-none mb-1">{month}</div>
+                                                <div className="text-xs font-semibold text-blue-700">{formatNumber(monthly[mi])}</div>
                                               </div>
                                             ))}
                                           </div>
-                                          <div className="mt-2 rounded-sm bg-muted/50 border border-gray-100 px-2 py-1.5 flex items-center justify-between">
-                                            <span className="text-[10px] font-medium text-muted-foreground">المجموع</span>
-                                            <span className="text-xs font-semibold text-gray-700">{formatNumber(annualNum)}</span>
+                                          <div className="mt-2 rounded-sm bg-green-50 border border-green-100 px-2 py-1.5 flex items-center justify-between">
+                                            <span className="text-[10px] font-medium text-green-700/80">المجموع</span>
+                                            <span className="text-xs font-semibold text-green-700">{formatNumber(annualNum)}</span>
                                           </div>
                                         </div>
                                       )}
@@ -2640,8 +2640,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                             : (monthData?.monthly_target || 0);
 
                                           return (
-                                            <div key={index} className="rounded-md bg-background/90 border border-primary/10 px-2 py-1.5 text-center min-h-[54px]">
-                                              <div className="text-[11px] text-muted-foreground leading-none mb-1.5">{month}</div>
+                                            <div key={index} className="rounded-md bg-blue-50 border border-blue-100 px-2 py-1.5 text-center min-h-[54px]">
+                                              <div className="text-[11px] text-blue-600/70 leading-none mb-1.5">{month}</div>
                                               {isEditingThisMonth ? (
                                                 <Input
                                                   type="number"
@@ -2651,16 +2651,16 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                                   className="h-7 text-center text-xs font-bold px-1"
                                                 />
                                               ) : (
-                                                <div className={`text-sm font-bold ${target > 0 ? 'text-primary' : 'text-muted-foreground'}`}>{formatNumber(target)}</div>
+                                                <div className={`text-sm font-bold ${target > 0 ? 'text-blue-700' : 'text-blue-300'}`}>{formatNumber(target)}</div>
                                               )}
                                             </div>
                                           );
                                         })}
                                       </div>
 
-                                      <div className="mt-2 rounded-md bg-primary/10 border border-primary/15 px-3 py-2 flex items-center justify-between">
-                                        <span className="text-xs font-medium text-muted-foreground">المجموع</span>
-                                        <span className="text-base font-bold text-primary">
+                                      <div className="mt-2 rounded-md bg-green-50 border border-green-200 px-3 py-2 flex items-center justify-between">
+                                        <span className="text-xs font-medium text-green-700/80">المجموع</span>
+                                        <span className="text-base font-bold text-green-700">
                                           {formatNumber(isEditingThisMonth
                                             ? currentMonthlyValues.reduce((sum, val) => sum + (val || 0), 0)
                                             : plan.annual_target
