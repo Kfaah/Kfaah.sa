@@ -301,8 +301,7 @@ body::-webkit-scrollbar {
 .op-plans-table-wrap .text-base     { font-size: 1.0625rem; line-height: 1.55; }  /* 16 → 17 */
 .op-plans-table-wrap .text-lg       { font-size: 1.2rem;   line-height: 1.5; }    /* 18 → 19 */
 .op-plans-table-wrap .text-xl       { font-size: 1.35rem;  line-height: 1.4; }    /* 20 → 22 */
-.op-plans-table-wrap .\[10px\],
-.op-plans-table-wrap [class*="text-[10px]"] { font-size: 0.8125rem; }              /* 10 → 13 */
+.op-plans-table-wrap [class*="text-["] { font-size: 0.8125rem; }                   /* 10px → 13px */
 
 @keyframes fadeIn {
   from {
