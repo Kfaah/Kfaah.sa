@@ -2222,7 +2222,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                         )}
                                       </div>
                                     </td>
-                                    </td>
                                     {/* التكلفة التقديرية */}
                                     {costCol && (
                                       <td className="w-32 py-4 px-3 text-center border-l-2 border-gray-200 align-middle">
