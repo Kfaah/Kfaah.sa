@@ -1149,30 +1149,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               </Button>
             )}
             
-            {/* ملخص الفلتر */}
-            <div className="mr-auto flex items-center gap-3 bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2 rounded-xl">
-              {selectedEmployeeId === "all" ? (
-                <>
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center text-white font-bold text-sm">
-                    👥
-                  </div>
-                  <span className="font-medium text-slate-700">جميع الموظفين</span>
-                </>
-              ) : getSelectedEmployee() ? (
-                <>
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary))] flex items-center justify-center text-white font-bold text-sm">
-                    {getSelectedEmployee()?.full_name.charAt(0)}
-                  </div>
-                  <span className="font-medium text-slate-700">{getSelectedEmployee()?.full_name}</span>
-                  {getSelectedEmployee()?.job_role && (
-                    <Badge variant="outline" className="text-xs">
-                      {getSelectedEmployee()?.job_role}
-                    </Badge>
-                  )}
-                </>
-              ) : null}
-              <span className="text-slate-500">- {selectedYear}</span>
-            </div>
           </div>
         </div>
 
