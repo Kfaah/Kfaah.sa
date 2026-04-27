@@ -2290,10 +2290,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 لا توجد خطط تشغيلية حتى الآن
               </div>
             ) : (
-              <div className="op-plans-table-wrap rounded-lg overflow-hidden border border-gray-200 overflow-x-auto bg-white">
+              <div className="op-plans-table-wrap rounded-lg border border-gray-200 overflow-x-auto bg-white">
                 <table className="w-full">
                   {/* رأس الجدول */}
-                  <thead className="sticky top-0 z-30">
+                  <thead>
                     <tr className="bg-[hsl(var(--primary))] shadow-sm">
                       {/* عرض الأعمدة حسب الترتيب من columnOrder */}
                       {columnOrder.filter(c => c.is_visible).map((col, idx) => {
@@ -2305,14 +2305,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           <>
                             <th 
                               key={col.id} 
-                              className={`py-4 px-5 bg-[hsl(var(--primary))] ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
+                              className={`py-4 px-5 sticky top-0 z-30 bg-[hsl(var(--primary))] ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
                             >
                               <span className="text-sm font-semibold text-white">{col.column_name}</span>
                             </th>
                             {col.column_key === 'initiative' && (
                               <th
                                 key={`${col.id}-sub`}
-                                className="py-4 px-5 text-right border-r border-white/20"
+                                className="py-4 px-5 sticky top-0 z-30 bg-[hsl(var(--primary))] text-right border-r border-white/20"
                               >
                                 <span className="text-sm font-semibold text-white">المبادرة الفرعية</span>
                               </th>
@@ -2321,7 +2321,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         );
                       })}
                       {isEditMode && (
-                        <th className="w-24 py-4 px-3 text-center border-r border-white/20 bg-amber-600">
+                        <th className="w-24 py-4 px-3 sticky top-0 z-30 text-center border-r border-white/20 bg-amber-600">
                           <span className="text-sm font-semibold text-white">إجراء</span>
                         </th>
                       )}
