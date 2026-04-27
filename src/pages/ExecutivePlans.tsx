@@ -1537,7 +1537,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   )}
                                   
                                   {/* عمود التاريخ */}
-                                  <TableCell className="border-l border-gray-200 py-3">
+                                  <TableCell rowSpan={dayTotalRows} className="border-l border-gray-200 py-3 align-top">
                                     <div className="flex items-start justify-between gap-2">
                                       {/* المحتوى يميناً (RTL) */}
                                       <div className="flex flex-col items-start gap-1 flex-1">
