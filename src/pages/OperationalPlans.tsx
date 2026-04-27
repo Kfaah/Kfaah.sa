@@ -1729,15 +1729,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               </Button>
             )}
             
-            {/* عدد النتائج */}
-            <div className="mr-auto flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2 rounded-xl">
-              <span className="text-sm font-semibold text-slate-700">
-                {filteredPlans.length}
-              </span>
-              <span className="text-sm text-slate-500">من</span>
-              <span className="text-sm font-semibold text-slate-700">{plans.length}</span>
-              <span className="text-sm text-slate-500">خطة</span>
-            </div>
           </div>
 
           {/* اختيار الخطة (عند وجود أكثر من خطة لنفس السنة) */}
