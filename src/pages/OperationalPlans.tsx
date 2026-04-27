@@ -1557,20 +1557,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
           subtitle={isAdmin ? "إدارة الخطط التشغيلية للموظفين" : "إدارة خططك التشغيلية"}
           actions={
             <>
-              {isAdmin && (
-                <Button
-                  className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
-                  onClick={() => setIsAIDialogOpen(true)}
-                  disabled={isAIGenerating}
-                >
-                  {isAIGenerating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
-                  )}
-                  توليد الخطط بالذكاء الاصطناعي
-                </Button>
-              )}
               <Button
                 className="gap-2 bg-white text-primary hover:bg-white/90"
                 onClick={() => navigate("/operational-plans/add")}
@@ -1585,6 +1571,20 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 <FileSpreadsheet className="w-4 h-4" />
                 رفع ملف Excel
               </Button>
+              {isAdmin && (
+                <Button
+                  className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                  onClick={() => setIsAIDialogOpen(true)}
+                  disabled={isAIGenerating}
+                >
+                  {isAIGenerating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  توليد الخطط بالذكاء الاصطناعي
+                </Button>
+              )}
               <Button
                 className={`gap-2 border ${
                   isEditMode
