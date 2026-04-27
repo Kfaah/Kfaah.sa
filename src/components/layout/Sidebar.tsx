@@ -442,7 +442,7 @@ export function Sidebar() {
                   className={cn(
                     "object-contain drop-shadow-xl",
                     isSawabOrg
-                      ? "h-[126px] w-[198px] scale-100 translate-x-0 translate-y-0"
+                      ? "h-[108px] w-[174px] scale-100 translate-x-0 translate-y-0"
                       : "h-[210px] w-[210px] scale-125"
                   )}
                 />
@@ -465,9 +465,14 @@ export function Sidebar() {
                   if (short) {
                     return (
                       <div className="text-white drop-shadow-sm leading-tight">
-                        <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-lg" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
+                        <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
                         {short[1] && (
-                          <p className={cn("font-semibold opacity-95", isSawabOrg ? "text-base" : "text-sm")}>{short[1]}</p>
+                          <p className={cn("font-semibold opacity-95", isSawabOrg ? "text-sm" : "text-sm")}>{short[1]}</p>
+                        )}
+                        {isSawabOrg && (
+                          <p className="mt-1 text-[10px] font-semibold leading-none text-white/80">
+                            Sawab Association
+                          </p>
                         )}
                       </div>
                     );
