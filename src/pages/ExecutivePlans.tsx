@@ -1695,18 +1695,34 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {showMonth && (
                                     <TableCell
                                       rowSpan={monthSpan}
-                                      className="bg-gray-100 border-l border-gray-200 align-top cursor-pointer hover:bg-gray-200 transition-colors"
+                                      className="bg-gradient-to-b from-slate-50 to-white border-l border-gray-200 align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
-                                      <div className="flex flex-col items-center gap-2 py-3 px-2">
-                                        <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] rotate-180 transition-transform" />
-                                        <Calendar className="w-6 h-6 text-[hsl(var(--primary))]" />
-                                        <span className="font-bold text-base text-gray-800 text-center">{monthGroup.monthName}</span>
-                                        <span className="text-xs text-muted-foreground">{selectedYear}</span>
-                                        <Badge className="bg-[hsl(var(--primary))] text-white text-[10px]">{totalDays} يوم</Badge>
-                                        <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))] text-[10px]">
-                                          {activityCount(monthGroup.activities.length)}
-                                        </Badge>
+                                      <div className="flex flex-col items-center gap-2 py-4 px-2">
+                                        {/* رأس الشهر */}
+                                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-md shadow-[hsl(var(--primary)/0.25)]">
+                                          <Calendar className="w-5 h-5 text-white" />
+                                        </div>
+                                        <span className="font-extrabold text-base text-slate-800 text-center leading-tight">{monthGroup.monthName}</span>
+                                        <span className="text-[10px] text-slate-500 font-medium -mt-1">{selectedYear}</span>
+
+                                        {/* شارة الأيام */}
+                                        <div className="flex items-center gap-1 bg-gradient-to-r from-sky-500 to-cyan-500 text-white rounded-full px-2.5 py-0.5 shadow-sm">
+                                          <CalendarDays className="w-3 h-3" />
+                                          <span className="text-[10px] font-bold">{totalDays} يوم</span>
+                                        </div>
+
+                                        {/* دائرة الأنشطة */}
+                                        <div className="relative flex flex-col items-center mt-1">
+                                          <div className="w-12 h-12 rounded-full bg-white border-2 border-[hsl(var(--primary)/0.4)] flex items-center justify-center shadow-sm">
+                                            <span className="font-extrabold text-base text-[hsl(var(--primary))]">{monthGroup.activities.length}</span>
+                                          </div>
+                                          <span className="text-[10px] font-semibold text-[hsl(var(--primary))] mt-1">
+                                            {pluralAr(monthGroup.activities.length, "نشاط", "أنشطة")}
+                                          </span>
+                                        </div>
+
+                                        <ChevronDown className="w-4 h-4 text-slate-400 rotate-180 mt-1" />
                                       </div>
                                     </TableCell>
                                   )}
