@@ -12,6 +12,16 @@ export default {
         "2xl": "1400px",
       },
     },
+    fontSize: {
+      xs: ['0.85rem', { lineHeight: '1.35' }],
+      sm: ['0.95rem', { lineHeight: '1.45' }],
+      base: ['1.05rem', { lineHeight: '1.6' }],
+      lg: ['1.15rem', { lineHeight: '1.55' }],
+      xl: ['1.35rem', { lineHeight: '1.4' }],
+      '2xl': ['1.65rem', { lineHeight: '1.3' }],
+      '3xl': ['2rem', { lineHeight: '1.25' }],
+      '4xl': ['2.5rem', { lineHeight: '1.15' }],
+    },
     extend: {
       fontFamily: {
         tajawal: ['Tajawal', 'sans-serif'],
