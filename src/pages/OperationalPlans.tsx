@@ -1296,6 +1296,34 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     }
   };
 
+  // حذف خطة كاملة بالاسم (جميع أنشطتها للسنة المحددة)
+  const handleDeleteWholePlan = async (planName: string) => {
+    if (!confirm(`سيتم حذف جميع أنشطة "${planName}" للسنة ${filterYear}. هل أنت متأكد؟`)) return;
+
+    try {
+      const { error } = await supabase
+        .from("operational_plans")
+        .delete()
+        .eq("year", filterYear)
+        .eq("plan_name", planName);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحذف",
+        description: `تم حذف "${planName}" بالكامل`,
+      });
+
+      fetchPlans();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف الخطة",
+        variant: "destructive",
+      });
+    }
+  };
+
   // حفظ تعديلات الخطة
   const handleSaveEdit = async (planId: string) => {
     if (!editFormData) return;
