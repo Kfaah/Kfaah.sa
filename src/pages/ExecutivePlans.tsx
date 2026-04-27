@@ -1445,7 +1445,31 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           );
                         }
                         
-                        // إذا كانت مفتوحة، نعرض الصفوف مع دمج عمود الشهر
+                         // حساب إجمالي عدد الصفوف الفعلية للشهر (لاستعمالها في rowSpan)
+                         let monthTotalRows = 0;
+                         for (const dg of monthGroup.dateGroups) {
+                           const dayKeyCalc = `day-${monthGroup.month}-${dg.day}`;
+                           monthTotalRows += 1; // صف اليوم نفسه
+                           if (expandedDays.has(dayKeyCalc)) {
+                             // أعد بناء deptMap للحساب
+                             const dMap = new Map<string, Map<string, number>>();
+                             for (const a of dg.activities) {
+                               const dK = a.departmentId ?? `_no_${a.departmentName}`;
+                               const eK = a.employeeId ?? `_no_${a.employeeName}`;
+                               if (!dMap.has(dK)) dMap.set(dK, new Map());
+                               dMap.get(dK)!.set(eK, (dMap.get(dK)!.get(eK) ?? 0) + 1);
+                             }
+                             for (const [dK, emps] of dMap) {
+                               monthTotalRows += 1; // صف رأس القسم
+                               const deptKeyCalc = `${dayKeyCalc}|dept-${dK}`;
+                               if (expandedDayDepts.has(deptKeyCalc)) {
+                                 monthTotalRows += emps.size; // صف لكل موظف
+                               }
+                             }
+                           }
+                         }
+
+                         // إذا كانت مفتوحة، نعرض الصفوف مع دمج عمود الشهر
                         return (
                           <React.Fragment key={`expanded-${monthGroup.month}`}>
                             {monthGroup.dateGroups.map((dateGroup, dateIdx) => {
@@ -1465,6 +1489,17 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                 dept.emps.get(eKey)!.acts.push(a);
                               }
                               const deptList = Array.from(deptMap.entries());
+
+                              // عدد الصفوف الفرعية لهذا اليوم (لاستخدامها في rowSpan لعمود التاريخ)
+                              let dayTotalRows = 1;
+                              if (isDayExpanded) {
+                                for (const [dKey, dept] of deptList) {
+                                  dayTotalRows += 1;
+                                  if (expandedDayDepts.has(`${dayKey}|dept-${dKey}`)) {
+                                    dayTotalRows += dept.emps.size;
+                                  }
+                                }
+                              }
                               
                               return (
                                 <React.Fragment key={`day-frag-${monthGroup.month}-${dateGroup.day}`}>
@@ -1480,7 +1515,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {/* عمود الشهر - مدمج لجميع الصفوف */}
                                   {isFirstRow && (
                                     <TableCell 
-                                      rowSpan={totalDays} 
+                                      rowSpan={monthTotalRows} 
                                       className="bg-gray-100 border-l border-gray-200 align-top cursor-pointer hover:bg-gray-200 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
@@ -1502,7 +1537,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   )}
                                   
                                   {/* عمود التاريخ */}
-                                  <TableCell className="border-l border-gray-200 py-3">
+                                  <TableCell rowSpan={dayTotalRows} className="border-l border-gray-200 py-3 align-top">
                                     <div className="flex items-start justify-between gap-2">
                                       {/* المحتوى يميناً (RTL) */}
                                       <div className="flex flex-col items-start gap-1 flex-1">
@@ -1569,125 +1604,102 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     </div>
                                   </TableCell>
                                   
-                                   {/* === محتوى هرمي مدمج: قسم → موظف → مهام === */}
-                                   <TableCell colSpan={3} className="align-top p-0">
-                                     {!isDayExpanded ? (
-                                       <button
-                                         type="button"
-                                         onClick={() => toggleSetKey(setExpandedDays, dayKey)}
-                                         className="w-full text-right px-4 py-3 text-xs text-muted-foreground hover:text-[hsl(var(--primary))] flex items-center gap-2 transition-colors hover:bg-[hsl(var(--primary)/0.03)]"
-                                       >
-                                         <Building2 className="w-3.5 h-3.5" />
-                                         <span>{deptList.length} قسم · {dateGroup.activities.length} نشاط</span>
-                                         <span className="text-[10px] mr-auto opacity-70">— اضغط السهم للتوسيع</span>
-                                       </button>
-                                     ) : (
-                                       <div className="flex flex-col divide-y divide-gray-200">
-                                         {deptList.map(([dKey, dept]) => {
-                                           const deptKey = `${dayKey}|dept-${dKey}`;
-                                           const isDeptExpanded = expandedDayDepts.has(deptKey);
-                                           const empCount = dept.emps.size;
-                                           const totalActsInDept = Array.from(dept.emps.values()).reduce((s, e) => s + e.acts.length, 0);
-                                           return (
-                                             <div key={`dept-${deptKey}`} className="bg-[hsl(var(--primary)/0.02)]">
-                                                {/* رأس القسم — قابل للطي (يطابق أعمدة الجدول) */}
-                                                <button
-                                                  type="button"
-                                                  onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
-                                                  className={cn(
-                                                    "w-full grid grid-cols-[220px_200px_1fr] items-center text-right transition-all border-r-4",
-                                                    isDeptExpanded
-                                                      ? "bg-gradient-to-l from-[hsl(var(--primary)/0.08)] to-transparent border-[hsl(var(--primary))]"
-                                                      : "hover:bg-[hsl(var(--primary)/0.05)] border-[hsl(var(--primary)/0.3)]"
-                                                  )}
-                                                >
-                                                  {/* عمود القسم */}
-                                                  <div className="flex items-center gap-2 px-3 py-2 border-l border-gray-100">
-                                                    <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDeptExpanded ? "" : "rotate-90")} />
-                                                    <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
-                                                    <span className="font-bold text-sm text-gray-800 truncate">{dept.name}</span>
-                                                  </div>
-                                                  {/* عمود الموظف — عدّاد الموظفين */}
-                                                  <div className="flex items-center gap-1.5 px-3 py-2 border-l border-gray-100">
-                                                    <Badge variant="outline" className="text-[10px] border-[hsl(var(--primary)/0.4)] text-[hsl(var(--primary))]">
-                                                      {empCount} موظف
-                                                    </Badge>
-                                                  </div>
-                                                  {/* عمود المهام — عدّاد المهام */}
-                                                  <div className="flex items-center gap-1.5 px-3 py-2">
-                                                    <Badge variant="outline" className="text-[10px] border-[hsl(var(--accent)/0.4)] text-[hsl(var(--accent))]">
-                                                      {totalActsInDept} مهمة في القسم
-                                                    </Badge>
-                                                  </div>
-                                                </button>
+                                    {/* الحالة المطوية: زر التوسيع يحتل بقية الصف */}
+                                    {!isDayExpanded && (
+                                      <TableCell colSpan={3} className="align-top p-0">
+                                        <button
+                                          type="button"
+                                          onClick={() => toggleSetKey(setExpandedDays, dayKey)}
+                                          className="w-full text-right px-4 py-3 text-xs text-muted-foreground hover:text-[hsl(var(--primary))] flex items-center gap-2 transition-colors hover:bg-[hsl(var(--primary)/0.03)]"
+                                        >
+                                          <Building2 className="w-3.5 h-3.5" />
+                                          <span>{deptList.length} قسم · {dateGroup.activities.length} نشاط</span>
+                                          <span className="text-[10px] mr-auto opacity-70">— اضغط السهم للتوسيع</span>
+                                        </button>
+                                      </TableCell>
+                                    )}
+                                  </TableRow>
 
-                                               {/* جسم القسم: الموظفون مع مهامهم */}
-                                               {isDeptExpanded && (
-                                                 <div className="flex flex-col divide-y divide-gray-100 bg-white">
-                                                   {Array.from(dept.emps.entries()).map(([eKey, emp]) => {
-                                                     const empKey = `${deptKey}|emp-${eKey}`;
-                                                     const isEmpExpanded = expandedDayDeptEmps.has(empKey);
-                                                     return (
-                                                       <div key={`emp-${empKey}`} className="grid grid-cols-[220px_200px_1fr] items-stretch">
-                                                         {/* عمود فارغ تحت القسم */}
-                                                         <div className="border-l border-gray-100" />
-                                                         {/* رأس الموظف القابل للطي */}
-                                                         <button
-                                                           type="button"
-                                                           onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
-                                                           className={cn(
-                                                             "flex items-center gap-2 px-3 py-2 text-right border-l border-gray-100 transition-all",
-                                                             isEmpExpanded
-                                                               ? "bg-[hsl(var(--accent)/0.08)]"
-                                                               : "hover:bg-[hsl(var(--accent)/0.04)]"
-                                                           )}
-                                                         >
-                                                           <ChevronDown className={cn("w-3.5 h-3.5 text-[hsl(var(--accent))] transition-transform", isEmpExpanded ? "" : "rotate-90")} />
-                                                           <User className="w-3.5 h-3.5 text-[hsl(var(--accent))]" />
-                                                           <span className="font-semibold text-xs text-gray-800 truncate flex-1">{emp.name}</span>
-                                                           <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">
-                                                             {emp.acts.length}
-                                                           </Badge>
-                                                         </button>
-                                                         {/* عمود المهام */}
-                                                         <div className="px-3 py-2">
-                                                           {isEmpExpanded ? (
-                                                             <div className="flex flex-col gap-1.5">
-                                                               {emp.acts.map((act, idx) => (
-                                                                 <div
-                                                                   key={act.id}
-                                                                   className={cn(
-                                                                     "flex items-start gap-2 px-2.5 py-1.5 rounded-md text-xs shadow-sm",
-                                                                     act.status === "completed"
-                                                                       ? "bg-gradient-to-l from-green-500 to-emerald-600 text-white"
-                                                                       : act.status === "in_progress"
-                                                                       ? "bg-gradient-to-l from-blue-500 to-indigo-600 text-white"
-                                                                       : "bg-gradient-to-l from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
-                                                                   )}
-                                                                 >
-                                                                   <div className="w-4 h-4 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                                     <span className="text-[9px] font-bold">{idx + 1}</span>
-                                                                   </div>
-                                                                   <span className="font-medium leading-snug flex-1">{act.activityName}</span>
-                                                                 </div>
-                                                               ))}
-                                                             </div>
-                                                           ) : (
-                                                             <span className="text-[11px] text-gray-400">— مطوي ({emp.acts.length} مهمة)</span>
-                                                           )}
-                                                         </div>
-                                                       </div>
-                                                     );
-                                                   })}
-                                                 </div>
-                                               )}
-                                             </div>
-                                           );
-                                         })}
-                                       </div>
-                                     )}
-                                   </TableCell>
-                                 </TableRow>
+                                  {/* صفوف الأقسام والموظفين عند التوسيع — أعمدة فعلية متوافقة مع الترويسة */}
+                                  {isDayExpanded && deptList.map(([dKey, dept]) => {
+                                    const deptKey = `${dayKey}|dept-${dKey}`;
+                                    const isDeptExpanded = expandedDayDepts.has(deptKey);
+                                    const empCount = dept.emps.size;
+                                    const totalActsInDept = Array.from(dept.emps.values()).reduce((s, e) => s + e.acts.length, 0);
+                                    return (
+                                      <React.Fragment key={`dept-row-${deptKey}`}>
+                                        {/* صف رأس القسم */}
+                                        <TableRow
+                                          className={cn(
+                                            "cursor-pointer transition-colors border-t border-gray-200",
+                                            isDeptExpanded ? "bg-slate-50" : "bg-slate-50/60 hover:bg-slate-100"
+                                          )}
+                                          onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
+                                        >
+                                          {/* عمود القسم */}
+                                          <TableCell className="border-l border-gray-200 align-middle py-2.5">
+                                            <div className="flex items-center gap-2 pr-1">
+                                              <ChevronDown className={cn("w-4 h-4 text-slate-600 transition-transform", isDeptExpanded ? "" : "rotate-90")} />
+                                              <Building2 className="w-4 h-4 text-slate-700" />
+                                              <span className="font-semibold text-sm text-slate-800 truncate">{dept.name}</span>
+                                            </div>
+                                          </TableCell>
+                                          {/* عمود الموظف — عدّاد */}
+                                          <TableCell className="border-l border-gray-200 align-middle py-2.5">
+                                            <span className="text-xs text-slate-500">{empCount} موظف</span>
+                                          </TableCell>
+                                          {/* عمود المهام — عدّاد */}
+                                          <TableCell className="align-middle py-2.5">
+                                            <span className="text-xs text-slate-500">{totalActsInDept} مهمة</span>
+                                          </TableCell>
+                                        </TableRow>
+
+                                        {/* صفوف الموظفين داخل القسم */}
+                                        {isDeptExpanded && Array.from(dept.emps.entries()).map(([eKey, emp]) => {
+                                          const empKey = `${deptKey}|emp-${eKey}`;
+                                          const isEmpExpanded = expandedDayDeptEmps.has(empKey);
+                                          return (
+                                            <TableRow key={`emp-row-${empKey}`} className="bg-white border-t border-gray-100 hover:bg-slate-50/40 transition-colors">
+                                              {/* عمود القسم — فارغ */}
+                                              <TableCell className="border-l border-gray-200 align-top py-2" />
+                                              {/* عمود الموظف */}
+                                              <TableCell
+                                                className="border-l border-gray-200 align-top py-2 cursor-pointer"
+                                                onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
+                                              >
+                                                <div className="flex items-center gap-2">
+                                                  <ChevronDown className={cn("w-3.5 h-3.5 text-slate-500 transition-transform", isEmpExpanded ? "" : "rotate-90")} />
+                                                  <User className="w-3.5 h-3.5 text-slate-600" />
+                                                  <span className="font-medium text-xs text-slate-800 truncate flex-1">{emp.name}</span>
+                                                  <span className="text-[10px] text-slate-400">{emp.acts.length}</span>
+                                                </div>
+                                              </TableCell>
+                                              {/* عمود المهام */}
+                                              <TableCell className="align-top py-2">
+                                                {isEmpExpanded ? (
+                                                  <div className="flex flex-col gap-1">
+                                                    {emp.acts.map((act, idx) => (
+                                                      <div
+                                                        key={act.id}
+                                                        className="flex items-start gap-2 px-2.5 py-1.5 rounded-md text-xs bg-emerald-50 border border-emerald-100 text-slate-800 hover:bg-emerald-100/70 transition-colors"
+                                                      >
+                                                        <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                          <span className="text-[9px] font-bold">{idx + 1}</span>
+                                                        </div>
+                                                        <span className="font-medium leading-snug flex-1">{act.activityName}</span>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                ) : (
+                                                  <span className="text-[11px] text-slate-400">— ({emp.acts.length} مهمة)</span>
+                                                )}
+                                              </TableCell>
+                                            </TableRow>
+                                          );
+                                        })}
+                                      </React.Fragment>
+                                    );
+                                  })}
                                 </React.Fragment>
                               );
                             })}
