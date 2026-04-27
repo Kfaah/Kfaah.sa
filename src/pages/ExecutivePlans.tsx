@@ -1479,8 +1479,23 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                             {monthGroup.dateGroups.map((dateGroup, dateIdx) => {
                               const date = new Date(selectedYear, monthGroup.month - 1, dateGroup.day);
                               const isFirstRow = dateIdx === 0;
+                              const dayKey = `day-${monthGroup.month}-${dateGroup.day}`;
+                              const isDayExpanded = expandedDays.has(dayKey);
+
+                              // تجميع أنشطة هذا اليوم حسب القسم → الموظف
+                              const deptMap = new Map<string, { id: string | null; name: string; emps: Map<string, { id: string | null; name: string; acts: typeof dateGroup.activities }> }>();
+                              for (const a of dateGroup.activities) {
+                                const dKey = a.departmentId ?? `_no_${a.departmentName}`;
+                                if (!deptMap.has(dKey)) deptMap.set(dKey, { id: a.departmentId, name: a.departmentName, emps: new Map() });
+                                const eKey = a.employeeId ?? `_no_${a.employeeName}`;
+                                const dept = deptMap.get(dKey)!;
+                                if (!dept.emps.has(eKey)) dept.emps.set(eKey, { id: a.employeeId, name: a.employeeName, acts: [] as typeof dateGroup.activities });
+                                dept.emps.get(eKey)!.acts.push(a);
+                              }
+                              const deptList = Array.from(deptMap.entries());
                               
                               return (
+                                <React.Fragment key={`day-frag-${monthGroup.month}-${dateGroup.day}`}>
                                 <TableRow 
                                   key={`${monthGroup.month}-${dateGroup.day}`}
                                   className={cn(
@@ -1493,7 +1508,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {/* عمود الشهر - مدمج لجميع الصفوف */}
                                   {isFirstRow && (
                                     <TableCell 
-                                      rowSpan={totalDays} 
+                                      rowSpan={monthRowSpan} 
                                       className="bg-gray-100 border-l border-gray-200 align-top cursor-pointer hover:bg-gray-200 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
