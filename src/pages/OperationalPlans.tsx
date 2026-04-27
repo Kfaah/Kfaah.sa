@@ -2001,24 +2001,24 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 const previewRows = expanded ? ep.rows : ep.rows.slice(0, 5);
                 return (
                   <Card key={ep.id} className="overflow-hidden border-emerald-200/60">
-                    <div className="px-5 py-3 bg-gradient-to-l from-emerald-50 to-white border-b border-emerald-100 flex items-center justify-between gap-3">
+                    <div className="px-6 py-4 bg-gradient-to-l from-green-700 via-green-600 to-green-700 border-b border-green-800 flex items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                          <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                        <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0 backdrop-blur-sm">
+                          <FileSpreadsheet className="w-6 h-6 text-white" />
                         </div>
                         <div className="min-w-0">
-                          <div className="font-bold text-slate-800 truncate">
+                          <div className="font-bold text-white truncate text-lg">
                             {ep.plan_name}
-                            <span className="text-xs text-slate-500 font-normal mr-2">· {ep.year}</span>
+                            <span className="text-sm text-white/80 font-normal mr-2">· {ep.year}</span>
                           </div>
-                          <div className="text-xs text-slate-500 truncate">
+                          <div className="text-sm text-white/80 truncate">
                             {ep.source_filename || ep.sheet_name} · {ep.rows.length} صف · {ep.columns.length} عمود
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {ep.use_for_ai && (
-                          <Badge className="bg-violet-100 text-violet-700 hover:bg-violet-100 gap-1">
+                          <Badge className="bg-white/20 text-white hover:bg-white/25 gap-1 border-white/30">
                             <Sparkles className="w-3 h-3" />
                             مرجع AI
                           </Badge>
@@ -2027,7 +2027,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           variant="outline"
                           size="sm"
                           onClick={() => toggleExcelPlanAi(ep.id, ep.use_for_ai)}
-                          className="gap-1"
+                          className="gap-1 bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white"
                           title="تبديل الاعتماد للذكاء الاصطناعي"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
@@ -2037,6 +2037,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           variant="outline"
                           size="sm"
                           onClick={() => setExpandedExcelPlanId(expanded ? null : ep.id)}
+                          className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white"
                         >
                           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                           {expanded ? "طي" : "عرض كامل"}
@@ -2044,7 +2045,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          className="text-white hover:text-white hover:bg-white/15"
                           onClick={() => deleteExcelPlan(ep.id)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -2054,37 +2055,47 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     <div className={`overflow-x-auto ${expanded ? "max-h-[calc(100vh-220px)] overflow-y-auto" : ""}`}>
                       {(() => {
                         const visibleColumns = ep.columns.filter((column: string) => String(column ?? "").trim());
-                        return (
-                          <div className="op-plans-table-wrap rounded-lg border border-gray-200 bg-white">
-                            <table className="w-full" dir="rtl">
-                              <thead>
-                                <tr className="bg-gradient-to-l from-green-700 via-green-600 to-green-700 shadow-sm">
-                                  {visibleColumns.map((column: string, index: number) => (
-                                    <th key={`${column}-${index}`} className={`py-4 px-5 text-center sticky top-0 z-30 bg-green-600 ${index > 0 ? "border-r border-white/30" : ""}`}>
-                                      <span className="text-sm font-semibold text-white">{column}</span>
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {previewRows.map((row: Record<string, any>, rowIndex: number) => (
-                                  <tr key={`${ep.id}-free-${rowIndex}`} className="border-b border-gray-200 hover:bg-muted/30">
-                                    {visibleColumns.map((column: string, colIndex: number) => (
-                                      <td key={`${column}-${colIndex}`} className={`py-4 px-5 text-center align-middle ${colIndex > 0 ? "border-r border-gray-200" : ""}`}>
-                                        <span className="text-sm text-gray-700 break-words" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                          {String(row[column] ?? "").trim() || "—"}
-                                        </span>
-                                      </td>
-                                    ))}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        );
-
                         // كشف أعمدة الهرم
                         const hierarchyColumns = ep.columns.filter((c: string) => !/^#|^إجراء$|^اجراء$/.test(String(c).trim()));
+
+                        // كشف ما إذا كان الجدول يطابق هيكل (هدف/مبادرة/نشاط) المعروف
+                        const looksHierarchical =
+                          hierarchyColumns.length >= 3 &&
+                          /هدف|استراتيج/.test(String(hierarchyColumns[0] || "")) &&
+                          /مبادر|برنامج/.test(String(hierarchyColumns[1] || ""));
+
+                        // الخطط المرنة (بأي رؤوس أعمدة) — جدول مسطّح
+                        if (!looksHierarchical) {
+                          return (
+                            <div className="op-plans-table-wrap rounded-lg border border-gray-200 bg-white">
+                              <table className="w-full" dir="rtl">
+                                <thead>
+                                  <tr className="bg-[hsl(var(--primary))] shadow-sm">
+                                    {visibleColumns.map((column: string, index: number) => (
+                                      <th key={`${column}-${index}`} className={`py-4 px-5 text-center sticky top-0 z-30 bg-[hsl(var(--primary))] ${index > 0 ? "border-r border-white/20" : ""}`}>
+                                        <span className="text-sm font-semibold text-white">{column}</span>
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {previewRows.map((row: Record<string, any>, rowIndex: number) => (
+                                    <tr key={`${ep.id}-free-${rowIndex}`} className="border-b border-gray-200 hover:bg-muted/30">
+                                      {visibleColumns.map((column: string, colIndex: number) => (
+                                        <td key={`${column}-${colIndex}`} className={`py-4 px-5 text-center align-middle ${colIndex > 0 ? "border-r border-gray-200" : ""}`}>
+                                          <span className="text-sm text-gray-700 break-words" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                            {String(row[column] ?? "").trim() || "—"}
+                                          </span>
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        }
+
                         const goalCol = hierarchyColumns[0];
                         const initCol = hierarchyColumns[1];
                         const subInitCol = hierarchyColumns.length > 4 ? hierarchyColumns[2] : undefined;
