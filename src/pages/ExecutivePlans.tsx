@@ -848,6 +848,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     });
   };
 
+  const toggleDay = (dayKey: string) => {
+    setExpandedDays(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dayKey)) {
+        newSet.delete(dayKey);
+      } else {
+        newSet.add(dayKey);
+      }
+      return newSet;
+    });
+  };
+
   const toggleActivity = (activityKey: string) => {
     setExpandedActivities(prev => {
       const newSet = new Set(prev);
