@@ -2174,17 +2174,37 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                         <span className="text-gray-400 text-sm">غير محدد</span>
                                       )}
                                     </td>
-                                    {/* المستهدف السنوي - رقم فقط */}
+                                    {/* المستهدف السنوي + توزيع المستهدفات في نفس الخانة */}
                                     <td className="w-40 py-4 px-3 text-center border-l-2 border-gray-200 align-middle">
                                       <div
                                         className={`flex items-center justify-center gap-2 ${canExpand ? "cursor-pointer group/target" : ""}`}
                                         onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
                                       >
-                                        <span className="text-lg font-bold text-gray-800">{annualValue || "—"}</span>
+                                        <span className="text-base font-semibold text-gray-800">{annualValue || "—"}</span>
                                         {canExpand && (
                                           <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400 group-hover/target:text-primary'}`} />
                                         )}
                                       </div>
+                                      {isExpanded && canExpand && (
+                                        <div className="mt-3 rounded-md border border-gray-200 bg-white p-2 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                                          <div className="flex items-center justify-center gap-1.5 border-b border-gray-100 pb-2 mb-2">
+                                            <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                                            <span className="text-[11px] font-medium text-muted-foreground">التوزيع الشهري</span>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-1.5">
+                                            {MONTHS_AR.map((month, mi) => (
+                                              <div key={mi} className="rounded-sm bg-muted/40 border border-gray-100 px-1.5 py-1 text-center min-h-[44px]">
+                                                <div className="text-[10px] text-muted-foreground leading-none mb-1">{month}</div>
+                                                <div className="text-xs font-semibold text-gray-700">{formatNumber(monthly[mi])}</div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          <div className="mt-2 rounded-sm bg-muted/50 border border-gray-100 px-2 py-1.5 flex items-center justify-between">
+                                            <span className="text-[10px] font-medium text-muted-foreground">المجموع</span>
+                                            <span className="text-xs font-semibold text-gray-700">{formatNumber(annualNum)}</span>
+                                          </div>
+                                        </div>
+                                      )}
                                     </td>
                                     {/* التكلفة التقديرية */}
                                     {costCol && (
