@@ -446,7 +446,7 @@ export function Sidebar() {
                     isSawabOrg
                       ? "h-[108px] w-[174px] scale-100 translate-x-0 translate-y-0"
                       : isAtefOrg
-                        ? "h-[154px] w-[154px] scale-100"
+                        ? "h-[180px] w-[180px] scale-100"
                         : "h-[210px] w-[210px] scale-125"
                   )}
                 />
