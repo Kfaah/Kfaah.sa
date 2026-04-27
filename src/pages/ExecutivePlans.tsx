@@ -1624,7 +1624,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           <ChevronDown
                                             className={cn(
                                               "w-4 h-4 text-[hsl(var(--primary))] transition-transform",
-                                              isDayExpanded ? "rotate-90" : "-rotate-90"
+                                              isDayExpanded ? "-rotate-90" : "rotate-90"
                                             )}
                                           />
                                         </div>
