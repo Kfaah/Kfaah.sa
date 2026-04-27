@@ -2094,6 +2094,18 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 </td>
                               )}
                               
+                              {/* المبادرة الفرعية */}
+                              <td className="py-4 px-5 align-middle border-l-2 border-gray-200">
+                                {plan.sub_initiative ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-violet-500 text-xs">↳</span>
+                                    <span className="text-sm text-violet-700 font-medium">{plan.sub_initiative}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-300 text-xs">—</span>
+                                )}
+                              </td>
+
                               {/* النشاط */}
                               <td className="py-4 px-5 border-l-2 border-gray-200">
                                 <div 
