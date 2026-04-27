@@ -434,7 +434,7 @@ export function Sidebar() {
                 <img
                   src={branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
-                  className="h-[200px] w-[200px] object-contain drop-shadow-xl scale-110 -translate-y-3"
+                  className="h-[200px] w-[200px] object-contain drop-shadow-xl scale-110"
                 />
               ) : (
                 <img
