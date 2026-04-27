@@ -1987,6 +1987,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           const isLastInInitiative = planIndex === initGroup.plans.length - 1;
                           const isLastInitiative = initIndex === group.initiatives.length - 1;
                           const isLastGoal = groupIndex === groupedPlans.length - 1;
+                          const isEditingThisMonth = isEditingMonths === plan.id;
+                          const currentMonthlyValues = editingMonthlyTargets[plan.id] || [];
                           
                           // تحديد نوع الفاصل السفلي
                           let bottomBorder = 'border-b border-gray-200';
@@ -2110,18 +2112,100 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               {/* النشاط (يمتد على عمودين عند انعدام المبادرات الفرعية) */}
                               <td
                                 colSpan={initiativeHasNoSubInitiatives ? 2 : 1}
-                                className="py-4 px-5 border-l-2 border-gray-200"
+                                className="py-4 px-5 border-l-2 border-gray-200 align-top"
                               >
-                                <div 
-                                  className="flex items-center gap-2 cursor-pointer group/activity"
-                                  onClick={() => handleViewPlan(plan)}
-                                >
-                                  <ChevronDown 
-                                    className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
-                                  />
-                                  <div className="flex flex-col gap-1 min-w-0">
-                                    <p className={`text-sm ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
+                                <div className="flex flex-col gap-3 min-w-[320px] max-w-[560px]">
+                                  <div 
+                                    className="flex items-center gap-2 cursor-pointer group/activity"
+                                    onClick={() => handleViewPlan(plan)}
+                                  >
+                                    <ChevronDown 
+                                      className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
+                                    />
+                                    <div className="flex flex-col gap-1 min-w-0">
+                                      <p className={`text-sm leading-relaxed ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
+                                    </div>
                                   </div>
+
+                                  {isExpanded && (
+                                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                                      <div className="flex items-center justify-between gap-3 border-b border-primary/15 pb-2 mb-3">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                            <Calendar className="w-3.5 h-3.5 text-primary" />
+                                          </div>
+                                          <span className="text-xs font-semibold text-primary truncate">التوزيع الشهري</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                          {isEditMode && (isEditingThisMonth ? (
+                                            <>
+                                              <Button size="sm" variant="ghost" className="h-7 px-2 text-green-600 hover:bg-green-50" onClick={() => handleSaveMonthlyTargets(plan)}>
+                                                <Check className="w-3.5 h-3.5" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 px-2 text-red-600 hover:bg-red-50"
+                                                onClick={() => {
+                                                  setIsEditingMonths(null);
+                                                  setEditingMonthlyTargets(prev => {
+                                                    const updated = { ...prev };
+                                                    delete updated[plan.id];
+                                                    return updated;
+                                                  });
+                                                }}
+                                              >
+                                                <X className="w-3.5 h-3.5" />
+                                              </Button>
+                                            </>
+                                          ) : (
+                                            <Button size="sm" variant="ghost" className="h-7 px-2 text-primary hover:bg-primary/10" onClick={() => handleStartEditMonths(plan)}>
+                                              <Pencil className="w-3.5 h-3.5" />
+                                            </Button>
+                                          ))}
+                                          <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:bg-background" onClick={() => setExpandedPlanId(null)}>
+                                            <X className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-4 gap-1.5">
+                                        {MONTHS_AR.map((month, index) => {
+                                          const monthData = plan.months?.find(m => m.month === index + 1);
+                                          const target = isEditingThisMonth
+                                            ? (currentMonthlyValues[index] || 0)
+                                            : (monthData?.monthly_target || 0);
+
+                                          return (
+                                            <div key={index} className="rounded-md bg-background/90 border border-primary/10 px-2 py-1.5 text-center min-h-[54px]">
+                                              <div className="text-[11px] text-muted-foreground leading-none mb-1.5">{month}</div>
+                                              {isEditingThisMonth ? (
+                                                <Input
+                                                  type="number"
+                                                  min="0"
+                                                  value={target}
+                                                  onChange={(e) => handleMonthTargetChange(plan.id, index, parseInt(e.target.value) || 0)}
+                                                  className="h-7 text-center text-xs font-bold px-1"
+                                                />
+                                              ) : (
+                                                <div className={`text-sm font-bold ${target > 0 ? 'text-primary' : 'text-muted-foreground'}`}>{formatNumber(target)}</div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+
+                                      <div className="mt-2 rounded-md bg-primary/10 border border-primary/15 px-3 py-2 flex items-center justify-between">
+                                        <span className="text-xs font-medium text-muted-foreground">المجموع</span>
+                                        <span className="text-base font-bold text-primary">
+                                          {formatNumber(isEditingThisMonth
+                                            ? currentMonthlyValues.reduce((sum, val) => sum + (val || 0), 0)
+                                            : plan.annual_target
+                                          )}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                               
