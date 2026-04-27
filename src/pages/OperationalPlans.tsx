@@ -2215,23 +2215,26 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             const isEditingThisMonth = isEditingMonths === plan.id;
                             const currentMonthlyValues = editingMonthlyTargets[plan.id] || [];
                             
-                            // حساب عدد الأعمدة للصف الموسع
-                            // الأعمدة المرئية بعد الهدف والمبادرة + (الإجراء في وضع التعديل)
-                            const visibleMovableColumns = columnOrder.filter(c => c.is_visible && !['strategic_goal', 'initiative'].includes(c.column_key)).length;
-                            // +1 لعمود "المبادرة الفرعية" الثابت
-                            const expandedColSpan = visibleMovableColumns + 1 + (isEditMode ? 1 : 0);
+                            // الصف الموسع يمتد على كامل عرض الجدول (كل الأعمدة المرئية + المبادرة الفرعية + الإجراء)
+                            const visibleAllColumns = columnOrder.filter(c => c.is_visible).length;
+                            const expandedColSpan = visibleAllColumns + 1 + (isEditMode ? 1 : 0);
                             
                             rows.push(
                               <tr key={`${plan.id}-expanded`} className="bg-white">
-                                {/* الخلية الموسعة - تمتد على الأعمدة المتبقية (بدون الهدف والمبادرة) */}
-                                <td colSpan={expandedColSpan} className="p-0 border-l-2 border-gray-200">
-                                  <div className="bg-gradient-to-b from-white to-gray-50 p-6 border-t border-[hsl(var(--primary)/0.2)] animate-in slide-in-from-top-2 duration-200">
-                                    {/* زر إغلاق/طي الجدول الشهري — يظهر دائماً */}
-                                    <div className="flex justify-between items-center mb-3">
-                                      <span className="text-sm font-semibold text-[hsl(var(--primary))] flex items-center gap-2">
-                                        <Calendar className="w-4 h-4" />
-                                        التوزيع الشهري للنشاط
-                                      </span>
+                                {/* الخلية الموسعة - تمتد على كامل عرض الجدول لتجنب أي إزاحة بصرية */}
+                                <td colSpan={expandedColSpan} className="p-0">
+                                  <div className="bg-gradient-to-b from-[hsl(var(--primary)/0.04)] to-white p-5 border-t-2 border-[hsl(var(--primary)/0.25)] border-b-2 border-[hsl(var(--primary)/0.15)] animate-in slide-in-from-top-2 duration-200">
+                                    {/* رأس الجدول الموسع — اسم النشاط كعنوان واضح + زر إغلاق */}
+                                    <div className="flex justify-between items-center mb-4 pb-3 border-b border-[hsl(var(--primary)/0.15)]">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-lg bg-[hsl(var(--primary))] flex items-center justify-center shadow-sm">
+                                          <Calendar className="w-4 h-4 text-white" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="text-xs text-gray-500 font-medium">التوزيع الشهري للنشاط</span>
+                                          <span className="text-sm font-bold text-[hsl(var(--primary))]">{plan.activity_name}</span>
+                                        </div>
+                                      </div>
                                       <Button
                                         size="sm"
                                         variant="outline"
