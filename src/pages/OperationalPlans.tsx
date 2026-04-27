@@ -2232,11 +2232,11 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
 
                         // رؤوس أعمدة ثابتة كنموذج الجدول السفلي
                         const headers: { label: string; cls: string }[] = [
-                          { label: "الهدف الاستراتيجي", cls: "py-4 px-5 text-right" },
-                          { label: "المبادرة الرئيسية", cls: "py-4 px-5 text-right border-r border-white/20" },
-                          { label: "المبادرة الفرعية", cls: "py-4 px-5 text-right border-r border-white/20" },
-                          { label: "النشاط", cls: "py-4 px-5 text-right border-r border-white/20" },
-                          { label: "مسؤول التنفيذ", cls: "py-4 px-5 text-right border-r border-white/20" },
+                          { label: "الهدف الاستراتيجي", cls: "py-4 px-5 text-center" },
+                          { label: "المبادرة الرئيسية", cls: "py-4 px-5 text-center border-r border-white/20" },
+                          { label: "المبادرة الفرعية", cls: "py-4 px-5 text-center border-r border-white/20" },
+                          { label: "النشاط", cls: "py-4 px-5 text-center border-r border-white/20" },
+                          { label: "مسؤول التنفيذ", cls: "py-4 px-5 text-center border-r border-white/20" },
                           { label: "المستهدف السنوي", cls: "py-4 px-3 text-center border-r border-white/20 w-40" },
                         ];
                         if (costCol) headers.push({ label: "التكلفة التقديرية", cls: "py-4 px-3 text-center border-r border-white/20 w-32" });
