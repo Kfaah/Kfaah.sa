@@ -428,16 +428,9 @@ export function Sidebar() {
             className="relative mb-3 group cursor-pointer animate-scale-in"
             title="العودة للصفحة الرئيسية"
           >
-            {!isSawabOrg && (
-              <>
-                <div className="absolute inset-[-12px] rounded-full border-2 border-white/45 pointer-events-none animate-pulse" />
-                <div className="absolute inset-[-24px] rounded-full bg-white/20 blur-2xl pointer-events-none" />
-              </>
-            )}
-            <div className={cn(
-              "relative w-52 h-52 rounded-full bg-white flex flex-col items-center justify-center text-center shadow-2xl overflow-hidden transition-transform duration-500 group-hover:scale-105 shrink-0",
-              isSawabOrg ? "ring-0" : "ring-4 ring-white/35"
-            )}>
+            <div className="absolute inset-[-12px] rounded-full border-2 border-white/45 pointer-events-none animate-pulse" />
+            <div className="absolute inset-[-24px] rounded-full bg-white/20 blur-2xl pointer-events-none" />
+            <div className="relative w-52 h-52 rounded-full bg-white flex flex-col items-center justify-center text-center shadow-2xl overflow-hidden ring-4 ring-white/35 transition-transform duration-500 group-hover:scale-105 shrink-0">
               {branding.loading ? (
                 <div className="w-44 h-44 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
@@ -447,7 +440,7 @@ export function Sidebar() {
                   className={cn(
                     "object-contain drop-shadow-xl",
                     isSawabOrg
-                      ? "h-[222px] w-[222px] scale-100 translate-x-0 translate-y-0"
+                      ? "h-[188px] w-[188px] translate-x-0"
                       : "h-[210px] w-[210px] scale-125"
                   )}
                 />
