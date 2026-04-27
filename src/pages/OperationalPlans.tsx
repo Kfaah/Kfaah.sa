@@ -2187,21 +2187,21 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                       </div>
                                       {isExpanded && canExpand && (
                                         <div className="mt-3 rounded-md border border-gray-200 bg-white p-2 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
-                                          <div className="flex items-center justify-center gap-1.5 border-b border-gray-100 pb-2 mb-2">
-                                            <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                                            <span className="text-[11px] font-medium text-muted-foreground">التوزيع الشهري</span>
+                                          <div className="flex items-center justify-center gap-1.5 rounded-sm bg-green-600 px-2 py-1.5 mb-2">
+                                            <Calendar className="w-3.5 h-3.5 text-white" />
+                                            <span className="text-[11px] font-medium text-white">التوزيع الشهري</span>
                                           </div>
                                           <div className="grid grid-cols-2 gap-1.5">
                                             {MONTHS_AR.map((month, mi) => (
-                                              <div key={mi} className="rounded-sm bg-blue-50 border border-blue-100 px-1.5 py-1 text-center min-h-[44px]">
-                                                <div className="text-[10px] text-blue-600/70 leading-none mb-1">{month}</div>
-                                                <div className="text-xs font-semibold text-blue-700">{formatNumber(monthly[mi])}</div>
+                                              <div key={mi} className="rounded-sm bg-blue-500 border border-blue-600 px-1.5 py-1 text-center min-h-[44px]">
+                                                <div className="text-[10px] text-white/90 leading-none mb-1">{month}</div>
+                                                <div className="text-xs font-semibold text-white">{formatNumber(monthly[mi])}</div>
                                               </div>
                                             ))}
                                           </div>
-                                          <div className="mt-2 rounded-sm bg-green-50 border border-green-100 px-2 py-1.5 flex items-center justify-between">
-                                            <span className="text-[10px] font-medium text-green-700/80">المجموع</span>
-                                            <span className="text-xs font-semibold text-green-700">{formatNumber(annualNum)}</span>
+                                          <div className="mt-2 rounded-sm bg-green-600 border border-green-700 px-2 py-1.5 flex items-center justify-between">
+                                            <span className="text-[10px] font-medium text-white">المجموع</span>
+                                            <span className="text-xs font-semibold text-white">{formatNumber(annualNum)}</span>
                                           </div>
                                         </div>
                                       )}
