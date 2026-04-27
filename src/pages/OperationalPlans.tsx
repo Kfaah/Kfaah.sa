@@ -1980,6 +1980,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             return sum + 1 + (expandedPlanId === plan.id ? 1 : 0);
                           }, 0) + addActivityRowForThisInitiative;
                         let initRowRendered = false;
+                        // إذا لم يكن لأي نشاط في هذه المبادرة "مبادرة فرعية"، نُلغي العمود ونوسّع خلية النشاط
+                        const initiativeHasNoSubInitiatives = initGroup.plans.every(
+                          (p) => !p.sub_initiative || !p.sub_initiative.trim()
+                        );
                         
                         initGroup.plans.forEach((plan, planIndex) => {
                           const isExpanded = expandedPlanId === plan.id;
@@ -2095,19 +2099,24 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               )}
                               
                               {/* المبادرة الفرعية */}
-                              <td className="py-4 px-5 align-middle border-l-2 border-gray-200">
-                                {plan.sub_initiative ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-violet-500 text-xs">↳</span>
-                                    <span className="text-sm text-violet-700 font-medium">{plan.sub_initiative}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-300 text-xs">—</span>
-                                )}
-                              </td>
+                              {!initiativeHasNoSubInitiatives && (
+                                <td className="py-4 px-5 align-middle border-l-2 border-gray-200">
+                                  {plan.sub_initiative ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-violet-500 text-xs">↳</span>
+                                      <span className="text-sm text-violet-700 font-medium">{plan.sub_initiative}</span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-300 text-xs">—</span>
+                                  )}
+                                </td>
+                              )}
 
-                              {/* النشاط */}
-                              <td className="py-4 px-5 border-l-2 border-gray-200">
+                              {/* النشاط (يمتد على عمودين عند انعدام المبادرات الفرعية) */}
+                              <td
+                                colSpan={initiativeHasNoSubInitiatives ? 2 : 1}
+                                className="py-4 px-5 border-l-2 border-gray-200"
+                              >
                                 <div 
                                   className="flex items-center gap-2 cursor-pointer group/activity"
                                   onClick={() => handleViewPlan(plan)}
