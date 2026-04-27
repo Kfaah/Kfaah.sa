@@ -2209,15 +2209,18 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     {/* التكلفة التقديرية */}
                                     {costCol && (() => {
                                       const rawCost = row[costCol];
-                                      const numCost = Number(String(rawCost ?? "").replace(/[^\d.-]/g, ""));
-                                      const display = rawCost === undefined || rawCost === null || rawCost === ""
+                                      const normalized = String(rawCost ?? "")
+                                        .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+                                        .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+                                      const numCost = Number(normalized.replace(/[^\d.-]/g, ""));
+                                      const display = rawCost === undefined || rawCost === null || String(rawCost).trim() === ""
                                         ? "—"
                                         : Number.isFinite(numCost) && numCost !== 0
                                           ? numCost.toLocaleString("en-US")
-                                          : String(rawCost);
+                                          : normalized || String(rawCost);
                                       return (
                                         <td className="w-32 py-4 px-3 text-center border-l-2 border-gray-200 align-middle">
-                                          <span className="text-sm text-gray-700" style={{ fontFamily: 'Arial, sans-serif' }}>{display}</span>
+                                          <span className="text-sm font-normal text-gray-700" style={{ fontFamily: 'Arial, sans-serif' }}>{display}</span>
                                         </td>
                                       );
                                     })()}
