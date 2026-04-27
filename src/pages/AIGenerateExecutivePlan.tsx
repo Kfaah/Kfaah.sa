@@ -311,6 +311,84 @@ export default function AIGenerateExecutivePlan() {
           </div>
         </div>
 
+        {/* فلاتر الأقسام والموظفين */}
+        <div className="bg-white rounded-2xl border border-indigo-100 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-gray-900">نطاق التوليد</h3>
+                <p className="text-xs text-gray-500">حدد القسم والموظفين الذين سيتم توليد خططهم. اتركه فارغاً ليشمل الجميع.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label className="text-right block mb-2 flex items-center gap-1">
+                <Building2 className="w-4 h-4 text-emerald-600" /> القسم
+              </Label>
+              <Select value={departmentId} onValueChange={(v) => { setDepartmentId(v); setSelectedEmployeeIds([]); }} disabled={isWorking} dir="rtl">
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="all">كل الأقسام</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="text-sm text-gray-600">
+                {selectedEmployeeIds.length === 0
+                  ? `سيتم التوليد لجميع موظفي ${departmentId === "all" ? "الجمعية" : "هذا القسم"} (${filteredEmployees.length})`
+                  : `${selectedEmployeeIds.length} موظف مختار`}
+              </div>
+              <div className="mr-auto flex gap-2">
+                <Button type="button" size="sm" variant="outline" className="text-xs h-8" onClick={() => setSelectedEmployeeIds(filteredEmployees.map(e => e.id))} disabled={isWorking}>
+                  اختر الكل
+                </Button>
+                <Button type="button" size="sm" variant="outline" className="text-xs h-8" onClick={() => setSelectedEmployeeIds([])} disabled={isWorking}>
+                  مسح
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[260px] overflow-y-auto p-1">
+            {filteredEmployees.length === 0 ? (
+              <p className="col-span-full text-sm text-slate-500 text-center py-6 bg-slate-50 rounded-lg">
+                لا يوجد موظفون في هذا القسم
+              </p>
+            ) : filteredEmployees.map((emp) => {
+              const sel = selectedEmployeeIds.includes(emp.id);
+              return (
+                <button
+                  type="button"
+                  key={emp.id}
+                  onClick={() => setSelectedEmployeeIds(prev => prev.includes(emp.id) ? prev.filter(x => x !== emp.id) : [...prev, emp.id])}
+                  disabled={isWorking}
+                  className={cn(
+                    "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-right",
+                    sel
+                      ? "bg-indigo-50 border-indigo-400"
+                      : "bg-white border-slate-200 hover:border-indigo-200",
+                    isWorking && "opacity-50 cursor-not-allowed",
+                  )}
+                >
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", sel ? "bg-indigo-500 text-white" : "bg-slate-100 text-slate-500")}>
+                    <User className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-semibold text-slate-800 flex-1 truncate">{emp.full_name}</span>
+                  <Checkbox checked={sel} className="pointer-events-none" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* الملفات المرجعية - تظهر دائماً لكن أبرز عند withFiles */}
         <div className={cn(
           "bg-white rounded-2xl border p-6 shadow-sm",
