@@ -2146,17 +2146,17 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                           return (
                                             <td key={ci} className="px-3 py-3 text-slate-700 border-b border-slate-100 align-top">
                                               <div
-                                                className={`flex items-start gap-2 ${canExpand ? "cursor-pointer group/activity" : ""}`}
+                                                className={`flex items-start justify-between gap-2 ${canExpand ? "cursor-pointer group/activity" : ""}`}
                                                 onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
                                               >
+                                                <p className={`text-base font-semibold leading-relaxed ${isRowExpanded ? "text-primary" : "text-gray-800"}`}>
+                                                  {String(row[c] ?? "")}
+                                                </p>
                                                 {canExpand ? (
                                                   <ChevronDown className={`w-5 h-5 flex-shrink-0 mt-0.5 transition-transform ${isRowExpanded ? "rotate-180 text-primary" : "text-gray-400 group-hover/activity:text-primary"}`} />
                                                 ) : (
                                                   <span className="w-4" />
                                                 )}
-                                                <p className={`text-base font-semibold leading-relaxed ${isRowExpanded ? "text-primary" : "text-gray-800"}`}>
-                                                  {String(row[c] ?? "")}
-                                                </p>
                                               </div>
                                               {isRowExpanded && canExpand && (
                                                 <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
@@ -2526,15 +2526,15 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               >
                                 <div className="flex flex-col gap-3 min-w-[320px] max-w-[560px]">
                                   <div 
-                                    className="flex items-center gap-2 cursor-pointer group/activity"
+                                    className="flex items-center justify-between gap-2 cursor-pointer group/activity"
                                     onClick={() => handleViewPlan(plan)}
                                   >
-                                    <ChevronDown 
-                                      className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
-                                    />
                                     <div className="flex flex-col gap-1 min-w-0">
                                       <p className={`text-sm leading-relaxed ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
                                     </div>
+                                    <ChevronDown 
+                                      className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
+                                    />
                                   </div>
 
                                   {isExpanded && (
