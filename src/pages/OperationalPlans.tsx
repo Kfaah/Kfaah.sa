@@ -1682,57 +1682,76 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
             onSubmit={handleDialogSubmit}
           />
           
-          {/* Dialog توليد AI */}
-          {isAdmin && (
-            <div>
-              {isAIDialogOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                  <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl border border-purple-100">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                        <Sparkles className="w-7 h-7 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">توليد بالذكاء الاصطناعي</h3>
-                        <p className="text-sm text-gray-500">إنشاء خطط تشغيلية تلقائياً</p>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-purple-50 rounded-xl p-4 mb-4 border border-purple-200">
-                      <p className="text-sm font-medium text-purple-900 leading-relaxed">
-                        لتوليد خطة بالذكاء الاصطناعي، ارفع ملف Excel (حتى لو كان مختصراً)، وسيستنتج الذكاء الاصطناعي الهدف ويبني خطة تشغيلية كاملة.
-                      </p>
-                    </div>
-                    
-                    <div className="flex gap-2 justify-end">
-                      <Button 
-                        variant="outline" 
-                        className="border-gray-300"
-                        onClick={() => setIsAIDialogOpen(false)}
-                      >
-                        إغلاق
-                      </Button>
-                      <Button 
-                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 gap-2 shadow-lg shadow-purple-500/25"
-                        onClick={handleAIGeneratePlans}
-                        disabled={isAIGenerating}
-                      >
-                        {isAIGenerating ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            جاري التوليد...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4" />
-                            توليد الخطط
-                          </>
-                        )}
-                      </Button>
-                    </div>
+          {/* Dialog توليد AI - خياران */}
+          {isAdmin && isAIDialogOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setIsAIDialogOpen(false)}>
+              <div className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-2xl border border-purple-100" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
+                    <Sparkles className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">توليد الخطط بالذكاء الاصطناعي</h3>
+                    <p className="text-sm text-gray-500">اختر الطريقة المناسبة لتوليد خطتك التشغيلية</p>
                   </div>
                 </div>
-              )}
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* الخيار الأول: توليد فوري */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAIDialogOpen(false);
+                      navigate("/operational-plans/upload?mode=instant");
+                    }}
+                    className="group text-right p-5 rounded-xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-white hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 transition-all"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                      <Zap className="w-6 h-6 text-white" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-1.5">توليد فوري</h4>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      يقوم الذكاء الاصطناعي بدراسة وضع الجمعية والأهداف الحالية وتوليد خطة تشغيلية متكاملة على الفور دون الحاجة لرفع أي ملفات.
+                    </p>
+                    <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-violet-700 group-hover:gap-2 transition-all">
+                      ابدأ التوليد
+                      <ChevronUp className="w-3 h-3 -rotate-90" />
+                    </div>
+                  </button>
+
+                  {/* الخيار الثاني: مع ملفات مرجعية */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAIDialogOpen(false);
+                      navigate("/operational-plans/upload?mode=files");
+                    }}
+                    className="group text-right p-5 rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 transition-all"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                      <Upload className="w-6 h-6 text-white" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-1.5">توليد بناءً على ملفات</h4>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      ارفع نماذج خطط سابقة، تقارير، أو أي مستندات مرجعية، وسيقوم الذكاء الاصطناعي بدراستها مع وضع الجمعية لتوليد خطة دقيقة مبنية عليها.
+                    </p>
+                    <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 group-hover:gap-2 transition-all">
+                      ارفع الملفات
+                      <ChevronUp className="w-3 h-3 -rotate-90" />
+                    </div>
+                  </button>
+                </div>
+
+                <div className="flex justify-end mt-5">
+                  <Button
+                    variant="outline"
+                    className="border-gray-300"
+                    onClick={() => setIsAIDialogOpen(false)}
+                  >
+                    إلغاء
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>
