@@ -2042,7 +2042,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         </Button>
                       </div>
                     </div>
-                    <div className={`overflow-x-auto ${expanded ? "max-h-[600px] overflow-y-auto" : ""}`}>
+                    <div className={`overflow-x-auto ${expanded ? "max-h-[calc(100vh-220px)] overflow-y-auto" : ""}`}>
                       {(() => {
                         // كشف أعمدة الهرم
                         const goalCol = ep.columns.find((c: string) => /الهدف الاستراتيجي|^هدف|برنامج/.test(c));
@@ -2246,12 +2246,12 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         if (costCol) headers.push({ label: "التكلفة التقديرية", cls: "py-4 px-3 text-center border-r border-white/20 w-32" });
 
                         return (
-                          <div className="op-plans-table-wrap rounded-lg overflow-hidden border border-gray-200 bg-white">
+                          <div className="op-plans-table-wrap rounded-lg border border-gray-200 bg-white">
                             <table className="w-full" dir="rtl">
-                              <thead className="sticky top-0 z-30">
+                              <thead>
                                 <tr className="bg-[hsl(var(--primary))] shadow-sm">
                                   {headers.map((h, i) => (
-                                    <th key={i} className={`${h.cls} bg-[hsl(var(--primary))]`}>
+                                    <th key={i} className={`${h.cls} sticky top-0 z-30 bg-[hsl(var(--primary))]`}>
                                       <span className="text-sm font-semibold text-white">{h.label}</span>
                                     </th>
                                   ))}
