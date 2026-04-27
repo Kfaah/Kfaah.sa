@@ -1312,10 +1312,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 )}
                 <Button
                   onClick={() => {
-                    setIsDialogOpen(true);
-                    setSelectedPlanMonthId("");
-                    setSelectedDays([]);
-                    setAddingMonth(new Date().getMonth() + 1);
+                    navigate(makeOrgUrl("/executive-plans/add"));
                   }}
                   variant="outline"
                   className="gap-2"
