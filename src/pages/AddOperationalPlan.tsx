@@ -1165,6 +1165,7 @@ const AddOperationalPlan = () => {
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
 
   const [year, setYear] = useState(new Date().getFullYear());
+  const [planName, setPlanName] = useState<string>("الخطة الأولى");
   const [rows, setRows] = useState<TableRowData[]>([]);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [columns, setColumns] = useState<ColumnDef[]>(createDefaultColumns);
