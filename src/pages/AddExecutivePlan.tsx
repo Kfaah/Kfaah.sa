@@ -586,7 +586,7 @@ export default function AddExecutivePlan() {
           tone="amber"
           right={
             <Badge variant="outline" className="text-amber-700 border-amber-300">
-              {totalSelectedActs} نشاط مختار
+              {totalSelectedActs} {totalSelectedActs >= 3 && totalSelectedActs <= 10 ? "أنشطة" : "نشاط"} مختار
             </Badge>
           }
         >
@@ -616,7 +616,7 @@ export default function AddExecutivePlan() {
                     </div>
                     <span className="font-bold text-sm text-slate-800">{employee.full_name}</span>
                     <Badge variant="outline" className="mr-auto">
-                      {acts.length} نشاط متاح
+                      {acts.length} {acts.length >= 3 && acts.length <= 10 ? "أنشطة" : "نشاط"} متاح
                     </Badge>
                   </div>
 
@@ -681,7 +681,7 @@ export default function AddExecutivePlan() {
             <span className="text-white/40">·</span>
             <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {selectedEmployeeIds.length} موظف</span>
             <span className="text-white/40">·</span>
-            <span className="flex items-center gap-1"><ListTodo className="w-4 h-4" /> {totalSelectedActs} نشاط</span>
+            <span className="flex items-center gap-1"><ListTodo className="w-4 h-4" /> {totalSelectedActs} {totalSelectedActs >= 3 && totalSelectedActs <= 10 ? "أنشطة" : "نشاط"}</span>
             <span className="text-white/40">·</span>
             <span className="font-bold">
               المجموع: {selectedDays.length * totalSelectedActs} خطة تنفيذية
