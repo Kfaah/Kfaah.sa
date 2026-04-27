@@ -2492,7 +2492,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               key={`add-init-btn-${group.strategicGoal}`} 
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-gray-50/50 transition-colors border-b-4 border-b-gray-400`}
                             >
-                              <td colSpan={columnOrder.filter(c => c.is_visible && !['strategic_goal'].includes(c.column_key)).length + 1} className="py-3 px-4">
+                              <td colSpan={columnOrder.filter(c => c.is_visible && !['strategic_goal'].includes(c.column_key)).length + 2} className="py-3 px-4">
                                 <div className="flex justify-center items-center gap-3">
                                   {/* زر إضافة مبادرة جديدة */}
                                   <Button
