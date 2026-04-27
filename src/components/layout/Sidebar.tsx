@@ -494,7 +494,7 @@ export function Sidebar() {
                   );
                 })()}
                 <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent rounded-full via-white/70" />
-                <p className={cn("text-sm font-semibold", isSawabOrg ? "text-slate-700" : "text-white/90")}>
+                <p className="text-sm font-semibold text-white">
                   نظام إدارة التسويق الإلكتروني
                 </p>
               </div>
@@ -528,7 +528,7 @@ export function Sidebar() {
 
                 {/* Name and Role - Right side, centered vertically */}
                 <div className="flex-1 flex flex-col items-center justify-center gap-2">
-                  <h3 className="text-base font-bold text-sidebar-item-foreground rounded-full border-2 border-[hsl(var(--sidebar-icon-start))] bg-background/60 px-4 py-1">{user.firstName} {user.lastName}</h3>
+                  <h3 className="text-base font-bold text-white rounded-full border-2 border-[hsl(var(--sidebar-icon-start))] bg-gradient-to-l from-green-700 via-green-600 to-green-700 px-4 py-1 shadow-sm">{user.firstName} {user.lastName}</h3>
                   <span className="rounded-full border border-primary/20 bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
                     {user.role}
                   </span>
