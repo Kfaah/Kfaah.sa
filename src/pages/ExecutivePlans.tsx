@@ -1821,6 +1821,85 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     </div>
                                   </TableCell>
                                 </TableRow>
+                                {isDayExpanded && deptList.map(([dKey, dept]) => {
+                                  const deptKey = `${dayKey}|dept-${dKey}`;
+                                  const isDeptExpanded = expandedDayDepts.has(deptKey);
+                                  const empList = Array.from(dept.emps.entries());
+                                  const totalActsInDept = empList.reduce((s, [, e]) => s + e.acts.length, 0);
+                                  return (
+                                    <React.Fragment key={`dept-frag-${deptKey}`}>
+                                      <TableRow className="bg-[hsl(var(--primary)/0.04)] hover:bg-[hsl(var(--primary)/0.08)] border-r-4 border-r-[hsl(var(--primary))]">
+                                        <TableCell colSpan={2} className="py-2 pr-8">
+                                          <button
+                                            type="button"
+                                            onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
+                                            className="flex items-center gap-2 w-full text-right"
+                                          >
+                                            <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDeptExpanded ? "" : "-rotate-90")} />
+                                            <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                            <span className="font-semibold text-gray-800 text-sm">{dept.name}</span>
+                                            <Badge variant="outline" className="text-[10px] mr-auto border-[hsl(var(--primary))] text-[hsl(var(--primary))]">
+                                              {empList.length} موظف · {totalActsInDept} نشاط
+                                            </Badge>
+                                          </button>
+                                        </TableCell>
+                                      </TableRow>
+                                      {isDeptExpanded && empList.map(([eKey, emp]) => {
+                                        const empKey = `${deptKey}|emp-${eKey}`;
+                                        const isEmpExpanded = expandedDayDeptEmps.has(empKey);
+                                        return (
+                                          <React.Fragment key={`emp-frag-${empKey}`}>
+                                            <TableRow className="bg-white hover:bg-gray-50 border-r-[6px] border-r-[hsl(var(--accent))]">
+                                              <TableCell colSpan={2} className="py-2 pr-14">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
+                                                  className="flex items-center gap-2 w-full text-right"
+                                                >
+                                                  <ChevronDown className={cn("w-4 h-4 text-gray-600 transition-transform", isEmpExpanded ? "" : "-rotate-90")} />
+                                                  <UserCircle className="w-4 h-4 text-gray-600" />
+                                                  <span className="font-medium text-gray-800 text-sm">{emp.name}</span>
+                                                  <Badge variant="secondary" className="text-[10px] mr-auto">
+                                                    {emp.acts.length} نشاط
+                                                  </Badge>
+                                                </button>
+                                              </TableCell>
+                                            </TableRow>
+                                            {isEmpExpanded && (
+                                              <TableRow className="bg-gray-50/50 border-r-[6px] border-r-[hsl(var(--accent)/0.6)]">
+                                                <TableCell colSpan={2} className="py-3 pr-20">
+                                                  <div className="grid grid-cols-2 gap-2">
+                                                    {emp.acts.map((act, idx) => (
+                                                      <div
+                                                        key={act.id}
+                                                        className={cn(
+                                                          "flex items-start gap-2 px-2.5 py-2 rounded-lg",
+                                                          act.status === "completed"
+                                                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                                                            : act.status === "in_progress"
+                                                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                                                            : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
+                                                        )}
+                                                      >
+                                                        <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                          <span className="text-xs font-bold">{idx + 1}</span>
+                                                        </div>
+                                                        <span className="text-sm font-medium leading-snug flex-1">
+                                                          {act.activityName}
+                                                        </span>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </TableCell>
+                                              </TableRow>
+                                            )}
+                                          </React.Fragment>
+                                        );
+                                      })}
+                                    </React.Fragment>
+                                  );
+                                })}
+                                </React.Fragment>
                               );
                             })}
                           </React.Fragment>
