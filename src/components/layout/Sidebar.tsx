@@ -152,6 +152,9 @@ export function Sidebar() {
   const isSawabOrg = /sawab|صواب/i.test(
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
+  const isAtefOrg = /atef|عطف/i.test(
+    `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
+  );
 
   // Resolve role_level from employees table to know which menu to show
   useEffect(() => {
