@@ -180,7 +180,9 @@ export function ProfileHeader({
               transition={{ duration: 0.5, delay: 0.35 }}
               className="w-full flex justify-center"
             >
-              <p className="text-lg md:text-xl text-white/90 font-medium">{user.role}</p>
+              <span className="inline-block px-4 py-1.5 rounded-full bg-white text-slate-900 text-base md:text-lg font-semibold shadow-md">
+                {user.role}
+              </span>
             </motion.div>
 
             {/* Online Badge - Centered */}
