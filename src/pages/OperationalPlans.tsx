@@ -269,6 +269,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
   const [filterEmployeeId, setFilterEmployeeId] = useState<string>("all");
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
+  const [filterPlanName, setFilterPlanName] = useState<string>("all");
   
   // توليد AI
   const [isAIGenerating, setIsAIGenerating] = useState(false);
