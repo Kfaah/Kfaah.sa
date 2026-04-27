@@ -1532,16 +1532,27 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {/* عمود التاريخ */}
                                   <TableCell className="border-l border-gray-200 py-3">
                                     <div className="flex flex-col items-start gap-1">
-                                      <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); toggleSetKey(setExpandedDays, dayKey); }}
+                                        className="flex items-center gap-2 hover:bg-[hsl(var(--primary)/0.1)] rounded px-1 -mx-1 transition-colors"
+                                        aria-label="توسيع التفاصيل"
+                                      >
+                                        <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDayExpanded ? "" : "-rotate-90")} />
                                         <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))] flex-shrink-0" />
                                         <span className="font-bold text-gray-800">{dateGroup.weekDay}</span>
-                                      </div>
+                                      </button>
                                       <div className="text-sm text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>
                                         {formatGregorianDate(date)}
                                       </div>
                                       <div className="text-xs text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>
                                         {formatHijriDate(date)}
                                       </div>
+                                      {isDayExpanded && (
+                                        <Badge variant="outline" className="text-[10px] mt-1 border-[hsl(var(--primary))] text-[hsl(var(--primary))]">
+                                          {deptList.length} قسم · {dateGroup.activities.length} نشاط
+                                        </Badge>
+                                      )}
                                     </div>
                                   </TableCell>
                                   
