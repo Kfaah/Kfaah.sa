@@ -1853,49 +1853,78 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
-                <Target className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">إجمالي الخطط</p>
-                <p className="text-3xl font-bold text-primary" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(plans.length)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                <TrendingUp className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">الخطط النشطة</p>
-                <p className="text-3xl font-bold text-emerald-600">{plans.filter(p => p.status === "active").length}</p>
-              </div>
-              <div className="mr-auto flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-sm font-medium">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                نشط
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <Calendar className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">السنة الحالية</p>
-                <p className="text-3xl font-bold text-blue-600" style={{ fontFamily: 'Arial, sans-serif' }}>{new Date().getFullYear()}</p>
-              </div>
-              <div className="mr-auto text-sm text-blue-600 bg-blue-100 px-3 py-1.5 rounded-full font-medium">
-                📅 {new Date().toLocaleDateString('ar-SA', { month: 'long' })}
-              </div>
-            </CardContent>
-          </Card>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 px-1">
+            <Target className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-slate-700">
+              إحصاءات {filterPlanName === "all" ? `جميع خطط ${filterYear}` : filterPlanName}
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">الأهداف الاستراتيجية</p>
+                  <p className="text-2xl font-bold text-primary" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(selectedPlanStats.goals)}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30 shrink-0">
+                  <Lightbulb className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">المبادرات الفرعية</p>
+                  <p className="text-2xl font-bold text-amber-600" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    {formatNumber(selectedPlanStats.subInitiatives || selectedPlanStats.initiatives)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">الأنشطة</p>
+                  <p className="text-2xl font-bold text-emerald-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(selectedPlanStats.activities)}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">إجمالي المستهدفات</p>
+                  <p className="text-2xl font-bold text-blue-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(selectedPlanStats.totalTarget)}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">الميزانية التقديرية</p>
+                  <p className="text-2xl font-bold text-violet-600" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    {formatNumber(selectedPlanStats.totalBudget)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Plans Table */}
