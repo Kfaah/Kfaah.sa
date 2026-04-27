@@ -2053,6 +2053,36 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     </div>
                     <div className={`overflow-x-auto ${expanded ? "max-h-[calc(100vh-220px)] overflow-y-auto" : ""}`}>
                       {(() => {
+                        const visibleColumns = ep.columns.filter((column: string) => String(column ?? "").trim());
+                        return (
+                          <div className="op-plans-table-wrap rounded-lg border border-gray-200 bg-white">
+                            <table className="w-full" dir="rtl">
+                              <thead>
+                                <tr className="bg-[hsl(var(--primary))] shadow-sm">
+                                  {visibleColumns.map((column: string, index: number) => (
+                                    <th key={`${column}-${index}`} className={`py-4 px-5 text-center sticky top-0 z-30 bg-[hsl(var(--primary))] ${index > 0 ? "border-r border-white/20" : ""}`}>
+                                      <span className="text-sm font-semibold text-white">{column}</span>
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {previewRows.map((row: Record<string, any>, rowIndex: number) => (
+                                  <tr key={`${ep.id}-free-${rowIndex}`} className="border-b border-gray-200 hover:bg-muted/30">
+                                    {visibleColumns.map((column: string, colIndex: number) => (
+                                      <td key={`${column}-${colIndex}`} className={`py-4 px-5 text-center align-middle ${colIndex > 0 ? "border-r border-gray-200" : ""}`}>
+                                        <span className="text-sm text-gray-700 break-words" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                          {String(row[column] ?? "").trim() || "—"}
+                                        </span>
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+
                         // كشف أعمدة الهرم
                         const hierarchyColumns = ep.columns.filter((c: string) => !/^#|^إجراء$|^اجراء$/.test(String(c).trim()));
                         const goalCol = hierarchyColumns[0];
