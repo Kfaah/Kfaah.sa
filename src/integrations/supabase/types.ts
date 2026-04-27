@@ -1781,6 +1781,51 @@ export type Database = {
         }
         Relationships: []
       }
+      excel_plans: {
+        Row: {
+          columns: Json
+          created_at: string
+          id: string
+          organization_id: string | null
+          plan_name: string
+          rows: Json
+          sheet_name: string | null
+          source_filename: string | null
+          updated_at: string
+          use_for_ai: boolean
+          user_id: string | null
+          year: number
+        }
+        Insert: {
+          columns?: Json
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          plan_name?: string
+          rows?: Json
+          sheet_name?: string | null
+          source_filename?: string | null
+          updated_at?: string
+          use_for_ai?: boolean
+          user_id?: string | null
+          year?: number
+        }
+        Update: {
+          columns?: Json
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          plan_name?: string
+          rows?: Json
+          sheet_name?: string | null
+          source_filename?: string | null
+          updated_at?: string
+          use_for_ai?: boolean
+          user_id?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       executive_plans: {
         Row: {
           achieved: number

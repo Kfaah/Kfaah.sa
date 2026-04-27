@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle, ArrowUp, ArrowDown, Columns, Sparkles, Loader2, Filter, Building2, Users } from "lucide-react";
+import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle, ArrowUp, ArrowDown, Columns, Sparkles, Loader2, Filter, Building2, Users, FileSpreadsheet, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
@@ -278,6 +278,21 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   // اختيار مسؤول التنفيذ
   const [selectedResponsibleEmployee, setSelectedResponsibleEmployee] = useState<string>("");
 
+  // الخطط المرفوعة من Excel
+  interface ExcelPlanRow {
+    id: string;
+    plan_name: string;
+    year: number;
+    sheet_name: string | null;
+    columns: string[];
+    rows: Record<string, any>[];
+    use_for_ai: boolean;
+    source_filename: string | null;
+    created_at: string;
+  }
+  const [excelPlans, setExcelPlans] = useState<ExcelPlanRow[]>([]);
+  const [expandedExcelPlanId, setExpandedExcelPlanId] = useState<string | null>(null);
+
   // التحقق من دور المدير - نتحقق من role في user أو من user_roles
   const [userRole, setUserRole] = useState<string | null>(null);
   
@@ -307,7 +322,46 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     fetchEmployees();
     fetchCustomColumns();
     fetchColumnOrder();
+    fetchExcelPlans();
   }, [authUser, isAdmin]);
+
+  const fetchExcelPlans = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("excel_plans" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setExcelPlans(((data as any[]) || []) as ExcelPlanRow[]);
+    } catch (err) {
+      console.error("Failed to load excel plans:", err);
+    }
+  };
+
+  const deleteExcelPlan = async (id: string) => {
+    if (!confirm("هل أنت متأكد من حذف هذه الخطة المرفوعة؟")) return;
+    try {
+      const { error } = await supabase.from("excel_plans" as any).delete().eq("id", id);
+      if (error) throw error;
+      setExcelPlans((prev) => prev.filter((p) => p.id !== id));
+      toast({ title: "تم الحذف", description: "تم حذف الخطة المرفوعة" });
+    } catch (err: any) {
+      toast({ title: "فشل الحذف", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const toggleExcelPlanAi = async (id: string, current: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("excel_plans" as any)
+        .update({ use_for_ai: !current })
+        .eq("id", id);
+      if (error) throw error;
+      setExcelPlans((prev) => prev.map((p) => (p.id === id ? { ...p, use_for_ai: !current } : p)));
+    } catch (err: any) {
+      toast({ title: "فشل التحديث", description: err?.message, variant: "destructive" });
+    }
+  };
 
   const fetchCustomColumns = async () => {
     try {
@@ -1522,7 +1576,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 onClick={() => navigate("/operational-plans/add")}
               >
                 <Plus className="w-4 h-4" />
-                إضافة خطة
+                إضافة خطة يدوياً
+              </Button>
+              <Button
+                className="gap-2 bg-emerald-500 text-white hover:bg-emerald-600 border border-emerald-400"
+                onClick={() => navigate("/operational-plans/upload")}
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                رفع ملف Excel
               </Button>
               <Button
                 className={`gap-2 border ${
@@ -1908,6 +1969,109 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
             </Card>
           </div>
         </div>
+
+        {/* Excel-uploaded plans section */}
+        {excelPlans.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 px-1">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              <h3 className="text-sm font-semibold text-slate-700">
+                الخطط المرفوعة من Excel ({excelPlans.length})
+              </h3>
+            </div>
+            <div className="grid gap-3">
+              {excelPlans.map((ep) => {
+                const expanded = expandedExcelPlanId === ep.id;
+                const previewRows = expanded ? ep.rows : ep.rows.slice(0, 5);
+                return (
+                  <Card key={ep.id} className="overflow-hidden border-emerald-200/60">
+                    <div className="px-5 py-3 bg-gradient-to-l from-emerald-50 to-white border-b border-emerald-100 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                          <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-800 truncate">
+                            {ep.plan_name}
+                            <span className="text-xs text-slate-500 font-normal mr-2">· {ep.year}</span>
+                          </div>
+                          <div className="text-xs text-slate-500 truncate">
+                            {ep.source_filename || ep.sheet_name} · {ep.rows.length} صف · {ep.columns.length} عمود
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {ep.use_for_ai && (
+                          <Badge className="bg-violet-100 text-violet-700 hover:bg-violet-100 gap-1">
+                            <Sparkles className="w-3 h-3" />
+                            مرجع AI
+                          </Badge>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleExcelPlanAi(ep.id, ep.use_for_ai)}
+                          className="gap-1"
+                          title="تبديل الاعتماد للذكاء الاصطناعي"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          {ep.use_for_ai ? "إلغاء الاعتماد" : "اعتماد لـ AI"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setExpandedExcelPlanId(expanded ? null : ep.id)}
+                        >
+                          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          {expanded ? "طي" : "عرض كامل"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => deleteExcelPlan(ep.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className={`overflow-x-auto ${expanded ? "max-h-[600px] overflow-y-auto" : ""}`}>
+                      <table className="w-full text-sm" dir="rtl">
+                        <thead className="bg-[hsl(160,50%,25%)] text-white sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 text-right font-semibold border-l border-white/20 w-12">#</th>
+                            {ep.columns.map((c, i) => (
+                              <th key={i} className="px-3 py-2 text-right font-semibold border-l border-white/20 whitespace-nowrap">
+                                {c}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previewRows.map((row, ri) => (
+                            <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-slate-50/60"}>
+                              <td className="px-3 py-2 text-slate-400 border-b border-slate-100 text-center">{ri + 1}</td>
+                              {ep.columns.map((c, ci) => (
+                                <td key={ci} className="px-3 py-2 text-slate-700 border-b border-slate-100 whitespace-nowrap max-w-[280px] truncate">
+                                  {String(row[c] ?? "")}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {!expanded && ep.rows.length > 5 && (
+                        <div className="px-4 py-2 text-xs text-slate-500 bg-slate-50 border-t border-slate-100 text-center">
+                          + {ep.rows.length - 5} صفوف أخرى — اضغط "عرض كامل" لرؤيتها
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Plans Table */}
         <Card>
