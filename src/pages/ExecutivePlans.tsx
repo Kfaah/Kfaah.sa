@@ -990,6 +990,26 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   توليد بالذكاء الاصطناعي
                 </Button>
               )}
+              <Button
+                className={`gap-2 border ${
+                  isEditMode
+                    ? "bg-white text-primary border-white"
+                    : "bg-white/15 text-white border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                }`}
+                onClick={() => setIsEditMode(!isEditMode)}
+              >
+                {isEditMode ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    إنهاء التعديل
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="w-4 h-4" />
+                    التعديل على الخطة
+                  </>
+                )}
+              </Button>
             </>
           }
         />
