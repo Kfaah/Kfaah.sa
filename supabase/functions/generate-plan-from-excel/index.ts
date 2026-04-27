@@ -50,11 +50,14 @@ const TOOL_SCHEMA = {
         },
         columns: {
           type: "array",
+          minItems: 8,
           items: { type: "string" },
           description: "أسماء الأعمدة بالعربية بالترتيب",
         },
         rows: {
           type: "array",
+          minItems: 8,
+          maxItems: 15,
           description: "صفوف الخطة، كل صف هو كائن مفاتيحه أسماء الأعمدة",
           items: {
             type: "object",
@@ -119,7 +122,7 @@ ${
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         max_tokens: 8192,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -173,20 +176,19 @@ ${
     }
     console.log("Parsed columns:", parsed?.columns?.length, "rows:", parsed?.rows?.length);
 
-    const outColumns: string[] = Array.isArray(parsed.columns)
-      ? parsed.columns.filter((c: any) => typeof c === "string" && c.trim())
-      : [];
-    const outRows: Record<string, any>[] = Array.isArray(parsed.rows)
-      ? parsed.rows
-      : [];
+    const inferredGoal = cleanText(parsed.inferred_goal) || inferGoal(planName, sourceFilename, columns, rows);
+    const outColumns = buildColumns(parsed.columns);
+    let outRows = normalizeRows(parsed.rows, outColumns, { goal: inferredGoal, year, planName });
 
-    if (!outColumns.length || !outRows.length) {
-      console.error("Empty plan. Parsed:", JSON.stringify(parsed)?.slice(0, 1000));
-      return json({ error: "الخطة المولّدة فارغة" }, 500);
+    if (outRows.length < 8) {
+      console.warn("AI returned too few usable rows; completing with smart fallback rows", outRows.length);
+      outRows = buildSmartRows(outColumns, { goal: inferredGoal, year, planName }, outRows);
     }
 
+    outRows = outRows.slice(0, 15).map((row, index) => fillMissingCells(row, outColumns, { goal: inferredGoal, year, planName }, index));
+
     return json({
-      inferred_goal: parsed.inferred_goal || "",
+      inferred_goal: inferredGoal,
       plan_summary: parsed.plan_summary || "",
       columns: outColumns,
       rows: outRows,
