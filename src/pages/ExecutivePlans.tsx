@@ -67,7 +67,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
 import { useScopedView } from "@/hooks/useScopedView";
-import { ScopeToggle } from "@/components/scope/ScopeToggle";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Employee {
