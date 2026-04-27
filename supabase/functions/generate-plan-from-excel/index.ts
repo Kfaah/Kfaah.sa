@@ -205,3 +205,73 @@ function json(payload: unknown, status = 200) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+function cleanText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function inferGoal(planName: string, sourceFilename: string, columns: string[], rows: Record<string, any>[]) {
+  const source = [planName, sourceFilename, ...columns, ...rows.slice(0, 3).flatMap((row) => Object.values(row).map(String))]
+    .join(" ")
+    .replace(/[_\-.]+/g, " ")
+    .trim();
+  return source ? `تعزيز ${source.slice(0, 80)}` : "تعزيز الأداء التشغيلي وتحقيق أثر مستدام للمستفيدين";
+}
+
+function buildColumns(input: unknown) {
+  const preferred = ["النشاط", "الهدف الفرعي", "المسؤول", "الفترة الزمنية", "المؤشر", "المستهدف", "الميزانية المقدرة", "المخرجات", "الحالة"];
+  const parsed = Array.isArray(input) ? input.map(cleanText).filter(Boolean) : [];
+  const merged = [...parsed, ...preferred].filter((item, index, arr) => arr.indexOf(item) === index);
+  return merged.slice(0, Math.max(9, Math.min(merged.length, 12)));
+}
+
+function normalizeRows(input: unknown, cols: string[], ctx: { goal: string; year: number; planName: string }) {
+  if (!Array.isArray(input)) return [];
+  return input
+    .filter((row) => row && typeof row === "object" && !Array.isArray(row))
+    .map((row, index) => fillMissingCells(row as Record<string, unknown>, cols, ctx, index))
+    .filter((row) => Object.values(row).some((value) => cleanText(value).length > 0));
+}
+
+function fillMissingCells(row: Record<string, unknown>, cols: string[], ctx: { goal: string; year: number; planName: string }, index: number) {
+  const filled: Record<string, string> = {};
+  for (const col of cols) {
+    filled[col] = cleanText(row[col]) || fallbackValue(col, index, ctx);
+  }
+  return filled;
+}
+
+function buildSmartRows(cols: string[], ctx: { goal: string; year: number; planName: string }, existing: Record<string, string>[]) {
+  const rows = [...existing];
+  while (rows.length < 10) {
+    rows.push(fillMissingCells({}, cols, ctx, rows.length));
+  }
+  return rows;
+}
+
+function fallbackValue(col: string, index: number, ctx: { goal: string; year: number; planName: string }) {
+  const quarter = `الربع ${Math.floor(index / 3) + 1} ${ctx.year}`;
+  const activities = [
+    "تحليل الاحتياج وبناء خط الأساس",
+    "تصميم المبادرة وخطة التنفيذ التفصيلية",
+    "تجهيز الموارد والشراكات الداعمة",
+    "تنفيذ المرحلة الأولى من الأنشطة",
+    "إطلاق حملة تواصل واستقطاب المستفيدين",
+    "متابعة جودة التنفيذ وقياس المؤشرات",
+    "تحسين مسارات العمل بناءً على النتائج",
+    "توسيع نطاق التنفيذ للفئات ذات الأولوية",
+    "توثيق الأثر والدروس المستفادة",
+    "إعداد التقرير النهائي وخطة الاستدامة",
+  ];
+  const activity = activities[index % activities.length];
+  if (/نشاط|المهمة|العمل|الفعالية/.test(col)) return activity;
+  if (/هدف|غاية/.test(col)) return ctx.goal;
+  if (/مسؤول|مالك|منفذ|إدارة/.test(col)) return index % 2 ? "فريق البرامج" : "إدارة التخطيط والتنفيذ";
+  if (/زمن|تاريخ|فترة|موعد|جدول/.test(col)) return quarter;
+  if (/مؤشر|قياس|kpi/i.test(col)) return `نسبة إنجاز ${activity}`;
+  if (/مستهدف|هدف كمي|نسبة/.test(col)) return `${80 + (index % 4) * 5}%`;
+  if (/ميزانية|تكلفة|مبلغ/.test(col)) return `${(12000 + index * 3500).toLocaleString("ar-SA")} ريال`;
+  if (/مخرج|نتيجة|أثر/.test(col)) return `مخرج موثق يدعم ${ctx.goal}`;
+  if (/حالة|status/i.test(col)) return "مخطط";
+  return `${activity} ضمن ${ctx.planName}`;
+}
