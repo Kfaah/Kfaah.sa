@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Upload, FileText, X, Loader2, Brain, ArrowRight, CheckCircle2, FileSpreadsheet, FileImage, Calendar } from "lucide-react";
+import { Sparkles, Upload, FileText, X, Loader2, Brain, ArrowRight, CheckCircle2, FileSpreadsheet, FileImage, Calendar, Building2, Users, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getAvailableYears, getCurrentYear } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
@@ -36,6 +37,8 @@ function fileIcon(name: string) {
 export default function AIGenerateExecutivePlan() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { slug } = useParams<{ slug?: string }>();
+  const { currentOrg } = useOrganization();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const withFiles = params.get("withFiles") === "1";
@@ -46,6 +49,58 @@ export default function AIGenerateExecutivePlan() {
   const [files, setFiles] = useState<File[]>([]);
   const [selectedMonths, setSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
   const [stage, setStage] = useState<"idle" | "uploading" | "analyzing" | "done">("idle");
+
+  // Scope filters
+  const [routeOrgId, setRouteOrgId] = useState<string | null>(null);
+  const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [employees, setEmployees] = useState<{ id: string; full_name: string; user_id: string | null; department_id: string | null }[]>([]);
+  const [departmentId, setDepartmentId] = useState<string>("all");
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]); // [] => all employees in scope
+
+  useEffect(() => {
+    const resolve = async () => {
+      if (!slug) { setRouteOrgId(null); return; }
+      if (currentOrg?.slug === slug) { setRouteOrgId(currentOrg.id); return; }
+      const { data } = await supabase.from("organizations").select("id").eq("slug", slug).maybeSingle();
+      setRouteOrgId(data?.id ?? null);
+    };
+    resolve();
+  }, [slug, currentOrg?.id, currentOrg?.slug]);
+
+  useEffect(() => {
+    const loadFilters = async () => {
+      if (slug && !activeOrgId) return;
+      let dq = supabase.from("departments").select("id, name").order("name");
+      let eq = supabase
+        .from("employees")
+        .select("id, full_name, user_id, department_id")
+        .eq("status", "active")
+        .order("full_name");
+      if (activeOrgId) {
+        dq = dq.eq("organization_id", activeOrgId);
+        eq = eq.eq("organization_id", activeOrgId);
+      }
+      const [{ data: deps }, { data: emps }] = await Promise.all([dq, eq]);
+      setDepartments(deps || []);
+      setEmployees((emps || []) as any);
+    };
+    loadFilters();
+  }, [activeOrgId, slug]);
+
+  const filteredEmployees = useMemo(() => {
+    if (departmentId === "all") return employees;
+    return employees.filter((e) => e.department_id === departmentId);
+  }, [employees, departmentId]);
+
+  // Effective userIds to send (undefined => no filter, generate for all)
+  const effectiveUserIds = useMemo(() => {
+    const pool = selectedEmployeeIds.length > 0
+      ? employees.filter((e) => selectedEmployeeIds.includes(e.id))
+      : filteredEmployees;
+    const ids = pool.map((e) => e.user_id).filter((v): v is string => !!v);
+    return ids;
+  }, [employees, filteredEmployees, selectedEmployeeIds]);
 
   const years = getAvailableYears();
 
@@ -118,6 +173,11 @@ export default function AIGenerateExecutivePlan() {
           plan_name: planName.trim() || undefined,
           user_brief: brief.trim() || undefined,
           reference_file_paths: uploadedPaths,
+          // Scope: only generate for these users (if any filter applied)
+          userIds:
+            departmentId !== "all" || selectedEmployeeIds.length > 0
+              ? effectiveUserIds
+              : undefined,
         },
       });
 
