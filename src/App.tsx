@@ -33,6 +33,7 @@ const OperationalPlans = lazy(() => import("./pages/OperationalPlans"));
 const AddOperationalPlan = lazy(() => import("./pages/AddOperationalPlan"));
 const OperationalPlanDetails = lazy(() => import("./pages/OperationalPlanDetails"));
 const UploadExcelPlan = lazy(() => import("./pages/UploadExcelPlan"));
+const AIGeneratePlan = lazy(() => import("./pages/AIGeneratePlan"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Uploads = lazy(() => import("./pages/Uploads"));
@@ -259,6 +260,7 @@ function AppRoutes() {
       <Route path="/operational-plans" element={<ProtectedRoute><OperationalPlans /></ProtectedRoute>} />
       <Route path="/operational-plans/add" element={<ProtectedRoute><AddOperationalPlan /></ProtectedRoute>} />
       <Route path="/operational-plans/upload" element={<ProtectedRoute><UploadExcelPlan /></ProtectedRoute>} />
+      <Route path="/operational-plans/ai-generate" element={<ProtectedRoute><AIGeneratePlan /></ProtectedRoute>} />
       <Route path="/operational-plans/:id" element={<ProtectedRoute><OperationalPlanDetails /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
@@ -287,6 +289,7 @@ function AppRoutes() {
       <Route path="/:slug/operational-plans" element={<ProtectedRoute><OperationalPlans /></ProtectedRoute>} />
       <Route path="/:slug/operational-plans/add" element={<ProtectedRoute><AddOperationalPlan /></ProtectedRoute>} />
       <Route path="/:slug/operational-plans/upload" element={<ProtectedRoute><UploadExcelPlan /></ProtectedRoute>} />
+      <Route path="/:slug/operational-plans/ai-generate" element={<ProtectedRoute><AIGeneratePlan /></ProtectedRoute>} />
       <Route path="/:slug/operational-plans/:id" element={<ProtectedRoute><OperationalPlanDetails /></ProtectedRoute>} />
       <Route path="/:slug/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/:slug/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
