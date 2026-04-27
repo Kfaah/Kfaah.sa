@@ -2355,11 +2355,43 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
         )}
 
         {/* Plans Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>قائمة الخطط التشغيلية</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card className="overflow-hidden border-emerald-200/60">
+          {(() => {
+            const planName = filteredPlans[0]?.plan_name || "الخطة الأولى";
+            const goalsCount = new Set(filteredPlans.map(p => p.strategic_goal).filter(Boolean)).size;
+            return (
+              <div className="px-6 py-4 bg-gradient-to-l from-green-700 via-green-600 to-green-700 border-b border-green-800 flex items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0 backdrop-blur-sm">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-white truncate text-lg">
+                      {planName}
+                      <span className="text-sm text-white/80 font-normal mr-2">· {filterYear}</span>
+                    </div>
+                    <div className="text-sm text-white/80 truncate">
+                      خطة يدوية · {filteredPlans.length} نشاط · {goalsCount} هدف استراتيجي
+                    </div>
+                  </div>
+                </div>
+                {filteredPlans.length > 0 && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:text-white hover:bg-white/15"
+                      onClick={() => handleDeleteWholePlan(planName)}
+                      title="حذف الخطة بالكامل"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          <CardContent className="pt-4">
             {loading && !plansLoaded ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
