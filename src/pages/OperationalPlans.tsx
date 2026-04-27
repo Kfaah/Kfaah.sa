@@ -1947,8 +1947,9 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                       // حساب إجمالي الصفوف لهذا الهدف (مع احتساب الصفوف الموسعة + صفوف الإضافة في وضع التعديل)
                       const totalRowsInGoal =
                         group.initiatives.reduce((sum, init) => {
-                          const planRows = init.plans.reduce((planSum, plan) => {
-                            return planSum + 1 + (expandedPlanId === plan.id ? 1 : 0);
+                          const planRows = init.plans.reduce((planSum) => {
+                            // الصف الموسع لم يعد يحتل عموداً منفصلاً ضمن rowSpan — يمتد على كامل عرض الجدول
+                            return planSum + 1;
                           }, 0);
 
                           // نضيف صف "إضافة نشاط" فقط عندما يكون المستخدم فعلاً يضيف نشاطاً تحت هذه المبادرة
@@ -1976,8 +1977,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             : 0;
 
                         const totalRowsInInitiative =
-                          initGroup.plans.reduce((sum, plan) => {
-                            return sum + 1 + (expandedPlanId === plan.id ? 1 : 0);
+                          initGroup.plans.reduce((sum) => {
+                            return sum + 1;
                           }, 0) + addActivityRowForThisInitiative;
                         let initRowRendered = false;
                         // إذا لم يكن لأي نشاط في هذه المبادرة "مبادرة فرعية"، نُلغي العمود ونوسّع خلية النشاط
