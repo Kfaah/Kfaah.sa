@@ -474,13 +474,13 @@ export function Sidebar() {
                   const short = getShortOrgName(branding.orgName);
                   if (short) {
                     return (
-                       <div className={cn("drop-shadow-sm leading-tight", isSawabOrg ? "text-slate-800" : "text-white")}>
+                       <div className={cn("drop-shadow-sm leading-tight", "text-white")}>
                         <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
                         {short[1] && (
                           <p className={cn("font-semibold opacity-95", isSawabOrg ? "text-sm" : "text-sm")}>{short[1]}</p>
                         )}
                         {isSawabOrg && (
-                          <p className="mt-1 text-[10px] font-semibold leading-none text-slate-600">
+                          <p className="mt-1 text-[10px] font-semibold leading-none text-white/80">
                             Sawab Association
                           </p>
                         )}
@@ -488,12 +488,12 @@ export function Sidebar() {
                     );
                   }
                   return (
-                    <p className={cn("text-base font-bold drop-shadow-sm", isSawabOrg ? "text-slate-800" : "text-white")}>
+                    <p className="text-base font-bold drop-shadow-sm text-white">
                       {branding.orgName}
                     </p>
                   );
                 })()}
-                <div className={cn("my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent rounded-full", isSawabOrg ? "via-slate-400/60" : "via-white/70")} />
+                <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent rounded-full via-white/70" />
                 <p className={cn("text-sm font-semibold", isSawabOrg ? "text-slate-700" : "text-white/90")}>
                   نظام إدارة التسويق الإلكتروني
                 </p>
