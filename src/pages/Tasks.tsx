@@ -55,6 +55,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { TaskCommunicationDialog } from "@/components/tasks/TaskCommunicationDialog";
 import { LiveTimer } from "@/components/tasks/LiveTimer";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 import { ActiveTaskBanner } from "@/components/tasks/ActiveTaskBanner";
 
@@ -94,6 +95,10 @@ interface ActivityInfo {
   activity_name: string;
 }
 
+interface TasksProps {
+  embedded?: boolean;
+}
+
 type TaskUpdateData = {
   status?: Task["status"];
   started_at?: string;
@@ -107,9 +112,12 @@ const MONTHS_AR = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
 
-const Tasks = () => {
+const TASKS_CACHE_PREFIX = "tasks_page_cache_v1:";
+
+const Tasks = ({ embedded = false }: TasksProps) => {
   const { toast } = useToast();
   const { user: authUser } = useAuth();
+  const { currentOrg } = useOrganization();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -168,6 +176,7 @@ const Tasks = () => {
     estimated_time_minutes: 30,
   });
   const [isAdding, setIsAdding] = useState(false);
+  const orgId = currentOrg?.id ?? null;
 
   // فتح نافذة التواصل عند الانتقال من إشعار رسالة
   useEffect(() => {
