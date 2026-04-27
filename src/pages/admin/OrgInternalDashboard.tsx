@@ -802,9 +802,12 @@ function InsightCard({ title, data }: { title: string; data: Record<string, unkn
   );
 }
 
-function EmptyState({ text, onAction, actionLabel }: { text: string; onAction?: () => void; actionLabel?: string }) {
+const EmptyState = forwardRef<
+  HTMLDivElement,
+  { text: string; onAction?: () => void; actionLabel?: string }
+>(function EmptyState({ text, onAction, actionLabel }, ref) {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-8 gap-3">
+    <div ref={ref} className="flex flex-col items-center justify-center text-center py-8 gap-3">
       <p className="text-muted-foreground">{text}</p>
       {onAction && actionLabel && (
         <Button onClick={onAction} className="bg-accent text-accent-foreground hover:bg-accent/90">
@@ -813,7 +816,7 @@ function EmptyState({ text, onAction, actionLabel }: { text: string; onAction?: 
       )}
     </div>
   );
-}
+});
 
 function PlaceholderTab({ title, desc, linkTo, linkLabel }: { title: string; desc: string; linkTo?: string; linkLabel?: string }) {
   return (
