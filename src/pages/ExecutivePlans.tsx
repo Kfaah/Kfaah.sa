@@ -634,6 +634,15 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       planMonths.filter(pm => pm.month === month).forEach(pm => {
         const plan = operationalPlans.find(p => p.id === pm.operational_plan_id);
         if (!plan) return;
+
+        // تحديد الموظف المسؤول عن هذا النشاط (responsible_employee_id أولاً، وإلا مالك الخطة)
+        const respEmp = plan.responsible_employee_id
+          ? employees.find((e) => e.id === plan.responsible_employee_id)
+          : employees.find((e) => e.user_id === plan.user_id);
+        const employeeId = respEmp?.id ?? null;
+        const employeeName = respEmp?.full_name ?? "غير محدد";
+        const departmentId = respEmp?.department_id ?? null;
+        const departmentName = respEmp?.department_name ?? "بدون قسم";
         
         const dayPlans = executivePlans
           .filter(ep => ep.operational_plan_month_id === pm.id)
@@ -678,6 +687,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             dailyTarget: dayPlan.dailyTarget,
             achieved: dayPlan.achieved,
             status: dayPlan.status,
+            employeeId,
+            employeeName,
+            departmentId,
+            departmentName,
           });
         });
       });
