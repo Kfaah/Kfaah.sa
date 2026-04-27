@@ -1721,6 +1721,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               </div>
                                             </PopoverContent>
                                           </Popover>
+                                            </div>
                                         );
                                       })}
                                     </div>
