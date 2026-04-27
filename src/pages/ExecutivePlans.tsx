@@ -974,18 +974,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             </>
           }
         />
-        <div>
-          <ScopeToggle
-            scope={scopedView.scope}
-            onChange={scopedView.setScope}
-            roleLevel={scopedView.roleLevel}
-            teamCount={scopedView.subordinateEmployeeIds.length}
-          />
-        </div>
-
         {/* الفلاتر */}
         <div className="bg-gradient-to-r from-slate-50 via-white to-slate-50 rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <div className="flex flex-wrap items-center gap-5">
+          <div className="flex flex-row-reverse flex-wrap items-center gap-5">
             <div className="flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary))] text-white px-4 py-2 rounded-xl shadow-lg shadow-[hsl(var(--primary)/0.25)]">
               <Filter className="w-4 h-4" />
               <span className="text-sm font-semibold">فلترة</span>
