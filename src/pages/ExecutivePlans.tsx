@@ -67,7 +67,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
 import { useScopedView } from "@/hooks/useScopedView";
-import { ScopeToggle } from "@/components/scope/ScopeToggle";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Employee {
@@ -974,18 +973,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             </>
           }
         />
-        <div>
-          <ScopeToggle
-            scope={scopedView.scope}
-            onChange={scopedView.setScope}
-            roleLevel={scopedView.roleLevel}
-            teamCount={scopedView.subordinateEmployeeIds.length}
-          />
-        </div>
-
         {/* الفلاتر */}
         <div className="bg-gradient-to-r from-slate-50 via-white to-slate-50 rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <div className="flex flex-wrap items-center gap-5">
+          <div className="flex flex-row-reverse flex-wrap items-center gap-5">
             <div className="flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary))] text-white px-4 py-2 rounded-xl shadow-lg shadow-[hsl(var(--primary)/0.25)]">
               <Filter className="w-4 h-4" />
               <span className="text-sm font-semibold">فلترة</span>
@@ -1356,7 +1346,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
                               <TableCell colSpan={3} className="py-3">
-                                <div className="flex flex-row-reverse items-center gap-3">
+                                <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
                                   <span className="font-bold text-lg text-gray-800">
@@ -1383,7 +1373,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
                               <TableCell colSpan={3} className="py-3">
-                                <div className="flex flex-row-reverse items-center gap-3">
+                                <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] rotate-180 transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
                                   <span className="font-bold text-lg text-gray-800">
@@ -1746,7 +1736,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
                               <TableCell colSpan={3} className="py-3">
-                                <div className="flex flex-row-reverse items-center gap-3">
+                                <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
                                   <span className="font-bold text-lg text-gray-800">
@@ -1773,7 +1763,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
                               <TableCell colSpan={3} className="py-3">
-                                <div className="flex flex-row-reverse items-center gap-3">
+                                <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] rotate-180 transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
                                   <span className="font-bold text-lg text-gray-800">

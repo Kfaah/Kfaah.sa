@@ -531,7 +531,7 @@ export function Sidebar() {
                   <h3 className="w-full rounded-full border border-white/35 bg-gradient-to-l from-[hsl(var(--identity-name-start))] to-[hsl(var(--identity-name-end))] px-4 py-2 text-center text-base font-bold leading-tight text-[hsl(var(--identity-foreground))] shadow-sm">
                     {user.firstName} {user.lastName}
                   </h3>
-                  <span className="w-full rounded-full border border-white/30 bg-gradient-to-l from-[hsl(var(--identity-role-start))] to-[hsl(var(--identity-role-end))] px-3 py-1.5 text-center text-xs font-bold leading-tight text-[hsl(var(--identity-foreground))] shadow-sm">
+                  <span className="w-full rounded-full border border-white/30 bg-gradient-to-l from-[hsl(var(--primary))] to-[hsl(var(--accent))] px-3 py-1.5 text-center text-xs font-bold leading-tight text-[hsl(var(--identity-foreground))] shadow-sm">
                     {user.role}
                   </span>
                 </div>
