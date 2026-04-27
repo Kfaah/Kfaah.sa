@@ -953,15 +953,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           subtitle="توزيع المستهدفات الشهرية على أيام محددة"
           actions={
             <>
-              {isAdmin && (
-                <Button
-                  onClick={() => setIsAIDialogOpen(true)}
-                  className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  توليد بالذكاء الاصطناعي
-                </Button>
-              )}
               <Button
                 onClick={() => {
                   setIsDialogOpen(true);
@@ -971,9 +962,30 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 }}
                 className="gap-2 bg-white text-primary hover:bg-white/90"
               >
-                <Plus className="w-5 h-5" />
-                إضافة خطة تنفيذية
+                <Plus className="w-4 h-4" />
+                إضافة خطة يدوياً
               </Button>
+              <Button
+                className="gap-2 bg-emerald-500 text-white hover:bg-emerald-600 border border-emerald-400"
+                onClick={() => navigate(makeOrgUrl("/executive-plans/upload"))}
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                رفع ملف Excel
+              </Button>
+              {isAdmin && (
+                <Button
+                  className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                  onClick={() => setIsAIChoiceDialogOpen(true)}
+                  disabled={isAIGenerating}
+                >
+                  {isAIGenerating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  توليد بالذكاء الاصطناعي
+                </Button>
+              )}
             </>
           }
         />
