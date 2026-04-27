@@ -15,6 +15,7 @@ import { PreviewModeBanner } from "@/components/preview/PreviewModeBanner";
 import PublicLanding from "./pages/PublicLanding";
 import OrgAuth from "./pages/OrgAuth";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import AdminOverview from "./pages/admin/AdminOverview";
 
 // Lazy-loaded route pages — split into separate chunks to make navigation snappy
 const Index = lazy(() => import("./pages/Index"));
@@ -36,7 +37,6 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Uploads = lazy(() => import("./pages/Uploads"));
 const Organizations = lazy(() => import("./pages/Organizations"));
 const Intelligence = lazy(() => import("./pages/Intelligence"));
-const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
 const AdminCompare = lazy(() => import("./pages/admin/AdminCompare"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
