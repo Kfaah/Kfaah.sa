@@ -422,7 +422,7 @@ export function Sidebar() {
         )}
         style={
           isSawabOrg
-            ? { backgroundColor: "#00508f" }
+            ? { backgroundColor: "#00b3c7" }
             : branding.primary
               ? { backgroundColor: branding.primary }
               : undefined
