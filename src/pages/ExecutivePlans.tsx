@@ -299,6 +299,12 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [isAIChoiceDialogOpen, setIsAIChoiceDialogOpen] = useState(false);
   const [aiSelectedMonths, setAiSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
   const [isEditMode, setIsEditMode] = useState(false);
+  // فلترة الخطط المختارة (فارغة = الكل)
+  const [selectedPlanNames, setSelectedPlanNames] = useState<Set<string>>(new Set());
+  // تحرير مضمّن للخلية النشطة في وضع التعديل
+  const [editingExecPlanId, setEditingExecPlanId] = useState<string | null>(null);
+  const [editingValues, setEditingValues] = useState<{ daily_target: string; achieved: string }>({ daily_target: "", achieved: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
   // فلاتر إضافية
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
