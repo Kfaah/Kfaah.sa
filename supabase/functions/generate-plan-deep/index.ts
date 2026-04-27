@@ -13,6 +13,95 @@ const corsHeaders = {
 
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+// --- Relevance gate prompt ---
+const RELEVANCE_SYSTEM = `أنت مدقّق ملفات لخطة تشغيلية لجمعية خيرية.
+مهمتك: تحديد ما إذا كان الملف ذا صلة بالتخطيط التشغيلي للجمعية أم لا.
+
+يُعتبر الملف "ذا صلة" إذا كان يحتوي على واحد مما يلي:
+- خطط استراتيجية أو تشغيلية سابقة
+- أهداف ومبادرات وأنشطة
+- ميزانيات ومستهدفات وبرامج
+- تقارير أداء أو إحصائيات الجمعية
+- لوائح / سياسات / منهجيات عمل
+- بيانات الموظفين أو الإدارات أو الشركاء
+- دراسات احتياج، مستفيدين، تأثير اجتماعي
+
+يُعتبر "غير ذي صلة" إذا كان:
+- صور شخصية، صور غير مرتبطة، شعارات فقط
+- إيصالات شراء، فواتير فردية، كشوف بنكية شخصية
+- ملفات عشوائية، نصوص لا علاقة لها بعمل الجمعيات
+- محتوى ترفيهي، شخصي، أو تجاري لا صلة له
+- صور سيلفي، ميمز، محادثات عامة
+
+يجب أن تستدعي الأداة classify_file وترجع التصنيف فقط.`;
+
+const classifyTool = {
+  type: "function",
+  function: {
+    name: "classify_file",
+    description: "تصنيف ملف من حيث صلته بخطة تشغيلية لجمعية خيرية",
+    parameters: {
+      type: "object",
+      properties: {
+        is_relevant: { type: "boolean", description: "هل الملف ذو صلة بالخطة التشغيلية؟" },
+        category: {
+          type: "string",
+          description: "تصنيف موجز للمحتوى (مثال: خطة سابقة، إيصال شراء، صورة شخصية، تقرير أداء...)",
+        },
+        reason: {
+          type: "string",
+          description: "سبب القرار في جملة واحدة عربية واضحة",
+        },
+      },
+      required: ["is_relevant", "category", "reason"],
+      additionalProperties: false,
+    },
+  },
+};
+
+async function classifyFileRelevance(
+  apiKey: string,
+  fileName: string,
+  textPreview: string | null,
+  imageDataUrl: string | null,
+): Promise<{ is_relevant: boolean; category: string; reason: string }> {
+  const userParts: any[] = [
+    {
+      type: "text",
+      text: `اسم الملف: ${fileName}\n\n${textPreview ? `معاينة المحتوى النصي:\n${textPreview.slice(0, 4000)}` : "(لا يوجد محتوى نصي مستخرج — اعتمد على الاسم والصورة إن وجدت)"}`,
+    },
+  ];
+  if (imageDataUrl) {
+    userParts.push({ type: "image_url", image_url: { url: imageDataUrl } });
+  }
+
+  const resp = await fetch(LOVABLE_AI_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: RELEVANCE_SYSTEM },
+        { role: "user", content: userParts },
+      ],
+      tools: [classifyTool],
+      tool_choice: { type: "function", function: { name: "classify_file" } },
+    }),
+  });
+  if (!resp.ok) {
+    // Fail open: if classifier errors, allow the file but mark unknown
+    return { is_relevant: true, category: "غير محدد", reason: "تعذر التصنيف، تم القبول مبدئياً" };
+  }
+  const j = await resp.json();
+  const args = j?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) return { is_relevant: true, category: "غير محدد", reason: "لا توجد نتيجة تصنيف" };
+  try {
+    return JSON.parse(args);
+  } catch {
+    return { is_relevant: true, category: "غير محدد", reason: "صيغة تصنيف غير صالحة" };
+  }
+}
+
 interface RequestBody {
   plan_name?: string;
   year?: number;
@@ -137,23 +226,61 @@ Deno.serve(async (req) => {
       admin.from("excel_plans").select("plan_name, year, columns, rows").order("created_at", { ascending: false }).limit(5),
     ]);
 
-    // Read uploaded reference files (text only — pdf/docx/excel become a list of names with note)
+    // Read & classify uploaded reference files. Reject irrelevant ones up-front.
     const fileSummaries: string[] = [];
+    const acceptedFiles: string[] = [];
+    const rejectedFiles: { path: string; category: string; reason: string }[] = [];
+
     for (const path of filePaths.slice(0, 10)) {
       try {
         const { data: fileBlob } = await admin.storage.from("ai-plan-references").download(path);
         if (!fileBlob) continue;
         const lower = path.toLowerCase();
         const isText = /\.(txt|md|csv|json|html?)$/.test(lower);
+        const isImage = /\.(png|jpe?g|webp|gif)$/.test(lower);
+
+        let textPreview: string | null = null;
+        let imageDataUrl: string | null = null;
+
         if (isText) {
-          const text = await fileBlob.text();
-          fileSummaries.push(`📄 ${path}\n${text.slice(0, 8000)}`);
+          textPreview = await fileBlob.text();
+        } else if (isImage) {
+          const buf = new Uint8Array(await fileBlob.arrayBuffer());
+          // Cap image size to ~3MB for the classifier
+          if (buf.byteLength <= 3 * 1024 * 1024) {
+            const b64 = btoa(String.fromCharCode(...buf));
+            const mime = lower.endsWith(".png") ? "image/png" : lower.endsWith(".webp") ? "image/webp" : lower.endsWith(".gif") ? "image/gif" : "image/jpeg";
+            imageDataUrl = `data:${mime};base64,${b64}`;
+          }
+        }
+
+        const verdict = await classifyFileRelevance(LOVABLE_API_KEY, path, textPreview, imageDataUrl);
+
+        if (!verdict.is_relevant) {
+          rejectedFiles.push({ path, category: verdict.category, reason: verdict.reason });
+          continue;
+        }
+
+        acceptedFiles.push(path);
+        if (textPreview) {
+          fileSummaries.push(`📄 ${path} [${verdict.category}]\n${textPreview.slice(0, 8000)}`);
         } else {
-          fileSummaries.push(`📎 ${path} (ملف ثنائي بحجم ${Math.round(fileBlob.size / 1024)} KB — يُؤخذ بالاعتبار اسم الملف وسياقه)`);
+          fileSummaries.push(`📎 ${path} [${verdict.category}] (ملف ثنائي بحجم ${Math.round(fileBlob.size / 1024)} KB — مقبول كمرجع)`);
         }
       } catch (e) {
         console.error("file read error", path, e);
       }
+    }
+
+    // If user uploaded files but ALL were rejected, stop and explain.
+    if (filePaths.length > 0 && acceptedFiles.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "تم رفض جميع الملفات المرفقة لأنها غير ذات صلة بالخطة التشغيلية للجمعية. يرجى رفع ملفات تتعلق بالخطط أو الأهداف أو التقارير أو السياسات أو بيانات الجمعية.",
+          rejected_files: rejectedFiles,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const orgContext = {
@@ -299,6 +426,8 @@ ${fileSummaries.length ? fileSummaries.join("\n\n---\n\n") : "(لم يتم رف�
         plan_name: finalName,
         rows_count: plan.rows.length,
         executive_summary: plan.executive_summary,
+        accepted_files: acceptedFiles,
+        rejected_files: rejectedFiles,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
