@@ -2341,6 +2341,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 className={`${color.bg} border-r-4 ${color.border} bg-green-50/50`}
                               >
                                 {/* ملاحظة: الهدف الاستراتيجي والمبادرة يغطيان هذا الصف عبر rowSpan */}
+                                {/* المبادرة الفرعية - فارغة */}
+                                <td className="py-2 px-4 border-l-2 border-gray-300"></td>
                                 {/* النشاط */}
                                 <td className="py-2 px-4 border-l-2 border-gray-300">
                                   <Input
