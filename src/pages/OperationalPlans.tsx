@@ -78,8 +78,10 @@ interface OperationalPlan {
   activity_name: string;
   strategic_goal: string | null;
   initiative: string | null;
+  sub_initiative: string | null;
   strategic_goal_id: string | null;
   initiative_id: string | null;
+  sub_initiative_id: string | null;
   annual_target: number;
   year: number;
   status: string;
