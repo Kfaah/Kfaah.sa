@@ -1590,31 +1590,36 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                            const totalActsInDept = Array.from(dept.emps.values()).reduce((s, e) => s + e.acts.length, 0);
                                            return (
                                              <div key={`dept-${deptKey}`} className="bg-[hsl(var(--primary)/0.02)]">
-                                               {/* رأس القسم — قابل للطي */}
-                                               <button
-                                                 type="button"
-                                                 onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
-                                                 className={cn(
-                                                   "w-full grid grid-cols-[220px_1fr] items-center gap-3 px-3 py-2 text-right transition-all border-r-4",
-                                                   isDeptExpanded
-                                                     ? "bg-gradient-to-l from-[hsl(var(--primary)/0.08)] to-transparent border-[hsl(var(--primary))]"
-                                                     : "hover:bg-[hsl(var(--primary)/0.05)] border-[hsl(var(--primary)/0.3)]"
-                                                 )}
-                                               >
-                                                 <div className="flex items-center gap-2">
-                                                   <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDeptExpanded ? "" : "rotate-90")} />
-                                                   <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
-                                                   <span className="font-bold text-sm text-gray-800 truncate">{dept.name}</span>
-                                                 </div>
-                                                 <div className="flex items-center gap-2">
-                                                   <Badge variant="outline" className="text-[10px] border-[hsl(var(--primary)/0.4)] text-[hsl(var(--primary))]">
-                                                     {empCount} موظف
-                                                   </Badge>
-                                                   <Badge variant="outline" className="text-[10px] border-[hsl(var(--accent)/0.4)] text-[hsl(var(--accent))]">
-                                                     {totalActsInDept} مهمة
-                                                   </Badge>
-                                                 </div>
-                                               </button>
+                                                {/* رأس القسم — قابل للطي (يطابق أعمدة الجدول) */}
+                                                <button
+                                                  type="button"
+                                                  onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
+                                                  className={cn(
+                                                    "w-full grid grid-cols-[220px_200px_1fr] items-center text-right transition-all border-r-4",
+                                                    isDeptExpanded
+                                                      ? "bg-gradient-to-l from-[hsl(var(--primary)/0.08)] to-transparent border-[hsl(var(--primary))]"
+                                                      : "hover:bg-[hsl(var(--primary)/0.05)] border-[hsl(var(--primary)/0.3)]"
+                                                  )}
+                                                >
+                                                  {/* عمود القسم */}
+                                                  <div className="flex items-center gap-2 px-3 py-2 border-l border-gray-100">
+                                                    <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDeptExpanded ? "" : "rotate-90")} />
+                                                    <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                                    <span className="font-bold text-sm text-gray-800 truncate">{dept.name}</span>
+                                                  </div>
+                                                  {/* عمود الموظف — عدّاد الموظفين */}
+                                                  <div className="flex items-center gap-1.5 px-3 py-2 border-l border-gray-100">
+                                                    <Badge variant="outline" className="text-[10px] border-[hsl(var(--primary)/0.4)] text-[hsl(var(--primary))]">
+                                                      {empCount} موظف
+                                                    </Badge>
+                                                  </div>
+                                                  {/* عمود المهام — عدّاد المهام */}
+                                                  <div className="flex items-center gap-1.5 px-3 py-2">
+                                                    <Badge variant="outline" className="text-[10px] border-[hsl(var(--accent)/0.4)] text-[hsl(var(--accent))]">
+                                                      {totalActsInDept} مهمة في القسم
+                                                    </Badge>
+                                                  </div>
+                                                </button>
 
                                                {/* جسم القسم: الموظفون مع مهامهم */}
                                                {isDeptExpanded && (
