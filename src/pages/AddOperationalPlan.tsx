@@ -993,18 +993,20 @@ function SortableRow({
                     ))}
                   </SelectContent>
                 </Select>
-                {cellValue && (
-                  <button
+                <button
                     type="button"
                     onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCustomColumn(row.id, col.id, ""); }}
-                    className="absolute start-0.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded bg-background/80 hover:bg-destructive/10 text-muted-foreground hover:text-destructive shadow-sm"
-                    aria-label="مسح"
+                    className={cn(
+                      "absolute start-0.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded bg-background border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive shadow-sm transition-colors",
+                      !cellValue && "opacity-40"
+                    )}
+                    aria-label="مسح الاختيار"
+                    title="مسح الاختيار"
                   >
                     <X className="w-3 h-3" />
                   </button>
-                )}
               </div>
             );
           } else if (contentType === "dropdown") {
@@ -1028,18 +1030,20 @@ function SortableRow({
                     ))}
                   </SelectContent>
                 </Select>
-                {cellValue && (
-                  <button
+                <button
                     type="button"
                     onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCustomColumn(row.id, col.id, ""); }}
-                    className="absolute start-0.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded bg-background/80 hover:bg-destructive/10 text-muted-foreground hover:text-destructive shadow-sm"
-                    aria-label="مسح"
+                    className={cn(
+                      "absolute start-0.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded bg-background border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive shadow-sm transition-colors",
+                      !cellValue && "opacity-40"
+                    )}
+                    aria-label="مسح الاختيار"
+                    title="مسح الاختيار"
                   >
                     <X className="w-3 h-3" />
                   </button>
-                )}
               </div>
             );
           } else if (contentType === "date") {
