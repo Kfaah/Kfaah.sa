@@ -83,6 +83,8 @@ interface OperationalPlan {
   initiative_id: string | null;
   sub_initiative_id: string | null;
   annual_target: number;
+  estimated_budget?: number;
+  plan_name?: string;
   year: number;
   status: string;
   created_at: string;
@@ -267,6 +269,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
   const [filterEmployeeId, setFilterEmployeeId] = useState<string>("all");
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
+  const [filterPlanName, setFilterPlanName] = useState<string>("all");
   
   // توليد AI
   const [isAIGenerating, setIsAIGenerating] = useState(false);
@@ -470,6 +473,13 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
       return false;
     }
     
+    // فلتر اسم الخطة
+    if (filterPlanName !== "all") {
+      if ((plan.plan_name || "الخطة الأولى") !== filterPlanName) {
+        return false;
+      }
+    }
+
     // فلتر القسم
     if (filterDepartmentId !== "all") {
       const responsibleEmployee = employees.find(e => e.id === plan.responsible_employee_id);
@@ -487,6 +497,39 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     
     return true;
   });
+
+  // قائمة أسماء الخطط المتاحة في السنة الحالية
+  const availablePlanNames = Array.from(
+    new Set(
+      plans
+        .filter((p) => p.year === filterYear)
+        .map((p) => p.plan_name || "الخطة الأولى")
+    )
+  );
+
+  // إحصاءات الخطة المختارة (تعتمد على filteredPlans)
+  const selectedPlanStats = (() => {
+    const goalsSet = new Set<string>();
+    const initsSet = new Set<string>();
+    const subInitsSet = new Set<string>();
+    let totalTarget = 0;
+    let totalBudget = 0;
+    filteredPlans.forEach((p) => {
+      if (p.strategic_goal) goalsSet.add(p.strategic_goal_id || p.strategic_goal);
+      if (p.initiative) initsSet.add(p.initiative_id || p.initiative);
+      if (p.sub_initiative) subInitsSet.add(p.sub_initiative_id || p.sub_initiative);
+      totalTarget += Number(p.annual_target || 0);
+      totalBudget += Number(p.estimated_budget || 0);
+    });
+    return {
+      goals: goalsSet.size,
+      initiatives: initsSet.size,
+      subInitiatives: subInitsSet.size,
+      activities: filteredPlans.length,
+      totalTarget,
+      totalBudget,
+    };
+  })();
 
   // توليد AI للخطط التشغيلية
   const handleAIGeneratePlans = async () => {
@@ -1611,7 +1654,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                 <Calendar className="w-4 h-4 text-white" />
               </div>
-              <Select value={filterYear.toString()} onValueChange={(val) => setFilterYear(parseInt(val))}>
+              <Select
+                dir="rtl"
+                value={filterYear.toString()}
+                onValueChange={(val) => {
+                  setFilterYear(parseInt(val));
+                  setFilterPlanName("all");
+                }}
+              >
                 <SelectTrigger className="w-[120px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="اختر السنة" />
                 </SelectTrigger>
@@ -1630,7 +1680,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
                 <Building2 className="w-4 h-4 text-white" />
               </div>
-              <Select value={filterDepartmentId} onValueChange={setFilterDepartmentId}>
+              <Select dir="rtl" value={filterDepartmentId} onValueChange={setFilterDepartmentId}>
                 <SelectTrigger className="w-[170px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="اختر القسم" />
                 </SelectTrigger>
@@ -1650,7 +1700,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
                 <Users className="w-4 h-4 text-white" />
               </div>
-              <Select value={filterEmployeeId} onValueChange={setFilterEmployeeId}>
+              <Select dir="rtl" value={filterEmployeeId} onValueChange={setFilterEmployeeId}>
                 <SelectTrigger className="w-[190px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="اختر مسؤول التنفيذ" />
                 </SelectTrigger>
@@ -1671,7 +1721,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
             </div>
             
             {/* زر إعادة تعيين الفلاتر */}
-            {(filterDepartmentId !== "all" || filterEmployeeId !== "all" || filterYear !== new Date().getFullYear()) && (
+            {(filterDepartmentId !== "all" || filterEmployeeId !== "all" || filterYear !== new Date().getFullYear() || filterPlanName !== "all") && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -1680,6 +1730,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                   setFilterDepartmentId("all");
                   setFilterEmployeeId("all");
                   setFilterYear(new Date().getFullYear());
+                  setFilterPlanName("all");
                 }}
               >
                 <X className="w-4 h-4 ml-1" />
@@ -1697,6 +1748,41 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <span className="text-sm text-slate-500">خطة</span>
             </div>
           </div>
+
+          {/* اختيار الخطة (عند وجود أكثر من خطة لنفس السنة) */}
+          {availablePlanNames.length > 0 && (
+            <div className="mt-4 flex items-center gap-2 flex-wrap pt-3 border-t border-slate-200">
+              <div className="flex items-center gap-1.5 text-slate-600 text-xs px-2">
+                <Target className="w-4 h-4" />
+                <span className="font-semibold">الخطة:</span>
+              </div>
+              {availablePlanNames.length > 1 && (
+                <button
+                  onClick={() => setFilterPlanName("all")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                    filterPlanName === "all"
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-white border-slate-200 text-slate-700 hover:border-primary/60 hover:bg-primary/5"
+                  }`}
+                >
+                  جميع الخطط
+                </button>
+              )}
+              {availablePlanNames.map((name) => (
+                <button
+                  key={name}
+                  onClick={() => setFilterPlanName(name)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                    filterPlanName === name || (availablePlanNames.length === 1 && filterPlanName === "all")
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-white border-slate-200 text-slate-700 hover:border-primary/60 hover:bg-primary/5"
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         
         {/* شريط وضع التعديل */}
@@ -1767,49 +1853,78 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
-                <Target className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">إجمالي الخطط</p>
-                <p className="text-3xl font-bold text-primary" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(plans.length)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                <TrendingUp className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">الخطط النشطة</p>
-                <p className="text-3xl font-bold text-emerald-600">{plans.filter(p => p.status === "active").length}</p>
-              </div>
-              <div className="mr-auto flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-sm font-medium">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                نشط
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <Calendar className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">السنة الحالية</p>
-                <p className="text-3xl font-bold text-blue-600" style={{ fontFamily: 'Arial, sans-serif' }}>{new Date().getFullYear()}</p>
-              </div>
-              <div className="mr-auto text-sm text-blue-600 bg-blue-100 px-3 py-1.5 rounded-full font-medium">
-                📅 {new Date().toLocaleDateString('ar-SA', { month: 'long' })}
-              </div>
-            </CardContent>
-          </Card>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 px-1">
+            <Target className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-slate-700">
+              إحصاءات {filterPlanName === "all" ? `جميع خطط ${filterYear}` : filterPlanName}
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">الأهداف الاستراتيجية</p>
+                  <p className="text-2xl font-bold text-primary" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(selectedPlanStats.goals)}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30 shrink-0">
+                  <Lightbulb className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">المبادرات الفرعية</p>
+                  <p className="text-2xl font-bold text-amber-600" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    {formatNumber(selectedPlanStats.subInitiatives || selectedPlanStats.initiatives)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">الأنشطة</p>
+                  <p className="text-2xl font-bold text-emerald-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(selectedPlanStats.activities)}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">إجمالي المستهدفات</p>
+                  <p className="text-2xl font-bold text-blue-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(selectedPlanStats.totalTarget)}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">الميزانية التقديرية</p>
+                  <p className="text-2xl font-bold text-violet-600" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    {formatNumber(selectedPlanStats.totalBudget)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Plans Table */}

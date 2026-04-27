@@ -2649,10 +2649,12 @@ export type Database = {
           annual_target: number
           created_at: string
           display_order: number | null
+          estimated_budget: number
           id: string
           initiative: string | null
           initiative_id: string | null
           organization_id: string | null
+          plan_name: string
           responsible_employee_id: string | null
           status: string
           strategic_goal: string | null
@@ -2668,10 +2670,12 @@ export type Database = {
           annual_target?: number
           created_at?: string
           display_order?: number | null
+          estimated_budget?: number
           id?: string
           initiative?: string | null
           initiative_id?: string | null
           organization_id?: string | null
+          plan_name?: string
           responsible_employee_id?: string | null
           status?: string
           strategic_goal?: string | null
@@ -2687,10 +2691,12 @@ export type Database = {
           annual_target?: number
           created_at?: string
           display_order?: number | null
+          estimated_budget?: number
           id?: string
           initiative?: string | null
           initiative_id?: string | null
           organization_id?: string | null
+          plan_name?: string
           responsible_employee_id?: string | null
           status?: string
           strategic_goal?: string | null

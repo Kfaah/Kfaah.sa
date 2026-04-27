@@ -1165,6 +1165,7 @@ const AddOperationalPlan = () => {
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
 
   const [year, setYear] = useState(new Date().getFullYear());
+  const [planName, setPlanName] = useState<string>("الخطة الأولى");
   const [rows, setRows] = useState<TableRowData[]>([]);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [columns, setColumns] = useState<ColumnDef[]>(createDefaultColumns);
@@ -1940,6 +1941,7 @@ const AddOperationalPlan = () => {
                 year,
                 responsible_employee_id: activity.responsibleEmployeeId || null,
                 status: "active",
+                plan_name: planName?.trim() || "الخطة الأولى",
               })
               .select()
               .single();
@@ -2049,6 +2051,15 @@ const AddOperationalPlan = () => {
               </div>
 
               <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-xl">
+                  <FileSpreadsheet className="w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={planName}
+                    onChange={(e) => setPlanName(e.target.value)}
+                    placeholder="اسم الخطة (مثال: الخطة الأولى)"
+                    className="h-8 w-56 border-0 bg-transparent text-sm font-medium focus-visible:ring-0 px-0"
+                  />
+                </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-xl">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <Select
