@@ -122,6 +122,13 @@ function hexToHslTokens(hex: string): string | null {
   return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+/** Parse "h s% l%" → numeric lightness (0-100) for contrast decisions. */
+function tokenLightness(token: string | null): number | null {
+  if (!token) return null;
+  const m = /\s(\d+(?:\.\d+)?)%$/.exec(token.trim());
+  return m ? Number(m[1]) : null;
+}
+
 function applyBrandingToDocument(
   b: { primary: string | null; secondary: string | null; accent: string | null },
   options: { reset?: boolean } = {},
@@ -140,6 +147,10 @@ function applyBrandingToDocument(
       "--primary", "--ring", "--sidebar-primary", "--sidebar-ring",
       "--accent", "--secondary",
       "--gradient-primary", "--gradient-accent",
+      "--sidebar-background", "--sidebar-foreground",
+      "--sidebar-accent", "--sidebar-accent-foreground",
+      "--sidebar-border", "--sidebar-item", "--sidebar-item-foreground",
+      "--sidebar-icon-start", "--sidebar-icon-end",
     ];
     for (const v of VARS) root.style.removeProperty(v);
     return;
@@ -165,6 +176,31 @@ function applyBrandingToDocument(
   if (secondary) {
     // keep secondary as a soft tint — don't override the muted background entirely
     root.style.setProperty("--secondary", secondary);
+  }
+
+  // Pick the darkest available brand color as the sidebar background, so the
+  // navigation rail visually matches the heaviest tone of the organization's
+  // logo (e.g. for "صواب" — the dark blue used for the wordmark).
+  const candidates = [
+    { token: secondary, l: tokenLightness(secondary) },
+    { token: primary, l: tokenLightness(primary) },
+  ].filter((c) => c.token && c.l !== null) as { token: string; l: number }[];
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => a.l - b.l);
+    const bg = candidates[0];
+    if (bg.l <= 55) {
+      root.style.setProperty("--sidebar-background", bg.token);
+      root.style.setProperty("--sidebar-foreground", "0 0% 100%");
+      root.style.setProperty("--sidebar-border", `${bg.token.replace(/\d+%$/, `${Math.max(bg.l - 8, 5)}%`)}`);
+      root.style.setProperty("--sidebar-accent", `${bg.token.replace(/\d+%$/, `${Math.min(bg.l + 10, 95)}%`)}`);
+      root.style.setProperty("--sidebar-accent-foreground", "0 0% 100%");
+    } else {
+      root.style.removeProperty("--sidebar-background");
+      root.style.removeProperty("--sidebar-foreground");
+      root.style.removeProperty("--sidebar-border");
+      root.style.removeProperty("--sidebar-accent");
+      root.style.removeProperty("--sidebar-accent-foreground");
+    }
   }
 }
 
