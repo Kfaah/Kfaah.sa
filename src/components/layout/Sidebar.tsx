@@ -43,6 +43,8 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
+const SAWAB_SIDEBAR_LOGO = "/sawab-sidebar-logo-v10.png";
+
 // اسم الجمعية المختصر (سطران × 3-4 كلمات) للعرض في الشريط الجانبي
 // المطابقة تتم بمقاطع من الاسم الرسمي الكامل المخزن في DB
 const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: [string, string] }> = [
@@ -435,12 +437,12 @@ export function Sidebar() {
                 <div className="w-44 h-44 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
-                  src={branding.logoUrl}
+                  src={isSawabOrg ? SAWAB_SIDEBAR_LOGO : branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
                   className={cn(
                     "object-contain drop-shadow-xl",
                     isSawabOrg
-                      ? "h-[202px] w-[202px] scale-100 translate-x-0 translate-y-0"
+                      ? "h-[126px] w-[198px] scale-100 translate-x-0 translate-y-0"
                       : "h-[210px] w-[210px] scale-125"
                   )}
                 />
