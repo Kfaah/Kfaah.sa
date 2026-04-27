@@ -150,6 +150,9 @@ export function Sidebar() {
         : roleLevel === "manager"
           ? managerNavItems
           : employeeNavItems;
+  const isSawabOrg = /sawab|صواب/i.test(
+    `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
+  );
 
   // Resolve role_level from employees table to know which menu to show
   useEffect(() => {
@@ -434,7 +437,12 @@ export function Sidebar() {
                 <img
                   src={branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
-                  className="h-[210px] w-[210px] object-contain drop-shadow-xl scale-125"
+                  className={cn(
+                    "object-contain drop-shadow-xl",
+                    isSawabOrg
+                      ? "h-[214px] w-[214px] scale-[1.16] -translate-x-2"
+                      : "h-[210px] w-[210px] scale-125"
+                  )}
                 />
               ) : (
                 <img
@@ -455,9 +463,9 @@ export function Sidebar() {
                   if (short) {
                     return (
                       <div className="text-white drop-shadow-sm leading-tight">
-                        <p className={cn("font-bold whitespace-nowrap", short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
+                        <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-lg" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
                         {short[1] && (
-                          <p className="text-sm font-semibold opacity-95">{short[1]}</p>
+                          <p className={cn("font-semibold opacity-95", isSawabOrg ? "text-base" : "text-sm")}>{short[1]}</p>
                         )}
                       </div>
                     );
