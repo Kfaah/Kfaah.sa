@@ -305,6 +305,15 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   const [expandedExcelPlanId, setExpandedExcelPlanId] = useState<string | null>(null);
   const [expandedExcelRows, setExpandedExcelRows] = useState<Record<string, boolean>>({});
 
+  const normalizeArabic = (value: string) => value.replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").trim();
+  const findColumnByKeywords = (cols: string[], keywords: string[]) => {
+    const normalizedKeywords = keywords.map(normalizeArabic);
+    return cols.find((col) => {
+      const normalizedCol = normalizeArabic(String(col));
+      return normalizedKeywords.some((keyword) => normalizedCol.includes(keyword));
+    });
+  };
+
   // التحقق من دور المدير - نتحقق من role في user أو من user_roles
   const [userRole, setUserRole] = useState<string | null>(null);
   
@@ -2045,13 +2054,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     <div className={`overflow-x-auto ${expanded ? "max-h-[calc(100vh-220px)] overflow-y-auto" : ""}`}>
                       {(() => {
                         // كشف أعمدة الهرم
-                        const goalCol = ep.columns.find((c: string) => /الهدف الاستراتيجي|^هدف|برنامج/.test(c));
-                        const initCol = ep.columns.find((c: string) => /^المبادرة الرئيسية$|^المبادرة$/.test(c));
-                        const subInitCol = ep.columns.find((c: string) => /المبادرة الفرعية|فرعية/.test(c));
-                        const activityCol = ep.columns.find((c: string) => /^النشاط$|^نشاط/.test(c));
-                        const respCol = ep.columns.find((c: string) => /مسؤول|منفذ/.test(c));
-                        const targetCol = ep.columns.find((c: string) => /المستهدف السنوي|^المستهدف$/.test(c));
-                        const costCol = ep.columns.find((c: string) => /تكلفة|ميزانية/.test(c));
+                        const hierarchyColumns = ep.columns.filter((c: string) => !/^#|^إجراء$|^اجراء$/.test(String(c).trim()));
+                        const goalCol = hierarchyColumns[0];
+                        const initCol = hierarchyColumns[1];
+                        const subInitCol = hierarchyColumns.length > 4 ? hierarchyColumns[2] : undefined;
+                        const activityCol = hierarchyColumns.length > 4 ? hierarchyColumns[3] : hierarchyColumns[2];
+                        const respCol = findColumnByKeywords(hierarchyColumns, ["مسؤول", "منفذ", "موظف"]);
+                        const targetCol = findColumnByKeywords(hierarchyColumns, ["المستهدف", "السنوي", "عدد"]);
+                        const costCol = findColumnByKeywords(hierarchyColumns, ["تكلفة", "ميزانية"]);
 
                         const distributeMonthly = (annualStr: string): number[] => {
                           const num = parseInt(String(annualStr).replace(/[^\d]/g, ""), 10);
@@ -2234,14 +2244,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           });
                         });
 
-                        // رؤوس أعمدة ثابتة كنموذج الجدول السفلي
+                        // رؤوس الأعمدة من الجدول نفسه بدون فرض مسميات محددة
                         const headers: { label: string; cls: string }[] = [
-                          { label: "الهدف الاستراتيجي", cls: "py-4 px-5 text-center" },
-                          { label: "المبادرة الرئيسية", cls: "py-4 px-5 text-center border-r border-white/20" },
-                          { label: "المبادرة الفرعية", cls: "py-4 px-5 text-center border-r border-white/20" },
-                          { label: "النشاط", cls: "py-4 px-5 text-center border-r border-white/20" },
-                          { label: "مسؤول التنفيذ", cls: "py-4 px-5 text-center border-r border-white/20" },
-                          { label: "المستهدف السنوي", cls: "py-4 px-3 text-center border-r border-white/20 w-40" },
+                          { label: goalCol || "العمود الأول", cls: "py-4 px-5 text-center" },
+                          { label: initCol || "العمود الثاني", cls: "py-4 px-5 text-center border-r border-white/20" },
+                          { label: subInitCol || "", cls: "py-4 px-5 text-center border-r border-white/20" },
+                          { label: activityCol || "", cls: "py-4 px-5 text-center border-r border-white/20" },
+                          { label: respCol || "", cls: "py-4 px-5 text-center border-r border-white/20" },
+                          { label: targetCol || "", cls: "py-4 px-3 text-center border-r border-white/20 w-40" },
                         ];
                         if (costCol) headers.push({ label: "التكلفة التقديرية", cls: "py-4 px-3 text-center border-r border-white/20 w-32" });
 
