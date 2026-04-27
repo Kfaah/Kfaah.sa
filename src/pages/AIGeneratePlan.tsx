@@ -97,8 +97,22 @@ export default function AIGeneratePlan() {
       });
 
       if (error) {
-        const msg = error.message || "فشل التوليد";
-        if (/429/.test(msg)) toast({ title: "تجاوز حد الطلبات", description: "حاول بعد قليل", variant: "destructive" });
+        const ctx: any = (error as any).context;
+        let serverData: any = null;
+        try {
+          if (ctx && typeof ctx.json === "function") serverData = await ctx.json();
+        } catch {}
+        const msg = serverData?.error || error.message || "فشل التوليد";
+        if (serverData?.rejected_files?.length) {
+          const list = serverData.rejected_files
+            .map((f: any) => `• ${f.path.split("/").pop()} — ${f.category}: ${f.reason}`)
+            .join("\n");
+          toast({
+            title: "🚫 ملفات غير مقبولة",
+            description: `${msg}\n\n${list}`,
+            variant: "destructive",
+          });
+        } else if (/429/.test(msg)) toast({ title: "تجاوز حد الطلبات", description: "حاول بعد قليل", variant: "destructive" });
         else if (/402/.test(msg)) toast({ title: "الرصيد غير كافٍ", variant: "destructive" });
         else toast({ title: "فشل التوليد", description: msg, variant: "destructive" });
         setStage("idle");
@@ -112,6 +126,15 @@ export default function AIGeneratePlan() {
       }
 
       setStage("done");
+      if (data.rejected_files?.length) {
+        const list = data.rejected_files
+          .map((f: any) => `• ${f.path.split("/").pop()} (${f.category})`)
+          .join("\n");
+        toast({
+          title: "تم تجاهل بعض الملفات غير ذات الصلة",
+          description: list,
+        });
+      }
       toast({
         title: "✨ تم توليد الخطة بنجاح",
         description: `${data.rows_count} نشاط ضمن "${data.plan_name}"`,
