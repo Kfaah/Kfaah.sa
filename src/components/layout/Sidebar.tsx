@@ -527,9 +527,11 @@ export function Sidebar() {
                 </div>
 
                 {/* Name and Role - Right side, centered vertically */}
-                <div className="flex-1 flex flex-col items-center justify-center gap-2">
-                  <h3 className="text-base font-bold text-white rounded-full border-2 border-[hsl(var(--sidebar-icon-start))] bg-gradient-to-l from-green-700 via-green-600 to-green-700 px-4 py-1 shadow-sm">{user.firstName} {user.lastName}</h3>
-                  <span className="rounded-full border border-primary/20 bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
+                <div className="flex-1 flex min-w-0 flex-col items-stretch justify-center gap-2">
+                  <h3 className="w-full rounded-full border border-white/35 bg-gradient-to-l from-[hsl(var(--identity-name-start))] to-[hsl(var(--identity-name-end))] px-4 py-2 text-center text-base font-bold leading-tight text-[hsl(var(--identity-foreground))] shadow-sm">
+                    {user.firstName} {user.lastName}
+                  </h3>
+                  <span className="w-full rounded-full border border-white/30 bg-gradient-to-l from-[hsl(var(--identity-role-start))] to-[hsl(var(--identity-role-end))] px-3 py-1.5 text-center text-xs font-bold leading-tight text-[hsl(var(--identity-foreground))] shadow-sm">
                     {user.role}
                   </span>
                 </div>
