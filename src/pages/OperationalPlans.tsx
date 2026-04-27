@@ -1702,7 +1702,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     type="button"
                     onClick={() => {
                       setIsAIDialogOpen(false);
-                      navigate("/operational-plans/upload?mode=instant");
+                      navigate("/operational-plans/ai-generate");
                     }}
                     className="group text-right p-5 rounded-xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-white hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 transition-all"
                   >
@@ -1724,7 +1724,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     type="button"
                     onClick={() => {
                       setIsAIDialogOpen(false);
-                      navigate("/operational-plans/upload?mode=files");
+                      navigate("/operational-plans/ai-generate?withFiles=1");
                     }}
                     className="group text-right p-5 rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 transition-all"
                   >
