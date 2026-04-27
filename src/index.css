@@ -293,6 +293,17 @@ body::-webkit-scrollbar {
   display: none;
 }
 
+/* ============================================================
+   تكبير خفيف لخطوط جدول الخطة التشغيلية فقط (لا يؤثر على بقية الصفحة)
+   ============================================================ */
+.op-plans-table-wrap .text-xs       { font-size: 0.875rem; line-height: 1.35; }   /* 12 → 14 */
+.op-plans-table-wrap .text-sm       { font-size: 1rem;     line-height: 1.5; }    /* 14 → 16 */
+.op-plans-table-wrap .text-base     { font-size: 1.0625rem; line-height: 1.55; }  /* 16 → 17 */
+.op-plans-table-wrap .text-lg       { font-size: 1.2rem;   line-height: 1.5; }    /* 18 → 19 */
+.op-plans-table-wrap .text-xl       { font-size: 1.35rem;  line-height: 1.4; }    /* 20 → 22 */
+.op-plans-table-wrap .\[10px\],
+.op-plans-table-wrap [class*="text-[10px]"] { font-size: 0.8125rem; }              /* 10 → 13 */
+
 @keyframes fadeIn {
   from {
     opacity: 0;
