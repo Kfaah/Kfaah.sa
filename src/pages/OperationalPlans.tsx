@@ -2043,30 +2043,136 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                       </div>
                     </div>
                     <div className={`overflow-x-auto ${expanded ? "max-h-[600px] overflow-y-auto" : ""}`}>
-                      <table className="w-full text-sm" dir="rtl">
-                        <thead className="bg-[hsl(160,50%,25%)] text-white sticky top-0">
-                          <tr>
-                            <th className="px-3 py-2 text-right font-semibold border-l border-white/20 w-12">#</th>
-                            {ep.columns.map((c, i) => (
-                              <th key={i} className="px-3 py-2 text-right font-semibold border-l border-white/20 whitespace-nowrap">
-                                {c}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {previewRows.map((row, ri) => (
-                            <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-slate-50/60"}>
-                              <td className="px-3 py-2 text-slate-400 border-b border-slate-100 text-center">{ri + 1}</td>
-                              {ep.columns.map((c, ci) => (
-                                <td key={ci} className="px-3 py-2 text-slate-700 border-b border-slate-100 whitespace-nowrap max-w-[280px] truncate">
-                                  {String(row[c] ?? "")}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      {(() => {
+                        // أعمدة الهرم القابلة للدمج العمودي
+                        const mergeableCols = ep.columns.filter((c: string) =>
+                          /الهدف الاستراتيجي|^هدف|برنامج|المبادرة/.test(c)
+                        );
+                        // حساب rowSpan: لكل خلية إما تظهر مع span أو تُخفى لأنها تتبع التي قبلها
+                        const spanMap: Record<number, Record<string, number | null>> = {};
+                        for (let ri = 0; ri < previewRows.length; ri++) {
+                          spanMap[ri] = {};
+                          for (const c of mergeableCols) {
+                            const val = String(previewRows[ri][c] ?? "").trim();
+                            if (!val) { spanMap[ri][c] = 1; continue; }
+                            // إذا الخلية فوقها مباشرة لها نفس القيمة، أخفِ هذه
+                            const prev = ri > 0 ? String(previewRows[ri - 1][c] ?? "").trim() : "";
+                            // كذلك يجب أن تكون الأعمدة الأعلى منها هرميًا متطابقة (لمنع دمج خاطئ)
+                            const idx = mergeableCols.indexOf(c);
+                            const parentsMatch = mergeableCols.slice(0, idx).every((pc) =>
+                              String(previewRows[ri][pc] ?? "").trim() === String(previewRows[ri - 1]?.[pc] ?? "").trim()
+                            );
+                            if (ri > 0 && prev === val && parentsMatch) {
+                              spanMap[ri][c] = null; // مخفية
+                            } else {
+                              // احسب كم صف متتالي بنفس القيمة من هنا
+                              let span = 1;
+                              for (let j = ri + 1; j < previewRows.length; j++) {
+                                const nextVal = String(previewRows[j][c] ?? "").trim();
+                                const parentsStillMatch = mergeableCols.slice(0, idx).every((pc) =>
+                                  String(previewRows[j][pc] ?? "").trim() === String(previewRows[ri][pc] ?? "").trim()
+                                );
+                                if (nextVal === val && parentsStillMatch) span++;
+                                else break;
+                              }
+                              spanMap[ri][c] = span;
+                            }
+                          }
+                        }
+
+                        const targetCol = ep.columns.find((c: string) => /المستهدف السنوي|^المستهدف$|مستهدف/.test(c));
+                        const arabicMonths = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+                        const distributeMonthly = (annualStr: string): number[] => {
+                          const num = parseInt(String(annualStr).replace(/[^\d]/g, ""), 10);
+                          if (!num || isNaN(num)) return Array(12).fill(0);
+                          const base = Math.floor(num / 12);
+                          const remainder = num - base * 12;
+                          return Array.from({ length: 12 }, (_, i) => base + (i < remainder ? 1 : 0));
+                        };
+
+                        return (
+                          <table className="w-full text-sm" dir="rtl">
+                            <thead className="bg-[hsl(160,50%,25%)] text-white sticky top-0">
+                              <tr>
+                                <th className="px-3 py-2 text-right font-semibold border-l border-white/20 w-12">#</th>
+                                <th className="px-2 py-2 text-center font-semibold border-l border-white/20 w-10"></th>
+                                {ep.columns.map((c: string, i: number) => (
+                                  <th key={i} className="px-3 py-2 text-right font-semibold border-l border-white/20 whitespace-nowrap">
+                                    {c}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {previewRows.map((row: any, ri: number) => {
+                                const rowKey = `${ep.id}_${ri}`;
+                                const isRowExpanded = !!expandedExcelRows[rowKey];
+                                const annualValue = targetCol ? String(row[targetCol] ?? "") : "";
+                                const monthly = distributeMonthly(annualValue);
+                                return (
+                                  <Fragment key={ri}>
+                                    <tr className={ri % 2 === 0 ? "bg-white" : "bg-slate-50/60"}>
+                                      <td className="px-3 py-2 text-slate-400 border-b border-slate-100 text-center align-top">{ri + 1}</td>
+                                      <td className="px-1 py-2 border-b border-slate-100 text-center align-top">
+                                        {targetCol && annualValue && monthly.some(v => v > 0) && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={() => setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
+                                            title={isRowExpanded ? "طي الأشهر" : "عرض المستهدفات الشهرية"}
+                                          >
+                                            {isRowExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                          </Button>
+                                        )}
+                                      </td>
+                                      {ep.columns.map((c: string, ci: number) => {
+                                        const isMergeable = mergeableCols.includes(c);
+                                        if (isMergeable) {
+                                          const span = spanMap[ri][c];
+                                          if (span === null) return null;
+                                          return (
+                                            <td
+                                              key={ci}
+                                              rowSpan={span as number}
+                                              className="px-3 py-2 text-slate-800 font-medium border-b border-l border-slate-200 whitespace-nowrap max-w-[280px] truncate align-middle bg-slate-50/40"
+                                            >
+                                              {String(row[c] ?? "")}
+                                            </td>
+                                          );
+                                        }
+                                        return (
+                                          <td key={ci} className="px-3 py-2 text-slate-700 border-b border-slate-100 whitespace-nowrap max-w-[280px] truncate align-top">
+                                            {String(row[c] ?? "")}
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                    {isRowExpanded && (
+                                      <tr className="bg-emerald-50/40">
+                                        <td></td>
+                                        <td></td>
+                                        <td colSpan={ep.columns.length} className="px-3 py-3 border-b border-slate-200">
+                                          <div className="text-xs font-semibold text-emerald-800 mb-2">توزيع المستهدف الشهري ({annualValue}):</div>
+                                          <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
+                                            {arabicMonths.map((m, mi) => (
+                                              <div key={mi} className="bg-white border border-emerald-200 rounded-md px-2 py-1.5 text-center">
+                                                <div className="text-[10px] text-slate-500">{m}</div>
+                                                <div className="text-sm font-bold text-emerald-700">{monthly[mi]}</div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </Fragment>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        );
+                      })()}
                       {!expanded && ep.rows.length > 5 && (
                         <div className="px-4 py-2 text-xs text-slate-500 bg-slate-50 border-t border-slate-100 text-center">
                           + {ep.rows.length - 5} صفوف أخرى — اضغط "عرض كامل" لرؤيتها
