@@ -741,7 +741,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     }
     
     return groups;
-  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths]);
+  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames]);
 
   // الحصول على وضع العرض (الآن موحد للصفحة كلها)
   const getViewMode = (): "tasks" | "dates" => {
