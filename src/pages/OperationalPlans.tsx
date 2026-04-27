@@ -1827,7 +1827,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 لا توجد خطط تشغيلية حتى الآن
               </div>
             ) : (
-              <div className="rounded-lg overflow-hidden border border-gray-200 overflow-x-auto bg-white">
+              <div className="op-plans-table-wrap rounded-lg overflow-hidden border border-gray-200 overflow-x-auto bg-white">
                 <table className="w-full">
                   {/* رأس الجدول */}
                   <thead>
