@@ -748,17 +748,31 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     }
   };
 
+  const employeeByUser = useMemo(() => {
+    const map = new Map<string, Employee>();
+    employees.forEach((employee) => {
+      if (employee.user_id) map.set(employee.user_id, employee);
+      map.set(employee.id, employee);
+    });
+    return map;
+  }, [employees]);
+
+  const activityByPlan = useMemo(() => {
+    const map = new Map<string, string>();
+    activities.forEach((activity) => map.set(activity.executive_plan_id, activity.activity_name));
+    return map;
+  }, [activities]);
+
   // الحصول على اسم المنفذ
   const getExecutorName = (userId: string) => {
-    const employee = employees.find(e => e.user_id === userId);
+    const employee = employeeByUser.get(userId);
     return employee?.full_name || "غير محدد";
   };
 
   // الحصول على اسم النشاط من executive_plan_id
   const getActivityName = (executivePlanId: string | null) => {
     if (!executivePlanId) return "غير محدد";
-    const activity = activities.find(a => a.executive_plan_id === executivePlanId);
-    return activity?.activity_name || "غير محدد";
+    return activityByPlan.get(executivePlanId) || "غير محدد";
   };
 
   // تجميع المهام حسب النشاط - مع التخزين المؤقت
