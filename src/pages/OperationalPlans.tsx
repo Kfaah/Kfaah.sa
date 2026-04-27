@@ -83,6 +83,8 @@ interface OperationalPlan {
   initiative_id: string | null;
   sub_initiative_id: string | null;
   annual_target: number;
+  estimated_budget?: number;
+  plan_name?: string;
   year: number;
   status: string;
   created_at: string;
