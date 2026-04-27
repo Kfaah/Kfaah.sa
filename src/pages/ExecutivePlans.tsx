@@ -975,8 +975,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         />
         {/* الفلاتر */}
         <div className="bg-gradient-to-r from-slate-50 via-white to-slate-50 rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <div className="flex flex-row-reverse flex-wrap items-center gap-5">
-            <div className="flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary))] text-white px-4 py-2 rounded-xl shadow-lg shadow-[hsl(var(--primary)/0.25)]">
+          <div className="flex items-center gap-5 flex-wrap">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/25">
               <Filter className="w-4 h-4" />
               <span className="text-sm font-semibold">فلترة</span>
             </div>
@@ -986,7 +986,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
                 <CalendarDays className="w-4 h-4 text-white" />
               </div>
-              <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
+              <Select dir="rtl" value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
                 <SelectTrigger className="w-[100px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                   <SelectValue placeholder="السنة" />
                 </SelectTrigger>
@@ -1056,7 +1056,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
                   <Building2 className="w-4 h-4 text-white" />
                 </div>
-                <Select value={filterDepartmentId} onValueChange={setFilterDepartmentId}>
+                <Select dir="rtl" value={filterDepartmentId} onValueChange={setFilterDepartmentId}>
                   <SelectTrigger className="w-[160px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                     <SelectValue placeholder="القسم" />
                   </SelectTrigger>
@@ -1078,7 +1078,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
                   <Users className="w-4 h-4 text-white" />
                 </div>
-                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                <Select dir="rtl" value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
                   <SelectTrigger className="w-[200px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
                     <SelectValue placeholder="الموظف" />
                   </SelectTrigger>
