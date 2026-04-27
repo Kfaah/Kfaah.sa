@@ -1561,15 +1561,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
           }
         />
 
-        <div className="flex justify-end">
-          <ScopeToggle
-            scope={scopedView.scope}
-            onChange={scopedView.setScope}
-            roleLevel={scopedView.roleLevel}
-            teamCount={scopedView.subordinateEmployeeIds.length}
-          />
-        </div>
-
         <div>
           <AddOperationalPlanDialog
             open={isAddDialogOpen}
