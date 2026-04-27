@@ -1440,7 +1440,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     {totalDays} يوم
                                   </Badge>
                                   <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))]">
-                                    {monthGroup.activities.length} نشاط
+                                    {activityCount(monthGroup.activities.length)}
                                   </Badge>
                                 </div>
                               </TableCell>
@@ -1464,7 +1464,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     {monthGroup.monthName} {selectedYear}
                                   </span>
                                   <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))]">
-                                    {monthGroup.activities.length} نشاط
+                                    {activityCount(monthGroup.activities.length)}
                                   </Badge>
                                   <span className="text-muted-foreground text-sm">- لا توجد تواريخ تنفيذ</span>
                                 </div>
