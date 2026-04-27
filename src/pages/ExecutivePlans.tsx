@@ -1386,6 +1386,40 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                       {groupedPlans.map((monthGroup) => {
                         const isExpanded = expandedMonths.has(`month-${monthGroup.month}`);
                         const totalDays = monthGroup.dateGroups.length;
+
+                        // حساب إجمالي عدد الصفوف بعد التوسيع الهرمي (يوم/قسم/موظف)
+                        // كل توسيع يوم يضيف صفوف الأقسام، كل توسيع قسم يضيف صفوف الموظفين، كل توسيع موظف يضيف صف الأنشطة
+                        const computeRowSpan = () => {
+                          let total = 0;
+                          for (const dg of monthGroup.dateGroups) {
+                            total += 1; // صف اليوم
+                            const dayKey = `day-${monthGroup.month}-${dg.day}`;
+                            if (!expandedDays.has(dayKey)) continue;
+                            // تجميع حسب القسم
+                            const deptMap = new Map<string, { name: string; emps: Map<string, { name: string; acts: typeof dg.activities }> }>();
+                            for (const a of dg.activities) {
+                              const dKey = a.departmentId ?? `_no_${a.departmentName}`;
+                              if (!deptMap.has(dKey)) deptMap.set(dKey, { name: a.departmentName, emps: new Map() });
+                              const eKey = a.employeeId ?? `_no_${a.employeeName}`;
+                              const dept = deptMap.get(dKey)!;
+                              if (!dept.emps.has(eKey)) dept.emps.set(eKey, { name: a.employeeName, acts: [] as typeof dg.activities });
+                              dept.emps.get(eKey)!.acts.push(a);
+                            }
+                            for (const [dKey, dept] of deptMap) {
+                              total += 1; // صف القسم
+                              const deptKey = `${dayKey}|dept-${dKey}`;
+                              if (!expandedDayDepts.has(deptKey)) continue;
+                              for (const [eKey] of dept.emps) {
+                                total += 1; // صف الموظف
+                                const empKey = `${deptKey}|emp-${eKey}`;
+                                if (!expandedDayDeptEmps.has(empKey)) continue;
+                                total += 1; // صف الأنشطة
+                              }
+                            }
+                          }
+                          return total || 1;
+                        };
+                        const monthRowSpan = isExpanded && totalDays > 0 ? computeRowSpan() : totalDays;
                         
                         // إذا لم تكن مفتوحة، نعرض صف واحد مع معلومات الشهر
                         if (!isExpanded) {
