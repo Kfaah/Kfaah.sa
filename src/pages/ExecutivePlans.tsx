@@ -1445,7 +1445,31 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           );
                         }
                         
-                        // إذا كانت مفتوحة، نعرض الصفوف مع دمج عمود الشهر
+                         // حساب إجمالي عدد الصفوف الفعلية للشهر (لاستعمالها في rowSpan)
+                         let monthTotalRows = 0;
+                         for (const dg of monthGroup.dateGroups) {
+                           const dayKeyCalc = `day-${monthGroup.month}-${dg.day}`;
+                           monthTotalRows += 1; // صف اليوم نفسه
+                           if (expandedDays.has(dayKeyCalc)) {
+                             // أعد بناء deptMap للحساب
+                             const dMap = new Map<string, Map<string, number>>();
+                             for (const a of dg.activities) {
+                               const dK = a.departmentId ?? `_no_${a.departmentName}`;
+                               const eK = a.employeeId ?? `_no_${a.employeeName}`;
+                               if (!dMap.has(dK)) dMap.set(dK, new Map());
+                               dMap.get(dK)!.set(eK, (dMap.get(dK)!.get(eK) ?? 0) + 1);
+                             }
+                             for (const [dK, emps] of dMap) {
+                               monthTotalRows += 1; // صف رأس القسم
+                               const deptKeyCalc = `${dayKeyCalc}|dept-${dK}`;
+                               if (expandedDayDepts.has(deptKeyCalc)) {
+                                 monthTotalRows += emps.size; // صف لكل موظف
+                               }
+                             }
+                           }
+                         }
+
+                         // إذا كانت مفتوحة، نعرض الصفوف مع دمج عمود الشهر
                         return (
                           <React.Fragment key={`expanded-${monthGroup.month}`}>
                             {monthGroup.dateGroups.map((dateGroup, dateIdx) => {
@@ -1465,6 +1489,17 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                 dept.emps.get(eKey)!.acts.push(a);
                               }
                               const deptList = Array.from(deptMap.entries());
+
+                              // عدد الصفوف الفرعية لهذا اليوم (لاستخدامها في rowSpan لعمود التاريخ)
+                              let dayTotalRows = 1;
+                              if (isDayExpanded) {
+                                for (const [dKey, dept] of deptList) {
+                                  dayTotalRows += 1;
+                                  if (expandedDayDepts.has(`${dayKey}|dept-${dKey}`)) {
+                                    dayTotalRows += dept.emps.size;
+                                  }
+                                }
+                              }
                               
                               return (
                                 <React.Fragment key={`day-frag-${monthGroup.month}-${dateGroup.day}`}>
