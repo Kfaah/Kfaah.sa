@@ -136,10 +136,12 @@
   html {
     direction: rtl;
     font-family: 'Tajawal', sans-serif;
+    font-size: 18px;
   }
 
   body {
     @apply bg-background text-foreground font-tajawal antialiased;
+    font-size: 1rem;
   }
 }
 
