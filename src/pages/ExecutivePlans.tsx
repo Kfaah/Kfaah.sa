@@ -89,6 +89,7 @@ interface OperationalPlan {
   user_id: string;
   strategic_goal: string | null;
   initiative: string | null;
+  responsible_employee_id?: string | null;
 }
 
 interface OperationalPlanMonth {
@@ -269,6 +270,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
+  // توسيع داخلي للأيام: يوم → أقسام → موظفين
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+  const [expandedDayDepts, setExpandedDayDepts] = useState<Set<string>>(new Set());
+  const [expandedDayDeptEmps, setExpandedDayDeptEmps] = useState<Set<string>>(new Set());
   const [globalViewMode, setGlobalViewMode] = useState<"dates" | "tasks">("dates"); // الافتراضي بحسب التواريخ
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [aiProgress, setAiProgress] = useState<
@@ -615,6 +620,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           dailyTarget: number;
           achieved: number;
           status: string;
+          employeeId: string | null;
+          employeeName: string;
+          departmentId: string | null;
+          departmentName: string;
         }[];
       }[];
     }[] = [];
@@ -629,6 +638,15 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       planMonths.filter(pm => pm.month === month).forEach(pm => {
         const plan = operationalPlans.find(p => p.id === pm.operational_plan_id);
         if (!plan) return;
+
+        // تحديد الموظف المسؤول عن هذا النشاط (responsible_employee_id أولاً، وإلا مالك الخطة)
+        const respEmp = plan.responsible_employee_id
+          ? employees.find((e) => e.id === plan.responsible_employee_id)
+          : employees.find((e) => e.user_id === plan.user_id);
+        const employeeId = respEmp?.id ?? null;
+        const employeeName = respEmp?.full_name ?? "غير محدد";
+        const departmentId = respEmp?.department_id ?? null;
+        const departmentName = respEmp?.department_name ?? "بدون قسم";
         
         const dayPlans = executivePlans
           .filter(ep => ep.operational_plan_month_id === pm.id)
@@ -673,6 +691,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             dailyTarget: dayPlan.dailyTarget,
             achieved: dayPlan.achieved,
             status: dayPlan.status,
+            employeeId,
+            employeeName,
+            departmentId,
+            departmentName,
           });
         });
       });
@@ -819,6 +841,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         newSet.add(activityKey);
       }
       return newSet;
+    });
+  };
+
+  const toggleSetKey = (
+    setter: React.Dispatch<React.SetStateAction<Set<string>>>,
+    key: string,
+  ) => {
+    setter((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
     });
   };
 
@@ -1352,6 +1386,40 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                       {groupedPlans.map((monthGroup) => {
                         const isExpanded = expandedMonths.has(`month-${monthGroup.month}`);
                         const totalDays = monthGroup.dateGroups.length;
+
+                        // حساب إجمالي عدد الصفوف بعد التوسيع الهرمي (يوم/قسم/موظف)
+                        // كل توسيع يوم يضيف صفوف الأقسام، كل توسيع قسم يضيف صفوف الموظفين، كل توسيع موظف يضيف صف الأنشطة
+                        const computeRowSpan = () => {
+                          let total = 0;
+                          for (const dg of monthGroup.dateGroups) {
+                            total += 1; // صف اليوم
+                            const dayKey = `day-${monthGroup.month}-${dg.day}`;
+                            if (!expandedDays.has(dayKey)) continue;
+                            // تجميع حسب القسم
+                            const deptMap = new Map<string, { name: string; emps: Map<string, { name: string; acts: typeof dg.activities }> }>();
+                            for (const a of dg.activities) {
+                              const dKey = a.departmentId ?? `_no_${a.departmentName}`;
+                              if (!deptMap.has(dKey)) deptMap.set(dKey, { name: a.departmentName, emps: new Map() });
+                              const eKey = a.employeeId ?? `_no_${a.employeeName}`;
+                              const dept = deptMap.get(dKey)!;
+                              if (!dept.emps.has(eKey)) dept.emps.set(eKey, { name: a.employeeName, acts: [] as typeof dg.activities });
+                              dept.emps.get(eKey)!.acts.push(a);
+                            }
+                            for (const [dKey, dept] of deptMap) {
+                              total += 1; // صف القسم
+                              const deptKey = `${dayKey}|dept-${dKey}`;
+                              if (!expandedDayDepts.has(deptKey)) continue;
+                              for (const [eKey] of dept.emps) {
+                                total += 1; // صف الموظف
+                                const empKey = `${deptKey}|emp-${eKey}`;
+                                if (!expandedDayDeptEmps.has(empKey)) continue;
+                                total += 1; // صف الأنشطة
+                              }
+                            }
+                          }
+                          return total || 1;
+                        };
+                        const monthRowSpan = isExpanded && totalDays > 0 ? computeRowSpan() : totalDays;
                         
                         // إذا لم تكن مفتوحة، نعرض صف واحد مع معلومات الشهر
                         if (!isExpanded) {
@@ -1411,8 +1479,23 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                             {monthGroup.dateGroups.map((dateGroup, dateIdx) => {
                               const date = new Date(selectedYear, monthGroup.month - 1, dateGroup.day);
                               const isFirstRow = dateIdx === 0;
+                              const dayKey = `day-${monthGroup.month}-${dateGroup.day}`;
+                              const isDayExpanded = expandedDays.has(dayKey);
+
+                              // تجميع أنشطة هذا اليوم حسب القسم → الموظف
+                              const deptMap = new Map<string, { id: string | null; name: string; emps: Map<string, { id: string | null; name: string; acts: typeof dateGroup.activities }> }>();
+                              for (const a of dateGroup.activities) {
+                                const dKey = a.departmentId ?? `_no_${a.departmentName}`;
+                                if (!deptMap.has(dKey)) deptMap.set(dKey, { id: a.departmentId, name: a.departmentName, emps: new Map() });
+                                const eKey = a.employeeId ?? `_no_${a.employeeName}`;
+                                const dept = deptMap.get(dKey)!;
+                                if (!dept.emps.has(eKey)) dept.emps.set(eKey, { id: a.employeeId, name: a.employeeName, acts: [] as typeof dateGroup.activities });
+                                dept.emps.get(eKey)!.acts.push(a);
+                              }
+                              const deptList = Array.from(deptMap.entries());
                               
                               return (
+                                <React.Fragment key={`day-frag-${monthGroup.month}-${dateGroup.day}`}>
                                 <TableRow 
                                   key={`${monthGroup.month}-${dateGroup.day}`}
                                   className={cn(
@@ -1425,7 +1508,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {/* عمود الشهر - مدمج لجميع الصفوف */}
                                   {isFirstRow && (
                                     <TableCell 
-                                      rowSpan={totalDays} 
+                                      rowSpan={monthRowSpan} 
                                       className="bg-gray-100 border-l border-gray-200 align-top cursor-pointer hover:bg-gray-200 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
@@ -1449,16 +1532,27 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {/* عمود التاريخ */}
                                   <TableCell className="border-l border-gray-200 py-3">
                                     <div className="flex flex-col items-start gap-1">
-                                      <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); toggleSetKey(setExpandedDays, dayKey); }}
+                                        className="flex items-center gap-2 hover:bg-[hsl(var(--primary)/0.1)] rounded px-1 -mx-1 transition-colors"
+                                        aria-label="توسيع التفاصيل"
+                                      >
+                                        <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDayExpanded ? "" : "-rotate-90")} />
                                         <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))] flex-shrink-0" />
                                         <span className="font-bold text-gray-800">{dateGroup.weekDay}</span>
-                                      </div>
+                                      </button>
                                       <div className="text-sm text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>
                                         {formatGregorianDate(date)}
                                       </div>
                                       <div className="text-xs text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>
                                         {formatHijriDate(date)}
                                       </div>
+                                      {isDayExpanded && (
+                                        <Badge variant="outline" className="text-[10px] mt-1 border-[hsl(var(--primary))] text-[hsl(var(--primary))]">
+                                          {deptList.length} قسم · {dateGroup.activities.length} نشاط
+                                        </Badge>
+                                      )}
                                     </div>
                                   </TableCell>
                                   
@@ -1727,6 +1821,85 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     </div>
                                   </TableCell>
                                 </TableRow>
+                                {isDayExpanded && deptList.map(([dKey, dept]) => {
+                                  const deptKey = `${dayKey}|dept-${dKey}`;
+                                  const isDeptExpanded = expandedDayDepts.has(deptKey);
+                                  const empList = Array.from(dept.emps.entries());
+                                  const totalActsInDept = empList.reduce((s, [, e]) => s + e.acts.length, 0);
+                                  return (
+                                    <React.Fragment key={`dept-frag-${deptKey}`}>
+                                      <TableRow className="bg-[hsl(var(--primary)/0.04)] hover:bg-[hsl(var(--primary)/0.08)] border-r-4 border-r-[hsl(var(--primary))]">
+                                        <TableCell colSpan={2} className="py-2 pr-8">
+                                          <button
+                                            type="button"
+                                            onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
+                                            className="flex items-center gap-2 w-full text-right"
+                                          >
+                                            <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDeptExpanded ? "" : "-rotate-90")} />
+                                            <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                            <span className="font-semibold text-gray-800 text-sm">{dept.name}</span>
+                                            <Badge variant="outline" className="text-[10px] mr-auto border-[hsl(var(--primary))] text-[hsl(var(--primary))]">
+                                              {empList.length} موظف · {totalActsInDept} نشاط
+                                            </Badge>
+                                          </button>
+                                        </TableCell>
+                                      </TableRow>
+                                      {isDeptExpanded && empList.map(([eKey, emp]) => {
+                                        const empKey = `${deptKey}|emp-${eKey}`;
+                                        const isEmpExpanded = expandedDayDeptEmps.has(empKey);
+                                        return (
+                                          <React.Fragment key={`emp-frag-${empKey}`}>
+                                            <TableRow className="bg-white hover:bg-gray-50 border-r-[6px] border-r-[hsl(var(--accent))]">
+                                              <TableCell colSpan={2} className="py-2 pr-14">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
+                                                  className="flex items-center gap-2 w-full text-right"
+                                                >
+                                                  <ChevronDown className={cn("w-4 h-4 text-gray-600 transition-transform", isEmpExpanded ? "" : "-rotate-90")} />
+                                                  <User className="w-4 h-4 text-gray-600" />
+                                                  <span className="font-medium text-gray-800 text-sm">{emp.name}</span>
+                                                  <Badge variant="secondary" className="text-[10px] mr-auto">
+                                                    {emp.acts.length} نشاط
+                                                  </Badge>
+                                                </button>
+                                              </TableCell>
+                                            </TableRow>
+                                            {isEmpExpanded && (
+                                              <TableRow className="bg-gray-50/50 border-r-[6px] border-r-[hsl(var(--accent)/0.6)]">
+                                                <TableCell colSpan={2} className="py-3 pr-20">
+                                                  <div className="grid grid-cols-2 gap-2">
+                                                    {emp.acts.map((act, idx) => (
+                                                      <div
+                                                        key={act.id}
+                                                        className={cn(
+                                                          "flex items-start gap-2 px-2.5 py-2 rounded-lg",
+                                                          act.status === "completed"
+                                                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                                                            : act.status === "in_progress"
+                                                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                                                            : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
+                                                        )}
+                                                      >
+                                                        <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                          <span className="text-xs font-bold">{idx + 1}</span>
+                                                        </div>
+                                                        <span className="text-sm font-medium leading-snug flex-1">
+                                                          {act.activityName}
+                                                        </span>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </TableCell>
+                                              </TableRow>
+                                            )}
+                                          </React.Fragment>
+                                        );
+                                      })}
+                                    </React.Fragment>
+                                  );
+                                })}
+                                </React.Fragment>
                               );
                             })}
                           </React.Fragment>
