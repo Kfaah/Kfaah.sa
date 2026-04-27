@@ -61,8 +61,6 @@
     --sidebar-icon-end: 47 39% 40%;
     --identity-name-start: 142 65% 55%;
     --identity-name-end: 145 70% 62%;
-    --identity-role-start: var(--primary);
-    --identity-role-end: var(--accent);
     --identity-foreground: 0 0% 100%;
     --admin-hub-primary: 210 60% 28%;
     --admin-hub-accent: 174 52% 52%;
