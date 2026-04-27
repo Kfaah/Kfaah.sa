@@ -2156,17 +2156,9 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     {/* النشاط + لوحة التوزيع الشهري داخله */}
                                     <td colSpan={initiativeHasNoSub ? 2 : 1} className="py-4 px-5 border-l-2 border-gray-200 align-middle">
                                       <div className="flex flex-col gap-3 min-w-[320px] max-w-[560px] mx-auto">
-                                        <div
-                                          className={`flex items-center justify-between gap-2 ${canExpand ? "cursor-pointer group/activity" : ""}`}
-                                          onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
-                                        >
-                                          <p className={`text-sm leading-relaxed ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>
-                                            {activityCol ? String(row[activityCol] ?? "") : ""}
-                                          </p>
-                                          {canExpand && (
-                                            <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} />
-                                          )}
-                                        </div>
+                                        <p className={`text-sm leading-relaxed text-center ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700'}`}>
+                                          {activityCol ? String(row[activityCol] ?? "") : ""}
+                                        </p>
                                         {isExpanded && canExpand && (
                                           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
                                             <div className="flex items-center justify-between gap-3 border-b border-primary/15 pb-2 mb-3">
