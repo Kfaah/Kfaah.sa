@@ -1986,16 +1986,16 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
         </div>
 
         {/* Excel-uploaded plans section */}
-        {excelPlans.length > 0 && (
+        {filteredExcelPlans.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center gap-2 px-1">
               <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
               <h3 className="text-sm font-semibold text-slate-700">
-                الخطط المرفوعة من Excel ({excelPlans.length})
+                الخطط المرفوعة من Excel ({filteredExcelPlans.length})
               </h3>
             </div>
             <div className="grid gap-3">
-              {excelPlans.map((ep) => {
+              {filteredExcelPlans.map((ep) => {
                 const expanded = expandedExcelPlanId === ep.id;
                 const previewRows = expanded ? ep.rows : ep.rows.slice(0, 5);
                 return (
