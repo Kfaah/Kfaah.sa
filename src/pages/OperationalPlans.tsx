@@ -562,11 +562,19 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
 
       setPlans(plansWithMonths);
     } catch (error: any) {
-      toast({
-        title: "خطأ",
-        description: "فشل في تحميل الخطط التشغيلية",
-        variant: "destructive",
-      });
+      // Log the real error so we can diagnose later. When mounted as a
+      // background-preloaded embed inside the organization's internal
+      // dashboard, suppress the destructive toast — it would pop over
+      // whatever the user is currently viewing for a load they didn't
+      // initiate. The user can retry by switching to the tab.
+      console.error("[OperationalPlans] fetchPlans failed:", error);
+      if (!embedded) {
+        toast({
+          title: "خطأ",
+          description: "فشل في تحميل الخطط التشغيلية",
+          variant: "destructive",
+        });
+      }
     } finally {
       setPlansLoaded(true);
       setLoading(false);
