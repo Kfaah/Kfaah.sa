@@ -1849,13 +1849,23 @@ const AddOperationalPlan = () => {
 
   const canSubmit = () => {
     if (rows.length === 0) return false;
-    
-    return rows.some(row => 
-      row.strategicGoal.trim() && 
-      row.initiative.trim() && 
-      row.activity.trim() && 
-      row.annualTarget > 0
-    );
+
+    // يكفي وجود صف واحد فيه أي محتوى (في الأعمدة الأساسية أو المخصصة)
+    return rows.some(row => {
+      const baseHasContent =
+        row.strategicGoal.trim() ||
+        row.initiative.trim() ||
+        row.activity.trim() ||
+        row.annualTarget > 0;
+
+      const customHasContent = Object.values(row.customColumns || {}).some(v => {
+        if (v === null || v === undefined) return false;
+        const s = String(v).trim();
+        return s.length > 0;
+      });
+
+      return baseHasContent || customHasContent;
+    });
   };
 
   const handleSubmit = async () => {
