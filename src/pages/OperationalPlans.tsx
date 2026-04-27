@@ -2376,11 +2376,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           <span className="text-sm font-semibold text-white">إجراء</span>
                         </th>
                       )}
-                      {!isEditMode && (
-                        <th className="w-16 py-4 px-3 sticky top-0 z-30 text-center border-r border-white/20 bg-red-600">
-                          <span className="text-sm font-semibold text-white">حذف</span>
-                        </th>
-                      )}
                     </tr>
                   </thead>
                   
