@@ -587,21 +587,66 @@ export default function OrgInternalDashboard({
           />
         </TabsContent>
 
-        {/* TASKS / REPORTS / INNOVATION / UPLOADS / DONORS - placeholder summaries linking to existing pages */}
-        <TabsContent value="tasks" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/tasks" title="المهام" />
+        {/* TASKS / REPORTS / INNOVATION / UPLOADS / DONORS - placeholder summaries linking to existing pages.
+            Use forceMount so that once a tab has been visited (or preloaded),
+            its iframe stays in the DOM and re-visits are instantaneous. */}
+        <TabsContent
+          value="tasks"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/tasks"
+            title="المهام"
+            isActive={visitedTabs.has("tasks")}
+          />
         </TabsContent>
-        <TabsContent value="reports" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/admin/reports" title="التقارير" embedSlug={false} />
+        <TabsContent
+          value="reports"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/admin/reports"
+            title="التقارير"
+            embedSlug={false}
+            isActive={visitedTabs.has("reports")}
+          />
         </TabsContent>
-        <TabsContent value="innovation" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/admin/innovation" title="الابتكار والتحديث" embedSlug={false} />
+        <TabsContent
+          value="innovation"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/admin/innovation"
+            title="الابتكار والتحديث"
+            embedSlug={false}
+            isActive={visitedTabs.has("innovation")}
+          />
         </TabsContent>
         <TabsContent value="uploads" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
         </TabsContent>
-        <TabsContent value="operational-plans" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/admin/action-plans" title="الخطط من التوصيات" embedSlug={false} />
+        <TabsContent
+          value="operational-plans"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/admin/action-plans"
+            title="الخطط من التوصيات"
+            embedSlug={false}
+            isActive={visitedTabs.has("operational-plans")}
+          />
         </TabsContent>
         <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
@@ -613,8 +658,18 @@ export default function OrgInternalDashboard({
             <ExecutivePlans embedded />
           </Suspense>
         </TabsContent>
-        <TabsContent value="performance" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/performance" title="تقييم الأداء" />
+        <TabsContent
+          value="performance"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/performance"
+            title="تقييم الأداء"
+            isActive={visitedTabs.has("performance")}
+          />
         </TabsContent>
         <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <div className="space-y-4">
