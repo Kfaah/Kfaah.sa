@@ -621,12 +621,18 @@ export default function OrgInternalDashboard({
           className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
           dir="rtl"
         >
-          <EmbeddedOrgPage
-            slug={org?.slug}
-            path="/tasks"
-            title="المهام"
-            isActive={visitedTabs.has("tasks")}
-          />
+          {standaloneTab ? (
+            <Suspense fallback={<div className="min-h-[70vh] bg-background" />}>
+              <TasksPage embedded />
+            </Suspense>
+          ) : (
+            <EmbeddedOrgPage
+              slug={org?.slug}
+              path="/tasks"
+              title="المهام"
+              isActive={visitedTabs.has("tasks")}
+            />
+          )}
         </TabsContent>
         <TabsContent
           value="reports"
