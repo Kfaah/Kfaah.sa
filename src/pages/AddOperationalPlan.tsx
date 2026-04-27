@@ -959,6 +959,121 @@ function SortableRow({
           const isSelected = selectedCells.has(`${row.id}:${col.id}`);
           const isDragSource = draggedCell?.rowId === row.id && draggedCell?.colId === col.id;
           const isDragTarget = draggedCell && (draggedCell.rowId !== row.id || draggedCell.colId !== col.id);
+          const cellValue = row.customColumns[col.id] || "";
+          const contentType = col.contentType || "text";
+
+          // قائمة الموظفين المناسبة (الكل أو من قسم محدد)
+          const eligibleEmployees = contentType === "employee_department" && col.departmentId
+            ? employees.filter(e => e.department_id === col.departmentId)
+            : employees;
+
+          // اختيار الكنترول المناسب حسب نوع المحتوى
+          let innerControl: React.ReactNode;
+
+          if (contentType === "employee" || contentType === "employee_department") {
+            const selectedEmp = eligibleEmployees.find(e => e.id === cellValue);
+            innerControl = (
+              <div className="relative h-full w-full flex items-center">
+                <Select
+                  value={cellValue}
+                  onValueChange={(v) => updateCustomColumn(row.id, col.id, v)}
+                >
+                  <SelectTrigger className="h-8 text-xs border-0 bg-transparent hover:bg-muted/50 rounded-none pe-7">
+                    <SelectValue placeholder="اختر موظف...">
+                      {selectedEmp?.full_name}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {eligibleEmployees.length === 0 ? (
+                      <div className="text-xs text-muted-foreground p-2">لا يوجد موظفون</div>
+                    ) : eligibleEmployees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id} className="text-xs">
+                        {emp.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {cellValue && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); updateCustomColumn(row.id, col.id, ""); }}
+                    className="absolute start-1 top-1/2 -translate-y-1/2 z-30 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                    aria-label="مسح"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          } else if (contentType === "dropdown") {
+            const options = col.dropdownConfig?.options || [];
+            innerControl = (
+              <div className="relative h-full w-full flex items-center">
+                <Select
+                  value={cellValue}
+                  onValueChange={(v) => updateCustomColumn(row.id, col.id, v)}
+                >
+                  <SelectTrigger className="h-8 text-xs border-0 bg-transparent hover:bg-muted/50 rounded-none pe-7">
+                    <SelectValue placeholder={col.label} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {options.length === 0 ? (
+                      <div className="text-xs text-muted-foreground p-2">لا توجد خيارات</div>
+                    ) : options.map((opt) => (
+                      <SelectItem key={opt} value={opt} className="text-xs">
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {cellValue && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); updateCustomColumn(row.id, col.id, ""); }}
+                    className="absolute start-1 top-1/2 -translate-y-1/2 z-30 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                    aria-label="مسح"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          } else if (contentType === "date") {
+            innerControl = (
+              <Input
+                type="date"
+                value={cellValue}
+                onChange={(e) => { e.stopPropagation(); updateCustomColumn(row.id, col.id, e.target.value); }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+              />
+            );
+          } else if (contentType === "number" || contentType === "percentage") {
+            innerControl = (
+              <Input
+                type="number"
+                value={cellValue}
+                onChange={(e) => { e.stopPropagation(); updateCustomColumn(row.id, col.id, e.target.value); }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
+                placeholder={contentType === "percentage" ? "%" : col.label}
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm text-center"
+              />
+            );
+          } else {
+            innerControl = (
+              <Input
+                value={cellValue}
+                onChange={(e) => { e.stopPropagation(); updateCustomColumn(row.id, col.id, e.target.value); }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={onBeforeEdit}
+                placeholder={col.label}
+                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
+              />
+            );
+          }
+
           return (
             <TableCell
               key={col.id}
@@ -996,17 +1111,7 @@ function SortableRow({
                 onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleCellSelection(row.id, col.id); }}
               />
 
-              <Input
-                value={row.customColumns[col.id] || ""}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  updateCustomColumn(row.id, col.id, e.target.value);
-                }}
-                onClick={(e) => e.stopPropagation()}
-                onFocus={onBeforeEdit}
-                placeholder={col.label}
-                className="border-0 h-full w-full rounded-none focus-visible:ring-1 focus-visible:ring-inset text-sm"
-              />
+              {innerControl}
             </TableCell>
           );
         }
