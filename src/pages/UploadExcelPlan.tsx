@@ -126,9 +126,17 @@ export default function UploadExcelPlan() {
         if (!genData || (genData as any).error) {
           throw new Error((genData as any)?.error || "فشل التوليد");
         }
-        const aiColumns: string[] = (genData as any).columns || [];
-        const aiRows: Record<string, any>[] = (genData as any).rows || [];
+        const aiColumns: string[] = Array.isArray((genData as any).columns)
+          ? (genData as any).columns.filter((column: unknown) => String(column || "").trim())
+          : [];
+        const aiRows: Record<string, any>[] = Array.isArray((genData as any).rows)
+          ? (genData as any).rows.filter((row: unknown) => row && typeof row === "object")
+          : [];
         const inferredGoal: string = (genData as any).inferred_goal || "";
+
+        if (aiColumns.length === 0 || aiRows.length === 0) {
+          throw new Error("رجعت الخطة المولّدة فارغة، حاول باسم خطة أوضح أو ملف آخر");
+        }
 
         const generatedName = `${planName.trim()} — مقترح AI`;
         const { error: insertError } = await supabase.from("excel_plans").insert({
