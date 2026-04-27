@@ -844,6 +844,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     });
   };
 
+  const toggleSetKey = (
+    setter: React.Dispatch<React.SetStateAction<Set<string>>>,
+    key: string,
+  ) => {
+    setter((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const getSelectedEmployee = () => {
     return (
       employees.find((e) => e.user_id === selectedEmployeeId) ||
