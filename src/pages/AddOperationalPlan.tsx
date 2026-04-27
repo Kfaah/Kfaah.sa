@@ -1876,6 +1876,24 @@ const AddOperationalPlan = () => {
     try {
       const goals = convertRowsToGoals();
 
+      // التحقق من وجود أنشطة فعلية للحفظ
+      const totalActivities = goals.reduce(
+        (sum, g) => sum + g.initiatives.reduce((s, i) => s + i.activities.length, 0),
+        0
+      );
+
+      if (totalActivities === 0) {
+        toast({
+          title: "لا توجد أنشطة للحفظ",
+          description: "يجب إدخال هدف استراتيجي ومبادرة ونشاط على الأقل لحفظ الخطة",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      let savedCount = 0;
+
       for (const goal of goals) {
         let goalId = goal.existingId;
 
@@ -1960,12 +1978,21 @@ const AddOperationalPlan = () => {
               .insert(monthlyData);
 
             if (monthsError) throw monthsError;
+            savedCount++;
           }
         }
       }
 
-      toast({ title: "تم إضافة الخطط التشغيلية بنجاح" });
-      navigate("/operational-plans");
+      if (savedCount === 0) {
+        toast({
+          title: "لم يتم حفظ أي نشاط",
+          description: "تأكد من اكتمال بيانات الصفوف (هدف + مبادرة + نشاط)",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: `تم حفظ ${savedCount} نشاط ضمن "${planName?.trim() || "الخطة"}" بنجاح` });
+        navigate("/operational-plans");
+      }
     } catch (error: any) {
       toast({
         title: "خطأ",
