@@ -1229,6 +1229,19 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         {/* إحصائيات سريعة */}
         {!loading && groupedPlans.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* الأشهر المغطاة — أقصى اليمين في RTL */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-3 text-white shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/80 text-xs font-medium">الأشهر</p>
+                  <p className="text-2xl font-bold">{groupedPlans.length}</p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <Calendar className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
             {/* إجمالي الأيام */}
             <div className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
@@ -1268,19 +1281,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
                   <ListTodo className="w-5 h-5" />
-                </div>
-              </div>
-            </div>
-            
-            {/* الأشهر المغطاة */}
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-3 text-white shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white/80 text-xs font-medium">الأشهر</p>
-                  <p className="text-2xl font-bold">{groupedPlans.length}</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                  <Calendar className="w-5 h-5" />
                 </div>
               </div>
             </div>
