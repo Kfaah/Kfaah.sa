@@ -274,6 +274,17 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   // توليد AI
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
+
+  // فتح حوار التوليد تلقائياً عند القدوم من رفع Excel
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("aiGenerate") === "1") {
+      setIsAIDialogOpen(true);
+      params.delete("aiGenerate");
+      const newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, []);
   
   // اختيار مسؤول التنفيذ
   const [selectedResponsibleEmployee, setSelectedResponsibleEmployee] = useState<string>("");
