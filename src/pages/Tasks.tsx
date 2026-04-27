@@ -127,7 +127,8 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [activities, setActivities] = useState<ActivityInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasFetchedTasks, setHasFetchedTasks] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   
@@ -177,6 +178,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   });
   const [isAdding, setIsAdding] = useState(false);
   const orgId = currentOrg?.id ?? null;
+  const cacheKey = orgId && authUser?.id ? `${TASKS_CACHE_PREFIX}${orgId}:${authUser.id}` : null;
 
   // فتح نافذة التواصل عند الانتقال من إشعار رسالة
   useEffect(() => {
