@@ -1550,18 +1550,18 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         <Sparkles className="w-7 h-7 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">توليد بالذكاء الاصطناعي</h3>
-                        <p className="text-4xl text-gray-500">إنشاء خطط تشغيلية تلقائياً</p>
+                        <h3 className="text-xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">توليد بالذكاء الاصطناعي</h3>
+                        <p className="text-sm text-gray-500">إنشاء خطط تشغيلية تلقائياً</p>
                       </div>
                     </div>
                     
                     <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl p-4 mb-4 border border-purple-100">
-                      <p className="text-4xl text-purple-800">
+                      <p className="text-sm text-purple-800">
                         سيتم توليد خطط تشغيلية بناءً على الأهداف الاستراتيجية والمبادرات والمستهدفات المحددة.
                       </p>
                     </div>
                     
-                    <div className="text-center text-4xl text-gray-500 mb-4 bg-amber-50 rounded-lg p-3 border border-amber-200">
+                    <div className="text-center text-sm text-gray-500 mb-4 bg-amber-50 rounded-lg p-3 border border-amber-200">
                       <span className="text-amber-600">⏳</span> هذه الميزة ستكون متاحة في التحديث القادم
                     </div>
                     
@@ -1603,7 +1603,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
           <div className="flex items-center gap-5 flex-wrap">
             <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-xl shadow-lg shadow-blue-500/25">
               <Filter className="w-4 h-4" />
-              <span className="text-4xl font-semibold">فلترة</span>
+              <span className="text-sm font-semibold">فلترة</span>
             </div>
             
             {/* فلتر السنة */}
@@ -1661,7 +1661,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                       <div className="flex items-center gap-2">
                         <span>{emp.full_name}</span>
                         {emp.job_role && (
-                          <span className="text-4xl text-gray-400">({emp.job_role})</span>
+                          <span className="text-xs text-gray-400">({emp.job_role})</span>
                         )}
                       </div>
                     </SelectItem>
@@ -1689,12 +1689,12 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
             
             {/* عدد النتائج */}
             <div className="mr-auto flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2 rounded-xl">
-              <span className="text-4xl font-semibold text-slate-700">
+              <span className="text-sm font-semibold text-slate-700">
                 {filteredPlans.length}
               </span>
-              <span className="text-4xl text-slate-500">من</span>
-              <span className="text-4xl font-semibold text-slate-700">{plans.length}</span>
-              <span className="text-4xl text-slate-500">خطة</span>
+              <span className="text-sm text-slate-500">من</span>
+              <span className="text-sm font-semibold text-slate-700">{plans.length}</span>
+              <span className="text-sm text-slate-500">خطة</span>
             </div>
           </div>
         </div>
@@ -1708,7 +1708,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               </div>
               <div>
                 <p className="font-semibold text-orange-800">وضع التعديل مفعّل</p>
-                <p className="text-4xl text-orange-600">انقر على أي خلية للتعديل، أو استخدم أزرار الإضافة والحذف</p>
+                <p className="text-sm text-orange-600">انقر على أي خلية للتعديل، أو استخدم أزرار الإضافة والحذف</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1774,8 +1774,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 <Target className="w-7 h-7 text-white" />
               </div>
               <div>
-                <p className="text-4xl text-muted-foreground font-medium">إجمالي الخطط</p>
-                <p className="text-4xl font-bold text-primary" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(plans.length)}</p>
+                <p className="text-sm text-muted-foreground font-medium">إجمالي الخطط</p>
+                <p className="text-3xl font-bold text-primary" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(plans.length)}</p>
               </div>
             </CardContent>
           </Card>
@@ -1786,10 +1786,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 <TrendingUp className="w-7 h-7 text-white" />
               </div>
               <div>
-                <p className="text-4xl text-muted-foreground font-medium">الخطط النشطة</p>
-                <p className="text-4xl font-bold text-emerald-600">{plans.filter(p => p.status === "active").length}</p>
+                <p className="text-sm text-muted-foreground font-medium">الخطط النشطة</p>
+                <p className="text-3xl font-bold text-emerald-600">{plans.filter(p => p.status === "active").length}</p>
               </div>
-              <div className="mr-auto flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-4xl font-medium">
+              <div className="mr-auto flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-sm font-medium">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 نشط
               </div>
@@ -1802,10 +1802,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 <Calendar className="w-7 h-7 text-white" />
               </div>
               <div>
-                <p className="text-4xl text-muted-foreground font-medium">السنة الحالية</p>
-                <p className="text-4xl font-bold text-blue-600" style={{ fontFamily: 'Arial, sans-serif' }}>{new Date().getFullYear()}</p>
+                <p className="text-sm text-muted-foreground font-medium">السنة الحالية</p>
+                <p className="text-3xl font-bold text-blue-600" style={{ fontFamily: 'Arial, sans-serif' }}>{new Date().getFullYear()}</p>
               </div>
-              <div className="mr-auto text-4xl text-blue-600 bg-blue-100 px-3 py-1.5 rounded-full font-medium">
+              <div className="mr-auto text-sm text-blue-600 bg-blue-100 px-3 py-1.5 rounded-full font-medium">
                 📅 {new Date().toLocaleDateString('ar-SA', { month: 'long' })}
               </div>
             </CardContent>
@@ -1827,7 +1827,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 لا توجد خطط تشغيلية حتى الآن
               </div>
             ) : (
-              <div className="rounded-lg overflow-hidden border border-gray-200 overflow-x-auto bg-white">
+              <div className="op-plans-table-wrap rounded-lg overflow-hidden border border-gray-200 overflow-x-auto bg-white">
                 <table className="w-full">
                   {/* رأس الجدول */}
                   <thead>
@@ -1844,14 +1844,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               key={col.id} 
                               className={`py-4 px-5 ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
                             >
-                              <span className="text-4xl font-semibold text-white">{col.column_name}</span>
+                              <span className="text-sm font-semibold text-white">{col.column_name}</span>
                             </th>
                             {col.column_key === 'initiative' && (
                               <th
                                 key={`${col.id}-sub`}
                                 className="py-4 px-5 text-right border-r border-white/20"
                               >
-                                <span className="text-4xl font-semibold text-white">المبادرة الفرعية</span>
+                                <span className="text-sm font-semibold text-white">المبادرة الفرعية</span>
                               </th>
                             )}
                           </>
@@ -1859,7 +1859,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                       })}
                       {isEditMode && (
                         <th className="w-24 py-4 px-3 text-center border-r border-white/20 bg-amber-600">
-                          <span className="text-4xl font-semibold text-white">إجراء</span>
+                          <span className="text-sm font-semibold text-white">إجراء</span>
                         </th>
                       )}
                     </tr>
@@ -2022,7 +2022,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 >
                                   <div className="flex flex-col items-center justify-center text-center gap-2">
                                     <div className="w-full">
-                                      <p className={`font-semibold text-4xl ${color.text} leading-relaxed mb-2 text-center`}>{group.strategicGoal}</p>
+                                      <p className={`font-semibold text-sm ${color.text} leading-relaxed mb-2 text-center`}>{group.strategicGoal}</p>
                                       {/* الأقسام */}
                                       {goalData?.departments && goalData.departments.length > 0 && (
                                         <div className="flex flex-wrap gap-1.5 justify-center">
@@ -2030,7 +2030,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                             <Badge 
                                               key={d.id} 
                                               variant="outline" 
-                                              className={`text-4xl px-2 py-0.5 ${color.badge}`}
+                                              className={`text-[10px] px-2 py-0.5 ${color.badge}`}
                                             >
                                               {d.name}
                                             </Badge>
@@ -2064,7 +2064,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 >
                                   <div className="flex flex-col items-center justify-center text-center gap-2">
                                     <div className="w-full">
-                                      <p className="text-gray-700 text-4xl font-medium leading-relaxed mb-2 text-center">{initGroup.initiative}</p>
+                                      <p className="text-gray-700 text-sm font-medium leading-relaxed mb-2 text-center">{initGroup.initiative}</p>
                                       {/* الأقسام */}
                                       {initData?.departments && initData.departments.length > 0 && (
                                         <div className="flex flex-wrap gap-1.5 justify-center">
@@ -2072,7 +2072,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                             <Badge 
                                               key={d.id} 
                                               variant="outline" 
-                                              className="text-4xl px-2 py-0.5 bg-gray-100 text-gray-600 border-gray-200"
+                                              className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 border-gray-200"
                                             >
                                               {d.name}
                                             </Badge>
@@ -2103,11 +2103,11 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 <td className="py-4 px-5 align-middle border-l-2 border-gray-200">
                                   {plan.sub_initiative ? (
                                     <div className="flex items-center gap-1.5">
-                                      <span className="text-violet-500 text-4xl">↳</span>
-                                      <span className="text-4xl text-violet-700 font-medium">{plan.sub_initiative}</span>
+                                      <span className="text-violet-500 text-xs">↳</span>
+                                      <span className="text-sm text-violet-700 font-medium">{plan.sub_initiative}</span>
                                     </div>
                                   ) : (
-                                    <span className="text-gray-300 text-4xl">—</span>
+                                    <span className="text-gray-300 text-xs">—</span>
                                   )}
                                 </td>
                               )}
@@ -2125,7 +2125,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
                                   />
                                   <div className="flex flex-col gap-1 min-w-0">
-                                    <p className={`text-4xl ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
+                                    <p className={`text-sm ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
                                   </div>
                                 </div>
                               </td>
@@ -2141,12 +2141,12 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                         {plan.responsible_employee_name ? (
                                           <div className="flex items-center gap-2">
                                             <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                                              <span className="text-4xl font-semibold text-primary">{plan.responsible_employee_name.charAt(0)}</span>
+                                              <span className="text-xs font-semibold text-primary">{plan.responsible_employee_name.charAt(0)}</span>
                                             </div>
-                                            <span className="text-gray-700 text-4xl">{plan.responsible_employee_name}</span>
+                                            <span className="text-gray-700 text-sm">{plan.responsible_employee_name}</span>
                                           </div>
                                         ) : (
-                                          <span className="text-gray-400 text-4xl">غير محدد</span>
+                                          <span className="text-gray-400 text-sm">غير محدد</span>
                                         )}
                                       </td>
                                     );
@@ -2156,7 +2156,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   if (col.column_key === 'annual_target') {
                                     return (
                                       <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
-                                        <span className="text-4xl font-bold text-gray-800">{formatNumber(plan.annual_target)}</span>
+                                        <span className="text-lg font-bold text-gray-800">{formatNumber(plan.annual_target)}</span>
                                       </td>
                                     );
                                   }
@@ -2165,7 +2165,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   if (col.column_key === 'monthly_average') {
                                     return (
                                       <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
-                                        <span className="text-4xl font-bold text-[hsl(var(--primary))]">
+                                        <span className="text-lg font-bold text-[hsl(var(--primary))]">
                                           {formatNumber(Math.round(plan.annual_target / 12))}
                                         </span>
                                       </td>
@@ -2175,7 +2175,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   // الأعمدة المخصصة
                                   return (
                                     <td key={col.id} className="py-4 px-3 text-center border-l-2 border-gray-200">
-                                      <span className="text-4xl text-gray-500">—</span>
+                                      <span className="text-sm text-gray-500">—</span>
                                     </td>
                                   );
                                 })
@@ -2306,10 +2306,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                                       min="0"
                                                       value={target}
                                                       onChange={(e) => handleMonthTargetChange(plan.id, index, parseInt(e.target.value) || 0)}
-                                                      className="w-16 h-8 text-center text-4xl font-bold mx-auto"
+                                                      className="w-16 h-8 text-center text-sm font-bold mx-auto"
                                                     />
                                                   ) : (
-                                                    <span className={`text-4xl font-bold ${target > 0 ? 'text-[hsl(var(--primary))]' : 'text-muted-foreground'}`}>
+                                                    <span className={`text-lg font-bold ${target > 0 ? 'text-[hsl(var(--primary))]' : 'text-muted-foreground'}`}>
                                                       {target}
                                                     </span>
                                                   )}
@@ -2317,7 +2317,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                               );
                                             })}
                                             <TableCell className="text-center bg-[hsl(var(--primary)/0.2)]">
-                                              <span className="text-4xl font-bold text-[hsl(var(--primary))]">
+                                              <span className="text-xl font-bold text-[hsl(var(--primary))]">
                                                 {isEditingThisMonth 
                                                   ? currentMonthlyValues.reduce((sum, val) => sum + (val || 0), 0)
                                                   : plan.annual_target
@@ -2357,7 +2357,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   <Input
                                     value={newActivityName}
                                     onChange={(e) => setNewActivityName(e.target.value)}
-                                    className="h-8 text-4xl"
+                                    className="h-8 text-sm"
                                     placeholder="اسم النشاط الجديد"
                                     autoFocus
                                   />
@@ -2373,7 +2373,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                             type="number"
                                             value={newActivityTarget}
                                             onChange={(e) => setNewActivityTarget(e.target.value)}
-                                            className="h-8 text-4xl text-center"
+                                            className="h-8 text-sm text-center"
                                             placeholder="المستهدف"
                                           />
                                         </td>
@@ -2432,7 +2432,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 <Input
                                   value={newInlineInitiativeName}
                                   onChange={(e) => setNewInlineInitiativeName(e.target.value)}
-                                  className="h-8 text-4xl"
+                                  className="h-8 text-sm"
                                   placeholder="اسم المبادرة الجديدة"
                                   autoFocus
                                 />
@@ -2444,7 +2444,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 <Input
                                   value={newInlineActivityName}
                                   onChange={(e) => setNewInlineActivityName(e.target.value)}
-                                  className="h-8 text-4xl"
+                                  className="h-8 text-sm"
                                   placeholder="اسم النشاط"
                                 />
                               </td>
@@ -2459,7 +2459,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                           type="number"
                                           value={newInlineActivityTarget}
                                           onChange={(e) => setNewInlineActivityTarget(e.target.value)}
-                                          className="h-8 text-4xl text-center"
+                                          className="h-8 text-sm text-center"
                                           placeholder="المستهدف"
                                         />
                                       </td>
@@ -2511,7 +2511,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 px-4 text-4xl font-medium text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-400"
+                                    className="h-8 px-4 text-xs font-medium text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-400"
                                     onClick={() => {
                                       setAddItemDialogType("initiative");
                                       setAddItemDialogParentGoal(group.strategicGoal);
@@ -2526,7 +2526,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 px-4 text-4xl font-medium text-teal-700 border-teal-300 bg-teal-50 hover:bg-teal-100 hover:text-teal-800 hover:border-teal-400"
+                                    className="h-8 px-4 text-xs font-medium text-teal-700 border-teal-300 bg-teal-50 hover:bg-teal-100 hover:text-teal-800 hover:border-teal-400"
                                     onClick={() => {
                                       setAddItemDialogType("activity");
                                       setAddItemDialogParentGoal(group.strategicGoal);
@@ -2558,7 +2558,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               <Input
                                 value={newInlineGoalName}
                                 onChange={(e) => setNewInlineGoalName(e.target.value)}
-                                className="h-8 text-4xl"
+                                className="h-8 text-sm"
                                 placeholder="الهدف الاستراتيجي"
                                 autoFocus
                               />
@@ -2568,7 +2568,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               <Input
                                 value={newInlineGoalInitiative}
                                 onChange={(e) => setNewInlineGoalInitiative(e.target.value)}
-                                className="h-8 text-4xl"
+                                className="h-8 text-sm"
                                 placeholder="المبادرة"
                               />
                             </td>
@@ -2579,7 +2579,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               <Input
                                 value={newInlineGoalActivity}
                                 onChange={(e) => setNewInlineGoalActivity(e.target.value)}
-                                className="h-8 text-4xl"
+                                className="h-8 text-sm"
                                 placeholder="النشاط"
                               />
                             </td>
@@ -2594,7 +2594,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                         type="number"
                                         value={newInlineGoalTarget}
                                         onChange={(e) => setNewInlineGoalTarget(e.target.value)}
-                                        className="h-8 text-4xl text-center"
+                                        className="h-8 text-sm text-center"
                                         placeholder="المستهدف"
                                       />
                                     </td>
@@ -2646,7 +2646,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 px-4 text-4xl font-medium text-purple-700 border-purple-300 bg-purple-50 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-400"
+                                  className="h-8 px-4 text-xs font-medium text-purple-700 border-purple-300 bg-purple-50 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-400"
                                   onClick={() => {
                                     setAddItemDialogType("strategic_goal");
                                     setAddItemDialogParentGoal("");
@@ -2712,8 +2712,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
               <div className="bg-primary/10 px-6 py-4 border-b">
-                <h3 className="text-4xl font-bold text-primary">ترتيب الأهداف الاستراتيجية</h3>
-                <p className="text-4xl text-muted-foreground">استخدم الأسهم لتحريك الأهداف ثم اضغط حفظ</p>
+                <h3 className="text-lg font-bold text-primary">ترتيب الأهداف الاستراتيجية</h3>
+                <p className="text-sm text-muted-foreground">استخدم الأسهم لتحريك الأهداف ثم اضغط حفظ</p>
               </div>
               
               <div className="p-4 max-h-[60vh] overflow-y-auto space-y-2">
@@ -2722,7 +2722,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     key={goal.id} 
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 group hover:bg-gray-100 transition-colors"
                   >
-                    <span className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-4xl">
+                    <span className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm">
                       {index + 1}
                     </span>
                     <span className="flex-1 font-medium text-gray-700">{goal.name}</span>
@@ -2771,8 +2771,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
               <div className="bg-blue-50 px-6 py-4 border-b">
-                <h3 className="text-4xl font-bold text-blue-700">ترتيب المبادرات</h3>
-                <p className="text-4xl text-blue-600">الهدف: {reorderInitiativesGoal}</p>
+                <h3 className="text-lg font-bold text-blue-700">ترتيب المبادرات</h3>
+                <p className="text-sm text-blue-600">الهدف: {reorderInitiativesGoal}</p>
               </div>
               
               <div className="p-4 max-h-[60vh] overflow-y-auto space-y-2">
@@ -2781,7 +2781,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     key={init.id || init.name} 
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 group hover:bg-gray-100 transition-colors"
                   >
-                    <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-4xl">
+                    <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm">
                       {index + 1}
                     </span>
                     <span className="flex-1 font-medium text-gray-700 text-center">{init.name}</span>
@@ -2830,8 +2830,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
               <div className="bg-green-50 px-6 py-4 border-b">
-                <h3 className="text-4xl font-bold text-green-700">ترتيب الأنشطة</h3>
-                <p className="text-4xl text-green-600">المبادرة: {reorderActivitiesInitiative}</p>
+                <h3 className="text-lg font-bold text-green-700">ترتيب الأنشطة</h3>
+                <p className="text-sm text-green-600">المبادرة: {reorderActivitiesInitiative}</p>
               </div>
               
               <div className="p-4 max-h-[60vh] overflow-y-auto space-y-2">
@@ -2840,7 +2840,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     key={activity.id} 
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 group hover:bg-gray-100 transition-colors"
                   >
-                    <span className="w-8 h-8 rounded-full bg-green-100 text-green-700 font-bold flex items-center justify-center text-4xl">
+                    <span className="w-8 h-8 rounded-full bg-green-100 text-green-700 font-bold flex items-center justify-center text-sm">
                       {index + 1}
                     </span>
                     <span className="flex-1 font-medium text-gray-700">{activity.activity_name}</span>
@@ -2889,8 +2889,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
               <div className="bg-blue-50 px-6 py-4 border-b">
-                <h3 className="text-4xl font-bold text-blue-700">اختر الهدف الاستراتيجي</h3>
-                <p className="text-4xl text-blue-600">لترتيب المبادرات داخله</p>
+                <h3 className="text-lg font-bold text-blue-700">اختر الهدف الاستراتيجي</h3>
+                <p className="text-sm text-blue-600">لترتيب المبادرات داخله</p>
               </div>
               
               <div className="p-4 max-h-[60vh] overflow-y-auto space-y-2">
@@ -2938,8 +2938,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
               <div className="bg-green-50 px-6 py-4 border-b">
-                <h3 className="text-4xl font-bold text-green-700">اختر المبادرة</h3>
-                <p className="text-4xl text-green-600">لترتيب الأنشطة داخلها</p>
+                <h3 className="text-lg font-bold text-green-700">اختر المبادرة</h3>
+                <p className="text-sm text-green-600">لترتيب الأنشطة داخلها</p>
               </div>
               
               <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
@@ -2981,7 +2981,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
 
                     return (
                       <div key={goalName} className="space-y-2">
-                        <p className="text-4xl font-semibold text-gray-500 px-2">{goalName}</p>
+                        <p className="text-sm font-semibold text-gray-500 px-2">{goalName}</p>
                         {inits.map((initName) => (
                           <button
                             key={initName}
