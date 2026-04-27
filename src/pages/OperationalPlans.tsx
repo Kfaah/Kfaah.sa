@@ -1944,12 +1944,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     
                     groupedPlans.forEach((group, groupIndex) => {
                       const color = GOAL_COLORS[group.colorIndex];
-                      // حساب إجمالي الصفوف لهذا الهدف (مع احتساب الصفوف الموسعة + صفوف الإضافة في وضع التعديل)
+                      // حساب إجمالي الصفوف لهذا الهدف (التوزيع الشهري أصبح داخل نفس صف النشاط فلا يُضاف كصف مستقل)
                       const totalRowsInGoal =
                         group.initiatives.reduce((sum, init) => {
-                          const planRows = init.plans.reduce((planSum, plan) => {
-                            return planSum + 1 + (expandedPlanId === plan.id ? 1 : 0);
-                          }, 0);
+                          const planRows = init.plans.length;
 
                           // نضيف صف "إضافة نشاط" فقط عندما يكون المستخدم فعلاً يضيف نشاطاً تحت هذه المبادرة
                           const addActivityRow =
@@ -1967,7 +1965,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                       let goalRowRendered = false;
                       
                       group.initiatives.forEach((initGroup, initIndex) => {
-                        // حساب الصفوف للمبادرة (مع احتساب الصفوف الموسعة + صف إضافة نشاط عند الإضافة فعلياً)
+                        // حساب الصفوف للمبادرة (التوزيع الشهري داخل نفس صف النشاط حتى لا يختل الجدول)
                         const addActivityRowForThisInitiative =
                           isEditMode &&
                           addingActivityUnder?.strategicGoal === group.strategicGoal &&
@@ -1975,10 +1973,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             ? 1
                             : 0;
 
-                        const totalRowsInInitiative =
-                          initGroup.plans.reduce((sum, plan) => {
-                            return sum + 1 + (expandedPlanId === plan.id ? 1 : 0);
-                          }, 0) + addActivityRowForThisInitiative;
+                        const totalRowsInInitiative = initGroup.plans.length + addActivityRowForThisInitiative;
                         let initRowRendered = false;
                         // إذا لم يكن لأي نشاط في هذه المبادرة "مبادرة فرعية"، نُلغي العمود ونوسّع خلية النشاط
                         const initiativeHasNoSubInitiatives = initGroup.plans.every(
