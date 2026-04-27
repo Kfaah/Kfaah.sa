@@ -1522,7 +1522,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 onClick={() => navigate("/operational-plans/add")}
               >
                 <Plus className="w-4 h-4" />
-                إضافة خطة
+                إضافة خطة يدوياً
+              </Button>
+              <Button
+                className="gap-2 bg-emerald-500 text-white hover:bg-emerald-600 border border-emerald-400"
+                onClick={() => navigate("/operational-plans/upload")}
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                رفع ملف Excel
               </Button>
               <Button
                 className={`gap-2 border ${
