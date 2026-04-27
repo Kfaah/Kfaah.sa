@@ -1479,8 +1479,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         const hasPhases = hasPreTasks || hasDuringTasks || hasPostTasks;
                                         
                                         return (
-                                          <Popover key={activity.id}>
-                                            <div className="relative">
+                                          <div key={activity.id} className="relative">
                                             {isEditMode && (
                                               <button
                                                 type="button"
@@ -1496,6 +1495,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                 <X className="w-3 h-3" />
                                               </button>
                                             )}
+                                            <Popover>
                                             <PopoverTrigger asChild>
                                               <div
                                                 className={cn(
