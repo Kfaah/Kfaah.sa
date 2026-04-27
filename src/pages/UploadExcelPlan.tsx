@@ -26,8 +26,7 @@ export default function UploadExcelPlan() {
 
   const [planName, setPlanName] = useState("الخطة الأولى");
   const [year, setYear] = useState<number>(getCurrentYear());
-  const [useForAi, setUseForAi] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<null | "approve" | "ai">(null);
 
   const years = getAvailableYears();
 
@@ -79,7 +78,7 @@ export default function UploadExcelPlan() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSave = async () => {
+  const handleSave = async (mode: "approve" | "ai") => {
     if (rows.length === 0) {
       toast({ title: "لا توجد بيانات", description: "ارفع ملف Excel أولاً", variant: "destructive" });
       return;
@@ -88,7 +87,7 @@ export default function UploadExcelPlan() {
       toast({ title: "اسم الخطة مطلوب", variant: "destructive" });
       return;
     }
-    setSaving(true);
+    setSaving(mode);
     try {
       const { data: userRes } = await supabase.auth.getUser();
       const { error } = await supabase.from("excel_plans").insert({
@@ -97,18 +96,26 @@ export default function UploadExcelPlan() {
         sheet_name: sheetName,
         columns: columns as any,
         rows: rows as any,
-        use_for_ai: useForAi,
+        use_for_ai: mode === "ai",
         source_filename: fileName,
         user_id: userRes.user?.id ?? null,
       });
       if (error) throw error;
-      toast({ title: "تم حفظ الخطة بنجاح", description: `${rows.length} صف بـ ${columns.length} عمود` });
-      navigate("/operational-plans");
+      if (mode === "ai") {
+        toast({
+          title: "تم اعتماد الملف كمرجع للذكاء الاصطناعي",
+          description: "سيتم بناء خطة مقترحة بناءً على هذا الملف",
+        });
+        navigate("/operational-plans?aiGenerate=1");
+      } else {
+        toast({ title: "تم اعتماد الخطة بنجاح", description: `${rows.length} صف بـ ${columns.length} عمود` });
+        navigate("/operational-plans");
+      }
     } catch (err: any) {
       console.error(err);
       toast({ title: "فشل الحفظ", description: err?.message || "حدث خطأ", variant: "destructive" });
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   };
 
@@ -209,18 +216,12 @@ export default function UploadExcelPlan() {
                     </Select>
                   </div>
                   <div className="flex items-end">
-                    <div className={cn(
-                      "w-full p-3 rounded-xl border flex items-center justify-between gap-3 transition-colors",
-                      useForAi ? "bg-primary/5 border-primary/40" : "bg-slate-50 border-slate-200"
-                    )}>
-                      <div className="flex items-center gap-2">
-                        <Sparkles className={cn("w-5 h-5", useForAi ? "text-primary" : "text-slate-400")} />
-                        <div>
-                          <div className="text-sm font-semibold text-slate-800">اعتمدها للذكاء الاصطناعي</div>
-                          <div className="text-xs text-slate-500">سيُبنى عليها لتوليد خطط مقترحة</div>
-                        </div>
+                    <div className="w-full p-3 rounded-xl border bg-slate-50 border-slate-200 flex items-center gap-2">
+                      <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">جاهز للاعتماد</div>
+                        <div className="text-xs text-slate-500">اختر طريقة الاعتماد بالأسفل</div>
                       </div>
-                      <Switch checked={useForAi} onCheckedChange={setUseForAi} />
                     </div>
                   </div>
                 </div>
@@ -263,13 +264,72 @@ export default function UploadExcelPlan() {
               </Card>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-3">
-                <Button variant="outline" onClick={() => navigate("/operational-plans")}>إلغاء</Button>
-                <Button onClick={handleSave} disabled={saving} className="gap-2">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  حفظ الخطة
-                </Button>
-              </div>
+              <Card className="p-5 bg-gradient-to-l from-slate-50 to-white">
+                <div className="text-sm font-semibold text-slate-700 mb-3 text-right">
+                  كيف تريد اعتماد هذا الملف؟
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleSave("approve")}
+                    disabled={saving !== null}
+                    className={cn(
+                      "group relative p-5 rounded-xl border-2 text-right transition-all",
+                      "border-emerald-200 bg-white hover:border-emerald-500 hover:bg-emerald-50/50",
+                      "disabled:opacity-50 disabled:cursor-not-allowed"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-500/10 group-hover:bg-emerald-500/20 flex items-center justify-center flex-shrink-0 transition-colors">
+                        {saving === "approve" ? (
+                          <Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />
+                        ) : (
+                          <Save className="w-6 h-6 text-emerald-600" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-slate-800 mb-1">اعتماد الخطة كما هي</div>
+                        <div className="text-xs text-slate-500 leading-relaxed">
+                          سيتم حفظ ملف Excel كخطة تشغيلية بنفس الأعمدة والبيانات تماماً دون أي تعديل
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSave("ai")}
+                    disabled={saving !== null}
+                    className={cn(
+                      "group relative p-5 rounded-xl border-2 text-right transition-all",
+                      "border-violet-200 bg-white hover:border-violet-500 hover:bg-violet-50/50",
+                      "disabled:opacity-50 disabled:cursor-not-allowed"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 group-hover:from-violet-500/20 group-hover:to-purple-500/20 flex items-center justify-center flex-shrink-0 transition-colors">
+                        {saving === "ai" ? (
+                          <Loader2 className="w-6 h-6 text-violet-600 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-6 h-6 text-violet-600" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-slate-800 mb-1">توليد خطة بالذكاء الاصطناعي</div>
+                        <div className="text-xs text-slate-500 leading-relaxed">
+                          سيُعتمد هذا الملف كمرجع، ويتم بناء خطة تشغيلية مقترحة بالذكاء الاصطناعي بناءً عليه
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-slate-200">
+                  <Button variant="outline" onClick={() => navigate("/operational-plans")} disabled={saving !== null}>
+                    إلغاء
+                  </Button>
+                </div>
+              </Card>
             </>
           )}
         </div>
