@@ -2626,7 +2626,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             key="add-goal-btn" 
                             className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
                           >
-                            <td colSpan={columnOrder.filter(c => c.is_visible).length + 1} className="py-3 px-4">
+                            <td colSpan={columnOrder.filter(c => c.is_visible).length + 2} className="py-3 px-4">
                               <div className="flex justify-center">
                                 <Button
                                   variant="outline"
