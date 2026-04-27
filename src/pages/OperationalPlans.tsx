@@ -2081,7 +2081,18 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         }
 
                         const targetCol = ep.columns.find((c: string) => /المستهدف السنوي|^المستهدف$|مستهدف/.test(c));
-                        const activityCol = ep.columns.find((c: string) => /^النشاط$|نشاط/.test(c));
+                        const costCol = ep.columns.find((c: string) => /تكلفة|ميزانية/.test(c));
+
+                        // عكس ترتيب العرض: المستهدف السنوي يأخذ مكان التكلفة والعكس
+                        const displayColumns = (() => {
+                          if (!targetCol || !costCol) return ep.columns;
+                          const arr = [...ep.columns];
+                          const ti = arr.indexOf(targetCol);
+                          const ci = arr.indexOf(costCol);
+                          if (ti < 0 || ci < 0) return arr;
+                          [arr[ti], arr[ci]] = [arr[ci], arr[ti]];
+                          return arr;
+                        })();
 
                         const distributeMonthly = (annualStr: string): number[] => {
                           const num = parseInt(String(annualStr).replace(/[^\d]/g, ""), 10);
@@ -2092,12 +2103,12 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         };
 
                         return (
-                          <table className="w-full text-sm" dir="rtl">
+                          <table className="w-full text-base" dir="rtl">
                             <thead className="bg-[hsl(160,50%,25%)] text-white sticky top-0">
                               <tr>
-                                <th className="px-3 py-2 text-right font-semibold border-l border-white/20 w-12">#</th>
-                                {ep.columns.map((c: string, i: number) => (
-                                  <th key={i} className="px-3 py-2 text-right font-semibold border-l border-white/20 whitespace-nowrap">
+                                <th className="px-3 py-3 text-right text-sm font-semibold border-l border-white/20 w-12">#</th>
+                                {displayColumns.map((c: string, i: number) => (
+                                  <th key={i} className="px-3 py-3 text-right text-sm font-semibold border-l border-white/20 whitespace-nowrap">
                                     {c}
                                   </th>
                                 ))}
@@ -2114,8 +2125,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 return (
                                   <Fragment key={ri}>
                                     <tr className={ri % 2 === 0 ? "bg-white" : "bg-slate-50/60"}>
-                                      <td className="px-3 py-2 text-slate-400 border-b border-slate-100 text-center align-top">{ri + 1}</td>
-                                      {ep.columns.map((c: string, ci: number) => {
+                                      <td className="px-3 py-3 text-sm text-slate-400 border-b border-slate-100 text-center align-top">{ri + 1}</td>
+                                      {displayColumns.map((c: string, ci: number) => {
                                         const isMergeable = mergeableCols.includes(c);
                                         if (isMergeable) {
                                           const span = spanMap[ri][c];
@@ -2124,26 +2135,26 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                             <td
                                               key={ci}
                                               rowSpan={span as number}
-                                              className="px-3 py-2 text-slate-800 font-medium border-b border-l border-slate-200 whitespace-nowrap max-w-[280px] truncate align-middle bg-slate-50/40"
+                                              className="px-3 py-3 text-base text-slate-800 font-semibold border-b border-l border-slate-200 whitespace-nowrap max-w-[300px] truncate align-middle bg-slate-50/40"
                                             >
                                               {String(row[c] ?? "")}
                                             </td>
                                           );
                                         }
-                                        // عمود النشاط: أضف السهم قبل النص + لوحة التوسيع تحت النص
-                                        if (activityCol && c === activityCol) {
+                                        // عمود المستهدف السنوي: السهم + لوحة التوزيع الشهري داخل نفس الصف
+                                        if (targetCol && c === targetCol) {
                                           return (
-                                            <td key={ci} className="px-3 py-2 text-slate-700 border-b border-slate-100 align-top max-w-[420px]">
+                                            <td key={ci} className="px-3 py-3 text-slate-700 border-b border-slate-100 align-top">
                                               <div
                                                 className={`flex items-start gap-2 ${canExpand ? "cursor-pointer group/activity" : ""}`}
                                                 onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
                                               >
                                                 {canExpand ? (
-                                                  <ChevronDown className={`w-4 h-4 flex-shrink-0 mt-0.5 transition-transform ${isRowExpanded ? "rotate-180 text-primary" : "text-gray-400 group-hover/activity:text-primary"}`} />
+                                                  <ChevronDown className={`w-5 h-5 flex-shrink-0 mt-0.5 transition-transform ${isRowExpanded ? "rotate-180 text-primary" : "text-gray-400 group-hover/activity:text-primary"}`} />
                                                 ) : (
                                                   <span className="w-4" />
                                                 )}
-                                                <p className={`text-sm leading-relaxed ${isRowExpanded ? "text-primary font-semibold" : "text-gray-700"}`}>
+                                                <p className={`text-base font-semibold leading-relaxed ${isRowExpanded ? "text-primary" : "text-gray-800"}`}>
                                                   {String(row[c] ?? "")}
                                                 </p>
                                               </div>
@@ -2185,7 +2196,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                           );
                                         }
                                         return (
-                                          <td key={ci} className="px-3 py-2 text-slate-700 border-b border-slate-100 whitespace-nowrap max-w-[280px] truncate align-top">
+                                          <td key={ci} className="px-3 py-3 text-base text-slate-700 border-b border-slate-100 whitespace-nowrap max-w-[320px] truncate align-top">
                                             {String(row[c] ?? "")}
                                           </td>
                                         );
