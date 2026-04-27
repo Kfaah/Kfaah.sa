@@ -1480,6 +1480,22 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         
                                         return (
                                           <Popover key={activity.id}>
+                                            <div className="relative">
+                                            {isEditMode && (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  if (window.confirm(`حذف "${activity.activityName}" من هذا اليوم؟`)) {
+                                                    handleDeleteDay(activity.id);
+                                                  }
+                                                }}
+                                                className="absolute -top-1.5 -left-1.5 z-10 w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md ring-2 ring-white transition-transform hover:scale-110"
+                                                aria-label="حذف"
+                                              >
+                                                <X className="w-3 h-3" />
+                                              </button>
+                                            )}
                                             <PopoverTrigger asChild>
                                               <div
                                                 className={cn(
@@ -1488,7 +1504,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                     ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
                                                     : activity.status === "in_progress"
                                                     ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                                                    : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
+                                                    : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white",
+                                                  isEditMode && "ring-2 ring-red-300/60"
                                                 )}
                                               >
                                                 {/* الرقم التسلسلي */}
