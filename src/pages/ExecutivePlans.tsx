@@ -636,6 +636,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           employeeName: string;
           departmentId: string | null;
           departmentName: string;
+          initiative: string | null;
+          subInitiative: string | null;
         }[];
       }[];
     }[] = [];
@@ -707,6 +709,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             employeeName,
             departmentId,
             departmentName,
+            initiative: plan.initiative,
+            subInitiative: plan.sub_initiative,
           });
         });
       });
