@@ -137,7 +137,10 @@
           // response never re-triggers any visibility change.
           if (hasAppliedBranding) revealed = true;
           var timeoutId = setTimeout(function () {
-            if (hasAppliedBranding || document.documentElement.getAttribute("data-org-branded") === "true") reveal();
+            // Never let the pre-paint branding gate trap the app on a blank
+            // screen. If branding cannot be resolved quickly, show the app
+            // with the default theme and let React continue normally.
+            reveal();
           }, 4000);
 
           // Fetch organization_profiles via REST joined with organizations(slug).
@@ -152,7 +155,10 @@
           })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (rows) {
-              if (!rows || !rows.length) return;
+              if (!rows || !rows.length) {
+                reveal();
+                return;
+              }
               var row = rows[0];
               var prof = row.organization_profiles || {};
               if (Array.isArray(prof)) prof = prof[0] || {};
@@ -179,7 +185,7 @@
             .catch(function () { /* noop */ })
             .finally(function () {
               clearTimeout(timeoutId);
-              if (hasAppliedBranding || document.documentElement.getAttribute("data-org-branded") === "true") reveal();
+              reveal();
             });
         } catch (e) {
           var el = document.getElementById("__branding_gate__");
