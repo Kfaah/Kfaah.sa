@@ -722,15 +722,23 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   const toneMap: Record<string, string> = {
-    purple: "from-violet-500 to-purple-600 border-violet-100",
-    blue: "from-sky-500 to-blue-600 border-sky-100",
-    emerald: "from-emerald-500 to-teal-600 border-emerald-100",
-    indigo: "from-indigo-500 to-blue-600 border-indigo-100",
-    amber: "from-amber-500 to-orange-600 border-amber-100",
+    purple: "from-violet-500 to-purple-600",
+    blue: "from-sky-500 to-blue-600",
+    emerald: "from-emerald-500 to-teal-600",
+    indigo: "from-indigo-500 to-blue-600",
+    amber: "from-amber-500 to-orange-600",
   };
-  const [iconCls, borderCls] = toneMap[tone].split(" border-");
+  const borderToneMap: Record<string, string> = {
+    purple: "border-violet-100",
+    blue: "border-sky-100",
+    emerald: "border-emerald-100",
+    indigo: "border-indigo-100",
+    amber: "border-amber-100",
+  };
+  const iconCls = toneMap[tone];
+  const borderCls = borderToneMap[tone];
   return (
-    <section className={cn("bg-white rounded-2xl border-2 p-5 shadow-sm", `border-${borderCls}`)}>
+    <section className={cn("bg-white rounded-2xl border-2 p-5 shadow-sm", borderCls)}>
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-md", iconCls)}>
