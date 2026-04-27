@@ -119,7 +119,8 @@ ${
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.5-flash",
+        max_tokens: 8192,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
@@ -151,19 +152,26 @@ ${
     }
 
     const data = await aiResp.json();
-    const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
+    const choice = data?.choices?.[0];
+    const toolCall = choice?.message?.tool_calls?.[0];
+    console.log("AI finish_reason:", choice?.finish_reason);
+    console.log("AI usage:", JSON.stringify(data?.usage));
     if (!toolCall?.function?.arguments) {
-      console.error("No tool call returned:", JSON.stringify(data).slice(0, 500));
-      return json({ error: "لم يتم توليد خطة صالحة" }, 500);
+      console.error("No tool call returned. finish_reason:", choice?.finish_reason);
+      console.error("Message:", JSON.stringify(choice?.message)?.slice(0, 1000));
+      return json({ error: "لم يتم توليد خطة صالحة (لا يوجد tool call)" }, 500);
     }
+    console.log("Tool args length:", toolCall.function.arguments.length);
 
     let parsed: any;
     try {
       parsed = JSON.parse(toolCall.function.arguments);
     } catch (e) {
       console.error("Failed to parse tool args:", e);
-      return json({ error: "تعذّر تحليل خرج الذكاء الاصطناعي" }, 500);
+      console.error("Raw args:", toolCall.function.arguments?.slice(0, 2000));
+      return json({ error: "تعذّر تحليل خرج الذكاء الاصطناعي (JSON غير مكتمل — قد يكون تم بلوغ حد الإخراج)" }, 500);
     }
+    console.log("Parsed columns:", parsed?.columns?.length, "rows:", parsed?.rows?.length);
 
     const outColumns: string[] = Array.isArray(parsed.columns)
       ? parsed.columns.filter((c: any) => typeof c === "string" && c.trim())
@@ -173,6 +181,7 @@ ${
       : [];
 
     if (!outColumns.length || !outRows.length) {
+      console.error("Empty plan. Parsed:", JSON.stringify(parsed)?.slice(0, 1000));
       return json({ error: "الخطة المولّدة فارغة" }, 500);
     }
 
