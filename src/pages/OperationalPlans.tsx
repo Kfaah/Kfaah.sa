@@ -2592,23 +2592,23 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
 
                                   {isExpanded && (
                                     <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
-                                      <div className="flex items-center justify-between gap-3 border-b border-primary/15 pb-2 mb-3">
+                                      <div className="flex items-center justify-between gap-3 rounded-md bg-green-600 px-3 py-2 mb-3">
                                         <div className="flex items-center gap-2 min-w-0">
-                                          <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                            <Calendar className="w-3.5 h-3.5 text-primary" />
+                                          <div className="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center flex-shrink-0">
+                                            <Calendar className="w-3.5 h-3.5 text-white" />
                                           </div>
-                                          <span className="text-xs font-semibold text-primary truncate">التوزيع الشهري</span>
+                                          <span className="text-xs font-semibold text-white truncate">التوزيع الشهري</span>
                                         </div>
                                         <div className="flex items-center gap-1.5 flex-shrink-0">
                                           {isEditMode && (isEditingThisMonth ? (
                                             <>
-                                              <Button size="sm" variant="ghost" className="h-7 px-2 text-green-600 hover:bg-green-50" onClick={() => handleSaveMonthlyTargets(plan)}>
+                                              <Button size="sm" variant="ghost" className="h-7 px-2 text-white hover:bg-white/15" onClick={() => handleSaveMonthlyTargets(plan)}>
                                                 <Check className="w-3.5 h-3.5" />
                                               </Button>
                                               <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-7 px-2 text-red-600 hover:bg-red-50"
+                                                className="h-7 px-2 text-white hover:bg-white/15"
                                                 onClick={() => {
                                                   setIsEditingMonths(null);
                                                   setEditingMonthlyTargets(prev => {
@@ -2622,11 +2622,11 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                               </Button>
                                             </>
                                           ) : (
-                                            <Button size="sm" variant="ghost" className="h-7 px-2 text-primary hover:bg-primary/10" onClick={() => handleStartEditMonths(plan)}>
+                                            <Button size="sm" variant="ghost" className="h-7 px-2 text-white hover:bg-white/15" onClick={() => handleStartEditMonths(plan)}>
                                               <Pencil className="w-3.5 h-3.5" />
                                             </Button>
                                           ))}
-                                          <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:bg-background" onClick={() => setExpandedPlanId(null)}>
+                                          <Button size="sm" variant="ghost" className="h-7 px-2 text-white hover:bg-white/15" onClick={() => setExpandedPlanId(null)}>
                                             <X className="w-3.5 h-3.5" />
                                           </Button>
                                         </div>
@@ -2640,8 +2640,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                             : (monthData?.monthly_target || 0);
 
                                           return (
-                                            <div key={index} className="rounded-md bg-blue-50 border border-blue-100 px-2 py-1.5 text-center min-h-[54px]">
-                                              <div className="text-[11px] text-blue-600/70 leading-none mb-1.5">{month}</div>
+                                            <div key={index} className="rounded-md bg-blue-500 border border-blue-600 px-2 py-1.5 text-center min-h-[54px]">
+                                              <div className="text-[11px] text-white/90 leading-none mb-1.5">{month}</div>
                                               {isEditingThisMonth ? (
                                                 <Input
                                                   type="number"
@@ -2651,16 +2651,16 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                                   className="h-7 text-center text-xs font-bold px-1"
                                                 />
                                               ) : (
-                                                <div className={`text-sm font-bold ${target > 0 ? 'text-blue-700' : 'text-blue-300'}`}>{formatNumber(target)}</div>
+                                                <div className={`text-sm font-bold ${target > 0 ? 'text-white' : 'text-white/50'}`}>{formatNumber(target)}</div>
                                               )}
                                             </div>
                                           );
                                         })}
                                       </div>
 
-                                      <div className="mt-2 rounded-md bg-green-50 border border-green-200 px-3 py-2 flex items-center justify-between">
-                                        <span className="text-xs font-medium text-green-700/80">المجموع</span>
-                                        <span className="text-base font-bold text-green-700">
+                                      <div className="mt-2 rounded-md bg-green-600 border border-green-700 px-3 py-2 flex items-center justify-between">
+                                        <span className="text-xs font-medium text-white">المجموع</span>
+                                        <span className="text-base font-bold text-white">
                                           {formatNumber(isEditingThisMonth
                                             ? currentMonthlyValues.reduce((sum, val) => sum + (val || 0), 0)
                                             : plan.annual_target
