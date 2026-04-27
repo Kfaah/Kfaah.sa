@@ -2104,14 +2104,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
                                   />
                                   <div className="flex flex-col gap-1 min-w-0">
-                                    {plan.sub_initiative && (
-                                      <Badge
-                                        variant="outline"
-                                        className="self-start text-[10px] px-2 py-0.5 bg-violet-50 text-violet-700 border-violet-200 font-medium"
-                                      >
-                                        ↳ {plan.sub_initiative}
-                                      </Badge>
-                                    )}
                                     <p className={`text-sm ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
                                   </div>
                                 </div>
