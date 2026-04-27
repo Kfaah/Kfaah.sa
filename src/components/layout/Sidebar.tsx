@@ -455,7 +455,7 @@ export function Sidebar() {
                   if (short) {
                     return (
                       <div className="text-white drop-shadow-sm leading-tight">
-                        <p className="text-base font-bold">{short[0]}</p>
+                        <p className={cn("font-bold whitespace-nowrap", short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
                         {short[1] && (
                           <p className="text-sm font-semibold opacity-95">{short[1]}</p>
                         )}
