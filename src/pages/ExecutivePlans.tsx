@@ -1599,7 +1599,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   : "bg-white border-gray-200 text-gray-800 hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
                                               )}
                                             >
-                                              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isDeptExpanded ? "" : "-rotate-90")} />
+                                              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isDeptExpanded ? "" : "rotate-90")} />
                                               <Building2 className="w-3.5 h-3.5" />
                                               <span className="font-semibold text-xs flex-1">{dept.name}</span>
                                               <Badge variant="secondary" className={cn("text-[9px] px-1 py-0 h-4", isDeptExpanded ? "bg-white/20 text-white border-0" : "")}>
@@ -1636,7 +1636,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                     : "bg-white border-gray-200 text-gray-800 hover:border-[hsl(var(--accent))] hover:bg-[hsl(var(--accent)/0.05)]"
                                                 )}
                                               >
-                                                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isEmpExpanded ? "" : "-rotate-90")} />
+                                                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isEmpExpanded ? "" : "rotate-90")} />
                                                 <User className="w-3.5 h-3.5" />
                                                 <span className="font-medium text-xs flex-1">{emp.name}</span>
                                                 <Badge variant="secondary" className={cn("text-[9px] px-1 py-0 h-4", isEmpExpanded ? "bg-white/20 text-white border-0" : "")}>
