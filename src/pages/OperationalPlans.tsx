@@ -2058,9 +2058,9 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           <div className="op-plans-table-wrap rounded-lg border border-gray-200 bg-white">
                             <table className="w-full" dir="rtl">
                               <thead>
-                                <tr className="bg-[hsl(var(--primary))] shadow-sm">
+                                <tr className="bg-gradient-to-l from-green-700 via-green-600 to-green-700 shadow-sm">
                                   {visibleColumns.map((column: string, index: number) => (
-                                    <th key={`${column}-${index}`} className={`py-4 px-5 text-center sticky top-0 z-30 bg-[hsl(var(--primary))] ${index > 0 ? "border-r border-white/20" : ""}`}>
+                                    <th key={`${column}-${index}`} className={`py-4 px-5 text-center sticky top-0 z-30 bg-green-600 ${index > 0 ? "border-r border-white/30" : ""}`}>
                                       <span className="text-sm font-semibold text-white">{column}</span>
                                     </th>
                                   ))}
