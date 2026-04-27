@@ -1607,12 +1607,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       onClick={() => toggleDay(dayKey)}
                                     >
                                       <div className="flex items-start gap-2">
-                                        <ChevronDown
-                                          className={cn(
-                                            "w-4 h-4 text-[hsl(var(--primary))] transition-transform mt-0.5 shrink-0",
-                                            !isDayExpanded && "-rotate-90"
-                                          )}
-                                        />
                                         <div className="flex flex-col items-start gap-1 flex-1">
                                           <div className="flex items-center gap-1.5">
                                             <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))]" />
@@ -1620,6 +1614,19 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </div>
                                           <div className="text-xs text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatGregorianDate(l.date)}</div>
                                           <div className="text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>{formatHijriDate(l.date)}</div>
+                                        </div>
+                                        <div
+                                          className={cn(
+                                            "w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all shadow-sm",
+                                            "bg-white border border-[hsl(var(--primary)/0.3)] hover:bg-[hsl(var(--primary)/0.1)] hover:border-[hsl(var(--primary))]"
+                                          )}
+                                        >
+                                          <ChevronDown
+                                            className={cn(
+                                              "w-4 h-4 text-[hsl(var(--primary))] transition-transform",
+                                              !isDayExpanded && "-rotate-90"
+                                            )}
+                                          />
                                         </div>
                                       </div>
                                     </TableCell>
