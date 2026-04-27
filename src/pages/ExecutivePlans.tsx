@@ -202,6 +202,17 @@ function formatGregorianShort(date: Date): string {
   return rtlIsolate(`${day} / ${month}`);
 }
 
+// تمييز العدد العربي: 3-10 جمع قلة، 11+ مفرد منصوب
+function pluralAr(n: number, singular: string, plural: string): string {
+  return n >= 3 && n <= 10 ? plural : singular;
+}
+function activityCount(n: number): string {
+  return `${n} ${pluralAr(n, "نشاط", "أنشطة")}`;
+}
+function deptCount(n: number): string {
+  return `${n} ${pluralAr(n, "قسم", "أقسام")}`;
+}
+
 function wrapTextByChars(text: string, maxChars = 30): string {
   const raw = (text ?? "").toString().trim();
   if (!raw) return "";
