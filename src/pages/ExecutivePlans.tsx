@@ -1162,6 +1162,35 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 </SelectContent>
               </Select>
             </div>
+
+            {/* فلتر الخطة */}
+            {availablePlans.length > 0 && (
+              <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-emerald-100 shadow-sm hover:border-emerald-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                  <Layers className="w-4 h-4 text-white" />
+                </div>
+                <Select
+                  dir="rtl"
+                  value={selectedPlanNames.size === 0 ? "__all__" : Array.from(selectedPlanNames)[0]}
+                  onValueChange={(val) => {
+                    if (val === "__all__") setSelectedPlanNames(new Set());
+                    else setSelectedPlanNames(new Set([val]));
+                  }}
+                >
+                  <SelectTrigger className="w-[160px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
+                    <SelectValue placeholder="الخطة" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="__all__">جميع الخطط</SelectItem>
+                    {availablePlans.map((p) => (
+                      <SelectItem key={p.name} value={p.name}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             {/* فلتر الأشهر */}
             <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
