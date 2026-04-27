@@ -53,7 +53,7 @@ const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: [string, string] 
   { match: /صواب/, lines: ["جمعية صواب لتأهيل", "المتعافين من الإدمان"] },
   { match: /مآثر/, lines: ["جمعية مآثر للدعوة والإرشاد", "وتوعية الجاليات بمحافظة العارضة"] },
   { match: /القصبة/, lines: ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بمركز القصبة"] },
-  { match: /حرف/, lines: ["جمعية حرف", "التعليمية"] },
+  { match: /حرف/, lines: ["جمعية حرف التعليمية", ""] },
 ];
 
 function getShortOrgName(fullName: string): [string, string] | null {
