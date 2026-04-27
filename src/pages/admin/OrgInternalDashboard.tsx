@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SourceLink } from "@/components/admin/SourceLink";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
@@ -156,6 +157,34 @@ export default function OrgInternalDashboard({
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
   }, [initialTab]);
+
+  // Tabs that have been visited at least once. Once visited, we keep their
+  // iframe mounted so that returning to the tab is instantaneous (no full
+  // page/app reload inside the iframe).
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set([initialTab ?? "overview"]));
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [activeTab]);
+
+  // Background preload of the heaviest / most-used embedded tabs shortly
+  // after the dashboard shell is ready. This makes the first click on
+  // these tabs feel instant because the iframe is already warmed up.
+  useEffect(() => {
+    if (!org?.slug) return;
+    const t = setTimeout(() => {
+      setVisitedTabs((prev) => {
+        const next = new Set(prev);
+        ["tasks", "reports", "performance", "operational-plans", "innovation"].forEach((k) => next.add(k));
+        return next;
+      });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [org?.slug]);
 
   const loadAll = async () => {
     if (!orgId) return;
@@ -559,21 +588,66 @@ export default function OrgInternalDashboard({
           />
         </TabsContent>
 
-        {/* TASKS / REPORTS / INNOVATION / UPLOADS / DONORS - placeholder summaries linking to existing pages */}
-        <TabsContent value="tasks" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/tasks" title="المهام" />
+        {/* TASKS / REPORTS / INNOVATION / UPLOADS / DONORS - placeholder summaries linking to existing pages.
+            Use forceMount so that once a tab has been visited (or preloaded),
+            its iframe stays in the DOM and re-visits are instantaneous. */}
+        <TabsContent
+          value="tasks"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/tasks"
+            title="المهام"
+            isActive={visitedTabs.has("tasks")}
+          />
         </TabsContent>
-        <TabsContent value="reports" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/admin/reports" title="التقارير" embedSlug={false} />
+        <TabsContent
+          value="reports"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/admin/reports"
+            title="التقارير"
+            embedSlug={false}
+            isActive={visitedTabs.has("reports")}
+          />
         </TabsContent>
-        <TabsContent value="innovation" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/admin/innovation" title="الابتكار والتحديث" embedSlug={false} />
+        <TabsContent
+          value="innovation"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/admin/innovation"
+            title="الابتكار والتحديث"
+            embedSlug={false}
+            isActive={visitedTabs.has("innovation")}
+          />
         </TabsContent>
         <TabsContent value="uploads" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
         </TabsContent>
-        <TabsContent value="operational-plans" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/admin/action-plans" title="الخطط من التوصيات" embedSlug={false} />
+        <TabsContent
+          value="operational-plans"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/admin/action-plans"
+            title="الخطط من التوصيات"
+            embedSlug={false}
+            isActive={visitedTabs.has("operational-plans")}
+          />
         </TabsContent>
         <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
@@ -585,8 +659,18 @@ export default function OrgInternalDashboard({
             <ExecutivePlans embedded />
           </Suspense>
         </TabsContent>
-        <TabsContent value="performance" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <EmbeddedOrgPage slug={org?.slug} path="/performance" title="تقييم الأداء" />
+        <TabsContent
+          value="performance"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <EmbeddedOrgPage
+            slug={org?.slug}
+            path="/performance"
+            title="تقييم الأداء"
+            isActive={visitedTabs.has("performance")}
+          />
         </TabsContent>
         <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <div className="space-y-4">
@@ -752,7 +836,25 @@ const EmbeddedOrgPage = forwardRef<HTMLDivElement, {
   path: string;
   title: string;
   embedSlug?: boolean;
-}>(function EmbeddedOrgPage({ slug, path, title, embedSlug = true }, ref) {
+  /**
+   * When true, mount the iframe immediately even before the tab becomes
+   * visible. Useful for preloading the most-used tabs in the background
+   * so subsequent clicks render instantly.
+   */
+  preload?: boolean;
+  /**
+   * The currently-active tab value (if any). When provided, the iframe
+   * will lazy-mount on first activation and then remain mounted, so
+   * future visits to this tab are instant (no full reload).
+   */
+  isActive?: boolean;
+}>(function EmbeddedOrgPage({ slug, path, title, embedSlug = true, preload = false, isActive = true }, ref) {
+  // Once we have ever mounted the iframe, keep it mounted forever.
+  const [hasMounted, setHasMounted] = useState<boolean>(preload || isActive);
+  useEffect(() => {
+    if (preload || isActive) setHasMounted(true);
+  }, [preload, isActive]);
+
   if (!slug) {
     return (
       <Card ref={ref}>
@@ -764,6 +866,12 @@ const EmbeddedOrgPage = forwardRef<HTMLDivElement, {
     );
   }
   const src = embedSlug ? `/${slug}${path}?embedded=1` : `${path}?embedded=1&org=${slug}`;
+  if (!hasMounted) {
+    // Light placeholder until the tab is visited or preloaded.
+    return (
+      <div ref={ref} className="w-full" style={{ minHeight: 200 }} />
+    );
+  }
   return (
     <div ref={ref} className="w-full">
       <iframe
