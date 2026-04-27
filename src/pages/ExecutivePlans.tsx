@@ -1230,8 +1230,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           for (const m of groupedPlans) {
             for (const dg of m.dateGroups) {
               for (const a of dg.activities) {
-                if (a.responsibleEmployee?.department_name) deptSet.add(a.responsibleEmployee.department_name);
-                if (a.responsibleEmployee?.id) empSet.add(a.responsibleEmployee.id);
+                if (a.departmentName) deptSet.add(a.departmentName);
+                if (a.employeeId) empSet.add(a.employeeId);
               }
             }
           }
