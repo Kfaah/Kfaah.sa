@@ -2559,6 +2559,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 placeholder="المبادرة"
                               />
                             </td>
+                            {/* المبادرة الفرعية - فارغة */}
+                            <td className="py-2 px-4 border-l-2 border-gray-300"></td>
                             {/* النشاط */}
                             <td className="py-2 px-4 border-l-2 border-gray-300">
                               <Input
