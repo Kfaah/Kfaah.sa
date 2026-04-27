@@ -611,26 +611,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     };
   })();
 
-  // توليد AI للخطط التشغيلية
+  // توليد AI للخطط التشغيلية: انتقل لصفحة الرفع لاختيار ملف ثم التوليد
   const handleAIGeneratePlans = async () => {
-    setIsAIGenerating(true);
-    try {
-      // هذه الوظيفة ستكون للاستخدام المستقبلي
-      toast({
-        title: "قريباً",
-        description: "ميزة توليد الخطط التشغيلية بالذكاء الاصطناعي ستكون متاحة قريباً",
-      });
-      setIsAIDialogOpen(false);
-    } catch (error: any) {
-      console.error("Error generating plans:", error);
-      toast({
-        title: "خطأ",
-        description: error?.message || "فشل في توليد الخطط",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAIGenerating(false);
-    }
+    setIsAIDialogOpen(false);
+    navigate("/operational-plans/upload");
   };
 
   const fetchPlans = async () => {
