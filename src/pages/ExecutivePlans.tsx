@@ -1224,9 +1224,22 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         </div>
 
         {/* إحصائيات سريعة */}
-        {!loading && groupedPlans.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* الأشهر المغطاة — أقصى اليمين في RTL */}
+        {!loading && groupedPlans.length > 0 && (() => {
+          const deptSet = new Set<string>();
+          const empSet = new Set<string>();
+          for (const m of groupedPlans) {
+            for (const dg of m.dateGroups) {
+              for (const a of dg.activities) {
+                if (a.departmentName) deptSet.add(a.departmentName);
+                if (a.employeeId) empSet.add(a.employeeId);
+              }
+            }
+          }
+          const totalDays = groupedPlans.reduce((sum, g) => sum + g.dateGroups.length, 0);
+          const totalActivities = groupedPlans.reduce((sum, g) => sum + g.activities.length, 0);
+          return (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {/* 1. الأشهر — أقصى اليمين في RTL */}
             <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
@@ -1239,50 +1252,60 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               </div>
             </div>
 
-            {/* إجمالي الأيام */}
+            {/* 2. أيام التنفيذ */}
             <div className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/80 text-xs font-medium">أيام التنفيذ</p>
-                  <p className="text-2xl font-bold">
-                    {groupedPlans.reduce((sum, g) => sum + g.dateGroups.length, 0)}
-                  </p>
+                  <p className="text-2xl font-bold">{totalDays}</p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
                   <CalendarDays className="w-5 h-5" />
                 </div>
               </div>
             </div>
-            
-            {/* إجمالي الأنشطة */}
+
+            {/* 3. الأقسام */}
+            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-3 text-white shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/80 text-xs font-medium">الأقسام</p>
+                  <p className="text-2xl font-bold">{deptSet.size}</p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <Building2 className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            {/* 4. الموظفون */}
+            <div className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl p-3 text-white shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/80 text-xs font-medium">الموظفون</p>
+                  <p className="text-2xl font-bold">{empSet.size}</p>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <Users className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            {/* 5. الأنشطة */}
             <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl p-3 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/80 text-xs font-medium">الأنشطة</p>
-                  <p className="text-2xl font-bold">
-                    {groupedPlans.reduce((sum, g) => sum + g.activities.length, 0)}
-                  </p>
+                  <p className="text-2xl font-bold">{totalActivities}</p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
                   <Activity className="w-5 h-5" />
                 </div>
               </div>
             </div>
-            
-            {/* المهام المرتبطة */}
-            <div className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.8)] rounded-xl p-3 text-white shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white/80 text-xs font-medium">المهام</p>
-                  <p className="text-2xl font-bold">{tasks.length}</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                  <ListTodo className="w-5 h-5" />
-                </div>
-              </div>
-            </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* المحتوى الرئيسي */}
         {loading ? (
@@ -1378,7 +1401,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           الموظف
                         </TableHead>
                         <TableHead className="text-right font-bold text-white min-w-[320px]">
-                          المهام
+                          الأنشطة
                         </TableHead>
                       </TableRow>
                     </TableHeader>
