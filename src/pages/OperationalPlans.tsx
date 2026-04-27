@@ -78,8 +78,10 @@ interface OperationalPlan {
   activity_name: string;
   strategic_goal: string | null;
   initiative: string | null;
+  sub_initiative: string | null;
   strategic_goal_id: string | null;
   initiative_id: string | null;
+  sub_initiative_id: string | null;
   annual_target: number;
   year: number;
   status: string;
@@ -2091,7 +2093,17 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   <ChevronDown 
                                     className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
                                   />
-                                  <p className={`text-sm ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
+                                  <div className="flex flex-col gap-1 min-w-0">
+                                    {plan.sub_initiative && (
+                                      <Badge
+                                        variant="outline"
+                                        className="self-start text-[10px] px-2 py-0.5 bg-violet-50 text-violet-700 border-violet-200 font-medium"
+                                      >
+                                        ↳ {plan.sub_initiative}
+                                      </Badge>
+                                    )}
+                                    <p className={`text-sm ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
+                                  </div>
                                 </div>
                               </td>
                               

@@ -2657,6 +2657,8 @@ export type Database = {
           status: string
           strategic_goal: string | null
           strategic_goal_id: string | null
+          sub_initiative: string | null
+          sub_initiative_id: string | null
           updated_at: string
           user_id: string
           year: number
@@ -2674,6 +2676,8 @@ export type Database = {
           status?: string
           strategic_goal?: string | null
           strategic_goal_id?: string | null
+          sub_initiative?: string | null
+          sub_initiative_id?: string | null
           updated_at?: string
           user_id: string
           year?: number
@@ -2691,6 +2695,8 @@ export type Database = {
           status?: string
           strategic_goal?: string | null
           strategic_goal_id?: string | null
+          sub_initiative?: string | null
+          sub_initiative_id?: string | null
           updated_at?: string
           user_id?: string
           year?: number
@@ -2722,6 +2728,13 @@ export type Database = {
             columns: ["strategic_goal_id"]
             isOneToOne: false
             referencedRelation: "strategic_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_plans_sub_initiative_id_fkey"
+            columns: ["sub_initiative_id"]
+            isOneToOne: false
+            referencedRelation: "sub_initiatives"
             referencedColumns: ["id"]
           },
         ]
@@ -3206,6 +3219,54 @@ export type Database = {
           },
           {
             foreignKeyName: "strategic_goals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sub_initiatives: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          initiative_id: string
+          name: string
+          organization_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          initiative_id: string
+          name: string
+          organization_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          initiative_id?: string
+          name?: string
+          organization_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_initiatives_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_initiatives_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
