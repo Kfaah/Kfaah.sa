@@ -250,53 +250,80 @@ const Tasks = ({ embedded = false }: TasksProps) => {
 
   // تم إزالة التحقق من المهمة النشطة - يتم الآن من خلال أيقونة تسجيل الحضور في الشريط الجانبي
 
-  // جلب جميع البيانات بالتوازي لتسريع التحميل
+  // جلب جميع البيانات بدون حجب الصفحة: كاش فوري ثم تحديث في الخلفية
   useEffect(() => {
-    if (!authUser) return;
+    if (!authUser || !orgId) return;
 
-    // PERF: Only show the blocking spinner on the *first* load. Re-fetches
-    // (e.g. when the auth user resolves a second time) keep the previous
-    // task list visible so the page never feels like it freezes again.
-    setLoading((prev) => (tasks.length === 0 ? true : prev));
-
-    // جلب المهام (الأولوية القصوى — يحدد متى تختفي شاشة التحميل)
-    const tasksPromise = supabase
-      .from("tasks")
-      .select("*")
-      .order("due_date", { ascending: true })
-      .limit(500)
-      .then(({ data, error }) => {
-        if (error) {
-          toast({ title: "خطأ", description: error.message, variant: "destructive" });
-        } else {
-          setTasks((data as Task[]) || []);
+    let cancelled = false;
+    if (cacheKey) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+        if (cached?.tasks) {
+          setTasks(cached.tasks);
+          setEmployees(cached.employees || []);
+          setDepartments(cached.departments || []);
+          setActivities(cached.activities || []);
+          setHasFetchedTasks(true);
         }
-        setLoading(false); // إخفاء شاشة التحميل فور وصول المهام
-      });
+      } catch {
+        // تجاهل الكاش التالف
+      }
+    }
 
-    // باقي البيانات تُجلب بالتوازي وتظهر تدريجيًا دون تأخير الواجهة
-    supabase
-      .from("departments")
-      .select("id, name")
-      .order("name")
-      .then(({ data, error }) => {
-        if (!error) setDepartments((data as Department[]) || []);
-      });
+    const taskColumns = "id,title,description,user_id,executive_plan_id,priority,status,category,due_date,ai_generated,created_at,completion_percentage,quality_percentage,estimated_time_minutes,actual_time_minutes,started_at";
 
-    supabase
-      .from("employees")
-      .select("id, full_name, user_id, department_id")
-      .order("full_name")
-      .then(({ data, error }) => {
-        if (!error) setEmployees((data as Employee[]) || []);
-      });
+    const loadFast = async () => {
+      try {
+        const [tasksRes, employeesRes, departmentsRes] = await Promise.all([
+          supabase
+            .from("tasks")
+            .select(taskColumns)
+            .eq("organization_id", orgId)
+            .order("due_date", { ascending: true })
+            .limit(300),
+          supabase
+            .from("employees")
+            .select("id, full_name, user_id, department_id")
+            .eq("organization_id", orgId)
+            .order("full_name")
+            .limit(500),
+          supabase
+            .from("departments")
+            .select("id, name")
+            .eq("organization_id", orgId)
+            .order("name"),
+        ]);
 
-    // PERF: The activities list is only used by the activity filter dropdown.
-    // Defer it slightly so it never competes with the critical task fetch
-    // and never blocks the table from appearing. Two-level inner joins on
-    // executive_plans are heavy — keep them off the critical path.
+        if (cancelled) return;
+        if (tasksRes.error) throw tasksRes.error;
+
+        const nextTasks = (tasksRes.data as Task[]) || [];
+        const nextEmployees = (employeesRes.data as Employee[]) || [];
+        const nextDepartments = (departmentsRes.data as Department[]) || [];
+        setTasks(nextTasks);
+        setEmployees(nextEmployees);
+        setDepartments(nextDepartments);
+        setHasFetchedTasks(true);
+
+        if (cacheKey) {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            tasks: nextTasks,
+            employees: nextEmployees,
+            departments: nextDepartments,
+            activities,
+            cachedAt: Date.now(),
+          }));
+        }
+      } catch (error: any) {
+        if (!cancelled) toast({ title: "خطأ", description: error.message, variant: "destructive" });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadFast();
+
     const activitiesTimer = setTimeout(async () => {
-      if (!authUser) return;
       try {
         const { data, error } = await supabase
           .from("executive_plans")
@@ -308,19 +335,29 @@ const Tasks = ({ embedded = false }: TasksProps) => {
               )
             )
           `)
-          .limit(500);
+          .eq("organization_id", orgId)
+          .limit(300);
         if (error) throw error;
+        if (cancelled) return;
         const activitiesMap: ActivityInfo[] = (data || []).map((ep: any) => ({
           executive_plan_id: ep.id,
           activity_name: ep.operational_plan_month?.operational_plan?.activity_name || "غير محدد",
         }));
         setActivities(activitiesMap);
+        if (cacheKey) {
+          const cached = JSON.parse(localStorage.getItem(cacheKey) || "{}");
+          localStorage.setItem(cacheKey, JSON.stringify({ ...cached, activities: activitiesMap, cachedAt: Date.now() }));
+        }
       } catch (error: any) {
         console.error("Error fetching activities:", error);
       }
-    }, 0);
-    return () => clearTimeout(activitiesTimer);
-  }, [authUser]);
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(activitiesTimer);
+    };
+  }, [authUser?.id, orgId, cacheKey]);
 
   // توليد المهام بالذكاء الاصطناعي لشهر كامل
   const handleGenerateMonthTasks = async () => {
