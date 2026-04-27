@@ -662,6 +662,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       planMonths.filter(pm => pm.month === month).forEach(pm => {
         const plan = operationalPlans.find(p => p.id === pm.operational_plan_id);
         if (!plan) return;
+        // فلترة بحسب الخطط المختارة
+        if (selectedPlanNames.size > 0) {
+          const pname = plan.plan_name || "الخطة الأولى";
+          if (!selectedPlanNames.has(pname)) return;
+        }
 
         // تحديد الموظف المسؤول عن هذا النشاط (responsible_employee_id أولاً، وإلا مالك الخطة)
         const respEmp = plan.responsible_employee_id
