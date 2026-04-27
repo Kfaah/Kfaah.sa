@@ -2804,6 +2804,20 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   </div>
                                 </td>
                               )}
+                              {/* عمود حذف دائم - يظهر دائماً خارج وضع التعديل */}
+                              {!isEditMode && (
+                                <td className="w-16 py-4 px-3 text-center border-r border-gray-200">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-700"
+                                    onClick={() => handleDeletePlan(plan.id)}
+                                    title="حذف النشاط"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </td>
+                              )}
                             </tr>
                           );
                           
