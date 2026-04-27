@@ -1628,29 +1628,26 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     const totalActsInDept = Array.from(dept.emps.values()).reduce((s, e) => s + e.acts.length, 0);
                                     return (
                                       <React.Fragment key={`dept-row-${deptKey}`}>
-                                        {/* صف رأس القسم */}
+                                        {/* صف رأس القسم — بهوية الجمعية الزرقاء */}
                                         <TableRow
-                                          className={cn(
-                                            "cursor-pointer transition-colors border-t border-gray-200",
-                                            isDeptExpanded ? "bg-slate-50" : "bg-slate-50/60 hover:bg-slate-100"
-                                          )}
+                                          className="cursor-pointer transition-all border-t-2 border-[hsl(var(--primary))] bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.92)]"
                                           onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
                                         >
                                           {/* عمود القسم */}
-                                          <TableCell className="border-l border-gray-200 align-middle py-2.5">
+                                          <TableCell className="border-l border-white/20 align-middle py-3">
                                             <div className="flex items-center gap-2 pr-1">
-                                              <ChevronDown className={cn("w-4 h-4 text-slate-600 transition-transform", isDeptExpanded ? "" : "rotate-90")} />
-                                              <Building2 className="w-4 h-4 text-slate-700" />
-                                              <span className="font-semibold text-sm text-slate-800 truncate">{dept.name}</span>
+                                              <ChevronDown className={cn("w-4 h-4 text-white transition-transform", isDeptExpanded ? "" : "rotate-90")} />
+                                              <Building2 className="w-4 h-4 text-white/90" />
+                                              <span className="font-bold text-sm text-white truncate">{dept.name}</span>
                                             </div>
                                           </TableCell>
                                           {/* عمود الموظف — عدّاد */}
-                                          <TableCell className="border-l border-gray-200 align-middle py-2.5">
-                                            <span className="text-xs text-slate-500">{empCount} موظف</span>
+                                          <TableCell className="border-l border-white/20 align-middle py-3">
+                                            <span className="text-xs text-white/85 font-medium">{empCount} موظف</span>
                                           </TableCell>
                                           {/* عمود المهام — عدّاد */}
-                                          <TableCell className="align-middle py-2.5">
-                                            <span className="text-xs text-slate-500">{totalActsInDept} مهمة</span>
+                                          <TableCell className="align-middle py-3">
+                                            <span className="text-xs text-white/85 font-medium">{totalActsInDept} مهمة</span>
                                           </TableCell>
                                         </TableRow>
 
@@ -1664,14 +1661,21 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               <TableCell className="border-l border-gray-200 align-top py-2" />
                                               {/* عمود الموظف */}
                                               <TableCell
-                                                className="border-l border-gray-200 align-top py-2 cursor-pointer"
+                                                className="border-l border-gray-200 align-top py-2.5 cursor-pointer"
                                                 onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
                                               >
-                                                <div className="flex items-center gap-2">
-                                                  <ChevronDown className={cn("w-3.5 h-3.5 text-slate-500 transition-transform", isEmpExpanded ? "" : "rotate-90")} />
-                                                  <User className="w-3.5 h-3.5 text-slate-600" />
-                                                  <span className="font-medium text-xs text-slate-800 truncate flex-1">{emp.name}</span>
-                                                  <span className="text-[10px] text-slate-400">{emp.acts.length}</span>
+                                                <div className={cn(
+                                                  "flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all",
+                                                  isEmpExpanded
+                                                    ? "bg-[hsl(var(--primary)/0.06)] border-[hsl(var(--primary)/0.4)]"
+                                                    : "bg-white border-slate-200 hover:border-[hsl(var(--primary)/0.4)] hover:bg-[hsl(var(--primary)/0.03)]"
+                                                )}>
+                                                  <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isEmpExpanded ? "" : "rotate-90")} />
+                                                  <User className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                                  <span className="font-bold text-sm text-slate-800 truncate flex-1">{emp.name}</span>
+                                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-[hsl(var(--primary)/0.4)] text-[hsl(var(--primary))]">
+                                                    {emp.acts.length}
+                                                  </Badge>
                                                 </div>
                                               </TableCell>
                                               {/* عمود المهام */}
