@@ -1569,138 +1569,120 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     </div>
                                   </TableCell>
                                   
-                                  {/* === عمود الأقسام === */}
-                                  <TableCell className="border-l border-gray-200 align-top py-2 bg-[hsl(var(--primary)/0.02)]">
-                                    {!isDayExpanded ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => toggleSetKey(setExpandedDays, dayKey)}
-                                        className="text-xs text-muted-foreground hover:text-[hsl(var(--primary))] flex items-center gap-1.5"
-                                      >
-                                        <Building2 className="w-3.5 h-3.5" />
-                                        {deptList.length} قسم — اضغط للتوسيع
-                                      </button>
-                                    ) : (
-                                      <div className="flex flex-col gap-1.5">
-                                        {deptList.map(([dKey, dept]) => {
-                                          const deptKey = `${dayKey}|dept-${dKey}`;
-                                          const isDeptExpanded = expandedDayDepts.has(deptKey);
-                                          const empCount = dept.emps.size;
-                                          const totalActsInDept = Array.from(dept.emps.values()).reduce((s, e) => s + e.acts.length, 0);
-                                          return (
-                                            <button
-                                              key={`dept-${deptKey}`}
-                                              type="button"
-                                              onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
-                                              className={cn(
-                                                "flex items-center gap-2 px-2 py-1.5 rounded-md text-right transition-all border",
-                                                isDeptExpanded
-                                                  ? "bg-[hsl(var(--primary))] text-white border-[hsl(var(--primary))] shadow-sm"
-                                                  : "bg-white border-gray-200 text-gray-800 hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
-                                              )}
-                                            >
-                                              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isDeptExpanded ? "" : "rotate-90")} />
-                                              <Building2 className="w-3.5 h-3.5" />
-                                              <span className="font-semibold text-xs flex-1">{dept.name}</span>
-                                              <Badge variant="secondary" className={cn("text-[9px] px-1 py-0 h-4", isDeptExpanded ? "bg-white/20 text-white border-0" : "")}>
-                                                {empCount}/{totalActsInDept}
-                                              </Badge>
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                  </TableCell>
+                                   {/* === محتوى هرمي مدمج: قسم → موظف → مهام === */}
+                                   <TableCell colSpan={3} className="align-top p-0">
+                                     {!isDayExpanded ? (
+                                       <button
+                                         type="button"
+                                         onClick={() => toggleSetKey(setExpandedDays, dayKey)}
+                                         className="w-full text-right px-4 py-3 text-xs text-muted-foreground hover:text-[hsl(var(--primary))] flex items-center gap-2 transition-colors hover:bg-[hsl(var(--primary)/0.03)]"
+                                       >
+                                         <Building2 className="w-3.5 h-3.5" />
+                                         <span>{deptList.length} قسم · {dateGroup.activities.length} نشاط</span>
+                                         <span className="text-[10px] mr-auto opacity-70">— اضغط السهم للتوسيع</span>
+                                       </button>
+                                     ) : (
+                                       <div className="flex flex-col divide-y divide-gray-200">
+                                         {deptList.map(([dKey, dept]) => {
+                                           const deptKey = `${dayKey}|dept-${dKey}`;
+                                           const isDeptExpanded = expandedDayDepts.has(deptKey);
+                                           const empCount = dept.emps.size;
+                                           const totalActsInDept = Array.from(dept.emps.values()).reduce((s, e) => s + e.acts.length, 0);
+                                           return (
+                                             <div key={`dept-${deptKey}`} className="bg-[hsl(var(--primary)/0.02)]">
+                                               {/* رأس القسم — قابل للطي */}
+                                               <button
+                                                 type="button"
+                                                 onClick={() => toggleSetKey(setExpandedDayDepts, deptKey)}
+                                                 className={cn(
+                                                   "w-full grid grid-cols-[220px_1fr] items-center gap-3 px-3 py-2 text-right transition-all border-r-4",
+                                                   isDeptExpanded
+                                                     ? "bg-gradient-to-l from-[hsl(var(--primary)/0.08)] to-transparent border-[hsl(var(--primary))]"
+                                                     : "hover:bg-[hsl(var(--primary)/0.05)] border-[hsl(var(--primary)/0.3)]"
+                                                 )}
+                                               >
+                                                 <div className="flex items-center gap-2">
+                                                   <ChevronDown className={cn("w-4 h-4 text-[hsl(var(--primary))] transition-transform", isDeptExpanded ? "" : "rotate-90")} />
+                                                   <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                                   <span className="font-bold text-sm text-gray-800 truncate">{dept.name}</span>
+                                                 </div>
+                                                 <div className="flex items-center gap-2">
+                                                   <Badge variant="outline" className="text-[10px] border-[hsl(var(--primary)/0.4)] text-[hsl(var(--primary))]">
+                                                     {empCount} موظف
+                                                   </Badge>
+                                                   <Badge variant="outline" className="text-[10px] border-[hsl(var(--accent)/0.4)] text-[hsl(var(--accent))]">
+                                                     {totalActsInDept} مهمة
+                                                   </Badge>
+                                                 </div>
+                                               </button>
 
-                                  {/* === عمود الموظفين === */}
-                                  <TableCell className="border-l border-gray-200 align-top py-2 bg-[hsl(var(--accent)/0.02)]">
-                                    {!isDayExpanded ? (
-                                      <span className="text-xs text-gray-400">—</span>
-                                    ) : (
-                                      <div className="flex flex-col gap-1.5">
-                                        {deptList.flatMap(([dKey, dept]) => {
-                                          const deptKey = `${dayKey}|dept-${dKey}`;
-                                          if (!expandedDayDepts.has(deptKey)) return [];
-                                          return Array.from(dept.emps.entries()).map(([eKey, emp]) => {
-                                            const empKey = `${deptKey}|emp-${eKey}`;
-                                            const isEmpExpanded = expandedDayDeptEmps.has(empKey);
-                                            return (
-                                              <button
-                                                key={`emp-${empKey}`}
-                                                type="button"
-                                                onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
-                                                className={cn(
-                                                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-right transition-all border",
-                                                  isEmpExpanded
-                                                    ? "bg-[hsl(var(--accent))] text-white border-[hsl(var(--accent))] shadow-sm"
-                                                    : "bg-white border-gray-200 text-gray-800 hover:border-[hsl(var(--accent))] hover:bg-[hsl(var(--accent)/0.05)]"
-                                                )}
-                                              >
-                                                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isEmpExpanded ? "" : "rotate-90")} />
-                                                <User className="w-3.5 h-3.5" />
-                                                <span className="font-medium text-xs flex-1">{emp.name}</span>
-                                                <Badge variant="secondary" className={cn("text-[9px] px-1 py-0 h-4", isEmpExpanded ? "bg-white/20 text-white border-0" : "")}>
-                                                  {emp.acts.length}
-                                                </Badge>
-                                              </button>
-                                            );
-                                          });
-                                        })}
-                                        {deptList.every(([dKey]) => !expandedDayDepts.has(`${dayKey}|dept-${dKey}`)) && (
-                                          <span className="text-xs text-gray-400">اختر قسماً لعرض موظفيه</span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </TableCell>
-
-                                  {/* === عمود المهام === */}
-                                  <TableCell className="align-top py-2 bg-gray-50/40">
-                                    {!isDayExpanded ? (
-                                      <span className="text-xs text-gray-400">—</span>
-                                    ) : (
-                                      <div className="flex flex-col gap-2">
-                                        {deptList.flatMap(([dKey, dept]) => {
-                                          const deptKey = `${dayKey}|dept-${dKey}`;
-                                          if (!expandedDayDepts.has(deptKey)) return [];
-                                          return Array.from(dept.emps.entries()).flatMap(([eKey, emp]) => {
-                                            const empKey = `${deptKey}|emp-${eKey}`;
-                                            if (!expandedDayDeptEmps.has(empKey)) return [];
-                                            return [(
-                                              <div key={`tasks-${empKey}`} className="rounded-md border-2 border-[hsl(var(--accent)/0.3)] p-2 bg-white">
-                                                <div className="text-[10px] text-muted-foreground mb-1.5 font-semibold flex items-center gap-1">
-                                                  <User className="w-3 h-3" /> {emp.name}
-                                                </div>
-                                                <div className="grid grid-cols-1 gap-1.5">
-                                                  {emp.acts.map((act, idx) => (
-                                                    <div
-                                                      key={act.id}
-                                                      className={cn(
-                                                        "flex items-start gap-2 px-2 py-1.5 rounded-md text-xs",
-                                                        act.status === "completed"
-                                                          ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                                                          : act.status === "in_progress"
-                                                          ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                                                          : "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
-                                                      )}
-                                                    >
-                                                      <div className="w-4 h-4 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                        <span className="text-[9px] font-bold">{idx + 1}</span>
-                                                      </div>
-                                                      <span className="font-medium leading-snug flex-1">{act.activityName}</span>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </div>
-                                            )];
-                                          });
-                                        })}
-                                        {deptList.every(([dKey]) => !expandedDayDepts.has(`${dayKey}|dept-${dKey}`)) && (
-                                          <span className="text-xs text-gray-400">اختر قسماً ثم موظفاً لعرض مهامه</span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
+                                               {/* جسم القسم: الموظفون مع مهامهم */}
+                                               {isDeptExpanded && (
+                                                 <div className="flex flex-col divide-y divide-gray-100 bg-white">
+                                                   {Array.from(dept.emps.entries()).map(([eKey, emp]) => {
+                                                     const empKey = `${deptKey}|emp-${eKey}`;
+                                                     const isEmpExpanded = expandedDayDeptEmps.has(empKey);
+                                                     return (
+                                                       <div key={`emp-${empKey}`} className="grid grid-cols-[220px_200px_1fr] items-stretch">
+                                                         {/* عمود فارغ تحت القسم */}
+                                                         <div className="border-l border-gray-100" />
+                                                         {/* رأس الموظف القابل للطي */}
+                                                         <button
+                                                           type="button"
+                                                           onClick={() => toggleSetKey(setExpandedDayDeptEmps, empKey)}
+                                                           className={cn(
+                                                             "flex items-center gap-2 px-3 py-2 text-right border-l border-gray-100 transition-all",
+                                                             isEmpExpanded
+                                                               ? "bg-[hsl(var(--accent)/0.08)]"
+                                                               : "hover:bg-[hsl(var(--accent)/0.04)]"
+                                                           )}
+                                                         >
+                                                           <ChevronDown className={cn("w-3.5 h-3.5 text-[hsl(var(--accent))] transition-transform", isEmpExpanded ? "" : "rotate-90")} />
+                                                           <User className="w-3.5 h-3.5 text-[hsl(var(--accent))]" />
+                                                           <span className="font-semibold text-xs text-gray-800 truncate flex-1">{emp.name}</span>
+                                                           <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">
+                                                             {emp.acts.length}
+                                                           </Badge>
+                                                         </button>
+                                                         {/* عمود المهام */}
+                                                         <div className="px-3 py-2">
+                                                           {isEmpExpanded ? (
+                                                             <div className="flex flex-col gap-1.5">
+                                                               {emp.acts.map((act, idx) => (
+                                                                 <div
+                                                                   key={act.id}
+                                                                   className={cn(
+                                                                     "flex items-start gap-2 px-2.5 py-1.5 rounded-md text-xs shadow-sm",
+                                                                     act.status === "completed"
+                                                                       ? "bg-gradient-to-l from-green-500 to-emerald-600 text-white"
+                                                                       : act.status === "in_progress"
+                                                                       ? "bg-gradient-to-l from-blue-500 to-indigo-600 text-white"
+                                                                       : "bg-gradient-to-l from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
+                                                                   )}
+                                                                 >
+                                                                   <div className="w-4 h-4 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                                     <span className="text-[9px] font-bold">{idx + 1}</span>
+                                                                   </div>
+                                                                   <span className="font-medium leading-snug flex-1">{act.activityName}</span>
+                                                                 </div>
+                                                               ))}
+                                                             </div>
+                                                           ) : (
+                                                             <span className="text-[11px] text-gray-400">— مطوي ({emp.acts.length} مهمة)</span>
+                                                           )}
+                                                         </div>
+                                                       </div>
+                                                     );
+                                                   })}
+                                                 </div>
+                                               )}
+                                             </div>
+                                           );
+                                         })}
+                                       </div>
+                                     )}
+                                   </TableCell>
+                                 </TableRow>
                                 </React.Fragment>
                               );
                             })}
