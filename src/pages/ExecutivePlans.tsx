@@ -1490,7 +1490,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                         const leaves: Leaf[] = [];
                         monthGroup.dateGroups.forEach((dg, dayIdx) => {
                           const dayKey = `day-${monthGroup.month}-${dg.day}`;
-                          const isDayExpanded = expandedDays.has(dayKey);
+                          // الأيام مفتوحة افتراضيًا؛ expandedDays هنا تُستخدم كقائمة "المطوية"
+                          const isDayExpanded = !expandedDays.has(dayKey);
                           const date = new Date(selectedYear, monthGroup.month - 1, dg.day);
                           if (!isDayExpanded) {
                             // صف واحد فقط (مطوي) لهذا اليوم
