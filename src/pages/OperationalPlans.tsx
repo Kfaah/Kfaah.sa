@@ -1839,12 +1839,22 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         const isNumeric = ['annual_target', 'monthly_average'].includes(col.column_key);
                         
                         return (
-                          <th 
-                            key={col.id} 
-                            className={`py-4 px-5 ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
-                          >
-                            <span className="text-sm font-semibold text-white">{col.column_name}</span>
-                          </th>
+                          <>
+                            <th 
+                              key={col.id} 
+                              className={`py-4 px-5 ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
+                            >
+                              <span className="text-sm font-semibold text-white">{col.column_name}</span>
+                            </th>
+                            {col.column_key === 'initiative' && (
+                              <th
+                                key={`${col.id}-sub`}
+                                className="py-4 px-5 text-right border-r border-white/20"
+                              >
+                                <span className="text-sm font-semibold text-white">المبادرة الفرعية</span>
+                              </th>
+                            )}
+                          </>
                         );
                       })}
                       {isEditMode && (
