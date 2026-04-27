@@ -2248,10 +2248,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         return (
                           <div className="op-plans-table-wrap rounded-lg overflow-hidden border border-gray-200 bg-white">
                             <table className="w-full" dir="rtl">
-                              <thead>
-                                <tr className="bg-[hsl(var(--primary))]">
+                              <thead className="sticky top-0 z-30">
+                                <tr className="bg-[hsl(var(--primary))] shadow-sm">
                                   {headers.map((h, i) => (
-                                    <th key={i} className={h.cls}>
+                                    <th key={i} className={`${h.cls} bg-[hsl(var(--primary))]`}>
                                       <span className="text-sm font-semibold text-white">{h.label}</span>
                                     </th>
                                   ))}
@@ -2293,8 +2293,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <div className="op-plans-table-wrap rounded-lg overflow-hidden border border-gray-200 overflow-x-auto bg-white">
                 <table className="w-full">
                   {/* رأس الجدول */}
-                  <thead>
-                    <tr className="bg-[hsl(var(--primary))]">
+                  <thead className="sticky top-0 z-30">
+                    <tr className="bg-[hsl(var(--primary))] shadow-sm">
                       {/* عرض الأعمدة حسب الترتيب من columnOrder */}
                       {columnOrder.filter(c => c.is_visible).map((col, idx) => {
                         // تحديد خصائص العمود
@@ -2305,7 +2305,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           <>
                             <th 
                               key={col.id} 
-                              className={`py-4 px-5 ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
+                              className={`py-4 px-5 bg-[hsl(var(--primary))] ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
                             >
                               <span className="text-sm font-semibold text-white">{col.column_name}</span>
                             </th>
