@@ -524,6 +524,20 @@ export function EditPlanDialog({
                 />
               </div>
               <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <Folder className="w-4 h-4 text-violet-500" />
+                  المبادرة الفرعية (اختياري)
+                </Label>
+                <Input
+                  value={subInitiative}
+                  onChange={(e) => setSubInitiative(e.target.value)}
+                  placeholder="مثال: حملة رمضان، المرحلة الأولى..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  استخدم هذا الحقل إذا كانت المبادرة الرئيسية تتفرع لمبادرات فرعية. اتركه فارغًا إن لم تكن بحاجة له.
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label>المستهدف السنوي</Label>
                 <Input
                   type="number"
