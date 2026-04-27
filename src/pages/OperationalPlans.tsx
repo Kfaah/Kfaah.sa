@@ -562,11 +562,32 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
 
       setPlans(plansWithMonths);
     } catch (error: any) {
-      toast({
-        title: "خطأ",
-        description: "فشل في تحميل الخطط التشغيلية",
-        variant: "destructive",
-      });
+      // Log the real error so we can diagnose, and only surface a toast
+      // when the user is actively viewing this page. When this component
+      // is mounted as a background-preloaded embed (e.g. inside the
+      // organization's internal dashboard), a transient first-load failure
+      // shouldn't pop a destructive toast over whatever the user is
+      // currently looking at — we'll just retry silently on the next
+      // interaction.
+      console.error("[OperationalPlans] fetchPlans failed:", error);
+      const isHidden =
+        typeof document !== "undefined" && document.visibilityState === "hidden";
+      const isBackgroundEmbed =
+        embedded &&
+        typeof window !== "undefined" &&
+        // The dashboard preloads embedded tabs while a *different* tab is
+        // active. Detect that case by checking whether our nearest tab
+        // panel is hidden via Radix's data-state="inactive".
+        !!document.querySelector(
+          '[data-state="inactive"][role="tabpanel"] [data-operational-plans-root="true"]'
+        );
+      if (!isHidden && !isBackgroundEmbed) {
+        toast({
+          title: "خطأ",
+          description: "فشل في تحميل الخطط التشغيلية",
+          variant: "destructive",
+        });
+      }
     } finally {
       setPlansLoaded(true);
       setLoading(false);
