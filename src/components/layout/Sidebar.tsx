@@ -439,7 +439,7 @@ export function Sidebar() {
                 <div className="w-44 h-44 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
-                  src={isSawabOrg ? SAWAB_SIDEBAR_LOGO : branding.logoUrl}
+                  src={isSawabOrg ? SAWAB_SIDEBAR_LOGO : isAtefOrg ? atefLogoIcon : branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
                   className={cn(
                     "object-contain drop-shadow-xl",
