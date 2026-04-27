@@ -2044,55 +2044,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     </div>
                     <div className={`overflow-x-auto ${expanded ? "max-h-[600px] overflow-y-auto" : ""}`}>
                       {(() => {
-                        // أعمدة الهرم القابلة للدمج العمودي
-                        const mergeableCols = ep.columns.filter((c: string) =>
-                          /الهدف الاستراتيجي|^هدف|برنامج|المبادرة/.test(c)
-                        );
-                        // حساب rowSpan: لكل خلية إما تظهر مع span أو تُخفى لأنها تتبع التي قبلها
-                        const spanMap: Record<number, Record<string, number | null>> = {};
-                        for (let ri = 0; ri < previewRows.length; ri++) {
-                          spanMap[ri] = {};
-                          for (const c of mergeableCols) {
-                            const val = String(previewRows[ri][c] ?? "").trim();
-                            if (!val) { spanMap[ri][c] = 1; continue; }
-                            // إذا الخلية فوقها مباشرة لها نفس القيمة، أخفِ هذه
-                            const prev = ri > 0 ? String(previewRows[ri - 1][c] ?? "").trim() : "";
-                            // كذلك يجب أن تكون الأعمدة الأعلى منها هرميًا متطابقة (لمنع دمج خاطئ)
-                            const idx = mergeableCols.indexOf(c);
-                            const parentsMatch = mergeableCols.slice(0, idx).every((pc) =>
-                              String(previewRows[ri][pc] ?? "").trim() === String(previewRows[ri - 1]?.[pc] ?? "").trim()
-                            );
-                            if (ri > 0 && prev === val && parentsMatch) {
-                              spanMap[ri][c] = null; // مخفية
-                            } else {
-                              // احسب كم صف متتالي بنفس القيمة من هنا
-                              let span = 1;
-                              for (let j = ri + 1; j < previewRows.length; j++) {
-                                const nextVal = String(previewRows[j][c] ?? "").trim();
-                                const parentsStillMatch = mergeableCols.slice(0, idx).every((pc) =>
-                                  String(previewRows[j][pc] ?? "").trim() === String(previewRows[ri][pc] ?? "").trim()
-                                );
-                                if (nextVal === val && parentsStillMatch) span++;
-                                else break;
-                              }
-                              spanMap[ri][c] = span;
-                            }
-                          }
-                        }
-
-                        const targetCol = ep.columns.find((c: string) => /المستهدف السنوي|^المستهدف$|مستهدف/.test(c));
+                        // كشف أعمدة الهرم
+                        const goalCol = ep.columns.find((c: string) => /الهدف الاستراتيجي|^هدف|برنامج/.test(c));
+                        const initCol = ep.columns.find((c: string) => /^المبادرة الرئيسية$|^المبادرة$/.test(c));
+                        const subInitCol = ep.columns.find((c: string) => /المبادرة الفرعية|فرعية/.test(c));
+                        const activityCol = ep.columns.find((c: string) => /^النشاط$|^نشاط/.test(c));
+                        const respCol = ep.columns.find((c: string) => /مسؤول|منفذ/.test(c));
+                        const targetCol = ep.columns.find((c: string) => /المستهدف السنوي|^المستهدف$/.test(c));
                         const costCol = ep.columns.find((c: string) => /تكلفة|ميزانية/.test(c));
-
-                        // عكس ترتيب العرض: المستهدف السنوي يأخذ مكان التكلفة والعكس
-                        const displayColumns = (() => {
-                          if (!targetCol || !costCol) return ep.columns;
-                          const arr = [...ep.columns];
-                          const ti = arr.indexOf(targetCol);
-                          const ci = arr.indexOf(costCol);
-                          if (ti < 0 || ci < 0) return arr;
-                          [arr[ti], arr[ci]] = [arr[ci], arr[ti]];
-                          return arr;
-                        })();
 
                         const distributeMonthly = (annualStr: string): number[] => {
                           const num = parseInt(String(annualStr).replace(/[^\d]/g, ""), 10);
@@ -2102,111 +2061,190 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           return Array.from({ length: 12 }, (_, i) => base + (i < remainder ? 1 : 0));
                         };
 
+                        // تجميع الصفوف هرميًا: الهدف ← المبادرة ← الأنشطة
+                        type Group = { goal: string; colorIndex: number; inits: { init: string; plans: any[] }[] };
+                        const groups: Group[] = [];
+                        const goalMap = new Map<string, Map<string, any[]>>();
+                        previewRows.forEach((r: any) => {
+                          const g = goalCol ? String(r[goalCol] ?? "بدون هدف").trim() || "بدون هدف" : "بدون هدف";
+                          const i = initCol ? String(r[initCol] ?? "بدون مبادرة").trim() || "بدون مبادرة" : "بدون مبادرة";
+                          if (!goalMap.has(g)) goalMap.set(g, new Map());
+                          const m = goalMap.get(g)!;
+                          if (!m.has(i)) m.set(i, []);
+                          m.get(i)!.push(r);
+                        });
+                        let cIdx = 0;
+                        for (const [g, m] of goalMap.entries()) {
+                          const inits: { init: string; plans: any[] }[] = [];
+                          for (const [i, plans] of m.entries()) inits.push({ init: i, plans });
+                          groups.push({ goal: g, colorIndex: cIdx % GOAL_COLORS.length, inits });
+                          cIdx++;
+                        }
+
+                        const tableRows: JSX.Element[] = [];
+                        groups.forEach((group, gi) => {
+                          const color = GOAL_COLORS[group.colorIndex];
+                          const totalRowsInGoal = group.inits.reduce((s, x) => s + x.plans.length, 0);
+                          let goalRendered = false;
+
+                          group.inits.forEach((ig, ii) => {
+                            const initiativeHasNoSub = subInitCol
+                              ? ig.plans.every((p) => !String(p[subInitCol] ?? "").trim())
+                              : true;
+                            let initRendered = false;
+
+                            ig.plans.forEach((row, pi) => {
+                              const rowKey = `${ep.id}_${gi}_${ii}_${pi}`;
+                              const isExpanded = !!expandedExcelRows[rowKey];
+                              const annualValue = targetCol ? String(row[targetCol] ?? "") : "";
+                              const monthly = distributeMonthly(annualValue);
+                              const annualNum = parseInt(annualValue.replace(/[^\d]/g, ""), 10) || 0;
+                              const canExpand = !!targetCol && monthly.some(v => v > 0);
+
+                              const isLastInInit = pi === ig.plans.length - 1;
+                              const isLastInit = ii === group.inits.length - 1;
+                              const isLastGoal = gi === groups.length - 1;
+                              let bottomBorder = 'border-b border-gray-200';
+                              if (isLastInInit && isLastInit && !isLastGoal) bottomBorder = 'border-b-[3px] border-gray-400';
+                              else if (isLastInInit && !isLastInit) bottomBorder = 'border-b-2 border-gray-300';
+
+                              tableRows.push(
+                                <tr key={rowKey} className={`group/row ${color.bg} ${color.hover} border-r-4 ${color.border} transition-colors ${isExpanded ? 'bg-primary/5' : ''} ${bottomBorder}`}>
+                                  {/* الهدف الاستراتيجي */}
+                                  {!goalRendered && (
+                                    <td rowSpan={totalRowsInGoal} className={`py-4 px-5 align-middle ${color.bg} border-l-2 border-gray-200`}>
+                                      <div className="flex flex-col items-center justify-center text-center">
+                                        <p className={`font-semibold text-sm ${color.text} leading-relaxed text-center`}>{group.goal}</p>
+                                      </div>
+                                    </td>
+                                  )}
+                                  {/* المبادرة */}
+                                  {!initRendered && (
+                                    <td rowSpan={ig.plans.length} className="py-4 px-5 align-middle bg-gray-50/50 border-l-2 border-gray-200">
+                                      <div className="flex flex-col items-center justify-center text-center">
+                                        <p className="text-gray-700 text-sm font-medium leading-relaxed text-center">{ig.init}</p>
+                                      </div>
+                                    </td>
+                                  )}
+                                  {/* المبادرة الفرعية */}
+                                  {!initiativeHasNoSub && (
+                                    <td className="py-4 px-5 align-middle border-l-2 border-gray-200">
+                                      {subInitCol && String(row[subInitCol] ?? "").trim() ? (
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-violet-500 text-xs">↳</span>
+                                          <span className="text-sm text-violet-700 font-medium">{String(row[subInitCol])}</span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-gray-300 text-xs">—</span>
+                                      )}
+                                    </td>
+                                  )}
+                                  {/* النشاط */}
+                                  <td colSpan={initiativeHasNoSub ? 2 : 1} className="py-4 px-5 border-l-2 border-gray-200 align-top">
+                                    <div className="min-w-[320px] max-w-[560px]">
+                                      <p className="text-sm leading-relaxed text-gray-700">{activityCol ? String(row[activityCol] ?? "") : ""}</p>
+                                    </div>
+                                  </td>
+                                  {/* مسؤول التنفيذ */}
+                                  <td className="py-4 px-5 border-l-2 border-gray-200">
+                                    {respCol && String(row[respCol] ?? "").trim() ? (
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                                          <span className="text-xs font-semibold text-primary">{String(row[respCol]).charAt(0)}</span>
+                                        </div>
+                                        <span className="text-gray-700 text-sm">{String(row[respCol])}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-400 text-sm">غير محدد</span>
+                                    )}
+                                  </td>
+                                  {/* المستهدف السنوي + سهم التوسيع */}
+                                  <td className="w-40 py-4 px-3 text-center border-l-2 border-gray-200 align-top">
+                                    <div
+                                      className={`flex items-center justify-between gap-2 ${canExpand ? "cursor-pointer group/activity" : ""}`}
+                                      onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
+                                    >
+                                      <span className="text-lg font-bold text-gray-800 mx-auto">{annualValue || "—"}</span>
+                                      {canExpand && (
+                                        <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400 group-hover/activity:text-primary'}`} />
+                                      )}
+                                    </div>
+                                    {isExpanded && canExpand && (
+                                      <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200 text-right">
+                                        <div className="flex items-center justify-between gap-3 border-b border-primary/15 pb-2 mb-3">
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                              <Calendar className="w-3.5 h-3.5 text-primary" />
+                                            </div>
+                                            <span className="text-xs font-semibold text-primary truncate">التوزيع الشهري</span>
+                                          </div>
+                                          <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:bg-background"
+                                            onClick={(e) => { e.stopPropagation(); setExpandedExcelRows(prev => ({ ...prev, [rowKey]: false })); }}>
+                                            <X className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-1.5">
+                                          {MONTHS_AR.map((month, mi) => (
+                                            <div key={mi} className="rounded-md bg-background/90 border border-primary/10 px-2 py-1.5 text-center min-h-[54px]">
+                                              <div className="text-[11px] text-muted-foreground leading-none mb-1.5">{month}</div>
+                                              <div className={`text-sm font-bold ${monthly[mi] > 0 ? 'text-primary' : 'text-muted-foreground'}`}>{formatNumber(monthly[mi])}</div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        <div className="mt-2 rounded-md bg-primary/10 border border-primary/15 px-3 py-2 flex items-center justify-between">
+                                          <span className="text-xs font-medium text-muted-foreground">المجموع</span>
+                                          <span className="text-base font-bold text-primary">{formatNumber(annualNum)}</span>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </td>
+                                  {/* المتوسط الشهري */}
+                                  <td className="w-28 py-4 px-3 text-center border-l-2 border-gray-200 align-top">
+                                    <span className="text-lg font-bold text-[hsl(var(--primary))]">
+                                      {annualNum > 0 ? formatNumber(Math.round(annualNum / 12)) : "—"}
+                                    </span>
+                                  </td>
+                                  {/* التكلفة التقديرية */}
+                                  {costCol && (
+                                    <td className="w-32 py-4 px-3 text-center border-l-2 border-gray-200 align-top">
+                                      <span className="text-sm text-gray-700">{String(row[costCol] ?? "—")}</span>
+                                    </td>
+                                  )}
+                                </tr>
+                              );
+                              goalRendered = true;
+                              initRendered = true;
+                            });
+                          });
+                        });
+
+                        // رؤوس أعمدة ثابتة كنموذج الجدول السفلي
+                        const headers: { label: string; cls: string }[] = [
+                          { label: "الهدف الاستراتيجي", cls: "py-4 px-5 text-right" },
+                          { label: "المبادرة الرئيسية", cls: "py-4 px-5 text-right border-r border-white/20" },
+                          { label: "المبادرة الفرعية", cls: "py-4 px-5 text-right border-r border-white/20" },
+                          { label: "النشاط", cls: "py-4 px-5 text-right border-r border-white/20" },
+                          { label: "مسؤول التنفيذ", cls: "py-4 px-5 text-right border-r border-white/20" },
+                          { label: "المستهدف السنوي", cls: "py-4 px-3 text-center border-r border-white/20 w-40" },
+                          { label: "المتوسط الشهري", cls: "py-4 px-3 text-center border-r border-white/20 w-28" },
+                        ];
+                        if (costCol) headers.push({ label: "التكلفة التقديرية", cls: "py-4 px-3 text-center border-r border-white/20 w-32" });
+
                         return (
-                          <table className="w-full text-base" dir="rtl">
-                            <thead className="bg-[hsl(160,50%,25%)] text-white sticky top-0">
-                              <tr>
-                                <th className="px-3 py-3 text-right text-sm font-semibold border-l border-white/20 w-12">#</th>
-                                {displayColumns.map((c: string, i: number) => (
-                                  <th key={i} className="px-3 py-3 text-right text-sm font-semibold border-l border-white/20 whitespace-nowrap">
-                                    {c}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {previewRows.map((row: any, ri: number) => {
-                                const rowKey = `${ep.id}_${ri}`;
-                                const isRowExpanded = !!expandedExcelRows[rowKey];
-                                const annualValue = targetCol ? String(row[targetCol] ?? "") : "";
-                                const monthly = distributeMonthly(annualValue);
-                                const annualNum = parseInt(annualValue.replace(/[^\d]/g, ""), 10) || 0;
-                                const canExpand = !!targetCol && monthly.some(v => v > 0);
-                                return (
-                                  <Fragment key={ri}>
-                                    <tr className={ri % 2 === 0 ? "bg-white" : "bg-slate-50/60"}>
-                                      <td className="px-3 py-3 text-sm text-slate-400 border-b border-slate-100 text-center align-top">{ri + 1}</td>
-                                      {displayColumns.map((c: string, ci: number) => {
-                                        const isMergeable = mergeableCols.includes(c);
-                                        if (isMergeable) {
-                                          const span = spanMap[ri][c];
-                                          if (span === null) return null;
-                                          return (
-                                            <td
-                                              key={ci}
-                                              rowSpan={span as number}
-                                              className="px-3 py-3 text-base text-slate-800 font-semibold border-b border-l border-slate-200 whitespace-nowrap max-w-[300px] truncate align-middle bg-slate-50/40"
-                                            >
-                                              {String(row[c] ?? "")}
-                                            </td>
-                                          );
-                                        }
-                                        // عمود المستهدف السنوي: السهم + لوحة التوزيع الشهري داخل نفس الصف
-                                        if (targetCol && c === targetCol) {
-                                          return (
-                                            <td key={ci} className="px-3 py-3 text-slate-700 border-b border-slate-100 align-top">
-                                              <div
-                                                className={`flex items-start justify-between gap-2 ${canExpand ? "cursor-pointer group/activity" : ""}`}
-                                                onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
-                                              >
-                                                <p className={`text-base font-semibold leading-relaxed ${isRowExpanded ? "text-primary" : "text-gray-800"}`}>
-                                                  {String(row[c] ?? "")}
-                                                </p>
-                                                {canExpand ? (
-                                                  <ChevronDown className={`w-5 h-5 flex-shrink-0 mt-0.5 transition-transform ${isRowExpanded ? "rotate-180 text-primary" : "text-gray-400 group-hover/activity:text-primary"}`} />
-                                                ) : (
-                                                  <span className="w-4" />
-                                                )}
-                                              </div>
-                                              {isRowExpanded && canExpand && (
-                                                <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
-                                                  <div className="flex items-center justify-between gap-3 border-b border-primary/15 pb-2 mb-3">
-                                                    <div className="flex items-center gap-2 min-w-0">
-                                                      <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                        <Calendar className="w-3.5 h-3.5 text-primary" />
-                                                      </div>
-                                                      <span className="text-xs font-semibold text-primary truncate">التوزيع الشهري</span>
-                                                    </div>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      className="h-7 px-2 text-muted-foreground hover:bg-background"
-                                                      onClick={(e) => { e.stopPropagation(); setExpandedExcelRows(prev => ({ ...prev, [rowKey]: false })); }}
-                                                    >
-                                                      <X className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                  </div>
-                                                  <div className="grid grid-cols-4 gap-1.5">
-                                                    {MONTHS_AR.map((month, mi) => (
-                                                      <div key={mi} className="rounded-md bg-background/90 border border-primary/10 px-2 py-1.5 text-center min-h-[54px]">
-                                                        <div className="text-[11px] text-muted-foreground leading-none mb-1.5">{month}</div>
-                                                        <div className={`text-sm font-bold ${monthly[mi] > 0 ? "text-primary" : "text-muted-foreground"}`}>
-                                                          {formatNumber(monthly[mi])}
-                                                        </div>
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                  <div className="mt-2 rounded-md bg-primary/10 border border-primary/15 px-3 py-2 flex items-center justify-between">
-                                                    <span className="text-xs font-medium text-muted-foreground">المجموع</span>
-                                                    <span className="text-base font-bold text-primary">{formatNumber(annualNum)}</span>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </td>
-                                          );
-                                        }
-                                        return (
-                                          <td key={ci} className="px-3 py-3 text-base text-slate-700 border-b border-slate-100 whitespace-nowrap max-w-[320px] truncate align-top">
-                                            {String(row[c] ?? "")}
-                                          </td>
-                                        );
-                                      })}
-                                    </tr>
-                                  </Fragment>
-                                );
-                              })}
-                            </tbody>
-                          </table>
+                          <div className="op-plans-table-wrap rounded-lg overflow-hidden border border-gray-200 bg-white">
+                            <table className="w-full" dir="rtl">
+                              <thead>
+                                <tr className="bg-[hsl(var(--primary))]">
+                                  {headers.map((h, i) => (
+                                    <th key={i} className={h.cls}>
+                                      <span className="text-sm font-semibold text-white">{h.label}</span>
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>{tableRows}</tbody>
+                            </table>
+                          </div>
                         );
                       })()}
                       {!expanded && ep.rows.length > 5 && (
