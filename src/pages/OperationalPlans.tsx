@@ -2193,15 +2193,15 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                           </div>
                                           <div className="grid grid-cols-2 gap-1.5">
                                             {MONTHS_AR.map((month, mi) => (
-                                              <div key={mi} className="rounded-sm bg-muted/40 border border-gray-100 px-1.5 py-1 text-center min-h-[44px]">
-                                                <div className="text-[10px] text-muted-foreground leading-none mb-1">{month}</div>
-                                                <div className="text-xs font-semibold text-gray-700">{formatNumber(monthly[mi])}</div>
+                                              <div key={mi} className="rounded-sm bg-blue-50 border border-blue-100 px-1.5 py-1 text-center min-h-[44px]">
+                                                <div className="text-[10px] text-blue-600/70 leading-none mb-1">{month}</div>
+                                                <div className="text-xs font-semibold text-blue-700">{formatNumber(monthly[mi])}</div>
                                               </div>
                                             ))}
                                           </div>
-                                          <div className="mt-2 rounded-sm bg-muted/50 border border-gray-100 px-2 py-1.5 flex items-center justify-between">
-                                            <span className="text-[10px] font-medium text-muted-foreground">المجموع</span>
-                                            <span className="text-xs font-semibold text-gray-700">{formatNumber(annualNum)}</span>
+                                          <div className="mt-2 rounded-sm bg-green-50 border border-green-100 px-2 py-1.5 flex items-center justify-between">
+                                            <span className="text-[10px] font-medium text-green-700/80">المجموع</span>
+                                            <span className="text-xs font-semibold text-green-700">{formatNumber(annualNum)}</span>
                                           </div>
                                         </div>
                                       )}
