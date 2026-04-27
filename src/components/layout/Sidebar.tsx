@@ -152,6 +152,9 @@ export function Sidebar() {
   const isSawabOrg = /sawab|صواب/i.test(
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
+  const isAtefOrg = /atef|عطف/i.test(
+    `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
+  );
 
   // Resolve role_level from employees table to know which menu to show
   useEffect(() => {
@@ -442,7 +445,9 @@ export function Sidebar() {
                     "object-contain drop-shadow-xl",
                     isSawabOrg
                       ? "h-[108px] w-[174px] scale-100 translate-x-0 translate-y-0"
-                      : "h-[210px] w-[210px] scale-125"
+                      : isAtefOrg
+                        ? "h-[230px] w-[230px] scale-[1.35]"
+                        : "h-[210px] w-[210px] scale-125"
                   )}
                 />
               ) : (
@@ -464,9 +469,20 @@ export function Sidebar() {
                   if (short) {
                     return (
                        <div className={cn("drop-shadow-sm leading-tight", isSawabOrg ? "text-slate-800" : "text-white")}>
-                        <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
-                        {short[1] && (
-                          <p className={cn("font-semibold opacity-95", isSawabOrg ? "text-sm" : "text-sm")}>{short[1]}</p>
+                        {isAtefOrg ? (
+                          <>
+                            <p className="font-bold whitespace-nowrap text-sm leading-tight">جمعية عطف لرعاية الأيتام</p>
+                            <p className="mt-1 text-[10px] font-semibold leading-none text-white/85 tracking-wide">
+                              Atef Orphan Care Association
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
+                            {short[1] && (
+                              <p className={cn("font-semibold opacity-95", isSawabOrg ? "text-sm" : "text-sm")}>{short[1]}</p>
+                            )}
+                          </>
                         )}
                         {isSawabOrg && (
                           <p className="mt-1 text-[10px] font-semibold leading-none text-slate-600">
