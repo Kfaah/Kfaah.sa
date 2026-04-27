@@ -157,6 +157,34 @@ export default function OrgInternalDashboard({
     if (initialTab) setActiveTab(initialTab);
   }, [initialTab]);
 
+  // Tabs that have been visited at least once. Once visited, we keep their
+  // iframe mounted so that returning to the tab is instantaneous (no full
+  // page/app reload inside the iframe).
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set([initialTab ?? "overview"]));
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [activeTab]);
+
+  // Background preload of the heaviest / most-used embedded tabs shortly
+  // after the dashboard shell is ready. This makes the first click on
+  // these tabs feel instant because the iframe is already warmed up.
+  useEffect(() => {
+    if (!org?.slug) return;
+    const t = setTimeout(() => {
+      setVisitedTabs((prev) => {
+        const next = new Set(prev);
+        ["tasks", "reports", "performance", "operational-plans", "innovation"].forEach((k) => next.add(k));
+        return next;
+      });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [org?.slug]);
+
   const loadAll = async () => {
     if (!orgId) return;
     if (!hasLoadedOnce) setLoading(true);
