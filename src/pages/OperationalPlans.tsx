@@ -1980,6 +1980,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             return sum + 1 + (expandedPlanId === plan.id ? 1 : 0);
                           }, 0) + addActivityRowForThisInitiative;
                         let initRowRendered = false;
+                        // إذا لم يكن لأي نشاط في هذه المبادرة "مبادرة فرعية"، نُلغي العمود ونوسّع خلية النشاط
+                        const initiativeHasNoSubInitiatives = initGroup.plans.every(
+                          (p) => !p.sub_initiative || !p.sub_initiative.trim()
+                        );
                         
                         initGroup.plans.forEach((plan, planIndex) => {
                           const isExpanded = expandedPlanId === plan.id;
