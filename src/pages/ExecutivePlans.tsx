@@ -89,6 +89,7 @@ interface OperationalPlan {
   user_id: string;
   strategic_goal: string | null;
   initiative: string | null;
+  sub_initiative: string | null;
   responsible_employee_id?: string | null;
 }
 
