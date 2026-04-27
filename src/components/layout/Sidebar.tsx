@@ -440,7 +440,7 @@ export function Sidebar() {
                   className={cn(
                     "object-contain drop-shadow-xl",
                     isSawabOrg
-                      ? "h-auto w-[190px] -translate-x-6 translate-y-2"
+                      ? "h-auto w-[205px] -translate-x-6 translate-y-5"
                       : "h-[210px] w-[210px] scale-125"
                   )}
                 />
