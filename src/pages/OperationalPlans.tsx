@@ -2123,7 +2123,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 else if (isLastInSub && isLastSub && !isLastInit) bottomBorder = 'border-b-2 border-gray-300';
 
                                 tableRows.push(
-                                  <tr key={rowKey} className={`group/row ${color.bg} ${color.hover} border-r-4 ${color.border} transition-colors ${isExpanded ? 'bg-primary/5' : ''} ${bottomBorder}`}>
+                                  <tr key={rowKey} className={`group/row ${color.bg} ${color.hover} border-r-4 ${color.border} transition-colors ${isExpanded ? 'bg-muted/30' : ''} ${bottomBorder}`}>
                                     {/* الهدف الاستراتيجي */}
                                     {!goalRendered && (
                                       <td rowSpan={totalRowsInGoal} className={`py-4 px-5 align-middle text-center ${color.bg} border-l-2 border-gray-200`}>
@@ -2153,40 +2153,12 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                         )}
                                       </td>
                                     )}
-                                    {/* النشاط + لوحة التوزيع الشهري داخله */}
-                                    <td colSpan={initiativeHasNoSub ? 2 : 1} className="py-4 px-5 border-l-2 border-gray-200 align-middle">
-                                      <div className="flex flex-col gap-3 min-w-[320px] max-w-[560px] mx-auto">
-                                        <p className={`text-sm leading-relaxed text-center ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700'}`}>
+                                    {/* النشاط */}
+                                    <td colSpan={initiativeHasNoSub ? 2 : 1} className="py-4 px-5 border-l-2 border-gray-200 align-middle text-center">
+                                      <div className="min-w-[320px] max-w-[560px] mx-auto">
+                                        <p className="text-sm leading-relaxed text-center text-gray-700">
                                           {activityCol ? String(row[activityCol] ?? "") : ""}
                                         </p>
-                                        {isExpanded && canExpand && (
-                                          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
-                                            <div className="flex items-center justify-between gap-3 border-b border-primary/15 pb-2 mb-3">
-                                              <div className="flex items-center gap-2 min-w-0">
-                                                <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                  <Calendar className="w-3.5 h-3.5 text-primary" />
-                                                </div>
-                                                <span className="text-xs font-semibold text-primary truncate">التوزيع الشهري</span>
-                                              </div>
-                                              <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:bg-background"
-                                                onClick={(e) => { e.stopPropagation(); setExpandedExcelRows(prev => ({ ...prev, [rowKey]: false })); }}>
-                                                <X className="w-3.5 h-3.5" />
-                                              </Button>
-                                            </div>
-                                            <div className="grid grid-cols-4 gap-1.5">
-                                              {MONTHS_AR.map((month, mi) => (
-                                                <div key={mi} className="rounded-md bg-background/90 border border-primary/10 px-2 py-1.5 text-center min-h-[54px]">
-                                                  <div className="text-[11px] text-muted-foreground leading-none mb-1.5">{month}</div>
-                                                  <div className={`text-sm font-bold ${monthly[mi] > 0 ? 'text-primary' : 'text-muted-foreground'}`}>{formatNumber(monthly[mi])}</div>
-                                                </div>
-                                              ))}
-                                            </div>
-                                            <div className="mt-2 rounded-md bg-primary/10 border border-primary/15 px-3 py-2 flex items-center justify-between">
-                                              <span className="text-xs font-medium text-muted-foreground">المجموع</span>
-                                              <span className="text-base font-bold text-primary">{formatNumber(annualNum)}</span>
-                                            </div>
-                                          </div>
-                                        )}
                                       </div>
                                     </td>
                                     {/* مسؤول التنفيذ */}
@@ -2202,17 +2174,37 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                         <span className="text-gray-400 text-sm">غير محدد</span>
                                       )}
                                     </td>
-                                    {/* المستهدف السنوي - رقم فقط */}
+                                    {/* المستهدف السنوي + توزيع المستهدفات في نفس الخانة */}
                                     <td className="w-40 py-4 px-3 text-center border-l-2 border-gray-200 align-middle">
                                       <div
                                         className={`flex items-center justify-center gap-2 ${canExpand ? "cursor-pointer group/target" : ""}`}
                                         onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
                                       >
-                                        <span className="text-lg font-bold text-gray-800">{annualValue || "—"}</span>
+                                        <span className="text-base font-semibold text-gray-800">{annualValue || "—"}</span>
                                         {canExpand && (
                                           <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400 group-hover/target:text-primary'}`} />
                                         )}
                                       </div>
+                                      {isExpanded && canExpand && (
+                                        <div className="mt-3 rounded-md border border-gray-200 bg-white p-2 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                                          <div className="flex items-center justify-center gap-1.5 border-b border-gray-100 pb-2 mb-2">
+                                            <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                                            <span className="text-[11px] font-medium text-muted-foreground">التوزيع الشهري</span>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-1.5">
+                                            {MONTHS_AR.map((month, mi) => (
+                                              <div key={mi} className="rounded-sm bg-muted/40 border border-gray-100 px-1.5 py-1 text-center min-h-[44px]">
+                                                <div className="text-[10px] text-muted-foreground leading-none mb-1">{month}</div>
+                                                <div className="text-xs font-semibold text-gray-700">{formatNumber(monthly[mi])}</div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          <div className="mt-2 rounded-sm bg-muted/50 border border-gray-100 px-2 py-1.5 flex items-center justify-between">
+                                            <span className="text-[10px] font-medium text-muted-foreground">المجموع</span>
+                                            <span className="text-xs font-semibold text-gray-700">{formatNumber(annualNum)}</span>
+                                          </div>
+                                        </div>
+                                      )}
                                     </td>
                                     {/* التكلفة التقديرية */}
                                     {costCol && (
