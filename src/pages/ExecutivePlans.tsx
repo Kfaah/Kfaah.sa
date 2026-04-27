@@ -1857,7 +1857,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   className="flex items-center gap-2 w-full text-right"
                                                 >
                                                   <ChevronDown className={cn("w-4 h-4 text-gray-600 transition-transform", isEmpExpanded ? "" : "-rotate-90")} />
-                                                  <UserCircle className="w-4 h-4 text-gray-600" />
+                                                  <User className="w-4 h-4 text-gray-600" />
                                                   <span className="font-medium text-gray-800 text-sm">{emp.name}</span>
                                                   <Badge variant="secondary" className="text-[10px] mr-auto">
                                                     {emp.acts.length} نشاط
