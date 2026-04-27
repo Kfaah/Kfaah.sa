@@ -2081,7 +2081,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         }
 
                         const targetCol = ep.columns.find((c: string) => /المستهدف السنوي|^المستهدف$|مستهدف/.test(c));
-                        const arabicMonths = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+                        const activityCol = ep.columns.find((c: string) => /^النشاط$|نشاط/.test(c));
 
                         const distributeMonthly = (annualStr: string): number[] => {
                           const num = parseInt(String(annualStr).replace(/[^\d]/g, ""), 10);
@@ -2096,7 +2096,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             <thead className="bg-[hsl(160,50%,25%)] text-white sticky top-0">
                               <tr>
                                 <th className="px-3 py-2 text-right font-semibold border-l border-white/20 w-12">#</th>
-                                <th className="px-2 py-2 text-center font-semibold border-l border-white/20 w-10"></th>
                                 {ep.columns.map((c: string, i: number) => (
                                   <th key={i} className="px-3 py-2 text-right font-semibold border-l border-white/20 whitespace-nowrap">
                                     {c}
@@ -2110,23 +2109,12 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 const isRowExpanded = !!expandedExcelRows[rowKey];
                                 const annualValue = targetCol ? String(row[targetCol] ?? "") : "";
                                 const monthly = distributeMonthly(annualValue);
+                                const annualNum = parseInt(annualValue.replace(/[^\d]/g, ""), 10) || 0;
+                                const canExpand = !!targetCol && monthly.some(v => v > 0);
                                 return (
                                   <Fragment key={ri}>
                                     <tr className={ri % 2 === 0 ? "bg-white" : "bg-slate-50/60"}>
                                       <td className="px-3 py-2 text-slate-400 border-b border-slate-100 text-center align-top">{ri + 1}</td>
-                                      <td className="px-1 py-2 border-b border-slate-100 text-center align-top">
-                                        {targetCol && annualValue && monthly.some(v => v > 0) && (
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6"
-                                            onClick={() => setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
-                                            title={isRowExpanded ? "طي الأشهر" : "عرض المستهدفات الشهرية"}
-                                          >
-                                            {isRowExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                                          </Button>
-                                        )}
-                                      </td>
                                       {ep.columns.map((c: string, ci: number) => {
                                         const isMergeable = mergeableCols.includes(c);
                                         if (isMergeable) {
@@ -2142,6 +2130,60 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                             </td>
                                           );
                                         }
+                                        // عمود النشاط: أضف السهم قبل النص + لوحة التوسيع تحت النص
+                                        if (activityCol && c === activityCol) {
+                                          return (
+                                            <td key={ci} className="px-3 py-2 text-slate-700 border-b border-slate-100 align-top max-w-[420px]">
+                                              <div
+                                                className={`flex items-start gap-2 ${canExpand ? "cursor-pointer group/activity" : ""}`}
+                                                onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
+                                              >
+                                                {canExpand ? (
+                                                  <ChevronDown className={`w-4 h-4 flex-shrink-0 mt-0.5 transition-transform ${isRowExpanded ? "rotate-180 text-primary" : "text-gray-400 group-hover/activity:text-primary"}`} />
+                                                ) : (
+                                                  <span className="w-4" />
+                                                )}
+                                                <p className={`text-sm leading-relaxed ${isRowExpanded ? "text-primary font-semibold" : "text-gray-700"}`}>
+                                                  {String(row[c] ?? "")}
+                                                </p>
+                                              </div>
+                                              {isRowExpanded && canExpand && (
+                                                <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                                                  <div className="flex items-center justify-between gap-3 border-b border-primary/15 pb-2 mb-3">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                      <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                        <Calendar className="w-3.5 h-3.5 text-primary" />
+                                                      </div>
+                                                      <span className="text-xs font-semibold text-primary truncate">التوزيع الشهري</span>
+                                                    </div>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      className="h-7 px-2 text-muted-foreground hover:bg-background"
+                                                      onClick={(e) => { e.stopPropagation(); setExpandedExcelRows(prev => ({ ...prev, [rowKey]: false })); }}
+                                                    >
+                                                      <X className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                  </div>
+                                                  <div className="grid grid-cols-4 gap-1.5">
+                                                    {MONTHS_AR.map((month, mi) => (
+                                                      <div key={mi} className="rounded-md bg-background/90 border border-primary/10 px-2 py-1.5 text-center min-h-[54px]">
+                                                        <div className="text-[11px] text-muted-foreground leading-none mb-1.5">{month}</div>
+                                                        <div className={`text-sm font-bold ${monthly[mi] > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                                                          {formatNumber(monthly[mi])}
+                                                        </div>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                  <div className="mt-2 rounded-md bg-primary/10 border border-primary/15 px-3 py-2 flex items-center justify-between">
+                                                    <span className="text-xs font-medium text-muted-foreground">المجموع</span>
+                                                    <span className="text-base font-bold text-primary">{formatNumber(annualNum)}</span>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </td>
+                                          );
+                                        }
                                         return (
                                           <td key={ci} className="px-3 py-2 text-slate-700 border-b border-slate-100 whitespace-nowrap max-w-[280px] truncate align-top">
                                             {String(row[c] ?? "")}
@@ -2149,23 +2191,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                         );
                                       })}
                                     </tr>
-                                    {isRowExpanded && (
-                                      <tr className="bg-emerald-50/40">
-                                        <td></td>
-                                        <td></td>
-                                        <td colSpan={ep.columns.length} className="px-3 py-3 border-b border-slate-200">
-                                          <div className="text-xs font-semibold text-emerald-800 mb-2">توزيع المستهدف الشهري ({annualValue}):</div>
-                                          <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
-                                            {arabicMonths.map((m, mi) => (
-                                              <div key={mi} className="bg-white border border-emerald-200 rounded-md px-2 py-1.5 text-center">
-                                                <div className="text-[10px] text-slate-500">{m}</div>
-                                                <div className="text-sm font-bold text-emerald-700">{monthly[mi]}</div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    )}
                                   </Fragment>
                                 );
                               })}
