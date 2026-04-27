@@ -138,11 +138,8 @@ export function Sidebar() {
   const [roleReady, setRoleReady] = useState(isActuallyAdmin || isAdminArea);
 
   // خلفية واحدة ثابتة من أعلى القائمة إلى أسفلها بدون أي تدرج.
-  const sidebarBgStyle = branding.primary
-    ? {
-        backgroundColor: branding.primary,
-      }
-    : undefined;
+  // ملاحظة: لجمعية صواب نفرض خلفية بيضاء بحسب طلب المستخدم.
+  const sidebarBgStyle = undefined as React.CSSProperties | undefined;
   const visibleNavItems = previewAsEmployee
     ? employeeNavItems
     : !roleReady
@@ -416,9 +413,11 @@ export function Sidebar() {
       <div
         className={cn(
           "absolute inset-0",
-          !branding.primary && "bg-[hsl(var(--primary))]"
+          isSawabOrg
+            ? "bg-white"
+            : !branding.primary && "bg-[hsl(var(--primary))]"
         )}
-        style={sidebarBgStyle}
+        style={isSawabOrg ? undefined : (branding.primary ? { backgroundColor: branding.primary } : undefined)}
       />
 
       {/* Header Section with Logo */}
