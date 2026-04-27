@@ -1480,7 +1480,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {/* عمود الشهر - مدمج لجميع الصفوف */}
                                   {isFirstRow && (
                                     <TableCell 
-                                      rowSpan={monthRowSpan} 
+                                      rowSpan={totalDays} 
                                       className="bg-gray-100 border-l border-gray-200 align-top cursor-pointer hover:bg-gray-200 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
