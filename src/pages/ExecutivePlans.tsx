@@ -1723,26 +1723,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                         <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
                                                           <span className="text-[9px] font-bold">{idx + 1}</span>
                                                         </div>
-                                                        <div className="flex-1 min-w-0">
-                                                          {(act.initiative || act.subInitiative) && (
-                                                            <div className="flex flex-wrap items-center gap-1 mb-0.5">
-                                                              {act.initiative && (
-                                                                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))] border border-[hsl(var(--primary)/0.25)]">
-                                                                  <Target className="w-2.5 h-2.5" />
-                                                                  <span className="font-semibold">المبادرة:</span>
-                                                                  <span className="truncate max-w-[180px]">{act.initiative}</span>
-                                                                </span>
-                                                              )}
-                                                              {act.subInitiative && (
-                                                                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
-                                                                  <span className="font-semibold">فرعية:</span>
-                                                                  <span className="truncate max-w-[160px]">{act.subInitiative}</span>
-                                                                </span>
-                                                              )}
-                                                            </div>
-                                                          )}
-                                                          <span className="font-medium leading-snug">{act.activityName}</span>
-                                                        </div>
+                                                        <span className="font-medium leading-snug flex-1">{act.activityName}</span>
                                                       </div>
                                                     ))}
                                                   </div>
