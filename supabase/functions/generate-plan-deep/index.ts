@@ -426,6 +426,8 @@ ${fileSummaries.length ? fileSummaries.join("\n\n---\n\n") : "(لم يتم رف�
         plan_name: finalName,
         rows_count: plan.rows.length,
         executive_summary: plan.executive_summary,
+        accepted_files: acceptedFiles,
+        rejected_files: rejectedFiles,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
