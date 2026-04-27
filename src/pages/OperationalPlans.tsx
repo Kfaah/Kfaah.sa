@@ -2237,7 +2237,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                           <div className="op-plans-table-wrap rounded-lg overflow-hidden border border-gray-200 bg-white">
                             <table className="w-full" dir="rtl">
                               <thead>
-                                <tr className="bg-gray-600">
+                                <tr className="bg-[hsl(var(--primary))]">
                                   {headers.map((h, i) => (
                                     <th key={i} className={h.cls}>
                                       <span className="text-sm font-semibold text-white">{h.label}</span>
