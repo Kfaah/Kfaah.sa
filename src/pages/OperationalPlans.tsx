@@ -1839,12 +1839,22 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         const isNumeric = ['annual_target', 'monthly_average'].includes(col.column_key);
                         
                         return (
-                          <th 
-                            key={col.id} 
-                            className={`py-4 px-5 ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
-                          >
-                            <span className="text-sm font-semibold text-white">{col.column_name}</span>
-                          </th>
+                          <>
+                            <th 
+                              key={col.id} 
+                              className={`py-4 px-5 ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
+                            >
+                              <span className="text-sm font-semibold text-white">{col.column_name}</span>
+                            </th>
+                            {col.column_key === 'initiative' && (
+                              <th
+                                key={`${col.id}-sub`}
+                                className="py-4 px-5 text-right border-r border-white/20"
+                              >
+                                <span className="text-sm font-semibold text-white">المبادرة الفرعية</span>
+                              </th>
+                            )}
+                          </>
                         );
                       })}
                       {isEditMode && (
@@ -2084,6 +2094,18 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 </td>
                               )}
                               
+                              {/* المبادرة الفرعية */}
+                              <td className="py-4 px-5 align-middle border-l-2 border-gray-200">
+                                {plan.sub_initiative ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-violet-500 text-xs">↳</span>
+                                    <span className="text-sm text-violet-700 font-medium">{plan.sub_initiative}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-300 text-xs">—</span>
+                                )}
+                              </td>
+
                               {/* النشاط */}
                               <td className="py-4 px-5 border-l-2 border-gray-200">
                                 <div 
@@ -2094,14 +2116,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
                                   />
                                   <div className="flex flex-col gap-1 min-w-0">
-                                    {plan.sub_initiative && (
-                                      <Badge
-                                        variant="outline"
-                                        className="self-start text-[10px] px-2 py-0.5 bg-violet-50 text-violet-700 border-violet-200 font-medium"
-                                      >
-                                        ↳ {plan.sub_initiative}
-                                      </Badge>
-                                    )}
                                     <p className={`text-sm ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
                                   </div>
                                 </div>
@@ -2194,7 +2208,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             // حساب عدد الأعمدة للصف الموسع
                             // الأعمدة المرئية بعد الهدف والمبادرة + (الإجراء في وضع التعديل)
                             const visibleMovableColumns = columnOrder.filter(c => c.is_visible && !['strategic_goal', 'initiative'].includes(c.column_key)).length;
-                            const expandedColSpan = visibleMovableColumns + (isEditMode ? 1 : 0);
+                            // +1 لعمود "المبادرة الفرعية" الثابت
+                            const expandedColSpan = visibleMovableColumns + 1 + (isEditMode ? 1 : 0);
                             
                             rows.push(
                               <tr key={`${plan.id}-expanded`} className="bg-white">
@@ -2326,6 +2341,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 className={`${color.bg} border-r-4 ${color.border} bg-green-50/50`}
                               >
                                 {/* ملاحظة: الهدف الاستراتيجي والمبادرة يغطيان هذا الصف عبر rowSpan */}
+                                {/* المبادرة الفرعية - فارغة */}
+                                <td className="py-2 px-4 border-l-2 border-gray-300"></td>
                                 {/* النشاط */}
                                 <td className="py-2 px-4 border-l-2 border-gray-300">
                                   <Input
@@ -2411,6 +2428,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   autoFocus
                                 />
                               </td>
+                              {/* المبادرة الفرعية - فارغة */}
+                              <td className="py-2 px-4 border-l-2 border-gray-300"></td>
                               {/* النشاط */}
                               <td className="py-2 px-4 border-l-2 border-gray-300">
                                 <Input
@@ -2477,7 +2496,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               key={`add-init-btn-${group.strategicGoal}`} 
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-gray-50/50 transition-colors border-b-4 border-b-gray-400`}
                             >
-                              <td colSpan={columnOrder.filter(c => c.is_visible && !['strategic_goal'].includes(c.column_key)).length + 1} className="py-3 px-4">
+                              <td colSpan={columnOrder.filter(c => c.is_visible && !['strategic_goal'].includes(c.column_key)).length + 2} className="py-3 px-4">
                                 <div className="flex justify-center items-center gap-3">
                                   {/* زر إضافة مبادرة جديدة */}
                                   <Button
@@ -2544,6 +2563,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 placeholder="المبادرة"
                               />
                             </td>
+                            {/* المبادرة الفرعية - فارغة */}
+                            <td className="py-2 px-4 border-l-2 border-gray-300"></td>
                             {/* النشاط */}
                             <td className="py-2 px-4 border-l-2 border-gray-300">
                               <Input
@@ -2611,7 +2632,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             key="add-goal-btn" 
                             className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
                           >
-                            <td colSpan={columnOrder.filter(c => c.is_visible).length + 1} className="py-3 px-4">
+                            <td colSpan={columnOrder.filter(c => c.is_visible).length + 2} className="py-3 px-4">
                               <div className="flex justify-center">
                                 <Button
                                   variant="outline"
