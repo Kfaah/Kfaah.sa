@@ -39,6 +39,13 @@ const emptyForm: FormState = {
   is_active: true,
 };
 
+const SAWAB_ADMIN_LOGO = "/sawab-sidebar-logo-v10.png";
+
+function getAdminOrganizationLogo(o: Organization) {
+  const isSawab = /sawab|صواب/i.test(`${o.slug ?? ""} ${o.name ?? ""}`);
+  return isSawab ? SAWAB_ADMIN_LOGO : o.logo_url;
+}
+
 export default function AdminHub() {
   const navigate = useNavigate();
   const { isSuperAdmin, loading: orgLoading, refresh, switchOrg } = useOrganization();
@@ -209,12 +216,15 @@ export default function AdminHub() {
                 <div className="p-6">
                   {/* Logo + name */}
                   <div className="flex items-start gap-4 mb-4">
-                      <div className="w-16 h-16 rounded-2xl bg-admin-hub flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
-                      {o.logo_url ? (
-                        <img src={o.logo_url} alt={o.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Building2 className="w-8 h-8 text-white" />
-                      )}
+                      <div className="w-16 h-16 rounded-2xl bg-white border border-border flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+                      {(() => {
+                        const logoSrc = getAdminOrganizationLogo(o);
+                        return logoSrc ? (
+                          <img src={logoSrc} alt={o.name} className="w-full h-full object-contain p-1.5" />
+                        ) : (
+                          <Building2 className="w-8 h-8 text-muted-foreground" />
+                        );
+                      })()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-lg text-foreground line-clamp-2 leading-tight break-words">{o.name}</h3>
