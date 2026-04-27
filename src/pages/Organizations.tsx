@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization, type Organization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
+import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 type OrgWithCounts = Organization & { member_count?: number };
 
@@ -210,7 +211,8 @@ export default function Organizations() {
                   <div className="w-14 h-14 rounded-xl bg-white border border-border flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
                     {(() => {
                       const isSawab = /sawab|صواب/i.test(`${o.slug ?? ""} ${o.name ?? ""}`);
-                      const src = isSawab ? "/sawab-sidebar-logo-v10.png" : o.logo_url;
+                      const isAtef = /atef|atff|عطف/i.test(`${o.slug ?? ""} ${o.name ?? ""}`);
+                      const src = isSawab ? "/sawab-sidebar-logo-v10.png" : isAtef ? atefLogoIcon : o.logo_url;
                       return src ? (
                         <img src={src} alt={o.name} className="w-full h-full object-contain p-1" />
                       ) : (
