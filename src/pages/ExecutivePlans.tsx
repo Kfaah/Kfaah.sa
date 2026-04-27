@@ -1558,7 +1558,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           {totalDays} يوم
                                         </Badge>
                                         <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))] text-xs">
-                                          {monthGroup.activities.length} نشاط
+                                          {activityCount(monthGroup.activities.length)}
                                         </Badge>
                                       </div>
                                     </TableCell>
@@ -1581,7 +1581,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         </div>
                                         {isDayExpanded && (
                                           <Badge variant="outline" className="text-[10px] mt-1 border-[hsl(var(--primary))] text-[hsl(var(--primary))]">
-                                            {deptList.length} قسم · {dateGroup.activities.length} نشاط
+                                            {deptCount(deptList.length)} · {activityCount(dateGroup.activities.length)}
                                           </Badge>
                                         )}
                                       </div>
@@ -1641,7 +1641,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           className="w-full text-right px-4 py-3 text-xs text-muted-foreground hover:text-[hsl(var(--primary))] flex items-center gap-2 transition-colors hover:bg-[hsl(var(--primary)/0.03)]"
                                         >
                                           <Building2 className="w-3.5 h-3.5" />
-                                          <span>{deptList.length} قسم · {dateGroup.activities.length} نشاط</span>
+                                          <span>{deptCount(deptList.length)} · {activityCount(dateGroup.activities.length)}</span>
                                           <span className="text-[10px] mr-auto opacity-70">— اضغط السهم للتوسيع</span>
                                         </button>
                                       </TableCell>
@@ -1675,7 +1675,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </TableCell>
                                           {/* عمود المهام — عدّاد */}
                                           <TableCell className="align-middle py-3">
-                                            <span className="text-xs text-white/85 font-medium">{totalActsInDept} نشاط</span>
+                                            <span className="text-xs text-white/85 font-medium">{activityCount(totalActsInDept)}</span>
                                           </TableCell>
                                         </TableRow>
 
@@ -1723,7 +1723,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                     ))}
                                                   </div>
                                                 ) : (
-                                                  <span className="text-[11px] text-slate-400">— ({emp.acts.length} نشاط)</span>
+                                                  <span className="text-[11px] text-slate-400">— ({activityCount(emp.acts.length)})</span>
                                                 )}
                                               </TableCell>
                                             </TableRow>
@@ -1783,7 +1783,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     {monthGroup.monthName} {selectedYear}
                                   </span>
                                   <Badge className="bg-[hsl(var(--primary))] text-white">
-                                    {totalActivities} نشاط
+                                    {activityCount(totalActivities)}
                                   </Badge>
                                   <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))]">
                                     {monthGroup.activities.reduce((sum, a) => sum + a.days.length, 0)} يوم
@@ -1846,7 +1846,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         </span>
                                         <span className="text-sm text-muted-foreground">{selectedYear}</span>
                                         <Badge className="bg-[hsl(var(--primary))] text-white text-xs">
-                                          {totalActivities} نشاط
+                                          {activityCount(totalActivities)}
                                         </Badge>
                                         <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))] text-xs">
                                           {monthGroup.activities.reduce((sum, a) => sum + a.days.length, 0)} يوم
