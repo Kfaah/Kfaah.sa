@@ -13,6 +13,95 @@ const corsHeaders = {
 
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+// --- Relevance gate prompt ---
+const RELEVANCE_SYSTEM = `أنت مدقّق ملفات لخطة تشغيلية لجمعية خيرية.
+مهمتك: تحديد ما إذا كان الملف ذا صلة بالتخطيط التشغيلي للجمعية أم لا.
+
+يُعتبر الملف "ذا صلة" إذا كان يحتوي على واحد مما يلي:
+- خطط استراتيجية أو تشغيلية سابقة
+- أهداف ومبادرات وأنشطة
+- ميزانيات ومستهدفات وبرامج
+- تقارير أداء أو إحصائيات الجمعية
+- لوائح / سياسات / منهجيات عمل
+- بيانات الموظفين أو الإدارات أو الشركاء
+- دراسات احتياج، مستفيدين، تأثير اجتماعي
+
+يُعتبر "غير ذي صلة" إذا كان:
+- صور شخصية، صور غير مرتبطة، شعارات فقط
+- إيصالات شراء، فواتير فردية، كشوف بنكية شخصية
+- ملفات عشوائية، نصوص لا علاقة لها بعمل الجمعيات
+- محتوى ترفيهي، شخصي، أو تجاري لا صلة له
+- صور سيلفي، ميمز، محادثات عامة
+
+يجب أن تستدعي الأداة classify_file وترجع التصنيف فقط.`;
+
+const classifyTool = {
+  type: "function",
+  function: {
+    name: "classify_file",
+    description: "تصنيف ملف من حيث صلته بخطة تشغيلية لجمعية خيرية",
+    parameters: {
+      type: "object",
+      properties: {
+        is_relevant: { type: "boolean", description: "هل الملف ذو صلة بالخطة التشغيلية؟" },
+        category: {
+          type: "string",
+          description: "تصنيف موجز للمحتوى (مثال: خطة سابقة، إيصال شراء، صورة شخصية، تقرير أداء...)",
+        },
+        reason: {
+          type: "string",
+          description: "سبب القرار في جملة واحدة عربية واضحة",
+        },
+      },
+      required: ["is_relevant", "category", "reason"],
+      additionalProperties: false,
+    },
+  },
+};
+
+async function classifyFileRelevance(
+  apiKey: string,
+  fileName: string,
+  textPreview: string | null,
+  imageDataUrl: string | null,
+): Promise<{ is_relevant: boolean; category: string; reason: string }> {
+  const userParts: any[] = [
+    {
+      type: "text",
+      text: `اسم الملف: ${fileName}\n\n${textPreview ? `معاينة المحتوى النصي:\n${textPreview.slice(0, 4000)}` : "(لا يوجد محتوى نصي مستخرج — اعتمد على الاسم والصورة إن وجدت)"}`,
+    },
+  ];
+  if (imageDataUrl) {
+    userParts.push({ type: "image_url", image_url: { url: imageDataUrl } });
+  }
+
+  const resp = await fetch(LOVABLE_AI_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: RELEVANCE_SYSTEM },
+        { role: "user", content: userParts },
+      ],
+      tools: [classifyTool],
+      tool_choice: { type: "function", function: { name: "classify_file" } },
+    }),
+  });
+  if (!resp.ok) {
+    // Fail open: if classifier errors, allow the file but mark unknown
+    return { is_relevant: true, category: "غير محدد", reason: "تعذر التصنيف، تم القبول مبدئياً" };
+  }
+  const j = await resp.json();
+  const args = j?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) return { is_relevant: true, category: "غير محدد", reason: "لا توجد نتيجة تصنيف" };
+  try {
+    return JSON.parse(args);
+  } catch {
+    return { is_relevant: true, category: "غير محدد", reason: "صيغة تصنيف غير صالحة" };
+  }
+}
+
 interface RequestBody {
   plan_name?: string;
   year?: number;
