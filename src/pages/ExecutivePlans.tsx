@@ -276,6 +276,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isAIChoiceDialogOpen, setIsAIChoiceDialogOpen] = useState(false);
   const [aiSelectedMonths, setAiSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
+  const [isEditMode, setIsEditMode] = useState(false);
   // فلاتر إضافية
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
