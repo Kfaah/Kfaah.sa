@@ -993,10 +993,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             <>
               <Button
                 onClick={() => {
-                  setIsDialogOpen(true);
-                  setSelectedPlanMonthId("");
-                  setSelectedDays([]);
-                  setAddingMonth(new Date().getMonth() + 1);
+                  navigate(makeOrgUrl("/executive-plans/add"));
                 }}
                 className="gap-2 bg-white text-primary hover:bg-white/90"
               >
