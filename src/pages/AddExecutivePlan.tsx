@@ -285,7 +285,7 @@ export default function AddExecutivePlan() {
     if (!canSubmit) {
       toast({
         title: "بيانات ناقصة",
-        description: "اختر أيام، موظف واحد على الأقل، ومهمة واحدة على الأقل.",
+        description: "اختر أيام، موظف واحد على الأقل، ونشاطًا واحدًا على الأقل.",
         variant: "destructive",
       });
       return;
