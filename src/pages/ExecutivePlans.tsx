@@ -270,6 +270,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
+  // توسيع داخلي للأيام: يوم → أقسام → موظفين
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+  const [expandedDayDepts, setExpandedDayDepts] = useState<Set<string>>(new Set());
+  const [expandedDayDeptEmps, setExpandedDayDeptEmps] = useState<Set<string>>(new Set());
   const [globalViewMode, setGlobalViewMode] = useState<"dates" | "tasks">("dates"); // الافتراضي بحسب التواريخ
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [aiProgress, setAiProgress] = useState<
