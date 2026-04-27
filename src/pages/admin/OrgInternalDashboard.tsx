@@ -188,32 +188,52 @@ export default function OrgInternalDashboard({
 
   const loadAll = async () => {
     if (!orgId) return;
-    if (!hasLoadedOnce) setLoading(true);
-    try {
-      const [orgRes, profRes, analysisRes, qRes, tRes, empRes, donCount, campCount, taskCount] = await Promise.all([
-        supabase.from("organizations").select("id,name,slug,logo_url").eq("id", orgId).maybeSingle(),
-        supabase.from("organization_profiles").select("about,goals,website_url,store_url,twitter_url,instagram_url,tiktok_url,snapchat_url,youtube_url,facebook_url").eq("organization_id", orgId).maybeSingle(),
+    // PERF: Render the page shell as soon as the organization header is
+    // available. Heavier data (analysis, accountability, employees) streams
+    // in afterwards so the UI never feels frozen behind a giant spinner.
+    // Wave 1 — fast, unblocks the shell immediately.
+    const wave1 = Promise.all([
+      supabase.from("organizations").select("id,name,slug,logo_url").eq("id", orgId).maybeSingle(),
+      supabase.from("organization_profiles").select("about,goals,website_url,store_url,twitter_url,instagram_url,tiktok_url,snapchat_url,youtube_url,facebook_url").eq("organization_id", orgId).maybeSingle(),
+    ]).then(([orgRes, profRes]) => {
+      if (orgRes.data) setOrg(orgRes.data as OrgInfo);
+      setProfile((profRes.data as Profile) ?? null);
+      setLoading(false); // hide the giant spinner ASAP
+    });
+
+    // Wave 2 — counts (all `head:true`, very cheap).
+    const wave2 = Promise.all([
+      supabase.from("donations").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
+      supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
+      supabase.from("tasks").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
+      supabase.from("employees").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
+    ]).then(([donCount, campCount, taskCount, empCount]) => {
+      setCounts({
+        donations: donCount.count ?? 0,
+        campaigns: campCount.count ?? 0,
+        tasks: taskCount.count ?? 0,
+        employees: empCount.count ?? 0,
+      });
+    });
+
+    // Wave 3 — heavier rows used by specific tabs only. Streamed in.
+    const wave3 = (async () => {
+      const [analysisRes, qRes, tRes, empRes] = await Promise.all([
         supabase.from("deep_analyses").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("accountability_questions").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
         supabase.from("accountability_tasks").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
         supabase.from("employees").select("id,full_name,job_role,email,phone,avatar_url,title").eq("organization_id", orgId).limit(500),
-        supabase.from("donations").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
-        supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
-        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
       ]);
-
-      if (orgRes.data) setOrg(orgRes.data as OrgInfo);
-      setProfile((profRes.data as Profile) ?? null);
       setAnalysis((analysisRes.data as unknown as DeepAnalysis) ?? null);
       setQuestions((qRes.data as unknown as AccountabilityQuestion[]) ?? []);
       setATasks((tRes.data as unknown as AccountabilityTask[]) ?? []);
       setEmployees(empRes.data ?? []);
-      setCounts({
-        employees: empRes.data?.length ?? 0,
-        donations: donCount.count ?? 0,
-        campaigns: campCount.count ?? 0,
-        tasks: taskCount.count ?? 0,
-      });
+    })();
+
+    // Best-effort: resolve once everything is in. Errors in any wave are
+    // intentionally non-fatal for the rest of the UI.
+    try {
+      await Promise.allSettled([wave1, wave2, wave3]);
     } finally {
       setLoading(false);
     }
@@ -242,13 +262,10 @@ export default function OrgInternalDashboard({
 
   const empMap = new Map(employees.map((e) => [e.id, e]));
 
-  if (loading && !hasLoadedOnce) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // PERF: Render the page shell immediately. The header / KPI cards / tabs
+  // mount right away with placeholder values, and individual sections show
+  // their own lightweight loading state as their data streams in. This
+  // eliminates the large blocking spinner that previously hid the page.
 
   return (
     <div className={standaloneTab ? "space-y-6" : "space-y-6 p-8"} dir="rtl">
@@ -802,9 +819,12 @@ function InsightCard({ title, data }: { title: string; data: Record<string, unkn
   );
 }
 
-function EmptyState({ text, onAction, actionLabel }: { text: string; onAction?: () => void; actionLabel?: string }) {
+const EmptyState = forwardRef<
+  HTMLDivElement,
+  { text: string; onAction?: () => void; actionLabel?: string }
+>(function EmptyState({ text, onAction, actionLabel }, ref) {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-8 gap-3">
+    <div ref={ref} className="flex flex-col items-center justify-center text-center py-8 gap-3">
       <p className="text-muted-foreground">{text}</p>
       {onAction && actionLabel && (
         <Button onClick={onAction} className="bg-accent text-accent-foreground hover:bg-accent/90">
@@ -813,7 +833,7 @@ function EmptyState({ text, onAction, actionLabel }: { text: string; onAction?: 
       )}
     </div>
   );
-}
+});
 
 function PlaceholderTab({ title, desc, linkTo, linkLabel }: { title: string; desc: string; linkTo?: string; linkLabel?: string }) {
   return (
