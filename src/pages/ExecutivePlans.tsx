@@ -743,6 +743,55 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     return groups;
   }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames]);
 
+  // قائمة الخطط الفريدة المتاحة (مع عدد الأنشطة لكل خطة)
+  const availablePlans = useMemo(() => {
+    const map = new Map<string, { name: string; activitiesCount: number; planIds: Set<string> }>();
+    for (const p of operationalPlans) {
+      const key = p.plan_name || "الخطة الأولى";
+      if (!map.has(key)) map.set(key, { name: key, activitiesCount: 0, planIds: new Set() });
+      const entry = map.get(key)!;
+      entry.activitiesCount += 1;
+      entry.planIds.add(p.id);
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "ar"));
+  }, [operationalPlans]);
+
+  const togglePlanSelection = (planName: string) => {
+    setSelectedPlanNames(prev => {
+      const next = new Set(prev);
+      if (next.has(planName)) next.delete(planName);
+      else next.add(planName);
+      return next;
+    });
+  };
+
+  // حفظ تعديل خلية (الهدف اليومي والمنجز)
+  const saveExecPlanEdit = async (execPlanId: string) => {
+    const dt = parseFloat(editingValues.daily_target);
+    const ach = parseFloat(editingValues.achieved);
+    if (Number.isNaN(dt) || dt < 0) {
+      toast({ title: "قيمة غير صالحة", description: "الهدف اليومي يجب أن يكون رقمًا موجبًا", variant: "destructive" });
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const updates: any = { daily_target: dt };
+      if (!Number.isNaN(ach) && ach >= 0) updates.achieved = ach;
+      const { error } = await supabase
+        .from("executive_plans")
+        .update(updates)
+        .eq("id", execPlanId);
+      if (error) throw error;
+      setExecutivePlans(prev => prev.map(ep => ep.id === execPlanId ? { ...ep, ...updates } : ep));
+      setEditingExecPlanId(null);
+      toast({ title: "تم الحفظ", description: "تم تحديث بيانات النشاط" });
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   // الحصول على وضع العرض (الآن موحد للصفحة كلها)
   const getViewMode = (): "tasks" | "dates" => {
     return globalViewMode;
