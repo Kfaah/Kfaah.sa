@@ -2212,7 +2212,16 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     </td>
                                     {/* المستهدف السنوي - رقم فقط */}
                                     <td className="w-40 py-4 px-3 text-center border-l-2 border-gray-200 align-middle">
-                                      <span className="text-lg font-bold text-gray-800">{annualValue || "—"}</span>
+                                      <div
+                                        className={`flex items-center justify-center gap-2 ${canExpand ? "cursor-pointer group/target" : ""}`}
+                                        onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
+                                      >
+                                        <span className="text-lg font-bold text-gray-800">{annualValue || "—"}</span>
+                                        {canExpand && (
+                                          <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400 group-hover/target:text-primary'}`} />
+                                        )}
+                                      </div>
+                                    </td>
                                     </td>
                                     {/* التكلفة التقديرية */}
                                     {costCol && (
