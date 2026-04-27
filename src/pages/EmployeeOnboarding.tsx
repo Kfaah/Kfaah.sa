@@ -538,7 +538,7 @@ export default function EmployeeOnboarding() {
                   <Button
                     onClick={addDuty}
                     type="button"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     <Plus className="w-4 h-4 ml-1" />
                     إضافة المهمة
@@ -768,7 +768,11 @@ function ChipField({
             }
           }}
         />
-        <Button type="button" variant="secondary" onClick={onAdd}>
+        <Button
+          type="button"
+          onClick={onAdd}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
           إضافة
         </Button>
       </div>
