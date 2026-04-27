@@ -2178,7 +2178,9 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                         className={`flex items-center justify-center gap-2 ${canExpand ? "cursor-pointer group/target" : ""}`}
                                         onClick={() => canExpand && setExpandedExcelRows(prev => ({ ...prev, [rowKey]: !prev[rowKey] }))}
                                       >
-                                        <span className="text-base font-semibold text-gray-800">{annualValue || "—"}</span>
+                                        <span className="text-sm font-normal text-gray-700" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                          {annualNum > 0 ? annualNum.toLocaleString("en-US") : (annualValue || "—")}
+                                        </span>
                                         {canExpand && (
                                           <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400 group-hover/target:text-primary'}`} />
                                         )}
