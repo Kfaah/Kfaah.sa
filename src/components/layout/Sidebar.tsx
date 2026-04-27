@@ -53,7 +53,7 @@ const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: [string, string] 
   { match: /صواب/, lines: ["جمعية صواب لتأهيل", "المتعافين من الإدمان"] },
   { match: /مآثر/, lines: ["جمعية مآثر للدعوة والإرشاد", "وتوعية الجاليات بمحافظة العارضة"] },
   { match: /القصبة/, lines: ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بمركز القصبة"] },
-  { match: /حرف/, lines: ["جمعية حرف", "التعليمية"] },
+  { match: /حرف/, lines: ["جمعية حرف التعليمية", ""] },
 ];
 
 function getShortOrgName(fullName: string): [string, string] | null {
@@ -455,7 +455,7 @@ export function Sidebar() {
                   if (short) {
                     return (
                       <div className="text-white drop-shadow-sm leading-tight">
-                        <p className="text-base font-bold">{short[0]}</p>
+                        <p className={cn("font-bold whitespace-nowrap", short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
                         {short[1] && (
                           <p className="text-sm font-semibold opacity-95">{short[1]}</p>
                         )}
