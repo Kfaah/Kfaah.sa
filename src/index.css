@@ -59,6 +59,11 @@
     --sidebar-item-shadow: 155 38% 13% / 0.24;
     --sidebar-icon-start: 145 26% 37%;
     --sidebar-icon-end: 47 39% 40%;
+    --identity-name-start: 145 45% 31%;
+    --identity-name-end: 154 56% 35%;
+    --identity-role-start: 196 83% 37%;
+    --identity-role-end: 210 60% 32%;
+    --identity-foreground: 0 0% 100%;
     --admin-hub-primary: 210 60% 28%;
     --admin-hub-accent: 174 52% 52%;
     --admin-hub-foreground: 210 50% 15%;
@@ -121,6 +126,11 @@
     --sidebar-item-shadow: 155 38% 13% / 0.24;
     --sidebar-icon-start: 145 26% 37%;
     --sidebar-icon-end: 47 39% 40%;
+    --identity-name-start: 145 45% 31%;
+    --identity-name-end: 154 56% 35%;
+    --identity-role-start: 196 83% 37%;
+    --identity-role-end: 210 60% 32%;
+    --identity-foreground: 0 0% 100%;
     --admin-hub-primary: 210 60% 28%;
     --admin-hub-accent: 174 52% 52%;
     --admin-hub-foreground: 195 20% 96%;
