@@ -2079,6 +2079,18 @@ const AddOperationalPlan = () => {
         {/* Toolbar */}
         <div className="px-6 py-3 border-b bg-gradient-to-l from-primary/5 via-accent/5 to-transparent flex items-center gap-2 flex-wrap">
           <Button
+            variant="default"
+            size="sm"
+            onClick={addColumn}
+            className="h-7 text-xs gap-1"
+          >
+            <Columns className="w-3 h-3" />
+            عمود جديد
+          </Button>
+
+          <div className="h-4 w-px bg-border mx-2" />
+
+          <Button
             variant="outline"
             size="sm"
             onClick={addRow}
@@ -2105,19 +2117,7 @@ const AddOperationalPlan = () => {
             <Plus className="w-3 h-3" />
             10 صفوف
           </Button>
-          
-          <div className="h-4 w-px bg-border mx-2" />
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={addColumn}
-            className="h-7 text-xs gap-1"
-          >
-            <Columns className="w-3 h-3" />
-            عمود جديد
-          </Button>
-          
           <div className="h-4 w-px bg-border mx-2" />
           
           <Button
