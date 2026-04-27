@@ -1162,6 +1162,35 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 </SelectContent>
               </Select>
             </div>
+
+            {/* فلتر الخطة */}
+            {availablePlans.length > 0 && (
+              <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-emerald-100 shadow-sm hover:border-emerald-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                  <Layers className="w-4 h-4 text-white" />
+                </div>
+                <Select
+                  dir="rtl"
+                  value={selectedPlanNames.size === 0 ? "__all__" : Array.from(selectedPlanNames)[0]}
+                  onValueChange={(val) => {
+                    if (val === "__all__") setSelectedPlanNames(new Set());
+                    else setSelectedPlanNames(new Set([val]));
+                  }}
+                >
+                  <SelectTrigger className="w-[160px] h-9 border-0 bg-transparent focus:ring-0 shadow-none">
+                    <SelectValue placeholder="الخطة" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="__all__">جميع الخطط</SelectItem>
+                    {availablePlans.map((p) => (
+                      <SelectItem key={p.name} value={p.name}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             {/* فلتر الأشهر */}
             <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border-2 border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
@@ -1315,100 +1344,20 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           </div>
         </div>
 
-        {/* بطاقات الخطط */}
-        {!loading && availablePlans.length > 0 && (
-          <div className="bg-gradient-to-br from-white via-slate-50 to-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-md">
-                  <Layers className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">الخطط المتاحة</h3>
-                  <p className="text-[11px] text-slate-500">اختر خطة لعرض تفاصيلها أو دع الكل لعرضها مجتمعة</p>
-                </div>
-              </div>
-              {selectedPlanNames.size > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedPlanNames(new Set())}
-                  className="text-xs text-slate-600 hover:text-slate-900"
-                >
-                  <X className="w-3.5 h-3.5 ml-1" />
-                  عرض الكل
-                </Button>
-              )}
+        {/* شريط وضع التعديل */}
+        {isEditMode && (
+          <div className="flex items-center gap-3 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300 rounded-xl px-4 py-3 shadow-sm">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow">
+              <Pencil className="w-4 h-4 text-white" />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {/* بطاقة "الكل" */}
-              <button
-                onClick={() => setSelectedPlanNames(new Set())}
-                className={cn(
-                  "group relative overflow-hidden rounded-xl p-3 text-right transition-all border-2",
-                  selectedPlanNames.size === 0
-                    ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] border-transparent text-white shadow-lg shadow-[hsl(var(--primary)/0.25)]"
-                    : "bg-white border-slate-200 hover:border-[hsl(var(--primary)/0.5)] hover:shadow-md text-slate-700"
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className={cn("text-[11px] font-medium mb-0.5", selectedPlanNames.size === 0 ? "text-white/80" : "text-slate-500")}>
-                      عرض شامل
-                    </p>
-                    <p className="text-sm font-bold truncate">جميع الخطط</p>
-                  </div>
-                  <div className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                    selectedPlanNames.size === 0 ? "bg-white/20" : "bg-slate-100 group-hover:bg-[hsl(var(--primary)/0.1)]"
-                  )}>
-                    <Layers className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className={cn("text-[10px] mt-2", selectedPlanNames.size === 0 ? "text-white/70" : "text-slate-500")}>
-                  {availablePlans.length} {pluralAr(availablePlans.length, "خطة", "خطط")}
-                </div>
-              </button>
-
-              {availablePlans.map((p) => {
-                const isSelected = selectedPlanNames.has(p.name);
-                return (
-                  <button
-                    key={p.name}
-                    onClick={() => togglePlanSelection(p.name)}
-                    className={cn(
-                      "group relative overflow-hidden rounded-xl p-3 text-right transition-all border-2",
-                      isSelected
-                        ? "bg-gradient-to-br from-emerald-500 to-teal-600 border-transparent text-white shadow-lg shadow-emerald-500/25"
-                        : "bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md text-slate-700"
-                    )}
-                  >
-                    {isSelected && (
-                      <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-white/25 flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-[11px] font-medium mb-0.5", isSelected ? "text-white/80" : "text-slate-500")}>
-                          خطة تشغيلية
-                        </p>
-                        <p className="text-sm font-bold truncate">{p.name}</p>
-                      </div>
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                        isSelected ? "bg-white/20" : "bg-emerald-50 group-hover:bg-emerald-100"
-                      )}>
-                        <Target className={cn("w-4 h-4", isSelected ? "text-white" : "text-emerald-600")} />
-                      </div>
-                    </div>
-                    <div className={cn("text-[10px] mt-2", isSelected ? "text-white/70" : "text-slate-500")}>
-                      {activityCount(p.activitiesCount)}
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-900">وضع التعديل مفعّل</p>
+              <p className="text-xs text-amber-700">انقر على أي نشاط في الجدول لتعديل الهدف اليومي والمنجز</p>
             </div>
+            <Button size="sm" variant="ghost" onClick={() => setIsEditMode(false)} className="text-amber-700 hover:bg-amber-100">
+              <X className="w-4 h-4 ml-1" />
+              إنهاء
+            </Button>
           </div>
         )}
 
@@ -1746,18 +1695,34 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {showMonth && (
                                     <TableCell
                                       rowSpan={monthSpan}
-                                      className="bg-gray-100 border-l border-gray-200 align-top cursor-pointer hover:bg-gray-200 transition-colors"
+                                      className="bg-gradient-to-b from-slate-50 to-white border-l border-gray-200 align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
-                                      <div className="flex flex-col items-center gap-2 py-3 px-2">
-                                        <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] rotate-180 transition-transform" />
-                                        <Calendar className="w-6 h-6 text-[hsl(var(--primary))]" />
-                                        <span className="font-bold text-base text-gray-800 text-center">{monthGroup.monthName}</span>
-                                        <span className="text-xs text-muted-foreground">{selectedYear}</span>
-                                        <Badge className="bg-[hsl(var(--primary))] text-white text-[10px]">{totalDays} يوم</Badge>
-                                        <Badge variant="outline" className="text-[hsl(var(--primary))] border-[hsl(var(--primary))] text-[10px]">
-                                          {activityCount(monthGroup.activities.length)}
-                                        </Badge>
+                                      <div className="flex flex-col items-center gap-2 py-4 px-2">
+                                        {/* رأس الشهر */}
+                                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-md shadow-[hsl(var(--primary)/0.25)]">
+                                          <Calendar className="w-5 h-5 text-white" />
+                                        </div>
+                                        <span className="font-extrabold text-base text-slate-800 text-center leading-tight">{monthGroup.monthName}</span>
+                                        <span className="text-[10px] text-slate-500 font-medium -mt-1">{selectedYear}</span>
+
+                                        {/* شارة الأيام */}
+                                        <div className="flex items-center gap-1 bg-gradient-to-r from-sky-500 to-cyan-500 text-white rounded-full px-2.5 py-0.5 shadow-sm">
+                                          <CalendarDays className="w-3 h-3" />
+                                          <span className="text-[10px] font-bold">{totalDays} يوم</span>
+                                        </div>
+
+                                        {/* دائرة الأنشطة */}
+                                        <div className="relative flex flex-col items-center mt-1">
+                                          <div className="w-12 h-12 rounded-full bg-white border-2 border-[hsl(var(--primary)/0.4)] flex items-center justify-center shadow-sm">
+                                            <span className="font-extrabold text-base text-[hsl(var(--primary))]">{monthGroup.activities.length}</span>
+                                          </div>
+                                          <span className="text-[10px] font-semibold text-[hsl(var(--primary))] mt-1">
+                                            {pluralAr(monthGroup.activities.length, "نشاط", "أنشطة")}
+                                          </span>
+                                        </div>
+
+                                        <ChevronDown className="w-4 h-4 text-slate-400 rotate-180 mt-1" />
                                       </div>
                                     </TableCell>
                                   )}
