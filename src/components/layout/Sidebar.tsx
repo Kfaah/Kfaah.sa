@@ -446,7 +446,7 @@ export function Sidebar() {
                     isSawabOrg
                       ? "h-[108px] w-[174px] scale-100 translate-x-0 translate-y-0"
                       : isAtefOrg
-                        ? "h-[230px] w-[230px] scale-[1.35]"
+                        ? "h-[150px] w-[150px] scale-100"
                         : "h-[210px] w-[210px] scale-125"
                   )}
                 />
@@ -469,20 +469,9 @@ export function Sidebar() {
                   if (short) {
                     return (
                        <div className={cn("drop-shadow-sm leading-tight", isSawabOrg ? "text-slate-800" : "text-white")}>
-                        {isAtefOrg ? (
-                          <>
-                            <p className="font-bold whitespace-nowrap text-sm leading-tight">جمعية عطف لرعاية الأيتام</p>
-                            <p className="mt-1 text-[10px] font-semibold leading-none text-white/85 tracking-wide">
-                              Atef Orphan Care Association
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
-                            {short[1] && (
-                              <p className={cn("font-semibold opacity-95", isSawabOrg ? "text-sm" : "text-sm")}>{short[1]}</p>
-                            )}
-                          </>
+                        <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
+                        {short[1] && (
+                          <p className={cn("font-semibold opacity-95", isSawabOrg ? "text-sm" : "text-sm")}>{short[1]}</p>
                         )}
                         {isSawabOrg && (
                           <p className="mt-1 text-[10px] font-semibold leading-none text-slate-600">
