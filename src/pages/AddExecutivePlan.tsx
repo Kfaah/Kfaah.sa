@@ -742,6 +742,51 @@ export default function AddExecutivePlan() {
                       })}
                     </div>
                   )}
+
+                  {/* Inline: add a new activity for this employee */}
+                  {(() => {
+                    const draft = newActivityByEmp[employee.id] || { name: "", monthlyTarget: "", saving: false };
+                    return (
+                      <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50/40 border-t border-emerald-100">
+                        <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                          <Plus className="w-3.5 h-3.5" />
+                        </div>
+                        <Input
+                          placeholder={`أضف نشاطًا جديدًا لـ ${employee.full_name}`}
+                          value={draft.name}
+                          onChange={(e) => setNewActField(employee.id, { name: e.target.value })}
+                          onKeyDown={(e) => { if (e.key === "Enter") addActivityForEmployee(employee); }}
+                          className="h-9 flex-1 text-sm bg-white"
+                          disabled={draft.saving}
+                        />
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[11px] text-slate-600 whitespace-nowrap">المستهدف الشهري</label>
+                          <Input
+                            type="number"
+                            min={1}
+                            placeholder="0"
+                            value={draft.monthlyTarget}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setNewActField(employee.id, { monthlyTarget: v === "" ? "" : Math.max(1, Number(v)) });
+                            }}
+                            onKeyDown={(e) => { if (e.key === "Enter") addActivityForEmployee(employee); }}
+                            className="w-20 h-9 text-center bg-white"
+                            disabled={draft.saving}
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => addActivityForEmployee(employee)}
+                          disabled={draft.saving || !draft.name.trim() || !draft.monthlyTarget}
+                          className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          {draft.saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                          إضافة
+                        </Button>
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
