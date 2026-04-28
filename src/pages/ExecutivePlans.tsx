@@ -1995,12 +1995,36 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       )}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
-                                          openInlineEditor(l.acts[0] as any);
+                                          const firstAct = l.acts[0] as any;
+                                          startCellEdit({ kind: "day", execPlanId: firstAct.id }, String(firstAct.day ?? ""));
                                         } else {
                                           toggleDay(dayKey);
                                         }
                                       }}
                                     >
+                                      {isEditMode && l.acts && l.acts.length > 0 && isEditingCell("day", (l.acts[0] as any).id) ? (
+                                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            max="31"
+                                            value={cellValue}
+                                            onChange={(e) => setCellValue(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === "Enter") saveCellEdit();
+                                              if (e.key === "Escape") cancelCellEdit();
+                                            }}
+                                            autoFocus
+                                            className="h-8 w-16 text-xs"
+                                          />
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
+                                            {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
+                                          </Button>
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelCellEdit}>
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ) : (
                                       <div className="flex items-start gap-2">
                                         <div className="flex flex-col items-start gap-1 flex-1">
                                           <div className="flex items-center gap-1.5">
@@ -2025,6 +2049,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           />
                                         </div>
                                       </div>
+                                      )}
                                     </TableCell>
                                   )}
                                   {l.collapsed ? (
