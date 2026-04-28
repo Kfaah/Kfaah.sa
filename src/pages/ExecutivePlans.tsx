@@ -310,8 +310,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     initiative: string;
     sub_initiative: string;
     responsible_employee_id: string;
+    department_id: string;
     day: string;
-  }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", day: "" });
+    month: string;
+  }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", department_id: "", day: "", month: "" });
   const [savingEdit, setSavingEdit] = useState(false);
   // فتح محرر النشاط بكل البيانات
   const openInlineEditor = (act: {
@@ -322,7 +324,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     initiative: string | null;
     subInitiative: string | null;
     employeeId: string | null;
+    departmentId?: string | null;
     day: number;
+    month?: number;
   }) => {
     setEditingExecPlanId(act.id);
     setEditingValues({
@@ -332,7 +336,24 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       initiative: act.initiative ?? "",
       sub_initiative: act.subInitiative ?? "",
       responsible_employee_id: act.employeeId ?? "none",
+      department_id: act.departmentId ?? "none",
       day: String(act.day ?? ""),
+      month: String(act.month ?? ""),
+    });
+  };
+  const editEmployeeOptions = useMemo(() => {
+    if (!editingValues.department_id || editingValues.department_id === "none") return employees;
+    return employees.filter((employee) => employee.department_id === editingValues.department_id);
+  }, [employees, editingValues.department_id]);
+  const setEditingDepartment = (departmentId: string) => {
+    setEditingValues((current) => {
+      const currentEmployee = employees.find((employee) => employee.id === current.responsible_employee_id);
+      const nextEmployeeId = departmentId === "none"
+        ? current.responsible_employee_id
+        : currentEmployee?.department_id === departmentId
+          ? current.responsible_employee_id
+          : employees.find((employee) => employee.department_id === departmentId)?.id ?? "none";
+      return { ...current, department_id: departmentId, responsible_employee_id: nextEmployeeId };
     });
   };
   // عناوين الأعمدة (قابلة للتعديل في وضع التعديل)
