@@ -364,44 +364,48 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       } else if (cellEdit.kind === "initiative" || cellEdit.kind === "sub_initiative") {
         const value = cellValue.trim() || null;
         const updates: any = cellEdit.kind === "initiative" ? { initiative: value } : { sub_initiative: value };
+        const ids = (cellEdit as any).operationalPlanIds?.length ? (cellEdit as any).operationalPlanIds : [cellEdit.operationalPlanId];
         const { error } = await supabase
           .from("operational_plans")
           .update(updates)
-          .eq("id", cellEdit.operationalPlanId);
+          .in("id", ids);
         if (error) throw error;
-        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, ...updates } : p));
+        setOperationalPlans((prev) => prev.map((p) => ids.includes(p.id) ? { ...p, ...updates } : p));
       } else if (cellEdit.kind === "employee") {
         const employeeId = cellValue && cellValue !== "none" ? cellValue : null;
+        const ids = (cellEdit as any).operationalPlanIds?.length ? (cellEdit as any).operationalPlanIds : [cellEdit.operationalPlanId];
         const { error } = await supabase
           .from("operational_plans")
           .update({ responsible_employee_id: employeeId } as any)
-          .eq("id", cellEdit.operationalPlanId);
+          .in("id", ids);
         if (error) throw error;
-        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, responsible_employee_id: employeeId } : p));
+        setOperationalPlans((prev) => prev.map((p) => ids.includes(p.id) ? { ...p, responsible_employee_id: employeeId } : p));
       } else if (cellEdit.kind === "department") {
         // اختيار قسم = إسناد المسؤولية إلى أول موظف في هذا القسم (أو إفراغها)
         const departmentId = cellValue && cellValue !== "none" ? cellValue : null;
         const employeeId = departmentId
           ? employees.find((e) => e.department_id === departmentId)?.id ?? null
           : null;
+        const ids = (cellEdit as any).operationalPlanIds?.length ? (cellEdit as any).operationalPlanIds : [cellEdit.operationalPlanId];
         const { error } = await supabase
           .from("operational_plans")
           .update({ responsible_employee_id: employeeId } as any)
-          .eq("id", cellEdit.operationalPlanId);
+          .in("id", ids);
         if (error) throw error;
-        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, responsible_employee_id: employeeId } : p));
+        setOperationalPlans((prev) => prev.map((p) => ids.includes(p.id) ? { ...p, responsible_employee_id: employeeId } : p));
       } else if (cellEdit.kind === "day") {
         const dayNum = parseInt(cellValue);
         if (Number.isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
           toast({ title: "يوم غير صالح", description: "يجب أن يكون اليوم بين 1 و 31", variant: "destructive" });
           return;
         }
+        const ids = (cellEdit as any).execPlanIds?.length ? (cellEdit as any).execPlanIds : [cellEdit.execPlanId];
         const { error } = await supabase
           .from("executive_plans")
           .update({ day: dayNum } as any)
-          .eq("id", cellEdit.execPlanId);
+          .in("id", ids);
         if (error) throw error;
-        setExecutivePlans((prev) => prev.map((ep) => ep.id === cellEdit.execPlanId ? { ...ep, day: dayNum } : ep));
+        setExecutivePlans((prev) => prev.map((ep) => ids.includes(ep.id) ? { ...ep, day: dayNum } : ep));
       } else if (cellEdit.kind === "month") {
         const monthNum = parseInt(cellValue);
         if (Number.isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
