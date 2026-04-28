@@ -345,7 +345,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       anyEdit.planMonthId === idValue
     );
   };
-  const saveCellEdit = async (overrideValue?: string) => {
+  const saveCellEditWith = async (overrideValue?: string) => {
     if (!cellEdit) return;
     setSavingCell(true);
     try {
@@ -428,6 +428,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       setSavingCell(false);
     }
   };
+  const saveCellEdit = () => { void saveCellEditWith(); };
   // فتح محرر النشاط بكل البيانات
   const openInlineEditor = (act: {
     id: string;
