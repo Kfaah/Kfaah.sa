@@ -313,6 +313,28 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     day: string;
   }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", day: "" });
   const [savingEdit, setSavingEdit] = useState(false);
+  // فتح محرر النشاط بكل البيانات
+  const openInlineEditor = (act: {
+    id: string;
+    activityName: string;
+    dailyTarget: number;
+    achieved: number;
+    initiative: string | null;
+    subInitiative: string | null;
+    employeeId: string | null;
+    day: number;
+  }) => {
+    setEditingExecPlanId(act.id);
+    setEditingValues({
+      daily_target: String(act.dailyTarget ?? 0),
+      achieved: String(act.achieved ?? 0),
+      activity_name: act.activityName ?? "",
+      initiative: act.initiative ?? "",
+      sub_initiative: act.subInitiative ?? "",
+      responsible_employee_id: act.employeeId ?? "none",
+      day: String(act.day ?? ""),
+    });
+  };
   // عناوين الأعمدة (قابلة للتعديل في وضع التعديل)
   const [columnTitles, setColumnTitles] = useState<{ [k: string]: string }>(() => {
     try {
