@@ -730,6 +730,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             departmentName,
             initiative: plan.initiative,
             subInitiative: plan.sub_initiative,
+            operationalPlanId: plan.id,
+            planMonthId: pm.id,
+            day: dayPlan.day,
+            month,
           });
         });
       });
