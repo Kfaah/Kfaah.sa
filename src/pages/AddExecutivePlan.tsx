@@ -686,20 +686,35 @@ export default function AddExecutivePlan() {
                 </div>
               )}
               {activitiesByEmployee.map(({ employee, activities: acts }) => (
+                <React.Fragment key={employee.id}>
                 <div key={employee.id} className="border-2 border-slate-200 rounded-xl overflow-hidden">
                   <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
                     <div className="w-8 h-8 rounded-lg bg-indigo-500 text-white flex items-center justify-center">
                       <User className="w-4 h-4" />
                     </div>
                     <span className="font-bold text-sm text-slate-800">{employee.full_name}</span>
-                    <Badge variant="outline" className="mr-auto">
-                      {acts.length} {acts.length >= 3 && acts.length <= 10 ? "أنشطة" : "نشاط"} متاح
-                    </Badge>
+                    <div className="mr-auto flex items-center gap-2">
+                      {acts.length > 0 && (
+                        <Button
+                          type="button"
+                          variant={showSuggestionsByEmp[employee.id] ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleSuggestions(employee.id)}
+                          className={cn(
+                            "h-7 px-2.5 text-[11px] gap-1.5",
+                            showSuggestionsByEmp[employee.id]
+                              ? "bg-amber-500 hover:bg-amber-600 text-white"
+                              : "text-amber-700 border-amber-300 hover:bg-amber-50",
+                          )}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          {showSuggestionsByEmp[employee.id] ? "إخفاء المقترحة" : `أنشطة مقترحة (${acts.length})`}
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
-                  {acts.length === 0 ? (
-                    <p className="text-xs text-slate-500 text-center py-3">لا توجد أنشطة لهذا الموظف في {MONTHS_AR[month - 1]} — يمكنك إضافة نشاط جديد بالأسفل</p>
-                  ) : (
+                  {acts.length > 0 && showSuggestionsByEmp[employee.id] && (
                     <div className="divide-y divide-slate-100">
                       {acts.map((a) => {
                         const sel = selectedActivities[a.planMonthId] !== undefined;
