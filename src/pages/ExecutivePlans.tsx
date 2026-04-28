@@ -303,8 +303,39 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [selectedPlanNames, setSelectedPlanNames] = useState<Set<string>>(new Set());
   // تحرير مضمّن للخلية النشطة في وضع التعديل
   const [editingExecPlanId, setEditingExecPlanId] = useState<string | null>(null);
-  const [editingValues, setEditingValues] = useState<{ daily_target: string; achieved: string }>({ daily_target: "", achieved: "" });
+  const [editingValues, setEditingValues] = useState<{
+    daily_target: string;
+    achieved: string;
+    activity_name: string;
+    initiative: string;
+    sub_initiative: string;
+    responsible_employee_id: string;
+    day: string;
+  }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", day: "" });
   const [savingEdit, setSavingEdit] = useState(false);
+  // عناوين الأعمدة (قابلة للتعديل في وضع التعديل)
+  const [columnTitles, setColumnTitles] = useState<{ [k: string]: string }>(() => {
+    try {
+      const saved = localStorage.getItem("execPlans.columnTitles");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      month: "الشهر",
+      date: "التاريخ",
+      department: "القسم",
+      initiative: "المبادرة",
+      subInitiative: "المبادرة الفرعية",
+      employee: "الموظف",
+      activities: "الأنشطة",
+    };
+  });
+  const updateColumnTitle = (key: string, value: string) => {
+    setColumnTitles(prev => {
+      const next = { ...prev, [key]: value };
+      try { localStorage.setItem("execPlans.columnTitles", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   // فلاتر إضافية
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
