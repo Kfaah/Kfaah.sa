@@ -672,16 +672,15 @@ export default function AddExecutivePlan() {
             <div className="flex items-center justify-center py-8 gap-2 text-slate-500">
               <Loader2 className="w-5 h-5 animate-spin" /> جاري تحميل الأنشطة...
             </div>
-          ) : activitiesByEmployee.every((g) => g.activities.length === 0) ? (
-            <div className="text-center py-8 bg-amber-50 rounded-xl border border-amber-200">
-              <Sparkles className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-              <p className="text-sm font-semibold text-amber-800">لا توجد أنشطة في الخطة التشغيلية لهذا الشهر</p>
-              <p className="text-xs text-amber-700 mt-1">
-                تأكد من وجود خطط تشغيلية للموظفين المختارين في {MONTHS_AR[month - 1]} {year}
-              </p>
-            </div>
           ) : (
             <div className="space-y-4">
+              {activitiesByEmployee.every((g) => g.activities.length === 0) && (
+                <div className="text-center py-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <p className="text-xs text-amber-700">
+                    لا توجد أنشطة جاهزة لهذا الشهر — يمكنك إضافة أنشطة جديدة لكل موظف بالأسفل
+                  </p>
+                </div>
+              )}
               {activitiesByEmployee.map(({ employee, activities: acts }) => (
                 <div key={employee.id} className="border-2 border-slate-200 rounded-xl overflow-hidden">
                   <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
