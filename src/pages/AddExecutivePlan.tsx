@@ -695,7 +695,7 @@ export default function AddExecutivePlan() {
                   </div>
 
                   {acts.length === 0 ? (
-                    <p className="text-xs text-slate-500 text-center py-3">لا أنشطة لهذا الموظف في {MONTHS_AR[month - 1]}</p>
+                    <p className="text-xs text-slate-500 text-center py-3">لا توجد أنشطة لهذا الموظف في {MONTHS_AR[month - 1]} — يمكنك إضافة نشاط جديد بالأسفل</p>
                   ) : (
                     <div className="divide-y divide-slate-100">
                       {acts.map((a) => {
