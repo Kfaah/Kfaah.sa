@@ -310,8 +310,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     initiative: string;
     sub_initiative: string;
     responsible_employee_id: string;
+    department_id: string;
     day: string;
-  }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", day: "" });
+    month: string;
+  }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", department_id: "", day: "", month: "" });
   const [savingEdit, setSavingEdit] = useState(false);
   // فتح محرر النشاط بكل البيانات
   const openInlineEditor = (act: {
@@ -322,7 +324,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     initiative: string | null;
     subInitiative: string | null;
     employeeId: string | null;
+    departmentId?: string | null;
     day: number;
+    month?: number;
   }) => {
     setEditingExecPlanId(act.id);
     setEditingValues({
@@ -332,7 +336,23 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       initiative: act.initiative ?? "",
       sub_initiative: act.subInitiative ?? "",
       responsible_employee_id: act.employeeId ?? "none",
+      department_id: act.departmentId ?? "none",
       day: String(act.day ?? ""),
+      month: String(act.month ?? ""),
+    });
+  };
+  const editEmployeeOptions = useMemo(() => {
+    if (!editingValues.department_id || editingValues.department_id === "none") return employees;
+    return employees.filter((employee) => employee.department_id === editingValues.department_id);
+  }, [employees, editingValues.department_id]);
+  const setEditingDepartment = (departmentId: string) => {
+    setEditingValues((current) => {
+      if (departmentId === "none") return { ...current, department_id: "none", responsible_employee_id: "none" };
+      const currentEmployee = employees.find((employee) => employee.id === current.responsible_employee_id);
+      const nextEmployeeId = currentEmployee?.department_id === departmentId
+          ? current.responsible_employee_id
+          : employees.find((employee) => employee.department_id === departmentId)?.id ?? "none";
+      return { ...current, department_id: departmentId, responsible_employee_id: nextEmployeeId };
     });
   };
   // عناوين الأعمدة (قابلة للتعديل في وضع التعديل)
@@ -802,7 +822,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     }
     
     return groups;
-  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames]);
+  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames, employees]);
 
   // قائمة الخطط الفريدة المتاحة (مع عدد الأنشطة لكل خطة)
   const availablePlans = useMemo(() => {
@@ -831,6 +851,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     const dt = parseFloat(editingValues.daily_target);
     const ach = parseFloat(editingValues.achieved);
     const dayNum = parseInt(editingValues.day);
+    const monthNum = parseInt(editingValues.month);
     if (Number.isNaN(dt) || dt < 0) {
       toast({ title: "قيمة غير صالحة", description: "الهدف اليومي يجب أن يكون رقمًا موجبًا", variant: "destructive" });
       return;
@@ -839,8 +860,14 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       toast({ title: "يوم غير صالح", description: "يجب أن يكون اليوم بين 1 و 31", variant: "destructive" });
       return;
     }
+    if (!Number.isNaN(monthNum) && (monthNum < 1 || monthNum > 12)) {
+      toast({ title: "شهر غير صالح", description: "يجب اختيار شهر صحيح", variant: "destructive" });
+      return;
+    }
     setSavingEdit(true);
     try {
+      const currentExecPlan = executivePlans.find((ep) => ep.id === execPlanId);
+      const planMonthId = currentExecPlan?.operational_plan_month_id;
       const execUpdates: any = { daily_target: dt };
       if (!Number.isNaN(ach) && ach >= 0) execUpdates.achieved = ach;
       if (!Number.isNaN(dayNum)) execUpdates.day = dayNum;
@@ -851,15 +878,27 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       if (error) throw error;
       setExecutivePlans(prev => prev.map(ep => ep.id === execPlanId ? { ...ep, ...execUpdates } : ep));
 
+      if (planMonthId && !Number.isNaN(monthNum)) {
+        const { error: monthErr } = await supabase
+          .from("operational_plan_months")
+          .update({ month: monthNum } as any)
+          .eq("id", planMonthId);
+        if (monthErr) throw monthErr;
+        setPlanMonths(prev => prev.map(pm => pm.id === planMonthId ? { ...pm, month: monthNum } : pm));
+      }
+
       // تحديث الخطة التشغيلية (اسم النشاط، المبادرة، المبادرة الفرعية، المسؤول)
       if (operationalPlanId) {
+        const responsibleEmployeeId = editingValues.responsible_employee_id && editingValues.responsible_employee_id !== "none"
+          ? editingValues.responsible_employee_id
+          : editingValues.department_id && editingValues.department_id !== "none"
+            ? employees.find((employee) => employee.department_id === editingValues.department_id)?.id ?? null
+            : null;
         const opUpdates: any = {
           activity_name: editingValues.activity_name.trim(),
           initiative: editingValues.initiative.trim() || null,
           sub_initiative: editingValues.sub_initiative.trim() || null,
-          responsible_employee_id: editingValues.responsible_employee_id && editingValues.responsible_employee_id !== "none"
-            ? editingValues.responsible_employee_id
-            : null,
+          responsible_employee_id: responsibleEmployeeId,
         };
         const { error: opErr } = await supabase
           .from("operational_plans")
@@ -1205,7 +1244,17 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     ? "bg-white text-primary border-white"
                     : "bg-white/15 text-white border-white/30 hover:bg-white/25 backdrop-blur-sm"
                 }`}
-                onClick={() => setIsEditMode(!isEditMode)}
+                onClick={() => {
+                  const nextEditMode = !isEditMode;
+                  setIsEditMode(nextEditMode);
+                  if (nextEditMode) {
+                    setGlobalViewMode("dates");
+                    setExpandedMonths(new Set(groupedPlans.map((monthGroup) => `month-${monthGroup.month}`)));
+                    setExpandedDays(new Set());
+                  } else {
+                    setEditingExecPlanId(null);
+                  }
+                }}
               >
                 {isEditMode ? (
                   <>
@@ -1438,7 +1487,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             </div>
             <div className="flex-1">
               <p className="text-sm font-bold text-amber-900">وضع التعديل مفعّل</p>
-              <p className="text-xs text-amber-700">انقر على أي نشاط في الجدول لتعديل الهدف اليومي والمنجز</p>
+              <p className="text-xs text-amber-700">انقر على التاريخ أو القسم أو الموظف أو النشاط لتعديل بيانات الخطة وحفظها مباشرة</p>
             </div>
             <Button size="sm" variant="ghost" onClick={() => setIsEditMode(false)} className="text-amber-700 hover:bg-amber-100">
               <X className="w-4 h-4 ml-1" />
@@ -1978,16 +2027,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                             )}
                                             onClick={() => {
                                               if (!isEditMode || isEditingThis) return;
-                                              setEditingExecPlanId(act.id);
-                                              setEditingValues({
-                                                daily_target: String(act.dailyTarget ?? 0),
-                                                achieved: String(act.achieved ?? 0),
-                                                activity_name: act.activityName ?? "",
-                                                initiative: act.initiative ?? "",
-                                                sub_initiative: act.subInitiative ?? "",
-                                                responsible_employee_id: act.employeeId ?? "none",
-                                                day: String(act.day ?? ""),
-                                              });
+                                              openInlineEditor(act as any);
                                             }}
                                           >
                                             <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
@@ -2031,26 +2071,66 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                       />
                                                     </div>
                                                   </div>
-                                                  <div className="flex flex-col gap-1">
-                                                    <span className="text-[9px] font-semibold text-slate-600">الموظف المسؤول (يحدد القسم تلقائيًا)</span>
-                                                    <Select
-                                                      value={editingValues.responsible_employee_id || "none"}
-                                                      onValueChange={(v) => setEditingValues(s => ({ ...s, responsible_employee_id: v }))}
-                                                    >
-                                                      <SelectTrigger className="h-8 text-xs">
-                                                        <SelectValue placeholder="اختر الموظف" />
-                                                      </SelectTrigger>
-                                                      <SelectContent>
-                                                        <SelectItem value="none">بدون موظف</SelectItem>
-                                                        {employees.map(e => (
-                                                          <SelectItem key={e.id} value={e.id}>
-                                                            {e.full_name}{e.department_name ? ` — ${e.department_name}` : ""}
-                                                          </SelectItem>
-                                                        ))}
-                                                      </SelectContent>
-                                                    </Select>
+                                                  <div className="grid grid-cols-2 gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">القسم</span>
+                                                      <Select value={editingValues.department_id || "none"} onValueChange={setEditingDepartment}>
+                                                        <SelectTrigger className="h-8 text-xs">
+                                                          <SelectValue placeholder="اختر القسم" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                          <SelectItem value="none">بدون قسم محدد</SelectItem>
+                                                          {departments.map((dept) => (
+                                                            <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                                                          ))}
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">الموظف المسؤول</span>
+                                                      <Select
+                                                        value={editingValues.responsible_employee_id || "none"}
+                                                        onValueChange={(employeeId) => {
+                                                          if (employeeId === "none") {
+                                                            setEditingValues((current) => ({ ...current, responsible_employee_id: "none", department_id: "none" }));
+                                                            return;
+                                                          }
+                                                          const employee = employees.find((e) => e.id === employeeId);
+                                                          setEditingValues((current) => ({
+                                                            ...current,
+                                                            responsible_employee_id: employeeId,
+                                                            department_id: employee?.department_id ?? current.department_id,
+                                                          }));
+                                                        }}
+                                                      >
+                                                        <SelectTrigger className="h-8 text-xs">
+                                                          <SelectValue placeholder="اختر الموظف" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                          <SelectItem value="none">بدون موظف</SelectItem>
+                                                          {editEmployeeOptions.map(e => (
+                                                            <SelectItem key={e.id} value={e.id}>
+                                                              {e.full_name}{e.department_name ? ` — ${e.department_name}` : ""}
+                                                            </SelectItem>
+                                                          ))}
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
                                                   </div>
-                                                  <div className="grid grid-cols-3 gap-2">
+                                                  <div className="grid grid-cols-4 gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">الشهر/التاريخ</span>
+                                                      <Select value={editingValues.month || ""} onValueChange={(month) => setEditingValues(v => ({ ...v, month }))}>
+                                                        <SelectTrigger className="h-8 text-xs">
+                                                          <SelectValue placeholder="الشهر" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                          {MONTHS_AR.map((month, index) => (
+                                                            <SelectItem key={month} value={String(index + 1)}>{month}</SelectItem>
+                                                          ))}
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
                                                     <div className="flex flex-col gap-1">
                                                       <span className="text-[9px] font-semibold text-slate-600">اليوم</span>
                                                       <Input
