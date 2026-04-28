@@ -1932,6 +1932,27 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           initSpan.set(l.initKey, (initSpan.get(l.initKey) ?? 0) + 1);
                           subSpan.set(l.subKey, (subSpan.get(l.subKey) ?? 0) + 1);
                         }
+                        // تجميع المعرفات حسب مفاتيح المجموعة (لتطبيق التعديل على الخلية الكاملة)
+                        const opIdsByDept = new Map<string, string[]>();
+                        const opIdsByInit = new Map<string, string[]>();
+                        const opIdsBySub = new Map<string, string[]>();
+                        const execIdsByDay = new Map<number, string[]>();
+                        for (const l of leaves) {
+                          for (const a of (l.acts as any[])) {
+                            if (a.operationalPlanId) {
+                              if (!opIdsByDept.has(l.deptKey)) opIdsByDept.set(l.deptKey, []);
+                              if (!opIdsByDept.get(l.deptKey)!.includes(a.operationalPlanId)) opIdsByDept.get(l.deptKey)!.push(a.operationalPlanId);
+                              if (!opIdsByInit.has(l.initKey)) opIdsByInit.set(l.initKey, []);
+                              if (!opIdsByInit.get(l.initKey)!.includes(a.operationalPlanId)) opIdsByInit.get(l.initKey)!.push(a.operationalPlanId);
+                              if (!opIdsBySub.has(l.subKey)) opIdsBySub.set(l.subKey, []);
+                              if (!opIdsBySub.get(l.subKey)!.includes(a.operationalPlanId)) opIdsBySub.get(l.subKey)!.push(a.operationalPlanId);
+                            }
+                            if (a.id) {
+                              if (!execIdsByDay.has(l.day)) execIdsByDay.set(l.day, []);
+                              if (!execIdsByDay.get(l.day)!.includes(a.id)) execIdsByDay.get(l.day)!.push(a.id);
+                            }
+                          }
+                        }
                         const seenMonth = { v: false };
                         const seenDay = new Set<number>();
                         const seenDept = new Set<string>();
