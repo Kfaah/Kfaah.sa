@@ -852,6 +852,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     const dt = parseFloat(editingValues.daily_target);
     const ach = parseFloat(editingValues.achieved);
     const dayNum = parseInt(editingValues.day);
+    const monthNum = parseInt(editingValues.month);
     if (Number.isNaN(dt) || dt < 0) {
       toast({ title: "قيمة غير صالحة", description: "الهدف اليومي يجب أن يكون رقمًا موجبًا", variant: "destructive" });
       return;
@@ -860,8 +861,14 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       toast({ title: "يوم غير صالح", description: "يجب أن يكون اليوم بين 1 و 31", variant: "destructive" });
       return;
     }
+    if (!Number.isNaN(monthNum) && (monthNum < 1 || monthNum > 12)) {
+      toast({ title: "شهر غير صالح", description: "يجب اختيار شهر صحيح", variant: "destructive" });
+      return;
+    }
     setSavingEdit(true);
     try {
+      const currentExecPlan = executivePlans.find((ep) => ep.id === execPlanId);
+      const planMonthId = currentExecPlan?.operational_plan_month_id;
       const execUpdates: any = { daily_target: dt };
       if (!Number.isNaN(ach) && ach >= 0) execUpdates.achieved = ach;
       if (!Number.isNaN(dayNum)) execUpdates.day = dayNum;
@@ -872,15 +879,27 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       if (error) throw error;
       setExecutivePlans(prev => prev.map(ep => ep.id === execPlanId ? { ...ep, ...execUpdates } : ep));
 
+      if (planMonthId && !Number.isNaN(monthNum)) {
+        const { error: monthErr } = await supabase
+          .from("operational_plan_months")
+          .update({ month: monthNum })
+          .eq("id", planMonthId);
+        if (monthErr) throw monthErr;
+        setPlanMonths(prev => prev.map(pm => pm.id === planMonthId ? { ...pm, month: monthNum } : pm));
+      }
+
       // تحديث الخطة التشغيلية (اسم النشاط، المبادرة، المبادرة الفرعية، المسؤول)
       if (operationalPlanId) {
+        const responsibleEmployeeId = editingValues.responsible_employee_id && editingValues.responsible_employee_id !== "none"
+          ? editingValues.responsible_employee_id
+          : editingValues.department_id && editingValues.department_id !== "none"
+            ? employees.find((employee) => employee.department_id === editingValues.department_id)?.id ?? null
+            : null;
         const opUpdates: any = {
           activity_name: editingValues.activity_name.trim(),
           initiative: editingValues.initiative.trim() || null,
           sub_initiative: editingValues.sub_initiative.trim() || null,
-          responsible_employee_id: editingValues.responsible_employee_id && editingValues.responsible_employee_id !== "none"
-            ? editingValues.responsible_employee_id
-            : null,
+          responsible_employee_id: responsibleEmployeeId,
         };
         const { error: opErr } = await supabase
           .from("operational_plans")
