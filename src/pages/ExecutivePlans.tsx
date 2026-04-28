@@ -823,7 +823,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     }
     
     return groups;
-  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames]);
+  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames, employees]);
 
   // قائمة الخطط الفريدة المتاحة (مع عدد الأنشطة لكل خطة)
   const availablePlans = useMemo(() => {
