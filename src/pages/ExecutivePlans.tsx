@@ -315,6 +315,113 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     month: string;
   }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", department_id: "", day: "", month: "" });
   const [savingEdit, setSavingEdit] = useState(false);
+  // تحرير لكل عمود على حدة (الخلية المحددة فقط)
+  type CellEditTarget =
+    | { kind: "activity_name"; execPlanId: string; operationalPlanId: string }
+    | { kind: "employee"; operationalPlanId: string }
+    | { kind: "department"; operationalPlanId: string }
+    | { kind: "initiative"; operationalPlanId: string }
+    | { kind: "sub_initiative"; operationalPlanId: string }
+    | { kind: "day"; execPlanId: string }
+    | { kind: "month"; planMonthId: string };
+  const [cellEdit, setCellEdit] = useState<CellEditTarget | null>(null);
+  const [cellValue, setCellValue] = useState<string>("");
+  const [savingCell, setSavingCell] = useState(false);
+  const startCellEdit = (target: CellEditTarget, initial: string) => {
+    setCellEdit(target);
+    setCellValue(initial ?? "");
+  };
+  const cancelCellEdit = () => {
+    setCellEdit(null);
+    setCellValue("");
+  };
+  const isEditingCell = (kind: CellEditTarget["kind"], idValue: string) => {
+    if (!cellEdit || cellEdit.kind !== kind) return false;
+    const anyEdit = cellEdit as any;
+    return (
+      anyEdit.execPlanId === idValue ||
+      anyEdit.operationalPlanId === idValue ||
+      anyEdit.planMonthId === idValue
+    );
+  };
+  const saveCellEdit = async () => {
+    if (!cellEdit) return;
+    setSavingCell(true);
+    try {
+      if (cellEdit.kind === "activity_name") {
+        const value = cellValue.trim();
+        if (!value) {
+          toast({ title: "قيمة غير صالحة", description: "اسم النشاط لا يمكن أن يكون فارغًا", variant: "destructive" });
+          return;
+        }
+        const { error } = await supabase
+          .from("operational_plans")
+          .update({ activity_name: value } as any)
+          .eq("id", cellEdit.operationalPlanId);
+        if (error) throw error;
+        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, activity_name: value } : p));
+      } else if (cellEdit.kind === "initiative" || cellEdit.kind === "sub_initiative") {
+        const value = cellValue.trim() || null;
+        const updates: any = cellEdit.kind === "initiative" ? { initiative: value } : { sub_initiative: value };
+        const { error } = await supabase
+          .from("operational_plans")
+          .update(updates)
+          .eq("id", cellEdit.operationalPlanId);
+        if (error) throw error;
+        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, ...updates } : p));
+      } else if (cellEdit.kind === "employee") {
+        const employeeId = cellValue && cellValue !== "none" ? cellValue : null;
+        const { error } = await supabase
+          .from("operational_plans")
+          .update({ responsible_employee_id: employeeId } as any)
+          .eq("id", cellEdit.operationalPlanId);
+        if (error) throw error;
+        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, responsible_employee_id: employeeId } : p));
+      } else if (cellEdit.kind === "department") {
+        // اختيار قسم = إسناد المسؤولية إلى أول موظف في هذا القسم (أو إفراغها)
+        const departmentId = cellValue && cellValue !== "none" ? cellValue : null;
+        const employeeId = departmentId
+          ? employees.find((e) => e.department_id === departmentId)?.id ?? null
+          : null;
+        const { error } = await supabase
+          .from("operational_plans")
+          .update({ responsible_employee_id: employeeId } as any)
+          .eq("id", cellEdit.operationalPlanId);
+        if (error) throw error;
+        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, responsible_employee_id: employeeId } : p));
+      } else if (cellEdit.kind === "day") {
+        const dayNum = parseInt(cellValue);
+        if (Number.isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
+          toast({ title: "يوم غير صالح", description: "يجب أن يكون اليوم بين 1 و 31", variant: "destructive" });
+          return;
+        }
+        const { error } = await supabase
+          .from("executive_plans")
+          .update({ day: dayNum } as any)
+          .eq("id", cellEdit.execPlanId);
+        if (error) throw error;
+        setExecutivePlans((prev) => prev.map((ep) => ep.id === cellEdit.execPlanId ? { ...ep, day: dayNum } : ep));
+      } else if (cellEdit.kind === "month") {
+        const monthNum = parseInt(cellValue);
+        if (Number.isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+          toast({ title: "شهر غير صالح", description: "يجب اختيار شهر صحيح", variant: "destructive" });
+          return;
+        }
+        const { error } = await supabase
+          .from("operational_plan_months")
+          .update({ month: monthNum } as any)
+          .eq("id", cellEdit.planMonthId);
+        if (error) throw error;
+        setPlanMonths((prev) => prev.map((pm) => pm.id === cellEdit.planMonthId ? { ...pm, month: monthNum } : pm));
+      }
+      toast({ title: "تم الحفظ" });
+      cancelCellEdit();
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingCell(false);
+    }
+  };
   // فتح محرر النشاط بكل البيانات
   const openInlineEditor = (act: {
     id: string;
@@ -1888,12 +1995,36 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       )}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
-                                          openInlineEditor(l.acts[0] as any);
+                                          const firstAct = l.acts[0] as any;
+                                          startCellEdit({ kind: "day", execPlanId: firstAct.id }, String(firstAct.day ?? ""));
                                         } else {
                                           toggleDay(dayKey);
                                         }
                                       }}
                                     >
+                                      {isEditMode && l.acts && l.acts.length > 0 && isEditingCell("day", (l.acts[0] as any).id) ? (
+                                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            max="31"
+                                            value={cellValue}
+                                            onChange={(e) => setCellValue(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === "Enter") saveCellEdit();
+                                              if (e.key === "Escape") cancelCellEdit();
+                                            }}
+                                            autoFocus
+                                            className="h-8 w-16 text-xs"
+                                          />
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
+                                            {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
+                                          </Button>
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelCellEdit}>
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ) : (
                                       <div className="flex items-start gap-2">
                                         <div className="flex flex-col items-start gap-1 flex-1">
                                           <div className="flex items-center gap-1.5">
@@ -1918,6 +2049,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           />
                                         </div>
                                       </div>
+                                      )}
                                     </TableCell>
                                   )}
                                   {l.collapsed ? (
@@ -1943,14 +2075,37 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
-                                        if (isEditMode && l.acts && l.acts.length > 0) openInlineEditor(l.acts[0] as any);
+                                        if (isEditMode && l.acts && l.acts.length > 0) {
+                                          const a = l.acts[0] as any;
+                                          startCellEdit({ kind: "department", operationalPlanId: a.operationalPlanId }, a.departmentId ?? "none");
+                                        }
                                       }}
                                     >
+                                      {isEditMode && l.acts && l.acts.length > 0 && isEditingCell("department", (l.acts[0] as any).operationalPlanId) ? (
+                                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                          <Select value={cellValue || "none"} onValueChange={setCellValue}>
+                                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="none">بدون قسم</SelectItem>
+                                              {departments.map((d) => (
+                                                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
+                                            {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
+                                          </Button>
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelCellEdit}>
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ) : (
                                       <div className="flex items-center gap-2">
                                         <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
                                         <span className="font-bold text-sm text-slate-800 truncate">{l.deptName}</span>
                                         {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
                                       </div>
+                                      )}
                                     </TableCell>
                                   )}
                                   {showInit && (
@@ -1961,9 +2116,33 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
-                                        if (isEditMode && l.acts && l.acts.length > 0) openInlineEditor(l.acts[0] as any);
+                                        if (isEditMode && l.acts && l.acts.length > 0) {
+                                          const a = l.acts[0] as any;
+                                          startCellEdit({ kind: "initiative", operationalPlanId: a.operationalPlanId }, a.initiative ?? "");
+                                        }
                                       }}
                                     >
+                                      {isEditMode && l.acts && l.acts.length > 0 && isEditingCell("initiative", (l.acts[0] as any).operationalPlanId) ? (
+                                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                          <Input
+                                            value={cellValue}
+                                            onChange={(e) => setCellValue(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === "Enter") saveCellEdit();
+                                              if (e.key === "Escape") cancelCellEdit();
+                                            }}
+                                            autoFocus
+                                            className="h-8 text-xs"
+                                            placeholder="المبادرة"
+                                          />
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
+                                            {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
+                                          </Button>
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelCellEdit}>
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ) : (
                                       <div className="flex items-center gap-1.5">
                                         <Target className="w-3.5 h-3.5 text-[hsl(var(--primary))] shrink-0" />
                                         <span className="text-xs font-semibold text-slate-700 leading-snug">
@@ -1971,6 +2150,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         </span>
                                         {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
                                       </div>
+                                      )}
                                     </TableCell>
                                   )}
                                   {showSub && (
@@ -1981,15 +2161,40 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
-                                        if (isEditMode && l.acts && l.acts.length > 0) openInlineEditor(l.acts[0] as any);
+                                        if (isEditMode && l.acts && l.acts.length > 0) {
+                                          const a = l.acts[0] as any;
+                                          startCellEdit({ kind: "sub_initiative", operationalPlanId: a.operationalPlanId }, a.subInitiative ?? "");
+                                        }
                                       }}
                                     >
+                                      {isEditMode && l.acts && l.acts.length > 0 && isEditingCell("sub_initiative", (l.acts[0] as any).operationalPlanId) ? (
+                                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                          <Input
+                                            value={cellValue}
+                                            onChange={(e) => setCellValue(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === "Enter") saveCellEdit();
+                                              if (e.key === "Escape") cancelCellEdit();
+                                            }}
+                                            autoFocus
+                                            className="h-8 text-xs"
+                                            placeholder="المبادرة الفرعية"
+                                          />
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
+                                            {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
+                                          </Button>
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelCellEdit}>
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ) : (
                                       <div className="flex items-center gap-1.5">
                                         <span className="text-xs font-semibold text-blue-900 leading-snug">
                                           {l.subName === "_no_sub" ? <span className="text-slate-300">—</span> : l.subName}
                                         </span>
                                         {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
                                       </div>
+                                      )}
                                     </TableCell>
                                   )}
                                   <TableCell
@@ -1998,9 +2203,33 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       isEditMode && "cursor-pointer hover:bg-amber-50"
                                     )}
                                     onClick={() => {
-                                      if (isEditMode && l.acts && l.acts.length > 0) openInlineEditor(l.acts[0] as any);
+                                      if (isEditMode && l.acts && l.acts.length > 0) {
+                                        const a = l.acts[0] as any;
+                                        startCellEdit({ kind: "employee", operationalPlanId: a.operationalPlanId }, a.employeeId ?? "none");
+                                      }
                                     }}
                                   >
+                                    {isEditMode && l.acts && l.acts.length > 0 && isEditingCell("employee", (l.acts[0] as any).operationalPlanId) ? (
+                                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                        <Select value={cellValue || "none"} onValueChange={setCellValue}>
+                                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="none">بدون موظف</SelectItem>
+                                            {employees.map((e) => (
+                                              <SelectItem key={e.id} value={e.id}>
+                                                {e.full_name}{e.department_name ? ` — ${e.department_name}` : ""}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
+                                          {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelCellEdit}>
+                                          <X className="w-3 h-3" />
+                                        </Button>
+                                      </div>
+                                    ) : (
                                     <div className={cn(
                                       "flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200",
                                       isEditMode && "border-amber-300"
@@ -2009,11 +2238,12 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       <span className="font-semibold text-xs text-slate-800 truncate">{l.empName}</span>
                                       {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
                                     </div>
+                                    )}
                                   </TableCell>
                                   <TableCell className="align-top py-2">
                                     <div className="flex flex-col gap-1">
                                       {l.acts.map((act, i) => {
-                                        const isEditingThis = isEditMode && editingExecPlanId === act.id;
+                                        const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
                                         return (
                                           <div
                                             key={act.id}
@@ -2027,172 +2257,46 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                             )}
                                             onClick={() => {
                                               if (!isEditMode || isEditingThis) return;
-                                              openInlineEditor(act as any);
+                                              startCellEdit(
+                                                { kind: "activity_name", execPlanId: act.id, operationalPlanId: (act as any).operationalPlanId },
+                                                act.activityName ?? ""
+                                              );
                                             }}
                                           >
                                             <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
                                               <span className="text-[9px] font-bold">{i + 1}</span>
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                              {!isEditingThis && (
-                                                <div className="font-medium leading-snug">{act.activityName}</div>
-                                              )}
                                               {isEditingThis ? (
-                                                <div
-                                                  className="space-y-2 p-2 bg-white/70 rounded-md border border-amber-200"
-                                                  onClick={(e) => e.stopPropagation()}
-                                                >
-                                                  <div className="flex flex-col gap-1">
-                                                    <span className="text-[9px] font-semibold text-slate-600">اسم النشاط</span>
-                                                    <Input
-                                                      value={editingValues.activity_name}
-                                                      onChange={(e) => setEditingValues(v => ({ ...v, activity_name: e.target.value }))}
-                                                      className="h-8 text-xs"
-                                                      placeholder="اسم النشاط"
-                                                    />
-                                                  </div>
-                                                  <div className="grid grid-cols-2 gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">المبادرة</span>
-                                                      <Input
-                                                        value={editingValues.initiative}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, initiative: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                        placeholder="—"
-                                                      />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">المبادرة الفرعية</span>
-                                                      <Input
-                                                        value={editingValues.sub_initiative}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, sub_initiative: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                        placeholder="—"
-                                                      />
-                                                    </div>
-                                                  </div>
-                                                  <div className="grid grid-cols-2 gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">القسم</span>
-                                                      <Select value={editingValues.department_id || "none"} onValueChange={setEditingDepartment}>
-                                                        <SelectTrigger className="h-8 text-xs">
-                                                          <SelectValue placeholder="اختر القسم" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                          <SelectItem value="none">بدون قسم محدد</SelectItem>
-                                                          {departments.map((dept) => (
-                                                            <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                                                          ))}
-                                                        </SelectContent>
-                                                      </Select>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">الموظف المسؤول</span>
-                                                      <Select
-                                                        value={editingValues.responsible_employee_id || "none"}
-                                                        onValueChange={(employeeId) => {
-                                                          if (employeeId === "none") {
-                                                            setEditingValues((current) => ({ ...current, responsible_employee_id: "none", department_id: "none" }));
-                                                            return;
-                                                          }
-                                                          const employee = employees.find((e) => e.id === employeeId);
-                                                          setEditingValues((current) => ({
-                                                            ...current,
-                                                            responsible_employee_id: employeeId,
-                                                            department_id: employee?.department_id ?? current.department_id,
-                                                          }));
-                                                        }}
-                                                      >
-                                                        <SelectTrigger className="h-8 text-xs">
-                                                          <SelectValue placeholder="اختر الموظف" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                          <SelectItem value="none">بدون موظف</SelectItem>
-                                                          {editEmployeeOptions.map(e => (
-                                                            <SelectItem key={e.id} value={e.id}>
-                                                              {e.full_name}{e.department_name ? ` — ${e.department_name}` : ""}
-                                                            </SelectItem>
-                                                          ))}
-                                                        </SelectContent>
-                                                      </Select>
-                                                    </div>
-                                                  </div>
-                                                  <div className="grid grid-cols-4 gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">الشهر/التاريخ</span>
-                                                      <Select value={editingValues.month || ""} onValueChange={(month) => setEditingValues(v => ({ ...v, month }))}>
-                                                        <SelectTrigger className="h-8 text-xs">
-                                                          <SelectValue placeholder="الشهر" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                          {MONTHS_AR.map((month, index) => (
-                                                            <SelectItem key={month} value={String(index + 1)}>{month}</SelectItem>
-                                                          ))}
-                                                        </SelectContent>
-                                                      </Select>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">اليوم</span>
-                                                      <Input
-                                                        type="number"
-                                                        min="1"
-                                                        max="31"
-                                                        value={editingValues.day}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, day: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                      />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">الهدف اليومي</span>
-                                                      <Input
-                                                        type="number"
-                                                        min="0"
-                                                        value={editingValues.daily_target}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, daily_target: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                      />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">المنجز</span>
-                                                      <Input
-                                                        type="number"
-                                                        min="0"
-                                                        value={editingValues.achieved}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, achieved: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                      />
-                                                    </div>
-                                                  </div>
-                                                  <div className="flex items-center justify-end gap-1 pt-1 border-t border-amber-200">
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      onClick={() => setEditingExecPlanId(null)}
-                                                      className="h-7 px-2 text-xs"
-                                                    >
-                                                      <X className="w-3 h-3 ml-1" />
-                                                      إلغاء
-                                                    </Button>
-                                                    <Button
-                                                      size="sm"
-                                                      onClick={() => saveExecPlanEdit(act.id, act.operationalPlanId)}
-                                                      disabled={savingEdit}
-                                                      className="h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
-                                                    >
-                                                      {savingEdit ? <Loader2 className="w-3 h-3 animate-spin ml-1" /> : <Save className="w-3 h-3 ml-1" />}
-                                                      حفظ الكل
-                                                    </Button>
-                                                  </div>
+                                                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                  <Input
+                                                    value={cellValue}
+                                                    onChange={(e) => setCellValue(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === "Enter") saveCellEdit();
+                                                      if (e.key === "Escape") cancelCellEdit();
+                                                    }}
+                                                    autoFocus
+                                                    className="h-8 text-xs"
+                                                    placeholder="اسم النشاط"
+                                                  />
+                                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
+                                                    {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
+                                                  </Button>
+                                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelCellEdit}>
+                                                    <X className="w-3 h-3" />
+                                                  </Button>
                                                 </div>
                                               ) : (
-                                                isEditMode && (
-                                                  <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-500">
-                                                    <span>الهدف: <span className="font-semibold text-slate-700">{act.dailyTarget}</span></span>
-                                                    <span>•</span>
-                                                    <span>المنجز: <span className="font-semibold text-slate-700">{act.achieved}</span></span>
-                                                    <Pencil className="w-3 h-3 text-amber-600 mr-auto" />
-                                                  </div>
-                                                )
+                                                <>
+                                                  <div className="font-medium leading-snug">{act.activityName}</div>
+                                                  {isEditMode && (
+                                                    <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-500">
+                                                      <Pencil className="w-3 h-3 text-amber-600" />
+                                                      <span>انقر لتعديل اسم النشاط</span>
+                                                    </div>
+                                                  )}
+                                                </>
                                               )}
                                             </div>
                                           </div>
