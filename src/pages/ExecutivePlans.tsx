@@ -40,6 +40,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import {
   ChevronDown,
   Calendar,
@@ -318,11 +319,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   // تحرير لكل عمود على حدة (الخلية المحددة فقط)
   type CellEditTarget =
     | { kind: "activity_name"; execPlanId: string; operationalPlanId: string }
-    | { kind: "employee"; operationalPlanId: string }
-    | { kind: "department"; operationalPlanId: string }
-    | { kind: "initiative"; operationalPlanId: string }
-    | { kind: "sub_initiative"; operationalPlanId: string }
-    | { kind: "day"; execPlanId: string }
+    | { kind: "employee"; operationalPlanId: string; operationalPlanIds?: string[] }
+    | { kind: "department"; operationalPlanId: string; operationalPlanIds?: string[] }
+    | { kind: "initiative"; operationalPlanId: string; operationalPlanIds?: string[] }
+    | { kind: "sub_initiative"; operationalPlanId: string; operationalPlanIds?: string[] }
+    | { kind: "day"; execPlanId: string; execPlanIds?: string[]; monthNumber?: number }
     | { kind: "month"; planMonthId: string };
   const [cellEdit, setCellEdit] = useState<CellEditTarget | null>(null);
   const [cellValue, setCellValue] = useState<string>("");
@@ -344,12 +345,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       anyEdit.planMonthId === idValue
     );
   };
-  const saveCellEdit = async () => {
+  const saveCellEditWith = async (overrideValue?: string) => {
     if (!cellEdit) return;
     setSavingCell(true);
     try {
+      const cellValueLocal = overrideValue !== undefined ? overrideValue : cellValue;
       if (cellEdit.kind === "activity_name") {
-        const value = cellValue.trim();
+        const value = cellValueLocal.trim();
         if (!value) {
           toast({ title: "قيمة غير صالحة", description: "اسم النشاط لا يمكن أن يكون فارغًا", variant: "destructive" });
           return;
@@ -363,44 +365,48 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       } else if (cellEdit.kind === "initiative" || cellEdit.kind === "sub_initiative") {
         const value = cellValue.trim() || null;
         const updates: any = cellEdit.kind === "initiative" ? { initiative: value } : { sub_initiative: value };
+        const ids = (cellEdit as any).operationalPlanIds?.length ? (cellEdit as any).operationalPlanIds : [cellEdit.operationalPlanId];
         const { error } = await supabase
           .from("operational_plans")
           .update(updates)
-          .eq("id", cellEdit.operationalPlanId);
+          .in("id", ids);
         if (error) throw error;
-        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, ...updates } : p));
+        setOperationalPlans((prev) => prev.map((p) => ids.includes(p.id) ? { ...p, ...updates } : p));
       } else if (cellEdit.kind === "employee") {
         const employeeId = cellValue && cellValue !== "none" ? cellValue : null;
+        const ids = (cellEdit as any).operationalPlanIds?.length ? (cellEdit as any).operationalPlanIds : [cellEdit.operationalPlanId];
         const { error } = await supabase
           .from("operational_plans")
           .update({ responsible_employee_id: employeeId } as any)
-          .eq("id", cellEdit.operationalPlanId);
+          .in("id", ids);
         if (error) throw error;
-        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, responsible_employee_id: employeeId } : p));
+        setOperationalPlans((prev) => prev.map((p) => ids.includes(p.id) ? { ...p, responsible_employee_id: employeeId } : p));
       } else if (cellEdit.kind === "department") {
         // اختيار قسم = إسناد المسؤولية إلى أول موظف في هذا القسم (أو إفراغها)
         const departmentId = cellValue && cellValue !== "none" ? cellValue : null;
         const employeeId = departmentId
           ? employees.find((e) => e.department_id === departmentId)?.id ?? null
           : null;
+        const ids = (cellEdit as any).operationalPlanIds?.length ? (cellEdit as any).operationalPlanIds : [cellEdit.operationalPlanId];
         const { error } = await supabase
           .from("operational_plans")
           .update({ responsible_employee_id: employeeId } as any)
-          .eq("id", cellEdit.operationalPlanId);
+          .in("id", ids);
         if (error) throw error;
-        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, responsible_employee_id: employeeId } : p));
+        setOperationalPlans((prev) => prev.map((p) => ids.includes(p.id) ? { ...p, responsible_employee_id: employeeId } : p));
       } else if (cellEdit.kind === "day") {
         const dayNum = parseInt(cellValue);
         if (Number.isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
           toast({ title: "يوم غير صالح", description: "يجب أن يكون اليوم بين 1 و 31", variant: "destructive" });
           return;
         }
+        const ids = (cellEdit as any).execPlanIds?.length ? (cellEdit as any).execPlanIds : [cellEdit.execPlanId];
         const { error } = await supabase
           .from("executive_plans")
           .update({ day: dayNum } as any)
-          .eq("id", cellEdit.execPlanId);
+          .in("id", ids);
         if (error) throw error;
-        setExecutivePlans((prev) => prev.map((ep) => ep.id === cellEdit.execPlanId ? { ...ep, day: dayNum } : ep));
+        setExecutivePlans((prev) => prev.map((ep) => ids.includes(ep.id) ? { ...ep, day: dayNum } : ep));
       } else if (cellEdit.kind === "month") {
         const monthNum = parseInt(cellValue);
         if (Number.isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
@@ -422,6 +428,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       setSavingCell(false);
     }
   };
+  const saveCellEdit = () => { void saveCellEditWith(); };
   // فتح محرر النشاط بكل البيانات
   const openInlineEditor = (act: {
     id: string;
@@ -1927,6 +1934,27 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           initSpan.set(l.initKey, (initSpan.get(l.initKey) ?? 0) + 1);
                           subSpan.set(l.subKey, (subSpan.get(l.subKey) ?? 0) + 1);
                         }
+                        // تجميع المعرفات حسب مفاتيح المجموعة (لتطبيق التعديل على الخلية الكاملة)
+                        const opIdsByDept = new Map<string, string[]>();
+                        const opIdsByInit = new Map<string, string[]>();
+                        const opIdsBySub = new Map<string, string[]>();
+                        const execIdsByDay = new Map<number, string[]>();
+                        for (const l of leaves) {
+                          for (const a of (l.acts as any[])) {
+                            if (a.operationalPlanId) {
+                              if (!opIdsByDept.has(l.deptKey)) opIdsByDept.set(l.deptKey, []);
+                              if (!opIdsByDept.get(l.deptKey)!.includes(a.operationalPlanId)) opIdsByDept.get(l.deptKey)!.push(a.operationalPlanId);
+                              if (!opIdsByInit.has(l.initKey)) opIdsByInit.set(l.initKey, []);
+                              if (!opIdsByInit.get(l.initKey)!.includes(a.operationalPlanId)) opIdsByInit.get(l.initKey)!.push(a.operationalPlanId);
+                              if (!opIdsBySub.has(l.subKey)) opIdsBySub.set(l.subKey, []);
+                              if (!opIdsBySub.get(l.subKey)!.includes(a.operationalPlanId)) opIdsBySub.get(l.subKey)!.push(a.operationalPlanId);
+                            }
+                            if (a.id) {
+                              if (!execIdsByDay.has(l.day)) execIdsByDay.set(l.day, []);
+                              if (!execIdsByDay.get(l.day)!.includes(a.id)) execIdsByDay.get(l.day)!.push(a.id);
+                            }
+                          }
+                        }
                         const seenMonth = { v: false };
                         const seenDay = new Set<number>();
                         const seenDept = new Set<string>();
@@ -1996,7 +2024,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const firstAct = l.acts[0] as any;
-                                          startCellEdit({ kind: "day", execPlanId: firstAct.id }, String(firstAct.day ?? ""));
+                                          const ids = execIdsByDay.get(l.day) ?? [firstAct.id];
+                                          startCellEdit(
+                                            { kind: "day", execPlanId: firstAct.id, execPlanIds: ids, monthNumber: monthGroup.month },
+                                            String(firstAct.day ?? l.day ?? ""),
+                                          );
                                         } else {
                                           toggleDay(dayKey);
                                         }
@@ -2004,19 +2036,37 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     >
                                       {isEditMode && l.acts && l.acts.length > 0 && isEditingCell("day", (l.acts[0] as any).id) ? (
                                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                          <Input
-                                            type="number"
-                                            min="1"
-                                            max="31"
-                                            value={cellValue}
-                                            onChange={(e) => setCellValue(e.target.value)}
-                                            onKeyDown={(e) => {
-                                              if (e.key === "Enter") saveCellEdit();
-                                              if (e.key === "Escape") cancelCellEdit();
-                                            }}
-                                            autoFocus
-                                            className="h-8 w-16 text-xs"
-                                          />
+                                          <Popover open onOpenChange={(open) => { if (!open) cancelCellEdit(); }}>
+                                            <PopoverTrigger asChild>
+                                              <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1.5">
+                                                <CalendarDays className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                                                <span className="font-bold">
+                                                  {cellValue ? `${monthGroup.monthName} ${cellValue}` : "اختر اليوم"}
+                                                </span>
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-3 bg-popover" align="start">
+                                              <div className="text-xs font-semibold text-slate-600 mb-2 text-center">
+                                                اختر يوم التنفيذ — {monthGroup.monthName} {selectedYear}
+                                              </div>
+                                              <CalendarPicker
+                                                mode="single"
+                                                month={new Date(selectedYear, monthGroup.month - 1, 1)}
+                                                selected={cellValue ? new Date(selectedYear, monthGroup.month - 1, parseInt(cellValue)) : undefined}
+                                                onSelect={(d) => {
+                                                  if (!d) return;
+                                                  setCellValue(String(d.getDate()));
+                                                  // حفظ تلقائي بعد اختيار اليوم
+                                                  void saveCellEditWith(String(d.getDate()));
+                                                }}
+                                                disabled={(date) =>
+                                                  date.getMonth() !== monthGroup.month - 1 ||
+                                                  date.getFullYear() !== selectedYear
+                                                }
+                                                className="p-0 pointer-events-auto"
+                                              />
+                                            </PopoverContent>
+                                          </Popover>
                                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
                                             {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
                                           </Button>
@@ -2077,7 +2127,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
-                                          startCellEdit({ kind: "department", operationalPlanId: a.operationalPlanId }, a.departmentId ?? "none");
+                                          const ids = opIdsByDept.get(l.deptKey) ?? [a.operationalPlanId];
+                                          startCellEdit({ kind: "department", operationalPlanId: a.operationalPlanId, operationalPlanIds: ids }, a.departmentId ?? "none");
                                         }
                                       }}
                                     >
@@ -2118,7 +2169,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
-                                          startCellEdit({ kind: "initiative", operationalPlanId: a.operationalPlanId }, a.initiative ?? "");
+                                          const ids = opIdsByInit.get(l.initKey) ?? [a.operationalPlanId];
+                                          startCellEdit({ kind: "initiative", operationalPlanId: a.operationalPlanId, operationalPlanIds: ids }, a.initiative ?? "");
                                         }
                                       }}
                                     >
@@ -2163,7 +2215,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
-                                          startCellEdit({ kind: "sub_initiative", operationalPlanId: a.operationalPlanId }, a.subInitiative ?? "");
+                                          const ids = opIdsBySub.get(l.subKey) ?? [a.operationalPlanId];
+                                          startCellEdit({ kind: "sub_initiative", operationalPlanId: a.operationalPlanId, operationalPlanIds: ids }, a.subInitiative ?? "");
                                         }
                                       }}
                                     >
@@ -2205,7 +2258,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     onClick={() => {
                                       if (isEditMode && l.acts && l.acts.length > 0) {
                                         const a = l.acts[0] as any;
-                                        startCellEdit({ kind: "employee", operationalPlanId: a.operationalPlanId }, a.employeeId ?? "none");
+                                        const ids = Array.from(new Set((l.acts as any[]).map((x) => x.operationalPlanId).filter(Boolean)));
+                                        startCellEdit({ kind: "employee", operationalPlanId: a.operationalPlanId, operationalPlanIds: ids }, a.employeeId ?? "none");
                                       }
                                     }}
                                   >
