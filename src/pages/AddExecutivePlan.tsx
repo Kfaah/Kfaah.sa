@@ -92,6 +92,80 @@ export default function AddExecutivePlan() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Inline-add new activity per employee: empId -> { name, monthlyTarget, saving }
+  const [newActivityByEmp, setNewActivityByEmp] = useState<Record<string, { name: string; monthlyTarget: number | ""; saving: boolean }>>({});
+  const setNewActField = (empId: string, patch: Partial<{ name: string; monthlyTarget: number | ""; saving: boolean }>) =>
+    setNewActivityByEmp((prev) => ({
+      ...prev,
+      [empId]: { name: "", monthlyTarget: "", saving: false, ...(prev[empId] || {}), ...patch },
+    }));
+
+  const addActivityForEmployee = async (employee: Employee) => {
+    const draft = newActivityByEmp[employee.id];
+    const name = (draft?.name || "").trim();
+    const monthlyTarget = Number(draft?.monthlyTarget || 0);
+    if (!name) {
+      toast({ title: "اسم مطلوب", description: "اكتب اسم النشاط", variant: "destructive" });
+      return;
+    }
+    if (!monthlyTarget || monthlyTarget < 1) {
+      toast({ title: "مستهدف غير صالح", description: "حدّد مستهدفًا شهريًا أكبر من صفر", variant: "destructive" });
+      return;
+    }
+    setNewActField(employee.id, { saving: true });
+    try {
+      // 1) Insert operational_plan
+      const planPayload: any = {
+        activity_name: name,
+        annual_target: monthlyTarget,
+        year,
+        responsible_employee_id: employee.id,
+        user_id: employee.user_id ?? authUser?.id ?? null,
+        organization_id: activeOrgId,
+        status: "active",
+      };
+      const { data: planRow, error: planErr } = await supabase
+        .from("operational_plans")
+        .insert(planPayload)
+        .select("id")
+        .single();
+      if (planErr) throw planErr;
+
+      // 2) Insert operational_plan_months for the chosen month
+      const { data: monthRow, error: monthErr } = await supabase
+        .from("operational_plan_months")
+        .insert({
+          operational_plan_id: planRow.id,
+          month,
+          monthly_target: monthlyTarget,
+          organization_id: activeOrgId,
+        } as any)
+        .select("id")
+        .single();
+      if (monthErr) throw monthErr;
+
+      // 3) Update local state: add to activities and auto-select with sane daily target
+      const newAct: Activity = {
+        planMonthId: monthRow.id,
+        operationalPlanId: planRow.id,
+        activityName: name,
+        monthlyTarget,
+        responsibleEmployeeId: employee.id,
+        ownerUserId: employee.user_id,
+      };
+      setActivities((prev) => [...prev, newAct]);
+      const days = Math.max(selectedDays.length, 1);
+      setSelectedActivities((prev) => ({
+        ...prev,
+        [monthRow.id]: Math.max(1, Math.ceil(monthlyTarget / days)),
+      }));
+      setNewActField(employee.id, { name: "", monthlyTarget: "", saving: false });
+      toast({ title: "تمت إضافة النشاط", description: name });
+    } catch (e: any) {
+      setNewActField(employee.id, { saving: false });
+      toast({ title: "خطأ", description: e.message || "فشل إضافة النشاط", variant: "destructive" });
+    }
+  };
 
   // Resolve org id from slug
   useEffect(() => {
