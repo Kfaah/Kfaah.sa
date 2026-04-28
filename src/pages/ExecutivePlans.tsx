@@ -2062,26 +2062,62 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                       />
                                                     </div>
                                                   </div>
-                                                  <div className="flex flex-col gap-1">
-                                                    <span className="text-[9px] font-semibold text-slate-600">الموظف المسؤول (يحدد القسم تلقائيًا)</span>
-                                                    <Select
-                                                      value={editingValues.responsible_employee_id || "none"}
-                                                      onValueChange={(v) => setEditingValues(s => ({ ...s, responsible_employee_id: v }))}
-                                                    >
-                                                      <SelectTrigger className="h-8 text-xs">
-                                                        <SelectValue placeholder="اختر الموظف" />
-                                                      </SelectTrigger>
-                                                      <SelectContent>
-                                                        <SelectItem value="none">بدون موظف</SelectItem>
-                                                        {employees.map(e => (
-                                                          <SelectItem key={e.id} value={e.id}>
-                                                            {e.full_name}{e.department_name ? ` — ${e.department_name}` : ""}
-                                                          </SelectItem>
-                                                        ))}
-                                                      </SelectContent>
-                                                    </Select>
+                                                  <div className="grid grid-cols-2 gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">القسم</span>
+                                                      <Select value={editingValues.department_id || "none"} onValueChange={setEditingDepartment}>
+                                                        <SelectTrigger className="h-8 text-xs">
+                                                          <SelectValue placeholder="اختر القسم" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                          <SelectItem value="none">بدون قسم محدد</SelectItem>
+                                                          {departments.map((dept) => (
+                                                            <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                                                          ))}
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">الموظف المسؤول</span>
+                                                      <Select
+                                                        value={editingValues.responsible_employee_id || "none"}
+                                                        onValueChange={(employeeId) => {
+                                                          const employee = employees.find((e) => e.id === employeeId);
+                                                          setEditingValues((current) => ({
+                                                            ...current,
+                                                            responsible_employee_id: employeeId,
+                                                            department_id: employee?.department_id ?? current.department_id,
+                                                          }));
+                                                        }}
+                                                      >
+                                                        <SelectTrigger className="h-8 text-xs">
+                                                          <SelectValue placeholder="اختر الموظف" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                          <SelectItem value="none">بدون موظف</SelectItem>
+                                                          {editEmployeeOptions.map(e => (
+                                                            <SelectItem key={e.id} value={e.id}>
+                                                              {e.full_name}{e.department_name ? ` — ${e.department_name}` : ""}
+                                                            </SelectItem>
+                                                          ))}
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
                                                   </div>
-                                                  <div className="grid grid-cols-3 gap-2">
+                                                  <div className="grid grid-cols-4 gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">الشهر/التاريخ</span>
+                                                      <Select value={editingValues.month || ""} onValueChange={(month) => setEditingValues(v => ({ ...v, month }))}>
+                                                        <SelectTrigger className="h-8 text-xs">
+                                                          <SelectValue placeholder="الشهر" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                          {MONTHS_AR.map((month, index) => (
+                                                            <SelectItem key={month} value={String(index + 1)}>{month}</SelectItem>
+                                                          ))}
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
                                                     <div className="flex flex-col gap-1">
                                                       <span className="text-[9px] font-semibold text-slate-600">اليوم</span>
                                                       <Input
