@@ -2258,7 +2258,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     onClick={() => {
                                       if (isEditMode && l.acts && l.acts.length > 0) {
                                         const a = l.acts[0] as any;
-                                        startCellEdit({ kind: "employee", operationalPlanId: a.operationalPlanId }, a.employeeId ?? "none");
+                                        const ids = Array.from(new Set((l.acts as any[]).map((x) => x.operationalPlanId).filter(Boolean)));
+                                        startCellEdit({ kind: "employee", operationalPlanId: a.operationalPlanId, operationalPlanIds: ids }, a.employeeId ?? "none");
                                       }
                                     }}
                                   >
