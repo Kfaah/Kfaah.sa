@@ -315,6 +315,113 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     month: string;
   }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", department_id: "", day: "", month: "" });
   const [savingEdit, setSavingEdit] = useState(false);
+  // تحرير لكل عمود على حدة (الخلية المحددة فقط)
+  type CellEditTarget =
+    | { kind: "activity_name"; execPlanId: string; operationalPlanId: string }
+    | { kind: "employee"; operationalPlanId: string }
+    | { kind: "department"; operationalPlanId: string }
+    | { kind: "initiative"; operationalPlanId: string }
+    | { kind: "sub_initiative"; operationalPlanId: string }
+    | { kind: "day"; execPlanId: string }
+    | { kind: "month"; planMonthId: string };
+  const [cellEdit, setCellEdit] = useState<CellEditTarget | null>(null);
+  const [cellValue, setCellValue] = useState<string>("");
+  const [savingCell, setSavingCell] = useState(false);
+  const startCellEdit = (target: CellEditTarget, initial: string) => {
+    setCellEdit(target);
+    setCellValue(initial ?? "");
+  };
+  const cancelCellEdit = () => {
+    setCellEdit(null);
+    setCellValue("");
+  };
+  const isEditingCell = (kind: CellEditTarget["kind"], idValue: string) => {
+    if (!cellEdit || cellEdit.kind !== kind) return false;
+    const anyEdit = cellEdit as any;
+    return (
+      anyEdit.execPlanId === idValue ||
+      anyEdit.operationalPlanId === idValue ||
+      anyEdit.planMonthId === idValue
+    );
+  };
+  const saveCellEdit = async () => {
+    if (!cellEdit) return;
+    setSavingCell(true);
+    try {
+      if (cellEdit.kind === "activity_name") {
+        const value = cellValue.trim();
+        if (!value) {
+          toast({ title: "قيمة غير صالحة", description: "اسم النشاط لا يمكن أن يكون فارغًا", variant: "destructive" });
+          return;
+        }
+        const { error } = await supabase
+          .from("operational_plans")
+          .update({ activity_name: value } as any)
+          .eq("id", cellEdit.operationalPlanId);
+        if (error) throw error;
+        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, activity_name: value } : p));
+      } else if (cellEdit.kind === "initiative" || cellEdit.kind === "sub_initiative") {
+        const value = cellValue.trim() || null;
+        const updates: any = cellEdit.kind === "initiative" ? { initiative: value } : { sub_initiative: value };
+        const { error } = await supabase
+          .from("operational_plans")
+          .update(updates)
+          .eq("id", cellEdit.operationalPlanId);
+        if (error) throw error;
+        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, ...updates } : p));
+      } else if (cellEdit.kind === "employee") {
+        const employeeId = cellValue && cellValue !== "none" ? cellValue : null;
+        const { error } = await supabase
+          .from("operational_plans")
+          .update({ responsible_employee_id: employeeId } as any)
+          .eq("id", cellEdit.operationalPlanId);
+        if (error) throw error;
+        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, responsible_employee_id: employeeId } : p));
+      } else if (cellEdit.kind === "department") {
+        // اختيار قسم = إسناد المسؤولية إلى أول موظف في هذا القسم (أو إفراغها)
+        const departmentId = cellValue && cellValue !== "none" ? cellValue : null;
+        const employeeId = departmentId
+          ? employees.find((e) => e.department_id === departmentId)?.id ?? null
+          : null;
+        const { error } = await supabase
+          .from("operational_plans")
+          .update({ responsible_employee_id: employeeId } as any)
+          .eq("id", cellEdit.operationalPlanId);
+        if (error) throw error;
+        setOperationalPlans((prev) => prev.map((p) => p.id === cellEdit.operationalPlanId ? { ...p, responsible_employee_id: employeeId } : p));
+      } else if (cellEdit.kind === "day") {
+        const dayNum = parseInt(cellValue);
+        if (Number.isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
+          toast({ title: "يوم غير صالح", description: "يجب أن يكون اليوم بين 1 و 31", variant: "destructive" });
+          return;
+        }
+        const { error } = await supabase
+          .from("executive_plans")
+          .update({ day: dayNum } as any)
+          .eq("id", cellEdit.execPlanId);
+        if (error) throw error;
+        setExecutivePlans((prev) => prev.map((ep) => ep.id === cellEdit.execPlanId ? { ...ep, day: dayNum } : ep));
+      } else if (cellEdit.kind === "month") {
+        const monthNum = parseInt(cellValue);
+        if (Number.isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+          toast({ title: "شهر غير صالح", description: "يجب اختيار شهر صحيح", variant: "destructive" });
+          return;
+        }
+        const { error } = await supabase
+          .from("operational_plan_months")
+          .update({ month: monthNum } as any)
+          .eq("id", cellEdit.planMonthId);
+        if (error) throw error;
+        setPlanMonths((prev) => prev.map((pm) => pm.id === cellEdit.planMonthId ? { ...pm, month: monthNum } : pm));
+      }
+      toast({ title: "تم الحفظ" });
+      cancelCellEdit();
+    } catch (error: any) {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingCell(false);
+    }
+  };
   // فتح محرر النشاط بكل البيانات
   const openInlineEditor = (act: {
     id: string;
