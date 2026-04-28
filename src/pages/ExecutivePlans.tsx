@@ -2183,7 +2183,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               if (e.key === "Enter") saveCellEdit();
                                               if (e.key === "Escape") cancelCellEdit();
                                             }}
-                                            autoFocus
+                                            ref={(el) => { if (el) el.focus({ preventScroll: true }); }}
                                             className="h-8 text-xs"
                                             placeholder="المبادرة"
                                           />
@@ -2229,7 +2229,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               if (e.key === "Enter") saveCellEdit();
                                               if (e.key === "Escape") cancelCellEdit();
                                             }}
-                                            autoFocus
+                                            ref={(el) => { if (el) el.focus({ preventScroll: true }); }}
                                             className="h-8 text-xs"
                                             placeholder="المبادرة الفرعية"
                                           />
@@ -2330,7 +2330,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                       if (e.key === "Enter") saveCellEdit();
                                                       if (e.key === "Escape") cancelCellEdit();
                                                     }}
-                                                    autoFocus
+                                                    ref={(el) => { if (el) el.focus({ preventScroll: true }); }}
                                                     className="h-8 text-xs"
                                                     placeholder="اسم النشاط"
                                                   />
