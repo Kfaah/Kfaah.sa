@@ -693,7 +693,61 @@ export default function AddExecutivePlan() {
                   </p>
                 </div>
               )}
-              {activitiesByEmployee.map(({ employee, activities: acts }) => (
+              {activitiesByEmployee.map(({ employee, activities: acts }) => {
+                const manualActs = acts.filter((a) => manuallyAddedIds.has(a.planMonthId));
+                const suggestedActs = acts.filter((a) => !manuallyAddedIds.has(a.planMonthId));
+                const renderActivityRow = (a: Activity, tone: "manual" | "suggested") => {
+                  const sel = selectedActivities[a.planMonthId] !== undefined;
+                  const dailyVal = sel ? selectedActivities[a.planMonthId] : "";
+                  return (
+                    <div
+                      key={a.planMonthId}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-2.5 transition-colors",
+                        tone === "manual"
+                          ? "bg-emerald-50/60 hover:bg-emerald-50"
+                          : sel ? "bg-amber-50/50" : "hover:bg-slate-50",
+                      )}
+                    >
+                      <Checkbox
+                        checked={sel}
+                        onCheckedChange={() => toggleActivity(a.planMonthId, a.monthlyTarget)}
+                      />
+                      <Target className={cn("w-4 h-4 shrink-0", tone === "manual" ? "text-emerald-600" : "text-[hsl(var(--primary))]")} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-slate-800 truncate flex items-center gap-2">
+                          {a.activityName}
+                          {tone === "manual" && (
+                            <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-emerald-700 border-emerald-300 bg-emerald-50">
+                              مُضاف الآن
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          المستهدف الشهري: {a.monthlyTarget}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-[11px] text-slate-600 whitespace-nowrap">المستهدف اليومي</label>
+                        <Input
+                          type="number"
+                          min={1}
+                          disabled={!sel}
+                          value={dailyVal}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setSelectedActivities((prev) => ({
+                              ...prev,
+                              [a.planMonthId]: v === "" ? "" : Math.max(1, Number(v)),
+                            }));
+                          }}
+                          className="w-20 h-8 text-center"
+                        />
+                      </div>
+                    </div>
+                  );
+                };
+                return (
                 <React.Fragment key={employee.id}>
                 <div key={employee.id} className="border-2 border-slate-200 rounded-xl overflow-hidden">
                   <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
@@ -702,7 +756,7 @@ export default function AddExecutivePlan() {
                     </div>
                     <span className="font-bold text-sm text-slate-800">{employee.full_name}</span>
                     <div className="mr-auto flex items-center gap-2">
-                      {acts.length > 0 && (
+                      {suggestedActs.length > 0 && (
                         <Button
                           type="button"
                           variant={showSuggestionsByEmp[employee.id] ? "default" : "outline"}
@@ -716,56 +770,23 @@ export default function AddExecutivePlan() {
                           )}
                         >
                           <Sparkles className="w-3.5 h-3.5" />
-                          {showSuggestionsByEmp[employee.id] ? "إخفاء المقترحة" : `أنشطة مقترحة (${acts.length})`}
+                          {showSuggestionsByEmp[employee.id] ? "إخفاء المقترحة" : `أنشطة مقترحة (${suggestedActs.length})`}
                         </Button>
                       )}
                     </div>
                   </div>
 
-                  {acts.length > 0 && showSuggestionsByEmp[employee.id] && (
+                  {/* الأنشطة المضافة يدويًا — تظهر دائمًا */}
+                  {manualActs.length > 0 && (
+                    <div className="divide-y divide-emerald-100">
+                      {manualActs.map((a) => renderActivityRow(a, "manual"))}
+                    </div>
+                  )}
+
+                  {/* الأنشطة المقترحة من النظام — تظهر فقط عند الطلب */}
+                  {suggestedActs.length > 0 && showSuggestionsByEmp[employee.id] && (
                     <div className="divide-y divide-slate-100">
-                      {acts.map((a) => {
-                        const sel = selectedActivities[a.planMonthId] !== undefined;
-                        const dailyVal = sel ? selectedActivities[a.planMonthId] : "";
-                        return (
-                          <div
-                            key={a.planMonthId}
-                            className={cn(
-                              "flex items-center gap-3 px-4 py-2.5 transition-colors",
-                              sel ? "bg-amber-50/50" : "hover:bg-slate-50",
-                            )}
-                          >
-                            <Checkbox
-                              checked={sel}
-                              onCheckedChange={() => toggleActivity(a.planMonthId, a.monthlyTarget)}
-                            />
-                            <Target className="w-4 h-4 text-[hsl(var(--primary))] shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-semibold text-sm text-slate-800 truncate">{a.activityName}</div>
-                              <div className="text-[11px] text-slate-500">
-                                المستهدف الشهري: {a.monthlyTarget}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <label className="text-[11px] text-slate-600 whitespace-nowrap">المستهدف اليومي</label>
-                              <Input
-                                type="number"
-                                min={1}
-                                disabled={!sel}
-                                value={dailyVal}
-                                onChange={(e) => {
-                                  const v = e.target.value;
-                                  setSelectedActivities((prev) => ({
-                                    ...prev,
-                                    [a.planMonthId]: v === "" ? "" : Math.max(1, Number(v)),
-                                  }));
-                                }}
-                                className="w-20 h-8 text-center"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {suggestedActs.map((a) => renderActivityRow(a, "suggested"))}
                     </div>
                   )}
 
