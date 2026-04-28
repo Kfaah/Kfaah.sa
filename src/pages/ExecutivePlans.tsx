@@ -804,26 +804,51 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     });
   };
 
-  // حفظ تعديل خلية (الهدف اليومي والمنجز)
-  const saveExecPlanEdit = async (execPlanId: string) => {
+  // حفظ تعديل شامل (executive_plans + operational_plans)
+  const saveExecPlanEdit = async (execPlanId: string, operationalPlanId?: string) => {
     const dt = parseFloat(editingValues.daily_target);
     const ach = parseFloat(editingValues.achieved);
+    const dayNum = parseInt(editingValues.day);
     if (Number.isNaN(dt) || dt < 0) {
       toast({ title: "قيمة غير صالحة", description: "الهدف اليومي يجب أن يكون رقمًا موجبًا", variant: "destructive" });
       return;
     }
+    if (!Number.isNaN(dayNum) && (dayNum < 1 || dayNum > 31)) {
+      toast({ title: "يوم غير صالح", description: "يجب أن يكون اليوم بين 1 و 31", variant: "destructive" });
+      return;
+    }
     setSavingEdit(true);
     try {
-      const updates: any = { daily_target: dt };
-      if (!Number.isNaN(ach) && ach >= 0) updates.achieved = ach;
+      const execUpdates: any = { daily_target: dt };
+      if (!Number.isNaN(ach) && ach >= 0) execUpdates.achieved = ach;
+      if (!Number.isNaN(dayNum)) execUpdates.day = dayNum;
       const { error } = await supabase
         .from("executive_plans")
-        .update(updates)
+        .update(execUpdates)
         .eq("id", execPlanId);
       if (error) throw error;
-      setExecutivePlans(prev => prev.map(ep => ep.id === execPlanId ? { ...ep, ...updates } : ep));
+      setExecutivePlans(prev => prev.map(ep => ep.id === execPlanId ? { ...ep, ...execUpdates } : ep));
+
+      // تحديث الخطة التشغيلية (اسم النشاط، المبادرة، المبادرة الفرعية، المسؤول)
+      if (operationalPlanId) {
+        const opUpdates: any = {
+          activity_name: editingValues.activity_name.trim(),
+          initiative: editingValues.initiative.trim() || null,
+          sub_initiative: editingValues.sub_initiative.trim() || null,
+          responsible_employee_id: editingValues.responsible_employee_id && editingValues.responsible_employee_id !== "none"
+            ? editingValues.responsible_employee_id
+            : null,
+        };
+        const { error: opErr } = await supabase
+          .from("operational_plans")
+          .update(opUpdates)
+          .eq("id", operationalPlanId);
+        if (opErr) throw opErr;
+        setOperationalPlans(prev => prev.map(p => p.id === operationalPlanId ? { ...p, ...opUpdates } : p));
+      }
+
       setEditingExecPlanId(null);
-      toast({ title: "تم الحفظ", description: "تم تحديث بيانات النشاط" });
+      toast({ title: "تم الحفظ", description: "تم تحديث بيانات النشاط بالكامل" });
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     } finally {
