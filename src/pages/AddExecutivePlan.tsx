@@ -166,6 +166,11 @@ export default function AddExecutivePlan() {
         ...prev,
         [monthRow.id]: Math.max(1, Math.ceil(monthlyTarget / days)),
       }));
+      setManuallyAddedIds((prev) => {
+        const next = new Set(prev);
+        next.add(monthRow.id);
+        return next;
+      });
       setNewActField(employee.id, { name: "", monthlyTarget: "", saving: false });
       toast({ title: "تمت إضافة النشاط", description: name });
     } catch (e: any) {
