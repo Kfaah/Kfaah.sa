@@ -92,6 +92,80 @@ export default function AddExecutivePlan() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Inline-add new activity per employee: empId -> { name, monthlyTarget, saving }
+  const [newActivityByEmp, setNewActivityByEmp] = useState<Record<string, { name: string; monthlyTarget: number | ""; saving: boolean }>>({});
+  const setNewActField = (empId: string, patch: Partial<{ name: string; monthlyTarget: number | ""; saving: boolean }>) =>
+    setNewActivityByEmp((prev) => ({
+      ...prev,
+      [empId]: { name: "", monthlyTarget: "", saving: false, ...(prev[empId] || {}), ...patch },
+    }));
+
+  const addActivityForEmployee = async (employee: Employee) => {
+    const draft = newActivityByEmp[employee.id];
+    const name = (draft?.name || "").trim();
+    const monthlyTarget = Number(draft?.monthlyTarget || 0);
+    if (!name) {
+      toast({ title: "اسم مطلوب", description: "اكتب اسم النشاط", variant: "destructive" });
+      return;
+    }
+    if (!monthlyTarget || monthlyTarget < 1) {
+      toast({ title: "مستهدف غير صالح", description: "حدّد مستهدفًا شهريًا أكبر من صفر", variant: "destructive" });
+      return;
+    }
+    setNewActField(employee.id, { saving: true });
+    try {
+      // 1) Insert operational_plan
+      const planPayload: any = {
+        activity_name: name,
+        annual_target: monthlyTarget,
+        year,
+        responsible_employee_id: employee.id,
+        user_id: employee.user_id ?? authUser?.id ?? null,
+        organization_id: activeOrgId,
+        status: "active",
+      };
+      const { data: planRow, error: planErr } = await supabase
+        .from("operational_plans")
+        .insert(planPayload)
+        .select("id")
+        .single();
+      if (planErr) throw planErr;
+
+      // 2) Insert operational_plan_months for the chosen month
+      const { data: monthRow, error: monthErr } = await supabase
+        .from("operational_plan_months")
+        .insert({
+          operational_plan_id: planRow.id,
+          month,
+          monthly_target: monthlyTarget,
+          organization_id: activeOrgId,
+        } as any)
+        .select("id")
+        .single();
+      if (monthErr) throw monthErr;
+
+      // 3) Update local state: add to activities and auto-select with sane daily target
+      const newAct: Activity = {
+        planMonthId: monthRow.id,
+        operationalPlanId: planRow.id,
+        activityName: name,
+        monthlyTarget,
+        responsibleEmployeeId: employee.id,
+        ownerUserId: employee.user_id,
+      };
+      setActivities((prev) => [...prev, newAct]);
+      const days = Math.max(selectedDays.length, 1);
+      setSelectedActivities((prev) => ({
+        ...prev,
+        [monthRow.id]: Math.max(1, Math.ceil(monthlyTarget / days)),
+      }));
+      setNewActField(employee.id, { name: "", monthlyTarget: "", saving: false });
+      toast({ title: "تمت إضافة النشاط", description: name });
+    } catch (e: any) {
+      setNewActField(employee.id, { saving: false });
+      toast({ title: "خطأ", description: e.message || "فشل إضافة النشاط", variant: "destructive" });
+    }
+  };
 
   // Resolve org id from slug
   useEffect(() => {
@@ -598,16 +672,15 @@ export default function AddExecutivePlan() {
             <div className="flex items-center justify-center py-8 gap-2 text-slate-500">
               <Loader2 className="w-5 h-5 animate-spin" /> جاري تحميل الأنشطة...
             </div>
-          ) : activitiesByEmployee.every((g) => g.activities.length === 0) ? (
-            <div className="text-center py-8 bg-amber-50 rounded-xl border border-amber-200">
-              <Sparkles className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-              <p className="text-sm font-semibold text-amber-800">لا توجد أنشطة في الخطة التشغيلية لهذا الشهر</p>
-              <p className="text-xs text-amber-700 mt-1">
-                تأكد من وجود خطط تشغيلية للموظفين المختارين في {MONTHS_AR[month - 1]} {year}
-              </p>
-            </div>
           ) : (
             <div className="space-y-4">
+              {activitiesByEmployee.every((g) => g.activities.length === 0) && (
+                <div className="text-center py-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <p className="text-xs text-amber-700">
+                    لا توجد أنشطة جاهزة لهذا الشهر — يمكنك إضافة أنشطة جديدة لكل موظف بالأسفل
+                  </p>
+                </div>
+              )}
               {activitiesByEmployee.map(({ employee, activities: acts }) => (
                 <div key={employee.id} className="border-2 border-slate-200 rounded-xl overflow-hidden">
                   <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
@@ -621,7 +694,7 @@ export default function AddExecutivePlan() {
                   </div>
 
                   {acts.length === 0 ? (
-                    <p className="text-xs text-slate-500 text-center py-3">لا أنشطة لهذا الموظف في {MONTHS_AR[month - 1]}</p>
+                    <p className="text-xs text-slate-500 text-center py-3">لا توجد أنشطة لهذا الموظف في {MONTHS_AR[month - 1]} — يمكنك إضافة نشاط جديد بالأسفل</p>
                   ) : (
                     <div className="divide-y divide-slate-100">
                       {acts.map((a) => {
@@ -668,6 +741,51 @@ export default function AddExecutivePlan() {
                       })}
                     </div>
                   )}
+
+                  {/* Inline: add a new activity for this employee */}
+                  {(() => {
+                    const draft = newActivityByEmp[employee.id] || { name: "", monthlyTarget: "", saving: false };
+                    return (
+                      <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50/40 border-t border-emerald-100">
+                        <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                          <Plus className="w-3.5 h-3.5" />
+                        </div>
+                        <Input
+                          placeholder={`أضف نشاطًا جديدًا لـ ${employee.full_name}`}
+                          value={draft.name}
+                          onChange={(e) => setNewActField(employee.id, { name: e.target.value })}
+                          onKeyDown={(e) => { if (e.key === "Enter") addActivityForEmployee(employee); }}
+                          className="h-9 flex-1 text-sm bg-white"
+                          disabled={draft.saving}
+                        />
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[11px] text-slate-600 whitespace-nowrap">المستهدف الشهري</label>
+                          <Input
+                            type="number"
+                            min={1}
+                            placeholder="0"
+                            value={draft.monthlyTarget}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setNewActField(employee.id, { monthlyTarget: v === "" ? "" : Math.max(1, Number(v)) });
+                            }}
+                            onKeyDown={(e) => { if (e.key === "Enter") addActivityForEmployee(employee); }}
+                            className="w-20 h-9 text-center bg-white"
+                            disabled={draft.saving}
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => addActivityForEmployee(employee)}
+                          disabled={draft.saving || !draft.name.trim() || !draft.monthlyTarget}
+                          className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          {draft.saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                          إضافة
+                        </Button>
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
