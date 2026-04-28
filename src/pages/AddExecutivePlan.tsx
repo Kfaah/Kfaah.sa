@@ -124,7 +124,8 @@ export default function AddExecutivePlan() {
         annual_target: monthlyTarget,
         year,
         responsible_employee_id: employee.id,
-        user_id: employee.user_id ?? authUser?.id ?? null,
+        // ملاحظة: user_id هو "منشئ الخطة" (مطلوب لسياسات RLS)، أما المسؤول الفعلي فهو responsible_employee_id
+        user_id: authUser?.id ?? employee.user_id ?? null,
         organization_id: activeOrgId,
         status: "active",
       };
