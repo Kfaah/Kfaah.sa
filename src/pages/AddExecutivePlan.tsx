@@ -98,6 +98,8 @@ export default function AddExecutivePlan() {
   const [showSuggestionsByEmp, setShowSuggestionsByEmp] = useState<Record<string, boolean>>({});
   const toggleSuggestions = (empId: string) =>
     setShowSuggestionsByEmp((prev) => ({ ...prev, [empId]: !prev[empId] }));
+  // معرّفات الأنشطة التي أضافها المستخدم يدويًا في هذه الجلسة (تظهر دائمًا)
+  const [manuallyAddedIds, setManuallyAddedIds] = useState<Set<string>>(new Set());
   const setNewActField = (empId: string, patch: Partial<{ name: string; monthlyTarget: number | ""; saving: boolean }>) =>
     setNewActivityByEmp((prev) => ({
       ...prev,
