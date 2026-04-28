@@ -319,11 +319,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   // تحرير لكل عمود على حدة (الخلية المحددة فقط)
   type CellEditTarget =
     | { kind: "activity_name"; execPlanId: string; operationalPlanId: string }
-    | { kind: "employee"; operationalPlanId: string }
-    | { kind: "department"; operationalPlanId: string }
-    | { kind: "initiative"; operationalPlanId: string }
-    | { kind: "sub_initiative"; operationalPlanId: string }
-    | { kind: "day"; execPlanId: string }
+    | { kind: "employee"; operationalPlanId: string; operationalPlanIds?: string[] }
+    | { kind: "department"; operationalPlanId: string; operationalPlanIds?: string[] }
+    | { kind: "initiative"; operationalPlanId: string; operationalPlanIds?: string[] }
+    | { kind: "sub_initiative"; operationalPlanId: string; operationalPlanIds?: string[] }
+    | { kind: "day"; execPlanId: string; execPlanIds?: string[]; monthNumber?: number }
     | { kind: "month"; planMonthId: string };
   const [cellEdit, setCellEdit] = useState<CellEditTarget | null>(null);
   const [cellValue, setCellValue] = useState<string>("");
