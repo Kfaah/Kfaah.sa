@@ -94,6 +94,10 @@ export default function AddExecutivePlan() {
   const [submitting, setSubmitting] = useState(false);
   // Inline-add new activity per employee: empId -> { name, monthlyTarget, saving }
   const [newActivityByEmp, setNewActivityByEmp] = useState<Record<string, { name: string; monthlyTarget: number | ""; saving: boolean }>>({});
+  // إظهار الأنشطة المقترحة لكل موظف عند الطلب فقط
+  const [showSuggestionsByEmp, setShowSuggestionsByEmp] = useState<Record<string, boolean>>({});
+  const toggleSuggestions = (empId: string) =>
+    setShowSuggestionsByEmp((prev) => ({ ...prev, [empId]: !prev[empId] }));
   const setNewActField = (empId: string, patch: Partial<{ name: string; monthlyTarget: number | ""; saving: boolean }>) =>
     setNewActivityByEmp((prev) => ({
       ...prev,
