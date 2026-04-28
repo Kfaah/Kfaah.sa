@@ -2022,7 +2022,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const firstAct = l.acts[0] as any;
-                                          startCellEdit({ kind: "day", execPlanId: firstAct.id }, String(firstAct.day ?? ""));
+                                          const ids = execIdsByDay.get(l.day) ?? [firstAct.id];
+                                          startCellEdit(
+                                            { kind: "day", execPlanId: firstAct.id, execPlanIds: ids, monthNumber: monthGroup.month },
+                                            String(firstAct.day ?? l.day ?? ""),
+                                          );
                                         } else {
                                           toggleDay(dayKey);
                                         }
@@ -2030,19 +2034,37 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     >
                                       {isEditMode && l.acts && l.acts.length > 0 && isEditingCell("day", (l.acts[0] as any).id) ? (
                                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                          <Input
-                                            type="number"
-                                            min="1"
-                                            max="31"
-                                            value={cellValue}
-                                            onChange={(e) => setCellValue(e.target.value)}
-                                            onKeyDown={(e) => {
-                                              if (e.key === "Enter") saveCellEdit();
-                                              if (e.key === "Escape") cancelCellEdit();
-                                            }}
-                                            autoFocus
-                                            className="h-8 w-16 text-xs"
-                                          />
+                                          <Popover open onOpenChange={(open) => { if (!open) cancelCellEdit(); }}>
+                                            <PopoverTrigger asChild>
+                                              <Button variant="outline" size="sm" className="h-8 px-2 text-xs gap-1.5">
+                                                <CalendarDays className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                                                <span className="font-bold">
+                                                  {cellValue ? `${monthGroup.monthName} ${cellValue}` : "اختر اليوم"}
+                                                </span>
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-3 bg-popover" align="start">
+                                              <div className="text-xs font-semibold text-slate-600 mb-2 text-center">
+                                                اختر يوم التنفيذ — {monthGroup.monthName} {selectedYear}
+                                              </div>
+                                              <CalendarPicker
+                                                mode="single"
+                                                month={new Date(selectedYear, monthGroup.month - 1, 1)}
+                                                selected={cellValue ? new Date(selectedYear, monthGroup.month - 1, parseInt(cellValue)) : undefined}
+                                                onSelect={(d) => {
+                                                  if (!d) return;
+                                                  setCellValue(String(d.getDate()));
+                                                  // حفظ تلقائي بعد اختيار اليوم
+                                                  setTimeout(() => { saveCellEdit(); }, 0);
+                                                }}
+                                                disabled={(date) =>
+                                                  date.getMonth() !== monthGroup.month - 1 ||
+                                                  date.getFullYear() !== selectedYear
+                                                }
+                                                className="p-0 pointer-events-auto"
+                                              />
+                                            </PopoverContent>
+                                          </Popover>
                                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
                                             {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
                                           </Button>
