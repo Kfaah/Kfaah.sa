@@ -2018,16 +2018,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                             )}
                                             onClick={() => {
                                               if (!isEditMode || isEditingThis) return;
-                                              setEditingExecPlanId(act.id);
-                                              setEditingValues({
-                                                daily_target: String(act.dailyTarget ?? 0),
-                                                achieved: String(act.achieved ?? 0),
-                                                activity_name: act.activityName ?? "",
-                                                initiative: act.initiative ?? "",
-                                                sub_initiative: act.subInitiative ?? "",
-                                                responsible_employee_id: act.employeeId ?? "none",
-                                                day: String(act.day ?? ""),
-                                              });
+                                              openInlineEditor(act as any);
                                             }}
                                           >
                                             <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
