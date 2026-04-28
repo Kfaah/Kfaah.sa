@@ -347,10 +347,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   }, [employees, editingValues.department_id]);
   const setEditingDepartment = (departmentId: string) => {
     setEditingValues((current) => {
+      if (departmentId === "none") return { ...current, department_id: "none", responsible_employee_id: "none" };
       const currentEmployee = employees.find((employee) => employee.id === current.responsible_employee_id);
-      const nextEmployeeId = departmentId === "none"
-        ? current.responsible_employee_id
-        : currentEmployee?.department_id === departmentId
+      const nextEmployeeId = currentEmployee?.department_id === departmentId
           ? current.responsible_employee_id
           : employees.find((employee) => employee.department_id === departmentId)?.id ?? "none";
       return { ...current, department_id: departmentId, responsible_employee_id: nextEmployeeId };
@@ -2092,6 +2091,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                       <Select
                                                         value={editingValues.responsible_employee_id || "none"}
                                                         onValueChange={(employeeId) => {
+                                                          if (employeeId === "none") {
+                                                            setEditingValues((current) => ({ ...current, responsible_employee_id: "none", department_id: "none" }));
+                                                            return;
+                                                          }
                                                           const employee = employees.find((e) => e.id === employeeId);
                                                           setEditingValues((current) => ({
                                                             ...current,
