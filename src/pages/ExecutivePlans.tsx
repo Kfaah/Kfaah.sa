@@ -345,12 +345,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       anyEdit.planMonthId === idValue
     );
   };
-  const saveCellEdit = async () => {
+  const saveCellEdit = async (overrideValue?: string) => {
     if (!cellEdit) return;
     setSavingCell(true);
     try {
+      const cellValueLocal = overrideValue !== undefined ? overrideValue : cellValue;
       if (cellEdit.kind === "activity_name") {
-        const value = cellValue.trim();
+        const value = cellValueLocal.trim();
         if (!value) {
           toast({ title: "قيمة غير صالحة", description: "اسم النشاط لا يمكن أن يكون فارغًا", variant: "destructive" });
           return;
