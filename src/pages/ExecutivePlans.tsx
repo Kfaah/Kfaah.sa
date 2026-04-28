@@ -313,6 +313,28 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     day: string;
   }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", day: "" });
   const [savingEdit, setSavingEdit] = useState(false);
+  // فتح محرر النشاط بكل البيانات
+  const openInlineEditor = (act: {
+    id: string;
+    activityName: string;
+    dailyTarget: number;
+    achieved: number;
+    initiative: string | null;
+    subInitiative: string | null;
+    employeeId: string | null;
+    day: number;
+  }) => {
+    setEditingExecPlanId(act.id);
+    setEditingValues({
+      daily_target: String(act.dailyTarget ?? 0),
+      achieved: String(act.achieved ?? 0),
+      activity_name: act.activityName ?? "",
+      initiative: act.initiative ?? "",
+      sub_initiative: act.subInitiative ?? "",
+      responsible_employee_id: act.employeeId ?? "none",
+      day: String(act.day ?? ""),
+    });
+  };
   // عناوين الأعمدة (قابلة للتعديل في وضع التعديل)
   const [columnTitles, setColumnTitles] = useState<{ [k: string]: string }>(() => {
     try {
@@ -1811,14 +1833,24 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {showDay && (
                                     <TableCell
                                       rowSpan={daySpan.get(l.day) ?? 1}
-                                      className="border-l border-gray-200 align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors"
-                                      onClick={() => toggleDay(dayKey)}
+                                      className={cn(
+                                        "border-l border-gray-200 align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors",
+                                        isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
+                                      )}
+                                      onClick={() => {
+                                        if (isEditMode && l.acts && l.acts.length > 0) {
+                                          openInlineEditor(l.acts[0] as any);
+                                        } else {
+                                          toggleDay(dayKey);
+                                        }
+                                      }}
                                     >
                                       <div className="flex items-start gap-2">
                                         <div className="flex flex-col items-start gap-1 flex-1">
                                           <div className="flex items-center gap-1.5">
                                             <CalendarDays className="w-4 h-4 text-[hsl(var(--primary))]" />
                                             <span className="font-bold text-sm text-gray-800">{WEEKDAYS_AR[l.date.getDay()]}</span>
+                                            {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-1" />}
                                           </div>
                                           <div className="text-xs text-gray-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatGregorianDate(l.date)}</div>
                                           <div className="text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: 'Arial, sans-serif' }}>{formatHijriDate(l.date)}</div>
@@ -1855,34 +1887,78 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   ) : (
                                   <>
                                   {showDept && (
-                                    <TableCell rowSpan={deptSpan.get(l.deptKey) ?? 1} className="border-l border-gray-200 align-top py-3 bg-[hsl(var(--primary)/0.06)]">
+                                    <TableCell
+                                      rowSpan={deptSpan.get(l.deptKey) ?? 1}
+                                      className={cn(
+                                        "border-l border-gray-200 align-top py-3 bg-[hsl(var(--primary)/0.06)]",
+                                        isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
+                                      )}
+                                      onClick={() => {
+                                        if (isEditMode && l.acts && l.acts.length > 0) openInlineEditor(l.acts[0] as any);
+                                      }}
+                                    >
                                       <div className="flex items-center gap-2">
                                         <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
                                         <span className="font-bold text-sm text-slate-800 truncate">{l.deptName}</span>
+                                        {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
                                       </div>
                                     </TableCell>
                                   )}
                                   {showInit && (
-                                    <TableCell rowSpan={initSpan.get(l.initKey) ?? 1} className="border-l border-gray-200 align-top py-3">
+                                    <TableCell
+                                      rowSpan={initSpan.get(l.initKey) ?? 1}
+                                      className={cn(
+                                        "border-l border-gray-200 align-top py-3",
+                                        isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
+                                      )}
+                                      onClick={() => {
+                                        if (isEditMode && l.acts && l.acts.length > 0) openInlineEditor(l.acts[0] as any);
+                                      }}
+                                    >
                                       <div className="flex items-center gap-1.5">
                                         <Target className="w-3.5 h-3.5 text-[hsl(var(--primary))] shrink-0" />
                                         <span className="text-xs font-semibold text-slate-700 leading-snug">
                                           {l.initName === "_no_init" ? <span className="text-slate-300">—</span> : l.initName}
                                         </span>
+                                        {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
                                       </div>
                                     </TableCell>
                                   )}
                                   {showSub && (
-                                    <TableCell rowSpan={subSpan.get(l.subKey) ?? 1} className="border-l border-gray-200 align-top py-3">
-                                      <span className="text-xs font-semibold text-blue-900 leading-snug">
-                                        {l.subName === "_no_sub" ? <span className="text-slate-300">—</span> : l.subName}
-                                      </span>
+                                    <TableCell
+                                      rowSpan={subSpan.get(l.subKey) ?? 1}
+                                      className={cn(
+                                        "border-l border-gray-200 align-top py-3",
+                                        isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
+                                      )}
+                                      onClick={() => {
+                                        if (isEditMode && l.acts && l.acts.length > 0) openInlineEditor(l.acts[0] as any);
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-xs font-semibold text-blue-900 leading-snug">
+                                          {l.subName === "_no_sub" ? <span className="text-slate-300">—</span> : l.subName}
+                                        </span>
+                                        {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
+                                      </div>
                                     </TableCell>
                                   )}
-                                  <TableCell className="border-l border-gray-200 align-top py-2.5">
-                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200">
+                                  <TableCell
+                                    className={cn(
+                                      "border-l border-gray-200 align-top py-2.5",
+                                      isEditMode && "cursor-pointer hover:bg-amber-50"
+                                    )}
+                                    onClick={() => {
+                                      if (isEditMode && l.acts && l.acts.length > 0) openInlineEditor(l.acts[0] as any);
+                                    }}
+                                  >
+                                    <div className={cn(
+                                      "flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200",
+                                      isEditMode && "border-amber-300"
+                                    )}>
                                       <User className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
                                       <span className="font-semibold text-xs text-slate-800 truncate">{l.empName}</span>
+                                      {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
                                     </div>
                                   </TableCell>
                                   <TableCell className="align-top py-2">
