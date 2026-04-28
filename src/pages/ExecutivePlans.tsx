@@ -1245,7 +1245,17 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     ? "bg-white text-primary border-white"
                     : "bg-white/15 text-white border-white/30 hover:bg-white/25 backdrop-blur-sm"
                 }`}
-                onClick={() => setIsEditMode(!isEditMode)}
+                onClick={() => {
+                  const nextEditMode = !isEditMode;
+                  setIsEditMode(nextEditMode);
+                  if (nextEditMode) {
+                    setGlobalViewMode("dates");
+                    setExpandedMonths(new Set(groupedPlans.map((monthGroup) => `month-${monthGroup.month}`)));
+                    setExpandedDays(new Set());
+                  } else {
+                    setEditingExecPlanId(null);
+                  }
+                }}
               >
                 {isEditMode ? (
                   <>
@@ -1478,7 +1488,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             </div>
             <div className="flex-1">
               <p className="text-sm font-bold text-amber-900">وضع التعديل مفعّل</p>
-              <p className="text-xs text-amber-700">انقر على أي نشاط في الجدول لتعديل الهدف اليومي والمنجز</p>
+              <p className="text-xs text-amber-700">انقر على التاريخ أو القسم أو الموظف أو النشاط لتعديل بيانات الخطة وحفظها مباشرة</p>
             </div>
             <Button size="sm" variant="ghost" onClick={() => setIsEditMode(false)} className="text-amber-700 hover:bg-amber-100">
               <X className="w-4 h-4 ml-1" />
