@@ -303,8 +303,39 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [selectedPlanNames, setSelectedPlanNames] = useState<Set<string>>(new Set());
   // تحرير مضمّن للخلية النشطة في وضع التعديل
   const [editingExecPlanId, setEditingExecPlanId] = useState<string | null>(null);
-  const [editingValues, setEditingValues] = useState<{ daily_target: string; achieved: string }>({ daily_target: "", achieved: "" });
+  const [editingValues, setEditingValues] = useState<{
+    daily_target: string;
+    achieved: string;
+    activity_name: string;
+    initiative: string;
+    sub_initiative: string;
+    responsible_employee_id: string;
+    day: string;
+  }>({ daily_target: "", achieved: "", activity_name: "", initiative: "", sub_initiative: "", responsible_employee_id: "", day: "" });
   const [savingEdit, setSavingEdit] = useState(false);
+  // عناوين الأعمدة (قابلة للتعديل في وضع التعديل)
+  const [columnTitles, setColumnTitles] = useState<{ [k: string]: string }>(() => {
+    try {
+      const saved = localStorage.getItem("execPlans.columnTitles");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      month: "الشهر",
+      date: "التاريخ",
+      department: "القسم",
+      initiative: "المبادرة",
+      subInitiative: "المبادرة الفرعية",
+      employee: "الموظف",
+      activities: "الأنشطة",
+    };
+  });
+  const updateColumnTitle = (key: string, value: string) => {
+    setColumnTitles(prev => {
+      const next = { ...prev, [key]: value };
+      try { localStorage.setItem("execPlans.columnTitles", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   // فلاتر إضافية
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [filterDepartmentId, setFilterDepartmentId] = useState<string>("all");
@@ -648,6 +679,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           departmentName: string;
           initiative: string | null;
           subInitiative: string | null;
+          operationalPlanId: string;
+          planMonthId: string;
+          day: number;
+          month: number;
         }[];
       }[];
     }[] = [];
@@ -726,6 +761,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             departmentName,
             initiative: plan.initiative,
             subInitiative: plan.sub_initiative,
+            operationalPlanId: plan.id,
+            planMonthId: pm.id,
+            day: dayPlan.day,
+            month,
           });
         });
       });
@@ -765,26 +804,51 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     });
   };
 
-  // حفظ تعديل خلية (الهدف اليومي والمنجز)
-  const saveExecPlanEdit = async (execPlanId: string) => {
+  // حفظ تعديل شامل (executive_plans + operational_plans)
+  const saveExecPlanEdit = async (execPlanId: string, operationalPlanId?: string) => {
     const dt = parseFloat(editingValues.daily_target);
     const ach = parseFloat(editingValues.achieved);
+    const dayNum = parseInt(editingValues.day);
     if (Number.isNaN(dt) || dt < 0) {
       toast({ title: "قيمة غير صالحة", description: "الهدف اليومي يجب أن يكون رقمًا موجبًا", variant: "destructive" });
       return;
     }
+    if (!Number.isNaN(dayNum) && (dayNum < 1 || dayNum > 31)) {
+      toast({ title: "يوم غير صالح", description: "يجب أن يكون اليوم بين 1 و 31", variant: "destructive" });
+      return;
+    }
     setSavingEdit(true);
     try {
-      const updates: any = { daily_target: dt };
-      if (!Number.isNaN(ach) && ach >= 0) updates.achieved = ach;
+      const execUpdates: any = { daily_target: dt };
+      if (!Number.isNaN(ach) && ach >= 0) execUpdates.achieved = ach;
+      if (!Number.isNaN(dayNum)) execUpdates.day = dayNum;
       const { error } = await supabase
         .from("executive_plans")
-        .update(updates)
+        .update(execUpdates)
         .eq("id", execPlanId);
       if (error) throw error;
-      setExecutivePlans(prev => prev.map(ep => ep.id === execPlanId ? { ...ep, ...updates } : ep));
+      setExecutivePlans(prev => prev.map(ep => ep.id === execPlanId ? { ...ep, ...execUpdates } : ep));
+
+      // تحديث الخطة التشغيلية (اسم النشاط، المبادرة، المبادرة الفرعية، المسؤول)
+      if (operationalPlanId) {
+        const opUpdates: any = {
+          activity_name: editingValues.activity_name.trim(),
+          initiative: editingValues.initiative.trim() || null,
+          sub_initiative: editingValues.sub_initiative.trim() || null,
+          responsible_employee_id: editingValues.responsible_employee_id && editingValues.responsible_employee_id !== "none"
+            ? editingValues.responsible_employee_id
+            : null,
+        };
+        const { error: opErr } = await supabase
+          .from("operational_plans")
+          .update(opUpdates)
+          .eq("id", operationalPlanId);
+        if (opErr) throw opErr;
+        setOperationalPlans(prev => prev.map(p => p.id === operationalPlanId ? { ...p, ...opUpdates } : p));
+      }
+
       setEditingExecPlanId(null);
-      toast({ title: "تم الحفظ", description: "تم تحديث بيانات النشاط" });
+      toast({ title: "تم الحفظ", description: "تم تحديث بيانات النشاط بالكامل" });
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     } finally {
@@ -1526,13 +1590,31 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
-                        <TableHead className="text-right font-bold text-white min-w-[110px] border-l border-white/20">الشهر</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[160px] border-l border-white/20">التاريخ</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[170px] border-l border-white/20">القسم</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[180px] border-l border-white/20">المبادرة</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[170px] border-l border-white/20">المبادرة الفرعية</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[170px] border-l border-white/20">الموظف</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[280px]">الأنشطة</TableHead>
+                        {([
+                          { key: "month", w: "min-w-[110px]" },
+                          { key: "date", w: "min-w-[160px]" },
+                          { key: "department", w: "min-w-[170px]" },
+                          { key: "initiative", w: "min-w-[180px]" },
+                          { key: "subInitiative", w: "min-w-[170px]" },
+                          { key: "employee", w: "min-w-[170px]" },
+                          { key: "activities", w: "min-w-[280px]" },
+                        ] as const).map((c, idx, arr) => (
+                          <TableHead
+                            key={c.key}
+                            className={cn("text-right font-bold text-white", c.w, idx < arr.length - 1 && "border-l border-white/20")}
+                          >
+                            {isEditMode ? (
+                              <input
+                                value={columnTitles[c.key] ?? ""}
+                                onChange={(e) => updateColumnTitle(c.key, e.target.value)}
+                                className="bg-white/15 hover:bg-white/25 focus:bg-white text-white focus:text-slate-900 placeholder:text-white/60 px-2 py-1 rounded border border-white/30 outline-none text-right w-full transition-colors"
+                                placeholder="عنوان"
+                              />
+                            ) : (
+                              columnTitles[c.key]
+                            )}
+                          </TableHead>
+                        ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1824,6 +1906,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               setEditingValues({
                                                 daily_target: String(act.dailyTarget ?? 0),
                                                 achieved: String(act.achieved ?? 0),
+                                                activity_name: act.activityName ?? "",
+                                                initiative: act.initiative ?? "",
+                                                sub_initiative: act.subInitiative ?? "",
+                                                responsible_employee_id: act.employeeId ?? "none",
+                                                day: String(act.day ?? ""),
                                               });
                                             }}
                                           >
@@ -1831,48 +1918,113 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               <span className="text-[9px] font-bold">{i + 1}</span>
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                              <div className="font-medium leading-snug">{act.activityName}</div>
+                                              {!isEditingThis && (
+                                                <div className="font-medium leading-snug">{act.activityName}</div>
+                                              )}
                                               {isEditingThis ? (
                                                 <div
-                                                  className="mt-2 flex items-center gap-2"
+                                                  className="space-y-2 p-2 bg-white/70 rounded-md border border-amber-200"
                                                   onClick={(e) => e.stopPropagation()}
                                                 >
-                                                  <div className="flex flex-col gap-0.5">
-                                                    <span className="text-[9px] text-slate-500">الهدف اليومي</span>
+                                                  <div className="flex flex-col gap-1">
+                                                    <span className="text-[9px] font-semibold text-slate-600">اسم النشاط</span>
                                                     <Input
-                                                      type="number"
-                                                      min="0"
-                                                      value={editingValues.daily_target}
-                                                      onChange={(e) => setEditingValues(v => ({ ...v, daily_target: e.target.value }))}
-                                                      className="h-7 w-20 text-xs"
+                                                      value={editingValues.activity_name}
+                                                      onChange={(e) => setEditingValues(v => ({ ...v, activity_name: e.target.value }))}
+                                                      className="h-8 text-xs"
+                                                      placeholder="اسم النشاط"
                                                     />
                                                   </div>
-                                                  <div className="flex flex-col gap-0.5">
-                                                    <span className="text-[9px] text-slate-500">المنجز</span>
-                                                    <Input
-                                                      type="number"
-                                                      min="0"
-                                                      value={editingValues.achieved}
-                                                      onChange={(e) => setEditingValues(v => ({ ...v, achieved: e.target.value }))}
-                                                      className="h-7 w-20 text-xs"
-                                                    />
+                                                  <div className="grid grid-cols-2 gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">المبادرة</span>
+                                                      <Input
+                                                        value={editingValues.initiative}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, initiative: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                        placeholder="—"
+                                                      />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">المبادرة الفرعية</span>
+                                                      <Input
+                                                        value={editingValues.sub_initiative}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, sub_initiative: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                        placeholder="—"
+                                                      />
+                                                    </div>
                                                   </div>
-                                                  <div className="flex items-center gap-1 mt-3.5">
-                                                    <Button
-                                                      size="sm"
-                                                      onClick={() => saveExecPlanEdit(act.id)}
-                                                      disabled={savingEdit}
-                                                      className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                  <div className="flex flex-col gap-1">
+                                                    <span className="text-[9px] font-semibold text-slate-600">الموظف المسؤول (يحدد القسم تلقائيًا)</span>
+                                                    <Select
+                                                      value={editingValues.responsible_employee_id || "none"}
+                                                      onValueChange={(v) => setEditingValues(s => ({ ...s, responsible_employee_id: v }))}
                                                     >
-                                                      {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                                                    </Button>
+                                                      <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue placeholder="اختر الموظف" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        <SelectItem value="none">بدون موظف</SelectItem>
+                                                        {employees.map(e => (
+                                                          <SelectItem key={e.id} value={e.id}>
+                                                            {e.full_name}{e.department_name ? ` — ${e.department_name}` : ""}
+                                                          </SelectItem>
+                                                        ))}
+                                                      </SelectContent>
+                                                    </Select>
+                                                  </div>
+                                                  <div className="grid grid-cols-3 gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">اليوم</span>
+                                                      <Input
+                                                        type="number"
+                                                        min="1"
+                                                        max="31"
+                                                        value={editingValues.day}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, day: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                      />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">الهدف اليومي</span>
+                                                      <Input
+                                                        type="number"
+                                                        min="0"
+                                                        value={editingValues.daily_target}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, daily_target: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                      />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">المنجز</span>
+                                                      <Input
+                                                        type="number"
+                                                        min="0"
+                                                        value={editingValues.achieved}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, achieved: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center justify-end gap-1 pt-1 border-t border-amber-200">
                                                     <Button
                                                       size="sm"
                                                       variant="ghost"
                                                       onClick={() => setEditingExecPlanId(null)}
-                                                      className="h-7 px-2"
+                                                      className="h-7 px-2 text-xs"
                                                     >
-                                                      <X className="w-3 h-3" />
+                                                      <X className="w-3 h-3 ml-1" />
+                                                      إلغاء
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      onClick={() => saveExecPlanEdit(act.id, act.operationalPlanId)}
+                                                      disabled={savingEdit}
+                                                      className="h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                                                    >
+                                                      {savingEdit ? <Loader2 className="w-3 h-3 animate-spin ml-1" /> : <Save className="w-3 h-3 ml-1" />}
+                                                      حفظ الكل
                                                     </Button>
                                                   </div>
                                                 </div>
