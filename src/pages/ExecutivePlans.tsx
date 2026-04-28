@@ -1590,13 +1590,31 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
-                        <TableHead className="text-right font-bold text-white min-w-[110px] border-l border-white/20">الشهر</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[160px] border-l border-white/20">التاريخ</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[170px] border-l border-white/20">القسم</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[180px] border-l border-white/20">المبادرة</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[170px] border-l border-white/20">المبادرة الفرعية</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[170px] border-l border-white/20">الموظف</TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[280px]">الأنشطة</TableHead>
+                        {([
+                          { key: "month", w: "min-w-[110px]" },
+                          { key: "date", w: "min-w-[160px]" },
+                          { key: "department", w: "min-w-[170px]" },
+                          { key: "initiative", w: "min-w-[180px]" },
+                          { key: "subInitiative", w: "min-w-[170px]" },
+                          { key: "employee", w: "min-w-[170px]" },
+                          { key: "activities", w: "min-w-[280px]" },
+                        ] as const).map((c, idx, arr) => (
+                          <TableHead
+                            key={c.key}
+                            className={cn("text-right font-bold text-white", c.w, idx < arr.length - 1 && "border-l border-white/20")}
+                          >
+                            {isEditMode ? (
+                              <input
+                                value={columnTitles[c.key] ?? ""}
+                                onChange={(e) => updateColumnTitle(c.key, e.target.value)}
+                                className="bg-white/15 hover:bg-white/25 focus:bg-white text-white focus:text-slate-900 placeholder:text-white/60 px-2 py-1 rounded border border-white/30 outline-none text-right w-full transition-colors"
+                                placeholder="عنوان"
+                              />
+                            ) : (
+                              columnTitles[c.key]
+                            )}
+                          </TableHead>
+                        ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
