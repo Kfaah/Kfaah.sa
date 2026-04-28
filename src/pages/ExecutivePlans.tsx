@@ -1906,6 +1906,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               setEditingValues({
                                                 daily_target: String(act.dailyTarget ?? 0),
                                                 achieved: String(act.achieved ?? 0),
+                                                activity_name: act.activityName ?? "",
+                                                initiative: act.initiative ?? "",
+                                                sub_initiative: act.subInitiative ?? "",
+                                                responsible_employee_id: act.employeeId ?? "none",
+                                                day: String(act.day ?? ""),
                                               });
                                             }}
                                           >
@@ -1913,48 +1918,113 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               <span className="text-[9px] font-bold">{i + 1}</span>
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                              <div className="font-medium leading-snug">{act.activityName}</div>
+                                              {!isEditingThis && (
+                                                <div className="font-medium leading-snug">{act.activityName}</div>
+                                              )}
                                               {isEditingThis ? (
                                                 <div
-                                                  className="mt-2 flex items-center gap-2"
+                                                  className="space-y-2 p-2 bg-white/70 rounded-md border border-amber-200"
                                                   onClick={(e) => e.stopPropagation()}
                                                 >
-                                                  <div className="flex flex-col gap-0.5">
-                                                    <span className="text-[9px] text-slate-500">الهدف اليومي</span>
+                                                  <div className="flex flex-col gap-1">
+                                                    <span className="text-[9px] font-semibold text-slate-600">اسم النشاط</span>
                                                     <Input
-                                                      type="number"
-                                                      min="0"
-                                                      value={editingValues.daily_target}
-                                                      onChange={(e) => setEditingValues(v => ({ ...v, daily_target: e.target.value }))}
-                                                      className="h-7 w-20 text-xs"
+                                                      value={editingValues.activity_name}
+                                                      onChange={(e) => setEditingValues(v => ({ ...v, activity_name: e.target.value }))}
+                                                      className="h-8 text-xs"
+                                                      placeholder="اسم النشاط"
                                                     />
                                                   </div>
-                                                  <div className="flex flex-col gap-0.5">
-                                                    <span className="text-[9px] text-slate-500">المنجز</span>
-                                                    <Input
-                                                      type="number"
-                                                      min="0"
-                                                      value={editingValues.achieved}
-                                                      onChange={(e) => setEditingValues(v => ({ ...v, achieved: e.target.value }))}
-                                                      className="h-7 w-20 text-xs"
-                                                    />
+                                                  <div className="grid grid-cols-2 gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">المبادرة</span>
+                                                      <Input
+                                                        value={editingValues.initiative}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, initiative: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                        placeholder="—"
+                                                      />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">المبادرة الفرعية</span>
+                                                      <Input
+                                                        value={editingValues.sub_initiative}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, sub_initiative: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                        placeholder="—"
+                                                      />
+                                                    </div>
                                                   </div>
-                                                  <div className="flex items-center gap-1 mt-3.5">
-                                                    <Button
-                                                      size="sm"
-                                                      onClick={() => saveExecPlanEdit(act.id)}
-                                                      disabled={savingEdit}
-                                                      className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                  <div className="flex flex-col gap-1">
+                                                    <span className="text-[9px] font-semibold text-slate-600">الموظف المسؤول (يحدد القسم تلقائيًا)</span>
+                                                    <Select
+                                                      value={editingValues.responsible_employee_id || "none"}
+                                                      onValueChange={(v) => setEditingValues(s => ({ ...s, responsible_employee_id: v }))}
                                                     >
-                                                      {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                                                    </Button>
+                                                      <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue placeholder="اختر الموظف" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        <SelectItem value="none">بدون موظف</SelectItem>
+                                                        {employees.map(e => (
+                                                          <SelectItem key={e.id} value={e.id}>
+                                                            {e.full_name}{e.department_name ? ` — ${e.department_name}` : ""}
+                                                          </SelectItem>
+                                                        ))}
+                                                      </SelectContent>
+                                                    </Select>
+                                                  </div>
+                                                  <div className="grid grid-cols-3 gap-2">
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">اليوم</span>
+                                                      <Input
+                                                        type="number"
+                                                        min="1"
+                                                        max="31"
+                                                        value={editingValues.day}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, day: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                      />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">الهدف اليومي</span>
+                                                      <Input
+                                                        type="number"
+                                                        min="0"
+                                                        value={editingValues.daily_target}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, daily_target: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                      />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                      <span className="text-[9px] font-semibold text-slate-600">المنجز</span>
+                                                      <Input
+                                                        type="number"
+                                                        min="0"
+                                                        value={editingValues.achieved}
+                                                        onChange={(e) => setEditingValues(v => ({ ...v, achieved: e.target.value }))}
+                                                        className="h-8 text-xs"
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center justify-end gap-1 pt-1 border-t border-amber-200">
                                                     <Button
                                                       size="sm"
                                                       variant="ghost"
                                                       onClick={() => setEditingExecPlanId(null)}
-                                                      className="h-7 px-2"
+                                                      className="h-7 px-2 text-xs"
                                                     >
-                                                      <X className="w-3 h-3" />
+                                                      <X className="w-3 h-3 ml-1" />
+                                                      إلغاء
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      onClick={() => saveExecPlanEdit(act.id, act.operationalPlanId)}
+                                                      disabled={savingEdit}
+                                                      className="h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                                                    >
+                                                      {savingEdit ? <Loader2 className="w-3 h-3 animate-spin ml-1" /> : <Save className="w-3 h-3 ml-1" />}
+                                                      حفظ الكل
                                                     </Button>
                                                   </div>
                                                 </div>
