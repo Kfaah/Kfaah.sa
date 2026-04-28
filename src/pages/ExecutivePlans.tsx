@@ -2057,7 +2057,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   if (!d) return;
                                                   setCellValue(String(d.getDate()));
                                                   // حفظ تلقائي بعد اختيار اليوم
-                                                  setTimeout(() => { saveCellEdit(); }, 0);
+                                                  void saveCellEditWith(String(d.getDate()));
                                                 }}
                                                 disabled={(date) =>
                                                   date.getMonth() !== monthGroup.month - 1 ||
