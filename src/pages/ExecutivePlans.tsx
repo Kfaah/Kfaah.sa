@@ -2243,7 +2243,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   <TableCell className="align-top py-2">
                                     <div className="flex flex-col gap-1">
                                       {l.acts.map((act, i) => {
-                                        const isEditingThis = isEditMode && editingExecPlanId === act.id;
+                                        const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
                                         return (
                                           <div
                                             key={act.id}
@@ -2257,172 +2257,46 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                             )}
                                             onClick={() => {
                                               if (!isEditMode || isEditingThis) return;
-                                              openInlineEditor(act as any);
+                                              startCellEdit(
+                                                { kind: "activity_name", execPlanId: act.id, operationalPlanId: (act as any).operationalPlanId },
+                                                act.activityName ?? ""
+                                              );
                                             }}
                                           >
                                             <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
                                               <span className="text-[9px] font-bold">{i + 1}</span>
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                              {!isEditingThis && (
-                                                <div className="font-medium leading-snug">{act.activityName}</div>
-                                              )}
                                               {isEditingThis ? (
-                                                <div
-                                                  className="space-y-2 p-2 bg-white/70 rounded-md border border-amber-200"
-                                                  onClick={(e) => e.stopPropagation()}
-                                                >
-                                                  <div className="flex flex-col gap-1">
-                                                    <span className="text-[9px] font-semibold text-slate-600">اسم النشاط</span>
-                                                    <Input
-                                                      value={editingValues.activity_name}
-                                                      onChange={(e) => setEditingValues(v => ({ ...v, activity_name: e.target.value }))}
-                                                      className="h-8 text-xs"
-                                                      placeholder="اسم النشاط"
-                                                    />
-                                                  </div>
-                                                  <div className="grid grid-cols-2 gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">المبادرة</span>
-                                                      <Input
-                                                        value={editingValues.initiative}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, initiative: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                        placeholder="—"
-                                                      />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">المبادرة الفرعية</span>
-                                                      <Input
-                                                        value={editingValues.sub_initiative}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, sub_initiative: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                        placeholder="—"
-                                                      />
-                                                    </div>
-                                                  </div>
-                                                  <div className="grid grid-cols-2 gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">القسم</span>
-                                                      <Select value={editingValues.department_id || "none"} onValueChange={setEditingDepartment}>
-                                                        <SelectTrigger className="h-8 text-xs">
-                                                          <SelectValue placeholder="اختر القسم" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                          <SelectItem value="none">بدون قسم محدد</SelectItem>
-                                                          {departments.map((dept) => (
-                                                            <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                                                          ))}
-                                                        </SelectContent>
-                                                      </Select>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">الموظف المسؤول</span>
-                                                      <Select
-                                                        value={editingValues.responsible_employee_id || "none"}
-                                                        onValueChange={(employeeId) => {
-                                                          if (employeeId === "none") {
-                                                            setEditingValues((current) => ({ ...current, responsible_employee_id: "none", department_id: "none" }));
-                                                            return;
-                                                          }
-                                                          const employee = employees.find((e) => e.id === employeeId);
-                                                          setEditingValues((current) => ({
-                                                            ...current,
-                                                            responsible_employee_id: employeeId,
-                                                            department_id: employee?.department_id ?? current.department_id,
-                                                          }));
-                                                        }}
-                                                      >
-                                                        <SelectTrigger className="h-8 text-xs">
-                                                          <SelectValue placeholder="اختر الموظف" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                          <SelectItem value="none">بدون موظف</SelectItem>
-                                                          {editEmployeeOptions.map(e => (
-                                                            <SelectItem key={e.id} value={e.id}>
-                                                              {e.full_name}{e.department_name ? ` — ${e.department_name}` : ""}
-                                                            </SelectItem>
-                                                          ))}
-                                                        </SelectContent>
-                                                      </Select>
-                                                    </div>
-                                                  </div>
-                                                  <div className="grid grid-cols-4 gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">الشهر/التاريخ</span>
-                                                      <Select value={editingValues.month || ""} onValueChange={(month) => setEditingValues(v => ({ ...v, month }))}>
-                                                        <SelectTrigger className="h-8 text-xs">
-                                                          <SelectValue placeholder="الشهر" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                          {MONTHS_AR.map((month, index) => (
-                                                            <SelectItem key={month} value={String(index + 1)}>{month}</SelectItem>
-                                                          ))}
-                                                        </SelectContent>
-                                                      </Select>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">اليوم</span>
-                                                      <Input
-                                                        type="number"
-                                                        min="1"
-                                                        max="31"
-                                                        value={editingValues.day}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, day: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                      />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">الهدف اليومي</span>
-                                                      <Input
-                                                        type="number"
-                                                        min="0"
-                                                        value={editingValues.daily_target}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, daily_target: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                      />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                      <span className="text-[9px] font-semibold text-slate-600">المنجز</span>
-                                                      <Input
-                                                        type="number"
-                                                        min="0"
-                                                        value={editingValues.achieved}
-                                                        onChange={(e) => setEditingValues(v => ({ ...v, achieved: e.target.value }))}
-                                                        className="h-8 text-xs"
-                                                      />
-                                                    </div>
-                                                  </div>
-                                                  <div className="flex items-center justify-end gap-1 pt-1 border-t border-amber-200">
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      onClick={() => setEditingExecPlanId(null)}
-                                                      className="h-7 px-2 text-xs"
-                                                    >
-                                                      <X className="w-3 h-3 ml-1" />
-                                                      إلغاء
-                                                    </Button>
-                                                    <Button
-                                                      size="sm"
-                                                      onClick={() => saveExecPlanEdit(act.id, act.operationalPlanId)}
-                                                      disabled={savingEdit}
-                                                      className="h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
-                                                    >
-                                                      {savingEdit ? <Loader2 className="w-3 h-3 animate-spin ml-1" /> : <Save className="w-3 h-3 ml-1" />}
-                                                      حفظ الكل
-                                                    </Button>
-                                                  </div>
+                                                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                  <Input
+                                                    value={cellValue}
+                                                    onChange={(e) => setCellValue(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === "Enter") saveCellEdit();
+                                                      if (e.key === "Escape") cancelCellEdit();
+                                                    }}
+                                                    autoFocus
+                                                    className="h-8 text-xs"
+                                                    placeholder="اسم النشاط"
+                                                  />
+                                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveCellEdit} disabled={savingCell}>
+                                                    {savingCell ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 text-emerald-600" />}
+                                                  </Button>
+                                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelCellEdit}>
+                                                    <X className="w-3 h-3" />
+                                                  </Button>
                                                 </div>
                                               ) : (
-                                                isEditMode && (
-                                                  <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-500">
-                                                    <span>الهدف: <span className="font-semibold text-slate-700">{act.dailyTarget}</span></span>
-                                                    <span>•</span>
-                                                    <span>المنجز: <span className="font-semibold text-slate-700">{act.achieved}</span></span>
-                                                    <Pencil className="w-3 h-3 text-amber-600 mr-auto" />
-                                                  </div>
-                                                )
+                                                <>
+                                                  <div className="font-medium leading-snug">{act.activityName}</div>
+                                                  {isEditMode && (
+                                                    <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-500">
+                                                      <Pencil className="w-3 h-3 text-amber-600" />
+                                                      <span>انقر لتعديل اسم النشاط</span>
+                                                    </div>
+                                                  )}
+                                                </>
                                               )}
                                             </div>
                                           </div>
