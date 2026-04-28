@@ -648,6 +648,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           departmentName: string;
           initiative: string | null;
           subInitiative: string | null;
+          operationalPlanId: string;
+          planMonthId: string;
+          day: number;
+          month: number;
         }[];
       }[];
     }[] = [];
