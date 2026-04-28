@@ -882,7 +882,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       if (planMonthId && !Number.isNaN(monthNum)) {
         const { error: monthErr } = await supabase
           .from("operational_plan_months")
-          .update({ month: monthNum })
+          .update({ month: monthNum } as any)
           .eq("id", planMonthId);
         if (monthErr) throw monthErr;
         setPlanMonths(prev => prev.map(pm => pm.id === planMonthId ? { ...pm, month: monthNum } : pm));
