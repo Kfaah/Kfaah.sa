@@ -2127,7 +2127,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
-                                          startCellEdit({ kind: "department", operationalPlanId: a.operationalPlanId }, a.departmentId ?? "none");
+                                          const ids = opIdsByDept.get(l.deptKey) ?? [a.operationalPlanId];
+                                          startCellEdit({ kind: "department", operationalPlanId: a.operationalPlanId, operationalPlanIds: ids }, a.departmentId ?? "none");
                                         }
                                       }}
                                     >
@@ -2168,7 +2169,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
-                                          startCellEdit({ kind: "initiative", operationalPlanId: a.operationalPlanId }, a.initiative ?? "");
+                                          const ids = opIdsByInit.get(l.initKey) ?? [a.operationalPlanId];
+                                          startCellEdit({ kind: "initiative", operationalPlanId: a.operationalPlanId, operationalPlanIds: ids }, a.initiative ?? "");
                                         }
                                       }}
                                     >
@@ -2213,7 +2215,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
-                                          startCellEdit({ kind: "sub_initiative", operationalPlanId: a.operationalPlanId }, a.subInitiative ?? "");
+                                          const ids = opIdsBySub.get(l.subKey) ?? [a.operationalPlanId];
+                                          startCellEdit({ kind: "sub_initiative", operationalPlanId: a.operationalPlanId, operationalPlanIds: ids }, a.subInitiative ?? "");
                                         }
                                       }}
                                     >
