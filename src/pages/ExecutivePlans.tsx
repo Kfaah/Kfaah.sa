@@ -636,6 +636,15 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     });
   };
 
+  useEffect(() => {
+    const pending = pendingRelatedFocusRef.current;
+    if (!pending || loading) return;
+    requestAnimationFrame(() => {
+      focusEmployeeInExecutivePlans(pending.employeeId, pending.executivePlanId, pending.targetInfo);
+      pendingRelatedFocusRef.current = null;
+    });
+  }, [loading, operationalPlans, planMonths, executivePlans]);
+
   // التحقق من صلاحية المدير
   useEffect(() => {
     const checkAdmin = async () => {
