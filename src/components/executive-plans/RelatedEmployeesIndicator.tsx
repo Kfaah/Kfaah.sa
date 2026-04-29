@@ -235,12 +235,11 @@ export function RelatedEmployeesIndicator({
     if (scrollParent) {
       const parentRect = scrollParent.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
-      scrollParent.scrollTo({
-        top: scrollParent.scrollTop + targetRect.top - parentRect.top - parentRect.height / 2 + targetRect.height / 2,
-        behavior: "smooth",
-      });
+      scrollParent.scrollTop += targetRect.top - parentRect.top - parentRect.height / 2 + targetRect.height / 2;
+      scrollParent.scrollLeft += targetRect.left - parentRect.left - parentRect.width / 2 + targetRect.width / 2;
+      return;
     }
-    target.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    target.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
   }
 
   function navigateToEmployee(empId: string) {
@@ -258,9 +257,9 @@ export function RelatedEmployeesIndicator({
       }
       const target = pool[0];
       centerTarget(target);
-      target.classList.add("ring-2", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.08)]", "transition-shadow");
+      target.classList.add("ring-4", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.12)]", "transition-shadow");
       window.setTimeout(() => {
-        target.classList.remove("ring-2", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.08)]");
+        target.classList.remove("ring-4", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.12)]");
       }, 2200);
     }, 80);
   }
