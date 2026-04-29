@@ -2066,7 +2066,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {showMonth && (
                                     <TableCell
                                       rowSpan={monthSpan}
-                                      className="bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors"
+                                      className="bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors sticky z-20"
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
                                       <div className="flex flex-col items-center gap-2 py-4 px-2">
@@ -2205,9 +2206,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={deptSpan.get(l.deptKey) ?? 1}
                                       className={cn(
-                                        "border-l-2 border-[hsl(var(--primary)/0.35)] align-top py-3 bg-[hsl(var(--primary)/0.06)]",
+                                        "border-l-2 border-[hsl(var(--primary)/0.35)] align-top py-3 bg-[hsl(var(--primary)/0.06)] sticky z-20",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
@@ -2247,9 +2249,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={initSpan.get(l.initKey) ?? 1}
                                       className={cn(
-                                        "border-l-2 border-[hsl(var(--primary)/0.25)] align-top py-3 bg-white",
+                                        "border-l-2 border-[hsl(var(--primary)/0.25)] align-top py-3 bg-white sticky z-10",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
