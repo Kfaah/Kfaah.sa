@@ -75,7 +75,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
 import { useScopedView } from "@/hooks/useScopedView";
 import { useOrganization } from "@/contexts/OrganizationContext";
-import { ActivityRelatedPanel } from "@/components/executive-plans/ActivityRelatedPanel";
 import { ActivityPhasesPopover } from "@/components/executive-plans/ActivityPhasesPopover";
 import { RelatedEmployeesIndicator } from "@/components/executive-plans/RelatedEmployeesIndicator";
 
@@ -155,6 +154,15 @@ const DATES_TABLE_MIN_WIDTH = DATES_TABLE_COLUMNS.reduce(
 );
 
 const QUERY_CHUNK_SIZE = 80;
+
+function normalizeAnchorValue(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/ـ/g, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
 
 function chunkArray<T>(items: T[], size = QUERY_CHUNK_SIZE): T[][] {
   const chunks: T[][] = [];
