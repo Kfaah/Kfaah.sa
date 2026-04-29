@@ -76,6 +76,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
 import { useScopedView } from "@/hooks/useScopedView";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { ActivityRelatedPanel } from "@/components/executive-plans/ActivityRelatedPanel";
 
 interface Employee {
   id: string;
