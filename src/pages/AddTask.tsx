@@ -29,6 +29,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Employee {
   id: string;
@@ -60,6 +61,7 @@ const AddTask = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user: authUser } = useAuth();
+  const { currentOrg } = useOrganization();
 
   const [isLoading, setIsLoading] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -115,13 +117,22 @@ const AddTask = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [{ data: empData, error: empErr }, { data: depData, error: depErr }] = await Promise.all([
-          supabase
+        let employeesQuery = supabase
           .from("employees")
-            .select("id, full_name, user_id, job_role, department_id")
+          .select("id, full_name, user_id, job_role, department_id")
           .not("user_id", "is", null)
-            .order("full_name"),
-          supabase.from("departments").select("id, name").order("name"),
+          .order("full_name");
+
+        let departmentsQuery = supabase.from("departments").select("id, name").order("name");
+
+        if (currentOrg?.id) {
+          employeesQuery = employeesQuery.eq("organization_id", currentOrg.id);
+          departmentsQuery = departmentsQuery.eq("organization_id", currentOrg.id);
+        }
+
+        const [{ data: empData, error: empErr }, { data: depData, error: depErr }] = await Promise.all([
+          employeesQuery,
+          departmentsQuery,
         ]);
         if (empErr) throw empErr;
         if (depErr) throw depErr;
@@ -134,7 +145,7 @@ const AddTask = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [currentOrg?.id]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
