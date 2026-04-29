@@ -431,8 +431,9 @@ export function RelatedEmployeesIndicator({
                     <button
                       type="button"
                       onClick={() => navigateToEmployee(r.employee_id)}
+                      disabled={navigatingEmpId === r.employee_id}
                       className="flex-1 flex items-center gap-2 text-right min-w-0 hover:text-[hsl(var(--primary))] transition-colors"
-                      title="انتقل إلى صف هذا الموظف"
+                      title="انتقل إلى مهمة هذا الموظف ضمن هذا النشاط"
                     >
                       <div
                         className={cn(
@@ -457,7 +458,11 @@ export function RelatedEmployeesIndicator({
                           </div>
                         )}
                       </div>
-                      <ArrowLeft className="w-3 h-3 text-slate-400 group-hover:text-[hsl(var(--primary))] shrink-0" />
+                      {navigatingEmpId === r.employee_id ? (
+                        <Loader2 className="w-3 h-3 text-[hsl(var(--primary))] shrink-0 animate-spin" />
+                      ) : (
+                        <ArrowLeft className="w-3 h-3 text-slate-400 group-hover:text-[hsl(var(--primary))] shrink-0" />
+                      )}
                     </button>
                     <button
                       type="button"
