@@ -2212,10 +2212,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={deptSpan.get(l.deptKey) ?? 1}
                                       className={cn(
-                                        "border-l-2 border-[hsl(var(--primary)/0.35)] align-top py-3 bg-[hsl(var(--primary)/0.06)] sticky z-20",
+                                        "border-l-2 border-[hsl(var(--primary)/0.35)] align-top p-0 bg-[hsl(var(--primary)/0.06)]",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
-                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
@@ -2243,7 +2242,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </Button>
                                         </div>
                                       ) : (
-                                       <div className="flex items-start gap-2">
+                                       <div className="sticky z-20 flex items-start gap-2 py-3 px-3" style={{ top: stickyHeaderTop }}>
                                          <Building2 className="w-4 h-4 text-[hsl(var(--primary))] shrink-0 mt-0.5" />
                                          <span className="font-bold text-base text-slate-800 leading-snug whitespace-normal break-words flex-1">{l.deptName}</span>
                                          {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto shrink-0" />}
@@ -2255,10 +2254,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={initSpan.get(l.initKey) ?? 1}
                                       className={cn(
-                                        "border-l-2 border-[hsl(var(--primary)/0.25)] align-top py-3 bg-white sticky z-10",
+                                        "border-l-2 border-[hsl(var(--primary)/0.25)] align-top p-0 bg-white",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
-                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
