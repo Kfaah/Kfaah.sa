@@ -60,6 +60,15 @@ function buildFallbackArgs({
   return { tasks, suggested_related_employees };
 }
 
+function normalizeArabicText(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/ـ/g, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -165,18 +174,21 @@ Deno.serve(async (req) => {
       department: e.departments?.name ?? null,
     }));
 
-    // Build cross-plan signal: which employees are responsible for plans
-    // sharing strategic_goal / initiative / sub_initiative with the current activity.
+    // Build strict cross-plan signal: only employees responsible for rows that can be reached
+    // in the visible table for the same activity, or at least the same initiative/sub-initiative.
+    const currentActivity = normalizeArabicText(op.activity_name);
+    const currentInitiative = normalizeArabicText(op.initiative);
+    const currentSubInitiative = normalizeArabicText(op.sub_initiative);
     const overlap = (relatedPlans ?? [])
       .filter((p: any) => {
         if (!p.responsible_employee_id) return false;
-        const sg = (p.strategic_goal ?? "").trim();
-        const ini = (p.initiative ?? "").trim();
-        const sub = (p.sub_initiative ?? "").trim();
+        const activity = normalizeArabicText(p.activity_name);
+        const ini = normalizeArabicText(p.initiative);
+        const sub = normalizeArabicText(p.sub_initiative);
         return (
-          (sg && sg === (op.strategic_goal ?? "").trim()) ||
-          (ini && ini === (op.initiative ?? "").trim()) ||
-          (sub && sub === (op.sub_initiative ?? "").trim())
+          (!!activity && activity === currentActivity) ||
+          (!!currentSubInitiative && sub === currentSubInitiative) ||
+          (!!currentInitiative && ini === currentInitiative)
         );
       })
       .map((p: any) => {
