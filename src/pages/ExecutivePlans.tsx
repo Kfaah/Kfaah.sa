@@ -2048,6 +2048,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               const dayKey = `day-${monthGroup.month}-${l.day}`;
                               const isDayExpanded = !l.collapsed;
                               const firstAct = l.acts?.[0] as any;
+                              const nextLeaf = leaves[idx + 1];
+                              const isLastInSub = !nextLeaf || nextLeaf.subKey !== l.subKey;
+                              const isLastInInit = !nextLeaf || nextLeaf.initKey !== l.initKey;
+                              const isLastInDept = !nextLeaf || nextLeaf.deptKey !== l.deptKey;
                               return (
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
@@ -2061,16 +2065,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
                                     showDay && idx > 0 ? "border-t-2 border-[hsl(var(--primary)/0.25)]" : "",
+                                    !l.collapsed && isLastInSub && "[&>td]:border-b [&>td]:border-b-[hsl(var(--primary)/0.16)]",
+                                    !l.collapsed && isLastInInit && "[&>td]:border-b-2 [&>td]:border-b-[hsl(var(--primary)/0.35)]",
+                                    !l.collapsed && isLastInDept && "[&>td]:border-b-[3px] [&>td]:border-b-[hsl(var(--primary)/0.45)]",
                                   )}
                                 >
                                   {showMonth && (
                                     <TableCell
                                       rowSpan={monthSpan}
-                                      className="bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors sticky z-20"
-                                      style={{ top: stickyHeaderTop }}
+                                      className="bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
-                                      <div className="flex flex-col items-center gap-2 py-4 px-2">
+                                      <div className="sticky z-20 flex flex-col items-center gap-2 py-4 px-2" style={{ top: stickyHeaderTop }}>
                                         {/* رأس الشهر */}
                                         <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-md shadow-[hsl(var(--primary)/0.25)]">
                                           <Calendar className="w-5 h-5 text-white" />
@@ -2206,10 +2212,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={deptSpan.get(l.deptKey) ?? 1}
                                       className={cn(
-                                        "border-l-2 border-[hsl(var(--primary)/0.35)] align-top py-3 bg-[hsl(var(--primary)/0.06)] sticky z-20",
+                                        "border-l-2 border-b-[3px] border-l-[hsl(var(--primary)/0.35)] border-b-[hsl(var(--primary)/0.45)] align-top p-0 bg-[hsl(var(--primary)/0.06)]",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
-                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
@@ -2237,7 +2242,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </Button>
                                         </div>
                                       ) : (
-                                       <div className="flex items-start gap-2">
+                                       <div className="sticky z-20 flex items-start gap-2 py-3 px-3" style={{ top: stickyHeaderTop }}>
                                          <Building2 className="w-4 h-4 text-[hsl(var(--primary))] shrink-0 mt-0.5" />
                                          <span className="font-bold text-base text-slate-800 leading-snug whitespace-normal break-words flex-1">{l.deptName}</span>
                                          {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto shrink-0" />}
@@ -2249,10 +2254,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={initSpan.get(l.initKey) ?? 1}
                                       className={cn(
-                                        "border-l-2 border-[hsl(var(--primary)/0.25)] align-top py-3 bg-white sticky z-10",
+                                        "border-l-2 border-b-2 border-l-[hsl(var(--primary)/0.25)] border-b-[hsl(var(--primary)/0.35)] align-top p-0 bg-white",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
-                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
@@ -2282,7 +2286,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </Button>
                                         </div>
                                       ) : (
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="sticky z-10 flex items-center gap-1.5 py-3 px-3" style={{ top: stickyHeaderTop }}>
                                         <Target className="w-3.5 h-3.5 text-[hsl(var(--primary))] shrink-0" />
                                         <span className="text-sm font-semibold text-slate-700 leading-snug">
                                           {l.initName === "_no_init" ? <span className="text-slate-300">—</span> : l.initName}
@@ -2296,7 +2300,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={subSpan.get(l.subKey) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3",
+                                        "border-l border-b border-gray-200 border-b-[hsl(var(--primary)/0.18)] align-top py-3 bg-white",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
