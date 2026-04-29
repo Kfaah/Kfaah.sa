@@ -965,6 +965,47 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     return groups;
   }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames, employees]);
 
+  useEffect(() => {
+    if (globalViewMode !== "dates" || !activeOrgId) return;
+    const activityIds = Array.from(new Set(
+      groupedPlans.flatMap((month) => month.dateGroups.flatMap((day) => day.activities.map((activity) => activity.id)))
+    )).filter((id) => !phasePreloadStartedRef.current.has(id));
+    if (activityIds.length === 0) return;
+
+    let cancelled = false;
+    activityIds.forEach((id) => phasePreloadStartedRef.current.add(id));
+    setPreparingPhaseIds((prev) => new Set([...prev, ...activityIds]));
+
+    const preload = async () => {
+      for (const id of activityIds) {
+        if (cancelled) return;
+        try {
+          const { data: existing } = await supabase
+            .from("activity_related_tasks")
+            .select("id")
+            .eq("executive_plan_id", id)
+            .limit(1);
+          if (!existing || existing.length === 0) {
+            await supabase.functions.invoke("generate-related-tasks", { body: { executive_plan_id: id } });
+          }
+        } catch (error) {
+          console.error("preload activity phases", error);
+        } finally {
+          if (!cancelled) {
+            setPreparingPhaseIds((prev) => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+          }
+        }
+      }
+    };
+
+    void preload();
+    return () => { cancelled = true; };
+  }, [groupedPlans, globalViewMode, activeOrgId]);
+
   // قائمة الخطط الفريدة المتاحة (مع عدد الأنشطة لكل خطة)
   const availablePlans = useMemo(() => {
     const map = new Map<string, { name: string; activitiesCount: number; planIds: Set<string> }>();
