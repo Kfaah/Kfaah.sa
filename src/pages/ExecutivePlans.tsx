@@ -512,6 +512,23 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [addingMonth, setAddingMonth] = useState<number>(1);
   const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
+  const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const datesTableDragRef = React.useRef({ active: false, startX: 0, scrollLeft: 0 });
+  const phasePreloadStartedRef = React.useRef<Set<string>>(new Set());
+  const [preparingPhaseIds, setPreparingPhaseIds] = useState<Set<string>>(new Set());
+
+  const scrollDatesTable = (direction: "left" | "right" | "start" | "end") => {
+    const el = datesTableScrollRef.current;
+    if (!el) return;
+    const max = Math.max(0, el.scrollWidth - el.clientWidth);
+    const step = Math.max(520, Math.floor(el.clientWidth * 0.72));
+    const next =
+      direction === "start" ? max :
+      direction === "end" ? 0 :
+      direction === "left" ? el.scrollLeft - step :
+      el.scrollLeft + step;
+    el.scrollTo({ left: Math.max(0, Math.min(max, next)), behavior: "smooth" });
+  };
 
   // التحقق من صلاحية المدير
   useEffect(() => {
