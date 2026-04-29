@@ -1920,8 +1920,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                         <col key={column.key} style={{ width: column.width }} />
                       ))}
                     </colgroup>
-                    <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-[37px] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-30">
+                    <TableHeader className="sticky top-[37px] z-30">
+                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-30">
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
@@ -2555,7 +2555,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                  <div className="overflow-x-auto" dir="rtl">
                    <table className="w-full caption-bottom text-sm">
                      <TableHeader className="sticky top-0 z-20">
-                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-0 [&>th]:bg-[hsl(var(--primary))] [&>th]:z-20">
+                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-20">
                         <TableHead className="text-right font-bold text-white min-w-[120px] border-l border-white/20">
                           الشهر
                         </TableHead>
