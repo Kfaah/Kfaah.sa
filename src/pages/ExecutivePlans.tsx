@@ -2206,9 +2206,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={deptSpan.get(l.deptKey) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3 bg-[hsl(var(--primary)/0.06)]",
+                                        "border-l border-gray-200 align-top py-3 bg-[hsl(var(--primary)/0.06)] sticky z-20",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
@@ -2248,9 +2249,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={initSpan.get(l.initKey) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3",
+                                        "border-l border-gray-200 align-top py-3 sticky z-20 bg-white",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
