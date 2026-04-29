@@ -13,10 +13,10 @@ serve(async (req) => {
   }
 
   try {
-    const SMART_ROUTER_KEY = Deno.env.get("SMART_ROUTER_KEY");
-    if (!SMART_ROUTER_KEY) {
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "SMART_ROUTER_KEY is not configured" }),
+        JSON.stringify({ error: "ANTHROPIC_API_KEY is not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -46,37 +46,21 @@ serve(async (req) => {
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Smart model routing (داخل التطبيق فقط):
-    //   • Claude  → مهام برمجية / كود / SQL / debugging
-    //   • GPT-5   → تحليل عميق / حسابات / استدلال معقد / أرقام
-    //   • Gemini  → الافتراضي للنصوص العربية والمحادثة العامة
-    // يعتمد التوجيه على آخر رسالة من المستخدم.
+    // Routing مبسّط: استخدام Claude مباشرة عبر Anthropic API
+    //   • Sonnet 4.5  → الافتراضي (ممتاز للبرمجة والتحليل والعربية)
+    //   • Haiku       → للمحادثات القصيرة جداً (توفير التكلفة)
     // ──────────────────────────────────────────────────────────────
     const lastUserMsg = [...messages]
       .reverse()
       .find((m: any) => m?.role === "user")?.content ?? "";
-    const text = String(lastUserMsg).toLowerCase();
+    const text = String(lastUserMsg);
 
-    const codeHints = [
-      "code", "كود", "برمج", "برمجة", "function", "دالة", "bug", "خطأ برمجي",
-      "sql", "typescript", "javascript", "react", "api", "endpoint", "regex",
-      "script", "سكربت", "debug", "تصحيح", "خوارزمية", "algorithm",
-    ];
-    const analysisHints = [
-      "حلل", "تحليل", "قارن", "مقارنة", "احسب", "حساب", "إحصاء", "إحصائي",
-      "analyze", "analysis", "compare", "calculate", "statistics", "metric",
-      "تقرير", "report", "kpi", "مؤشر", "أداء", "performance",
-    ];
-
-    let selectedModel = "google/gemini-2.5-flash"; // default: نصوص ومحادثة
-    let routedReason = "general_text";
-    if (codeHints.some((k) => text.includes(k))) {
-      selectedModel = "anthropic/claude-sonnet-4-5";
-      routedReason = "code";
-    } else if (analysisHints.some((k) => text.includes(k))) {
-      selectedModel = "openai/gpt-5";
-      routedReason = "analysis";
-    }
+    // استخدم Haiku للرسائل القصيرة جداً (تحية/سؤال بسيط) لتوفير التكلفة
+    const isShortChat = text.length < 60;
+    const selectedModel = isShortChat
+      ? "claude-haiku-4-5"
+      : "claude-sonnet-4-5";
+    const routedReason = isShortChat ? "short_chat" : "default_sonnet";
 
     // Pull a small employee context for the system prompt
     const { data: emp } = await supabase
@@ -109,23 +93,124 @@ serve(async (req) => {
       });
     } catch (_) { /* ignore */ }
 
-    const response = await fetch(
-      "https://tsvtsicibuqzrvonlits.supabase.co/functions/v1/smart-chat",
-      {
-        method: "POST",
-        headers: {
-          "x-router-key": SMART_ROUTER_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: selectedModel,
-          messages: [{ role: "system", content: systemPrompt }, ...messages],
-          stream: true,
-        }),
-      },
-    );
+    // تحويل رسائل OpenAI-style إلى Anthropic-style
+    // (Anthropic لا يقبل دور system داخل messages، يجب فصله)
+    const anthropicMessages = messages
+      .filter((m: any) => m?.role === "user" || m?.role === "assistant")
+      .map((m: any) => ({
+        role: m.role,
+        content: typeof m.content === "string" ? m.content : String(m.content ?? ""),
+      }));
 
-    if (!response.ok) {
+    const anthropicResp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: anthropicMessages,
+        stream: true,
+      }),
+    });
+
+    if (!anthropicResp.ok) {
+      if (anthropicResp.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "تم تجاوز حد الاستخدام، حاول بعد دقيقة." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (anthropicResp.status === 401) {
+        return new Response(
+          JSON.stringify({ error: "مفتاح Anthropic غير صحيح أو منتهي." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (anthropicResp.status === 402 || anthropicResp.status === 403) {
+        return new Response(
+          JSON.stringify({ error: "نفذ رصيد Anthropic، يرجى الشحن." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      const t = await anthropicResp.text();
+      console.error("Anthropic error:", anthropicResp.status, t);
+      return new Response(JSON.stringify({ error: "Anthropic API error" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // تحويل Anthropic SSE إلى OpenAI-compatible SSE حتى يعمل الـ frontend الحالي بدون تغيير
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = anthropicResp.body!.getReader();
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
+        let buffer = "";
+
+        const emit = (delta: string) => {
+          const chunk = {
+            choices: [{ delta: { content: delta }, index: 0, finish_reason: null }],
+          };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+        };
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            let idx;
+            while ((idx = buffer.indexOf("\n")) !== -1) {
+              let line = buffer.slice(0, idx);
+              buffer = buffer.slice(idx + 1);
+              if (line.endsWith("\r")) line = line.slice(0, -1);
+              if (!line.startsWith("data: ")) continue;
+
+              const payload = line.slice(6).trim();
+              if (!payload) continue;
+
+              try {
+                const evt = JSON.parse(payload);
+                if (
+                  evt.type === "content_block_delta" &&
+                  evt.delta?.type === "text_delta" &&
+                  typeof evt.delta?.text === "string"
+                ) {
+                  emit(evt.delta.text);
+                } else if (evt.type === "message_stop") {
+                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                }
+              } catch (_) {
+                /* skip malformed chunk */
+              }
+            }
+          }
+          controller.close();
+        } catch (err) {
+          console.error("stream error:", err);
+          controller.error(err);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+      },
+    });
+
+    // (no-op below: kept for safety in case future code expects response variable)
+    // deno-lint-ignore no-unreachable
+    if (false) {
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "تم تجاوز حد الاستخدام، حاول بعد دقيقة." }),
