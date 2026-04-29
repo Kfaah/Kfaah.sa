@@ -69,8 +69,6 @@ import {
   Check,
   Layers,
   Save,
-  ArrowLeft,
-  ArrowRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -515,27 +513,21 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [addingMonth, setAddingMonth] = useState<number>(1);
   const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
-  const datesTableDragRef = React.useRef({ active: false, startX: 0, scrollLeft: 0 });
+  const datesTopScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const datesTableInnerRef = React.useRef<HTMLDivElement | null>(null);
+  const syncingDatesScrollRef = React.useRef(false);
   const phasePreloadStartedRef = React.useRef<Set<string>>(new Set());
   const [preparingPhaseIds, setPreparingPhaseIds] = useState<Set<string>>(new Set());
+  const [datesTableWidth, setDatesTableWidth] = useState(1200);
 
-  const scrollDatesTable = (direction: "left" | "right" | "start" | "end") => {
-    const el = datesTableScrollRef.current;
-    if (!el) return;
-    const max = Math.max(0, el.scrollWidth - el.clientWidth);
-    const step = Math.max(520, Math.floor(el.clientWidth * 0.72));
-    if (direction === "start") {
-      el.scrollTo({ left: 0, behavior: "smooth" });
-      return;
-    }
-    if (direction === "end") {
-      el.scrollTo({ left: -max, behavior: "smooth" });
-      requestAnimationFrame(() => {
-        if (Math.abs(el.scrollLeft) < 2) el.scrollTo({ left: max, behavior: "smooth" });
-      });
-      return;
-    }
-    el.scrollBy({ left: direction === "left" ? -step : step, behavior: "smooth" });
+  const syncDatesHorizontalScroll = (source: "top" | "table") => {
+    const top = datesTopScrollRef.current;
+    const table = datesTableScrollRef.current;
+    if (!top || !table || syncingDatesScrollRef.current) return;
+    syncingDatesScrollRef.current = true;
+    if (source === "top") table.scrollLeft = top.scrollLeft;
+    else top.scrollLeft = table.scrollLeft;
+    requestAnimationFrame(() => { syncingDatesScrollRef.current = false; });
   };
 
   // التحقق من صلاحية المدير
@@ -1847,65 +1839,47 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
               <Card className="overflow-hidden">
-                <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-sm" dir="rtl">
-                  <div className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--foreground))]">
-                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--primary))]" />
-                    <span>اسحب الجدول يمينًا ويسارًا أو استخدم أزرار التنقل</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" className="h-9 gap-2" onClick={() => scrollDatesTable("start")} title="بداية الجدول">
-                      <ArrowRight className="w-4 h-4" /> البداية
-                    </Button>
-                    <Button size="icon" variant="secondary" className="h-9 w-10" onClick={() => scrollDatesTable("right")} title="تحريك لليمين">
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="secondary" className="h-9 w-10" onClick={() => scrollDatesTable("left")} title="تحريك لليسار">
-                      <ArrowLeft className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-9 gap-2" onClick={() => scrollDatesTable("end")} title="نهاية الجدول">
-                      النهاية <ArrowLeft className="w-4 h-4" />
-                    </Button>
+                <div className="sticky top-0 z-30 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-sm" dir="rtl">
+                  <div
+                    ref={datesTopScrollRef}
+                    className="h-5 overflow-x-auto overflow-y-hidden rounded-md bg-[hsl(var(--muted)/0.45)]"
+                    onScroll={() => syncDatesHorizontalScroll("top")}
+                  >
+                    <div style={{ width: datesTableWidth, height: 1 }} />
                   </div>
                 </div>
                 <div
-                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset cursor-grab active:cursor-grabbing"
+                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
                   dir="rtl"
                   tabIndex={0}
                   ref={(el) => {
                     datesTableScrollRef.current = el;
                   }}
-                  onPointerDown={(e) => {
-                    if (e.button !== 0 || (e.target as HTMLElement).closest("button,input,[role='combobox'],[data-radix-popper-content-wrapper]")) return;
-                    datesTableDragRef.current = { active: true, startX: e.clientX, scrollLeft: e.currentTarget.scrollLeft };
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                  }}
-                  onPointerMove={(e) => {
-                    const drag = datesTableDragRef.current;
-                    if (!drag.active) return;
-                    e.preventDefault();
-                    e.currentTarget.scrollLeft = drag.scrollLeft + (e.clientX - drag.startX);
-                  }}
-                  onPointerUp={(e) => {
-                    datesTableDragRef.current.active = false;
-                    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
-                  }}
-                  onPointerCancel={() => { datesTableDragRef.current.active = false; }}
+                  onScroll={() => syncDatesHorizontalScroll("table")}
                   onKeyDown={(e) => {
+                    const step = e.shiftKey ? e.currentTarget.clientWidth * 0.9 : 260;
                     if (e.key === "ArrowLeft") {
                       e.preventDefault();
-                      scrollDatesTable(e.shiftKey ? "end" : "right");
+                      e.currentTarget.scrollBy({ left: step, behavior: "smooth" });
                     } else if (e.key === "ArrowRight") {
                       e.preventDefault();
-                      scrollDatesTable(e.shiftKey ? "start" : "left");
+                      e.currentTarget.scrollBy({ left: -step, behavior: "smooth" });
                     } else if (e.key === "Home") {
                       e.preventDefault();
-                      scrollDatesTable("start");
+                      e.currentTarget.scrollTo({ left: 0, behavior: "smooth" });
                     } else if (e.key === "End") {
                       e.preventDefault();
-                      scrollDatesTable("end");
+                      e.currentTarget.scrollTo({ left: -e.currentTarget.scrollWidth, behavior: "smooth" });
                     }
                   }}
                 >
+                  <div
+                    ref={(el) => {
+                      datesTableInnerRef.current = el;
+                      if (el) requestAnimationFrame(() => setDatesTableWidth(Math.max(el.scrollWidth, el.clientWidth, 1200)));
+                    }}
+                    className="min-w-max"
+                  >
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
@@ -2539,6 +2513,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                       })}
                     </TableBody>
                   </Table>
+                </div>
                 </div>
               </Card>
             )}
