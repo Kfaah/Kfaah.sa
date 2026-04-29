@@ -518,6 +518,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const syncingDatesScrollRef = React.useRef(false);
   const phasePreloadStartedRef = React.useRef<Set<string>>(new Set());
   const [preparingPhaseIds, setPreparingPhaseIds] = useState<Set<string>>(new Set());
+  const [datesTableWidth, setDatesTableWidth] = useState(1200);
 
   const syncDatesHorizontalScroll = (source: "top" | "table") => {
     const top = datesTopScrollRef.current;
@@ -528,6 +529,16 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     else top.scrollLeft = table.scrollLeft;
     requestAnimationFrame(() => { syncingDatesScrollRef.current = false; });
   };
+
+  useEffect(() => {
+    const el = datesTableInnerRef.current;
+    if (!el || globalViewMode !== "dates") return;
+    const updateWidth = () => setDatesTableWidth(Math.max(el.scrollWidth, el.clientWidth, 1200));
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [groupedPlans, globalViewMode]);
 
   // التحقق من صلاحية المدير
   useEffect(() => {
