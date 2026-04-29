@@ -534,7 +534,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const syncingDatesScrollRef = React.useRef(false);
   const phasePreloadStartedRef = React.useRef<Set<string>>(new Set());
   const [preparingPhaseIds, setPreparingPhaseIds] = useState<Set<string>>(new Set());
-  const [datesTableWidth, setDatesTableWidth] = useState(1200);
+  const [datesTableWidth, setDatesTableWidth] = useState(DATES_TABLE_MIN_WIDTH);
 
   const syncDatesHorizontalScroll = (source: "top" | "table") => {
     const top = datesTopScrollRef.current;
@@ -1861,7 +1861,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     className="h-5 overflow-x-auto overflow-y-hidden rounded-md bg-[hsl(var(--muted)/0.45)]"
                     onScroll={() => syncDatesHorizontalScroll("top")}
                   >
-                    <div style={{ width: datesTableWidth, height: 1 }} />
+                      <div style={{ width: datesTableWidth, minWidth: DATES_TABLE_MIN_WIDTH, height: 1 }} />
                   </div>
                 </div>
                 <div
@@ -1892,9 +1892,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   <div
                     ref={(el) => {
                       datesTableInnerRef.current = el;
-                      if (el) requestAnimationFrame(() => setDatesTableWidth(Math.max(el.scrollWidth, el.clientWidth, 1200)));
+                      if (el) requestAnimationFrame(() => setDatesTableWidth(Math.max(el.scrollWidth, el.clientWidth, DATES_TABLE_MIN_WIDTH)));
                     }}
-                    className="min-w-max"
+                    style={{ minWidth: DATES_TABLE_MIN_WIDTH }}
                   >
                   <Table className="table-fixed">
                     <colgroup>
