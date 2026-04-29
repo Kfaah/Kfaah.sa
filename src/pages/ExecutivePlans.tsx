@@ -308,6 +308,17 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [planMonths, setPlanMonths] = useState<OperationalPlanMonth[]>([]);
   const [executivePlans, setExecutivePlans] = useState<ExecutivePlan[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const pendingRelatedFocusRef = React.useRef<{
+    employeeId: string;
+    executivePlanId?: string;
+    targetInfo?: {
+      activityName?: string | null;
+      initiativeName?: string | null;
+      subInitiativeName?: string | null;
+      activityDay: number;
+      activityMonth: number;
+    };
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
@@ -537,9 +548,20 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
   const stickyHeaderTop = embedded ? "52px" : "0px";
 
-  const focusEmployeeInExecutivePlans = (employeeId: string, executivePlanId?: string) => {
+  const focusEmployeeInExecutivePlans = (
+    employeeId: string,
+    executivePlanId?: string,
+    targetInfo?: {
+      activityName?: string | null;
+      initiativeName?: string | null;
+      subInitiativeName?: string | null;
+      activityDay: number;
+      activityMonth: number;
+    },
+  ) => {
+    pendingRelatedFocusRef.current = { employeeId, executivePlanId, targetInfo };
     setFilterDepartmentId("all");
-    setSelectedEmployeeId(employeeId);
+    setSelectedEmployeeId("all");
     setExpandedDays(new Set());
 
     // انتقال فوري إلى صف النشاط المحدد للموظف المحدد — بدون أي تأخير صناعي.
@@ -548,12 +570,28 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         datesTableScrollRef.current ??
         document.querySelector<HTMLElement>("[data-executive-plans-scroll]");
 
-      // 1) حاول إيجاد صف النشاط نفسه (الأدق)
+      // 1) حاول إيجاد صف نفس الموظف ونفس النشاط/التاريخ داخل الجدول العام
       let target: HTMLElement | null = null;
+      if (targetInfo) {
+        const normalizedActivity = normalizeAnchorValue(targetInfo.activityName);
+        const normalizedInitiative = normalizeAnchorValue(targetInfo.initiativeName);
+        const normalizedSub = normalizeAnchorValue(targetInfo.subInitiativeName);
+        target = Array.from(document.querySelectorAll<HTMLElement>("[data-activity-row-target]")).find((el) => {
+          const row = el.closest<HTMLElement>("tr");
+          if (!row || row.dataset.empAnchor !== employeeId) return false;
+          if (row.dataset.dayAnchor !== String(targetInfo.activityDay)) return false;
+          if (row.dataset.monthAnchor !== String(targetInfo.activityMonth)) return false;
+          if (normalizedActivity && el.dataset.activityAnchor !== normalizedActivity) return false;
+          if (normalizedInitiative && row.dataset.initiativeAnchor !== normalizedInitiative) return false;
+          if (normalizedSub && row.dataset.subAnchor !== normalizedSub) return false;
+          return true;
+        }) ?? null;
+      }
       if (executivePlanId) {
-        target = document.querySelector<HTMLElement>(
-          `[data-activity-row-target="${executivePlanId}"]`,
-        );
+        const sameEmployeeActivity = document.querySelector<HTMLElement>(`[data-activity-row-target="${executivePlanId}"]`);
+        if (sameEmployeeActivity?.closest<HTMLElement>("tr")?.dataset.empAnchor === employeeId) {
+          target = target ?? sameEmployeeActivity;
+        }
       }
       // 2) وإلا، أول صف يعود لهذا الموظف
       if (!target) {
@@ -600,6 +638,15 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       });
     });
   };
+
+  useEffect(() => {
+    const pending = pendingRelatedFocusRef.current;
+    if (!pending || loading) return;
+    requestAnimationFrame(() => {
+      focusEmployeeInExecutivePlans(pending.employeeId, pending.executivePlanId, pending.targetInfo);
+      pendingRelatedFocusRef.current = null;
+    });
+  }, [loading, operationalPlans, planMonths, executivePlans]);
 
   // التحقق من صلاحية المدير
   useEffect(() => {
@@ -893,7 +940,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     };
     
     fetchAllPlans();
-  }, [selectedEmployeeId, selectedYear, employees, activeOrgId]);
+  }, [selectedEmployeeId, selectedYear, employees, activeOrgId, filterDepartmentId]);
 
   // تجميع الخطط التنفيذية حسب الشهر والمهمة
   const groupedPlans = useMemo(() => {
@@ -2137,6 +2184,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   key={`leaf-${idx}-${l.empKey}`}
                                   data-emp-anchor={firstAct?.employeeId || undefined}
                                   data-op-anchor={firstAct?.operationalPlanId || undefined}
+                                  data-day-anchor={l.day}
+                                  data-month-anchor={monthGroup.month}
                                   data-activity-anchor={firstAct?.activityName ? normalizeAnchorValue(firstAct.activityName) : undefined}
                                   data-initiative-anchor={l.initName ? normalizeAnchorValue(l.initName) : undefined}
                                   data-sub-anchor={l.subName ? normalizeAnchorValue(l.subName) : undefined}
