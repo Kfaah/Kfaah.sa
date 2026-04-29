@@ -478,7 +478,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [columnTitles, setColumnTitles] = useState<{ [k: string]: string }>(() => {
     try {
       const saved = localStorage.getItem("execPlans.columnTitles");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.relatedEmployees) parsed.relatedEmployees = "الموظفون ذوو العلاقة";
+        return parsed;
+      }
     } catch {}
     return {
       month: "الشهر",
@@ -488,6 +492,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       subInitiative: "المبادرة الفرعية",
       employee: "الموظف",
       activities: "الأنشطة",
+      relatedEmployees: "الموظفون ذوو العلاقة",
     };
   });
   const updateColumnTitle = (key: string, value: string) => {
