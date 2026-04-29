@@ -526,7 +526,9 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
         dispatched_count: dispatchedCount,
         skipped_no_user: skippedNoUser,
         used_fallback: usedFallback,
-        warning,
+        warning: warning ?? cappedNotice,
+        exceeded_limits: justifiedExceed,
+        exceed_reason: justifiedExceed ? args.exceed_reason : null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
