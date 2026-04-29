@@ -33,6 +33,10 @@ import { toast } from "@/hooks/use-toast";
 
 type Phase = "before" | "during" | "after";
 
+// حدود ذكية للمهام: لا تتجاوز الحدود إلا في حالات نادرة (المهام المُولَّدة بالذكاء الاصطناعي)
+const MAX_PER_PHASE_MANUAL = 4;
+const MAX_TOTAL_MANUAL = 12;
+
 interface EmployeeOption {
   id: string;
   full_name: string;
