@@ -76,7 +76,7 @@ import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/util
 import { useScopedView } from "@/hooks/useScopedView";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { ActivityPhasesPopover } from "@/components/executive-plans/ActivityPhasesPopover";
-import { RelatedEmployeesIndicator } from "@/components/executive-plans/RelatedEmployeesIndicator";
+
 
 interface Employee {
   id: string;
@@ -308,17 +308,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [planMonths, setPlanMonths] = useState<OperationalPlanMonth[]>([]);
   const [executivePlans, setExecutivePlans] = useState<ExecutivePlan[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const pendingRelatedFocusRef = React.useRef<{
-    employeeId: string;
-    executivePlanId?: string;
-    targetInfo?: {
-      activityName?: string | null;
-      initiativeName?: string | null;
-      subInitiativeName?: string | null;
-      activityDay: number;
-      activityMonth: number;
-    };
-  } | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
@@ -548,105 +538,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
   const stickyHeaderTop = embedded ? "52px" : "0px";
 
-  const focusEmployeeInExecutivePlans = (
-    employeeId: string,
-    executivePlanId?: string,
-    targetInfo?: {
-      activityName?: string | null;
-      initiativeName?: string | null;
-      subInitiativeName?: string | null;
-      activityDay: number;
-      activityMonth: number;
-    },
-  ) => {
-    pendingRelatedFocusRef.current = { employeeId, executivePlanId, targetInfo };
-    setFilterDepartmentId("all");
-    setSelectedEmployeeId("all");
-    setExpandedDays(new Set());
 
-    // انتقال فوري إلى صف النشاط المحدد للموظف المحدد — بدون أي تأخير صناعي.
-    const focusTarget = () => {
-      const scrollParent =
-        datesTableScrollRef.current ??
-        document.querySelector<HTMLElement>("[data-executive-plans-scroll]");
-
-      // 1) حاول إيجاد صف نفس الموظف ونفس النشاط/التاريخ داخل الجدول العام
-      let target: HTMLElement | null = null;
-      if (targetInfo) {
-        const normalizedActivity = normalizeAnchorValue(targetInfo.activityName);
-        const normalizedInitiative = normalizeAnchorValue(targetInfo.initiativeName);
-        const normalizedSub = normalizeAnchorValue(targetInfo.subInitiativeName);
-        target = Array.from(document.querySelectorAll<HTMLElement>("[data-activity-row-target]")).find((el) => {
-          const row = el.closest<HTMLElement>("tr");
-          if (!row || row.dataset.empAnchor !== employeeId) return false;
-          if (row.dataset.dayAnchor !== String(targetInfo.activityDay)) return false;
-          if (row.dataset.monthAnchor !== String(targetInfo.activityMonth)) return false;
-          if (normalizedActivity && el.dataset.activityAnchor !== normalizedActivity) return false;
-          if (normalizedInitiative && row.dataset.initiativeAnchor !== normalizedInitiative) return false;
-          if (normalizedSub && row.dataset.subAnchor !== normalizedSub) return false;
-          return true;
-        }) ?? null;
-      }
-      if (executivePlanId) {
-        const sameEmployeeActivity = document.querySelector<HTMLElement>(`[data-activity-row-target="${executivePlanId}"]`);
-        if (sameEmployeeActivity?.closest<HTMLElement>("tr")?.dataset.empAnchor === employeeId) {
-          target = target ?? sameEmployeeActivity;
-        }
-      }
-      // 2) وإلا، أول صف يعود لهذا الموظف
-      if (!target) {
-        target = document.querySelector<HTMLElement>(
-          `[data-employee-row-target="${employeeId}"]`,
-        );
-      }
-      if (!target) return false;
-
-      if (scrollParent) {
-        const parentRect = scrollParent.getBoundingClientRect();
-        const targetRect = target.getBoundingClientRect();
-        scrollParent.scrollTop +=
-          targetRect.top - parentRect.top - parentRect.height / 2 + targetRect.height / 2;
-      } else {
-        target.scrollIntoView({ behavior: "auto", block: "center" });
-      }
-
-      target.classList.add(
-        "ring-4",
-        "ring-[hsl(var(--primary))]",
-        "ring-offset-2",
-        "bg-[hsl(var(--primary)/0.10)]",
-        "transition-shadow",
-      );
-      window.setTimeout(() => {
-        target!.classList.remove(
-          "ring-4",
-          "ring-[hsl(var(--primary))]",
-          "ring-offset-2",
-          "bg-[hsl(var(--primary)/0.10)]",
-        );
-      }, 1800);
-      return true;
-    };
-
-    // محاولات متتالية فورية بعد إعادة الرسم (بدون انتظار toast/timeout طويل)
-    requestAnimationFrame(() => {
-      if (focusTarget()) return;
-      requestAnimationFrame(() => {
-        if (focusTarget()) return;
-        // محاولة أخيرة قصيرة جداً في حال احتاج الجدول إعادة بناء
-        window.setTimeout(focusTarget, 60);
-      });
-    });
-  };
-
-  useEffect(() => {
-    const pending = pendingRelatedFocusRef.current;
-    if (!pending || loading) return;
-    requestAnimationFrame(() => {
-      focusEmployeeInExecutivePlans(pending.employeeId, pending.executivePlanId, pending.targetInfo);
-      pendingRelatedFocusRef.current = null;
-    });
-  }, [loading, operationalPlans, planMonths, executivePlans]);
 
   // التحقق من صلاحية المدير
   useEffect(() => {
@@ -2590,24 +2482,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                             </div>
                                             {!isEditingThis && (
                                               <div className="flex items-center gap-1 shrink-0">
-                                                <RelatedEmployeesIndicator
-                                                  executivePlanId={act.id}
-                                                  responsibleEmployeeId={(act as any).employeeId ?? null}
-                                                  organizationId={activeOrgId}
-                                                  activityName={act.activityName ?? ""}
-                                                  initiativeName={(act as any).initiative ?? l.initName}
-                                                  subInitiativeName={(act as any).subInitiative ?? l.subName}
-                                                  activityDay={(act as any).day ?? l.day}
-                                                  activityMonth={(act as any).month ?? monthGroup.month}
-                                                  activityYear={selectedYear}
-                                                  allEmployees={employees.map((e) => ({
-                                                    id: e.id,
-                                                    full_name: e.full_name,
-                                                    job_title: (e as any).job_role ?? null,
-                                                    department_name: e.department_name ?? null,
-                                                  }))}
-                                                  onNavigateToEmployee={focusEmployeeInExecutivePlans}
-                                                />
                                                 <ActivityPhasesPopover
                                                   executivePlanId={act.id}
                                                   responsibleEmployeeId={(act as any).employeeId ?? null}
@@ -2617,6 +2491,12 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   activityDay={(act as any).day ?? l.day}
                                                   activityMonth={(act as any).month ?? monthGroup.month}
                                                   activityYear={selectedYear}
+                                                  allEmployees={employees.map((e) => ({
+                                                    id: e.id,
+                                                    full_name: e.full_name,
+                                                    job_title: (e as any).job_role ?? null,
+                                                    department_name: e.department_name ?? null,
+                                                  }))}
                                                 />
                                               </div>
                                             )}
