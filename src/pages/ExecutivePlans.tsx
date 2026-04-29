@@ -2048,6 +2048,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               const dayKey = `day-${monthGroup.month}-${l.day}`;
                               const isDayExpanded = !l.collapsed;
                               const firstAct = l.acts?.[0] as any;
+                              const nextLeaf = leaves[idx + 1];
+                              const isLastInSub = !nextLeaf || nextLeaf.subKey !== l.subKey;
+                              const isLastInInit = !nextLeaf || nextLeaf.initKey !== l.initKey;
+                              const isLastInDept = !nextLeaf || nextLeaf.deptKey !== l.deptKey;
                               return (
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
@@ -2061,16 +2065,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
                                     showDay && idx > 0 ? "border-t-2 border-[hsl(var(--primary)/0.25)]" : "",
+                                    !l.collapsed && isLastInSub && "[&>td]:border-b [&>td]:border-b-[hsl(var(--primary)/0.16)]",
+                                    !l.collapsed && isLastInInit && "[&>td]:border-b-2 [&>td]:border-b-[hsl(var(--primary)/0.35)]",
+                                    !l.collapsed && isLastInDept && "[&>td]:border-b-[3px] [&>td]:border-b-[hsl(var(--primary)/0.45)]",
                                   )}
                                 >
                                   {showMonth && (
                                     <TableCell
                                       rowSpan={monthSpan}
-                                      className="bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors sticky z-20"
-                                      style={{ top: stickyHeaderTop }}
+                                      className="bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
-                                      <div className="flex flex-col items-center gap-2 py-4 px-2">
+                                      <div className="sticky z-20 flex flex-col items-center gap-2 py-4 px-2" style={{ top: stickyHeaderTop }}>
                                         {/* رأس الشهر */}
                                         <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-md shadow-[hsl(var(--primary)/0.25)]">
                                           <Calendar className="w-5 h-5 text-white" />
