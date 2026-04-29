@@ -389,7 +389,45 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
     const validTasks = (args.tasks ?? []).filter(
       (t: any) => empById.has(t.employee_id) && targetEmpIds.has(t.employee_id)
     );
-    const rows = validTasks
+
+    // فرض الحدود الذكية: 4 مهام لكل مرحلة و12 إجمالاً، إلا إذا برّر الذكاء الاصطناعي التجاوز بسبب مقنع
+    const MAX_PER_PHASE = 4;
+    const MAX_TOTAL = 12;
+    const justifiedExceed =
+      args.justify_exceeding_limits === true &&
+      typeof args.exceed_reason === "string" &&
+      args.exceed_reason.trim().length >= 25;
+
+    let cappedTasks = validTasks;
+    let cappedNotice: string | null = null;
+    if (!justifiedExceed) {
+      const perPhaseCount: Record<string, number> = { before: 0, during: 0, after: 0 };
+      const kept: any[] = [];
+      // أولوية حسب priority ثم الترتيب الأصلي
+      const priorityRank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+      const sorted = [...validTasks]
+        .map((t, i) => ({ t, i }))
+        .sort((a, b) => {
+          const pa = priorityRank[a.t.priority] ?? 1;
+          const pb = priorityRank[b.t.priority] ?? 1;
+          if (pa !== pb) return pa - pb;
+          return a.i - b.i;
+        });
+      for (const { t } of sorted) {
+        const ph = t.phase as string;
+        if (!(ph in perPhaseCount)) continue;
+        if (kept.length >= MAX_TOTAL) break;
+        if (perPhaseCount[ph] >= MAX_PER_PHASE) continue;
+        kept.push(t);
+        perPhaseCount[ph]++;
+      }
+      if (kept.length < validTasks.length) {
+        cappedNotice = `تم اقتطاع المهام للحد الأقصى الموصى به (4 لكل مرحلة، 12 إجمالاً). ولّد الذكاء الاصطناعي ${validTasks.length} مهمة وتم الإبقاء على ${kept.length}.`;
+      }
+      cappedTasks = kept;
+    }
+
+    const rows = cappedTasks
       .map((t: any, i: number) => ({
         executive_plan_id,
         employee_id: t.employee_id,
