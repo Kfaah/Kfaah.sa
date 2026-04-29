@@ -2096,7 +2096,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={monthSpan}
                                       className={cn(
                                         "bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors",
-                                        monthIdx > 0 && "border-t-[4px] border-t-[hsl(var(--primary)/0.6)]"
+                                        monthIdx > 0 && "shadow-[inset_0_5px_0_0_hsl(var(--primary))]"
                                       )}
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
@@ -2133,7 +2133,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={daySpan.get(l.day) ?? 1}
                                       className={cn(
                                         "border-l border-gray-200 align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors sticky z-20 bg-white",
-                                        idx > 0 && "border-t-[4px] border-t-[hsl(var(--primary)/0.6)]",
+                                        idx > 0 && "!border-t-[5px] !border-t-solid !border-t-[hsl(var(--primary))] shadow-[inset_0_5px_0_0_hsl(var(--primary))]",
                                         isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       style={{ top: stickyHeaderTop }}
