@@ -2095,7 +2095,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={monthSpan}
                                       className={cn(
-                                        "bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors",
+                                        "bg-gradient-to-b from-slate-50 to-white border-l-[3px] border-l-[hsl(var(--primary)/0.5)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors",
                                         monthIdx > 0 && "shadow-[inset_0_4px_0_0_hsl(var(--primary)/0.6)]"
                                       )}
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
