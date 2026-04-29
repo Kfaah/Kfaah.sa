@@ -2212,7 +2212,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={deptSpan.get(l.deptKey) ?? 1}
                                       className={cn(
-                                        "border-l-2 border-[hsl(var(--primary)/0.35)] align-top p-0 bg-[hsl(var(--primary)/0.06)]",
+                                        "border-l-2 border-b-[3px] border-l-[hsl(var(--primary)/0.35)] border-b-[hsl(var(--primary)/0.45)] align-top p-0 bg-[hsl(var(--primary)/0.06)]",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
@@ -2254,7 +2254,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={initSpan.get(l.initKey) ?? 1}
                                       className={cn(
-                                        "border-l-2 border-[hsl(var(--primary)/0.25)] align-top p-0 bg-white",
+                                        "border-l-2 border-b-2 border-l-[hsl(var(--primary)/0.25)] border-b-[hsl(var(--primary)/0.35)] align-top p-0 bg-white",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
@@ -2300,7 +2300,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={subSpan.get(l.subKey) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3 bg-white",
+                                        "border-l border-b border-gray-200 border-b-[hsl(var(--primary)/0.18)] align-top py-3 bg-white",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
