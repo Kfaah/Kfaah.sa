@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -77,6 +77,40 @@ const AddTask = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const departmentOptions = useMemo(() => {
+    const grouped = new Map<string, { label: string; ids: Set<string> }>();
+
+    departments.forEach((department) => {
+      const label = cleanName(department.name);
+      const key = label.replace(/\s+/g, " ").trim();
+      const current = grouped.get(key);
+
+      if (current) {
+        current.ids.add(department.id);
+      } else {
+        grouped.set(key, { label, ids: new Set([department.id]) });
+      }
+    });
+
+    return Array.from(grouped.entries()).map(([key, option]) => ({
+      key,
+      label: option.label,
+      ids: Array.from(option.ids),
+    }));
+  }, [departments]);
+
+  const selectedDepartmentIds = useMemo(() => {
+    if (!selectedDepartmentId || selectedDepartmentId === "__all__") return [];
+    return departmentOptions.find((department) => department.key === selectedDepartmentId)?.ids ?? [];
+  }, [departmentOptions, selectedDepartmentId]);
+
+  const filteredEmployees = useMemo(() => {
+    if (!selectedDepartmentId || selectedDepartmentId === "__all__") return employees;
+    return employees.filter((employee) =>
+      employee.department_id ? selectedDepartmentIds.includes(employee.department_id) : false
+    );
+  }, [employees, selectedDepartmentId, selectedDepartmentIds]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -240,9 +274,9 @@ const AddTask = () => {
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   <SelectItem value="__all__">كل الأقسام</SelectItem>
-                  {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {cleanName(d.name)}
+                  {departmentOptions.map((department) => (
+                    <SelectItem key={department.key} value={department.key}>
+                      {department.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -281,13 +315,7 @@ const AddTask = () => {
                     />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    {employees
-                      .filter((emp) =>
-                        !selectedDepartmentId || selectedDepartmentId === "__all__"
-                          ? true
-                          : emp.department_id === selectedDepartmentId
-                      )
-                      .map((emp) => (
+                    {filteredEmployees.map((emp) => (
                       <SelectItem key={emp.id} value={emp.user_id || emp.id}>
                         <div className="flex items-center gap-2">
                           <span>{cleanName(emp.full_name)}</span>
@@ -295,11 +323,7 @@ const AddTask = () => {
                         </div>
                       </SelectItem>
                     ))}
-                    {employees.filter((emp) =>
-                      !selectedDepartmentId || selectedDepartmentId === "__all__"
-                        ? true
-                        : emp.department_id === selectedDepartmentId
-                    ).length === 0 && (
+                    {filteredEmployees.length === 0 && (
                       <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                         لا يوجد موظفون في هذا القسم
                       </div>
