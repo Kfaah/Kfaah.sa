@@ -1915,7 +1915,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     }}
                     style={{ minWidth: DATES_TABLE_MIN_WIDTH }}
                   >
-                  <table className="w-full caption-bottom text-sm table-fixed">
+                  <table className="w-full caption-bottom text-base table-fixed">
                     <colgroup>
                       {DATES_TABLE_COLUMNS.map((column) => (
                         <col key={column.key} style={{ width: column.width }} />
