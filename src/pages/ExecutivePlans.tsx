@@ -2363,6 +2363,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     </TableCell>
                                   )}
                                   <TableCell
+                                    data-employee-row-target={firstAct?.employeeId || undefined}
                                     className={cn(
                                       "border-l border-gray-200 align-top py-2.5",
                                       isLastInDay && daySeparatorClass,
