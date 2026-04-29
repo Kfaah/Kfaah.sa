@@ -1868,18 +1868,14 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   </div>
                 </div>
                 <div
-                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset cursor-grab active:cursor-grabbing select-none"
-                  dir="ltr"
+                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset cursor-grab active:cursor-grabbing"
+                  dir="rtl"
                   tabIndex={0}
                   ref={(el) => {
                     datesTableScrollRef.current = el;
-                    if (el && !el.dataset.initialScrollDone) {
-                      el.dataset.initialScrollDone = "true";
-                      requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth - el.clientWidth; });
-                    }
                   }}
                   onPointerDown={(e) => {
-                    if (e.button !== 0 || (e.target as HTMLElement).closest("button,input,[role='combobox']")) return;
+                    if (e.button !== 0 || (e.target as HTMLElement).closest("button,input,[role='combobox'],[data-radix-popper-content-wrapper]")) return;
                     datesTableDragRef.current = { active: true, startX: e.clientX, scrollLeft: e.currentTarget.scrollLeft };
                     e.currentTarget.setPointerCapture(e.pointerId);
                   }}
@@ -1887,7 +1883,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     const drag = datesTableDragRef.current;
                     if (!drag.active) return;
                     e.preventDefault();
-                    e.currentTarget.scrollLeft = drag.scrollLeft - (e.clientX - drag.startX);
+                    e.currentTarget.scrollLeft = drag.scrollLeft + (e.clientX - drag.startX);
                   }}
                   onPointerUp={(e) => {
                     datesTableDragRef.current.active = false;
@@ -1910,7 +1906,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     }
                   }}
                 >
-                  <Table dir="rtl" className="min-w-max">
+                  <Table>
                     <TableHeader>
                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
                         {([
