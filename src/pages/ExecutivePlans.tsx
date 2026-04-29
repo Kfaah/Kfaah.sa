@@ -2309,7 +2309,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <div className="flex flex-col gap-1">
                                       {l.acts.map((act, i) => {
                                         const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
-                                        const panelOpen = expandedActivityPanels.has(act.id);
                                         return (
                                           <div key={`act-wrap-${act.id}`}>
                                           <div
@@ -2366,46 +2365,43 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               )}
                                             </div>
                                             {!isEditingThis && (
-                                              <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="h-6 w-6 shrink-0 hover:bg-[hsl(var(--primary)/0.1)]"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setExpandedActivityPanels((prev) => {
-                                                    const next = new Set(prev);
-                                                    if (next.has(act.id)) next.delete(act.id);
-                                                    else next.add(act.id);
-                                                    return next;
-                                                  });
-                                                }}
-                                                title="عرض المهام التابعة (قبل/أثناء/بعد) والموظفين ذوي العلاقة"
-                                              >
-                                                <ChevronDown
-                                                  className={cn(
-                                                    "w-3.5 h-3.5 text-[hsl(var(--primary))] transition-transform",
-                                                    panelOpen ? "rotate-180" : "-rotate-90"
-                                                  )}
-                                                />
-                                              </Button>
+                                              <ActivityPhasesPopover
+                                                executivePlanId={act.id}
+                                                responsibleEmployeeId={(act as any).employeeId ?? null}
+                                                responsibleEmployeeName={(act as any).employeeName ?? l.empName ?? "غير محدد"}
+                                                organizationId={activeOrgId}
+                                                activityName={act.activityName ?? ""}
+                                                activityDay={(act as any).day ?? l.day}
+                                                activityMonth={(act as any).month ?? monthGroup.month}
+                                                activityYear={selectedYear}
+                                              />
                                             )}
                                           </div>
-                                          {panelOpen && (
-                                            <ActivityRelatedPanel
-                                              executivePlanId={act.id}
-                                              responsibleEmployeeId={(act as any).employeeId ?? null}
-                                              responsibleEmployeeName={(act as any).employeeName ?? "غير محدد"}
-                                              organizationId={activeOrgId}
-                                              activityName={act.activityName ?? ""}
-                                              activityDay={(act as any).day ?? l.day}
-                                              activityMonth={(act as any).month ?? monthGroup.month}
-                                              activityYear={selectedYear}
-                                              open={panelOpen}
-                                            />
-                                          )}
                                           </div>
                                         );
                                       })}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="align-top py-2 border-r border-gray-200">
+                                    <div className="flex flex-col gap-2">
+                                      {l.acts.map((act) => (
+                                        <RelatedEmployeesCell
+                                          key={`rel-${act.id}`}
+                                          executivePlanId={act.id}
+                                          responsibleEmployeeId={(act as any).employeeId ?? null}
+                                          organizationId={activeOrgId}
+                                          activityName={act.activityName ?? ""}
+                                          activityDay={(act as any).day ?? l.day}
+                                          activityMonth={(act as any).month ?? monthGroup.month}
+                                          activityYear={selectedYear}
+                                          allEmployees={employees.map((e) => ({
+                                            id: e.id,
+                                            full_name: e.full_name,
+                                            job_title: (e as any).job_role ?? null,
+                                            department_name: e.department_name ?? null,
+                                          }))}
+                                        />
+                                      ))}
                                     </div>
                                   </TableCell>
                                   </>
