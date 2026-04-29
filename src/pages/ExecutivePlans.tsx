@@ -2293,7 +2293,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       ) : (
                                       <div className="flex items-center gap-2">
                                         <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
-                                        <span className="font-bold text-sm text-slate-800 truncate">{l.deptName}</span>
+                                        <span className="font-bold text-base text-slate-800 truncate">{l.deptName}</span>
                                         {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
                                       </div>
                                       )}
@@ -2337,7 +2337,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       ) : (
                                       <div className="flex items-center gap-1.5">
                                         <Target className="w-3.5 h-3.5 text-[hsl(var(--primary))] shrink-0" />
-                                        <span className="text-xs font-semibold text-slate-700 leading-snug">
+                                        <span className="text-sm font-semibold text-slate-700 leading-snug">
                                           {l.initName === "_no_init" ? <span className="text-slate-300">—</span> : l.initName}
                                         </span>
                                         {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
@@ -2382,7 +2382,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         </div>
                                       ) : (
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-xs font-semibold text-blue-900 leading-snug">
+                                        <span className="text-sm font-semibold text-blue-900 leading-snug">
                                           {l.subName === "_no_sub" ? <span className="text-slate-300">—</span> : l.subName}
                                         </span>
                                         {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
@@ -2429,7 +2429,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       isEditMode && "border-amber-300"
                                     )}>
                                       <User className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
-                                      <span className="font-semibold text-xs text-slate-800 truncate">{l.empName}</span>
+                                      <span className="font-semibold text-sm text-slate-800 truncate">{l.empName}</span>
                                       {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
                                     </div>
                                     )}
@@ -2442,7 +2442,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           <div key={`act-wrap-${act.id}`}>
                                           <div
                                             className={cn(
-                                              "flex items-start gap-2 px-2 py-1 rounded-md text-xs border text-slate-800 transition-all",
+                                              "flex items-start gap-2 px-2 py-1 rounded-md text-sm border text-slate-800 transition-all",
                                               isEditingThis
                                                 ? "bg-amber-50 border-amber-300 ring-1 ring-amber-200"
                                                 : isEditMode
