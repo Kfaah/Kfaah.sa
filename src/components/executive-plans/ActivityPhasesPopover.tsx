@@ -216,6 +216,24 @@ export function ActivityPhasesPopover({
       toast({ title: "اختر مسؤولاً عن المهمة", variant: "destructive" });
       return;
     }
+    // فرض الحدود الذكية على الإضافة اليدوية فقط
+    const phaseCount = tasks.filter((t) => t.phase === phase).length;
+    if (phaseCount >= MAX_PER_PHASE_MANUAL) {
+      toast({
+        title: "بلغت الحد الأقصى لهذه المرحلة",
+        description: `لا يُنصح بتجاوز ${MAX_PER_PHASE_MANUAL} مهام في المرحلة الواحدة. احذف مهمة أو ادمجها مع أخرى.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (tasks.length >= MAX_TOTAL_MANUAL) {
+      toast({
+        title: "بلغت الحد الأقصى الإجمالي",
+        description: `الحد الموصى به ${MAX_TOTAL_MANUAL} مهمة لكل نشاط. ركّز على الأهم.`,
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       const offset = phase === "during" ? 0 : newOffset;
       const { data: ins, error } = await supabase
