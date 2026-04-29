@@ -537,6 +537,17 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
   const stickyHeaderTop = embedded ? "52px" : "0px";
 
+  const focusEmployeeInExecutivePlans = (employeeId: string) => {
+    const employee = employees.find((e) => e.id === employeeId);
+    setFilterDepartmentId("all");
+    setSelectedEmployeeId(employeeId);
+    setExpandedDays(new Set());
+    toast({ title: "تم عرض الموظف", description: employee?.full_name ?? "تمت فلترة الجدول على الموظف المحدد" });
+    window.setTimeout(() => {
+      datesTableScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }, 120);
+  };
+
   // التحقق من صلاحية المدير
   useEffect(() => {
     const checkAdmin = async () => {
