@@ -460,6 +460,156 @@ export type Database = {
           },
         ]
       }
+      activity_related_employees: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          executive_plan_id: string
+          id: string
+          notes: string | null
+          organization_id: string | null
+          role_in_activity: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          executive_plan_id: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          role_in_activity?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          executive_plan_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          role_in_activity?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_related_employees_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_related_employees_executive_plan_id_fkey"
+            columns: ["executive_plan_id"]
+            isOneToOne: false
+            referencedRelation: "executive_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_related_employees_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_related_tasks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          day_offset: number
+          description: string | null
+          dispatched_task_id: string | null
+          display_order: number
+          employee_id: string
+          estimated_minutes: number
+          executive_plan_id: string
+          id: string
+          is_dispatched: boolean
+          organization_id: string | null
+          phase: string
+          priority: string
+          source: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          day_offset?: number
+          description?: string | null
+          dispatched_task_id?: string | null
+          display_order?: number
+          employee_id: string
+          estimated_minutes?: number
+          executive_plan_id: string
+          id?: string
+          is_dispatched?: boolean
+          organization_id?: string | null
+          phase: string
+          priority?: string
+          source?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          day_offset?: number
+          description?: string | null
+          dispatched_task_id?: string | null
+          display_order?: number
+          employee_id?: string
+          estimated_minutes?: number
+          executive_plan_id?: string
+          id?: string
+          is_dispatched?: boolean
+          organization_id?: string | null
+          phase?: string
+          priority?: string
+          source?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_related_tasks_dispatched_task_id_fkey"
+            columns: ["dispatched_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_related_tasks_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_related_tasks_executive_plan_id_fkey"
+            columns: ["executive_plan_id"]
+            isOneToOne: false
+            referencedRelation: "executive_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_related_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_ai_insights_cache: {
         Row: {
           created_at: string
@@ -3506,8 +3656,10 @@ export type Database = {
           executive_plan_id: string | null
           id: string
           organization_id: string | null
+          phase: string | null
           priority: string
           quality_percentage: number | null
+          source_activity_id: string | null
           started_at: string | null
           status: string
           title: string
@@ -3526,8 +3678,10 @@ export type Database = {
           executive_plan_id?: string | null
           id?: string
           organization_id?: string | null
+          phase?: string | null
           priority?: string
           quality_percentage?: number | null
+          source_activity_id?: string | null
           started_at?: string | null
           status?: string
           title: string
@@ -3546,8 +3700,10 @@ export type Database = {
           executive_plan_id?: string | null
           id?: string
           organization_id?: string | null
+          phase?: string | null
           priority?: string
           quality_percentage?: number | null
+          source_activity_id?: string | null
           started_at?: string | null
           status?: string
           title?: string
@@ -3567,6 +3723,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_source_activity_id_fkey"
+            columns: ["source_activity_id"]
+            isOneToOne: false
+            referencedRelation: "executive_plans"
             referencedColumns: ["id"]
           },
         ]
