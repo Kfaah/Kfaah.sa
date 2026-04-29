@@ -33,6 +33,10 @@ import { toast } from "@/hooks/use-toast";
 
 type Phase = "before" | "during" | "after";
 
+// حدود ذكية للمهام: لا تتجاوز الحدود إلا في حالات نادرة (المهام المُولَّدة بالذكاء الاصطناعي)
+const MAX_PER_PHASE_MANUAL = 4;
+const MAX_TOTAL_MANUAL = 12;
+
 interface EmployeeOption {
   id: string;
   full_name: string;
@@ -212,6 +216,24 @@ export function ActivityPhasesPopover({
       toast({ title: "اختر مسؤولاً عن المهمة", variant: "destructive" });
       return;
     }
+    // فرض الحدود الذكية على الإضافة اليدوية فقط
+    const phaseCount = tasks.filter((t) => t.phase === phase).length;
+    if (phaseCount >= MAX_PER_PHASE_MANUAL) {
+      toast({
+        title: "بلغت الحد الأقصى لهذه المرحلة",
+        description: `لا يُنصح بتجاوز ${MAX_PER_PHASE_MANUAL} مهام في المرحلة الواحدة. احذف مهمة أو ادمجها مع أخرى.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (tasks.length >= MAX_TOTAL_MANUAL) {
+      toast({
+        title: "بلغت الحد الأقصى الإجمالي",
+        description: `الحد الموصى به ${MAX_TOTAL_MANUAL} مهمة لكل نشاط. ركّز على الأهم.`,
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       const offset = phase === "during" ? 0 : newOffset;
       const { data: ins, error } = await supabase
@@ -373,31 +395,40 @@ export function ActivityPhasesPopover({
                 const meta = PHASE_META[phase];
                 const list = byPhase[phase];
                 const isAdding = addingPhase === phase;
+                const phaseFull = list.length >= MAX_PER_PHASE_MANUAL;
+                const totalFull = tasks.length >= MAX_TOTAL_MANUAL;
+                const cannotAdd = phaseFull || totalFull;
                 return (
                   <div key={phase} className={cn("rounded-xl border p-3 transition-all", meta.color)}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", meta.chip)}>{meta.label}</span>
                         <span className="text-xs text-slate-600 font-medium">
-                          {list.length} {list.length === 1 ? "مهمة" : "مهام"}
+                          {list.length} / {MAX_PER_PHASE_MANUAL} {list.length === 1 ? "مهمة" : "مهام"}
                         </span>
                         {!meta.allowDate && (
                           <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
                             بنفس يوم النشاط
                           </span>
                         )}
+                        {cannotAdd && (
+                          <span className="text-[10px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full font-medium">
+                            بلغت الحد الموصى به
+                          </span>
+                        )}
                       </div>
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 hover:bg-white/80 rounded-full"
+                        className="h-7 w-7 hover:bg-white/80 rounded-full disabled:opacity-40"
+                        disabled={cannotAdd && !isAdding}
+                        title={cannotAdd ? `لا يُنصح بتجاوز ${MAX_PER_PHASE_MANUAL} مهام لكل مرحلة، أو ${MAX_TOTAL_MANUAL} إجمالاً` : "إضافة مهمة"}
                         onClick={() => {
                           setAddingPhase(isAdding ? null : phase);
                           setNewTitle("");
                           setNewAssignee(responsibleEmployeeId ?? null);
                           setNewOffset(phase === "before" ? -1 : phase === "after" ? 1 : 0);
                         }}
-                        title="إضافة مهمة"
                       >
                         <Plus className="w-4 h-4 text-slate-700" />
                       </Button>
@@ -633,7 +664,7 @@ export function ActivityPhasesPopover({
 
               <div className="flex items-center justify-center gap-1 text-[9px] text-slate-400 pt-1.5 border-t border-slate-100">
                 <Zap className="w-2.5 h-2.5" />
-                كل بند يُرحَّل تلقائياً كمهمة في لوحة المسؤول المُختار
+                كل بند يُرحَّل تلقائياً للمسؤول • الحد الموصى به {MAX_PER_PHASE_MANUAL} لكل مرحلة و{MAX_TOTAL_MANUAL} إجمالاً
               </div>
             </div>
           )}
