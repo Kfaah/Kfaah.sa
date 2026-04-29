@@ -229,7 +229,7 @@ const AddTask = () => {
                   <SelectItem value="__all__">كل الأقسام</SelectItem>
                   {departments.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
-                      {d.name.replace(/^الإدارة العامة\s*[-–—]?\s*/, "").trim() || d.name}
+                      {cleanName(d.name)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -277,8 +277,8 @@ const AddTask = () => {
                       .map((emp) => (
                       <SelectItem key={emp.id} value={emp.user_id || emp.id}>
                         <div className="flex items-center gap-2">
-                          <span>{emp.full_name.replace(/^الإدارة العامة\s*[-–—]?\s*/, "").trim() || emp.full_name}</span>
-                          <span className="text-muted-foreground text-xs">({(emp.job_role || "").replace(/^الإدارة العامة\s*[-–—]?\s*/, "").trim() || emp.job_role})</span>
+                          <span>{cleanName(emp.full_name)}</span>
+                          <span className="text-muted-foreground text-xs">({cleanName(emp.job_role || "")})</span>
                         </div>
                       </SelectItem>
                     ))}
