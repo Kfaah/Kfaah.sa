@@ -982,6 +982,25 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames, employees]);
 
   useEffect(() => {
+    if (globalViewMode !== "dates" || groupedPlans.length === 0) return;
+
+    setExpandedMonths((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+
+      groupedPlans.forEach((monthGroup) => {
+        const key = `month-${monthGroup.month}`;
+        if (!next.has(key)) {
+          next.add(key);
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [groupedPlans, globalViewMode]);
+
+  useEffect(() => {
     if (globalViewMode !== "dates" || !activeOrgId) return;
     const activityIds = Array.from(new Set(
       groupedPlans.flatMap((month) => month.dateGroups.flatMap((day) => day.activities.map((activity) => activity.id)))
