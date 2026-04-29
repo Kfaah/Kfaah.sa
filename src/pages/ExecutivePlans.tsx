@@ -588,7 +588,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         }) ?? null;
       }
       if (executivePlanId) {
-        target = target ?? document.querySelector<HTMLElement>(`[data-activity-row-target="${executivePlanId}"]`);
+        const sameEmployeeActivity = document.querySelector<HTMLElement>(`[data-activity-row-target="${executivePlanId}"]`);
+        if (sameEmployeeActivity?.closest<HTMLElement>("tr")?.dataset.empAnchor === employeeId) {
+          target = target ?? sameEmployeeActivity;
+        }
       }
       // 2) وإلا، أول صف يعود لهذا الموظف
       if (!target) {
