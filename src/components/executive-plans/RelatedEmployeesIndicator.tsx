@@ -228,9 +228,16 @@ export function RelatedEmployeesIndicator({
     setOpen(false);
     requestAnimationFrame(() => {
       const sameActivity = normalizeAnchorValue(activityName);
+      const sameInitiative = normalizeAnchorValue(initiativeName);
+      const sameSub = normalizeAnchorValue(subInitiativeName);
       const allCandidates = Array.from(document.querySelectorAll<HTMLElement>(`[data-emp-anchor="${empId}"]`));
       const candidates = sameActivity
-        ? allCandidates.filter((el) => el.dataset.activityAnchor === sameActivity)
+        ? allCandidates.filter((el) => {
+            const matchesActivity = el.dataset.activityAnchor === sameActivity;
+            const matchesInitiative = !sameInitiative || el.dataset.initiativeAnchor === sameInitiative;
+            const matchesSub = !sameSub || sameSub === "—" || el.dataset.subAnchor === sameSub;
+            return matchesActivity && matchesInitiative && matchesSub;
+          })
         : allCandidates;
       const pool = candidates.length > 0 ? candidates : allCandidates;
       if (pool.length === 0) {
