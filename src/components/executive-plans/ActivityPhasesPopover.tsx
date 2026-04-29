@@ -259,20 +259,21 @@ export function ActivityPhasesPopover({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          size="icon"
+          size="sm"
           variant="ghost"
-          className="h-6 w-6 shrink-0 hover:bg-[hsl(var(--primary)/0.1)] relative"
+          className="h-7 px-2 shrink-0 hover:bg-[hsl(var(--primary)/0.1)] relative gap-1 border border-[hsl(var(--primary)/0.2)] rounded-md"
           title="مهام (قبل/أثناء/بعد) للموظف الأساسي"
           onClick={(e) => e.stopPropagation()}
         >
+          <span className="text-[10px] font-bold text-[hsl(var(--primary))]">مراحل</span>
           <ChevronDown
             className={cn(
-              "w-3.5 h-3.5 text-[hsl(var(--primary))] transition-transform",
+              "w-3 h-3 text-[hsl(var(--primary))] transition-transform",
               open && "rotate-180"
             )}
           />
           {totalCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[hsl(var(--primary))] text-white text-[8px] font-bold flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[hsl(var(--primary))] text-white text-[9px] font-bold flex items-center justify-center shadow-sm">
               {totalCount}
             </span>
           )}
