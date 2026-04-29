@@ -395,31 +395,40 @@ export function ActivityPhasesPopover({
                 const meta = PHASE_META[phase];
                 const list = byPhase[phase];
                 const isAdding = addingPhase === phase;
+                const phaseFull = list.length >= MAX_PER_PHASE_MANUAL;
+                const totalFull = tasks.length >= MAX_TOTAL_MANUAL;
+                const cannotAdd = phaseFull || totalFull;
                 return (
                   <div key={phase} className={cn("rounded-xl border p-3 transition-all", meta.color)}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", meta.chip)}>{meta.label}</span>
                         <span className="text-xs text-slate-600 font-medium">
-                          {list.length} {list.length === 1 ? "مهمة" : "مهام"}
+                          {list.length} / {MAX_PER_PHASE_MANUAL} {list.length === 1 ? "مهمة" : "مهام"}
                         </span>
                         {!meta.allowDate && (
                           <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
                             بنفس يوم النشاط
                           </span>
                         )}
+                        {cannotAdd && (
+                          <span className="text-[10px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full font-medium">
+                            بلغت الحد الموصى به
+                          </span>
+                        )}
                       </div>
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 hover:bg-white/80 rounded-full"
+                        className="h-7 w-7 hover:bg-white/80 rounded-full disabled:opacity-40"
+                        disabled={cannotAdd && !isAdding}
+                        title={cannotAdd ? `لا يُنصح بتجاوز ${MAX_PER_PHASE_MANUAL} مهام لكل مرحلة، أو ${MAX_TOTAL_MANUAL} إجمالاً` : "إضافة مهمة"}
                         onClick={() => {
                           setAddingPhase(isAdding ? null : phase);
                           setNewTitle("");
                           setNewAssignee(responsibleEmployeeId ?? null);
                           setNewOffset(phase === "before" ? -1 : phase === "after" ? 1 : 0);
                         }}
-                        title="إضافة مهمة"
                       >
                         <Plus className="w-4 h-4 text-slate-700" />
                       </Button>
