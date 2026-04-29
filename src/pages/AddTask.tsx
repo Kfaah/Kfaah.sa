@@ -215,6 +215,7 @@ const AddTask = () => {
               </div>
               <Select
                 value={selectedDepartmentId}
+                dir="rtl"
                 onValueChange={(v) => {
                   setSelectedDepartmentId(v);
                   // امسح اختيار المنفذ إذا لم يعد ضمن القسم الجديد
@@ -228,7 +229,7 @@ const AddTask = () => {
                   <SelectItem value="__all__">كل الأقسام</SelectItem>
                   {departments.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
-                      {d.name}
+                      {d.name.replace(/^الإدارة العامة\s*[-–—]?\s*/, "").trim() || d.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -252,6 +253,7 @@ const AddTask = () => {
               ) : (
                 <Select
                   value={form.user_id}
+                  dir="rtl"
                   onValueChange={(v) => {
                     setForm((prev) => ({ ...prev, user_id: v }));
                     if (errors.user_id) setErrors((prev) => ({ ...prev, user_id: "" }));
@@ -275,8 +277,8 @@ const AddTask = () => {
                       .map((emp) => (
                       <SelectItem key={emp.id} value={emp.user_id || emp.id}>
                         <div className="flex items-center gap-2">
-                          <span>{emp.full_name}</span>
-                          <span className="text-muted-foreground text-xs">({emp.job_role})</span>
+                          <span>{emp.full_name.replace(/^الإدارة العامة\s*[-–—]?\s*/, "").trim() || emp.full_name}</span>
+                          <span className="text-muted-foreground text-xs">({(emp.job_role || "").replace(/^الإدارة العامة\s*[-–—]?\s*/, "").trim() || emp.job_role})</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -329,6 +331,7 @@ const AddTask = () => {
                 </div>
                 <Select
                   value={form.priority}
+                  dir="rtl"
                   onValueChange={(v: "low" | "medium" | "high") =>
                     setForm((prev) => ({ ...prev, priority: v }))
                   }
