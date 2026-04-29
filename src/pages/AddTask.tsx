@@ -117,6 +117,7 @@ const AddTask = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoadingEmployees(true);
         let employeesQuery = supabase
           .from("employees")
           .select("id, full_name, user_id, job_role, department_id")
@@ -138,6 +139,7 @@ const AddTask = () => {
         if (depErr) throw depErr;
         setEmployees(empData || []);
         setDepartments(depData || []);
+        setSelectedDepartmentId("");
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
