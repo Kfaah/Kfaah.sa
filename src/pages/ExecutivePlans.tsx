@@ -1841,64 +1841,67 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
               <Card className="overflow-hidden">
+                <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-sm" dir="rtl">
+                  <div className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--foreground))]">
+                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--primary))]" />
+                    <span>اسحب الجدول يمينًا ويسارًا أو استخدم أزرار التنقل</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" className="h-9 gap-2" onClick={() => scrollDatesTable("start")} title="بداية الجدول">
+                      <ArrowRight className="w-4 h-4" /> البداية
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-10" onClick={() => scrollDatesTable("right")} title="تحريك لليمين">
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-10" onClick={() => scrollDatesTable("left")} title="تحريك لليسار">
+                      <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-9 gap-2" onClick={() => scrollDatesTable("end")} title="نهاية الجدول">
+                      النهاية <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
                 <div
-                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
-                  dir="rtl"
+                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset cursor-grab active:cursor-grabbing select-none"
+                  dir="ltr"
                   tabIndex={0}
-                  ref={(el) => { if (el) (window as any).__execPlansScroller = el; }}
+                  ref={(el) => {
+                    datesTableScrollRef.current = el;
+                    if (el) requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth - el.clientWidth; });
+                  }}
+                  onPointerDown={(e) => {
+                    if (e.button !== 0 || (e.target as HTMLElement).closest("button,input,[role='combobox']")) return;
+                    datesTableDragRef.current = { active: true, startX: e.clientX, scrollLeft: e.currentTarget.scrollLeft };
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  }}
+                  onPointerMove={(e) => {
+                    const drag = datesTableDragRef.current;
+                    if (!drag.active) return;
+                    e.preventDefault();
+                    e.currentTarget.scrollLeft = drag.scrollLeft - (e.clientX - drag.startX);
+                  }}
+                  onPointerUp={(e) => {
+                    datesTableDragRef.current.active = false;
+                    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+                  }}
+                  onPointerCancel={() => { datesTableDragRef.current.active = false; }}
                   onKeyDown={(e) => {
-                    const el = e.currentTarget;
-                    const step = e.shiftKey ? el.clientWidth * 0.9 : 200;
-                    // In RTL, ArrowRight scrolls content rightward (toward visual right = lower scrollLeft in RTL)
                     if (e.key === "ArrowLeft") {
                       e.preventDefault();
-                      el.scrollBy({ left: -step, behavior: "smooth" });
+                      scrollDatesTable(e.shiftKey ? "end" : "left");
                     } else if (e.key === "ArrowRight") {
                       e.preventDefault();
-                      el.scrollBy({ left: step, behavior: "smooth" });
+                      scrollDatesTable(e.shiftKey ? "start" : "right");
                     } else if (e.key === "Home") {
                       e.preventDefault();
-                      el.scrollTo({ left: 0, behavior: "smooth" });
+                      scrollDatesTable("start");
                     } else if (e.key === "End") {
                       e.preventDefault();
-                      el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+                      scrollDatesTable("end");
                     }
                   }}
                 >
-                  <div className="sticky top-0 z-20 flex items-center justify-between gap-2 px-3 py-1.5 bg-[hsl(var(--primary)/0.05)] border-b border-[hsl(var(--primary)/0.15)] text-[11px] text-slate-600">
-                    <span className="flex items-center gap-2">
-                      <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px] shadow-sm">←</kbd>
-                      <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px] shadow-sm">→</kbd>
-                      <span>للتنقل أفقيًا في الجدول (Shift للتنقل السريع)</span>
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6"
-                        title="تمرير لليمين"
-                        onClick={(ev) => {
-                          const sc = (ev.currentTarget.closest("[tabindex]") as HTMLElement) ?? null;
-                          if (sc) sc.scrollBy({ left: 300, behavior: "smooth" });
-                        }}
-                      >
-                        <ChevronDown className="w-3.5 h-3.5 rotate-90" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6"
-                        title="تمرير لليسار"
-                        onClick={(ev) => {
-                          const sc = (ev.currentTarget.closest("[tabindex]") as HTMLElement) ?? null;
-                          if (sc) sc.scrollBy({ left: -300, behavior: "smooth" });
-                        }}
-                      >
-                        <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
-                      </Button>
-                    </div>
-                  </div>
-                  <Table>
+                  <Table dir="rtl" className="min-w-max">
                     <TableHeader>
                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
                         {([
