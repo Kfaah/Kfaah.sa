@@ -664,7 +664,7 @@ export function ActivityPhasesPopover({
 
               <div className="flex items-center justify-center gap-1 text-[9px] text-slate-400 pt-1.5 border-t border-slate-100">
                 <Zap className="w-2.5 h-2.5" />
-                كل بند يُرحَّل تلقائياً كمهمة في لوحة المسؤول المُختار
+                كل بند يُرحَّل تلقائياً للمسؤول • الحد الموصى به {MAX_PER_PHASE_MANUAL} لكل مرحلة و{MAX_TOTAL_MANUAL} إجمالاً
               </div>
             </div>
           )}
