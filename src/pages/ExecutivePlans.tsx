@@ -513,27 +513,20 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [addingMonth, setAddingMonth] = useState<number>(1);
   const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
-  const datesTableDragRef = React.useRef({ active: false, startX: 0, scrollLeft: 0 });
+  const datesTopScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const datesTableInnerRef = React.useRef<HTMLDivElement | null>(null);
+  const syncingDatesScrollRef = React.useRef(false);
   const phasePreloadStartedRef = React.useRef<Set<string>>(new Set());
   const [preparingPhaseIds, setPreparingPhaseIds] = useState<Set<string>>(new Set());
 
-  const scrollDatesTable = (direction: "left" | "right" | "start" | "end") => {
-    const el = datesTableScrollRef.current;
-    if (!el) return;
-    const max = Math.max(0, el.scrollWidth - el.clientWidth);
-    const step = Math.max(520, Math.floor(el.clientWidth * 0.72));
-    if (direction === "start") {
-      el.scrollTo({ left: 0, behavior: "smooth" });
-      return;
-    }
-    if (direction === "end") {
-      el.scrollTo({ left: -max, behavior: "smooth" });
-      requestAnimationFrame(() => {
-        if (Math.abs(el.scrollLeft) < 2) el.scrollTo({ left: max, behavior: "smooth" });
-      });
-      return;
-    }
-    el.scrollBy({ left: direction === "left" ? -step : step, behavior: "smooth" });
+  const syncDatesHorizontalScroll = (source: "top" | "table") => {
+    const top = datesTopScrollRef.current;
+    const table = datesTableScrollRef.current;
+    if (!top || !table || syncingDatesScrollRef.current) return;
+    syncingDatesScrollRef.current = true;
+    if (source === "top") table.scrollLeft = top.scrollLeft;
+    else top.scrollLeft = table.scrollLeft;
+    requestAnimationFrame(() => { syncingDatesScrollRef.current = false; });
   };
 
   // التحقق من صلاحية المدير
