@@ -21,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -1915,7 +1914,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     }}
                     style={{ minWidth: DATES_TABLE_MIN_WIDTH }}
                   >
-                  <Table className="table-fixed">
+                  <table className="w-full caption-bottom text-sm table-fixed">
                     <colgroup>
                       {DATES_TABLE_COLUMNS.map((column) => (
                         <col key={column.key} style={{ width: column.width }} />
@@ -2543,7 +2542,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                         );
                       })}
                     </TableBody>
-                  </Table>
+                  </table>
                 </div>
                 </div>
               </Card>
@@ -2554,7 +2553,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {globalViewMode === "tasks" && (
               <Card className="overflow-hidden">
                  <div className="overflow-x-auto" dir="rtl">
-                   <Table>
+                   <table className="w-full caption-bottom text-sm">
                      <TableHeader className="sticky top-0 z-20">
                        <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-0 [&>th]:bg-[hsl(var(--primary))] [&>th]:z-20">
                         <TableHead className="text-right font-bold text-white min-w-[120px] border-l border-white/20">
@@ -2718,7 +2717,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                         );
                       })}
                     </TableBody>
-                  </Table>
+                  </table>
                 </div>
               </Card>
             )}
