@@ -43,6 +43,19 @@ interface Department {
   name: string;
 }
 
+// إزالة كل تكرارات "الإدارة العامة" والفواصل الزائدة من الاسم
+const cleanName = (raw: string): string => {
+  if (!raw) return raw;
+  let s = raw;
+  // أزل كل تكرارات "الإدارة العامة" مع الفواصل المحتملة قبلها/بعدها
+  s = s.replace(/(?:\s*[-–—|/،,]\s*)?الإدارة\s+العامة(?:\s*[-–—|/،,]\s*)?/g, " ");
+  // وحّد المسافات
+  s = s.replace(/\s+/g, " ").trim();
+  // نظّف فواصل متبقية في الأطراف
+  s = s.replace(/^[-–—|/،,\s]+|[-–—|/،,\s]+$/g, "").trim();
+  return s || raw;
+};
+
 const AddTask = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
