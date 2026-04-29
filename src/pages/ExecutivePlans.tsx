@@ -1823,7 +1823,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
 
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
-              <Card className="overflow-hidden rounded-2xl border-[hsl(var(--primary)/0.25)] shadow-sm">
+              <Card className="overflow-hidden rounded-2xl border-x-[4px] border-y border-[hsl(var(--primary)/0.55)] shadow-sm">
                 <div
                   className="max-h-[calc(100vh-160px)] overflow-auto scrollbar-none outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
                   dir="rtl"
