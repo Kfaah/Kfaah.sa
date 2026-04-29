@@ -2074,20 +2074,17 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   className={cn(
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
-                                    // فاصل بين الأشهر — عريض على أول صف من شهر جديد
-                                    idx === 0 && monthIdx > 0 ? "[&>td]:shadow-[inset_0_4px_0_0_hsl(var(--primary)/0.6)]" : "",
-                                    // فاصل بين الأيام — نفس العرض داخل الشهر الواحد
-                                    showDay && idx > 0 ? "[&>td]:shadow-[inset_0_4px_0_0_hsl(var(--primary)/0.6)]" : "",
-                                    // فاصل بين الأقسام — عريض بنفس العرض، يُطبَّق على أول صف من قسم جديد (ولم يُطبَّق فاصل اليوم/الشهر بالفعل)
+                                    // فاصل موحّد على الصف نفسه حتى يمر كخط واحد مستقيم عبر الخلايا الممتدة
+                                    idx === 0 && monthIdx > 0 ? "border-t-[3px] border-t-[hsl(var(--primary)/0.55)]" : "",
+                                    showDay && idx > 0 ? "border-t-[3px] border-t-[hsl(var(--primary)/0.55)]" : "",
                                     !l.collapsed && isFirstInDept && idx > 0 && !showDay
-                                      ? "[&>td]:shadow-[inset_0_4px_0_0_hsl(var(--primary)/0.6)]"
+                                      ? "border-t-[3px] border-t-[hsl(var(--primary)/0.55)]"
                                       : "",
-                                    // فواصل المبادرات والمبادرات الفرعية — أخف
                                     !l.collapsed && isFirstInInit && idx > 0 && !isFirstInDept && !showDay
-                                      ? "[&>td]:shadow-[inset_0_2px_0_0_hsl(var(--primary)/0.35)]"
+                                      ? "border-t-2 border-t-[hsl(var(--primary)/0.35)]"
                                       : "",
                                     !l.collapsed && isFirstInSub && idx > 0 && !isFirstInInit && !isFirstInDept && !showDay
-                                      ? "[&>td]:shadow-[inset_0_1px_0_0_hsl(var(--primary)/0.18)]"
+                                      ? "border-t border-t-[hsl(var(--primary)/0.18)]"
                                       : "",
                                   )}
                                 >
