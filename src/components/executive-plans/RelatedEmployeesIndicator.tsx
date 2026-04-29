@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Popover,
@@ -67,9 +66,6 @@ export function RelatedEmployeesIndicator({
   const [addRole, setAddRole] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [autoGenerating, setAutoGenerating] = useState(false);
-  const [navigatingEmpId, setNavigatingEmpId] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const { slug } = useParams<{ slug?: string }>();
 
   useEffect(() => {
     void initialize();
@@ -249,66 +245,7 @@ export function RelatedEmployeesIndicator({
   }
 
   function navigateToEmployee(empId: string) {
-    void goToDerivedTask(empId);
-  }
-
-  /**
-   * ينقل المستخدم إلى المهمة المُشتقّة الخاصة بهذا الموظف لهذا النشاط
-   * (مثلاً مهمة "توثيق دورات تدريب مهني" الخاصة بالموثق الإعلامي).
-   * إذا لم تكن المهمة قد رُحِّلت بعد، نُرحّلها أولاً ثم ننتقل.
-   */
-  async function goToDerivedTask(empId: string) {
-    if (navigatingEmpId) return;
-    setNavigatingEmpId(empId);
-    try {
-      // 1) ابحث عن مهمة مُرحَّلة سابقاً لهذا الموظف ضمن هذا النشاط
-      let taskId = await findDispatchedTaskId(empId);
-
-      // 2) إن لم توجد، رحّل المهام لهذا الموظف ثم أعد البحث
-      if (!taskId) {
-        await dispatchTasksForEmp(empId);
-        taskId = await findDispatchedTaskId(empId);
-      }
-
-      if (!taskId) {
-        toast({
-          title: "لا توجد مهمة مرتبطة بعد",
-          description: "تعذّر العثور على مهمة مُشتقّة لهذا الموظف ضمن هذا النشاط.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setOpen(false);
-      const path = slug ? `/${slug}/tasks/${taskId}` : `/tasks/${taskId}`;
-      navigate(path);
-    } catch (e: any) {
-      console.error("goToDerivedTask", e);
-      toast({ title: "تعذّر الانتقال إلى المهمة", description: e.message, variant: "destructive" });
-    } finally {
-      setNavigatingEmpId(null);
-    }
-  }
-
-  async function findDispatchedTaskId(empId: string): Promise<string | null> {
-    // اجلب user_id للموظف
-    const { data: emp } = await supabase
-      .from("employees")
-      .select("user_id")
-      .eq("id", empId)
-      .maybeSingle();
-    if (!emp?.user_id) return null;
-
-    // ابحث عن مهمة في tasks تخص هذا الموظف ومرتبطة بهذا النشاط
-    const { data: t } = await supabase
-      .from("tasks")
-      .select("id")
-      .eq("executive_plan_id", executivePlanId)
-      .eq("user_id", emp.user_id)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    return t?.id ?? null;
+    legacyFocusInTable(empId);
   }
 
   function legacyFocusInTable(empId: string) {
