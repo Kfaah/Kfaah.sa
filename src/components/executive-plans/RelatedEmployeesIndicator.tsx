@@ -47,6 +47,7 @@ export function RelatedEmployeesIndicator({
   executivePlanId,
   responsibleEmployeeId,
   organizationId,
+  activityName,
   activityDay,
   activityMonth,
   activityYear,
@@ -58,7 +59,6 @@ export function RelatedEmployeesIndicator({
   const [addEmpId, setAddEmpId] = useState("");
   const [addRole, setAddRole] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
-  const generatedRef = useRef(false);
   const [autoGenerating, setAutoGenerating] = useState(false);
 
   useEffect(() => {
@@ -76,20 +76,6 @@ export function RelatedEmployeesIndicator({
       if (error) throw error;
       const rowsData = (data ?? []) as RelatedRow[];
       setRows(rowsData);
-      if (rowsData.length === 0 && responsibleEmployeeId && !generatedRef.current) {
-        generatedRef.current = true;
-        setAutoGenerating(true);
-        try {
-          await supabase.functions.invoke("generate-related-tasks", {
-            body: { executive_plan_id: executivePlanId },
-          });
-          await load();
-        } catch (e) {
-          console.error("auto-gen related employees", e);
-        } finally {
-          setAutoGenerating(false);
-        }
-      }
     } catch (e: any) {
       console.error(e);
     } finally {
@@ -210,14 +196,40 @@ export function RelatedEmployeesIndicator({
     }
   }
 
+  async function handleGenerateRelations() {
+    setAutoGenerating(true);
+    try {
+      const { error } = await supabase.functions.invoke("generate-related-tasks", {
+        body: { executive_plan_id: executivePlanId },
+      });
+      if (error) throw error;
+      await load();
+    } catch (e: any) {
+      toast({ title: "تعذّر توليد العلاقات", description: e.message, variant: "destructive" });
+    } finally {
+      setAutoGenerating(false);
+    }
+  }
+
+  function normalizeAnchorValue(value: unknown): string {
+    return String(value ?? "")
+      .trim()
+      .replace(/[\u064B-\u065F\u0670]/g, "")
+      .replace(/ـ/g, "")
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+  }
+
   function navigateToEmployee(empId: string) {
     setOpen(false);
-    // ابحث عن أقرب صف في الجدول لهذا الموظف وانتقل إليه مع إبراز
     requestAnimationFrame(() => {
-      const candidates = document.querySelectorAll<HTMLElement>(
-        `[data-emp-anchor="${empId}"]`,
-      );
-      if (candidates.length === 0) {
+      const sameActivity = normalizeAnchorValue(activityName);
+      const allCandidates = Array.from(document.querySelectorAll<HTMLElement>(`[data-emp-anchor="${empId}"]`));
+      const candidates = sameActivity
+        ? allCandidates.filter((el) => el.dataset.activityAnchor === sameActivity)
+        : allCandidates;
+      const pool = candidates.length > 0 ? candidates : allCandidates;
+      if (pool.length === 0) {
         toast({
           title: "لم يُعثر على صفّ هذا الموظف",
           description: "قد لا يكون له نشاط في الفترة المعروضة حالياً.",
@@ -225,7 +237,7 @@ export function RelatedEmployeesIndicator({
         });
         return;
       }
-      const target = candidates[0];
+      const target = pool[0];
       target.scrollIntoView({ behavior: "smooth", block: "center" });
       target.classList.add("ring-2", "ring-amber-400", "ring-offset-2", "transition-shadow");
       window.setTimeout(() => {
