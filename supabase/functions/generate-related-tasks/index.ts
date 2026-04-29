@@ -314,6 +314,14 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
                         additionalProperties: false,
                       },
                     },
+                    justify_exceeding_limits: {
+                      type: "boolean",
+                      description: "اضبطه true فقط إذا كان النشاط يستوجب فعلاً تجاوز 12 مهمة إجمالاً أو 4 مهام لكل مرحلة. وإلا اتركه false.",
+                    },
+                    exceed_reason: {
+                      type: "string",
+                      description: "سبب مقنع ومحدد للتجاوز (مطلوب عند justify_exceeding_limits=true).",
+                    },
                   },
                   required: ["tasks", "suggested_related_employees"],
                   additionalProperties: false,
