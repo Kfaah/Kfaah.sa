@@ -268,6 +268,9 @@ export function ActivityPhasesPopover({
           onClick={(e) => e.stopPropagation()}
         >
           <span className="text-[10px] font-bold text-[hsl(var(--primary))]">مراحل</span>
+          {isPreparing && totalCount === 0 && (
+            <Loader2 className="w-3 h-3 text-[hsl(var(--primary))] animate-spin" />
+          )}
           <ChevronDown
             className={cn(
               "w-3 h-3 text-[hsl(var(--primary))] transition-transform",
@@ -300,10 +303,10 @@ export function ActivityPhasesPopover({
                 <div className="text-xs text-white/85 truncate leading-tight mt-0.5">{activityName}</div>
               </div>
             </div>
-            {generating ? (
+            {generating || isPreparing ? (
               <Badge className="bg-white/25 text-white border-0 text-[11px] gap-1 backdrop-blur shrink-0 px-2 py-1">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                توليد ذكي...
+                تجهيز...
               </Badge>
             ) : totalCount > 0 ? (
               <Badge className="bg-white/25 text-white border-0 text-[11px] gap-1 backdrop-blur shrink-0 px-2 py-1">
