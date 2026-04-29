@@ -1509,45 +1509,72 @@ const Tasks = ({ embedded = false }: TasksProps) => {
 
         {/* نافذة توليد المهام بالذكاء الاصطناعي */}
         <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                توليد مهام الشهر تلقائياً
+                توليد المهام بالذكاء الاصطناعي
               </DialogTitle>
             </DialogHeader>
             
             <div className="space-y-6 mt-4">
-              <div className="p-4 bg-accent/10 rounded-xl border border-accent/30">
-                <div className="flex items-center gap-3 mb-2">
+              <div className="p-5 bg-gradient-to-br from-accent/10 via-primary/5 to-accent/10 rounded-xl border border-accent/30">
+                <div className="flex items-center gap-3 mb-3">
                   <Brain className="w-6 h-6 text-accent" />
-                  <h4 className="font-semibold text-foreground">التوليد التلقائي</h4>
+                  <h4 className="font-semibold text-foreground text-base">محرك تخطيط ذكي وعميق</h4>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  سيقوم الذكاء الاصطناعي بتوليد مهام تفصيلية لجميع الأنشطة في الخطط التنفيذية للشهر المحدد.
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                  يحلّل الذكاء الاصطناعي بعمق <strong className="text-foreground">الخطط التشغيلية والتنفيذية</strong>،
+                  وملفات كل موظف، وتخصصه الوظيفي، ودوره داخل الجمعية، ليولّد له مهاماً يومية
+                  دقيقة ومنبثقة فعلياً من خططه — وليست مهاماً عامة.
                 </p>
+                <ul className="text-xs text-muted-foreground space-y-1.5 pr-4">
+                  <li>• <strong className="text-foreground">5 إلى 7 مهام يومياً</strong> لكل موظف، تتقلّص إلى 3-4 إذا كانت كثيفة الوقت.</li>
+                  <li>• مراعاة <strong className="text-foreground">ساعات عمل الموظف</strong> وتقدير وقت كل مهمة بالدقائق.</li>
+                  <li>• ربط كل مهمة بـ<strong className="text-foreground">الخطة التنفيذية والهدف الاستراتيجي</strong> الصحيح.</li>
+                  <li>• توليد متخصص حسب <strong className="text-foreground">الدور الوظيفي وإمكانيات</strong> كل موظف.</li>
+                </ul>
               </div>
               
-              {/* اختيار الشهر */}
-              <div className="space-y-2">
-                <label className="font-semibold text-foreground">اختر الشهر</label>
-                <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="اختر الشهر" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    {MONTHS_AR.map((monthName, index) => (
-                      <SelectItem key={index + 1} value={String(index + 1)}>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-accent" />
-                          <span>{monthName}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* اختيار الشهر والسنة */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="font-semibold text-foreground">الشهر</label>
+                  <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="اختر الشهر" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      {MONTHS_AR.map((monthName, index) => (
+                        <SelectItem key={index + 1} value={String(index + 1)}>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-accent" />
+                            <span>{monthName}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="font-semibold text-foreground">السنة</label>
+                  <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                        <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 leading-relaxed">
+                ⏳ التوليد العميق قد يستغرق <strong>1-3 دقائق</strong> حسب عدد الموظفين والخطط. سيتم استبدال أي مهام مولّدة سابقاً للشهر نفسه.
               </div>
 
               {/* عرض التقدم */}
@@ -1569,12 +1596,12 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    جاري توليد المهام...
+                    جاري التوليد العميق...
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    توليد مهام {MONTHS_AR[selectedMonth - 1]} كاملاً
+                    توليد مهام {MONTHS_AR[selectedMonth - 1]} {selectedYear}
                   </>
                 )}
               </Button>
