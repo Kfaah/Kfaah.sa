@@ -140,6 +140,17 @@ const MONTHS_AR = [
 
 const WEEKDAYS_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
+const DATES_TABLE_COLUMNS = [
+  { key: "month", width: "110px" },
+  { key: "date", width: "160px" },
+  { key: "department", width: "170px" },
+  { key: "initiative", width: "180px" },
+  { key: "subInitiative", width: "170px" },
+  { key: "employee", width: "170px" },
+  { key: "activities", width: "280px" },
+  { key: "relatedEmployees", width: "200px" },
+] as const;
+
 const QUERY_CHUNK_SIZE = 80;
 
 function chunkArray<T>(items: T[], size = QUERY_CHUNK_SIZE): T[][] {
