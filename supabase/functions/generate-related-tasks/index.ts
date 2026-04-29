@@ -17,7 +17,14 @@ Deno.serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { executive_plan_id } = await req.json();
+    let body: any = {};
+    try {
+      const txt = await req.text();
+      body = txt ? JSON.parse(txt) : {};
+    } catch (_) {
+      body = {};
+    }
+    const { executive_plan_id } = body;
     if (!executive_plan_id) {
       return new Response(JSON.stringify({ error: "executive_plan_id required" }), {
         status: 400,
