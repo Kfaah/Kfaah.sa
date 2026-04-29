@@ -43,6 +43,7 @@ interface Props {
   activityMonth: number;
   activityYear: number;
   allEmployees: Employee[];
+  onNavigateToEmployee?: (employeeId: string) => void;
 }
 
 export function RelatedEmployeesIndicator({
@@ -56,6 +57,7 @@ export function RelatedEmployeesIndicator({
   activityMonth,
   activityYear,
   allEmployees,
+  onNavigateToEmployee,
 }: Props) {
   const [rows, setRows] = useState<RelatedRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -244,6 +246,10 @@ export function RelatedEmployeesIndicator({
 
   function navigateToEmployee(empId: string) {
     setOpen(false);
+    if (onNavigateToEmployee) {
+      onNavigateToEmployee(empId);
+      return;
+    }
     window.setTimeout(() => {
       const pool = Array.from(document.querySelectorAll<HTMLElement>("[data-employee-target]"))
         .filter((el) => el.dataset.employeeTarget === empId && isVisibleTarget(el));
