@@ -1827,6 +1827,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 <div
                   className="max-h-[calc(100vh-160px)] overflow-auto scrollbar-none outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
                   dir="rtl"
+                  data-executive-plans-scroll
                   tabIndex={0}
                   ref={(el) => {
                     datesTableScrollRef.current = el;
@@ -2398,10 +2399,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         </Button>
                                       </div>
                                     ) : (
-                                    <div className={cn(
+                                    <div
+                                      data-employee-target={firstAct?.employeeId || undefined}
+                                      className={cn(
                                       "flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200",
                                       isEditMode && "border-amber-300"
-                                    )}>
+                                    )}
+                                    >
                                       <User className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
                                       <span className="font-semibold text-sm text-slate-800 truncate">{l.empName}</span>
                                       {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
