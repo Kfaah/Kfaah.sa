@@ -1824,15 +1824,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
               <Card className="overflow-visible">
-                <div className="sticky z-40 border-x border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-md" style={{ top: stickyHeaderTop }} dir="rtl">
-                  <div
-                    ref={datesTopScrollRef}
-                    className="h-5 overflow-x-auto overflow-y-hidden rounded-md bg-[hsl(var(--muted)/0.45)]"
-                    onScroll={() => syncDatesHorizontalScroll("top")}
-                  >
-                      <div style={{ width: datesTableWidth, minWidth: DATES_TABLE_MIN_WIDTH, height: 1 }} />
-                  </div>
-                </div>
                 <div
                   className="max-h-[calc(100vh-160px)] overflow-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
                   dir="rtl"
@@ -1840,7 +1831,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   ref={(el) => {
                     datesTableScrollRef.current = el;
                   }}
-                  onScroll={() => syncDatesHorizontalScroll("table")}
                   onKeyDown={(e) => {
                     const step = e.shiftKey ? e.currentTarget.clientWidth * 0.9 : 260;
                     if (e.key === "ArrowLeft") {
@@ -1859,10 +1849,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   }}
                 >
                   <div
-                    ref={(el) => {
-                      datesTableInnerRef.current = el;
-                      if (el) requestAnimationFrame(() => setDatesTableWidth(Math.max(el.scrollWidth, el.clientWidth, DATES_TABLE_MIN_WIDTH)));
-                    }}
                     style={{ minWidth: DATES_TABLE_MIN_WIDTH }}
                   >
                   <table className="w-full caption-bottom text-base table-fixed">
