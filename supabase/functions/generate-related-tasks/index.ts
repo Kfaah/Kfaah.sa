@@ -32,7 +32,7 @@ serve(async (req) => {
     const { data: ep, error: epErr } = await admin
       .from("executive_plans")
       .select(
-        "id, day, organization_id, operational_plan_month_id, operational_plan_months!inner(month, operational_plan_id, operational_plans!inner(id, activity_name, strategic_goal, initiative, sub_initiative, responsible_employee_id, year))"
+        "id, day, daily_target, notes, organization_id, operational_plan_month_id, operational_plan_months!inner(month, monthly_target, operational_plan_id, operational_plans!inner(id, activity_name, strategic_goal, initiative, sub_initiative, responsible_employee_id, year, annual_target, plan_name, estimated_budget))"
       )
       .eq("id", executive_plan_id)
       .maybeSingle();
@@ -41,12 +41,32 @@ serve(async (req) => {
     const opm: any = (ep as any).operational_plan_months;
     const op: any = opm?.operational_plans;
     const responsibleEmpId: string | null = op?.responsible_employee_id ?? null;
+    const orgId: string = (ep as any).organization_id;
 
-    // Fetch all employees in this org with departments for AI context
+    // Fetch all employees in this org with departments + titles for AI context
     const { data: employees } = await admin
       .from("employees")
-      .select("id, full_name, job_title, department_id, departments(name)")
-      .eq("organization_id", ep.organization_id);
+      .select("id, full_name, job_role, title, department_id, role_level, departments(name)")
+      .eq("organization_id", orgId);
+
+    // Fetch other operational plans in the same org/year to detect cross-plan overlap
+    // (employees who frequently appear in similar initiatives → likely related)
+    const { data: relatedPlans } = await admin
+      .from("operational_plans")
+      .select("id, activity_name, strategic_goal, initiative, sub_initiative, responsible_employee_id, year")
+      .eq("organization_id", orgId)
+      .eq("year", op.year)
+      .neq("id", op.id)
+      .limit(60);
+
+    // Fetch recent tasks history for the responsible employee + same activity
+    // to detect collaboration patterns and avoid duplicate task titles
+    const { data: pastTasks } = await admin
+      .from("tasks")
+      .select("title, user_id, executive_plan_id, source_activity_id")
+      .eq("organization_id", orgId)
+      .order("created_at", { ascending: false })
+      .limit(120);
 
     // Already-defined related employees for this activity
     const { data: relatedEmps } = await admin
@@ -66,7 +86,8 @@ serve(async (req) => {
       .map((e: any) => ({
         employee_id: e.id,
         full_name: e.full_name,
-        job_title: e.job_title,
+        job_title: e.title || e.job_role,
+        role_level: e.role_level,
         department: e.departments?.name ?? null,
       }));
 
@@ -80,33 +101,89 @@ serve(async (req) => {
     const allOrgEmployees = (employees ?? []).map((e: any) => ({
       employee_id: e.id,
       full_name: e.full_name,
-      job_title: e.job_title,
+      job_title: e.title || e.job_role,
+      role_level: e.role_level,
       department: e.departments?.name ?? null,
     }));
 
-    const systemPrompt = `أنت مدير تنفيذي خبير في إدارة المشاريع والجمعيات الخيرية. مهمتك توليد قائمة احترافية ودقيقة من المهام التحضيرية (قبل) والتنفيذية (أثناء) والختامية (بعد) لنشاط محدد، موزعة على الموظفين المعنيين كلٌّ حسب دوره.
+    // Build cross-plan signal: which employees are responsible for plans
+    // sharing strategic_goal / initiative / sub_initiative with the current activity.
+    const overlap = (relatedPlans ?? [])
+      .filter((p: any) => {
+        if (!p.responsible_employee_id) return false;
+        const sg = (p.strategic_goal ?? "").trim();
+        const ini = (p.initiative ?? "").trim();
+        const sub = (p.sub_initiative ?? "").trim();
+        return (
+          (sg && sg === (op.strategic_goal ?? "").trim()) ||
+          (ini && ini === (op.initiative ?? "").trim()) ||
+          (sub && sub === (op.sub_initiative ?? "").trim())
+        );
+      })
+      .map((p: any) => {
+        const e = empById.get(p.responsible_employee_id);
+        return {
+          employee_id: p.responsible_employee_id,
+          full_name: e?.full_name ?? "",
+          department: e?.departments?.name ?? null,
+          shared_activity: p.activity_name,
+          shared_initiative: p.initiative,
+          shared_sub_initiative: p.sub_initiative,
+        };
+      })
+      .filter((x: any) => x.full_name && !targetEmpIds.has(x.employee_id));
+
+    // Existing task titles to avoid duplication
+    const existingTitles = (pastTasks ?? [])
+      .filter((t: any) => t.source_activity_id === executive_plan_id)
+      .map((t: any) => t.title)
+      .slice(0, 30);
+
+    const systemPrompt = `أنت مدير تنفيذي خبير وعالٍ الذكاء في إدارة المشاريع والجمعيات الخيرية، تتقن تحليل الخطط التشغيلية واستنتاج التشابكات بين الأقسام والموظفين.
+
+مهمتك:
+1) توليد قائمة احترافية ودقيقة جداً من المهام التحضيرية (قبل) والتنفيذية (أثناء) والختامية (بعد) لنشاط محدد، موزعة على الموظفين المعنيين كلٌّ حسب دوره الفعلي ومسماه الوظيفي وقسمه.
+2) استنتاج "الموظفين ذوي العلاقة" بشكل ذكي بناءً على:
+   - تركيبة الخطة التشغيلية (الهدف الاستراتيجي، المبادرة، المبادرة الفرعية).
+   - الموظفون المسؤولون عن خطط أخرى تتقاطع مع هذا النشاط (تشابك المبادرات).
+   - طبيعة النشاط ومتطلباته الواضحة من الأقسام (إعلام، مالية، توثيق، لوجستيات، علاقات عامة...).
+   - إذا كان النشاط فعالية: غالباً يحتاج (إعلام، تصوير، علاقات عامة، تنظيم).
+   - إذا كان النشاط داخلياً (تدريب/اجتماع): قد يحتاج (موارد بشرية، توثيق).
+   - إذا كان النشاط ميدانياً: غالباً يحتاج (لوجستيات، مالية، أمن).
 
 قواعد صارمة:
-- ولّد بين 3-8 مهام لكل موظف، موزعة بذكاء بين قبل/أثناء/بعد حسب طبيعة دوره.
-- كل مهمة عملية وقابلة للقياس (لا عموميات).
+- ولّد بين 3-6 مهام لكل موظف، موزعة بذكاء بين قبل/أثناء/بعد حسب طبيعة دوره.
+- كل مهمة عملية وقابلة للقياس وذات صياغة احترافية، لا عموميات. ابدأ بفعل أمر واضح.
 - المدة التقديرية واقعية بالدقائق (15-240).
 - الأولوية: high للحرجة، medium للأساسية، low للداعمة.
-- day_offset: عدد الأيام قبل (سالب) أو بعد (موجب) يوم النشاط، 0 لنفس اليوم. مثال: مهمة "تنسيق مع الإمام قبل المحاضرة بأسبوع" → day_offset = -7.
-- إن كان هناك موظفون آخرون في الجمعية لم يُضافوا لكنهم مرشحون منطقياً (مثل الإعلام، المالية، التوثيق)، اقترحهم في suggested_related_employees مع سبب واضح.`;
+- day_offset: عدد الأيام قبل (سالب) أو بعد (موجب) يوم النشاط، 0 لنفس اليوم. أمثلة: تنسيق مسبق → -7 أو -3، تجهيز يوم سابق → -1، تنفيذ → 0، تقرير ختامي → +1 أو +2.
+- لا تكرّر مهاماً موجودة سابقاً (سأزوّدك بقائمتها).
+- في suggested_related_employees: اختر بدقة 1-4 موظفين فقط، مع تبرير قوي مرتبط بطبيعة النشاط أو بتشابك المبادرات. لا تقترح موظفاً بلا مبرر واضح.
+- إن كان أحد الموظفين الموجودين في "overlap_signals" مناسباً، فأعطه أولوية لأنه مثبت بالبيانات.`;
 
     const userPrompt = `النشاط: "${op.activity_name}"
+اسم الخطة: ${op.plan_name ?? "غير محدد"}
 الهدف الاستراتيجي: ${op.strategic_goal ?? "غير محدد"}
 المبادرة: ${op.initiative ?? "غير محدد"}
 المبادرة الفرعية: ${op.sub_initiative ?? "غير محدد"}
+المستهدف السنوي: ${op.annual_target ?? "غير محدد"} | الشهري: ${opm.monthly_target ?? "غير محدد"} | اليومي: ${(ep as any).daily_target ?? "غير محدد"}
+الميزانية التقديرية: ${op.estimated_budget ?? "غير محددة"}
 يوم التنفيذ: اليوم ${ep.day} من الشهر ${opm.month}/${op.year}
+ملاحظات النشاط: ${(ep as any).notes ?? "—"}
 
 الموظفون المعنيون حالياً:
 ${JSON.stringify(targetList, null, 2)}
 
+إشارات تشابك من خطط أخرى في نفس السنة (موظفون مسؤولون عن خطط تشترك في الهدف/المبادرة/الفرعية):
+${JSON.stringify(overlap.slice(0, 15), null, 2)}
+
+مهام سبق توليدها لهذا النشاط (لا تكرّرها):
+${JSON.stringify(existingTitles, null, 2)}
+
 جميع موظفي الجمعية (لاقتراح موظفين إضافيين ذوي علاقة):
 ${JSON.stringify(allOrgEmployees, null, 2)}
 
-ولّد المهام الآن.`;
+ولّد المهام والموظفين ذوي العلاقة الآن بدقة عالية.`;
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
