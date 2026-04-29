@@ -2121,8 +2121,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={daySpan.get(l.day) ?? 1}
                                       className={cn(
-                                        "border-l-[3px] border-l-[hsl(var(--primary)/0.5)] align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors sticky z-20 bg-white",
-                                        showDay && idx > 0 && "border-t border-t-[hsl(var(--primary)/0.55)]",
+                                        "relative border-l-[3px] border-l-[hsl(var(--primary)/0.5)] align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors sticky z-20 bg-white",
+                                        showDay && idx > 0 && "before:content-[''] before:absolute before:top-0 before:inset-x-0 before:h-px before:bg-[hsl(var(--primary)/0.55)] before:z-30",
                                         isLastInDay && daySeparatorClass,
                                         isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
