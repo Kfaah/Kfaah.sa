@@ -582,15 +582,28 @@ export function ActivityPhasesPopover({
                           </Popover>
 
                           {meta.allowDate && (
-                            <label className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-1.5 rounded-md text-xs cursor-pointer">
-                              <CalendarIcon className="w-3.5 h-3.5" />
+                            <label className="relative inline-flex items-center gap-2 bg-white border-2 border-[hsl(var(--primary)/0.25)] hover:border-[hsl(var(--primary)/0.6)] text-slate-800 px-3 py-2 rounded-lg cursor-pointer shadow-sm">
+                              <CalendarIcon className="w-4 h-4 text-[hsl(var(--primary))]" />
+                              {(() => {
+                                const iso = toDateInputValue(activityYear, activityMonth, activityDay, newOffset);
+                                const p = formatDatePartsRTL(iso);
+                                return (
+                                  <span dir="ltr" className="inline-flex items-center gap-1 text-[15px] font-bold tracking-wide tabular-nums">
+                                    <span className="text-slate-500">{p.year}</span>
+                                    <span className="text-slate-300">/</span>
+                                    <span className="text-slate-700">{p.month}</span>
+                                    <span className="text-slate-300">/</span>
+                                    <span className="text-[hsl(var(--primary))]">{p.day}</span>
+                                  </span>
+                                );
+                              })()}
                               <input
                                 type="date"
                                 value={toDateInputValue(activityYear, activityMonth, activityDay, newOffset)}
                                 onChange={(e) =>
                                   setNewOffset(diffDays(activityYear, activityMonth, activityDay, e.target.value))
                                 }
-                                className="bg-transparent outline-none cursor-pointer"
+                                className="absolute inset-0 opacity-0 cursor-pointer"
                               />
                             </label>
                           )}
