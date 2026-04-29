@@ -1,0 +1,416 @@
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Loader2, Users, Plus, X, Sparkles, ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+
+interface Employee {
+  id: string;
+  full_name: string;
+  job_title?: string | null;
+  department_name?: string | null;
+}
+
+interface RelatedRow {
+  id: string;
+  employee_id: string;
+  role_in_activity: string | null;
+  source: "manual" | "ai";
+}
+
+interface Props {
+  executivePlanId: string;
+  responsibleEmployeeId: string | null;
+  organizationId: string | null;
+  activityName: string;
+  activityDay: number;
+  activityMonth: number;
+  activityYear: number;
+  allEmployees: Employee[];
+}
+
+export function RelatedEmployeesIndicator({
+  executivePlanId,
+  responsibleEmployeeId,
+  organizationId,
+  activityDay,
+  activityMonth,
+  activityYear,
+  allEmployees,
+}: Props) {
+  const [rows, setRows] = useState<RelatedRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [addEmpId, setAddEmpId] = useState("");
+  const [addRole, setAddRole] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const generatedRef = useRef(false);
+  const [autoGenerating, setAutoGenerating] = useState(false);
+
+  useEffect(() => {
+    void initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [executivePlanId]);
+
+  async function initialize() {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("activity_related_employees")
+        .select("id, employee_id, role_in_activity, source")
+        .eq("executive_plan_id", executivePlanId);
+      if (error) throw error;
+      const rowsData = (data ?? []) as RelatedRow[];
+      setRows(rowsData);
+      if (rowsData.length === 0 && responsibleEmployeeId && !generatedRef.current) {
+        generatedRef.current = true;
+        setAutoGenerating(true);
+        try {
+          await supabase.functions.invoke("generate-related-tasks", {
+            body: { executive_plan_id: executivePlanId },
+          });
+          await load();
+        } catch (e) {
+          console.error("auto-gen related employees", e);
+        } finally {
+          setAutoGenerating(false);
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function load() {
+    try {
+      const { data, error } = await supabase
+        .from("activity_related_employees")
+        .select("id, employee_id, role_in_activity, source")
+        .eq("executive_plan_id", executivePlanId);
+      if (error) throw error;
+      setRows((data ?? []) as RelatedRow[]);
+    } catch (e: any) {
+      console.error(e);
+    }
+  }
+
+  async function dispatchTasksForEmp(empId: string) {
+    try {
+      const { data: existing } = await supabase
+        .from("activity_related_tasks")
+        .select("id")
+        .eq("executive_plan_id", executivePlanId)
+        .eq("employee_id", empId)
+        .limit(1);
+      if (!existing || existing.length === 0) {
+        await supabase.functions.invoke("generate-related-tasks", {
+          body: { executive_plan_id: executivePlanId },
+        });
+      }
+      const { data: pending } = await supabase
+        .from("activity_related_tasks")
+        .select("*")
+        .eq("executive_plan_id", executivePlanId)
+        .eq("employee_id", empId)
+        .eq("is_dispatched", false);
+
+      const { data: emp } = await supabase
+        .from("employees")
+        .select("user_id")
+        .eq("id", empId)
+        .maybeSingle();
+      if (!emp?.user_id || !pending) return;
+
+      const baseDate = new Date(activityYear, activityMonth - 1, activityDay);
+      const PHASE_LBL: any = { before: "قبل", during: "أثناء", after: "بعد" };
+      for (const t of pending as any[]) {
+        const due = new Date(baseDate);
+        due.setDate(due.getDate() + (t.day_offset ?? 0));
+        const { data: ins } = await supabase
+          .from("tasks")
+          .insert({
+            title: `[${PHASE_LBL[t.phase]}] ${t.title}`,
+            description: t.description,
+            user_id: emp.user_id,
+            executive_plan_id: executivePlanId,
+            source_activity_id: executivePlanId,
+            phase: t.phase,
+            priority: t.priority,
+            estimated_time_minutes: t.estimated_minutes,
+            due_date: due.toISOString().slice(0, 10),
+            ai_generated: t.source === "ai",
+            organization_id: organizationId,
+          } as any)
+          .select("id")
+          .maybeSingle();
+        await supabase
+          .from("activity_related_tasks")
+          .update({ is_dispatched: true, dispatched_task_id: ins?.id ?? null })
+          .eq("id", t.id);
+      }
+    } catch (e) {
+      console.error("dispatchTasksForEmp", e);
+    }
+  }
+
+  async function handleAdd() {
+    if (!addEmpId) return;
+    try {
+      const { error } = await supabase
+        .from("activity_related_employees")
+        .insert({
+          executive_plan_id: executivePlanId,
+          employee_id: addEmpId,
+          role_in_activity: addRole.trim() || null,
+          source: "manual",
+          organization_id: organizationId,
+        } as any);
+      if (error) throw error;
+      const newEmpId = addEmpId;
+      setAddEmpId("");
+      setAddRole("");
+      setShowAddForm(false);
+      await load();
+      toast({ title: "تمت الإضافة، جاري ترحيل المهام للموظف..." });
+      void dispatchTasksForEmp(newEmpId);
+    } catch (e: any) {
+      toast({ title: "تعذّر الإضافة", description: e.message, variant: "destructive" });
+    }
+  }
+
+  async function handleRemove(rowId: string, empId: string) {
+    if (!confirm("إزالة هذا الموظف من النشاط؟")) return;
+    try {
+      await supabase
+        .from("activity_related_tasks")
+        .delete()
+        .eq("executive_plan_id", executivePlanId)
+        .eq("employee_id", empId)
+        .eq("is_dispatched", false);
+      await supabase.from("activity_related_employees").delete().eq("id", rowId);
+      await load();
+    } catch (e: any) {
+      toast({ title: "تعذّر الحذف", description: e.message, variant: "destructive" });
+    }
+  }
+
+  function navigateToEmployee(empId: string) {
+    setOpen(false);
+    // ابحث عن أقرب صف في الجدول لهذا الموظف وانتقل إليه مع إبراز
+    requestAnimationFrame(() => {
+      const candidates = document.querySelectorAll<HTMLElement>(
+        `[data-emp-anchor="${empId}"]`,
+      );
+      if (candidates.length === 0) {
+        toast({
+          title: "لم يُعثر على صفّ هذا الموظف",
+          description: "قد لا يكون له نشاط في الفترة المعروضة حالياً.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const target = candidates[0];
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.classList.add("ring-2", "ring-amber-400", "ring-offset-2", "transition-shadow");
+      window.setTimeout(() => {
+        target.classList.remove("ring-2", "ring-amber-400", "ring-offset-2");
+      }, 2200);
+    });
+  }
+
+  const empById = new Map(allEmployees.map((e) => [e.id, e]));
+  const availableToAdd = allEmployees.filter(
+    (e) => e.id !== responsibleEmployeeId && !rows.find((r) => r.employee_id === e.id),
+  );
+
+  const count = rows.length;
+  const isBusy = loading || autoGenerating;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          title={count > 0 ? `${count} موظف ذو علاقة` : "الموظفون ذوو العلاقة"}
+          className={cn(
+            "relative inline-flex items-center justify-center gap-1 h-6 px-2 rounded-full border text-[10px] font-bold transition-all shrink-0",
+            count > 0
+              ? "bg-gradient-to-l from-[hsl(var(--primary)/0.12)] to-[hsl(var(--accent)/0.08)] border-[hsl(var(--primary)/0.35)] text-[hsl(var(--primary))] hover:shadow-md"
+              : "bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:border-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]",
+          )}
+        >
+          {isBusy ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Users className="w-3 h-3" />
+          )}
+          <span>{count > 0 ? count : "+"}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="bottom"
+        align="end"
+        sideOffset={6}
+        className="w-[300px] p-2 bg-popover z-50"
+        dir="rtl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-1.5 text-[12px] font-bold text-slate-700 px-1">
+            <div className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+              <span>الموظفون ذوو العلاقة</span>
+            </div>
+            {!showAddForm && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10px] gap-1 text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.08)]"
+                onClick={() => setShowAddForm(true)}
+              >
+                <Plus className="w-3 h-3" />
+                إضافة
+              </Button>
+            )}
+          </div>
+
+          {/* قائمة الموظفين */}
+          {rows.length === 0 && !showAddForm && (
+            <div className="text-[11px] text-slate-400 italic text-center py-3">
+              لا يوجد موظفون ذوو علاقة لهذا النشاط
+            </div>
+          )}
+
+          {rows.length > 0 && (
+            <div className="flex flex-col gap-1 max-h-[220px] overflow-y-auto">
+              {rows.map((r) => {
+                const e = empById.get(r.employee_id);
+                const name = e?.full_name ?? "موظف";
+                return (
+                  <div
+                    key={r.id}
+                    className={cn(
+                      "group flex items-center gap-2 px-2 py-1.5 rounded-md border text-[11px] transition-all",
+                      r.source === "ai"
+                        ? "bg-[hsl(var(--primary)/0.04)] border-[hsl(var(--primary)/0.2)]"
+                        : "bg-slate-50 border-slate-200",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => navigateToEmployee(r.employee_id)}
+                      className="flex-1 flex items-center gap-2 text-right min-w-0 hover:text-[hsl(var(--primary))] transition-colors"
+                      title="انتقل إلى صف هذا الموظف"
+                    >
+                      <div
+                        className={cn(
+                          "w-6 h-6 rounded-full text-white flex items-center justify-center text-[9px] font-bold shrink-0",
+                          r.source === "ai"
+                            ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))]"
+                            : "bg-slate-500",
+                        )}
+                      >
+                        {name.split(/\s+/).slice(0, 2).map((p) => p[0]).join("")}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-800 truncate flex items-center gap-1">
+                          {name}
+                          {r.source === "ai" && (
+                            <Sparkles className="w-2.5 h-2.5 text-[hsl(var(--primary))] opacity-70" />
+                          )}
+                        </div>
+                        {(r.role_in_activity || e?.department_name) && (
+                          <div className="text-[9px] text-slate-500 truncate">
+                            {r.role_in_activity || e?.department_name}
+                          </div>
+                        )}
+                      </div>
+                      <ArrowLeft className="w-3 h-3 text-slate-400 group-hover:text-[hsl(var(--primary))] shrink-0" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(r.id, r.employee_id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 rounded-full shrink-0"
+                      title="إزالة"
+                    >
+                      <X className="w-2.5 h-2.5 text-red-500" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* نموذج الإضافة */}
+          {showAddForm && (
+            <div className="space-y-2 pt-2 border-t border-slate-200">
+              <Select value={addEmpId} onValueChange={setAddEmpId}>
+                <SelectTrigger className="h-8 text-[11px]">
+                  <SelectValue placeholder="اختر موظفاً..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 bg-popover z-[60]">
+                  {availableToAdd.length === 0 && (
+                    <div className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                      لا يوجد متاح
+                    </div>
+                  )}
+                  {availableToAdd.map((e) => (
+                    <SelectItem key={e.id} value={e.id} className="text-[11px]">
+                      {e.full_name}
+                      {e.department_name ? ` — ${e.department_name}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                value={addRole}
+                onChange={(e) => setAddRole(e.target.value)}
+                placeholder="دوره في النشاط (اختياري)"
+                className="h-8 text-[11px]"
+              />
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  onClick={handleAdd}
+                  disabled={!addEmpId}
+                  className="flex-1 h-7 text-[11px]"
+                >
+                  إضافة وترحيل المهام
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setAddEmpId("");
+                    setAddRole("");
+                  }}
+                  className="h-7 text-[11px]"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

@@ -77,7 +77,7 @@ import { useScopedView } from "@/hooks/useScopedView";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { ActivityRelatedPanel } from "@/components/executive-plans/ActivityRelatedPanel";
 import { ActivityPhasesPopover } from "@/components/executive-plans/ActivityPhasesPopover";
-import { RelatedEmployeesCell } from "@/components/executive-plans/RelatedEmployeesCell";
+import { RelatedEmployeesIndicator } from "@/components/executive-plans/RelatedEmployeesIndicator";
 
 interface Employee {
   id: string;
@@ -146,8 +146,7 @@ const DATES_TABLE_COLUMNS = [
   { key: "initiative", width: "180px" },
   { key: "subInitiative", width: "170px" },
   { key: "employee", width: "170px" },
-  { key: "activities", width: "280px" },
-  { key: "relatedEmployees", width: "200px" },
+  { key: "activities", width: "320px" },
 ] as const;
 
 const DATES_TABLE_MIN_WIDTH = DATES_TABLE_COLUMNS.reduce(
@@ -1954,7 +1953,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[hsl(var(--primary)/0.3)]"
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
-                              <TableCell colSpan={8} className="py-3">
+                              <TableCell colSpan={7} className="py-3">
                                 <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
@@ -1978,7 +1977,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[hsl(var(--primary)/0.3)]"
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
-                              <TableCell colSpan={8} className="py-3">
+                              <TableCell colSpan={7} className="py-3">
                                 <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] rotate-180 transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
@@ -2114,6 +2113,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               return (
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
+                                  data-emp-anchor={(l.acts && l.acts.length > 0 ? ((l.acts[0] as any).employeeId ?? "") : "") || undefined}
                                   className={cn(
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
@@ -2244,7 +2244,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   )}
                                   {l.collapsed ? (
                                     <TableCell
-                                      colSpan={6}
+                                      colSpan={5}
                                       className="bg-slate-50/60 border-l border-gray-200 align-middle py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.04)] transition-colors"
                                       onClick={() => toggleDay(dayKey)}
                                     >
@@ -2494,44 +2494,39 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               )}
                                             </div>
                                             {!isEditingThis && (
-                                              <ActivityPhasesPopover
-                                                executivePlanId={act.id}
-                                                responsibleEmployeeId={(act as any).employeeId ?? null}
-                                                responsibleEmployeeName={(act as any).employeeName ?? l.empName ?? "غير محدد"}
-                                                organizationId={activeOrgId}
-                                                activityName={act.activityName ?? ""}
-                                                activityDay={(act as any).day ?? l.day}
-                                                activityMonth={(act as any).month ?? monthGroup.month}
-                                                activityYear={selectedYear}
-                                                isPreparing={preparingPhaseIds.has(act.id)}
-                                              />
+                                              <div className="flex items-center gap-1 shrink-0">
+                                                <RelatedEmployeesIndicator
+                                                  executivePlanId={act.id}
+                                                  responsibleEmployeeId={(act as any).employeeId ?? null}
+                                                  organizationId={activeOrgId}
+                                                  activityName={act.activityName ?? ""}
+                                                  activityDay={(act as any).day ?? l.day}
+                                                  activityMonth={(act as any).month ?? monthGroup.month}
+                                                  activityYear={selectedYear}
+                                                  allEmployees={employees.map((e) => ({
+                                                    id: e.id,
+                                                    full_name: e.full_name,
+                                                    job_title: (e as any).job_role ?? null,
+                                                    department_name: e.department_name ?? null,
+                                                  }))}
+                                                />
+                                                <ActivityPhasesPopover
+                                                  executivePlanId={act.id}
+                                                  responsibleEmployeeId={(act as any).employeeId ?? null}
+                                                  responsibleEmployeeName={(act as any).employeeName ?? l.empName ?? "غير محدد"}
+                                                  organizationId={activeOrgId}
+                                                  activityName={act.activityName ?? ""}
+                                                  activityDay={(act as any).day ?? l.day}
+                                                  activityMonth={(act as any).month ?? monthGroup.month}
+                                                  activityYear={selectedYear}
+                                                  isPreparing={preparingPhaseIds.has(act.id)}
+                                                />
+                                              </div>
                                             )}
                                           </div>
                                           </div>
                                         );
                                       })}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="align-top py-2 border-r border-gray-200">
-                                    <div className="flex flex-col gap-2">
-                                      {l.acts.map((act) => (
-                                        <RelatedEmployeesCell
-                                          key={`rel-${act.id}`}
-                                          executivePlanId={act.id}
-                                          responsibleEmployeeId={(act as any).employeeId ?? null}
-                                          organizationId={activeOrgId}
-                                          activityName={act.activityName ?? ""}
-                                          activityDay={(act as any).day ?? l.day}
-                                          activityMonth={(act as any).month ?? monthGroup.month}
-                                          activityYear={selectedYear}
-                                          allEmployees={employees.map((e) => ({
-                                            id: e.id,
-                                            full_name: e.full_name,
-                                            job_title: (e as any).job_role ?? null,
-                                            department_name: e.department_name ?? null,
-                                          }))}
-                                        />
-                                      ))}
                                     </div>
                                   </TableCell>
                                   </>
