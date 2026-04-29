@@ -243,7 +243,7 @@ export function RelatedEmployeesIndicator({
       if (pool.length === 0) {
         toast({
           title: "لم يُعثر على صفّ هذا الموظف",
-          description: "قد لا يكون له نشاط في الفترة المعروضة حالياً.",
+          description: "قد يكون مُخفياً بفلتر القسم أو الشهر — جرّب إزالة الفلاتر أو اختيار «كل الأقسام» وكامل السنة.",
           variant: "destructive",
         });
         return;
