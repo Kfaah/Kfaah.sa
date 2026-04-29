@@ -1884,7 +1884,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   </div>
                 </div>
                 <div
-                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
+                  className="max-h-[calc(100vh-160px)] overflow-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
                   dir="rtl"
                   tabIndex={0}
                   ref={(el) => {
@@ -1922,11 +1922,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                       ))}
                     </colgroup>
                     <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]" style={{ "--exec-sticky-th-top": `calc(${stickyHeaderTop} + 37px)` } as React.CSSProperties}>
+                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]" >
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
-                            className={cn("top-[var(--exec-sticky-th-top)] text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
+                            className={cn("top-0 text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
                           >
                             {isEditMode ? (
                               <input
@@ -2556,14 +2556,14 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                  <div className="overflow-x-auto" dir="rtl">
                    <table className="w-full caption-bottom text-sm">
                      <TableHeader>
-                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-20 [&>th]:bg-[hsl(var(--primary))]" style={{ "--exec-sticky-th-top": stickyHeaderTop } as React.CSSProperties}>
-                        <TableHead className="top-[var(--exec-sticky-th-top)] text-right font-bold text-white min-w-[120px] border-l border-white/20">
+                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-20 [&>th]:bg-[hsl(var(--primary))]" >
+                        <TableHead className="top-0 text-right font-bold text-white min-w-[120px] border-l border-white/20">
                           الشهر
                         </TableHead>
-                        <TableHead className="top-[var(--exec-sticky-th-top)] text-right font-bold text-white min-w-[200px] border-l border-white/20">
+                        <TableHead className="top-0 text-right font-bold text-white min-w-[200px] border-l border-white/20">
                           النشاط
                         </TableHead>
-                        <TableHead className="top-[var(--exec-sticky-th-top)] text-right font-bold text-white">
+                        <TableHead className="top-0 text-right font-bold text-white">
                           تواريخ التنفيذ
                         </TableHead>
                       </TableRow>
