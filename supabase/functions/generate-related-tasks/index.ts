@@ -465,6 +465,8 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
         added_employees_count: suggestedEmps.length,
         dispatched_count: dispatchedCount,
         skipped_no_user: skippedNoUser,
+        used_fallback: usedFallback,
+        warning,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
