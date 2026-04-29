@@ -83,6 +83,12 @@ function diffDays(year: number, month: number, day: number, isoDate: string) {
   return Math.round((target.getTime() - base.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+// عرض التاريخ بتنسيق: اليوم (يمين) / الشهر (وسط) / السنة (يسار)
+function formatDatePartsRTL(iso: string) {
+  const [y, m, d] = iso.split("-");
+  return { day: d, month: m, year: y };
+}
+
 export function ActivityPhasesPopover({
   executivePlanId,
   responsibleEmployeeId,
