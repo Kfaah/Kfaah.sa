@@ -146,8 +146,7 @@ const DATES_TABLE_COLUMNS = [
   { key: "initiative", width: "180px" },
   { key: "subInitiative", width: "170px" },
   { key: "employee", width: "170px" },
-  { key: "activities", width: "280px" },
-  { key: "relatedEmployees", width: "200px" },
+  { key: "activities", width: "320px" },
 ] as const;
 
 const DATES_TABLE_MIN_WIDTH = DATES_TABLE_COLUMNS.reduce(
