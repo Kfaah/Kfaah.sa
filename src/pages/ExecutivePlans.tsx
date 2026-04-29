@@ -2094,7 +2094,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {showMonth && (
                                     <TableCell
                                       rowSpan={monthSpan}
-                                      className="bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors"
+                                      className={cn(
+                                        "bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors",
+                                        monthIdx > 0 && "border-t-[4px] border-t-[hsl(var(--primary)/0.6)]"
+                                      )}
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
                                       <div className="sticky z-20 flex flex-col items-center gap-2 py-4 px-2" style={{ top: stickyHeaderTop }}>
@@ -2130,6 +2133,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={daySpan.get(l.day) ?? 1}
                                       className={cn(
                                         "border-l border-gray-200 align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors sticky z-20 bg-white",
+                                        idx > 0 && "border-t-[4px] border-t-[hsl(var(--primary)/0.6)]",
                                         isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       style={{ top: stickyHeaderTop }}
