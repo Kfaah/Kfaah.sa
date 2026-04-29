@@ -6,6 +6,60 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+function buildFallbackArgs({
+  activityName,
+  targetList,
+  overlap,
+  existingTitles,
+}: {
+  activityName: string;
+  targetList: Array<{ employee_id: string; full_name?: string; job_title?: string | null; department?: string | null }>;
+  overlap: Array<{ employee_id: string; shared_activity?: string; shared_initiative?: string; department?: string | null }>;
+  existingTitles: string[];
+}) {
+  const existing = new Set(existingTitles.map((t) => t.trim()));
+  const suggested_related_employees = overlap.slice(0, 4).map((o) => ({
+    employee_id: o.employee_id,
+    role_in_activity: o.department ? `تنسيق ${o.department}` : "مساندة مرتبطة بالمبادرة",
+    reason: o.shared_initiative || o.shared_activity || "تشابه في الخطة التشغيلية",
+  }));
+
+  const employees = [
+    ...targetList.map((e) => ({ employee_id: e.employee_id, job_title: e.job_title, primary: true })),
+    ...suggested_related_employees.map((e) => ({ employee_id: e.employee_id, job_title: e.role_in_activity, primary: false })),
+  ];
+
+  const tasks = employees.flatMap((employee) => {
+    const roleHint = employee.job_title ? ` حسب دور ${employee.job_title}` : "";
+    const items = employee.primary
+      ? [
+          { phase: "before", title: `راجع متطلبات ${activityName} وجهّز قائمة التنفيذ`, day_offset: -3, estimated_minutes: 45, priority: "high" },
+          { phase: "during", title: `نفّذ مسؤوليات ${activityName} وتابع مؤشرات الإنجاز`, day_offset: 0, estimated_minutes: 120, priority: "high" },
+          { phase: "after", title: `وثّق نتائج ${activityName} وارفع التقرير الختامي`, day_offset: 1, estimated_minutes: 60, priority: "medium" },
+        ]
+      : [
+          { phase: "before", title: `نسّق المتطلبات المشتركة لنشاط ${activityName}${roleHint}`, day_offset: -2, estimated_minutes: 30, priority: "medium" },
+          { phase: "during", title: `ساند تنفيذ ${activityName}${roleHint} وسجّل الملاحظات`, day_offset: 0, estimated_minutes: 60, priority: "medium" },
+          { phase: "after", title: `زوّد المسؤول الرئيسي بمخرجات ${activityName}${roleHint}`, day_offset: 1, estimated_minutes: 30, priority: "low" },
+        ];
+    return items
+      .filter((item) => !existing.has(item.title))
+      .map((item) => ({
+        ...item,
+        employee_id: employee.employee_id,
+        description: `توليد احتياطي من النظام عند تعذر خدمة الذكاء الاصطناعي لضمان عدم توقف ترحيل المهام.`,
+      }));
+  });
+
+  return { tasks, suggested_related_employees };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -13,9 +67,11 @@ Deno.serve(async (req) => {
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return jsonResponse({ error: "إعدادات قاعدة البيانات غير مكتملة" }, 500);
+    }
 
     let body: any = {};
     try {
@@ -26,10 +82,7 @@ Deno.serve(async (req) => {
     }
     const { executive_plan_id } = body;
     if (!executive_plan_id) {
-      return new Response(JSON.stringify({ error: "executive_plan_id required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "executive_plan_id required" }, 400);
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -191,87 +244,98 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
 
 ولّد المهام والموظفين ذوي العلاقة الآن بدقة عالية.`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "submit_related_tasks",
-              description: "Submit generated tasks (before/during/after) per employee + suggested related employees.",
-              parameters: {
-                type: "object",
-                properties: {
-                  tasks: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        employee_id: { type: "string" },
-                        phase: { type: "string", enum: ["before", "during", "after"] },
-                        title: { type: "string" },
-                        description: { type: "string" },
-                        estimated_minutes: { type: "integer" },
-                        priority: { type: "string", enum: ["low", "medium", "high"] },
-                        day_offset: { type: "integer" },
+    let args: any = null;
+    let usedFallback = false;
+    let warning: string | null = null;
+
+    if (LOVABLE_API_KEY) {
+      const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "submit_related_tasks",
+                description: "Submit generated tasks (before/during/after) per employee + suggested related employees.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    tasks: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          employee_id: { type: "string" },
+                          phase: { type: "string", enum: ["before", "during", "after"] },
+                          title: { type: "string" },
+                          description: { type: "string" },
+                          estimated_minutes: { type: "integer" },
+                          priority: { type: "string", enum: ["low", "medium", "high"] },
+                          day_offset: { type: "integer" },
+                        },
+                        required: ["employee_id", "phase", "title", "estimated_minutes", "priority", "day_offset"],
+                        additionalProperties: false,
                       },
-                      required: ["employee_id", "phase", "title", "estimated_minutes", "priority", "day_offset"],
-                      additionalProperties: false,
+                    },
+                    suggested_related_employees: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          employee_id: { type: "string" },
+                          role_in_activity: { type: "string" },
+                          reason: { type: "string" },
+                        },
+                        required: ["employee_id", "role_in_activity"],
+                        additionalProperties: false,
+                      },
                     },
                   },
-                  suggested_related_employees: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        employee_id: { type: "string" },
-                        role_in_activity: { type: "string" },
-                        reason: { type: "string" },
-                      },
-                      required: ["employee_id", "role_in_activity"],
-                      additionalProperties: false,
-                    },
-                  },
+                  required: ["tasks", "suggested_related_employees"],
+                  additionalProperties: false,
                 },
-                required: ["tasks", "suggested_related_employees"],
-                additionalProperties: false,
               },
             },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "submit_related_tasks" } },
-      }),
-    });
+          ],
+          tool_choice: { type: "function", function: { name: "submit_related_tasks" } },
+        }),
+      });
 
-    if (!aiResp.ok) {
-      const t = await aiResp.text();
-      console.error("AI error", aiResp.status, t);
-      if (aiResp.status === 429)
-        return new Response(JSON.stringify({ error: "تم تجاوز حد الاستخدام، حاول لاحقاً" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      if (aiResp.status === 402)
-        return new Response(JSON.stringify({ error: "نفدت أرصدة الذكاء الاصطناعي، يرجى الإضافة" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      throw new Error("AI gateway failed");
+      if (aiResp.ok) {
+        const aiJson = await aiResp.json();
+        const toolCall = aiJson.choices?.[0]?.message?.tool_calls?.[0];
+        try {
+          args = toolCall ? JSON.parse(toolCall.function.arguments) : null;
+        } catch (parseError) {
+          console.error("AI tool arguments parse error", parseError);
+        }
+      } else {
+        const t = await aiResp.text();
+        console.error("AI error", aiResp.status, t);
+        warning = aiResp.status === 402
+          ? "نفدت أرصدة الذكاء الاصطناعي، فتم استخدام توليد احتياطي تلقائي"
+          : aiResp.status === 429
+            ? "تم تجاوز حد الاستخدام، فتم استخدام توليد احتياطي تلقائي"
+            : "تعذّر الاتصال بالذكاء الاصطناعي، فتم استخدام توليد احتياطي تلقائي";
+      }
+    } else {
+      warning = "مفتاح الذكاء الاصطناعي غير مفعّل، فتم استخدام توليد احتياطي تلقائي";
     }
 
-    const aiJson = await aiResp.json();
-    const toolCall = aiJson.choices?.[0]?.message?.tool_calls?.[0];
-    const args = toolCall ? JSON.parse(toolCall.function.arguments) : { tasks: [], suggested_related_employees: [] };
+    if (!args?.tasks || !Array.isArray(args.tasks)) {
+      usedFallback = true;
+      args = buildFallbackArgs({ activityName: op.activity_name, targetList, overlap, existingTitles });
+    }
 
     // Step 1: Insert AI-suggested related employees (skip duplicates and main responsible)
     const suggestedEmps = (args.suggested_related_employees ?? []).filter(
@@ -401,6 +465,8 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
         added_employees_count: suggestedEmps.length,
         dispatched_count: dispatchedCount,
         skipped_no_user: skippedNoUser,
+        used_fallback: usedFallback,
+        warning,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
