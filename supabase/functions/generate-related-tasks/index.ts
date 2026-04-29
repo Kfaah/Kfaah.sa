@@ -244,87 +244,98 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
 
 ولّد المهام والموظفين ذوي العلاقة الآن بدقة عالية.`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "submit_related_tasks",
-              description: "Submit generated tasks (before/during/after) per employee + suggested related employees.",
-              parameters: {
-                type: "object",
-                properties: {
-                  tasks: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        employee_id: { type: "string" },
-                        phase: { type: "string", enum: ["before", "during", "after"] },
-                        title: { type: "string" },
-                        description: { type: "string" },
-                        estimated_minutes: { type: "integer" },
-                        priority: { type: "string", enum: ["low", "medium", "high"] },
-                        day_offset: { type: "integer" },
+    let args: any = null;
+    let usedFallback = false;
+    let warning: string | null = null;
+
+    if (LOVABLE_API_KEY) {
+      const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "submit_related_tasks",
+                description: "Submit generated tasks (before/during/after) per employee + suggested related employees.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    tasks: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          employee_id: { type: "string" },
+                          phase: { type: "string", enum: ["before", "during", "after"] },
+                          title: { type: "string" },
+                          description: { type: "string" },
+                          estimated_minutes: { type: "integer" },
+                          priority: { type: "string", enum: ["low", "medium", "high"] },
+                          day_offset: { type: "integer" },
+                        },
+                        required: ["employee_id", "phase", "title", "estimated_minutes", "priority", "day_offset"],
+                        additionalProperties: false,
                       },
-                      required: ["employee_id", "phase", "title", "estimated_minutes", "priority", "day_offset"],
-                      additionalProperties: false,
+                    },
+                    suggested_related_employees: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          employee_id: { type: "string" },
+                          role_in_activity: { type: "string" },
+                          reason: { type: "string" },
+                        },
+                        required: ["employee_id", "role_in_activity"],
+                        additionalProperties: false,
+                      },
                     },
                   },
-                  suggested_related_employees: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        employee_id: { type: "string" },
-                        role_in_activity: { type: "string" },
-                        reason: { type: "string" },
-                      },
-                      required: ["employee_id", "role_in_activity"],
-                      additionalProperties: false,
-                    },
-                  },
+                  required: ["tasks", "suggested_related_employees"],
+                  additionalProperties: false,
                 },
-                required: ["tasks", "suggested_related_employees"],
-                additionalProperties: false,
               },
             },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "submit_related_tasks" } },
-      }),
-    });
+          ],
+          tool_choice: { type: "function", function: { name: "submit_related_tasks" } },
+        }),
+      });
 
-    if (!aiResp.ok) {
-      const t = await aiResp.text();
-      console.error("AI error", aiResp.status, t);
-      if (aiResp.status === 429)
-        return new Response(JSON.stringify({ error: "تم تجاوز حد الاستخدام، حاول لاحقاً" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      if (aiResp.status === 402)
-        return new Response(JSON.stringify({ error: "نفدت أرصدة الذكاء الاصطناعي، يرجى الإضافة" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      throw new Error("AI gateway failed");
+      if (aiResp.ok) {
+        const aiJson = await aiResp.json();
+        const toolCall = aiJson.choices?.[0]?.message?.tool_calls?.[0];
+        try {
+          args = toolCall ? JSON.parse(toolCall.function.arguments) : null;
+        } catch (parseError) {
+          console.error("AI tool arguments parse error", parseError);
+        }
+      } else {
+        const t = await aiResp.text();
+        console.error("AI error", aiResp.status, t);
+        warning = aiResp.status === 402
+          ? "نفدت أرصدة الذكاء الاصطناعي، فتم استخدام توليد احتياطي تلقائي"
+          : aiResp.status === 429
+            ? "تم تجاوز حد الاستخدام، فتم استخدام توليد احتياطي تلقائي"
+            : "تعذّر الاتصال بالذكاء الاصطناعي، فتم استخدام توليد احتياطي تلقائي";
+      }
+    } else {
+      warning = "مفتاح الذكاء الاصطناعي غير مفعّل، فتم استخدام توليد احتياطي تلقائي";
     }
 
-    const aiJson = await aiResp.json();
-    const toolCall = aiJson.choices?.[0]?.message?.tool_calls?.[0];
-    const args = toolCall ? JSON.parse(toolCall.function.arguments) : { tasks: [], suggested_related_employees: [] };
+    if (!args?.tasks || !Array.isArray(args.tasks)) {
+      usedFallback = true;
+      args = buildFallbackArgs({ activityName: op.activity_name, targetList, overlap, existingTitles });
+    }
 
     // Step 1: Insert AI-suggested related employees (skip duplicates and main responsible)
     const suggestedEmps = (args.suggested_related_employees ?? []).filter(
