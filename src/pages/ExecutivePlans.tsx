@@ -570,8 +570,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         datesTableScrollRef.current ??
         document.querySelector<HTMLElement>("[data-executive-plans-scroll]");
 
-      const selectedEmp = employees.find((e) => e.id === employeeId || e.user_id === employeeId);
-
       // 1) حاول إيجاد صف نفس الموظف ونفس النشاط/التاريخ داخل الجدول العام
       let target: HTMLElement | null = null;
       if (targetInfo) {
