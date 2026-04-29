@@ -2070,10 +2070,15 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   className={cn(
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
-                                    showDay && idx > 0 ? "border-t-2 border-[hsl(var(--primary)/0.25)]" : "",
+                                    // فاصل بين الأشهر — عريض على أول صف من شهر جديد
+                                    idx === 0 && monthIdx > 0 ? "border-t-[4px] border-t-[hsl(var(--primary)/0.55)]" : "",
+                                    // فاصل بين الأيام — نفس العرض داخل الشهر الواحد
+                                    showDay && idx > 0 ? "border-t-[4px] border-t-[hsl(var(--primary)/0.55)]" : "",
+                                    // فواصل المبادرات الفرعية والمبادرات
                                     !l.collapsed && isLastInSub && "[&>td]:border-b [&>td]:border-b-[hsl(var(--primary)/0.16)]",
                                     !l.collapsed && isLastInInit && "[&>td]:border-b-2 [&>td]:border-b-[hsl(var(--primary)/0.35)]",
-                                    !l.collapsed && isLastInDept && "[&>td]:border-b-[3px] [&>td]:border-b-[hsl(var(--primary)/0.45)]",
+                                    // فاصل بين الأقسام — عريض بنفس عرض فواصل الأيام والأشهر
+                                    !l.collapsed && isLastInDept && "[&>td]:border-b-[4px] [&>td]:border-b-[hsl(var(--primary)/0.55)]",
                                   )}
                                 >
                                   {showMonth && (
