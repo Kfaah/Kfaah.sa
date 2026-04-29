@@ -365,7 +365,7 @@ export function ActivityPhasesPopover({
 
                   {list.length === 0 && !isAdding && (
                     <div className="text-xs text-slate-400 italic py-2 text-center">
-                      {generating ? "يتم التوليد..." : "لا مهام بعد"}
+                      {generating || isPreparing ? "يتم التجهيز..." : "لا مهام بعد"}
                     </div>
                   )}
 
