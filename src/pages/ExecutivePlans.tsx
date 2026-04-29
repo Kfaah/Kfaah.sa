@@ -1849,8 +1849,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
 
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
-              <Card className="overflow-hidden">
-                <div className="sticky top-0 z-30 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-sm" dir="rtl">
+              <Card className="overflow-visible">
+                <div className="sticky top-0 z-40 border-x border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-md" dir="rtl">
                   <div
                     ref={datesTopScrollRef}
                     className="h-5 overflow-x-auto overflow-y-hidden rounded-md bg-[hsl(var(--muted)/0.45)]"
@@ -1891,22 +1891,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     }}
                     className="min-w-max"
                   >
-                  <Table>
-                    <TableHeader className="sticky top-[40px] z-20">
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-[40px] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-20">
-                        {([
-                          { key: "month", w: "min-w-[110px]" },
-                          { key: "date", w: "min-w-[160px]" },
-                          { key: "department", w: "min-w-[170px]" },
-                          { key: "initiative", w: "min-w-[180px]" },
-                          { key: "subInitiative", w: "min-w-[170px]" },
-                          { key: "employee", w: "min-w-[170px]" },
-                          { key: "activities", w: "min-w-[280px]" },
-                          { key: "relatedEmployees", w: "min-w-[200px]" },
-                        ] as const).map((c, idx, arr) => (
+                  <Table className="table-fixed">
+                    <colgroup>
+                      {DATES_TABLE_COLUMNS.map((column) => (
+                        <col key={column.key} style={{ width: column.width }} />
+                      ))}
+                    </colgroup>
+                    <TableHeader>
+                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-[37px] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-30">
+                        {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
-                            className={cn("text-right font-bold text-white", c.w, idx < arr.length - 1 && "border-l border-white/20")}
+                            className={cn("text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
                           >
                             {isEditMode ? (
                               <input
