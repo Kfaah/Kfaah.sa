@@ -15,6 +15,8 @@ import {
   Trash2,
   Sparkles,
   CheckCircle2,
+  Clock,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -45,9 +47,9 @@ interface RelatedTask {
 }
 
 const PHASE_META: Record<Phase, { label: string; color: string; chip: string }> = {
-  before: { label: "قبل", color: "bg-blue-50 border-blue-200", chip: "text-blue-700 bg-blue-100" },
-  during: { label: "أثناء", color: "bg-amber-50 border-amber-200", chip: "text-amber-700 bg-amber-100" },
-  after: { label: "بعد", color: "bg-emerald-50 border-emerald-200", chip: "text-emerald-700 bg-emerald-100" },
+  before: { label: "التحضير", color: "bg-sky-50/70 border-sky-100", chip: "text-sky-700 bg-sky-100" },
+  during: { label: "التنفيذ", color: "bg-amber-50/70 border-amber-100", chip: "text-amber-700 bg-amber-100" },
+  after: { label: "الختام", color: "bg-emerald-50/70 border-emerald-100", chip: "text-emerald-700 bg-emerald-100" },
 };
 
 export function ActivityPhasesPopover({
