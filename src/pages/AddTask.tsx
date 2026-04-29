@@ -35,6 +35,12 @@ interface Employee {
   full_name: string;
   user_id: string | null;
   job_role: string;
+  department_id: string | null;
+}
+
+interface Department {
+  id: string;
+  name: string;
 }
 
 const AddTask = () => {
@@ -45,6 +51,8 @@ const AddTask = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(true);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
 
   const [form, setForm] = useState({
     title: "",
@@ -57,26 +65,28 @@ const AddTask = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // جلب الموظفين
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        const [{ data: empData, error: empErr }, { data: depData, error: depErr }] = await Promise.all([
+          supabase
           .from("employees")
-          .select("id, full_name, user_id, job_role")
+            .select("id, full_name, user_id, job_role, department_id")
           .not("user_id", "is", null)
-          .order("full_name");
-
-        if (error) throw error;
-        setEmployees(data || []);
+            .order("full_name"),
+          supabase.from("departments").select("id, name").order("name"),
+        ]);
+        if (empErr) throw empErr;
+        if (depErr) throw depErr;
+        setEmployees(empData || []);
+        setDepartments(depData || []);
       } catch (error) {
-        console.error("Error fetching employees:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoadingEmployees(false);
       }
     };
-
-    fetchEmployees();
+    fetchData();
   }, []);
 
   const validateForm = () => {
@@ -194,6 +204,37 @@ const AddTask = () => {
 
             <Separator />
 
+            {/* القسم */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
+                <Label className="font-semibold text-foreground flex items-center gap-2">
+                  <User className="w-4 h-4 text-[hsl(var(--primary))]" />
+                  القسم
+                </Label>
+              </div>
+              <Select
+                value={selectedDepartmentId}
+                onValueChange={(v) => {
+                  setSelectedDepartmentId(v);
+                  // امسح اختيار المنفذ إذا لم يعد ضمن القسم الجديد
+                  setForm((prev) => ({ ...prev, user_id: "" }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر القسم أولاً" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="__all__">كل الأقسام</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* المنفذ */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -215,12 +256,23 @@ const AddTask = () => {
                     setForm((prev) => ({ ...prev, user_id: v }));
                     if (errors.user_id) setErrors((prev) => ({ ...prev, user_id: "" }));
                   }}
+                  disabled={!selectedDepartmentId}
                 >
                   <SelectTrigger className={errors.user_id ? "border-destructive" : ""}>
-                    <SelectValue placeholder="اختر الموظف المنفذ" />
+                    <SelectValue
+                      placeholder={
+                        selectedDepartmentId ? "اختر الموظف المنفذ" : "اختر القسم أولاً"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    {employees.map((emp) => (
+                    {employees
+                      .filter((emp) =>
+                        !selectedDepartmentId || selectedDepartmentId === "__all__"
+                          ? true
+                          : emp.department_id === selectedDepartmentId
+                      )
+                      .map((emp) => (
                       <SelectItem key={emp.id} value={emp.user_id || emp.id}>
                         <div className="flex items-center gap-2">
                           <span>{emp.full_name}</span>
@@ -228,6 +280,15 @@ const AddTask = () => {
                         </div>
                       </SelectItem>
                     ))}
+                    {employees.filter((emp) =>
+                      !selectedDepartmentId || selectedDepartmentId === "__all__"
+                        ? true
+                        : emp.department_id === selectedDepartmentId
+                    ).length === 0 && (
+                      <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+                        لا يوجد موظفون في هذا القسم
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               )}
