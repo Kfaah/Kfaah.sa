@@ -222,12 +222,14 @@ Deno.serve(async (req) => {
    - إذا كان النشاط داخلياً (تدريب/اجتماع): قد يحتاج (موارد بشرية، توثيق).
    - إذا كان النشاط ميدانياً: غالباً يحتاج (لوجستيات، مالية، أمن).
 
-قواعد صارمة:
-- ولّد بين 3-6 مهام لكل موظف معني (الأساسي + الموجودون مسبقاً + المقترحون الجدد جميعهم في نفس الاستدعاء)، موزعة بذكاء بين قبل/أثناء/بعد حسب طبيعة دوره.
+قواعد صارمة (حدود ذكية):
+- الحد الأقصى الموصى به: 4 مهام لكل مرحلة (قبل/أثناء/بعد)، و12 مهمة كحد أقصى لكامل النشاط مجموع الجميع.
+- ادمج التفاصيل المتقاربة في مهمة واحدة شاملة بدل تفتيتها. مثال صحيح: مهمة واحدة باسم "صياغة الرسائل التسويقية وتجربة مسارات التحوّل الرقمي وإعداد المرفق المصاحب" بدل ثلاث مهام منفصلة. اجمع الخطوات الصغيرة المرتبطة بنفس المُخرج تحت عنوان واحد، واذكر التفاصيل في حقل description.
+- لا تتجاوز الحد (12 إجمالاً، 4 لكل مرحلة) إلا في حالات نادرة استثنائية يقتضيها النشاط فعلاً (نشاط ضخم متعدد الجهات، أو حدث متشعّب). في هذه الحالة فقط، عيّن العلم "justify_exceeding_limits" إلى true واكتب في "exceed_reason" سبباً مقنعاً ومحدداً (لا عبارات عامة). إن لم يكن السبب مقنعاً سيُهمَل التجاوز ويُقتطع للحد الأقصى تلقائياً.
+- وزّع المهام بذكاء بين قبل/أثناء/بعد حسب طبيعة دور الموظف. ليس مطلوباً أن يحصل كل موظف على ثلاث مهام؛ موظف داعم قد يحتاج مهمة واحدة فقط.
 - كل مهمة عملية وقابلة للقياس وذات صياغة احترافية، لا عموميات. ابدأ بفعل أمر واضح.
-- المدة التقديرية واقعية بالدقائق (15-240).
-- الأولوية: high للحرجة، medium للأساسية، low للداعمة.
-- day_offset: عدد الأيام قبل (سالب) أو بعد (موجب) يوم النشاط، 0 لنفس اليوم. أمثلة: تنسيق مسبق → -7 أو -3، تجهيز يوم سابق → -1، تنفيذ → 0، تقرير ختامي → +1 أو +2.
+- المدة التقديرية واقعية بالدقائق (15-240). الأولوية: high للحرجة، medium للأساسية، low للداعمة.
+- day_offset: عدد الأيام قبل (سالب) أو بعد (موجب) يوم النشاط، 0 لنفس اليوم.
 - لا تكرّر مهاماً موجودة سابقاً (سأزوّدك بقائمتها).
 - في suggested_related_employees: اختر بدقة 0-4 موظفين فقط، ولا تقترح إلا من إشارات التشابك إذا كان له صف فعلي مرتبط بنفس النشاط أو نفس المبادرة/الفرعية. لا تقترح موظفاً من مجرد تشابه الهدف الاستراتيجي أو القسم العام.
 - إن كان أحد الموظفين الموجودين في "overlap_signals" مناسباً، فأعطه أولوية لأنه مثبت بالبيانات.`;
@@ -312,6 +314,14 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
                         additionalProperties: false,
                       },
                     },
+                    justify_exceeding_limits: {
+                      type: "boolean",
+                      description: "اضبطه true فقط إذا كان النشاط يستوجب فعلاً تجاوز 12 مهمة إجمالاً أو 4 مهام لكل مرحلة. وإلا اتركه false.",
+                    },
+                    exceed_reason: {
+                      type: "string",
+                      description: "سبب مقنع ومحدد للتجاوز (مطلوب عند justify_exceeding_limits=true).",
+                    },
                   },
                   required: ["tasks", "suggested_related_employees"],
                   additionalProperties: false,
@@ -379,7 +389,45 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
     const validTasks = (args.tasks ?? []).filter(
       (t: any) => empById.has(t.employee_id) && targetEmpIds.has(t.employee_id)
     );
-    const rows = validTasks
+
+    // فرض الحدود الذكية: 4 مهام لكل مرحلة و12 إجمالاً، إلا إذا برّر الذكاء الاصطناعي التجاوز بسبب مقنع
+    const MAX_PER_PHASE = 4;
+    const MAX_TOTAL = 12;
+    const justifiedExceed =
+      args.justify_exceeding_limits === true &&
+      typeof args.exceed_reason === "string" &&
+      args.exceed_reason.trim().length >= 25;
+
+    let cappedTasks = validTasks;
+    let cappedNotice: string | null = null;
+    if (!justifiedExceed) {
+      const perPhaseCount: Record<string, number> = { before: 0, during: 0, after: 0 };
+      const kept: any[] = [];
+      // أولوية حسب priority ثم الترتيب الأصلي
+      const priorityRank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+      const sorted = [...validTasks]
+        .map((t, i) => ({ t, i }))
+        .sort((a, b) => {
+          const pa = priorityRank[a.t.priority] ?? 1;
+          const pb = priorityRank[b.t.priority] ?? 1;
+          if (pa !== pb) return pa - pb;
+          return a.i - b.i;
+        });
+      for (const { t } of sorted) {
+        const ph = t.phase as string;
+        if (!(ph in perPhaseCount)) continue;
+        if (kept.length >= MAX_TOTAL) break;
+        if (perPhaseCount[ph] >= MAX_PER_PHASE) continue;
+        kept.push(t);
+        perPhaseCount[ph]++;
+      }
+      if (kept.length < validTasks.length) {
+        cappedNotice = `تم اقتطاع المهام للحد الأقصى الموصى به (4 لكل مرحلة، 12 إجمالاً). ولّد الذكاء الاصطناعي ${validTasks.length} مهمة وتم الإبقاء على ${kept.length}.`;
+      }
+      cappedTasks = kept;
+    }
+
+    const rows = cappedTasks
       .map((t: any, i: number) => ({
         executive_plan_id,
         employee_id: t.employee_id,
@@ -478,7 +526,9 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
         dispatched_count: dispatchedCount,
         skipped_no_user: skippedNoUser,
         used_fallback: usedFallback,
-        warning,
+        warning: warning ?? cappedNotice,
+        exceeded_limits: justifiedExceed,
+        exceed_reason: justifiedExceed ? args.exceed_reason : null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
