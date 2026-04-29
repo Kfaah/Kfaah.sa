@@ -524,12 +524,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     if (!el) return;
     const max = Math.max(0, el.scrollWidth - el.clientWidth);
     const step = Math.max(520, Math.floor(el.clientWidth * 0.72));
-    const next =
-      direction === "start" ? max :
-      direction === "end" ? 0 :
-      direction === "left" ? el.scrollLeft - step :
-      el.scrollLeft + step;
-    el.scrollTo({ left: Math.max(0, Math.min(max, next)), behavior: "smooth" });
+    if (direction === "start") {
+      el.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
+    if (direction === "end") {
+      el.scrollTo({ left: -max, behavior: "smooth" });
+      requestAnimationFrame(() => {
+        if (Math.abs(el.scrollLeft) < 2) el.scrollTo({ left: max, behavior: "smooth" });
+      });
+      return;
+    }
+    el.scrollBy({ left: direction === "left" ? -step : step, behavior: "smooth" });
   };
 
   // التحقق من صلاحية المدير
@@ -1862,18 +1868,14 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   </div>
                 </div>
                 <div
-                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset cursor-grab active:cursor-grabbing select-none"
-                  dir="ltr"
+                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset cursor-grab active:cursor-grabbing"
+                  dir="rtl"
                   tabIndex={0}
                   ref={(el) => {
                     datesTableScrollRef.current = el;
-                    if (el && !el.dataset.initialScrollDone) {
-                      el.dataset.initialScrollDone = "true";
-                      requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth - el.clientWidth; });
-                    }
                   }}
                   onPointerDown={(e) => {
-                    if (e.button !== 0 || (e.target as HTMLElement).closest("button,input,[role='combobox']")) return;
+                    if (e.button !== 0 || (e.target as HTMLElement).closest("button,input,[role='combobox'],[data-radix-popper-content-wrapper]")) return;
                     datesTableDragRef.current = { active: true, startX: e.clientX, scrollLeft: e.currentTarget.scrollLeft };
                     e.currentTarget.setPointerCapture(e.pointerId);
                   }}
@@ -1881,7 +1883,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     const drag = datesTableDragRef.current;
                     if (!drag.active) return;
                     e.preventDefault();
-                    e.currentTarget.scrollLeft = drag.scrollLeft - (e.clientX - drag.startX);
+                    e.currentTarget.scrollLeft = drag.scrollLeft + (e.clientX - drag.startX);
                   }}
                   onPointerUp={(e) => {
                     datesTableDragRef.current.active = false;
@@ -1891,10 +1893,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   onKeyDown={(e) => {
                     if (e.key === "ArrowLeft") {
                       e.preventDefault();
-                      scrollDatesTable(e.shiftKey ? "end" : "left");
+                      scrollDatesTable(e.shiftKey ? "end" : "right");
                     } else if (e.key === "ArrowRight") {
                       e.preventDefault();
-                      scrollDatesTable(e.shiftKey ? "start" : "right");
+                      scrollDatesTable(e.shiftKey ? "start" : "left");
                     } else if (e.key === "Home") {
                       e.preventDefault();
                       scrollDatesTable("start");
@@ -1904,7 +1906,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     }
                   }}
                 >
-                  <Table dir="rtl" className="min-w-max">
+                  <Table>
                     <TableHeader>
                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
                         {([
