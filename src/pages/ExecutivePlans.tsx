@@ -2504,6 +2504,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                     job_title: (e as any).job_role ?? null,
                                                     department_name: e.department_name ?? null,
                                                   }))}
+                                                  onNavigateToEmployee={focusEmployeeInExecutivePlans}
                                                 />
                                                 <ActivityPhasesPopover
                                                   executivePlanId={act.id}
