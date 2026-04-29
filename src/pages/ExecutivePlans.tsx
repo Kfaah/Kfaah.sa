@@ -534,6 +534,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const phasePreloadStartedRef = React.useRef<Set<string>>(new Set());
   const [preparingPhaseIds, setPreparingPhaseIds] = useState<Set<string>>(new Set());
   const [datesTableWidth, setDatesTableWidth] = useState(DATES_TABLE_MIN_WIDTH);
+  const stickyHeaderTop = embedded ? "52px" : "0px";
 
   const syncDatesHorizontalScroll = (source: "top" | "table") => {
     const top = datesTopScrollRef.current;
@@ -1873,7 +1874,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
               <Card className="overflow-visible">
-                <div className="sticky top-0 z-40 border-x border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-md" dir="rtl">
+                <div className="sticky z-40 border-x border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-md" style={{ top: stickyHeaderTop }} dir="rtl">
                   <div
                     ref={datesTopScrollRef}
                     className="h-5 overflow-x-auto overflow-y-hidden rounded-md bg-[hsl(var(--muted)/0.45)]"
@@ -1920,12 +1921,12 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                         <col key={column.key} style={{ width: column.width }} />
                       ))}
                     </colgroup>
-                    <TableHeader className="sticky top-[37px] z-30">
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-30">
+                    <TableHeader>
+                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]" style={{ "--exec-sticky-th-top": `calc(${stickyHeaderTop} + 37px)` } as React.CSSProperties}>
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
-                            className={cn("text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
+                            className={cn("top-[var(--exec-sticky-th-top)] text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
                           >
                             {isEditMode ? (
                               <input
@@ -2554,15 +2555,15 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               <Card className="overflow-hidden">
                  <div className="overflow-x-auto" dir="rtl">
                    <table className="w-full caption-bottom text-sm">
-                     <TableHeader className="sticky top-0 z-20">
-                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-20">
-                        <TableHead className="text-right font-bold text-white min-w-[120px] border-l border-white/20">
+                     <TableHeader>
+                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-20 [&>th]:bg-[hsl(var(--primary))]" style={{ "--exec-sticky-th-top": stickyHeaderTop } as React.CSSProperties}>
+                        <TableHead className="top-[var(--exec-sticky-th-top)] text-right font-bold text-white min-w-[120px] border-l border-white/20">
                           الشهر
                         </TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[200px] border-l border-white/20">
+                        <TableHead className="top-[var(--exec-sticky-th-top)] text-right font-bold text-white min-w-[200px] border-l border-white/20">
                           النشاط
                         </TableHead>
-                        <TableHead className="text-right font-bold text-white">
+                        <TableHead className="top-[var(--exec-sticky-th-top)] text-right font-bold text-white">
                           تواريخ التنفيذ
                         </TableHead>
                       </TableRow>
