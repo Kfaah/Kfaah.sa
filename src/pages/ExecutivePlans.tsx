@@ -1879,7 +1879,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {groupedPlans.map((monthGroup) => {
+                      {groupedPlans.map((monthGroup, monthIdx) => {
                         const isMonthExpanded = expandedMonths.has(`month-${monthGroup.month}`);
                         const totalDays = monthGroup.dateGroups.length;
 
@@ -1887,7 +1887,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           return (
                             <TableRow
                               key={`collapsed-${monthGroup.month}`}
-                              className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[hsl(var(--primary)/0.3)]"
+                              className={cn(
+                                "bg-gray-100 hover:bg-gray-200 cursor-pointer",
+                                monthIdx > 0 && "border-t-[4px] border-[hsl(var(--primary)/0.55)]"
+                              )}
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
                               <TableCell colSpan={7} className="py-3">
@@ -1911,7 +1914,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           return (
                             <TableRow
                               key={`empty-${monthGroup.month}`}
-                              className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[hsl(var(--primary)/0.3)]"
+                              className={cn(
+                                "bg-gray-100 hover:bg-gray-200 cursor-pointer",
+                                monthIdx > 0 && "border-t-[4px] border-[hsl(var(--primary)/0.55)]"
+                              )}
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
                               <TableCell colSpan={7} className="py-3">
