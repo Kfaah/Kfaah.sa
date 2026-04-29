@@ -1825,7 +1825,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[hsl(var(--primary)/0.3)]"
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
-                              <TableCell colSpan={7} className="py-3">
+                              <TableCell colSpan={8} className="py-3">
                                 <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
@@ -1849,7 +1849,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-t-2 border-[hsl(var(--primary)/0.3)]"
                               onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                             >
-                              <TableCell colSpan={7} className="py-3">
+                              <TableCell colSpan={8} className="py-3">
                                 <div className="flex items-center gap-3">
                                   <ChevronDown className="w-5 h-5 text-[hsl(var(--primary))] rotate-180 transition-transform" />
                                   <Calendar className="w-5 h-5 text-[hsl(var(--primary))]" />
