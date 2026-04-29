@@ -143,6 +143,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   // حالة نافذة التوليد
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState("");
 
