@@ -207,33 +207,6 @@ serve(async (req) => {
         "Cache-Control": "no-cache",
       },
     });
-
-    // (no-op below: kept for safety in case future code expects response variable)
-    // deno-lint-ignore no-unreachable
-    if (false) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "تم تجاوز حد الاستخدام، حاول بعد دقيقة." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "نفذ رصيد الذكاء الاصطناعي." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
   } catch (e) {
     console.error("assistant error:", e);
     return new Response(
