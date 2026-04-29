@@ -419,10 +419,10 @@ export function ActivityPhasesPopover({
                           >
                             <div className="flex items-start gap-2">
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm text-slate-800 leading-relaxed font-medium mb-1.5">
+                                <div className="text-base text-slate-800 leading-relaxed font-semibold mb-2">
                                   {t.title}
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                                <div className="flex flex-wrap items-center gap-2 text-[13px]">
                                   {/* المسؤول */}
                                   <Popover
                                     open={empPickerOpenFor === t.id}
@@ -430,12 +430,12 @@ export function ActivityPhasesPopover({
                                   >
                                     <PopoverTrigger asChild>
                                       <button
-                                        className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-md font-medium transition-colors"
+                                        className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-md font-medium transition-colors text-[13px]"
                                         disabled={isSaving}
                                       >
-                                        <UserCircle2 className="w-3 h-3" />
+                                        <UserCircle2 className="w-3.5 h-3.5" />
                                         <span>{emp?.full_name ?? "اختر مسؤولاً"}</span>
-                                        <ChevronDown className="w-3 h-3 opacity-60" />
+                                        <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                                       </button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-72 p-0" align="start" dir="rtl">
@@ -468,20 +468,43 @@ export function ActivityPhasesPopover({
 
                                   {/* التاريخ */}
                                   {meta.allowDate ? (
-                                    <label className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-md font-medium transition-colors cursor-pointer">
-                                      <CalendarIcon className="w-3 h-3" />
+                                    <label className="relative inline-flex items-center gap-2 bg-white border-2 border-[hsl(var(--primary)/0.25)] hover:border-[hsl(var(--primary)/0.6)] text-slate-800 px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer shadow-sm">
+                                      <CalendarIcon className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                      {(() => {
+                                        const p = formatDatePartsRTL(dueIso);
+                                        return (
+                                          <span dir="ltr" className="inline-flex items-center gap-1 text-[15px] font-bold tracking-wide tabular-nums">
+                                            <span className="text-slate-500">{p.year}</span>
+                                            <span className="text-slate-300">/</span>
+                                            <span className="text-slate-700">{p.month}</span>
+                                            <span className="text-slate-300">/</span>
+                                            <span className="text-[hsl(var(--primary))]">{p.day}</span>
+                                          </span>
+                                        );
+                                      })()}
                                       <input
                                         type="date"
                                         value={dueIso}
                                         onChange={(e) => void changeDate(t, e.target.value)}
                                         disabled={isSaving}
-                                        className="bg-transparent outline-none text-[11px] cursor-pointer"
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
                                       />
                                     </label>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-1 rounded-md font-medium">
-                                      <CalendarIcon className="w-3 h-3" />
-                                      {dueIso}
+                                    <span className="inline-flex items-center gap-2 bg-amber-50 border-2 border-amber-200 text-amber-800 px-3 py-1.5 rounded-lg font-bold shadow-sm">
+                                      <CalendarIcon className="w-4 h-4" />
+                                      {(() => {
+                                        const p = formatDatePartsRTL(dueIso);
+                                        return (
+                                          <span dir="ltr" className="inline-flex items-center gap-1 text-[15px] font-bold tracking-wide tabular-nums">
+                                            <span className="opacity-70">{p.year}</span>
+                                            <span className="opacity-40">/</span>
+                                            <span>{p.month}</span>
+                                            <span className="opacity-40">/</span>
+                                            <span className="text-amber-900">{p.day}</span>
+                                          </span>
+                                        );
+                                      })()}
                                     </span>
                                   )}
 
