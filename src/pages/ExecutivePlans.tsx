@@ -292,6 +292,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [expandedDayDepts, setExpandedDayDepts] = useState<Set<string>>(new Set());
   const [expandedDayDeptEmps, setExpandedDayDeptEmps] = useState<Set<string>>(new Set());
+  // أنشطة موسّعة لعرض لوحة "قبل/أثناء/بعد + الموظفون ذوو العلاقة"
+  const [expandedActivityPanels, setExpandedActivityPanels] = useState<Set<string>>(new Set());
   const [globalViewMode, setGlobalViewMode] = useState<"dates" | "tasks">("dates"); // الافتراضي بحسب التواريخ
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [aiProgress, setAiProgress] = useState<
