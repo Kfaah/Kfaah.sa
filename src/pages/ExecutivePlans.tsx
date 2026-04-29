@@ -2364,6 +2364,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   <TableCell
                                     className={cn(
                                       "border-l border-gray-200 align-top py-2.5",
+                                      isLastInDay && daySeparatorClass,
                                       isEditMode && "cursor-pointer hover:bg-amber-50"
                                     )}
                                     onClick={() => {
@@ -2405,7 +2406,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     </div>
                                     )}
                                   </TableCell>
-                                  <TableCell className="align-top py-2">
+                                  <TableCell className={cn("align-top py-2", isLastInDay && daySeparatorClass)}>
                                     <div className="flex flex-col gap-1">
                                       {l.acts.map((act, i) => {
                                         const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
