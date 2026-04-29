@@ -32,6 +32,7 @@ interface Props {
   activityDay: number;
   activityMonth: number;
   activityYear: number;
+  isPreparing?: boolean;
 }
 
 interface RelatedTask {
@@ -61,6 +62,7 @@ export function ActivityPhasesPopover({
   activityDay,
   activityMonth,
   activityYear,
+  isPreparing = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,7 +77,7 @@ export function ActivityPhasesPopover({
     if (!open || !responsibleEmployeeId) return;
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, isPreparing]);
 
   async function load() {
     setLoading(true);
@@ -91,7 +93,7 @@ export function ActivityPhasesPopover({
       const list = (data ?? []) as RelatedTask[];
       setTasks(list);
       // Auto-generate in background if empty and not tried yet
-      if (list.length === 0 && !autoTriedRef.current) {
+      if (list.length === 0 && !autoTriedRef.current && !isPreparing) {
         autoTriedRef.current = true;
         void autoGenerate();
       }
@@ -264,8 +266,14 @@ export function ActivityPhasesPopover({
           className="h-7 px-2 shrink-0 hover:bg-[hsl(var(--primary)/0.1)] relative gap-1 border border-[hsl(var(--primary)/0.2)] rounded-md"
           title="مهام (قبل/أثناء/بعد) للموظف الأساسي"
           onClick={(e) => e.stopPropagation()}
+          disabled={isPreparing && totalCount === 0}
         >
-          <span className="text-[10px] font-bold text-[hsl(var(--primary))]">مراحل</span>
+          <span className="text-[10px] font-bold text-[hsl(var(--primary))]">
+            {isPreparing && totalCount === 0 ? "تجهيز" : "مراحل"}
+          </span>
+          {isPreparing && totalCount === 0 && (
+            <Loader2 className="w-3 h-3 text-[hsl(var(--primary))] animate-spin" />
+          )}
           <ChevronDown
             className={cn(
               "w-3 h-3 text-[hsl(var(--primary))] transition-transform",
@@ -298,10 +306,10 @@ export function ActivityPhasesPopover({
                 <div className="text-xs text-white/85 truncate leading-tight mt-0.5">{activityName}</div>
               </div>
             </div>
-            {generating ? (
+            {generating || isPreparing ? (
               <Badge className="bg-white/25 text-white border-0 text-[11px] gap-1 backdrop-blur shrink-0 px-2 py-1">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                توليد ذكي...
+                تجهيز...
               </Badge>
             ) : totalCount > 0 ? (
               <Badge className="bg-white/25 text-white border-0 text-[11px] gap-1 backdrop-blur shrink-0 px-2 py-1">
@@ -360,7 +368,7 @@ export function ActivityPhasesPopover({
 
                   {list.length === 0 && !isAdding && (
                     <div className="text-xs text-slate-400 italic py-2 text-center">
-                      {generating ? "يتم التوليد..." : "لا مهام بعد"}
+                      {generating || isPreparing ? "يتم التجهيز..." : "لا مهام بعد"}
                     </div>
                   )}
 
