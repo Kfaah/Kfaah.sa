@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -29,6 +29,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Employee {
   id: string;
@@ -60,6 +61,7 @@ const AddTask = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user: authUser } = useAuth();
+  const { currentOrg } = useOrganization();
 
   const [isLoading, setIsLoading] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -78,21 +80,66 @@ const AddTask = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const departmentOptions = useMemo(() => {
+    const grouped = new Map<string, { label: string; ids: Set<string> }>();
+
+    departments.forEach((department) => {
+      const label = cleanName(department.name);
+      const key = label.replace(/\s+/g, " ").trim();
+      const current = grouped.get(key);
+
+      if (current) {
+        current.ids.add(department.id);
+      } else {
+        grouped.set(key, { label, ids: new Set([department.id]) });
+      }
+    });
+
+    return Array.from(grouped.entries()).map(([key, option]) => ({
+      key,
+      label: option.label,
+      ids: Array.from(option.ids),
+    }));
+  }, [departments]);
+
+  const selectedDepartmentIds = useMemo(() => {
+    if (!selectedDepartmentId || selectedDepartmentId === "__all__") return [];
+    return departmentOptions.find((department) => department.key === selectedDepartmentId)?.ids ?? [];
+  }, [departmentOptions, selectedDepartmentId]);
+
+  const filteredEmployees = useMemo(() => {
+    if (!selectedDepartmentId || selectedDepartmentId === "__all__") return employees;
+    return employees.filter((employee) =>
+      employee.department_id ? selectedDepartmentIds.includes(employee.department_id) : false
+    );
+  }, [employees, selectedDepartmentId, selectedDepartmentIds]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [{ data: empData, error: empErr }, { data: depData, error: depErr }] = await Promise.all([
-          supabase
+        setLoadingEmployees(true);
+        let employeesQuery = supabase
           .from("employees")
-            .select("id, full_name, user_id, job_role, department_id")
+          .select("id, full_name, user_id, job_role, department_id")
           .not("user_id", "is", null)
-            .order("full_name"),
-          supabase.from("departments").select("id, name").order("name"),
+          .order("full_name");
+
+        let departmentsQuery = supabase.from("departments").select("id, name").order("name");
+
+        if (currentOrg?.id) {
+          employeesQuery = employeesQuery.eq("organization_id", currentOrg.id);
+          departmentsQuery = departmentsQuery.eq("organization_id", currentOrg.id);
+        }
+
+        const [{ data: empData, error: empErr }, { data: depData, error: depErr }] = await Promise.all([
+          employeesQuery,
+          departmentsQuery,
         ]);
         if (empErr) throw empErr;
         if (depErr) throw depErr;
         setEmployees(empData || []);
         setDepartments(depData || []);
+        setSelectedDepartmentId("");
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -100,7 +147,7 @@ const AddTask = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [currentOrg?.id]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -126,6 +173,7 @@ const AddTask = () => {
         title: form.title.trim(),
         description: form.description.trim() || null,
         user_id: form.user_id,
+        organization_id: currentOrg?.id ?? null,
         due_date: form.due_date || null,
         priority: form.priority,
         estimated_time_minutes: form.estimated_time_minutes,
@@ -240,9 +288,9 @@ const AddTask = () => {
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   <SelectItem value="__all__">كل الأقسام</SelectItem>
-                  {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {cleanName(d.name)}
+                  {departmentOptions.map((department) => (
+                    <SelectItem key={department.key} value={department.key}>
+                      {department.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -281,13 +329,7 @@ const AddTask = () => {
                     />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    {employees
-                      .filter((emp) =>
-                        !selectedDepartmentId || selectedDepartmentId === "__all__"
-                          ? true
-                          : emp.department_id === selectedDepartmentId
-                      )
-                      .map((emp) => (
+                    {filteredEmployees.map((emp) => (
                       <SelectItem key={emp.id} value={emp.user_id || emp.id}>
                         <div className="flex items-center gap-2">
                           <span>{cleanName(emp.full_name)}</span>
@@ -295,11 +337,7 @@ const AddTask = () => {
                         </div>
                       </SelectItem>
                     ))}
-                    {employees.filter((emp) =>
-                      !selectedDepartmentId || selectedDepartmentId === "__all__"
-                        ? true
-                        : emp.department_id === selectedDepartmentId
-                    ).length === 0 && (
+                    {filteredEmployees.length === 0 && (
                       <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                         لا يوجد موظفون في هذا القسم
                       </div>
