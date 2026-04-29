@@ -2493,6 +2493,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                 activityDay={(act as any).day ?? l.day}
                                                 activityMonth={(act as any).month ?? monthGroup.month}
                                                 activityYear={selectedYear}
+                                                isPreparing={preparingPhaseIds.has(act.id)}
                                               />
                                             )}
                                           </div>
