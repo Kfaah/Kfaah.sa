@@ -224,35 +224,30 @@ export function RelatedEmployeesIndicator({
       .toLowerCase();
   }
 
+  function isVisibleTarget(el: HTMLElement) {
+    const rect = el.getBoundingClientRect();
+    const style = window.getComputedStyle(el);
+    return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+  }
+
   function navigateToEmployee(empId: string) {
     setOpen(false);
     requestAnimationFrame(() => {
-      const sameActivity = normalizeAnchorValue(activityName);
-      const sameInitiative = normalizeAnchorValue(initiativeName);
-      const sameSub = normalizeAnchorValue(subInitiativeName);
-      const allCandidates = Array.from(document.querySelectorAll<HTMLElement>(`[data-emp-anchor="${empId}"]`));
-      const candidates = sameActivity
-        ? allCandidates.filter((el) => {
-            const matchesActivity = el.dataset.activityAnchor === sameActivity;
-            const matchesInitiative = !sameInitiative || el.dataset.initiativeAnchor === sameInitiative;
-            const matchesSub = !sameSub || sameSub === "—" || el.dataset.subAnchor === sameSub;
-            return matchesActivity && matchesInitiative && matchesSub;
-          })
-        : allCandidates;
-      const pool = candidates.length > 0 ? candidates : allCandidates;
+      const pool = Array.from(document.querySelectorAll<HTMLElement>("[data-employee-row-target]"))
+        .filter((el) => el.dataset.employeeRowTarget === empId && isVisibleTarget(el));
       if (pool.length === 0) {
         toast({
           title: "لم يُعثر على صفّ هذا الموظف",
-          description: "قد يكون مُخفياً بفلتر القسم أو الشهر — جرّب إزالة الفلاتر أو اختيار «كل الأقسام» وكامل السنة.",
+          description: "لا يوجد صف ظاهر لهذا الموظف حالياً — جرّب إزالة فلاتر القسم أو الشهر.",
           variant: "destructive",
         });
         return;
       }
       const target = pool[0];
       target.scrollIntoView({ behavior: "smooth", block: "center" });
-      target.classList.add("ring-2", "ring-amber-400", "ring-offset-2", "transition-shadow");
+      target.classList.add("ring-2", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.08)]", "transition-shadow");
       window.setTimeout(() => {
-        target.classList.remove("ring-2", "ring-amber-400", "ring-offset-2");
+        target.classList.remove("ring-2", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.08)]");
       }, 2200);
     });
   }
