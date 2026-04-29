@@ -1881,8 +1881,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     className="min-w-max"
                   >
                   <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
+                    <TableHeader className="sticky top-[40px] z-20">
+                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-[40px] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-20">
                         {([
                           { key: "month", w: "min-w-[110px]" },
                           { key: "date", w: "min-w-[160px]" },
@@ -2522,10 +2522,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {/* عرض بحسب المهام */}
             {globalViewMode === "tasks" && (
               <Card className="overflow-hidden">
-                <div className="overflow-x-auto" dir="rtl">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
+                 <div className="overflow-x-auto" dir="rtl">
+                   <Table>
+                     <TableHeader className="sticky top-0 z-20">
+                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-0 [&>th]:bg-[hsl(var(--primary))] [&>th]:z-20">
                         <TableHead className="text-right font-bold text-white min-w-[120px] border-l border-white/20">
                           الشهر
                         </TableHead>
