@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,7 +71,6 @@ export function ActivityPhasesPopover({
   const [addingPhase, setAddingPhase] = useState<Phase | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newOffset, setNewOffset] = useState<number>(0);
-  const autoTriedRef = useRef(false);
 
   useEffect(() => {
     if (!open || !responsibleEmployeeId) return;
@@ -92,11 +91,6 @@ export function ActivityPhasesPopover({
       if (error) throw error;
       const list = (data ?? []) as RelatedTask[];
       setTasks(list);
-      // Auto-generate in background if empty and not tried yet
-      if (list.length === 0 && !autoTriedRef.current && !isPreparing) {
-        autoTriedRef.current = true;
-        void autoGenerate();
-      }
     } catch (e: any) {
       toast({ title: "تعذّر التحميل", description: e.message, variant: "destructive" });
     } finally {

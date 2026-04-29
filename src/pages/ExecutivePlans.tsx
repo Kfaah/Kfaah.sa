@@ -75,7 +75,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
 import { useScopedView } from "@/hooks/useScopedView";
 import { useOrganization } from "@/contexts/OrganizationContext";
-import { ActivityRelatedPanel } from "@/components/executive-plans/ActivityRelatedPanel";
 import { ActivityPhasesPopover } from "@/components/executive-plans/ActivityPhasesPopover";
 import { RelatedEmployeesIndicator } from "@/components/executive-plans/RelatedEmployeesIndicator";
 
@@ -155,6 +154,15 @@ const DATES_TABLE_MIN_WIDTH = DATES_TABLE_COLUMNS.reduce(
 );
 
 const QUERY_CHUNK_SIZE = 80;
+
+function normalizeAnchorValue(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/ـ/g, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
 
 function chunkArray<T>(items: T[], size = QUERY_CHUNK_SIZE): T[][] {
   const chunks: T[][] = [];
@@ -527,23 +535,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [addingMonth, setAddingMonth] = useState<number>(1);
   const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
-  const datesTopScrollRef = React.useRef<HTMLDivElement | null>(null);
-  const datesTableInnerRef = React.useRef<HTMLDivElement | null>(null);
-  const syncingDatesScrollRef = React.useRef(false);
-  const phasePreloadStartedRef = React.useRef<Set<string>>(new Set());
-  const [preparingPhaseIds, setPreparingPhaseIds] = useState<Set<string>>(new Set());
-  const [datesTableWidth, setDatesTableWidth] = useState(DATES_TABLE_MIN_WIDTH);
   const stickyHeaderTop = embedded ? "52px" : "0px";
-
-  const syncDatesHorizontalScroll = (source: "top" | "table") => {
-    const top = datesTopScrollRef.current;
-    const table = datesTableScrollRef.current;
-    if (!top || !table || syncingDatesScrollRef.current) return;
-    syncingDatesScrollRef.current = true;
-    if (source === "top") table.scrollLeft = top.scrollLeft;
-    else top.scrollLeft = table.scrollLeft;
-    requestAnimationFrame(() => { syncingDatesScrollRef.current = false; });
-  };
 
   // التحقق من صلاحية المدير
   useEffect(() => {
@@ -998,47 +990,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       return changed ? next : prev;
     });
   }, [groupedPlans, globalViewMode]);
-
-  useEffect(() => {
-    if (globalViewMode !== "dates" || !activeOrgId) return;
-    const activityIds = Array.from(new Set(
-      groupedPlans.flatMap((month) => month.dateGroups.flatMap((day) => day.activities.map((activity) => activity.id)))
-    )).filter((id) => !phasePreloadStartedRef.current.has(id));
-    if (activityIds.length === 0) return;
-
-    let cancelled = false;
-    activityIds.forEach((id) => phasePreloadStartedRef.current.add(id));
-    setPreparingPhaseIds((prev) => new Set([...prev, ...activityIds]));
-
-    const preload = async () => {
-      for (const id of activityIds) {
-        if (cancelled) return;
-        try {
-          const { data: existing } = await supabase
-            .from("activity_related_tasks")
-            .select("id")
-            .eq("executive_plan_id", id)
-            .limit(1);
-          if (!existing || existing.length === 0) {
-            await supabase.functions.invoke("generate-related-tasks", { body: { executive_plan_id: id } });
-          }
-        } catch (error) {
-          console.error("preload activity phases", error);
-        } finally {
-          if (!cancelled) {
-            setPreparingPhaseIds((prev) => {
-              const next = new Set(prev);
-              next.delete(id);
-              return next;
-            });
-          }
-        }
-      }
-    };
-
-    void preload();
-    return () => { cancelled = true; };
-  }, [groupedPlans, globalViewMode, activeOrgId]);
 
   // قائمة الخطط الفريدة المتاحة (مع عدد الأنشطة لكل خطة)
   const availablePlans = useMemo(() => {
@@ -1873,15 +1824,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
               <Card className="overflow-visible">
-                <div className="sticky z-40 border-x border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-md" style={{ top: stickyHeaderTop }} dir="rtl">
-                  <div
-                    ref={datesTopScrollRef}
-                    className="h-5 overflow-x-auto overflow-y-hidden rounded-md bg-[hsl(var(--muted)/0.45)]"
-                    onScroll={() => syncDatesHorizontalScroll("top")}
-                  >
-                      <div style={{ width: datesTableWidth, minWidth: DATES_TABLE_MIN_WIDTH, height: 1 }} />
-                  </div>
-                </div>
                 <div
                   className="max-h-[calc(100vh-160px)] overflow-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
                   dir="rtl"
@@ -1889,7 +1831,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   ref={(el) => {
                     datesTableScrollRef.current = el;
                   }}
-                  onScroll={() => syncDatesHorizontalScroll("table")}
                   onKeyDown={(e) => {
                     const step = e.shiftKey ? e.currentTarget.clientWidth * 0.9 : 260;
                     if (e.key === "ArrowLeft") {
@@ -1908,10 +1849,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   }}
                 >
                   <div
-                    ref={(el) => {
-                      datesTableInnerRef.current = el;
-                      if (el) requestAnimationFrame(() => setDatesTableWidth(Math.max(el.scrollWidth, el.clientWidth, DATES_TABLE_MIN_WIDTH)));
-                    }}
                     style={{ minWidth: DATES_TABLE_MIN_WIDTH }}
                   >
                   <table className="w-full caption-bottom text-base table-fixed">
@@ -2110,10 +2047,16 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               const showSub = !l.collapsed && !seenSub.has(l.subKey); if (showSub) seenSub.add(l.subKey);
                               const dayKey = `day-${monthGroup.month}-${l.day}`;
                               const isDayExpanded = !l.collapsed;
+                              const firstAct = l.acts?.[0] as any;
                               return (
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
-                                  data-emp-anchor={(l.acts && l.acts.length > 0 ? ((l.acts[0] as any).employeeId ?? "") : "") || undefined}
+                                  data-emp-anchor={firstAct?.employeeId || undefined}
+                                  data-op-anchor={firstAct?.operationalPlanId || undefined}
+                                  data-activity-anchor={firstAct?.activityName ? normalizeAnchorValue(firstAct.activityName) : undefined}
+                                  data-initiative-anchor={l.initName ? normalizeAnchorValue(l.initName) : undefined}
+                                  data-sub-anchor={l.subName ? normalizeAnchorValue(l.subName) : undefined}
+                                  data-dept-anchor={l.deptName ? normalizeAnchorValue(l.deptName) : undefined}
                                   className={cn(
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
@@ -2123,7 +2066,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {showMonth && (
                                     <TableCell
                                       rowSpan={monthSpan}
-                                      className="bg-gradient-to-b from-slate-50 to-white border-l border-gray-200 align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors"
+                                      className="bg-gradient-to-b from-slate-50 to-white border-l border-gray-200 align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors sticky z-20"
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
                                       <div className="flex flex-col items-center gap-2 py-4 px-2">
@@ -2158,9 +2102,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={daySpan.get(l.day) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors",
+                                        "border-l border-gray-200 align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors sticky z-20 bg-white",
                                         isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const firstAct = l.acts[0] as any;
@@ -2261,9 +2206,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={deptSpan.get(l.deptKey) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3 bg-[hsl(var(--primary)/0.06)]",
+                                        "border-l border-gray-200 align-top py-3 bg-[hsl(var(--primary)/0.06)] sticky z-20",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
@@ -2303,9 +2249,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={initSpan.get(l.initKey) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3",
+                                        "border-l border-gray-200 align-top py-3 sticky z-20 bg-white",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
@@ -2500,6 +2447,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   responsibleEmployeeId={(act as any).employeeId ?? null}
                                                   organizationId={activeOrgId}
                                                   activityName={act.activityName ?? ""}
+                                                  initiativeName={(act as any).initiative ?? l.initName}
+                                                  subInitiativeName={(act as any).subInitiative ?? l.subName}
                                                   activityDay={(act as any).day ?? l.day}
                                                   activityMonth={(act as any).month ?? monthGroup.month}
                                                   activityYear={selectedYear}
@@ -2519,7 +2468,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   activityDay={(act as any).day ?? l.day}
                                                   activityMonth={(act as any).month ?? monthGroup.month}
                                                   activityYear={selectedYear}
-                                                  isPreparing={preparingPhaseIds.has(act.id)}
                                                 />
                                               </div>
                                             )}

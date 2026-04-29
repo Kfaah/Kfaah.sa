@@ -60,6 +60,15 @@ function buildFallbackArgs({
   return { tasks, suggested_related_employees };
 }
 
+function normalizeArabicText(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/ـ/g, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -165,18 +174,21 @@ Deno.serve(async (req) => {
       department: e.departments?.name ?? null,
     }));
 
-    // Build cross-plan signal: which employees are responsible for plans
-    // sharing strategic_goal / initiative / sub_initiative with the current activity.
+    // Build strict cross-plan signal: only employees responsible for rows that can be reached
+    // in the visible table for the same activity, or at least the same initiative/sub-initiative.
+    const currentActivity = normalizeArabicText(op.activity_name);
+    const currentInitiative = normalizeArabicText(op.initiative);
+    const currentSubInitiative = normalizeArabicText(op.sub_initiative);
     const overlap = (relatedPlans ?? [])
       .filter((p: any) => {
         if (!p.responsible_employee_id) return false;
-        const sg = (p.strategic_goal ?? "").trim();
-        const ini = (p.initiative ?? "").trim();
-        const sub = (p.sub_initiative ?? "").trim();
+        const activity = normalizeArabicText(p.activity_name);
+        const ini = normalizeArabicText(p.initiative);
+        const sub = normalizeArabicText(p.sub_initiative);
         return (
-          (sg && sg === (op.strategic_goal ?? "").trim()) ||
-          (ini && ini === (op.initiative ?? "").trim()) ||
-          (sub && sub === (op.sub_initiative ?? "").trim())
+          (!!activity && activity === currentActivity) ||
+          (!!currentSubInitiative && sub === currentSubInitiative) ||
+          (!!currentInitiative && ini === currentInitiative)
         );
       })
       .map((p: any) => {
@@ -204,7 +216,7 @@ Deno.serve(async (req) => {
 1) توليد قائمة احترافية ودقيقة جداً من المهام التحضيرية (قبل) والتنفيذية (أثناء) والختامية (بعد) لنشاط محدد، موزعة على الموظفين المعنيين كلٌّ حسب دوره الفعلي ومسماه الوظيفي وقسمه.
 2) استنتاج "الموظفين ذوي العلاقة" بشكل ذكي بناءً على:
    - تركيبة الخطة التشغيلية (الهدف الاستراتيجي، المبادرة، المبادرة الفرعية).
-   - الموظفون المسؤولون عن خطط أخرى تتقاطع مع هذا النشاط (تشابك المبادرات).
+   - الموظفون المسؤولون عن نفس النشاط في أقسام أخرى، أو نفس المبادرة/المبادرة الفرعية فقط عند وجود تشابك واضح.
    - طبيعة النشاط ومتطلباته الواضحة من الأقسام (إعلام، مالية، توثيق، لوجستيات، علاقات عامة...).
    - إذا كان النشاط فعالية: غالباً يحتاج (إعلام، تصوير، علاقات عامة، تنظيم).
    - إذا كان النشاط داخلياً (تدريب/اجتماع): قد يحتاج (موارد بشرية، توثيق).
@@ -217,7 +229,7 @@ Deno.serve(async (req) => {
 - الأولوية: high للحرجة، medium للأساسية، low للداعمة.
 - day_offset: عدد الأيام قبل (سالب) أو بعد (موجب) يوم النشاط، 0 لنفس اليوم. أمثلة: تنسيق مسبق → -7 أو -3، تجهيز يوم سابق → -1، تنفيذ → 0، تقرير ختامي → +1 أو +2.
 - لا تكرّر مهاماً موجودة سابقاً (سأزوّدك بقائمتها).
-- في suggested_related_employees: اختر بدقة 1-4 موظفين فقط، مع تبرير قوي مرتبط بطبيعة النشاط أو بتشابك المبادرات. لا تقترح موظفاً بلا مبرر واضح.
+- في suggested_related_employees: اختر بدقة 0-4 موظفين فقط، ولا تقترح إلا من إشارات التشابك إذا كان له صف فعلي مرتبط بنفس النشاط أو نفس المبادرة/الفرعية. لا تقترح موظفاً من مجرد تشابه الهدف الاستراتيجي أو القسم العام.
 - إن كان أحد الموظفين الموجودين في "overlap_signals" مناسباً، فأعطه أولوية لأنه مثبت بالبيانات.`;
 
     const userPrompt = `النشاط: "${op.activity_name}"
@@ -233,7 +245,7 @@ Deno.serve(async (req) => {
 الموظفون المعنيون حالياً:
 ${JSON.stringify(targetList, null, 2)}
 
-إشارات تشابك من خطط أخرى في نفس السنة (موظفون مسؤولون عن خطط تشترك في الهدف/المبادرة/الفرعية):
+إشارات تشابك من خطط أخرى في نفس السنة (موظفون لديهم صفوف يمكن الانتقال لها لأنها تشترك في نفس النشاط أو المبادرة/الفرعية):
 ${JSON.stringify(overlap.slice(0, 15), null, 2)}
 
 مهام سبق توليدها لهذا النشاط (لا تكرّرها):
