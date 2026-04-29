@@ -2115,7 +2115,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
                                   className={cn(
-                                    "transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
+                                    "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
                                     showDay && idx > 0 ? "border-t-2 border-[hsl(var(--primary)/0.25)]" : "",
                                   )}
