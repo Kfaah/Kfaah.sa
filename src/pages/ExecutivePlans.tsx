@@ -2115,7 +2115,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   )}
                                   {l.collapsed ? (
                                     <TableCell
-                                      colSpan={5}
+                                      colSpan={6}
                                       className="bg-slate-50/60 border-l border-gray-200 align-middle py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.04)] transition-colors"
                                       onClick={() => toggleDay(dayKey)}
                                     >
