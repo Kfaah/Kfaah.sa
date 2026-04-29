@@ -2075,19 +2075,19 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
                                     // فاصل بين الأشهر — عريض على أول صف من شهر جديد
-                                    idx === 0 && monthIdx > 0 ? "[&>td]:border-t-[4px] [&>td]:border-t-[hsl(var(--primary)/0.6)]" : "",
+                                    idx === 0 && monthIdx > 0 ? "[&>td]:shadow-[inset_0_4px_0_0_hsl(var(--primary)/0.6)]" : "",
                                     // فاصل بين الأيام — نفس العرض داخل الشهر الواحد
-                                    showDay && idx > 0 ? "[&>td]:border-t-[4px] [&>td]:border-t-[hsl(var(--primary)/0.6)]" : "",
+                                    showDay && idx > 0 ? "[&>td]:shadow-[inset_0_4px_0_0_hsl(var(--primary)/0.6)]" : "",
                                     // فاصل بين الأقسام — عريض بنفس العرض، يُطبَّق على أول صف من قسم جديد (ولم يُطبَّق فاصل اليوم/الشهر بالفعل)
                                     !l.collapsed && isFirstInDept && idx > 0 && !showDay
-                                      ? "[&>td]:border-t-[4px] [&>td]:border-t-[hsl(var(--primary)/0.6)]"
+                                      ? "[&>td]:shadow-[inset_0_4px_0_0_hsl(var(--primary)/0.6)]"
                                       : "",
                                     // فواصل المبادرات والمبادرات الفرعية — أخف
                                     !l.collapsed && isFirstInInit && idx > 0 && !isFirstInDept && !showDay
-                                      ? "[&>td]:border-t-2 [&>td]:border-t-[hsl(var(--primary)/0.35)]"
+                                      ? "[&>td]:shadow-[inset_0_2px_0_0_hsl(var(--primary)/0.35)]"
                                       : "",
                                     !l.collapsed && isFirstInSub && idx > 0 && !isFirstInInit && !isFirstInDept && !showDay
-                                      ? "[&>td]:border-t [&>td]:border-t-[hsl(var(--primary)/0.18)]"
+                                      ? "[&>td]:shadow-[inset_0_1px_0_0_hsl(var(--primary)/0.18)]"
                                       : "",
                                   )}
                                 >
@@ -2096,7 +2096,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={monthSpan}
                                       className={cn(
                                         "bg-gradient-to-b from-slate-50 to-white border-l-[3px] border-l-[hsl(var(--primary)/0.5)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors",
-                                        monthIdx > 0 && "shadow-[inset_0_4px_0_0_hsl(var(--primary)/0.6)]"
                                       )}
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
@@ -2133,7 +2132,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={daySpan.get(l.day) ?? 1}
                                       className={cn(
                                         "border-l-[3px] border-l-[hsl(var(--primary)/0.5)] align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors sticky z-20 bg-white",
-                                        idx > 0 && "shadow-[inset_0_4px_0_0_hsl(var(--primary)/0.6)]",
                                         isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       style={{ top: stickyHeaderTop }}
