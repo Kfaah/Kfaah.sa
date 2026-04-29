@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Popover,
@@ -37,6 +37,8 @@ interface Props {
   responsibleEmployeeId: string | null;
   organizationId: string | null;
   activityName: string;
+  initiativeName?: string | null;
+  subInitiativeName?: string | null;
   activityDay: number;
   activityMonth: number;
   activityYear: number;
@@ -48,6 +50,8 @@ export function RelatedEmployeesIndicator({
   responsibleEmployeeId,
   organizationId,
   activityName,
+  initiativeName,
+  subInitiativeName,
   activityDay,
   activityMonth,
   activityYear,
