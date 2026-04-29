@@ -537,15 +537,68 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
   const stickyHeaderTop = embedded ? "52px" : "0px";
 
-  const focusEmployeeInExecutivePlans = (employeeId: string) => {
-    const employee = employees.find((e) => e.id === employeeId);
+  const focusEmployeeInExecutivePlans = (employeeId: string, executivePlanId?: string) => {
     setFilterDepartmentId("all");
     setSelectedEmployeeId(employeeId);
     setExpandedDays(new Set());
-    toast({ title: "تم عرض الموظف", description: employee?.full_name ?? "تمت فلترة الجدول على الموظف المحدد" });
-    window.setTimeout(() => {
-      datesTableScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    }, 120);
+
+    // انتقال فوري إلى صف النشاط المحدد للموظف المحدد — بدون أي تأخير صناعي.
+    const focusTarget = () => {
+      const scrollParent =
+        datesTableScrollRef.current ??
+        document.querySelector<HTMLElement>("[data-executive-plans-scroll]");
+
+      // 1) حاول إيجاد صف النشاط نفسه (الأدق)
+      let target: HTMLElement | null = null;
+      if (executivePlanId) {
+        target = document.querySelector<HTMLElement>(
+          `[data-activity-row-target="${executivePlanId}"]`,
+        );
+      }
+      // 2) وإلا، أول صف يعود لهذا الموظف
+      if (!target) {
+        target = document.querySelector<HTMLElement>(
+          `[data-employee-row-target="${employeeId}"]`,
+        );
+      }
+      if (!target) return false;
+
+      if (scrollParent) {
+        const parentRect = scrollParent.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        scrollParent.scrollTop +=
+          targetRect.top - parentRect.top - parentRect.height / 2 + targetRect.height / 2;
+      } else {
+        target.scrollIntoView({ behavior: "auto", block: "center" });
+      }
+
+      target.classList.add(
+        "ring-4",
+        "ring-[hsl(var(--primary))]",
+        "ring-offset-2",
+        "bg-[hsl(var(--primary)/0.10)]",
+        "transition-shadow",
+      );
+      window.setTimeout(() => {
+        target!.classList.remove(
+          "ring-4",
+          "ring-[hsl(var(--primary))]",
+          "ring-offset-2",
+          "bg-[hsl(var(--primary)/0.10)]",
+        );
+      }, 1800);
+      return true;
+    };
+
+    // محاولات متتالية فورية بعد إعادة الرسم (بدون انتظار toast/timeout طويل)
+    requestAnimationFrame(() => {
+      if (focusTarget()) return;
+      requestAnimationFrame(() => {
+        if (focusTarget()) return;
+        // محاولة أخيرة قصيرة جداً في حال احتاج الجدول إعادة بناء
+        window.setTimeout(focusTarget, 60);
+      });
+    });
   };
 
   // التحقق من صلاحية المدير
