@@ -535,23 +535,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [addingMonth, setAddingMonth] = useState<number>(1);
   const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
-  const datesTopScrollRef = React.useRef<HTMLDivElement | null>(null);
-  const datesTableInnerRef = React.useRef<HTMLDivElement | null>(null);
-  const syncingDatesScrollRef = React.useRef(false);
-  const phasePreloadStartedRef = React.useRef<Set<string>>(new Set());
-  const [preparingPhaseIds, setPreparingPhaseIds] = useState<Set<string>>(new Set());
-  const [datesTableWidth, setDatesTableWidth] = useState(DATES_TABLE_MIN_WIDTH);
   const stickyHeaderTop = embedded ? "52px" : "0px";
-
-  const syncDatesHorizontalScroll = (source: "top" | "table") => {
-    const top = datesTopScrollRef.current;
-    const table = datesTableScrollRef.current;
-    if (!top || !table || syncingDatesScrollRef.current) return;
-    syncingDatesScrollRef.current = true;
-    if (source === "top") table.scrollLeft = top.scrollLeft;
-    else top.scrollLeft = table.scrollLeft;
-    requestAnimationFrame(() => { syncingDatesScrollRef.current = false; });
-  };
 
   // التحقق من صلاحية المدير
   useEffect(() => {
