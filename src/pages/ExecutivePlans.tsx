@@ -77,7 +77,6 @@ import { useScopedView } from "@/hooks/useScopedView";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { ActivityRelatedPanel } from "@/components/executive-plans/ActivityRelatedPanel";
 import { ActivityPhasesPopover } from "@/components/executive-plans/ActivityPhasesPopover";
-import { RelatedEmployeesCell } from "@/components/executive-plans/RelatedEmployeesCell";
 import { RelatedEmployeesIndicator } from "@/components/executive-plans/RelatedEmployeesIndicator";
 
 interface Employee {
