@@ -2074,18 +2074,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   className={cn(
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
-                                    // فاصل موحّد على الصف نفسه حتى يمر كخط واحد مستقيم عبر الخلايا الممتدة
-                                    idx === 0 && monthIdx > 0 ? "border-t-[3px] border-t-[hsl(var(--primary)/0.55)]" : "",
-                                    showDay && idx > 0 ? "border-t-[3px] border-t-[hsl(var(--primary)/0.55)]" : "",
-                                    !l.collapsed && isFirstInDept && idx > 0 && !showDay
-                                      ? "border-t-[3px] border-t-[hsl(var(--primary)/0.55)]"
-                                      : "",
-                                    !l.collapsed && isFirstInInit && idx > 0 && !isFirstInDept && !showDay
-                                      ? "border-t-2 border-t-[hsl(var(--primary)/0.35)]"
-                                      : "",
-                                    !l.collapsed && isFirstInSub && idx > 0 && !isFirstInInit && !isFirstInDept && !showDay
-                                      ? "border-t border-t-[hsl(var(--primary)/0.18)]"
-                                      : "",
                                   )}
                                 >
                                   {showMonth && (
@@ -2129,6 +2117,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={daySpan.get(l.day) ?? 1}
                                       className={cn(
                                         "border-l-[3px] border-l-[hsl(var(--primary)/0.5)] align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors sticky z-20 bg-white",
+                                        showDay && idx > 0 && "border-t-[3px] border-t-[hsl(var(--primary)/0.55)]",
                                         isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       style={{ top: stickyHeaderTop }}
