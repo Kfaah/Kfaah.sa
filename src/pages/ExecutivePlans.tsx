@@ -2055,6 +2055,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               const isDayExpanded = !l.collapsed;
                               const firstAct = l.acts?.[0] as any;
                               const nextLeaf = leaves[idx + 1];
+                              const isLastInDay = !nextLeaf || nextLeaf.day !== l.day;
                               const isLastInSub = !nextLeaf || nextLeaf.subKey !== l.subKey;
                               const isLastInInit = !nextLeaf || nextLeaf.initKey !== l.initKey;
                               const isLastInDept = !nextLeaf || nextLeaf.deptKey !== l.deptKey;
@@ -2062,6 +2063,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               const isFirstInDept = !prevLeaf || prevLeaf.deptKey !== l.deptKey;
                               const isFirstInInit = !prevLeaf || prevLeaf.initKey !== l.initKey;
                               const isFirstInSub  = !prevLeaf || prevLeaf.subKey  !== l.subKey;
+                              const daySeparatorClass = "shadow-[inset_0_-3px_0_0_hsl(var(--primary)/0.55)]";
+                              const deptEndsWithDay = showDept && (leaves[idx + (deptSpan.get(l.deptKey) ?? 1)]?.day !== l.day);
+                              const initEndsWithDay = showInit && (leaves[idx + (initSpan.get(l.initKey) ?? 1)]?.day !== l.day);
+                              const subEndsWithDay = showSub && (leaves[idx + (subSpan.get(l.subKey) ?? 1)]?.day !== l.day);
                               return (
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
@@ -2117,7 +2122,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={daySpan.get(l.day) ?? 1}
                                       className={cn(
                                         "border-l-[3px] border-l-[hsl(var(--primary)/0.5)] align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors sticky z-20 bg-white",
-                                        showDay && idx > 0 && "border-t-[3px] border-t-[hsl(var(--primary)/0.55)]",
+                                        isLastInDay && daySeparatorClass,
                                         isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       style={{ top: stickyHeaderTop }}
@@ -2205,7 +2210,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {l.collapsed ? (
                                     <TableCell
                                       colSpan={5}
-                                      className="bg-slate-50/60 border-l border-gray-200 align-middle py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.04)] transition-colors"
+                                      className={cn(
+                                        "bg-slate-50/60 border-l border-gray-200 align-middle py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.04)] transition-colors",
+                                        isLastInDay && daySeparatorClass
+                                      )}
                                       onClick={() => toggleDay(dayKey)}
                                     >
                                       <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -2222,6 +2230,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={deptSpan.get(l.deptKey) ?? 1}
                                       className={cn(
                                         "border-l-2 border-b-[3px] border-l-[hsl(var(--primary)/0.35)] border-b-[hsl(var(--primary)/0.45)] align-top p-0 bg-[hsl(var(--primary)/0.06)]",
+                                        deptEndsWithDay && daySeparatorClass,
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
@@ -2264,6 +2273,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={initSpan.get(l.initKey) ?? 1}
                                       className={cn(
                                         "border-l-2 border-b-2 border-l-[hsl(var(--primary)/0.25)] border-b-[hsl(var(--primary)/0.35)] align-top p-0 bg-white",
+                                        initEndsWithDay && daySeparatorClass,
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
@@ -2310,6 +2320,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       rowSpan={subSpan.get(l.subKey) ?? 1}
                                       className={cn(
                                         "border-l border-b border-gray-200 border-b-[hsl(var(--primary)/0.18)] align-top py-3 bg-white",
+                                        subEndsWithDay && daySeparatorClass,
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
@@ -2353,6 +2364,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   <TableCell
                                     className={cn(
                                       "border-l border-gray-200 align-top py-2.5",
+                                      isLastInDay && daySeparatorClass,
                                       isEditMode && "cursor-pointer hover:bg-amber-50"
                                     )}
                                     onClick={() => {
@@ -2394,7 +2406,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     </div>
                                     )}
                                   </TableCell>
-                                  <TableCell className="align-top py-2">
+                                  <TableCell className={cn("align-top py-2", isLastInDay && daySeparatorClass)}>
                                     <div className="flex flex-col gap-1">
                                       {l.acts.map((act, i) => {
                                         const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
