@@ -2493,44 +2493,39 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                               )}
                                             </div>
                                             {!isEditingThis && (
-                                              <ActivityPhasesPopover
-                                                executivePlanId={act.id}
-                                                responsibleEmployeeId={(act as any).employeeId ?? null}
-                                                responsibleEmployeeName={(act as any).employeeName ?? l.empName ?? "غير محدد"}
-                                                organizationId={activeOrgId}
-                                                activityName={act.activityName ?? ""}
-                                                activityDay={(act as any).day ?? l.day}
-                                                activityMonth={(act as any).month ?? monthGroup.month}
-                                                activityYear={selectedYear}
-                                                isPreparing={preparingPhaseIds.has(act.id)}
-                                              />
+                                              <div className="flex items-center gap-1 shrink-0">
+                                                <RelatedEmployeesIndicator
+                                                  executivePlanId={act.id}
+                                                  responsibleEmployeeId={(act as any).employeeId ?? null}
+                                                  organizationId={activeOrgId}
+                                                  activityName={act.activityName ?? ""}
+                                                  activityDay={(act as any).day ?? l.day}
+                                                  activityMonth={(act as any).month ?? monthGroup.month}
+                                                  activityYear={selectedYear}
+                                                  allEmployees={employees.map((e) => ({
+                                                    id: e.id,
+                                                    full_name: e.full_name,
+                                                    job_title: (e as any).job_role ?? null,
+                                                    department_name: e.department_name ?? null,
+                                                  }))}
+                                                />
+                                                <ActivityPhasesPopover
+                                                  executivePlanId={act.id}
+                                                  responsibleEmployeeId={(act as any).employeeId ?? null}
+                                                  responsibleEmployeeName={(act as any).employeeName ?? l.empName ?? "غير محدد"}
+                                                  organizationId={activeOrgId}
+                                                  activityName={act.activityName ?? ""}
+                                                  activityDay={(act as any).day ?? l.day}
+                                                  activityMonth={(act as any).month ?? monthGroup.month}
+                                                  activityYear={selectedYear}
+                                                  isPreparing={preparingPhaseIds.has(act.id)}
+                                                />
+                                              </div>
                                             )}
                                           </div>
                                           </div>
                                         );
                                       })}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="align-top py-2 border-r border-gray-200">
-                                    <div className="flex flex-col gap-2">
-                                      {l.acts.map((act) => (
-                                        <RelatedEmployeesCell
-                                          key={`rel-${act.id}`}
-                                          executivePlanId={act.id}
-                                          responsibleEmployeeId={(act as any).employeeId ?? null}
-                                          organizationId={activeOrgId}
-                                          activityName={act.activityName ?? ""}
-                                          activityDay={(act as any).day ?? l.day}
-                                          activityMonth={(act as any).month ?? monthGroup.month}
-                                          activityYear={selectedYear}
-                                          allEmployees={employees.map((e) => ({
-                                            id: e.id,
-                                            full_name: e.full_name,
-                                            job_title: (e as any).job_role ?? null,
-                                            department_name: e.department_name ?? null,
-                                          }))}
-                                        />
-                                      ))}
                                     </div>
                                   </TableCell>
                                   </>
