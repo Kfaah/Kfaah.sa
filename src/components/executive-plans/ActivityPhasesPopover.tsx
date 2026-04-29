@@ -15,6 +15,8 @@ import {
   Trash2,
   Sparkles,
   CheckCircle2,
+  Clock,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -45,9 +47,9 @@ interface RelatedTask {
 }
 
 const PHASE_META: Record<Phase, { label: string; color: string; chip: string }> = {
-  before: { label: "قبل", color: "bg-blue-50 border-blue-200", chip: "text-blue-700 bg-blue-100" },
-  during: { label: "أثناء", color: "bg-amber-50 border-amber-200", chip: "text-amber-700 bg-amber-100" },
-  after: { label: "بعد", color: "bg-emerald-50 border-emerald-200", chip: "text-emerald-700 bg-emerald-100" },
+  before: { label: "التحضير", color: "bg-sky-50/70 border-sky-100", chip: "text-sky-700 bg-sky-100" },
+  during: { label: "التنفيذ", color: "bg-amber-50/70 border-amber-100", chip: "text-amber-700 bg-amber-100" },
+  after: { label: "الختام", color: "bg-emerald-50/70 border-emerald-100", chip: "text-emerald-700 bg-emerald-100" },
 };
 
 export function ActivityPhasesPopover({
@@ -279,54 +281,71 @@ export function ActivityPhasesPopover({
       <PopoverContent
         side="bottom"
         align="end"
-        className="w-[420px] p-3 bg-popover"
+        className="w-[460px] p-0 bg-popover shadow-xl border-2 border-[hsl(var(--primary)/0.15)] overflow-hidden"
         dir="rtl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--primary))] shrink-0" />
-            <div className="min-w-0">
-              <div className="text-[11px] font-bold text-slate-800 truncate">{responsibleEmployeeName}</div>
-              <div className="text-[10px] text-slate-500 truncate">{activityName}</div>
+        {/* Elegant gradient header */}
+        <div className="bg-gradient-to-l from-[hsl(var(--primary))] to-[hsl(var(--accent))] p-3 text-white">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[12px] font-bold truncate">{responsibleEmployeeName}</div>
+                <div className="text-[10px] text-white/80 truncate leading-tight">{activityName}</div>
+              </div>
             </div>
+            {generating ? (
+              <Badge className="bg-white/25 text-white border-0 text-[9px] gap-1 backdrop-blur shrink-0">
+                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                توليد ذكي...
+              </Badge>
+            ) : totalCount > 0 ? (
+              <Badge className="bg-white/25 text-white border-0 text-[9px] gap-1 backdrop-blur shrink-0">
+                <Zap className="w-2.5 h-2.5" />
+                {totalCount} مهمة
+              </Badge>
+            ) : null}
           </div>
-          {generating && (
-            <Badge variant="outline" className="text-[9px] gap-1 border-[hsl(var(--primary))] text-[hsl(var(--primary))] shrink-0">
-              <Loader2 className="w-2.5 h-2.5 animate-spin" />
-              توليد...
-            </Badge>
-          )}
         </div>
 
-        {loading && (
-          <div className="flex justify-center py-4">
-            <Loader2 className="w-4 h-4 animate-spin text-[hsl(var(--primary))]" />
-          </div>
-        )}
+        <div className="p-3">
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-6 gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-[hsl(var(--primary))]" />
+              <span className="text-[10px] text-slate-500">تحميل المهام...</span>
+            </div>
+          )}
 
-        {!loading && !responsibleEmployeeId && (
-          <div className="text-[11px] text-slate-500 text-center py-3">
-            لم يُحدَّد موظف رئيسي لهذا النشاط
-          </div>
-        )}
+          {!loading && !responsibleEmployeeId && (
+            <div className="text-[11px] text-slate-500 text-center py-4 italic">
+              لم يُحدَّد موظف رئيسي لهذا النشاط
+            </div>
+          )}
 
-        {!loading && responsibleEmployeeId && (
-          <div className="space-y-2">
+          {!loading && responsibleEmployeeId && (
+            <div className="space-y-2.5">
             {(["before", "during", "after"] as Phase[]).map((phase) => {
               const meta = PHASE_META[phase];
               const list = byPhase[phase];
               const isAdding = addingPhase === phase;
               return (
-                <div key={phase} className={cn("rounded-md border p-2", meta.color)}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", meta.chip)}>
-                      {meta.label} ({list.length})
-                    </span>
+                <div key={phase} className={cn("rounded-lg border p-2.5 transition-all", meta.color)}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", meta.chip)}>
+                        {meta.label}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        {list.length} {list.length === 1 ? "مهمة" : "مهام"}
+                      </span>
+                    </div>
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-5 w-5"
+                      className="h-6 w-6 hover:bg-white/80 rounded-full"
                       onClick={() => {
                         setAddingPhase(isAdding ? null : phase);
                         setNewTitle("");
@@ -334,35 +353,53 @@ export function ActivityPhasesPopover({
                       }}
                       title="إضافة مهمة يدوية"
                     >
-                      <Plus className="w-3 h-3 text-slate-700" />
+                      <Plus className="w-3.5 h-3.5 text-slate-600" />
                     </Button>
                   </div>
 
                   {list.length === 0 && !isAdding && (
-                    <div className="text-[10px] text-slate-400 italic py-1">لا مهام بعد</div>
+                    <div className="text-[10px] text-slate-400 italic py-1.5 text-center">
+                      {generating ? "يتم التوليد..." : "لا مهام بعد"}
+                    </div>
                   )}
 
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5">
                     {list.map((t) => (
                       <li
                         key={t.id}
-                        className="flex items-start gap-1.5 bg-white rounded px-1.5 py-1 border border-white/80 group"
+                        className="flex items-start gap-2 bg-white/90 backdrop-blur rounded-md px-2 py-1.5 border border-white shadow-sm hover:shadow group transition-all"
                       >
                         <span
                           className={cn(
-                            "text-[8px] font-bold px-1 py-px rounded shrink-0 mt-0.5",
+                            "text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0 mt-px tracking-tight",
                             t.source === "ai" ? "bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]" : "bg-slate-100 text-slate-600"
                           )}
                         >
-                          {t.source === "ai" ? "ذكاء" : "يدوي"}
+                          {t.source === "ai" ? "AI" : "يدوي"}
                         </span>
-                        <span className="flex-1 text-[11px] text-slate-800 leading-snug">{t.title}</span>
-                        {t.is_dispatched && (
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0 mt-0.5" />
-                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] text-slate-800 leading-snug">{t.title}</div>
+                          <div className="flex items-center gap-2 mt-0.5 text-[9px] text-slate-400">
+                            <span className="flex items-center gap-0.5">
+                              <Clock className="w-2.5 h-2.5" />
+                              {t.estimated_minutes}د
+                            </span>
+                            {t.day_offset !== 0 && (
+                              <span>
+                                {t.day_offset > 0 ? `+${t.day_offset}` : t.day_offset}ي
+                              </span>
+                            )}
+                            {t.is_dispatched && (
+                              <span className="flex items-center gap-0.5 text-emerald-600">
+                                <CheckCircle2 className="w-2.5 h-2.5" />
+                                مُرحَّلة
+                              </span>
+                            )}
+                          </div>
+                        </div>
                         <button
                           onClick={() => deleteTask(t.id, t.is_dispatched)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-red-50 rounded"
                           title="حذف"
                         >
                           <Trash2 className="w-3 h-3 text-red-500" />
@@ -372,7 +409,7 @@ export function ActivityPhasesPopover({
                   </ul>
 
                   {isAdding && (
-                    <div className="mt-2 space-y-1.5 bg-white rounded p-1.5 border border-white">
+                    <div className="mt-2 space-y-1.5 bg-white rounded-md p-2 border border-slate-200 shadow-sm">
                       <Input
                         value={newTitle}
                         onChange={(e) => setNewTitle(e.target.value)}
@@ -415,11 +452,13 @@ export function ActivityPhasesPopover({
               );
             })}
 
-            <div className="text-[9px] text-slate-400 text-center pt-1 border-t">
-              المهام تُترحّل تلقائياً إلى لوحة مهام الموظف
+              <div className="flex items-center justify-center gap-1 text-[9px] text-slate-400 pt-1.5 border-t border-slate-100">
+                <Zap className="w-2.5 h-2.5" />
+                المهام تُولَّد وتُرحَّل تلقائياً إلى لوحة مهام الموظف
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );

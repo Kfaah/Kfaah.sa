@@ -59,11 +59,44 @@ export function RelatedEmployeesCell({
   const [addEmpId, setAddEmpId] = useState("");
   const [addRole, setAddRole] = useState("");
   const generatedRef = useRef(false);
+  const [autoGenerating, setAutoGenerating] = useState(false);
 
   useEffect(() => {
-    void load();
+    void initialize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [executivePlanId]);
+
+  async function initialize() {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("activity_related_employees")
+        .select("id, employee_id, role_in_activity, source")
+        .eq("executive_plan_id", executivePlanId);
+      if (error) throw error;
+      const rowsData = (data ?? []) as RelatedRow[];
+      setRows(rowsData);
+      // Auto-generate AI suggestions on first encounter (no related employees yet + responsible exists)
+      if (rowsData.length === 0 && responsibleEmployeeId && !generatedRef.current) {
+        generatedRef.current = true;
+        setAutoGenerating(true);
+        try {
+          await supabase.functions.invoke("generate-related-tasks", {
+            body: { executive_plan_id: executivePlanId },
+          });
+          await load();
+        } catch (e) {
+          console.error("auto-gen related employees", e);
+        } finally {
+          setAutoGenerating(false);
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -198,10 +231,15 @@ export function RelatedEmployeesCell({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
-      {loading && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
-      {!loading && rows.length === 0 && (
-        <span className="text-[10px] text-slate-400 italic">لا أحد بعد</span>
+    <div className="flex flex-wrap items-center gap-1.5">
+      {(loading || autoGenerating) && (
+        <span className="inline-flex items-center gap-1 text-[10px] text-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.06)] px-1.5 py-0.5 rounded-full">
+          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+          {autoGenerating ? "تحليل ذكي..." : "تحميل..."}
+        </span>
+      )}
+      {!loading && !autoGenerating && rows.length === 0 && (
+        <span className="text-[10px] text-slate-400 italic">لا موظفين</span>
       )}
       {rows.map((r) => {
         const e = empById.get(r.employee_id);
@@ -210,21 +248,24 @@ export function RelatedEmployeesCell({
           <div
             key={r.id}
             className={cn(
-              "group inline-flex items-center gap-1 pl-1 pr-1.5 py-0.5 rounded-full border text-[10px]",
+              "group inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full border text-[10px] shadow-sm hover:shadow transition-all",
               r.source === "ai"
-                ? "bg-[hsl(var(--primary)/0.05)] border-[hsl(var(--primary)/0.3)] text-[hsl(var(--primary))]"
+                ? "bg-gradient-to-l from-[hsl(var(--primary)/0.08)] to-[hsl(var(--accent)/0.05)] border-[hsl(var(--primary)/0.25)] text-[hsl(var(--primary))]"
                 : "bg-slate-50 border-slate-200 text-slate-700"
             )}
             title={r.role_in_activity ?? name}
           >
-            <div className="w-4 h-4 rounded-full bg-[hsl(var(--primary))] text-white flex items-center justify-center text-[8px] font-bold">
+            <div className={cn(
+              "w-5 h-5 rounded-full text-white flex items-center justify-center text-[9px] font-bold shrink-0",
+              r.source === "ai" ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))]" : "bg-slate-500"
+            )}>
               {initials(name)}
             </div>
-            <span className="font-semibold max-w-[90px] truncate">{name}</span>
-            {r.source === "ai" && <Sparkles className="w-2.5 h-2.5 opacity-70" />}
+            <span className="font-semibold max-w-[100px] truncate leading-tight">{name}</span>
+            {r.source === "ai" && <Sparkles className="w-2.5 h-2.5 opacity-70 shrink-0" />}
             <button
               onClick={() => handleRemove(r.id, r.employee_id)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-red-100 rounded-full"
               title="إزالة"
             >
               <X className="w-2.5 h-2.5 text-red-500" />
@@ -238,7 +279,7 @@ export function RelatedEmployeesCell({
           <Button
             size="icon"
             variant="ghost"
-            className="h-5 w-5 rounded-full border border-dashed border-slate-300 hover:border-[hsl(var(--primary))]"
+            className="h-6 w-6 rounded-full border border-dashed border-slate-300 hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
             title="إضافة موظف ذي علاقة"
             onClick={(e) => e.stopPropagation()}
           >
