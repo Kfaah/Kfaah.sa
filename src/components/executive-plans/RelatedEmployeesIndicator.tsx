@@ -302,15 +302,27 @@ export function RelatedEmployeesIndicator({
               <span>الموظفون ذوو العلاقة</span>
             </div>
             {!showAddForm && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 px-2 text-[10px] gap-1 text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.08)]"
-                onClick={() => setShowAddForm(true)}
-              >
-                <Plus className="w-3 h-3" />
-                إضافة
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-[10px] gap-1 text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.08)]"
+                  onClick={handleGenerateRelations}
+                  disabled={autoGenerating || !responsibleEmployeeId}
+                >
+                  {autoGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  اكتشاف
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-[10px] gap-1 text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.08)]"
+                  onClick={() => setShowAddForm(true)}
+                >
+                  <Plus className="w-3 h-3" />
+                  إضافة
+                </Button>
+              </div>
             )}
           </div>
 
