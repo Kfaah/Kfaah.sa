@@ -1893,10 +1893,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   onKeyDown={(e) => {
                     if (e.key === "ArrowLeft") {
                       e.preventDefault();
-                      scrollDatesTable(e.shiftKey ? "end" : "left");
+                      scrollDatesTable(e.shiftKey ? "end" : "right");
                     } else if (e.key === "ArrowRight") {
                       e.preventDefault();
-                      scrollDatesTable(e.shiftKey ? "start" : "right");
+                      scrollDatesTable(e.shiftKey ? "start" : "left");
                     } else if (e.key === "Home") {
                       e.preventDefault();
                       scrollDatesTable("start");
