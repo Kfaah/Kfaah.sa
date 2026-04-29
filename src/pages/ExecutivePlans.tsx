@@ -151,6 +151,11 @@ const DATES_TABLE_COLUMNS = [
   { key: "relatedEmployees", width: "200px" },
 ] as const;
 
+const DATES_TABLE_MIN_WIDTH = DATES_TABLE_COLUMNS.reduce(
+  (total, column) => total + Number.parseInt(column.width, 10),
+  0,
+);
+
 const QUERY_CHUNK_SIZE = 80;
 
 function chunkArray<T>(items: T[], size = QUERY_CHUNK_SIZE): T[][] {
