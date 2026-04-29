@@ -2066,7 +2066,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {showMonth && (
                                     <TableCell
                                       rowSpan={monthSpan}
-                                      className="bg-gradient-to-b from-slate-50 to-white border-l border-gray-200 align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors"
+                                      className="bg-gradient-to-b from-slate-50 to-white border-l border-gray-200 align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors sticky right-0 z-20"
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
                                       <div className="flex flex-col items-center gap-2 py-4 px-2">
@@ -2101,9 +2102,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={daySpan.get(l.day) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors",
+                                        "border-l border-gray-200 align-top py-3 cursor-pointer hover:bg-[hsl(var(--primary)/0.06)] transition-colors sticky z-20 bg-white",
                                         isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
+                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const firstAct = l.acts[0] as any;
