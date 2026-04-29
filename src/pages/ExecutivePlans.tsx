@@ -1781,7 +1781,63 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
               <Card className="overflow-hidden">
-                <div className="overflow-x-auto" dir="rtl">
+                <div
+                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
+                  dir="rtl"
+                  tabIndex={0}
+                  ref={(el) => { if (el) (window as any).__execPlansScroller = el; }}
+                  onKeyDown={(e) => {
+                    const el = e.currentTarget;
+                    const step = e.shiftKey ? el.clientWidth * 0.9 : 200;
+                    // In RTL, ArrowRight scrolls content rightward (toward visual right = lower scrollLeft in RTL)
+                    if (e.key === "ArrowLeft") {
+                      e.preventDefault();
+                      el.scrollBy({ left: -step, behavior: "smooth" });
+                    } else if (e.key === "ArrowRight") {
+                      e.preventDefault();
+                      el.scrollBy({ left: step, behavior: "smooth" });
+                    } else if (e.key === "Home") {
+                      e.preventDefault();
+                      el.scrollTo({ left: 0, behavior: "smooth" });
+                    } else if (e.key === "End") {
+                      e.preventDefault();
+                      el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+                    }
+                  }}
+                >
+                  <div className="sticky top-0 z-20 flex items-center justify-between gap-2 px-3 py-1.5 bg-[hsl(var(--primary)/0.05)] border-b border-[hsl(var(--primary)/0.15)] text-[11px] text-slate-600">
+                    <span className="flex items-center gap-2">
+                      <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px] shadow-sm">←</kbd>
+                      <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px] shadow-sm">→</kbd>
+                      <span>للتنقل أفقيًا في الجدول (Shift للتنقل السريع)</span>
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        title="تمرير لليمين"
+                        onClick={(ev) => {
+                          const sc = (ev.currentTarget.closest("[tabindex]") as HTMLElement) ?? null;
+                          if (sc) sc.scrollBy({ left: 300, behavior: "smooth" });
+                        }}
+                      >
+                        <ChevronDown className="w-3.5 h-3.5 rotate-90" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        title="تمرير لليسار"
+                        onClick={(ev) => {
+                          const sc = (ev.currentTarget.closest("[tabindex]") as HTMLElement) ?? null;
+                          if (sc) sc.scrollBy({ left: -300, behavior: "smooth" });
+                        }}
+                      >
+                        <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+                      </Button>
+                    </div>
+                  </div>
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
