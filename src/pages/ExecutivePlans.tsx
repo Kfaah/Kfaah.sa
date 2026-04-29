@@ -1823,9 +1823,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
 
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
-              <Card className="overflow-visible">
+              <Card className="overflow-hidden rounded-2xl border-[hsl(var(--primary)/0.25)] shadow-sm">
                 <div
-                  className="max-h-[calc(100vh-160px)] overflow-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
+                  className="max-h-[calc(100vh-160px)] overflow-auto scrollbar-none outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
                   dir="rtl"
                   tabIndex={0}
                   ref={(el) => {
@@ -2066,8 +2066,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                   {showMonth && (
                                     <TableCell
                                       rowSpan={monthSpan}
-                                      className="bg-gradient-to-b from-slate-50 to-white border-l border-gray-200 align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors sticky z-20"
-                                      style={{ top: stickyHeaderTop }}
+                                      className="bg-gradient-to-b from-slate-50 to-white border-l-2 border-[hsl(var(--primary)/0.35)] align-top cursor-pointer hover:from-slate-100 hover:to-slate-50 transition-colors"
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
                                       <div className="flex flex-col items-center gap-2 py-4 px-2">
@@ -2206,10 +2205,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={deptSpan.get(l.deptKey) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3 bg-[hsl(var(--primary)/0.06)] sticky z-20",
+                                        "border-l-2 border-[hsl(var(--primary)/0.35)] align-top py-3 bg-[hsl(var(--primary)/0.06)]",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
-                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
@@ -2249,10 +2247,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={initSpan.get(l.initKey) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3 sticky z-20 bg-white",
+                                        "border-l-2 border-[hsl(var(--primary)/0.25)] align-top py-3 bg-white",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
-                                      style={{ top: stickyHeaderTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const a = l.acts[0] as any;
