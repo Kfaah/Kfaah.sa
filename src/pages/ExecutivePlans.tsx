@@ -2058,6 +2058,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               const isLastInSub = !nextLeaf || nextLeaf.subKey !== l.subKey;
                               const isLastInInit = !nextLeaf || nextLeaf.initKey !== l.initKey;
                               const isLastInDept = !nextLeaf || nextLeaf.deptKey !== l.deptKey;
+                              const prevLeaf = leaves[idx - 1];
+                              const isFirstInDept = !prevLeaf || prevLeaf.deptKey !== l.deptKey;
+                              const isFirstInInit = !prevLeaf || prevLeaf.initKey !== l.initKey;
+                              const isFirstInSub  = !prevLeaf || prevLeaf.subKey  !== l.subKey;
                               return (
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
@@ -2071,14 +2075,20 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
                                     // فاصل بين الأشهر — عريض على أول صف من شهر جديد
-                                    idx === 0 && monthIdx > 0 ? "border-t-[4px] border-t-[hsl(var(--primary)/0.55)]" : "",
+                                    idx === 0 && monthIdx > 0 ? "[&>td]:border-t-[4px] [&>td]:border-t-[hsl(var(--primary)/0.6)]" : "",
                                     // فاصل بين الأيام — نفس العرض داخل الشهر الواحد
-                                    showDay && idx > 0 ? "border-t-[4px] border-t-[hsl(var(--primary)/0.55)]" : "",
-                                    // فواصل المبادرات الفرعية والمبادرات
-                                    !l.collapsed && isLastInSub && "[&>td]:border-b [&>td]:border-b-[hsl(var(--primary)/0.16)]",
-                                    !l.collapsed && isLastInInit && "[&>td]:border-b-2 [&>td]:border-b-[hsl(var(--primary)/0.35)]",
-                                    // فاصل بين الأقسام — عريض بنفس عرض فواصل الأيام والأشهر
-                                    !l.collapsed && isLastInDept && "[&>td]:border-b-[4px] [&>td]:border-b-[hsl(var(--primary)/0.55)]",
+                                    showDay && idx > 0 ? "[&>td]:border-t-[4px] [&>td]:border-t-[hsl(var(--primary)/0.6)]" : "",
+                                    // فاصل بين الأقسام — عريض بنفس العرض، يُطبَّق على أول صف من قسم جديد (ولم يُطبَّق فاصل اليوم/الشهر بالفعل)
+                                    !l.collapsed && isFirstInDept && idx > 0 && !showDay
+                                      ? "[&>td]:border-t-[4px] [&>td]:border-t-[hsl(var(--primary)/0.6)]"
+                                      : "",
+                                    // فواصل المبادرات والمبادرات الفرعية — أخف
+                                    !l.collapsed && isFirstInInit && idx > 0 && !isFirstInDept && !showDay
+                                      ? "[&>td]:border-t-2 [&>td]:border-t-[hsl(var(--primary)/0.35)]"
+                                      : "",
+                                    !l.collapsed && isFirstInSub && idx > 0 && !isFirstInInit && !isFirstInDept && !showDay
+                                      ? "[&>td]:border-t [&>td]:border-t-[hsl(var(--primary)/0.18)]"
+                                      : "",
                                   )}
                                 >
                                   {showMonth && (
