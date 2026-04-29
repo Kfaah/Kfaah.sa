@@ -233,20 +233,8 @@ export function RelatedEmployeesIndicator({
   function navigateToEmployee(empId: string) {
     setOpen(false);
     requestAnimationFrame(() => {
-      const sameActivity = normalizeAnchorValue(activityName);
-      const sameInitiative = normalizeAnchorValue(initiativeName);
-      const sameSub = normalizeAnchorValue(subInitiativeName);
-      const allCandidates = Array.from(document.querySelectorAll<HTMLElement>("[data-related-emp-target]"))
-        .filter((el) => el.dataset.relatedEmpTarget === empId && isVisibleTarget(el));
-      const candidates = sameActivity
-        ? allCandidates.filter((el) => {
-            const matchesActivity = el.dataset.activityAnchor === sameActivity;
-            const matchesInitiative = !sameInitiative || el.dataset.initiativeAnchor === sameInitiative;
-            const matchesSub = !sameSub || sameSub === "—" || el.dataset.subAnchor === sameSub;
-            return matchesActivity && matchesInitiative && matchesSub;
-          })
-        : allCandidates;
-      const pool = candidates.length > 0 ? candidates : allCandidates;
+      const pool = Array.from(document.querySelectorAll<HTMLElement>("[data-employee-row-target]"))
+        .filter((el) => el.dataset.employeeRowTarget === empId && isVisibleTarget(el));
       if (pool.length === 0) {
         toast({
           title: "لم يُعثر على صفّ هذا الموظف",
