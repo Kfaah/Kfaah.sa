@@ -530,16 +530,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     requestAnimationFrame(() => { syncingDatesScrollRef.current = false; });
   };
 
-  useEffect(() => {
-    const el = datesTableInnerRef.current;
-    if (!el || globalViewMode !== "dates") return;
-    const updateWidth = () => setDatesTableWidth(Math.max(el.scrollWidth, el.clientWidth, 1200));
-    updateWidth();
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [groupedPlans, globalViewMode]);
-
   // التحقق من صلاحية المدير
   useEffect(() => {
     const checkAdmin = async () => {
