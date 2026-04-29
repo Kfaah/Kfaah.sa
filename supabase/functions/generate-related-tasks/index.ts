@@ -6,6 +6,60 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+function buildFallbackArgs({
+  activityName,
+  targetList,
+  overlap,
+  existingTitles,
+}: {
+  activityName: string;
+  targetList: Array<{ employee_id: string; full_name?: string; job_title?: string | null; department?: string | null }>;
+  overlap: Array<{ employee_id: string; shared_activity?: string; shared_initiative?: string; department?: string | null }>;
+  existingTitles: string[];
+}) {
+  const existing = new Set(existingTitles.map((t) => t.trim()));
+  const suggested_related_employees = overlap.slice(0, 4).map((o) => ({
+    employee_id: o.employee_id,
+    role_in_activity: o.department ? `تنسيق ${o.department}` : "مساندة مرتبطة بالمبادرة",
+    reason: o.shared_initiative || o.shared_activity || "تشابه في الخطة التشغيلية",
+  }));
+
+  const employees = [
+    ...targetList.map((e) => ({ employee_id: e.employee_id, job_title: e.job_title, primary: true })),
+    ...suggested_related_employees.map((e) => ({ employee_id: e.employee_id, job_title: e.role_in_activity, primary: false })),
+  ];
+
+  const tasks = employees.flatMap((employee) => {
+    const roleHint = employee.job_title ? ` حسب دور ${employee.job_title}` : "";
+    const items = employee.primary
+      ? [
+          { phase: "before", title: `راجع متطلبات ${activityName} وجهّز قائمة التنفيذ`, day_offset: -3, estimated_minutes: 45, priority: "high" },
+          { phase: "during", title: `نفّذ مسؤوليات ${activityName} وتابع مؤشرات الإنجاز`, day_offset: 0, estimated_minutes: 120, priority: "high" },
+          { phase: "after", title: `وثّق نتائج ${activityName} وارفع التقرير الختامي`, day_offset: 1, estimated_minutes: 60, priority: "medium" },
+        ]
+      : [
+          { phase: "before", title: `نسّق المتطلبات المشتركة لنشاط ${activityName}${roleHint}`, day_offset: -2, estimated_minutes: 30, priority: "medium" },
+          { phase: "during", title: `ساند تنفيذ ${activityName}${roleHint} وسجّل الملاحظات`, day_offset: 0, estimated_minutes: 60, priority: "medium" },
+          { phase: "after", title: `زوّد المسؤول الرئيسي بمخرجات ${activityName}${roleHint}`, day_offset: 1, estimated_minutes: 30, priority: "low" },
+        ];
+    return items
+      .filter((item) => !existing.has(item.title))
+      .map((item) => ({
+        ...item,
+        employee_id: employee.employee_id,
+        description: `توليد احتياطي من النظام عند تعذر خدمة الذكاء الاصطناعي لضمان عدم توقف ترحيل المهام.`,
+      }));
+  });
+
+  return { tasks, suggested_related_employees };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
