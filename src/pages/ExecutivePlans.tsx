@@ -2286,7 +2286,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </Button>
                                         </div>
                                       ) : (
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="sticky z-10 flex items-center gap-1.5 py-3 px-3" style={{ top: stickyHeaderTop }}>
                                         <Target className="w-3.5 h-3.5 text-[hsl(var(--primary))] shrink-0" />
                                         <span className="text-sm font-semibold text-slate-700 leading-snug">
                                           {l.initName === "_no_init" ? <span className="text-slate-300">—</span> : l.initName}
@@ -2300,7 +2300,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <TableCell
                                       rowSpan={subSpan.get(l.subKey) ?? 1}
                                       className={cn(
-                                        "border-l border-gray-200 align-top py-3",
+                                        "border-l border-gray-200 align-top py-3 bg-white",
                                         isEditMode && "cursor-pointer ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
                                       onClick={() => {
