@@ -930,7 +930,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     };
     
     fetchAllPlans();
-  }, [selectedEmployeeId, selectedYear, employees, activeOrgId]);
+  }, [selectedEmployeeId, selectedYear, employees, activeOrgId, filterDepartmentId]);
 
   // تجميع الخطط التنفيذية حسب الشهر والمهمة
   const groupedPlans = useMemo(() => {
