@@ -2514,6 +2514,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     </TableBody>
                   </Table>
                 </div>
+                </div>
               </Card>
             )}
 
