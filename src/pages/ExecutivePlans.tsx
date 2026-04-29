@@ -561,7 +561,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   ) => {
     pendingRelatedFocusRef.current = { employeeId, executivePlanId, targetInfo };
     setFilterDepartmentId("all");
-    setSelectedEmployeeId(employeeId);
+    setSelectedEmployeeId("all");
     setExpandedDays(new Set());
 
     // انتقال فوري إلى صف النشاط المحدد للموظف المحدد — بدون أي تأخير صناعي.
