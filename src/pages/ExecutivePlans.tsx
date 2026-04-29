@@ -1881,8 +1881,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     className="min-w-max"
                   >
                   <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]">
+                    <TableHeader className="sticky top-[40px] z-20">
+                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-[40px] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-20">
                         {([
                           { key: "month", w: "min-w-[110px]" },
                           { key: "date", w: "min-w-[160px]" },
