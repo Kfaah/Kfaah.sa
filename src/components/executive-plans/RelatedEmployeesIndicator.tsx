@@ -43,7 +43,7 @@ interface Props {
   activityMonth: number;
   activityYear: number;
   allEmployees: Employee[];
-  onNavigateToEmployee?: (employeeId: string) => void;
+  onNavigateToEmployee?: (employeeId: string, executivePlanId?: string) => void;
 }
 
 export function RelatedEmployeesIndicator({
@@ -247,7 +247,7 @@ export function RelatedEmployeesIndicator({
   function navigateToEmployee(empId: string) {
     setOpen(false);
     if (onNavigateToEmployee) {
-      onNavigateToEmployee(empId);
+      onNavigateToEmployee(empId, executivePlanId);
       return;
     }
     window.setTimeout(() => {
