@@ -2429,6 +2429,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                 act.activityName ?? ""
                                               );
                                             }}
+                                            data-related-emp-target={(act as any).employeeId || undefined}
+                                            data-activity-anchor={act.activityName ? normalizeAnchorValue(act.activityName) : undefined}
+                                            data-initiative-anchor={(act as any).initiative ? normalizeAnchorValue((act as any).initiative) : l.initName ? normalizeAnchorValue(l.initName) : undefined}
+                                            data-sub-anchor={(act as any).subInitiative ? normalizeAnchorValue((act as any).subInitiative) : l.subName ? normalizeAnchorValue(l.subName) : undefined}
                                           >
                                             <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
                                               <span className="text-[9px] font-bold">{i + 1}</span>
