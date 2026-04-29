@@ -524,12 +524,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     if (!el) return;
     const max = Math.max(0, el.scrollWidth - el.clientWidth);
     const step = Math.max(520, Math.floor(el.clientWidth * 0.72));
-    const next =
-      direction === "start" ? max :
-      direction === "end" ? 0 :
-      direction === "left" ? el.scrollLeft - step :
-      el.scrollLeft + step;
-    el.scrollTo({ left: Math.max(0, Math.min(max, next)), behavior: "smooth" });
+    if (direction === "start") {
+      el.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
+    if (direction === "end") {
+      el.scrollTo({ left: -max, behavior: "smooth" });
+      requestAnimationFrame(() => {
+        if (Math.abs(el.scrollLeft) < 2) el.scrollTo({ left: max, behavior: "smooth" });
+      });
+      return;
+    }
+    el.scrollBy({ left: direction === "left" ? -step : step, behavior: "smooth" });
   };
 
   // التحقق من صلاحية المدير
