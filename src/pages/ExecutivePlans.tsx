@@ -1793,6 +1793,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                           { key: "subInitiative", w: "min-w-[170px]" },
                           { key: "employee", w: "min-w-[170px]" },
                           { key: "activities", w: "min-w-[280px]" },
+                          { key: "relatedEmployees", w: "min-w-[200px]" },
                         ] as const).map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
