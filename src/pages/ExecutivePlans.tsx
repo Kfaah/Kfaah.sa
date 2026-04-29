@@ -2481,7 +2481,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       {l.acts.map((act, i) => {
                                         const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
                                         return (
-                                          <div key={`act-wrap-${act.id}`}>
+                                          <div key={`act-wrap-${act.id}`} data-activity-row-target={act.id}>
                                           <div
                                             className={cn(
                                               "flex items-start gap-2 px-2 py-1 rounded-md text-sm border text-slate-800 transition-all",
