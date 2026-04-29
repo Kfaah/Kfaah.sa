@@ -32,6 +32,7 @@ interface Props {
   activityDay: number;
   activityMonth: number;
   activityYear: number;
+  isPreparing?: boolean;
 }
 
 interface RelatedTask {
@@ -61,6 +62,7 @@ export function ActivityPhasesPopover({
   activityDay,
   activityMonth,
   activityYear,
+  isPreparing = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,7 +77,7 @@ export function ActivityPhasesPopover({
     if (!open || !responsibleEmployeeId) return;
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, isPreparing]);
 
   async function load() {
     setLoading(true);
@@ -91,7 +93,7 @@ export function ActivityPhasesPopover({
       const list = (data ?? []) as RelatedTask[];
       setTasks(list);
       // Auto-generate in background if empty and not tried yet
-      if (list.length === 0 && !autoTriedRef.current) {
+      if (list.length === 0 && !autoTriedRef.current && !isPreparing) {
         autoTriedRef.current = true;
         void autoGenerate();
       }
