@@ -960,14 +960,14 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                 className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
               >
                 <Sparkles className="w-5 h-5" />
-                توليد بالذكاء الاصطناعي
+                المهام بالذكاء الاصطناعي
               </Button>
               <Button
                 onClick={() => navigate("/tasks/add")}
                 className="gap-2 bg-white text-primary hover:bg-white/90"
               >
                 <Plus className="w-4 h-4" />
-                إضافة مهمة
+                إضافة مهمة يدوياً
               </Button>
             </>
           }
