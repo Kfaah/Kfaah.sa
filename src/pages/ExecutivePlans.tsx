@@ -2114,6 +2114,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               return (
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
+                                  data-emp-anchor={(l.acts && l.acts.length > 0 ? ((l.acts[0] as any).employeeId ?? "") : "") || undefined}
                                   className={cn(
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
