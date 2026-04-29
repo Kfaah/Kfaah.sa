@@ -43,7 +43,17 @@ interface Props {
   activityMonth: number;
   activityYear: number;
   allEmployees: Employee[];
-  onNavigateToEmployee?: (employeeId: string, executivePlanId?: string) => void;
+  onNavigateToEmployee?: (
+    employeeId: string,
+    executivePlanId?: string,
+    targetInfo?: {
+      activityName?: string | null;
+      initiativeName?: string | null;
+      subInitiativeName?: string | null;
+      activityDay: number;
+      activityMonth: number;
+    },
+  ) => void;
 }
 
 export function RelatedEmployeesIndicator({
@@ -245,13 +255,20 @@ export function RelatedEmployeesIndicator({
   }
 
   function navigateToEmployee(empId: string) {
+    setOpen(false);
     legacyFocusInTable(empId);
   }
 
   function legacyFocusInTable(empId: string) {
     setOpen(false);
     if (onNavigateToEmployee) {
-      onNavigateToEmployee(empId, executivePlanId);
+      onNavigateToEmployee(empId, executivePlanId, {
+        activityName,
+        initiativeName,
+        subInitiativeName,
+        activityDay,
+        activityMonth,
+      });
       return;
     }
     window.setTimeout(() => {
