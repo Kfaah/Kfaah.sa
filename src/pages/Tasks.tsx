@@ -365,23 +365,43 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     if (!authUser || !selectedMonth) return;
     
     setIsGenerating(true);
-    setGenerationProgress("جاري جلب الخطط التنفيذية...");
+    setGenerationProgress("جاري تحليل الخطط التشغيلية وملفات الموظفين...");
     
     try {
+      // مراحل تقدم تجميلية للمستخدم بينما يعمل المحرك في الخلفية
+      const progressStages = [
+        "جاري جمع الخطط التشغيلية للسنة...",
+        "جاري قراءة الخطط التنفيذية الشهرية...",
+        "جاري تحليل تخصصات الموظفين وملفاتهم...",
+        "جاري توليد مهام يومية احترافية لكل موظف...",
+        "جاري التحقق من الجودة وتوزيع المهام على الأيام...",
+      ];
+      let stageIdx = 0;
+      const stageTimer = setInterval(() => {
+        stageIdx = Math.min(stageIdx + 1, progressStages.length - 1);
+        setGenerationProgress(progressStages[stageIdx]);
+      }, 4000);
+
+      const session = await supabase.auth.getSession();
+      const accessToken = session.data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-tasks`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${accessToken}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
             month: selectedMonth,
-            year: new Date().getFullYear(),
+            year: selectedYear,
+            organization_id: orgId,
           }),
         }
       );
+      clearInterval(stageTimer);
       
       if (!response.ok) {
         const errorData = await response.json();
