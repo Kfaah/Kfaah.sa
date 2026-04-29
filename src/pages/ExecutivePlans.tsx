@@ -2047,10 +2047,16 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               const showSub = !l.collapsed && !seenSub.has(l.subKey); if (showSub) seenSub.add(l.subKey);
                               const dayKey = `day-${monthGroup.month}-${l.day}`;
                               const isDayExpanded = !l.collapsed;
+                              const firstAct = l.acts?.[0] as any;
                               return (
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
-                                  data-emp-anchor={(l.acts && l.acts.length > 0 ? ((l.acts[0] as any).employeeId ?? "") : "") || undefined}
+                                  data-emp-anchor={firstAct?.employeeId || undefined}
+                                  data-op-anchor={firstAct?.operationalPlanId || undefined}
+                                  data-activity-anchor={firstAct?.activityName ? normalizeAnchorValue(firstAct.activityName) : undefined}
+                                  data-initiative-anchor={l.initName ? normalizeAnchorValue(l.initName) : undefined}
+                                  data-sub-anchor={l.subName ? normalizeAnchorValue(l.subName) : undefined}
+                                  data-dept-anchor={l.deptName ? normalizeAnchorValue(l.deptName) : undefined}
                                   className={cn(
                                     "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
