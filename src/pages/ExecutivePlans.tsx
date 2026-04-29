@@ -2115,7 +2115,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                 <TableRow
                                   key={`leaf-${idx}-${l.empKey}`}
                                   className={cn(
-                                    "transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
+                                    "group/row transition-colors hover:bg-[hsl(var(--primary)/0.04)]",
                                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/40",
                                     showDay && idx > 0 ? "border-t-2 border-[hsl(var(--primary)/0.25)]" : "",
                                   )}
@@ -2291,11 +2291,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </Button>
                                         </div>
                                       ) : (
-                                      <div className="flex items-center gap-2">
-                                        <Building2 className="w-4 h-4 text-[hsl(var(--primary))]" />
-                                        <span className="font-bold text-base text-slate-800 truncate">{l.deptName}</span>
-                                        {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
-                                      </div>
+                                       <div className="flex items-start gap-2">
+                                         <Building2 className="w-4 h-4 text-[hsl(var(--primary))] shrink-0 mt-0.5" />
+                                         <span className="font-bold text-base text-slate-800 leading-snug whitespace-normal break-words flex-1">{l.deptName}</span>
+                                         {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto shrink-0" />}
+                                       </div>
                                       )}
                                     </TableCell>
                                   )}

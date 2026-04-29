@@ -279,7 +279,13 @@ export function RelatedEmployeesCell({
           <Button
             size="icon"
             variant="ghost"
-            className="h-6 w-6 rounded-full border border-dashed border-slate-300 hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)]"
+            className={cn(
+              "h-6 w-6 rounded-full border border-dashed border-slate-300 hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.05)] transition-opacity",
+              // إخفاء الزر افتراضياً وإظهاره فقط عند تمرير الفأرة على الصف، أو إذا كانت القائمة مفتوحة، أو الخلية فارغة
+              addOpen || rows.length === 0
+                ? "opacity-100"
+                : "opacity-0 group-hover/row:opacity-100 focus:opacity-100"
+            )}
             title="إضافة موظف ذي علاقة"
             onClick={(e) => e.stopPropagation()}
           >
