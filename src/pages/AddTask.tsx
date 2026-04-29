@@ -171,6 +171,7 @@ const AddTask = () => {
         title: form.title.trim(),
         description: form.description.trim() || null,
         user_id: form.user_id,
+        organization_id: currentOrg?.id ?? null,
         due_date: form.due_date || null,
         priority: form.priority,
         estimated_time_minutes: form.estimated_time_minutes,
