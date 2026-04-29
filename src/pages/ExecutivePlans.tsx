@@ -548,7 +548,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
   const stickyHeaderTop = embedded ? "52px" : "0px";
 
-  const focusEmployeeInExecutivePlans = (employeeId: string, executivePlanId?: string) => {
+  const focusEmployeeInExecutivePlans = (
+    employeeId: string,
+    executivePlanId?: string,
+    targetInfo?: {
+      activityName?: string | null;
+      initiativeName?: string | null;
+      subInitiativeName?: string | null;
+      activityDay: number;
+      activityMonth: number;
+    },
+  ) => {
+    pendingRelatedFocusRef.current = { employeeId, executivePlanId, targetInfo };
     setFilterDepartmentId("all");
     setSelectedEmployeeId(employeeId);
     setExpandedDays(new Set());
@@ -559,12 +570,27 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         datesTableScrollRef.current ??
         document.querySelector<HTMLElement>("[data-executive-plans-scroll]");
 
-      // 1) حاول إيجاد صف النشاط نفسه (الأدق)
+      const selectedEmp = employees.find((e) => e.id === employeeId || e.user_id === employeeId);
+
+      // 1) حاول إيجاد صف نفس الموظف ونفس النشاط/التاريخ داخل الجدول العام
       let target: HTMLElement | null = null;
+      if (targetInfo) {
+        const normalizedActivity = normalizeAnchorValue(targetInfo.activityName);
+        const normalizedInitiative = normalizeAnchorValue(targetInfo.initiativeName);
+        const normalizedSub = normalizeAnchorValue(targetInfo.subInitiativeName);
+        target = Array.from(document.querySelectorAll<HTMLElement>("[data-activity-row-target]")).find((el) => {
+          const row = el.closest<HTMLElement>("tr");
+          if (!row || row.dataset.empAnchor !== employeeId) return false;
+          if (row.dataset.dayAnchor !== String(targetInfo.activityDay)) return false;
+          if (row.dataset.monthAnchor !== String(targetInfo.activityMonth)) return false;
+          if (normalizedActivity && el.dataset.activityAnchor !== normalizedActivity) return false;
+          if (normalizedInitiative && row.dataset.initiativeAnchor !== normalizedInitiative) return false;
+          if (normalizedSub && row.dataset.subAnchor !== normalizedSub) return false;
+          return true;
+        }) ?? null;
+      }
       if (executivePlanId) {
-        target = document.querySelector<HTMLElement>(
-          `[data-activity-row-target="${executivePlanId}"]`,
-        );
+        target = target ?? document.querySelector<HTMLElement>(`[data-activity-row-target="${executivePlanId}"]`);
       }
       // 2) وإلا، أول صف يعود لهذا الموظف
       if (!target) {
