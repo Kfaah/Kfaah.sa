@@ -267,7 +267,26 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
     const toolCall = aiJson.choices?.[0]?.message?.tool_calls?.[0];
     const args = toolCall ? JSON.parse(toolCall.function.arguments) : { tasks: [], suggested_related_employees: [] };
 
-    // Insert generated tasks (replace existing AI-generated, keep manual)
+    // Step 1: Insert AI-suggested related employees (skip duplicates and main responsible)
+    const suggestedEmps = (args.suggested_related_employees ?? []).filter(
+      (s: any) => empById.has(s.employee_id) && !targetEmpIds.has(s.employee_id)
+    );
+    if (suggestedEmps.length > 0) {
+      const empRows = suggestedEmps.map((s: any) => ({
+        executive_plan_id,
+        employee_id: s.employee_id,
+        role_in_activity: s.role_in_activity || null,
+        source: "ai" as const,
+        organization_id: orgId,
+      }));
+      // Insert one-by-one to ignore duplicates from unique constraint (if any)
+      for (const r of empRows) {
+        const { error } = await admin.from("activity_related_employees").insert(r);
+        if (!error) targetEmpIds.add(r.employee_id);
+      }
+    }
+
+    // Step 2: Insert generated tasks (replace existing AI-generated undispatched, keep manual)
     await admin
       .from("activity_related_tasks")
       .delete()
@@ -275,8 +294,10 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
       .eq("source", "ai")
       .eq("is_dispatched", false);
 
-    const rows = (args.tasks ?? [])
-      .filter((t: any) => empById.has(t.employee_id))
+    const validTasks = (args.tasks ?? []).filter(
+      (t: any) => empById.has(t.employee_id) && targetEmpIds.has(t.employee_id)
+    );
+    const rows = validTasks
       .map((t: any, i: number) => ({
         executive_plan_id,
         employee_id: t.employee_id,
@@ -288,19 +309,92 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
         day_offset: t.day_offset ?? 0,
         display_order: i,
         source: "ai",
-        organization_id: ep.organization_id,
+        organization_id: orgId,
       }));
 
+    let insertedTasks: any[] = [];
     if (rows.length > 0) {
-      const { error: insErr } = await admin.from("activity_related_tasks").insert(rows);
+      const { data: insData, error: insErr } = await admin
+        .from("activity_related_tasks")
+        .insert(rows)
+        .select("*");
       if (insErr) throw insErr;
+      insertedTasks = insData ?? [];
+    }
+
+    // Step 3: AUTO-DISPATCH all undispatched tasks (AI + any pending) to employees' task lists
+    const { data: pendingAll } = await admin
+      .from("activity_related_tasks")
+      .select("*")
+      .eq("executive_plan_id", executive_plan_id)
+      .eq("is_dispatched", false);
+
+    let dispatchedCount = 0;
+    let skippedNoUser: string[] = [];
+    if (pendingAll && pendingAll.length > 0) {
+      const empIdsForDispatch = Array.from(new Set(pendingAll.map((t: any) => t.employee_id)));
+      const { data: empUsers } = await admin
+        .from("employees")
+        .select("id, user_id, full_name")
+        .in("id", empIdsForDispatch);
+      const userByEmp = new Map<string, string | null>(
+        (empUsers ?? []).map((e: any) => [e.id, e.user_id])
+      );
+      const nameByEmp = new Map<string, string>(
+        (empUsers ?? []).map((e: any) => [e.id, e.full_name])
+      );
+
+      const baseDate = new Date(op.year, opm.month - 1, ep.day);
+      const PHASE_LBL: Record<string, string> = { before: "قبل", during: "أثناء", after: "بعد" };
+
+      for (const t of pendingAll as any[]) {
+        const userId = userByEmp.get(t.employee_id);
+        if (!userId) {
+          const nm = nameByEmp.get(t.employee_id);
+          if (nm && !skippedNoUser.includes(nm)) skippedNoUser.push(nm);
+          continue;
+        }
+        const due = new Date(baseDate);
+        due.setDate(due.getDate() + (t.day_offset ?? 0));
+        const dueStr = due.toISOString().slice(0, 10);
+        const { data: tIns, error: tErr } = await admin
+          .from("tasks")
+          .insert({
+            title: `[${PHASE_LBL[t.phase] ?? ""}] ${t.title}`,
+            description: t.description,
+            user_id: userId,
+            executive_plan_id,
+            source_activity_id: executive_plan_id,
+            phase: t.phase,
+            priority: t.priority,
+            estimated_time_minutes: t.estimated_minutes,
+            due_date: dueStr,
+            ai_generated: t.source === "ai",
+            organization_id: orgId,
+            status: "upcoming",
+          })
+          .select("id")
+          .maybeSingle();
+        if (tErr) {
+          console.error("dispatch insert err", tErr);
+          continue;
+        }
+        await admin
+          .from("activity_related_tasks")
+          .update({ is_dispatched: true, dispatched_task_id: tIns?.id ?? null })
+          .eq("id", t.id);
+        dispatchedCount++;
+      }
     }
 
     return new Response(
       JSON.stringify({
         ok: true,
         generated_count: rows.length,
-        suggested_related_employees: (args.suggested_related_employees ?? []).filter((s: any) => empById.has(s.employee_id)),
+        suggested_related_employees: suggestedEmps,
+        added_employees_count: suggestedEmps.length,
+        dispatched_count: dispatchedCount,
+        skipped_no_user: skippedNoUser,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
