@@ -21,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -535,6 +534,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const phasePreloadStartedRef = React.useRef<Set<string>>(new Set());
   const [preparingPhaseIds, setPreparingPhaseIds] = useState<Set<string>>(new Set());
   const [datesTableWidth, setDatesTableWidth] = useState(DATES_TABLE_MIN_WIDTH);
+  const stickyHeaderTop = embedded ? "52px" : "0px";
 
   const syncDatesHorizontalScroll = (source: "top" | "table") => {
     const top = datesTopScrollRef.current;
@@ -1874,7 +1874,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {/* عرض بحسب التواريخ */}
             {globalViewMode === "dates" && (
               <Card className="overflow-visible">
-                <div className="sticky top-0 z-40 border-x border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-md" dir="rtl">
+                <div className="sticky z-40 border-x border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 shadow-md" style={{ top: stickyHeaderTop }} dir="rtl">
                   <div
                     ref={datesTopScrollRef}
                     className="h-5 overflow-x-auto overflow-y-hidden rounded-md bg-[hsl(var(--muted)/0.45)]"
@@ -1884,7 +1884,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   </div>
                 </div>
                 <div
-                  className="overflow-x-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
+                  className="max-h-[calc(100vh-160px)] overflow-auto outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
                   dir="rtl"
                   tabIndex={0}
                   ref={(el) => {
@@ -1915,18 +1915,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     }}
                     style={{ minWidth: DATES_TABLE_MIN_WIDTH }}
                   >
-                  <Table className="table-fixed">
+                  <table className="w-full caption-bottom text-sm table-fixed">
                     <colgroup>
                       {DATES_TABLE_COLUMNS.map((column) => (
                         <col key={column.key} style={{ width: column.width }} />
                       ))}
                     </colgroup>
                     <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-[37px] [&>th]:bg-[hsl(var(--primary))] [&>th]:z-30">
+                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]" >
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
-                            className={cn("text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
+                            className={cn("top-0 text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
                           >
                             {isEditMode ? (
                               <input
@@ -2543,7 +2543,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                         );
                       })}
                     </TableBody>
-                  </Table>
+                  </table>
                 </div>
                 </div>
               </Card>
@@ -2554,16 +2554,16 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             {globalViewMode === "tasks" && (
               <Card className="overflow-hidden">
                  <div className="overflow-x-auto" dir="rtl">
-                   <Table>
-                     <TableHeader className="sticky top-0 z-20">
-                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:top-0 [&>th]:bg-[hsl(var(--primary))] [&>th]:z-20">
-                        <TableHead className="text-right font-bold text-white min-w-[120px] border-l border-white/20">
+                   <table className="w-full caption-bottom text-sm">
+                     <TableHeader>
+                       <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-20 [&>th]:bg-[hsl(var(--primary))]" >
+                        <TableHead className="top-0 text-right font-bold text-white min-w-[120px] border-l border-white/20">
                           الشهر
                         </TableHead>
-                        <TableHead className="text-right font-bold text-white min-w-[200px] border-l border-white/20">
+                        <TableHead className="top-0 text-right font-bold text-white min-w-[200px] border-l border-white/20">
                           النشاط
                         </TableHead>
-                        <TableHead className="text-right font-bold text-white">
+                        <TableHead className="top-0 text-right font-bold text-white">
                           تواريخ التنفيذ
                         </TableHead>
                       </TableRow>
@@ -2718,7 +2718,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                         );
                       })}
                     </TableBody>
-                  </Table>
+                  </table>
                 </div>
               </Card>
             )}
