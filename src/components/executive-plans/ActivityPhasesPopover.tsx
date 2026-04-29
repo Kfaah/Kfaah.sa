@@ -266,8 +266,11 @@ export function ActivityPhasesPopover({
           className="h-7 px-2 shrink-0 hover:bg-[hsl(var(--primary)/0.1)] relative gap-1 border border-[hsl(var(--primary)/0.2)] rounded-md"
           title="مهام (قبل/أثناء/بعد) للموظف الأساسي"
           onClick={(e) => e.stopPropagation()}
+          disabled={isPreparing && totalCount === 0}
         >
-          <span className="text-[10px] font-bold text-[hsl(var(--primary))]">مراحل</span>
+          <span className="text-[10px] font-bold text-[hsl(var(--primary))]">
+            {isPreparing && totalCount === 0 ? "تجهيز" : "مراحل"}
+          </span>
           {isPreparing && totalCount === 0 && (
             <Loader2 className="w-3 h-3 text-[hsl(var(--primary))] animate-spin" />
           )}
