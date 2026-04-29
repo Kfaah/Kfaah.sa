@@ -308,6 +308,17 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [planMonths, setPlanMonths] = useState<OperationalPlanMonth[]>([]);
   const [executivePlans, setExecutivePlans] = useState<ExecutivePlan[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const pendingRelatedFocusRef = React.useRef<{
+    employeeId: string;
+    executivePlanId?: string;
+    targetInfo?: {
+      activityName?: string | null;
+      initiativeName?: string | null;
+      subInitiativeName?: string | null;
+      activityDay: number;
+      activityMonth: number;
+    };
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
