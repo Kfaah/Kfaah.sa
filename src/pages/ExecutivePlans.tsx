@@ -1867,7 +1867,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   tabIndex={0}
                   ref={(el) => {
                     datesTableScrollRef.current = el;
-                    if (el) requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth - el.clientWidth; });
+                    if (el && !el.dataset.initialScrollDone) {
+                      el.dataset.initialScrollDone = "true";
+                      requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth - el.clientWidth; });
+                    }
                   }}
                   onPointerDown={(e) => {
                     if (e.button !== 0 || (e.target as HTMLElement).closest("button,input,[role='combobox']")) return;
