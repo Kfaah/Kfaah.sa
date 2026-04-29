@@ -537,6 +537,17 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
   const stickyHeaderTop = embedded ? "52px" : "0px";
 
+  const focusEmployeeInExecutivePlans = (employeeId: string) => {
+    const employee = employees.find((e) => e.id === employeeId);
+    setFilterDepartmentId("all");
+    setSelectedEmployeeId(employeeId);
+    setExpandedDays(new Set());
+    toast({ title: "تم عرض الموظف", description: employee?.full_name ?? "تمت فلترة الجدول على الموظف المحدد" });
+    window.setTimeout(() => {
+      datesTableScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }, 120);
+  };
+
   // التحقق من صلاحية المدير
   useEffect(() => {
     const checkAdmin = async () => {
@@ -1827,6 +1838,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 <div
                   className="max-h-[calc(100vh-160px)] overflow-auto scrollbar-none outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.3)] focus:ring-inset"
                   dir="rtl"
+                  data-executive-plans-scroll
                   tabIndex={0}
                   ref={(el) => {
                     datesTableScrollRef.current = el;
@@ -2398,10 +2410,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         </Button>
                                       </div>
                                     ) : (
-                                    <div className={cn(
+                                    <div
+                                      data-employee-target={firstAct?.employeeId || undefined}
+                                      className={cn(
                                       "flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200",
                                       isEditMode && "border-amber-300"
-                                    )}>
+                                    )}
+                                    >
                                       <User className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
                                       <span className="font-semibold text-sm text-slate-800 truncate">{l.empName}</span>
                                       {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto" />}
@@ -2489,6 +2504,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                     job_title: (e as any).job_role ?? null,
                                                     department_name: e.department_name ?? null,
                                                   }))}
+                                                  onNavigateToEmployee={focusEmployeeInExecutivePlans}
                                                 />
                                                 <ActivityPhasesPopover
                                                   executivePlanId={act.id}

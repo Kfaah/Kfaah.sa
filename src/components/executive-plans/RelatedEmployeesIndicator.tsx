@@ -43,6 +43,7 @@ interface Props {
   activityMonth: number;
   activityYear: number;
   allEmployees: Employee[];
+  onNavigateToEmployee?: (employeeId: string) => void;
 }
 
 export function RelatedEmployeesIndicator({
@@ -56,6 +57,7 @@ export function RelatedEmployeesIndicator({
   activityMonth,
   activityYear,
   allEmployees,
+  onNavigateToEmployee,
 }: Props) {
   const [rows, setRows] = useState<RelatedRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -230,11 +232,27 @@ export function RelatedEmployeesIndicator({
     return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
   }
 
+  function centerTarget(target: HTMLElement) {
+    const scrollParent = target.closest<HTMLElement>("[data-executive-plans-scroll]");
+    if (scrollParent) {
+      const parentRect = scrollParent.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      scrollParent.scrollTop += targetRect.top - parentRect.top - parentRect.height / 2 + targetRect.height / 2;
+      scrollParent.scrollLeft += targetRect.left - parentRect.left - parentRect.width / 2 + targetRect.width / 2;
+      return;
+    }
+    target.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
+  }
+
   function navigateToEmployee(empId: string) {
     setOpen(false);
-    requestAnimationFrame(() => {
-      const pool = Array.from(document.querySelectorAll<HTMLElement>("[data-employee-row-target]"))
-        .filter((el) => el.dataset.employeeRowTarget === empId && isVisibleTarget(el));
+    if (onNavigateToEmployee) {
+      onNavigateToEmployee(empId);
+      return;
+    }
+    window.setTimeout(() => {
+      const pool = Array.from(document.querySelectorAll<HTMLElement>("[data-employee-target]"))
+        .filter((el) => el.dataset.employeeTarget === empId && isVisibleTarget(el));
       if (pool.length === 0) {
         toast({
           title: "لم يُعثر على صفّ هذا الموظف",
@@ -244,12 +262,12 @@ export function RelatedEmployeesIndicator({
         return;
       }
       const target = pool[0];
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
-      target.classList.add("ring-2", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.08)]", "transition-shadow");
+      centerTarget(target);
+      target.classList.add("ring-4", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.12)]", "transition-shadow");
       window.setTimeout(() => {
-        target.classList.remove("ring-2", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.08)]");
+        target.classList.remove("ring-4", "ring-[hsl(var(--primary))]", "ring-offset-2", "bg-[hsl(var(--primary)/0.12)]");
       }, 2200);
-    });
+    }, 80);
   }
 
   const empById = new Map(allEmployees.map((e) => [e.id, e]));
