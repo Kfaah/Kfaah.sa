@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAvailableYears, getCurrentYear } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useScopedView } from "@/hooks/useScopedView";
+import { useAuth } from "@/hooks/useAuth";
 
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
@@ -40,6 +42,9 @@ export default function AIGenerateExecutivePlan() {
   const { slug } = useParams<{ slug?: string }>();
   const { currentOrg } = useOrganization();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { roleLevel, myEmployeeId } = useScopedView("scope:exec-ai");
+  const { user: authUser } = useAuth();
+  const isPlainEmployee = roleLevel === "employee";
 
   const withFiles = params.get("withFiles") === "1";
 
@@ -95,12 +100,16 @@ export default function AIGenerateExecutivePlan() {
 
   // Effective userIds to send (undefined => no filter, generate for all)
   const effectiveUserIds = useMemo(() => {
+    // Plain employees can only generate for themselves
+    if (isPlainEmployee && authUser?.id) {
+      return [authUser.id];
+    }
     const pool = selectedEmployeeIds.length > 0
       ? employees.filter((e) => selectedEmployeeIds.includes(e.id))
       : filteredEmployees;
     const ids = pool.map((e) => e.user_id).filter((v): v is string => !!v);
     return ids;
-  }, [employees, filteredEmployees, selectedEmployeeIds]);
+  }, [employees, filteredEmployees, selectedEmployeeIds, isPlainEmployee, authUser?.id]);
 
   const years = getAvailableYears();
 
