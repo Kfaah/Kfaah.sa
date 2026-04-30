@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
   Zap,
   UserCircle2,
   Calendar as CalendarIcon,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -67,6 +69,7 @@ interface RelatedTask {
   day_offset: number;
   source: "manual" | "ai";
   is_dispatched: boolean;
+  dispatched_task_id?: string | null;
 }
 
 const PHASE_META: Record<Phase, { label: string; color: string; chip: string; allowDate: boolean }> = {
@@ -132,7 +135,7 @@ export function ActivityPhasesPopover({
     try {
       const { data, error } = await supabase
         .from("activity_related_tasks")
-        .select("id, employee_id, phase, title, estimated_minutes, priority, day_offset, source, is_dispatched")
+        .select("id, employee_id, phase, title, estimated_minutes, priority, day_offset, source, is_dispatched, dispatched_task_id")
         .eq("executive_plan_id", executivePlanId)
         .order("phase")
         .order("display_order");
