@@ -2495,8 +2495,12 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <div className="flex flex-col gap-1">
                                       {l.acts.map((act, i) => {
                                         const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
-                                        return (
-                                          <div key={`act-wrap-${act.id}`} data-activity-row-target={act.id}>
+                                          return (
+                                           <div
+                                             key={`act-wrap-${act.id}-${(act as any).employeeId ?? "none"}-${i}`}
+                                             data-activity-row-target={act.id}
+                                             data-activity-employee-target={(act as any).employeeId || undefined}
+                                           >
                                           {/* مرساة للتنقل من رابط مهمة مُرحَّلة */}
                                           <div id={`activity-row-${act.id}`} />
                                           <div
@@ -2567,8 +2571,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   activityDay={(act as any).day ?? l.day}
                                                   activityMonth={(act as any).month ?? monthGroup.month}
                                                   activityYear={selectedYear}
-                                                  autoOpen={focusActivityId === act.id}
-                                                  highlightTaskId={focusActivityId === act.id ? focusTaskId : null}
+                                                  autoOpen={focusActivityId === act.id && (!focusEmployeeId || focusEmployeeId === (act as any).employeeId)}
+                                                  highlightTaskId={focusActivityId === act.id && (!focusEmployeeId || focusEmployeeId === (act as any).employeeId) ? focusTaskId : null}
                                                   onAutoOpened={clearFocusParams}
                                                   allEmployees={employees.map((e) => ({
                                                     id: e.id,
