@@ -1548,11 +1548,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
 
   // عند فتح نافذة AI، حمّل الخطط المتاحة
   useEffect(() => {
-    if (isAIDialogOpen) {
+    if (isAIDialogOpen && (!slug || activeOrgId)) {
       loadAiAvailablePlans();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAIDialogOpen, selectedYear]);
+  }, [isAIDialogOpen, selectedYear, activeOrgId]);
 
   const toggleAiPlan = (key: string) => {
     setAiSelectedPlanKeys((prev) => {
