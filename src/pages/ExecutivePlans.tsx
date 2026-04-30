@@ -2449,6 +2449,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
                                         return (
                                           <div key={`act-wrap-${act.id}`} data-activity-row-target={act.id}>
+                                          {/* مرساة للتنقل من رابط مهمة مُرحَّلة */}
+                                          <div id={`activity-row-${act.id}`} />
                                           <div
                                             className={cn(
                                               "flex items-start gap-2 px-2 py-1 rounded-md text-sm border text-slate-800 transition-all",
