@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Upload, FileText, X, Loader2, Brain, ArrowRight, CheckCircle2, FileSpreadsheet, FileImage, Calendar, Building2, Users, User } from "lucide-react";
+import { Sparkles, Upload, FileText, X, Loader2, Brain, ArrowRight, CheckCircle2, FileSpreadsheet, FileImage, Calendar, Building2, Users, User, ListChecks, Layers } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getAvailableYears, getCurrentYear } from "@/lib/utils";
@@ -63,6 +63,18 @@ export default function AIGenerateExecutivePlan() {
   const [departmentId, setDepartmentId] = useState<string>("all");
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]); // [] => all employees in scope
 
+  // الخطط التشغيلية المتاحة (operational_plans + excel_plans)
+  type AvailablePlan = {
+    key: string;            // "op:<id>" or "excel:<id>"
+    id: string;
+    label: string;
+    subtitle: string;
+    source: "op" | "excel";
+  };
+  const [availablePlans, setAvailablePlans] = useState<AvailablePlan[]>([]);
+  const [selectedPlanKeys, setSelectedPlanKeys] = useState<string[]>([]); // [] => all
+  const [loadingPlans, setLoadingPlans] = useState(false);
+
   useEffect(() => {
     const resolve = async () => {
       if (!slug) { setRouteOrgId(null); return; }
@@ -92,6 +104,52 @@ export default function AIGenerateExecutivePlan() {
     };
     loadFilters();
   }, [activeOrgId, slug]);
+
+  // تحميل الخطط التشغيلية المتاحة (للسنة + الجمعية)
+  useEffect(() => {
+    const loadPlans = async () => {
+      if (slug && !activeOrgId) return;
+      setLoadingPlans(true);
+      try {
+        let opQ = supabase
+          .from("operational_plans")
+          .select("id, activity_name, plan_name, strategic_goal, initiative, year")
+          .eq("year", year)
+          .order("created_at", { ascending: false });
+        let exQ = supabase
+          .from("excel_plans")
+          .select("id, plan_name, sheet_name, year, source_filename")
+          .eq("year", year)
+          .order("created_at", { ascending: false });
+        if (activeOrgId) {
+          opQ = opQ.eq("organization_id", activeOrgId);
+          exQ = exQ.eq("organization_id", activeOrgId);
+        }
+        const [{ data: ops }, { data: excels }] = await Promise.all([opQ, exQ]);
+        const merged: AvailablePlan[] = [
+          ...((ops || []).map((p: any) => ({
+            key: `op:${p.id}`,
+            id: p.id,
+            label: p.activity_name || p.plan_name || "خطة تشغيلية",
+            subtitle: [p.strategic_goal, p.initiative].filter(Boolean).join(" • ") || `سنة ${p.year}`,
+            source: "op" as const,
+          }))),
+          ...((excels || []).map((p: any) => ({
+            key: `excel:${p.id}`,
+            id: p.id,
+            label: p.plan_name || p.sheet_name || "خطة Excel",
+            subtitle: p.source_filename || `Excel • ${p.year}`,
+            source: "excel" as const,
+          }))),
+        ];
+        setAvailablePlans(merged);
+        setSelectedPlanKeys([]); // إعادة تعيين عند تغيير السنة
+      } finally {
+        setLoadingPlans(false);
+      }
+    };
+    loadPlans();
+  }, [activeOrgId, slug, year]);
 
   const filteredEmployees = useMemo(() => {
     if (departmentId === "all") return employees;
@@ -187,6 +245,13 @@ export default function AIGenerateExecutivePlan() {
             departmentId !== "all" || selectedEmployeeIds.length > 0
               ? effectiveUserIds
               : undefined,
+          // الخطط المختارة (إن وُجدت). فارغ => كل الخطط للسنة/الجمعية
+          operationalPlanIds: selectedPlanKeys
+            .filter((k) => k.startsWith("op:"))
+            .map((k) => k.slice(3)),
+          excelPlanIds: selectedPlanKeys
+            .filter((k) => k.startsWith("excel:"))
+            .map((k) => k.slice(6)),
         },
       });
 
