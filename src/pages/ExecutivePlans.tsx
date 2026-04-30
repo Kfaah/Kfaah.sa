@@ -1376,6 +1376,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           body: {
             months: [month],
             year: selectedYear,
+            organizationId: activeOrgId,
             userIds,
             operationalPlanIds,
             excelPlanIds,
@@ -1467,7 +1468,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const loadAiAvailablePlans = async () => {
     setAiPlansLoading(true);
     try {
-      const orgId = currentOrg?.id || routeOrgId;
+      const orgId = activeOrgId;
 
       // 1) operational_plans
       let opQuery = supabase
