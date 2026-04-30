@@ -831,7 +831,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             .select("*")
             .in("operational_plan_id", ids)
             .order("month", { ascending: true });
-          if (activeOrgId) query = query.eq("organization_id", activeOrgId);
           const { data: monthChunk, error: monthsError } = await query;
           if (monthsError) throw monthsError;
           if (monthChunk) months.push(...monthChunk);
@@ -849,7 +848,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               .select("*")
               .in("operational_plan_month_id", ids)
               .order("day", { ascending: true });
-            if (activeOrgId) query = query.eq("organization_id", activeOrgId);
             const { data: executiveChunk, error: execError } = await query;
             if (execError) throw execError;
             if (executiveChunk) executive.push(...executiveChunk);
@@ -865,7 +863,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 .from("activity_related_tasks")
                 .select("id, executive_plan_id, employee_id, phase, title")
                 .in("executive_plan_id", ids);
-              if (activeOrgId) query = query.eq("organization_id", activeOrgId);
               const { data: relatedChunk, error: relatedError } = await query;
               if (relatedError) throw relatedError;
               if (relatedChunk) nextRelatedTasks.push(...(relatedChunk as ActivityRelatedTask[]));
@@ -882,7 +879,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 .from("tasks")
                 .select("id, title, status, priority, executive_plan_id, category")
                 .in("executive_plan_id", ids);
-              if (activeOrgId) query = query.eq("organization_id", activeOrgId);
               const { data: tasksData, error: tasksError } = await query;
               if (!tasksError && tasksData) nextTasks.push(...tasksData);
             }

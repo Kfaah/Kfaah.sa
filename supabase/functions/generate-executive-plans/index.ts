@@ -285,6 +285,7 @@ serve(async (req) => {
           initiative,
           strategic_goal,
           user_id,
+          organization_id,
           responsible_employee_id,
           operational_plan_months!inner (
             id,
@@ -345,6 +346,7 @@ serve(async (req) => {
           monthlyTarget: planMonth.monthly_target,
           annualTarget: plan.annual_target,
           userId: plan.user_id,
+          organizationId: plan.organization_id,
           employeeName: employee?.full_name || "موظف",
           jobRole: employee?.job_role || "",
         };
@@ -361,6 +363,7 @@ serve(async (req) => {
           monthlyTarget: m.meta.monthlyTarget,
           annualTarget: m.meta.annualTarget,
           userId: m.meta.userId,
+          organizationId: (excelPlans || []).find((p: any) => p.id === m.meta.excelPlanId)?.organization_id || null,
           employeeName: m.meta.employeeName,
           jobRole: m.meta.jobRole,
         });
@@ -618,6 +621,7 @@ ${i + 1}. النشاط: ${p.activityName}
         day: number; 
         activityName: string; 
         userId: string; 
+        organizationId?: string | null;
         dailyTarget: number;
         tasks?: { before: string[]; during: string[]; after: string[] };
       }[] = [];
@@ -635,6 +639,7 @@ ${i + 1}. النشاط: ${p.activityName}
             achieved: 0,
             status: "pending",
             notes: `تم التوليد بالذكاء الاصطناعي - ${planData.activityName}`,
+            organization_id: planData.organizationId || null,
           });
           
           planMetadata.push({
@@ -642,6 +647,7 @@ ${i + 1}. النشاط: ${p.activityName}
             day: dayData.day,
             activityName: planData.activityName,
             userId: planData.userId,
+            organizationId: planData.organizationId || null,
             dailyTarget: dayData.target,
             tasks: dayData.tasks || { before: [], during: [], after: [] },
           });
@@ -718,6 +724,7 @@ ${i + 1}. النشاط: ${p.activityName}
               description: `${label} - ${metadata.activityName}`,
               user_id: metadata.userId,
               executive_plan_id: executivePlan.id,
+              organization_id: metadata.organizationId || null,
               status: "pending",
               priority,
               due_date: dueDateStr,
@@ -737,6 +744,7 @@ ${i + 1}. النشاط: ${p.activityName}
             description: `مهمة مولدة بالذكاء الاصطناعي - المستهدف: ${metadata.dailyTarget}`,
             user_id: metadata.userId,
             executive_plan_id: executivePlan.id,
+            organization_id: metadata.organizationId || null,
             status: "pending",
             priority: "medium",
             due_date: dueDateStr,
