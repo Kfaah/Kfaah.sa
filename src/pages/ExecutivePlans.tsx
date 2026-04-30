@@ -3243,6 +3243,79 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 )}
               </div>
 
+              {/* قائمة الخطط التشغيلية المتاحة (operational + excel) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    اختر الخطط التشغيلية للتوليد منها
+                  </label>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={selectAllAiPlans} className="text-xs h-7 px-2">
+                      تحديد الكل
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={clearAllAiPlans} className="text-xs h-7 px-2">
+                      إلغاء الكل
+                    </Button>
+                  </div>
+                </div>
+
+                {aiPlansLoading ? (
+                  <div className="text-center py-6 text-sm text-gray-500 flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> جاري تحميل الخطط...
+                  </div>
+                ) : aiAvailablePlans.length === 0 ? (
+                  <div className="text-center py-6 text-sm text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    لا توجد خطط تشغيلية لسنة {selectedYear}. أضف خطة من صفحة "الخطط التشغيلية" أولاً.
+                  </div>
+                ) : (
+                  <div className="max-h-56 overflow-y-auto space-y-2 rounded-lg border border-gray-200 p-2 bg-gray-50/50">
+                    {aiAvailablePlans.map((plan) => {
+                      const isSelected = aiSelectedPlanKeys.has(plan.key);
+                      return (
+                        <div
+                          key={plan.key}
+                          onClick={() => toggleAiPlan(plan.key)}
+                          className={cn(
+                            "flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all border-2",
+                            isSelected
+                              ? "bg-emerald-50 border-emerald-400"
+                              : "bg-white hover:bg-gray-50 border-gray-200 hover:border-emerald-200",
+                          )}
+                        >
+                          <Checkbox checked={isSelected} className="pointer-events-none mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-gray-900 truncate">{plan.label}</span>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[10px] px-1.5 py-0",
+                                  plan.source === "excel"
+                                    ? "border-emerald-300 text-emerald-700 bg-emerald-50"
+                                    : "border-blue-300 text-blue-700 bg-blue-50",
+                                )}
+                              >
+                                {plan.source === "excel" ? "Excel" : "تشغيلية"}
+                              </Badge>
+                            </div>
+                            {plan.subtitle && (
+                              <p className="text-xs text-gray-500 mt-0.5 truncate">{plan.subtitle}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {aiAvailablePlans.length > 0 && (
+                  <div className="text-xs text-emerald-700 text-center">
+                    تم اختيار {aiSelectedPlanKeys.size} من {aiAvailablePlans.length}
+                  </div>
+                )}
+              </div>
+
               {/* الموظفين المستهدفين */}
               <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200">
                 <h4 className="font-semibold mb-3 flex items-center gap-2 text-slate-700">
