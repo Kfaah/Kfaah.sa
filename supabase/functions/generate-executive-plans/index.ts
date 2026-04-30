@@ -64,12 +64,13 @@ serve(async (req) => {
     let excelPlans: any[] = [];
 
     if (filterExcelIds.length > 0) {
-      const { data: excelPlansData } = await supabase
+      let excelPlansQuery = supabase
         .from("excel_plans")
         .select("id, plan_name, year, columns, rows, organization_id")
         .in("id", filterExcelIds)
         .eq("year", targetYear)
-        .eq("organization_id", activeOrganizationId ?? "00000000-0000-0000-0000-000000000000");
+      if (activeOrganizationId) excelPlansQuery = excelPlansQuery.eq("organization_id", activeOrganizationId);
+      const { data: excelPlansData } = await excelPlansQuery;
       excelPlans = excelPlansData || [];
 
       // محاولة ربط "مسؤول التنفيذ" بمستخدم/قسم
@@ -234,7 +235,7 @@ serve(async (req) => {
               strategic_goal: vp.strategicGoal,
               initiative: vp.initiative,
               plan_name: "مولّدة من Excel",
-              organization_id: (excelPlans || []).find((p: any) => p.id === vp.excelPlanId)?.organization_id || null,
+              organization_id: activeOrganizationId || (excelPlans || []).find((p: any) => p.id === vp.excelPlanId)?.organization_id || null,
             })
             .select("id")
             .single();
@@ -312,6 +313,9 @@ serve(async (req) => {
       } else if (hasPlanFilter && filterExcelIds.length > 0 && filterOperationalIds.length === 0) {
         // المستخدم اختار فقط خطط Excel — لا نريد جلب operational_plans غير محددة
         query = query.in("id", ["00000000-0000-0000-0000-000000000000"]);
+      }
+      if (activeOrganizationId) {
+        query = query.eq("organization_id", activeOrganizationId);
       }
 
       const { data: operationalPlans, error: fetchError } = await query;
