@@ -78,7 +78,62 @@ serve(async (req) => {
         .from("employees")
         .select("id, full_name, user_id, job_role, department_id, departments(name)");
 
-      const norm = (s: any) => String(s ?? "").trim().toLowerCase();
+      // تطبيع نص عربي: حذف التشكيل، توحيد الألف/الياء/التاء، حذف "ال"، وتفريق الكلمات الشائعة
+      const stripDiacritics = (s: string) =>
+        s.replace(/[\u0617-\u061A\u064B-\u0652\u0670\u0640]/g, "");
+      const normalizeArabic = (s: any) => {
+        let v = String(s ?? "").trim();
+        v = stripDiacritics(v);
+        v = v.replace(/[إأآا]/g, "ا").replace(/ى/g, "ي").replace(/ؤ/g, "و").replace(/ئ/g, "ي").replace(/ة/g, "ه");
+        return v.toLowerCase();
+      };
+      const STOPWORDS = new Set(["اداره", "ادارة", "قسم", "وحده", "وحدة", "مكتب", "ال", "و", "في", "على", "عن"]);
+      const tokenize = (s: any) =>
+        normalizeArabic(s)
+          .split(/[\s،,\-_/\\()]+/)
+          .map((t) => t.replace(/^ال/, ""))
+          .filter((t) => t && !STOPWORDS.has(t));
+      const norm = normalizeArabic;
+
+      // تجميع الموظفين حسب القسم (للتدوير)
+      const employeesByDept = new Map<string, any[]>();
+      for (const e of allEmployees || []) {
+        if (!e.user_id) continue;
+        const deptName = e.departments?.name;
+        if (!deptName) continue;
+        const key = normalizeArabic(deptName);
+        if (!employeesByDept.has(key)) employeesByDept.set(key, []);
+        employeesByDept.get(key)!.push(e);
+      }
+      const deptCursor = new Map<string, number>();
+      const pickFromDept = (deptKey: string): any | null => {
+        const list = employeesByDept.get(deptKey);
+        if (!list || list.length === 0) return null;
+        // فلترة بناء على userIds المختارة إن وُجدت
+        const filtered = (userIds && userIds.length > 0)
+          ? list.filter((e) => userIds.includes(e.user_id))
+          : list;
+        const pool = filtered.length > 0 ? filtered : list;
+        const i = (deptCursor.get(deptKey) ?? 0) % pool.length;
+        deptCursor.set(deptKey, i + 1);
+        return pool[i];
+      };
+
+      // إيجاد قسم بأفضل تطابق رمزي (token overlap)
+      const findDeptByTokens = (text: string): string | null => {
+        const tks = tokenize(text);
+        if (tks.length === 0) return null;
+        let best: { key: string; score: number } | null = null;
+        for (const key of employeesByDept.keys()) {
+          const dtks = tokenize(key);
+          if (dtks.length === 0) continue;
+          const overlap = dtks.filter((t) => tks.includes(t)).length;
+          if (overlap === 0) continue;
+          const score = overlap / Math.max(dtks.length, 1);
+          if (!best || score > best.score) best = { key, score };
+        }
+        return best && best.score >= 0.5 ? best.key : null;
+      };
 
       for (const ep of excelPlans || []) {
         const cols: string[] = Array.isArray(ep.columns) ? ep.columns : [];
@@ -109,30 +164,32 @@ serve(async (req) => {
 
           if (respText) {
             const respNorm = norm(respText);
-            // مطابقة بالاسم
+            // مطابقة بالاسم بالضبط
             const byName = (allEmployees || []).find((e: any) => norm(e.full_name) === respNorm);
             if (byName?.user_id) {
               matchedUserId = byName.user_id;
               matchedName = byName.full_name;
               matchedRole = byName.job_role || "";
             } else {
-              // مطابقة بالقسم
-              const deptMatch = (allEmployees || []).find(
-                (e: any) => norm(e.departments?.name) === respNorm,
-              );
-              if (deptMatch?.user_id) {
-                matchedUserId = deptMatch.user_id;
-                matchedName = deptMatch.full_name;
-                matchedRole = deptMatch.job_role || respText;
+              // مطابقة بالقسم: أولاً بالضبط، ثم بأقرب تطابق رمزي
+              let deptKey: string | null = employeesByDept.has(respNorm) ? respNorm : null;
+              if (!deptKey) deptKey = findDeptByTokens(respText);
+              if (deptKey) {
+                const picked = pickFromDept(deptKey);
+                if (picked) {
+                  matchedUserId = picked.user_id;
+                  matchedName = picked.full_name;
+                  matchedRole = picked.job_role || respText;
+                }
               }
             }
           }
 
-          // إذا لم يُربط، نسنده لأول موظف من القائمة المختارة
-          if (!matchedUserId && userIds && userIds.length > 0) {
-            matchedUserId = userIds[0];
+          // إذا لم يُربط بأي قسم/موظف، تجاهل هذا الصف بدلاً من إسناده لأول موظف
+          if (!matchedUserId) {
+            console.log(`⚠️ تعذر مطابقة "مسؤول التنفيذ"="${respText}" لأي قسم/موظف — تم تخطي النشاط: ${activity}`);
+            return;
           }
-          if (!matchedUserId) return;
 
           // فلترة بالموظفين المحددين
           if (userIds && userIds.length > 0 && !userIds.includes(matchedUserId)) return;
