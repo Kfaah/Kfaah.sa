@@ -249,45 +249,60 @@ export default function AIGenerateExecutivePlan() {
 
       setStage("analyzing");
 
-      const { data, error } = await supabase.functions.invoke("generate-executive-plans", {
-        body: {
-          months: selectedMonths,
-          year,
-          plan_name: planName.trim() || undefined,
-          user_brief: brief.trim() || undefined,
-          reference_file_paths: uploadedPaths,
-          // Scope: only generate for these users (if any filter applied)
-          userIds:
-            departmentId !== "all" || selectedEmployeeIds.length > 0
-              ? effectiveUserIds
-              : undefined,
-          // الخطط المختارة (إن وُجدت). فارغ => كل الخطط للسنة/الجمعية
-          operationalPlanIds: selectedPlanKeys
-            .filter((k) => k.startsWith("op:"))
-            .map((k) => k.slice(3)),
-          excelPlanIds: selectedPlanKeys
-            .filter((k) => k.startsWith("excel:"))
-            .map((k) => k.slice(6)),
-        },
-      });
+      // معالجة كل شهر في طلب منفصل لتجنّب حدّ 150 ثانية للـ Edge Function
+      let totalDays = 0;
+      let lastData: any = null;
+      const operationalPlanIds = selectedPlanKeys
+        .filter((k) => k.startsWith("op:"))
+        .map((k) => k.slice(3));
+      const excelPlanIds = selectedPlanKeys
+        .filter((k) => k.startsWith("excel:"))
+        .map((k) => k.slice(6));
+      const userIdsScope =
+        departmentId !== "all" || selectedEmployeeIds.length > 0 ? effectiveUserIds : undefined;
 
-      if (error) {
-        console.error(error);
-        toast({ title: "فشل التوليد", description: error.message || "خطأ غير معروف", variant: "destructive" });
-        setStage("idle");
-        return;
+      for (const m of selectedMonths) {
+        const { data, error } = await supabase.functions.invoke("generate-executive-plans", {
+          body: {
+            months: [m],
+            year,
+            plan_name: planName.trim() || undefined,
+            user_brief: brief.trim() || undefined,
+            reference_file_paths: uploadedPaths,
+            userIds: userIdsScope,
+            operationalPlanIds,
+            excelPlanIds,
+          },
+        });
+
+        if (error) {
+          console.error(error);
+          toast({
+            title: `فشل توليد شهر ${m}`,
+            description: error.message || "خطأ غير معروف",
+            variant: "destructive",
+          });
+          setStage("idle");
+          return;
+        }
+        if (data && (data as any).success === false) {
+          toast({
+            title: `فشل توليد شهر ${m}`,
+            description: (data as any).error || "تعذر التوليد",
+            variant: "destructive",
+          });
+          setStage("idle");
+          return;
+        }
+        lastData = data;
+        totalDays += (data as any)?.totalPlansGenerated || 0;
       }
 
-      if (data && (data as any).success === false) {
-        toast({ title: "فشل التوليد", description: (data as any).error || "تعذر التوليد", variant: "destructive" });
-        setStage("idle");
-        return;
-      }
-
+      const data = lastData;
       setStage("done");
       toast({
         title: "✨ تم توليد الخطط التنفيذية بنجاح",
-        description: `${(data as any)?.totalPlansGenerated || 0} يوم تنفيذي تم إنشاؤها`,
+        description: `${totalDays} يوم تنفيذي تم إنشاؤها`,
       });
 
       setTimeout(() => navigate("/executive-plans"), 800);
