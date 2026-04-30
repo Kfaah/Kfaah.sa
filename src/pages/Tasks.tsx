@@ -213,6 +213,62 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     }
   }, [authUser, orgId, cacheKey]);
 
+  useEffect(() => {
+    if (!activeGenerationJobId) return;
+
+    let cancelled = false;
+    const pollJob = async () => {
+      const { data, error } = await supabase
+        .from("task_generation_jobs")
+        .select("id,status,message,error_message,total_employees,processed_employees,generated_tasks_count")
+        .eq("id", activeGenerationJobId)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (error) {
+        setGenerationProgress("تعذر قراءة حالة التوليد، سيتم إعادة المحاولة...");
+        return;
+      }
+
+      const job = data as TaskGenerationJob | null;
+      if (!job) return;
+
+      const progressText = job.total_employees > 0
+        ? `${job.message || "جاري توليد المهام..."} (${job.processed_employees}/${job.total_employees})`
+        : job.message || "جاري تجهيز التوليد...";
+      setGenerationProgress(progressText);
+
+      if (job.status === "completed") {
+        await refreshTasks();
+        if (cancelled) return;
+        toast({
+          title: "تم التوليد بنجاح! ✨",
+          description: job.message || `تم توليد ${job.generated_tasks_count} مهمة بنجاح`,
+        });
+        setActiveGenerationJobId(null);
+        setIsGenerating(false);
+        setGenerationProgress("");
+        setIsGenerateDialogOpen(false);
+      } else if (job.status === "failed") {
+        toast({
+          title: "خطأ",
+          description: job.error_message || job.message || "فشل توليد المهام",
+          variant: "destructive",
+        });
+        setActiveGenerationJobId(null);
+        setIsGenerating(false);
+        setGenerationProgress("");
+      }
+    };
+
+    pollJob();
+    const timer = window.setInterval(pollJob, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [activeGenerationJobId, refreshTasks, toast]);
+
   // فتح نافذة التواصل عند الانتقال من إشعار رسالة
   useEffect(() => {
     const taskIdFromUrl = searchParams.get("task");
