@@ -157,6 +157,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState("");
+  const [activeGenerationJobId, setActiveGenerationJobId] = useState<string | null>(null);
 
   // حالة نافذة التعديل
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -191,6 +192,26 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const orgId = currentOrg?.id ?? null;
   const cacheKey = orgId && authUser?.id ? `${TASKS_CACHE_PREFIX}${orgId}:${authUser.id}` : null;
+
+  const refreshTasks = useCallback(async () => {
+    if (!authUser || !orgId) return;
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .select(TASK_COLUMNS)
+      .eq("organization_id", orgId)
+      .order("due_date", { ascending: true })
+      .limit(300);
+
+    if (error) throw error;
+    const nextTasks = (data as Task[]) || [];
+    setTasks(nextTasks);
+
+    if (cacheKey) {
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || "{}");
+      localStorage.setItem(cacheKey, JSON.stringify({ ...cached, tasks: nextTasks, cachedAt: Date.now() }));
+    }
+  }, [authUser, orgId, cacheKey]);
 
   // فتح نافذة التواصل عند الانتقال من إشعار رسالة
   useEffect(() => {
