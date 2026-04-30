@@ -621,6 +621,7 @@ ${i + 1}. النشاط: ${p.activityName}
         day: number; 
         activityName: string; 
         userId: string; 
+        organizationId?: string | null;
         dailyTarget: number;
         tasks?: { before: string[]; during: string[]; after: string[] };
       }[] = [];
@@ -723,6 +724,7 @@ ${i + 1}. النشاط: ${p.activityName}
               description: `${label} - ${metadata.activityName}`,
               user_id: metadata.userId,
               executive_plan_id: executivePlan.id,
+              organization_id: metadata.organizationId || null,
               status: "pending",
               priority,
               due_date: dueDateStr,
@@ -742,6 +744,7 @@ ${i + 1}. النشاط: ${p.activityName}
             description: `مهمة مولدة بالذكاء الاصطناعي - المستهدف: ${metadata.dailyTarget}`,
             user_id: metadata.userId,
             executive_plan_id: executivePlan.id,
+            organization_id: metadata.organizationId || null,
             status: "pending",
             priority: "medium",
             due_date: dueDateStr,
