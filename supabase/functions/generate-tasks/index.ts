@@ -116,8 +116,32 @@ serve(async (req) => {
       throw new Error("فشل في جلب الخطط التنفيذية");
     }
     if (!executivePlans || executivePlans.length === 0) {
+      // اكتشاف الأشهر المتاحة لإرشاد المستخدم
+      let availableMonths: number[] = [];
+      try {
+        let availQuery = supabase
+          .from("executive_plans")
+          .select(`operational_plan_months!inner(month, operational_plans!inner(year, organization_id))`)
+          .eq("operational_plan_months.operational_plans.year", targetYear);
+        if (orgId) availQuery = availQuery.eq("operational_plan_months.operational_plans.organization_id", orgId);
+        const { data: avail } = await availQuery;
+        const set = new Set<number>();
+        (avail || []).forEach((r: any) => {
+          const m = r.operational_plan_months?.month;
+          if (m) set.add(Number(m));
+        });
+        availableMonths = Array.from(set).sort((a, b) => a - b);
+      } catch (_) { /* ignore */ }
+
+      const monthsListAr = availableMonths.length > 0
+        ? availableMonths.map(m => MONTHS_AR[m - 1]).join("، ")
+        : "";
+      const baseMsg = `لا توجد خطط تنفيذية لشهر ${monthName} ${targetYear}.`;
+      const hint = availableMonths.length > 0
+        ? ` الأشهر المتاحة حالياً: ${monthsListAr}. اختر أحدها أو أضف خططاً تنفيذية لهذا الشهر أولاً.`
+        : ` لم يتم العثور على أي خطط تنفيذية لسنة ${targetYear}. يرجى الانتقال إلى صفحة الخطط التنفيذية وتوليدها أو إضافتها أولاً.`;
       return new Response(
-        JSON.stringify({ error: "لا توجد خطط تنفيذية لهذا الشهر. يرجى إضافة خطط تنفيذية أولاً." }),
+        JSON.stringify({ error: baseMsg + hint, available_months: availableMonths }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
