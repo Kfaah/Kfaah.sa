@@ -74,9 +74,12 @@ serve(async (req) => {
       excelPlans = excelPlansData || [];
 
       // محاولة ربط "مسؤول التنفيذ" بمستخدم/قسم
-      const { data: allEmployees } = await supabase
+      let employeesQuery = supabase
         .from("employees")
-        .select("id, full_name, user_id, job_role, department_id, departments(name)");
+        .select("id, full_name, user_id, job_role, department_id, organization_id, departments(id, name)")
+        .not("user_id", "is", null);
+      if (activeOrganizationId) employeesQuery = employeesQuery.eq("organization_id", activeOrganizationId);
+      const { data: allEmployees } = await employeesQuery;
 
       // تطبيع نص عربي: حذف التشكيل، توحيد الألف/الياء/التاء، حذف "ال"، وتفريق الكلمات الشائعة
       const stripDiacritics = (s: string) =>
@@ -95,13 +98,16 @@ serve(async (req) => {
           .filter((t) => t && !STOPWORDS.has(t));
       const norm = normalizeArabic;
 
-      // تجميع الموظفين حسب القسم (للتدوير)
+      // تجميع الموظفين حسب القسم داخل الجهة النشطة فقط (للتدوير)
       const employeesByDept = new Map<string, any[]>();
+      const deptNamesById = new Map<string, string>();
       for (const e of allEmployees || []) {
         if (!e.user_id) continue;
         const deptName = e.departments?.name;
-        if (!deptName) continue;
-        const key = normalizeArabic(deptName);
+        const deptId = e.department_id;
+        if (!deptName || !deptId) continue;
+        const key = deptId;
+        deptNamesById.set(key, deptName);
         if (!employeesByDept.has(key)) employeesByDept.set(key, []);
         employeesByDept.get(key)!.push(e);
       }
@@ -119,18 +125,39 @@ serve(async (req) => {
         return pool[i];
       };
 
-      // إيجاد قسم بأفضل تطابق رمزي (token overlap)
+      const departmentAliases = (deptName: string) => {
+        const aliases = [deptName];
+        const t = tokenize(deptName);
+        if (t.includes("تبرعات") || t.includes("تبرع") || t.includes("جمع")) {
+          aliases.push("تنمية الموارد المالية", "الموارد المالية", "استقطاع", "مانحين", "تحصيل مالي", "دعم برامج الجمعية");
+        }
+        if (t.includes("تسويق") || t.includes("اعلام")) {
+          aliases.push("إدارة الإعلام والتسويق", "الإعلام", "التسويق", "منصات التواصل", "محتوى", "هوية بصرية", "حملات رقمية");
+        }
+        if (t.includes("مشاريع") || t.includes("برامج")) {
+          aliases.push("إدارة المشاريع", "المشاريع", "البرامج", "الإغاثة", "كفالة", "تمكين اقتصادي");
+        }
+        if (t.includes("عامه") || t.includes("عام")) {
+          aliases.push("الإدارة التنفيذية", "مجلس الإدارة", "المدير التنفيذي", "إدارة عامة");
+        }
+        return aliases;
+      };
+
+      // إيجاد قسم بأفضل تطابق رمزي/دلالي (token overlap + مرادفات الأقسام)
       const findDeptByTokens = (text: string): string | null => {
         const tks = tokenize(text);
         if (tks.length === 0) return null;
         let best: { key: string; score: number } | null = null;
         for (const key of employeesByDept.keys()) {
-          const dtks = tokenize(key);
-          if (dtks.length === 0) continue;
-          const overlap = dtks.filter((t) => tks.includes(t)).length;
-          if (overlap === 0) continue;
-          const score = overlap / Math.max(dtks.length, 1);
-          if (!best || score > best.score) best = { key, score };
+          const aliases = departmentAliases(deptNamesById.get(key) || "");
+          for (const alias of aliases) {
+            const dtks = tokenize(alias);
+            if (dtks.length === 0) continue;
+            const overlap = dtks.filter((t) => tks.includes(t)).length;
+            if (overlap === 0) continue;
+            const score = overlap / Math.max(dtks.length, 1);
+            if (!best || score > best.score) best = { key, score };
+          }
         }
         return best && best.score >= 0.5 ? best.key : null;
       };
