@@ -3360,7 +3360,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               {/* زر التوليد */}
               <Button
                 onClick={handleAIGenerate}
-                disabled={isAIGenerating || aiSelectedMonths.length === 0}
+                disabled={isAIGenerating || aiSelectedMonths.length === 0 || aiSelectedPlanKeys.size === 0}
                 className="w-full gap-3 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 hover:from-purple-700 hover:via-pink-600 hover:to-purple-700 h-14 text-lg font-bold shadow-lg shadow-purple-500/30 transition-all hover:shadow-xl hover:shadow-purple-500/40"
               >
                 {isAIGenerating ? (
