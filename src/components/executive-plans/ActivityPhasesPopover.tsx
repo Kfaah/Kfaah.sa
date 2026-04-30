@@ -476,10 +476,17 @@ export function ActivityPhasesPopover({
                         const emp = employeeMap.get(t.employee_id);
                         const isSaving = savingId === t.id;
                         const dueIso = toDateInputValue(activityYear, activityMonth, activityDay, t.day_offset);
+                        const isHighlighted = highlightTaskId === t.id;
                         return (
                           <li
                             key={t.id}
-                            className="bg-white/95 backdrop-blur rounded-lg px-3 py-2.5 border border-white shadow-sm hover:shadow-md group transition-all"
+                            id={`related-task-${t.id}`}
+                            className={cn(
+                              "bg-white/95 backdrop-blur rounded-lg px-3 py-2.5 border shadow-sm hover:shadow-md group transition-all",
+                              isHighlighted
+                                ? "border-amber-400 ring-2 ring-amber-300 ring-offset-2 animate-pulse"
+                                : "border-white"
+                            )}
                           >
                             <div className="flex items-start gap-2">
                               <div className="flex-1 min-w-0">
