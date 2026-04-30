@@ -1986,7 +1986,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               <div className="flex items-center justify-center gap-3">
                 {isAdmin && (
                   <Button
-                    onClick={() => setIsAIDialogOpen(true)}
+                    onClick={() => setIsAIChoiceDialogOpen(true)}
                     className="gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                   >
                     <Sparkles className="w-5 h-5" />
