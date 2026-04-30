@@ -587,8 +587,8 @@ export function ActivityPhasesPopover({
                                   {t.is_dispatched && (
                                     t.dispatched_task_id ? (
                                       <Link
-                                        to={`/tasks/${t.dispatched_task_id}`}
-                                        title="افتح المهمة في خطة الموظف التنفيذية"
+                                        to={buildActivityUrl(executivePlanId, t.id)}
+                                        title="انتقل إلى موقع هذه المهمة في الجدول وأبرزها داخل المراحل"
                                         className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 font-medium bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition-colors"
                                       >
                                         <CheckCircle2 className="w-3 h-3" />
