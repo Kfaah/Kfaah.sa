@@ -1666,6 +1666,27 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                   </>
                 )}
               </Button>
+              <Button
+                className="gap-2 bg-red-500/90 text-white hover:bg-red-600 border border-red-300/50"
+                onClick={async () => {
+                  if (!confirm(`⚠️ سيتم حذف جميع الخطط التشغيلية للسنة ${filterYear} نهائياً. هل أنت متأكد؟`)) return;
+                  if (!confirm(`تأكيد نهائي: حذف كل الخطط التشغيلية لسنة ${filterYear}؟`)) return;
+                  try {
+                    const { error } = await supabase
+                      .from("operational_plans")
+                      .delete()
+                      .eq("year", filterYear);
+                    if (error) throw error;
+                    toast({ title: "تم الحذف", description: `تم حذف جميع الخطط التشغيلية لسنة ${filterYear}` });
+                    fetchPlans();
+                  } catch (err: any) {
+                    toast({ title: "فشل الحذف", description: err?.message, variant: "destructive" });
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+                حذف جميع الخطط
+              </Button>
             </>
           }
         />
