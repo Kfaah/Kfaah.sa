@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -119,9 +119,11 @@ export function ActivityPhasesPopover({
 }: Props) {
   const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
-  const buildActivityUrl = (planId: string, taskId: string) => {
+  const buildActivityUrl = (planId: string, taskId: string, employeeId?: string | null) => {
     const base = slug ? `/${slug}/internal-dashboard` : `/internal-dashboard`;
-    return `${base}?tab=executive-plans&activity=${planId}&task=${taskId}`;
+    const params = new URLSearchParams({ tab: "executive-plans", activity: planId, task: taskId });
+    if (employeeId) params.set("emp", employeeId);
+    return `${base}?${params.toString()}`;
   };
 
   /**
@@ -131,57 +133,14 @@ export function ActivityPhasesPopover({
    */
   async function navigateToAssigneeRow(taskRow: RelatedTask) {
     try {
-      // ابحث عن مهام مرحلية بنفس العنوان والمرحلة
-      const { data: candidates } = await supabase
-        .from("activity_related_tasks")
-        .select("id, executive_plan_id, phase, title")
-        .eq("title", taskRow.title)
-        .eq("phase", taskRow.phase);
-
-      const others = (candidates ?? []).filter((c: any) => c.executive_plan_id !== executivePlanId);
-      if (others.length > 0) {
-        // اجلب عناصر الخطة التشغيلية للأنشطة المرشّحة لتحديد المسؤول
-        const planIds = Array.from(new Set(others.map((c: any) => c.executive_plan_id)));
-        const { data: epRows } = await supabase
-          .from("executive_plans")
-          .select("id, operational_plan_month_id")
-          .in("id", planIds);
-        const monthIds = Array.from(new Set((epRows ?? []).map((r: any) => r.operational_plan_month_id)));
-        const { data: monthRows } = await supabase
-          .from("operational_plan_months")
-          .select("id, operational_plan_id")
-          .in("id", monthIds);
-        const opIds = Array.from(new Set((monthRows ?? []).map((r: any) => r.operational_plan_id)));
-        const { data: opRows } = await supabase
-          .from("operational_plans")
-          .select("id, responsible_employee_id")
-          .in("id", opIds);
-
-        const opById = new Map<string, string | null>();
-        (opRows ?? []).forEach((r: any) => opById.set(r.id, r.responsible_employee_id ?? null));
-        const monthToOp = new Map<string, string>();
-        (monthRows ?? []).forEach((r: any) => monthToOp.set(r.id, r.operational_plan_id));
-        const epToResp = new Map<string, string | null>();
-        (epRows ?? []).forEach((r: any) => {
-          const opId = monthToOp.get(r.operational_plan_month_id);
-          epToResp.set(r.id, opId ? opById.get(opId) ?? null : null);
-        });
-
-        const match = others.find((c: any) => epToResp.get(c.executive_plan_id) === taskRow.employee_id);
-        if (match) {
-          setOpen(false);
-          navigate(buildActivityUrl(match.executive_plan_id, match.id));
-          return;
-        }
-      }
-      // fallback: ابقَ على نفس النشاط مع إبراز المهمة
       setOpen(false);
-      navigate(buildActivityUrl(executivePlanId, taskRow.id));
+      navigate(buildActivityUrl(executivePlanId, taskRow.id, taskRow.employee_id));
     } catch (e: any) {
       toast({ title: "تعذّر الانتقال", description: e?.message ?? "", variant: "destructive" });
     }
   }
   const [open, setOpen] = useState(false);
+  const autoOpenedRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState<RelatedTask[]>([]);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -199,9 +158,13 @@ export function ActivityPhasesPopover({
 
   // فتح تلقائي عند التنقل من رابط مهمة مُرحَّلة
   useEffect(() => {
-    if (autoOpen && !open) {
+    if (!autoOpen) {
+      autoOpenedRef.current = false;
+      return;
+    }
+    if (!autoOpenedRef.current) {
+      autoOpenedRef.current = true;
       setOpen(true);
-      onAutoOpened?.();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpen]);
