@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,6 +117,11 @@ export function ActivityPhasesPopover({
   highlightTaskId = null,
   onAutoOpened,
 }: Props) {
+  const { slug } = useParams<{ slug?: string }>();
+  const buildActivityUrl = (planId: string, taskId: string) => {
+    const base = slug ? `/${slug}/internal-dashboard` : `/internal-dashboard`;
+    return `${base}?tab=executive-plans&activity=${planId}&task=${taskId}`;
+  };
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState<RelatedTask[]>([]);
