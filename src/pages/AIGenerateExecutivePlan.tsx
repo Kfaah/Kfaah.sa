@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Upload, FileText, X, Loader2, Brain, ArrowRight, CheckCircle2, FileSpreadsheet, FileImage, Calendar, Building2, Users, User } from "lucide-react";
+import { Sparkles, Upload, FileText, X, Loader2, Brain, ArrowRight, CheckCircle2, FileSpreadsheet, FileImage, Calendar, Building2, Users, User, ListChecks, Layers } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getAvailableYears, getCurrentYear } from "@/lib/utils";
@@ -63,6 +63,18 @@ export default function AIGenerateExecutivePlan() {
   const [departmentId, setDepartmentId] = useState<string>("all");
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]); // [] => all employees in scope
 
+  // الخطط التشغيلية المتاحة (operational_plans + excel_plans)
+  type AvailablePlan = {
+    key: string;            // "op:<id>" or "excel:<id>"
+    id: string;
+    label: string;
+    subtitle: string;
+    source: "op" | "excel";
+  };
+  const [availablePlans, setAvailablePlans] = useState<AvailablePlan[]>([]);
+  const [selectedPlanKeys, setSelectedPlanKeys] = useState<string[]>([]); // [] => all
+  const [loadingPlans, setLoadingPlans] = useState(false);
+
   useEffect(() => {
     const resolve = async () => {
       if (!slug) { setRouteOrgId(null); return; }
@@ -92,6 +104,52 @@ export default function AIGenerateExecutivePlan() {
     };
     loadFilters();
   }, [activeOrgId, slug]);
+
+  // تحميل الخطط التشغيلية المتاحة (للسنة + الجمعية)
+  useEffect(() => {
+    const loadPlans = async () => {
+      if (slug && !activeOrgId) return;
+      setLoadingPlans(true);
+      try {
+        let opQ = supabase
+          .from("operational_plans")
+          .select("id, activity_name, plan_name, strategic_goal, initiative, year")
+          .eq("year", year)
+          .order("created_at", { ascending: false });
+        let exQ = supabase
+          .from("excel_plans")
+          .select("id, plan_name, sheet_name, year, source_filename")
+          .eq("year", year)
+          .order("created_at", { ascending: false });
+        if (activeOrgId) {
+          opQ = opQ.eq("organization_id", activeOrgId);
+          exQ = exQ.eq("organization_id", activeOrgId);
+        }
+        const [{ data: ops }, { data: excels }] = await Promise.all([opQ, exQ]);
+        const merged: AvailablePlan[] = [
+          ...((ops || []).map((p: any) => ({
+            key: `op:${p.id}`,
+            id: p.id,
+            label: p.activity_name || p.plan_name || "خطة تشغيلية",
+            subtitle: [p.strategic_goal, p.initiative].filter(Boolean).join(" • ") || `سنة ${p.year}`,
+            source: "op" as const,
+          }))),
+          ...((excels || []).map((p: any) => ({
+            key: `excel:${p.id}`,
+            id: p.id,
+            label: p.plan_name || p.sheet_name || "خطة Excel",
+            subtitle: p.source_filename || `Excel • ${p.year}`,
+            source: "excel" as const,
+          }))),
+        ];
+        setAvailablePlans(merged);
+        setSelectedPlanKeys([]); // إعادة تعيين عند تغيير السنة
+      } finally {
+        setLoadingPlans(false);
+      }
+    };
+    loadPlans();
+  }, [activeOrgId, slug, year]);
 
   const filteredEmployees = useMemo(() => {
     if (departmentId === "all") return employees;
@@ -187,6 +245,13 @@ export default function AIGenerateExecutivePlan() {
             departmentId !== "all" || selectedEmployeeIds.length > 0
               ? effectiveUserIds
               : undefined,
+          // الخطط المختارة (إن وُجدت). فارغ => كل الخطط للسنة/الجمعية
+          operationalPlanIds: selectedPlanKeys
+            .filter((k) => k.startsWith("op:"))
+            .map((k) => k.slice(3)),
+          excelPlanIds: selectedPlanKeys
+            .filter((k) => k.startsWith("excel:"))
+            .map((k) => k.slice(6)),
         },
       });
 
@@ -318,6 +383,126 @@ export default function AIGenerateExecutivePlan() {
               );
             })}
           </div>
+        </div>
+
+        {/* اختيار الخطط التشغيلية المصدرية */}
+        <div className="bg-white rounded-2xl border border-emerald-100 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <ListChecks className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-gray-900">الخطط التشغيلية المصدرية</h3>
+                <p className="text-xs text-gray-500">
+                  اختر الخطط التشغيلية (يدوية، ذكاء اصطناعي، أو Excel) التي سيستند إليها التوليد. اتركها فارغة لاستخدام جميع خطط السنة.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedPlanKeys(availablePlans.map((p) => p.key))}
+                disabled={isWorking || availablePlans.length === 0}
+                className="text-xs h-7 px-2"
+              >
+                تحديد الكل
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedPlanKeys([])}
+                disabled={isWorking}
+                className="text-xs h-7 px-2"
+              >
+                مسح التحديد
+              </Button>
+            </div>
+          </div>
+
+          {loadingPlans ? (
+            <div className="flex items-center justify-center py-8 text-sm text-gray-500 gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              جاري تحميل الخطط التشغيلية...
+            </div>
+          ) : availablePlans.length === 0 ? (
+            <div className="text-center py-8 bg-amber-50/60 border border-amber-200 rounded-xl">
+              <Layers className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-amber-800">
+                لا توجد خطط تشغيلية لسنة {year}
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                أضف خططاً تشغيلية أولاً (يدوية، أو ارفع Excel، أو ولّدها بالذكاء الاصطناعي) ثم عُد لهذه الصفحة.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="text-xs text-gray-600 mb-2 text-right">
+                {selectedPlanKeys.length === 0
+                  ? `سيتم استخدام جميع الخطط المتاحة (${availablePlans.length})`
+                  : `${selectedPlanKeys.length} من ${availablePlans.length} مختارة`}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto p-1">
+                {availablePlans.map((p) => {
+                  const sel = selectedPlanKeys.includes(p.key);
+                  return (
+                    <button
+                      type="button"
+                      key={p.key}
+                      onClick={() =>
+                        setSelectedPlanKeys((prev) =>
+                          prev.includes(p.key) ? prev.filter((x) => x !== p.key) : [...prev, p.key],
+                        )
+                      }
+                      disabled={isWorking}
+                      className={cn(
+                        "flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-right",
+                        sel
+                          ? "bg-emerald-50 border-emerald-400"
+                          : "bg-white border-slate-200 hover:border-emerald-200",
+                        isWorking && "opacity-50 cursor-not-allowed",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                          sel ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500",
+                        )}
+                      >
+                        {p.source === "excel" ? (
+                          <FileSpreadsheet className="w-4 h-4" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-sm font-bold text-slate-800 truncate">{p.label}</span>
+                          <span
+                            className={cn(
+                              "text-[10px] px-1.5 py-0.5 rounded font-semibold shrink-0",
+                              p.source === "excel"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-violet-100 text-violet-700",
+                            )}
+                          >
+                            {p.source === "excel" ? "Excel" : "تشغيلية"}
+                          </span>
+                        </div>
+                        {p.subtitle && (
+                          <div className="text-[11px] text-slate-500 truncate">{p.subtitle}</div>
+                        )}
+                      </div>
+                      <Checkbox checked={sel} className="pointer-events-none mt-1" />
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         {/* فلاتر الأقسام والموظفين — مخفي للموظف العادي (يولد لنفسه فقط) */}

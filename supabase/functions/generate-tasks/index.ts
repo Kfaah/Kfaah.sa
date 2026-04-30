@@ -21,6 +21,7 @@ type GenerationRequest = {
   year?: number | string;
   organization_id?: string | null;
   employee_id?: string | null;
+  operational_plan_ids?: string[];
 };
 
 type EpItem = {
@@ -358,8 +359,9 @@ async function processGenerationJob(params: {
   targetMonth: number;
   targetYear: number;
   targetEmployeeId: string | null;
+  operationalPlanIds?: string[] | null;
 }) {
-  const { jobId, supabase, LOVABLE_API_KEY, orgId, targetMonth, targetYear, targetEmployeeId } = params;
+  const { jobId, supabase, LOVABLE_API_KEY, orgId, targetMonth, targetYear, targetEmployeeId, operationalPlanIds } = params;
   const monthName = MONTHS_AR[targetMonth - 1];
   const totalDays = daysInMonth(targetYear, targetMonth);
 
@@ -407,6 +409,9 @@ async function processGenerationJob(params: {
       .eq("operational_plan_months.month", targetMonth)
       .eq("operational_plan_months.operational_plans.year", targetYear);
     if (orgId) epQuery = epQuery.eq("operational_plan_months.operational_plans.organization_id", orgId);
+    if (operationalPlanIds && operationalPlanIds.length > 0) {
+      epQuery = epQuery.in("operational_plan_months.operational_plans.id", operationalPlanIds);
+    }
     const { data: executivePlans, error: epError } = await epQuery;
     if (epError) throw new Error("فشل في جلب الخطط التنفيذية");
     if (!executivePlans || executivePlans.length === 0) {
@@ -624,6 +629,9 @@ serve(async (req) => {
     const targetMonth = safeMonth(body.month);
     const targetYear = safeYear(body.year);
     const targetEmployeeId = body.employee_id || null;
+    const operationalPlanIds = Array.isArray(body.operational_plan_ids) && body.operational_plan_ids.length > 0
+      ? body.operational_plan_ids
+      : null;
     const orgId = await resolveOrganizationId(supabase, user.id, body.organization_id);
 
     if (!orgId) {
@@ -669,6 +677,7 @@ serve(async (req) => {
           year: targetYear,
           organization_id: orgId,
           employee_id: targetEmployeeId,
+          operational_plan_ids: operationalPlanIds,
         },
         message: "تم وضع طلب توليد المهام في قائمة المعالجة.",
       })
@@ -687,6 +696,7 @@ serve(async (req) => {
       targetMonth,
       targetYear,
       targetEmployeeId,
+      operationalPlanIds,
     });
 
     // Return immediately to avoid the 150s HTTP idle timeout, then continue the heavy AI work in the background.

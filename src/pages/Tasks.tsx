@@ -159,6 +159,13 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [generationProgress, setGenerationProgress] = useState("");
   const [activeGenerationJobId, setActiveGenerationJobId] = useState<string | null>(null);
 
+  // الخطط التشغيلية المتوفرة (التي لها خطط تنفيذية لشهر/سنة الاختيار)
+  const [availableOpPlans, setAvailableOpPlans] = useState<
+    Array<{ id: string; label: string; subtitle: string; daysCount: number }>
+  >([]);
+  const [selectedOpPlanIds, setSelectedOpPlanIds] = useState<string[]>([]);
+  const [loadingOpPlans, setLoadingOpPlans] = useState(false);
+
   // حالة نافذة التعديل
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -446,6 +453,58 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     };
   }, [authUser?.id, orgId, cacheKey]);
 
+  // تحميل الخطط التشغيلية المتاحة (التي لها خطط تنفيذية لهذا الشهر/السنة)
+  useEffect(() => {
+    if (!isGenerateDialogOpen) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoadingOpPlans(true);
+      try {
+        let q = supabase
+          .from("executive_plans")
+          .select(`
+            id,
+            operational_plan_months!inner (
+              month,
+              operational_plans!inner (
+                id, plan_name, activity_name, strategic_goal, initiative, year, organization_id
+              )
+            )
+          `)
+          .eq("operational_plan_months.month", selectedMonth)
+          .eq("operational_plan_months.operational_plans.year", selectedYear);
+        if (orgId) {
+          q = q.eq("operational_plan_months.operational_plans.organization_id", orgId);
+        }
+        const { data } = await q;
+        if (cancelled) return;
+
+        const grouped = new Map<string, { id: string; label: string; subtitle: string; daysCount: number }>();
+        (data || []).forEach((row: any) => {
+          const op = row.operational_plan_months?.operational_plans;
+          if (!op?.id) return;
+          const existing = grouped.get(op.id);
+          if (existing) {
+            existing.daysCount += 1;
+          } else {
+            grouped.set(op.id, {
+              id: op.id,
+              label: op.activity_name || op.plan_name || "خطة تشغيلية",
+              subtitle: [op.strategic_goal, op.initiative].filter(Boolean).join(" • ") || `سنة ${op.year}`,
+              daysCount: 1,
+            });
+          }
+        });
+        setAvailableOpPlans(Array.from(grouped.values()));
+        setSelectedOpPlanIds([]);
+      } finally {
+        if (!cancelled) setLoadingOpPlans(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [isGenerateDialogOpen, selectedMonth, selectedYear, orgId]);
+
   // توليد المهام بالذكاء الاصطناعي لشهر كامل
   const handleGenerateMonthTasks = async () => {
     if (!authUser || !selectedMonth) return;
@@ -483,6 +542,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
             year: selectedYear,
             organization_id: orgId,
             ...(scopeEmployeeId ? { employee_id: scopeEmployeeId } : {}),
+            ...(selectedOpPlanIds.length > 0 ? { operational_plan_ids: selectedOpPlanIds } : {}),
           }),
         }
       );
@@ -1669,6 +1729,113 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* اختيار الخطط التشغيلية المصدرية */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="font-semibold text-foreground flex items-center gap-2">
+                    <Target className="w-4 h-4 text-emerald-600" />
+                    الخطط التشغيلية المصدر
+                  </label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7 px-2"
+                      onClick={() => setSelectedOpPlanIds(availableOpPlans.map(p => p.id))}
+                      disabled={availableOpPlans.length === 0 || isGenerating}
+                    >
+                      تحديد الكل
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7 px-2"
+                      onClick={() => setSelectedOpPlanIds([])}
+                      disabled={isGenerating}
+                    >
+                      مسح
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  اختر الخطط التشغيلية التي ستُولَّد منها المهام. اتركها فارغة لاستخدام جميع الخطط المتاحة.
+                </p>
+
+                {loadingOpPlans ? (
+                  <div className="flex items-center justify-center py-6 text-sm text-gray-500 gap-2 bg-gray-50 rounded-lg border">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    جاري تحميل الخطط...
+                  </div>
+                ) : availableOpPlans.length === 0 ? (
+                  <div className="text-center py-5 bg-amber-50/60 border border-amber-200 rounded-lg">
+                    <p className="text-sm font-semibold text-amber-800">
+                      لا توجد خطط تنفيذية لشهر {MONTHS_AR[selectedMonth - 1]} {selectedYear}
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      ولّد الخطط التنفيذية أولاً من صفحة "الخطط التنفيذية"، ثم عُد لتوليد المهام.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-xs text-gray-600 text-right">
+                      {selectedOpPlanIds.length === 0
+                        ? `سيتم استخدام جميع الخطط (${availableOpPlans.length})`
+                        : `${selectedOpPlanIds.length} من ${availableOpPlans.length} مختارة`}
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto p-1 border rounded-lg bg-slate-50/40">
+                      {availableOpPlans.map((p) => {
+                        const sel = selectedOpPlanIds.includes(p.id);
+                        return (
+                          <button
+                            type="button"
+                            key={p.id}
+                            onClick={() =>
+                              setSelectedOpPlanIds((prev) =>
+                                prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id],
+                              )
+                            }
+                            disabled={isGenerating}
+                            className={cn(
+                              "flex items-start gap-3 p-3 rounded-lg border-2 transition-all text-right bg-white",
+                              sel ? "border-accent" : "border-slate-200 hover:border-accent/50",
+                              isGenerating && "opacity-50 cursor-not-allowed",
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                                sel ? "bg-accent text-white" : "bg-slate-100 text-slate-500",
+                              )}
+                            >
+                              <Target className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-bold text-slate-800 truncate">{p.label}</div>
+                              {p.subtitle && (
+                                <div className="text-[11px] text-slate-500 truncate">{p.subtitle}</div>
+                              )}
+                              <div className="text-[10px] text-emerald-700 mt-1">
+                                {p.daysCount} يوم تنفيذي في {MONTHS_AR[selectedMonth - 1]}
+                              </div>
+                            </div>
+                            <div
+                              className={cn(
+                                "w-5 h-5 rounded border-2 shrink-0 mt-1 flex items-center justify-center",
+                                sel ? "bg-accent border-accent" : "border-slate-300",
+                              )}
+                            >
+                              {sel && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 leading-relaxed">
