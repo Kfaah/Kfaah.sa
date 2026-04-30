@@ -159,6 +159,13 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [generationProgress, setGenerationProgress] = useState("");
   const [activeGenerationJobId, setActiveGenerationJobId] = useState<string | null>(null);
 
+  // الخطط التشغيلية المتوفرة (التي لها خطط تنفيذية لشهر/سنة الاختيار)
+  const [availableOpPlans, setAvailableOpPlans] = useState<
+    Array<{ id: string; label: string; subtitle: string; daysCount: number }>
+  >([]);
+  const [selectedOpPlanIds, setSelectedOpPlanIds] = useState<string[]>([]);
+  const [loadingOpPlans, setLoadingOpPlans] = useState(false);
+
   // حالة نافذة التعديل
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
