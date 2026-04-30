@@ -176,6 +176,7 @@ export function ActivityPhasesPopover({
       const el = document.getElementById(`related-task-${highlightTaskId}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.setTimeout(() => onAutoOpened?.(), 900);
       }
     }, 250);
     return () => clearTimeout(t);
