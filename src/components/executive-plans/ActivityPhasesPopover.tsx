@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
   Zap,
   UserCircle2,
   Calendar as CalendarIcon,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -67,6 +69,7 @@ interface RelatedTask {
   day_offset: number;
   source: "manual" | "ai";
   is_dispatched: boolean;
+  dispatched_task_id?: string | null;
 }
 
 const PHASE_META: Record<Phase, { label: string; color: string; chip: string; allowDate: boolean }> = {
@@ -132,7 +135,7 @@ export function ActivityPhasesPopover({
     try {
       const { data, error } = await supabase
         .from("activity_related_tasks")
-        .select("id, employee_id, phase, title, estimated_minutes, priority, day_offset, source, is_dispatched")
+        .select("id, employee_id, phase, title, estimated_minutes, priority, day_offset, source, is_dispatched, dispatched_task_id")
         .eq("executive_plan_id", executivePlanId)
         .order("phase")
         .order("display_order");
@@ -540,10 +543,22 @@ export function ActivityPhasesPopover({
                                   )}
 
                                   {t.is_dispatched && (
-                                    <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                                      <CheckCircle2 className="w-3 h-3" />
-                                      مُرحَّلة
-                                    </span>
+                                    t.dispatched_task_id ? (
+                                      <Link
+                                        to={`/tasks/${t.dispatched_task_id}`}
+                                        title="افتح المهمة في خطة الموظف التنفيذية"
+                                        className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 font-medium bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition-colors"
+                                      >
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        مُرحَّلة
+                                        <ExternalLink className="w-3 h-3" />
+                                      </Link>
+                                    ) : (
+                                      <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        مُرحَّلة
+                                      </span>
+                                    )
                                   )}
                                   {isSaving && <Loader2 className="w-3 h-3 animate-spin text-[hsl(var(--primary))]" />}
                                 </div>
