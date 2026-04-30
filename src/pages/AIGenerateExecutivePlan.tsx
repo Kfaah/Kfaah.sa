@@ -320,7 +320,18 @@ export default function AIGenerateExecutivePlan() {
           </div>
         </div>
 
-        {/* فلاتر الأقسام والموظفين */}
+        {/* فلاتر الأقسام والموظفين — مخفي للموظف العادي (يولد لنفسه فقط) */}
+        {isPlainEmployee ? (
+          <div className="bg-indigo-50/50 rounded-2xl border border-indigo-200 p-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
+              <User className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-sm text-gray-900">سيتم التوليد لخططك التشغيلية فقط</p>
+              <p className="text-xs text-gray-600">الذكاء الاصطناعي سيولّد خطة تنفيذية مخصصة لك بناءً على خططك التشغيلية للسنة المختارة.</p>
+            </div>
+          </div>
+        ) : (
         <div className="bg-white rounded-2xl border border-indigo-100 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div className="flex items-center gap-2">
@@ -397,6 +408,7 @@ export default function AIGenerateExecutivePlan() {
             })}
           </div>
         </div>
+        )}
 
         {/* الملفات المرجعية - تظهر دائماً لكن أبرز عند withFiles */}
         <div className={cn(
