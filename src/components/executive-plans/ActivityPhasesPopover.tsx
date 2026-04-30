@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,10 +118,69 @@ export function ActivityPhasesPopover({
   onAutoOpened,
 }: Props) {
   const { slug } = useParams<{ slug?: string }>();
+  const navigate = useNavigate();
   const buildActivityUrl = (planId: string, taskId: string) => {
     const base = slug ? `/${slug}/internal-dashboard` : `/internal-dashboard`;
     return `${base}?tab=executive-plans&activity=${planId}&task=${taskId}`;
   };
+
+  /**
+   * عند الضغط على شارة "مُرحَّلة" ننتقل إلى صف الموظف المسؤول عن هذه المهمة الفرعية
+   * في الجدول، حيث يجد المستخدم نفس المهمة داخل مراحل النشاط الذي يقوده ذلك الموظف.
+   * إذا لم نجد نسخة مطابقة عند الموظف، نعود إلى موقع المهمة الأصلي.
+   */
+  async function navigateToAssigneeRow(taskRow: RelatedTask) {
+    try {
+      // ابحث عن مهام مرحلية بنفس العنوان والمرحلة
+      const { data: candidates } = await supabase
+        .from("activity_related_tasks")
+        .select("id, executive_plan_id, phase, title")
+        .eq("title", taskRow.title)
+        .eq("phase", taskRow.phase);
+
+      const others = (candidates ?? []).filter((c: any) => c.executive_plan_id !== executivePlanId);
+      if (others.length > 0) {
+        // اجلب عناصر الخطة التشغيلية للأنشطة المرشّحة لتحديد المسؤول
+        const planIds = Array.from(new Set(others.map((c: any) => c.executive_plan_id)));
+        const { data: epRows } = await supabase
+          .from("executive_plans")
+          .select("id, operational_plan_month_id")
+          .in("id", planIds);
+        const monthIds = Array.from(new Set((epRows ?? []).map((r: any) => r.operational_plan_month_id)));
+        const { data: monthRows } = await supabase
+          .from("operational_plan_months")
+          .select("id, operational_plan_id")
+          .in("id", monthIds);
+        const opIds = Array.from(new Set((monthRows ?? []).map((r: any) => r.operational_plan_id)));
+        const { data: opRows } = await supabase
+          .from("operational_plans")
+          .select("id, responsible_employee_id")
+          .in("id", opIds);
+
+        const opById = new Map<string, string | null>();
+        (opRows ?? []).forEach((r: any) => opById.set(r.id, r.responsible_employee_id ?? null));
+        const monthToOp = new Map<string, string>();
+        (monthRows ?? []).forEach((r: any) => monthToOp.set(r.id, r.operational_plan_id));
+        const epToResp = new Map<string, string | null>();
+        (epRows ?? []).forEach((r: any) => {
+          const opId = monthToOp.get(r.operational_plan_month_id);
+          epToResp.set(r.id, opId ? opById.get(opId) ?? null : null);
+        });
+
+        const match = others.find((c: any) => epToResp.get(c.executive_plan_id) === taskRow.employee_id);
+        if (match) {
+          setOpen(false);
+          navigate(buildActivityUrl(match.executive_plan_id, match.id));
+          return;
+        }
+      }
+      // fallback: ابقَ على نفس النشاط مع إبراز المهمة
+      setOpen(false);
+      navigate(buildActivityUrl(executivePlanId, taskRow.id));
+    } catch (e: any) {
+      toast({ title: "تعذّر الانتقال", description: e?.message ?? "", variant: "destructive" });
+    }
+  }
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState<RelatedTask[]>([]);
@@ -586,15 +645,16 @@ export function ActivityPhasesPopover({
 
                                   {t.is_dispatched && (
                                     t.dispatched_task_id ? (
-                                      <Link
-                                        to={buildActivityUrl(executivePlanId, t.id)}
-                                        title="انتقل إلى موقع هذه المهمة في الجدول وأبرزها داخل المراحل"
+                                      <button
+                                        type="button"
+                                        onClick={(ev) => { ev.stopPropagation(); void navigateToAssigneeRow(t); }}
+                                        title="انتقل إلى صف الموظف المسؤول وأبرز هذه المهمة داخل مراحله"
                                         className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 font-medium bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition-colors"
                                       >
                                         <CheckCircle2 className="w-3 h-3" />
-                                        مُرحَّلة
+                                        الانتقال للمسؤول
                                         <ExternalLink className="w-3 h-3" />
-                                      </Link>
+                                      </button>
                                     ) : (
                                       <span className="flex items-center gap-1 text-emerald-600 font-medium">
                                         <CheckCircle2 className="w-3 h-3" />
