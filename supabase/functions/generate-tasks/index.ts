@@ -409,6 +409,9 @@ async function processGenerationJob(params: {
       .eq("operational_plan_months.month", targetMonth)
       .eq("operational_plan_months.operational_plans.year", targetYear);
     if (orgId) epQuery = epQuery.eq("operational_plan_months.operational_plans.organization_id", orgId);
+    if (operationalPlanIds && operationalPlanIds.length > 0) {
+      epQuery = epQuery.in("operational_plan_months.operational_plans.id", operationalPlanIds);
+    }
     const { data: executivePlans, error: epError } = await epQuery;
     if (epError) throw new Error("فشل في جلب الخطط التنفيذية");
     if (!executivePlans || executivePlans.length === 0) {
