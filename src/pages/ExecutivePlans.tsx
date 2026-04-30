@@ -1518,6 +1518,27 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   </>
                 )}
               </Button>
+              <Button
+                className="gap-2 bg-red-500/90 text-white hover:bg-red-600 border border-red-300/50"
+                onClick={async () => {
+                  if (!confirm(`⚠️ سيتم حذف جميع الخطط التنفيذية للسنة ${selectedYear} نهائياً. هل أنت متأكد؟`)) return;
+                  if (!confirm(`تأكيد نهائي: حذف كل الخطط التنفيذية لسنة ${selectedYear}؟`)) return;
+                  try {
+                    const client: any = supabase;
+                    let q = client.from("executive_plans").delete().eq("year", selectedYear);
+                    if (activeOrgId) q = q.eq("organization_id", activeOrgId);
+                    const { error } = await q;
+                    if (error) throw error;
+                    toast({ title: "تم الحذف", description: `تم حذف جميع الخطط التنفيذية لسنة ${selectedYear}` });
+                    window.location.reload();
+                  } catch (err: any) {
+                    toast({ title: "فشل الحذف", description: err?.message, variant: "destructive" });
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+                حذف جميع الخطط
+              </Button>
             </>
           }
         />
