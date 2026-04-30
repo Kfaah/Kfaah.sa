@@ -2517,6 +2517,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   activityDay={(act as any).day ?? l.day}
                                                   activityMonth={(act as any).month ?? monthGroup.month}
                                                   activityYear={selectedYear}
+                                                  autoOpen={focusActivityId === act.id}
+                                                  highlightTaskId={focusActivityId === act.id ? focusTaskId : null}
+                                                  onAutoOpened={clearFocusParams}
                                                   allEmployees={employees.map((e) => ({
                                                     id: e.id,
                                                     full_name: e.full_name,
