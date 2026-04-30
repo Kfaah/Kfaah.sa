@@ -285,6 +285,7 @@ serve(async (req) => {
           initiative,
           strategic_goal,
           user_id,
+          organization_id,
           responsible_employee_id,
           operational_plan_months!inner (
             id,
@@ -345,6 +346,7 @@ serve(async (req) => {
           monthlyTarget: planMonth.monthly_target,
           annualTarget: plan.annual_target,
           userId: plan.user_id,
+          organizationId: plan.organization_id,
           employeeName: employee?.full_name || "موظف",
           jobRole: employee?.job_role || "",
         };
@@ -361,6 +363,7 @@ serve(async (req) => {
           monthlyTarget: m.meta.monthlyTarget,
           annualTarget: m.meta.annualTarget,
           userId: m.meta.userId,
+          organizationId: (excelPlans || []).find((p: any) => p.id === m.meta.excelPlanId)?.organization_id || null,
           employeeName: m.meta.employeeName,
           jobRole: m.meta.jobRole,
         });
