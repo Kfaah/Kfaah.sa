@@ -1489,31 +1489,53 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       if (orgId) exQuery = exQuery.eq("organization_id", orgId);
       const { data: excelPlans } = await exQuery;
 
-      const items: Array<{ key: string; label: string; subtitle: string; source: "op" | "excel" }> = [];
+      const toItems = (opRows: any[] = [], excelRows: any[] = []) => {
+        const rows: Array<{ key: string; label: string; subtitle: string; source: "op" | "excel" }> = [];
 
-      (opPlans || []).forEach((p: any) => {
-        items.push({
-          key: `op:${p.id}`,
-          label: p.activity_name || "نشاط بدون اسم",
-          subtitle: [p.plan_name, p.initiative, p.strategic_goal].filter(Boolean).join(" • ") || "خطة تشغيلية",
-          source: "op",
+        opRows.forEach((p: any) => {
+          rows.push({
+            key: `op:${p.id}`,
+            label: p.activity_name || "نشاط بدون اسم",
+            subtitle: [p.plan_name, p.initiative, p.strategic_goal].filter(Boolean).join(" • ") || "خطة تشغيلية",
+            source: "op",
+          });
         });
-      });
 
-      (excelPlans || []).forEach((p: any) => {
-        const cols: string[] = Array.isArray(p.columns) ? p.columns : [];
-        const rows: any[] = Array.isArray(p.rows) ? p.rows : [];
-        const actCol = cols.find((c) => String(c).includes("النشاط"));
-        const activitiesCount = actCol
-          ? rows.filter((r) => String(r?.[actCol] ?? "").trim()).length
-          : rows.length;
-        items.push({
-          key: `excel:${p.id}`,
-          label: p.plan_name || "خطة Excel",
-          subtitle: `مرفوعة من Excel • ${activitiesCount} نشاط`,
-          source: "excel",
+        excelRows.forEach((p: any) => {
+          const cols: string[] = Array.isArray(p.columns) ? p.columns : [];
+          const rowsData: any[] = Array.isArray(p.rows) ? p.rows : [];
+          const actCol = cols.find((c) => String(c).includes("النشاط"));
+          const activitiesCount = actCol
+            ? rowsData.filter((r) => String(r?.[actCol] ?? "").trim()).length
+            : rowsData.length;
+          rows.push({
+            key: `excel:${p.id}`,
+            label: p.plan_name || "خطة Excel",
+            subtitle: `مرفوعة من Excel • ${activitiesCount} نشاط`,
+            source: "excel",
+          });
         });
-      });
+
+        return rows;
+      };
+
+      let items = toItems(opPlans || [], excelPlans || []);
+
+      // في حال كانت الخطط معروضة في صفحة الخطط التشغيلية بدون ربط جمعية صريح،
+      // نعرضها هنا أيضاً حتى لا تكون نافذة التوليد فارغة.
+      if (items.length === 0 && orgId) {
+        const [{ data: fallbackOpPlans }, { data: fallbackExcelPlans }] = await Promise.all([
+          supabase
+            .from("operational_plans")
+            .select("id, activity_name, plan_name, strategic_goal, initiative")
+            .eq("year", selectedYear),
+          supabase
+            .from("excel_plans")
+            .select("id, plan_name, columns, rows")
+            .eq("year", selectedYear),
+        ]);
+        items = toItems(fallbackOpPlans || [], fallbackExcelPlans || []);
+      }
 
       setAiAvailablePlans(items);
       // افتراضياً اختر الكل
@@ -1964,7 +1986,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               <div className="flex items-center justify-center gap-3">
                 {isAdmin && (
                   <Button
-                    onClick={() => setIsAIDialogOpen(true)}
+                    onClick={() => setIsAIChoiceDialogOpen(true)}
                     className="gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                   >
                     <Sparkles className="w-5 h-5" />
@@ -3141,7 +3163,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         )}
 
         <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
-          <DialogContent className="max-w-xl">
+          <DialogContent className="max-w-5xl w-[92vw] max-h-[88vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
@@ -3151,7 +3173,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-6 py-4">
+            <div className="space-y-5 py-4">
               {/* شرح العملية */}
               <div className="bg-blue-600 rounded-xl p-5 border border-blue-700 shadow-sm">
                 <h4 className="font-bold text-white mb-3 flex items-center gap-2">
@@ -3211,7 +3233,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                   {MONTHS_AR.map((month, idx) => {
                     const monthNum = idx + 1;
                     const isSelected = aiSelectedMonths.includes(monthNum);
@@ -3269,7 +3291,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     لا توجد خطط تشغيلية لسنة {selectedYear}. أضف خطة من صفحة "الخطط التشغيلية" أولاً.
                   </div>
                 ) : (
-                  <div className="max-h-56 overflow-y-auto space-y-2 rounded-lg border border-gray-200 p-2 bg-gray-50/50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200 p-2 bg-gray-50/50">
                     {aiAvailablePlans.map((plan) => {
                       const isSelected = aiSelectedPlanKeys.has(plan.key);
                       return (

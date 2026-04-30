@@ -126,15 +126,15 @@ export default function AIGenerateExecutivePlan() {
           exQ = exQ.eq("organization_id", activeOrgId);
         }
         const [{ data: ops }, { data: excels }] = await Promise.all([opQ, exQ]);
-        const merged: AvailablePlan[] = [
-          ...((ops || []).map((p: any) => ({
+        const mergePlans = (opRows: any[] = [], excelRows: any[] = []): AvailablePlan[] => [
+          ...(opRows.map((p: any) => ({
             key: `op:${p.id}`,
             id: p.id,
             label: p.activity_name || p.plan_name || "خطة تشغيلية",
             subtitle: [p.strategic_goal, p.initiative].filter(Boolean).join(" • ") || `سنة ${p.year}`,
             source: "op" as const,
           }))),
-          ...((excels || []).map((p: any) => ({
+          ...(excelRows.map((p: any) => ({
             key: `excel:${p.id}`,
             id: p.id,
             label: p.plan_name || p.sheet_name || "خطة Excel",
@@ -142,6 +142,22 @@ export default function AIGenerateExecutivePlan() {
             source: "excel" as const,
           }))),
         ];
+        let merged = mergePlans(ops || [], excels || []);
+        if (merged.length === 0 && activeOrgId) {
+          const [{ data: fallbackOps }, { data: fallbackExcels }] = await Promise.all([
+            supabase
+              .from("operational_plans")
+              .select("id, activity_name, plan_name, strategic_goal, initiative, year")
+              .eq("year", year)
+              .order("created_at", { ascending: false }),
+            supabase
+              .from("excel_plans")
+              .select("id, plan_name, sheet_name, year, source_filename")
+              .eq("year", year)
+              .order("created_at", { ascending: false }),
+          ]);
+          merged = mergePlans(fallbackOps || [], fallbackExcels || []);
+        }
         setAvailablePlans(merged);
         setSelectedPlanKeys([]); // إعادة تعيين عند تغيير السنة
       } finally {
