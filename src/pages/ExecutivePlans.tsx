@@ -1001,7 +1001,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               activities: [],
             });
           }
-          dateMap.get(dayPlan.day)!.activities.push({
+          const baseActivity = {
             id: dayPlan.id,
             activityName: plan.activity_name,
             dailyTarget: dayPlan.dailyTarget,
@@ -1017,7 +1017,22 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             planMonthId: pm.id,
             day: dayPlan.day,
             month,
-          });
+          };
+          dateMap.get(dayPlan.day)!.activities.push(baseActivity);
+
+          relatedTasks
+            .filter((task) => task.executive_plan_id === dayPlan.id && task.employee_id !== employeeId)
+            .forEach((task) => {
+              const relatedEmp = employees.find((e) => e.id === task.employee_id);
+              if (!relatedEmp) return;
+              dateMap.get(dayPlan.day)!.activities.push({
+                ...baseActivity,
+                employeeId: relatedEmp.id,
+                employeeName: relatedEmp.full_name,
+                departmentId: relatedEmp.department_id ?? null,
+                departmentName: relatedEmp.department_name ?? "بدون قسم",
+              });
+            });
         });
       });
       
@@ -1032,7 +1047,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     }
     
     return groups;
-  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames, employees]);
+  }, [planMonths, operationalPlans, executivePlans, relatedTasks, selectedYear, filterMonths, selectedPlanNames, employees]);
 
   useEffect(() => {
     if (globalViewMode !== "dates" || groupedPlans.length === 0) return;
