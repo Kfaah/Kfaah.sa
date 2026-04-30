@@ -1363,6 +1363,14 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       const failed: number[] = [];
       let successCount = 0;
 
+      // فصل الخطط المختارة إلى نوعين
+      const operationalPlanIds: string[] = [];
+      const excelPlanIds: string[] = [];
+      aiSelectedPlanKeys.forEach((k) => {
+        if (k.startsWith("op:")) operationalPlanIds.push(k.slice(3));
+        else if (k.startsWith("excel:")) excelPlanIds.push(k.slice(6));
+      });
+
       // ننفّذ شهر-بشهر لتجنب Timeout المتصفح عند اختيار 12 شهر
       for (let i = 0; i < monthsToRun.length; i++) {
         const month = monthsToRun[i];
@@ -1373,6 +1381,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             months: [month],
             year: selectedYear,
             userIds,
+            operationalPlanIds,
+            excelPlanIds,
           },
         });
 
