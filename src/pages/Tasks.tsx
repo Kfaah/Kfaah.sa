@@ -218,7 +218,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
 
     let cancelled = false;
     const pollJob = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("task_generation_jobs")
         .select("id,status,message,error_message,total_employees,processed_employees,generated_tasks_count")
         .eq("id", activeGenerationJobId)
