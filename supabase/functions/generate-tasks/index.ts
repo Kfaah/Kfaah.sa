@@ -21,6 +21,7 @@ type GenerationRequest = {
   year?: number | string;
   organization_id?: string | null;
   employee_id?: string | null;
+  operational_plan_ids?: string[];
 };
 
 type EpItem = {
