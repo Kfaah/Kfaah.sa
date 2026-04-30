@@ -239,9 +239,10 @@ serve(async (req) => {
     // 7) لكل موظف: نولّد دفعة واحدة (call AI واحد) تحوي مهام جميع أيام الشهر التي له فيها أنشطة
     const allTasks: any[] = [];
     let processedEmployees = 0;
+    let creditExhausted = false;
 
-    for (const [, bucket] of buckets) {
-      processedEmployees++;
+    const processBucket = async (bucket: EmpBucket) => {
+      if (creditExhausted) return;
       const emp = bucket.employee || {};
       const workMinutes = minutesBetween(emp.work_start_time, emp.work_end_time);
 
