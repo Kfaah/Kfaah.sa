@@ -3550,6 +3550,72 @@ export type Database = {
           },
         ]
       }
+      task_generation_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          days_covered: number
+          employee_id: string | null
+          error_message: string | null
+          generated_tasks_count: number
+          id: string
+          message: string | null
+          organization_id: string | null
+          processed_employees: number
+          request_payload: Json
+          requested_month: number
+          requested_year: number
+          result: Json
+          started_at: string | null
+          status: string
+          total_employees: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          days_covered?: number
+          employee_id?: string | null
+          error_message?: string | null
+          generated_tasks_count?: number
+          id?: string
+          message?: string | null
+          organization_id?: string | null
+          processed_employees?: number
+          request_payload?: Json
+          requested_month: number
+          requested_year: number
+          result?: Json
+          started_at?: string | null
+          status?: string
+          total_employees?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          days_covered?: number
+          employee_id?: string | null
+          error_message?: string | null
+          generated_tasks_count?: number
+          id?: string
+          message?: string | null
+          organization_id?: string | null
+          processed_employees?: number
+          request_payload?: Json
+          requested_month?: number
+          requested_year?: number
+          result?: Json
+          started_at?: string | null
+          status?: string
+          total_employees?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       task_messages: {
         Row: {
           attachment_name: string | null
