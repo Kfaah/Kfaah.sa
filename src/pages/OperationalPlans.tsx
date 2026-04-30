@@ -1997,7 +1997,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                       <span className="text-sm text-white/80 font-normal mr-2">· {filterYear}</span>
                     </div>
                     <div className="text-sm text-white/80 truncate">
-                      خطة يدوية · {filteredPlans.length} نشاط · {goalsCount} هدف استراتيجي
+                      {filteredPlans.length} نشاط · {goalsCount} هدف استراتيجي
                     </div>
                   </div>
                 </div>
