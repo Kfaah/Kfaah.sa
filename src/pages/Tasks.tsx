@@ -453,6 +453,58 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     };
   }, [authUser?.id, orgId, cacheKey]);
 
+  // تحميل الخطط التشغيلية المتاحة (التي لها خطط تنفيذية لهذا الشهر/السنة)
+  useEffect(() => {
+    if (!isGenerateDialogOpen) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoadingOpPlans(true);
+      try {
+        let q = supabase
+          .from("executive_plans")
+          .select(`
+            id,
+            operational_plan_months!inner (
+              month,
+              operational_plans!inner (
+                id, plan_name, activity_name, strategic_goal, initiative, year, organization_id
+              )
+            )
+          `)
+          .eq("operational_plan_months.month", selectedMonth)
+          .eq("operational_plan_months.operational_plans.year", selectedYear);
+        if (orgId) {
+          q = q.eq("operational_plan_months.operational_plans.organization_id", orgId);
+        }
+        const { data } = await q;
+        if (cancelled) return;
+
+        const grouped = new Map<string, { id: string; label: string; subtitle: string; daysCount: number }>();
+        (data || []).forEach((row: any) => {
+          const op = row.operational_plan_months?.operational_plans;
+          if (!op?.id) return;
+          const existing = grouped.get(op.id);
+          if (existing) {
+            existing.daysCount += 1;
+          } else {
+            grouped.set(op.id, {
+              id: op.id,
+              label: op.activity_name || op.plan_name || "خطة تشغيلية",
+              subtitle: [op.strategic_goal, op.initiative].filter(Boolean).join(" • ") || `سنة ${op.year}`,
+              daysCount: 1,
+            });
+          }
+        });
+        setAvailableOpPlans(Array.from(grouped.values()));
+        setSelectedOpPlanIds([]);
+      } finally {
+        if (!cancelled) setLoadingOpPlans(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [isGenerateDialogOpen, selectedMonth, selectedYear, orgId]);
+
   // توليد المهام بالذكاء الاصطناعي لشهر كامل
   const handleGenerateMonthTasks = async () => {
     if (!authUser || !selectedMonth) return;
