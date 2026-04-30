@@ -313,7 +313,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   // سكرول إلى صف النشاط المُركَّز عليه عند الوصول من رابط مهمة مُرحَّلة
   useEffect(() => {
     if (!focusActivityId) return;
-    const t = setTimeout(() => {
+    let attempts = 0;
+    const scrollToFocusedActivity = () => {
       const selector = focusEmployeeId
         ? `[data-activity-row-target="${focusActivityId}"][data-activity-employee-target="${focusEmployeeId}"]`
         : `[data-activity-row-target="${focusActivityId}"]`;
@@ -324,8 +325,12 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         setTimeout(() => {
           el.classList.remove("ring-2", "ring-amber-400", "ring-offset-2", "rounded-lg");
         }, 3000);
+      } else if (attempts < 12) {
+        attempts += 1;
+        window.setTimeout(scrollToFocusedActivity, 250);
       }
-    }, 800);
+    };
+    const t = window.setTimeout(scrollToFocusedActivity, 800);
     return () => clearTimeout(t);
   }, [focusActivityId, focusEmployeeId]);
 
