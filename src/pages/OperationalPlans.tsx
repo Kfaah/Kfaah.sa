@@ -2397,6 +2397,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
         {/* Plans Table */}
         <Card className="overflow-hidden border-emerald-200/60">
           {(() => {
+            if (filteredPlans.length === 0) return null;
             const planName = filteredPlans[0]?.plan_name || "الخطة الأولى";
             const goalsCount = new Set(filteredPlans.map(p => p.strategic_goal).filter(Boolean)).size;
             return (
