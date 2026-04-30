@@ -452,6 +452,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     
     setIsGenerating(true);
     setGenerationProgress("جاري تجهيز طلب التوليد في الخلفية...");
+    let queuedStarted = false;
     
     try {
       const session = await supabase.auth.getSession();
@@ -500,6 +501,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
       const result = await response.json();
 
       if (result.queued && result.jobId) {
+        queuedStarted = true;
         setActiveGenerationJobId(result.jobId);
         setGenerationProgress(result.message || "بدأ توليد المهام في الخلفية...");
         toast({
@@ -526,7 +528,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
       setIsGenerating(false);
       setGenerationProgress("");
     } finally {
-      if (!activeGenerationJobId) {
+      if (!queuedStarted) {
         setIsGenerating(false);
       }
     }
