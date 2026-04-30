@@ -65,8 +65,8 @@ export default function AIGenerateExecutivePlan() {
 
   // الخطط التشغيلية المتاحة (operational_plans + excel_plans)
   type AvailablePlan = {
-    key: string;            // "op:<id>" or "excel:<id>"
-    id: string;
+    key: string;            // "op:<planName>" or "excel:<id>"
+    ids: string[];          // grouped operational_plans ids OR single excel id
     label: string;
     subtitle: string;
     source: "op" | "excel";
@@ -126,22 +126,31 @@ export default function AIGenerateExecutivePlan() {
           exQ = exQ.eq("organization_id", activeOrgId);
         }
         const [{ data: ops }, { data: excels }] = await Promise.all([opQ, exQ]);
-        const mergePlans = (opRows: any[] = [], excelRows: any[] = []): AvailablePlan[] => [
-          ...(opRows.map((p: any) => ({
-            key: `op:${p.id}`,
-            id: p.id,
-            label: p.activity_name || p.plan_name || "خطة تشغيلية",
-            subtitle: [p.strategic_goal, p.initiative].filter(Boolean).join(" • ") || `سنة ${p.year}`,
+        const mergePlans = (opRows: any[] = [], excelRows: any[] = []): AvailablePlan[] => {
+          // اجمع الخطط التشغيلية حسب اسم الخطة (plan_name) — لا تظهر كل نشاط/هدف على حدة
+          const groups = new Map<string, { ids: string[]; year: any }>();
+          for (const p of opRows) {
+            const name = (p.plan_name || "").trim() || "خطة تشغيلية بدون اسم";
+            const g = groups.get(name) || { ids: [], year: p.year };
+            g.ids.push(p.id);
+            groups.set(name, g);
+          }
+          const opGrouped: AvailablePlan[] = Array.from(groups.entries()).map(([name, g]) => ({
+            key: `op:${name}`,
+            ids: g.ids,
+            label: name,
+            subtitle: `${g.ids.length} نشاط • سنة ${g.year}`,
             source: "op" as const,
-          }))),
-          ...(excelRows.map((p: any) => ({
+          }));
+          const excelMapped: AvailablePlan[] = excelRows.map((p: any) => ({
             key: `excel:${p.id}`,
-            id: p.id,
+            ids: [p.id],
             label: p.plan_name || p.sheet_name || "خطة Excel",
             subtitle: p.source_filename || `Excel • ${p.year}`,
             source: "excel" as const,
-          }))),
-        ];
+          }));
+          return [...opGrouped, ...excelMapped];
+        };
         let merged = mergePlans(ops || [], excels || []);
         if (merged.length === 0 && activeOrgId) {
           const [{ data: fallbackOps }, { data: fallbackExcels }] = await Promise.all([
