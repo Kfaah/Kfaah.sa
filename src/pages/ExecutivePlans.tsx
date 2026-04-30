@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -297,6 +297,32 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const makeOrgUrl = (path: string) => (slug ? `/${slug}${path}` : path);
   const { currentOrg } = useOrganization();
   const scopedView = useScopedView("scope:executive-plans");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusActivityId = searchParams.get("activity");
+  const focusTaskId = searchParams.get("task");
+
+  // سكرول إلى صف النشاط المُركَّز عليه عند الوصول من رابط مهمة مُرحَّلة
+  useEffect(() => {
+    if (!focusActivityId) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(`activity-row-${focusActivityId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-amber-400", "ring-offset-2", "rounded-lg");
+        setTimeout(() => {
+          el.classList.remove("ring-2", "ring-amber-400", "ring-offset-2", "rounded-lg");
+        }, 3000);
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [focusActivityId]);
+
+  const clearFocusParams = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("activity");
+    next.delete("task");
+    setSearchParams(next, { replace: true });
+  };
   const [isAdmin, setIsAdmin] = useState(false);
   const [routeOrgId, setRouteOrgId] = useState<string | null>(null);
   
@@ -2423,6 +2449,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
                                         return (
                                           <div key={`act-wrap-${act.id}`} data-activity-row-target={act.id}>
+                                          {/* مرساة للتنقل من رابط مهمة مُرحَّلة */}
+                                          <div id={`activity-row-${act.id}`} />
                                           <div
                                             className={cn(
                                               "flex items-start gap-2 px-2 py-1 rounded-md text-sm border text-slate-800 transition-all",
@@ -2491,6 +2519,9 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   activityDay={(act as any).day ?? l.day}
                                                   activityMonth={(act as any).month ?? monthGroup.month}
                                                   activityYear={selectedYear}
+                                                  autoOpen={focusActivityId === act.id}
+                                                  highlightTaskId={focusActivityId === act.id ? focusTaskId : null}
+                                                  onAutoOpened={clearFocusParams}
                                                   allEmployees={employees.map((e) => ({
                                                     id: e.id,
                                                     full_name: e.full_name,

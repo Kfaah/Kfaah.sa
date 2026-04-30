@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,12 @@ interface Props {
   activityYear: number;
   isPreparing?: boolean;
   allEmployees: EmployeeOption[];
+  /** فتح القائمة تلقائياً عند التحميل (للتنقل من رابط مهمة مُرحَّلة) */
+  autoOpen?: boolean;
+  /** إبراز مهمة معينة داخل القائمة */
+  highlightTaskId?: string | null;
+  /** يُستدعى بعد فتح القائمة تلقائياً (لمسح query params) */
+  onAutoOpened?: () => void;
 }
 
 interface RelatedTask {
@@ -107,7 +113,15 @@ export function ActivityPhasesPopover({
   activityYear,
   isPreparing = false,
   allEmployees,
+  autoOpen = false,
+  highlightTaskId = null,
+  onAutoOpened,
 }: Props) {
+  const { slug } = useParams<{ slug?: string }>();
+  const buildActivityUrl = (planId: string, taskId: string) => {
+    const base = slug ? `/${slug}/internal-dashboard` : `/internal-dashboard`;
+    return `${base}?tab=executive-plans&activity=${planId}&task=${taskId}`;
+  };
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState<RelatedTask[]>([]);
@@ -123,6 +137,27 @@ export function ActivityPhasesPopover({
     for (const e of allEmployees) m.set(e.id, e);
     return m;
   }, [allEmployees]);
+
+  // فتح تلقائي عند التنقل من رابط مهمة مُرحَّلة
+  useEffect(() => {
+    if (autoOpen && !open) {
+      setOpen(true);
+      onAutoOpened?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen]);
+
+  // سكرول إلى المهمة المُبرزة بعد التحميل
+  useEffect(() => {
+    if (!open || !highlightTaskId || loading) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(`related-task-${highlightTaskId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [open, highlightTaskId, loading, tasks.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -446,10 +481,17 @@ export function ActivityPhasesPopover({
                         const emp = employeeMap.get(t.employee_id);
                         const isSaving = savingId === t.id;
                         const dueIso = toDateInputValue(activityYear, activityMonth, activityDay, t.day_offset);
+                        const isHighlighted = highlightTaskId === t.id;
                         return (
                           <li
                             key={t.id}
-                            className="bg-white/95 backdrop-blur rounded-lg px-3 py-2.5 border border-white shadow-sm hover:shadow-md group transition-all"
+                            id={`related-task-${t.id}`}
+                            className={cn(
+                              "bg-white/95 backdrop-blur rounded-lg px-3 py-2.5 border shadow-sm hover:shadow-md group transition-all",
+                              isHighlighted
+                                ? "border-amber-400 ring-2 ring-amber-300 ring-offset-2 animate-pulse"
+                                : "border-white"
+                            )}
                           >
                             <div className="flex items-start gap-2">
                               <div className="flex-1 min-w-0">
@@ -545,8 +587,8 @@ export function ActivityPhasesPopover({
                                   {t.is_dispatched && (
                                     t.dispatched_task_id ? (
                                       <Link
-                                        to={`/tasks/${t.dispatched_task_id}`}
-                                        title="افتح المهمة في خطة الموظف التنفيذية"
+                                        to={buildActivityUrl(executivePlanId, t.id)}
+                                        title="انتقل إلى موقع هذه المهمة في الجدول وأبرزها داخل المراحل"
                                         className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 font-medium bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition-colors"
                                       >
                                         <CheckCircle2 className="w-3 h-3" />
