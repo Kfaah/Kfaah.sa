@@ -17,10 +17,11 @@ serve(async (req) => {
   }
 
   try {
-    const { month, months, year, userIds, operationalPlanIds, excelPlanIds } = await req.json();
+    const { month, months, year, userIds, operationalPlanIds, excelPlanIds, organizationId } = await req.json();
     const filterOperationalIds: string[] = Array.isArray(operationalPlanIds) ? operationalPlanIds : [];
     const filterExcelIds: string[] = Array.isArray(excelPlanIds) ? excelPlanIds : [];
     const hasPlanFilter = filterOperationalIds.length > 0 || filterExcelIds.length > 0;
+    const activeOrganizationId = typeof organizationId === "string" && organizationId.trim() ? organizationId.trim() : null;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -67,7 +68,8 @@ serve(async (req) => {
         .from("excel_plans")
         .select("id, plan_name, year, columns, rows, organization_id")
         .in("id", filterExcelIds)
-        .eq("year", targetYear);
+        .eq("year", targetYear)
+        .eq("organization_id", activeOrganizationId ?? "00000000-0000-0000-0000-000000000000");
       excelPlans = excelPlansData || [];
 
       // محاولة ربط "مسؤول التنفيذ" بمستخدم/قسم
@@ -166,6 +168,9 @@ serve(async (req) => {
 
     if (userIds && userIds.length > 0) {
       monthsQuery = monthsQuery.in("operational_plans.user_id", userIds);
+    }
+    if (activeOrganizationId) {
+      monthsQuery = monthsQuery.eq("operational_plans.organization_id", activeOrganizationId);
     }
 
     const { data: availableMonths, error: monthsError } = await monthsQuery;
