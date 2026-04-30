@@ -451,23 +451,9 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     if (!authUser || !selectedMonth) return;
     
     setIsGenerating(true);
-    setGenerationProgress("جاري تحليل الخطط التشغيلية وملفات الموظفين...");
+    setGenerationProgress("جاري تجهيز طلب التوليد في الخلفية...");
     
     try {
-      // مراحل تقدم تجميلية للمستخدم بينما يعمل المحرك في الخلفية
-      const progressStages = [
-        "جاري جمع الخطط التشغيلية للسنة...",
-        "جاري قراءة الخطط التنفيذية الشهرية...",
-        "جاري تحليل تخصصات الموظفين وملفاتهم...",
-        "جاري توليد مهام يومية احترافية لكل موظف...",
-        "جاري التحقق من الجودة وتوزيع المهام على الأيام...",
-      ];
-      let stageIdx = 0;
-      const stageTimer = setInterval(() => {
-        stageIdx = Math.min(stageIdx + 1, progressStages.length - 1);
-        setGenerationProgress(progressStages[stageIdx]);
-      }, 4000);
-
       const session = await supabase.auth.getSession();
       const accessToken = session.data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -499,7 +485,6 @@ const Tasks = ({ embedded = false }: TasksProps) => {
           }),
         }
       );
-      clearInterval(stageTimer);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -513,7 +498,17 @@ const Tasks = ({ embedded = false }: TasksProps) => {
       }
       
       const result = await response.json();
-      
+
+      if (result.queued && result.jobId) {
+        setActiveGenerationJobId(result.jobId);
+        setGenerationProgress(result.message || "بدأ توليد المهام في الخلفية...");
+        toast({
+          title: "بدأ التوليد في الخلفية",
+          description: "سيتم تحديث المهام تلقائياً عند اكتمال المعالجة.",
+        });
+        return;
+      }
+
       toast({
         title: "تم التوليد بنجاح! ✨",
         description: result.message,
@@ -528,9 +523,12 @@ const Tasks = ({ embedded = false }: TasksProps) => {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setIsGenerating(false);
       setGenerationProgress("");
+    } finally {
+      if (!activeGenerationJobId) {
+        setIsGenerating(false);
+      }
     }
   };
 
