@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { useScopedView } from "@/hooks/useScopedView";
 
 type Phase = "before" | "during" | "after";
 
@@ -119,6 +120,9 @@ export function ActivityPhasesPopover({
 }: Props) {
   const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
+  // الموظف العادي يرى مهامه فقط داخل المراحل، أما المدير/الأدمن فيرى الجميع
+  const { roleLevel, myEmployeeId } = useScopedView("scope:executive-plans");
+  const isPlainEmployee = roleLevel === "employee";
   const buildActivityUrl = (planId: string, taskId: string, employeeId?: string | null) => {
     const base = slug ? `/${slug}/internal-dashboard` : `/internal-dashboard`;
     const params = new URLSearchParams({ tab: "executive-plans", activity: planId, task: taskId });
@@ -378,12 +382,15 @@ export function ActivityPhasesPopover({
   }
 
   const byPhase: Record<Phase, RelatedTask[]> = {
-    before: tasks.filter((t) => t.phase === "before"),
-    during: tasks.filter((t) => t.phase === "during"),
-    after: tasks.filter((t) => t.phase === "after"),
+    before: tasks.filter((t) => t.phase === "before" && (!isPlainEmployee || t.employee_id === myEmployeeId)),
+    during: tasks.filter((t) => t.phase === "during" && (!isPlainEmployee || t.employee_id === myEmployeeId)),
+    after: tasks.filter((t) => t.phase === "after" && (!isPlainEmployee || t.employee_id === myEmployeeId)),
   };
 
-  const totalCount = tasks.length;
+  const visibleTasks = isPlainEmployee
+    ? tasks.filter((t) => t.employee_id === myEmployeeId)
+    : tasks;
+  const totalCount = visibleTasks.length;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
