@@ -372,6 +372,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isAIChoiceDialogOpen, setIsAIChoiceDialogOpen] = useState(false);
   const [aiSelectedMonths, setAiSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
+  // الخطط المختارة للتوليد بالذكاء الاصطناعي (operational + excel)
+  // الصيغة: "op:<uuid>" أو "excel:<uuid>"
+  const [aiAvailablePlans, setAiAvailablePlans] = useState<
+    Array<{ key: string; label: string; subtitle: string; source: "op" | "excel" }>
+  >([]);
+  const [aiSelectedPlanKeys, setAiSelectedPlanKeys] = useState<Set<string>>(new Set());
+  const [aiPlansLoading, setAiPlansLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   // فلترة الخطط المختارة (فارغة = الكل)
   const [selectedPlanNames, setSelectedPlanNames] = useState<Set<string>>(new Set());
@@ -1356,6 +1363,14 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       const failed: number[] = [];
       let successCount = 0;
 
+      // فصل الخطط المختارة إلى نوعين
+      const operationalPlanIds: string[] = [];
+      const excelPlanIds: string[] = [];
+      aiSelectedPlanKeys.forEach((k) => {
+        if (k.startsWith("op:")) operationalPlanIds.push(k.slice(3));
+        else if (k.startsWith("excel:")) excelPlanIds.push(k.slice(6));
+      });
+
       // ننفّذ شهر-بشهر لتجنب Timeout المتصفح عند اختيار 12 شهر
       for (let i = 0; i < monthsToRun.length; i++) {
         const month = monthsToRun[i];
@@ -1366,6 +1381,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             months: [month],
             year: selectedYear,
             userIds,
+            operationalPlanIds,
+            excelPlanIds,
           },
         });
 
@@ -1449,6 +1466,83 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const clearAllMonths = () => {
     setAiSelectedMonths([]);
   };
+
+  // جلب الخطط المتاحة للتوليد (operational + excel) للسنة المحددة
+  const loadAiAvailablePlans = async () => {
+    setAiPlansLoading(true);
+    try {
+      const orgId = currentOrg?.id || routeOrgId;
+
+      // 1) operational_plans
+      let opQuery = supabase
+        .from("operational_plans")
+        .select("id, activity_name, plan_name, strategic_goal, initiative")
+        .eq("year", selectedYear);
+      if (orgId) opQuery = opQuery.eq("organization_id", orgId);
+      const { data: opPlans } = await opQuery;
+
+      // 2) excel_plans
+      let exQuery = supabase
+        .from("excel_plans")
+        .select("id, plan_name, columns, rows")
+        .eq("year", selectedYear);
+      if (orgId) exQuery = exQuery.eq("organization_id", orgId);
+      const { data: excelPlans } = await exQuery;
+
+      const items: Array<{ key: string; label: string; subtitle: string; source: "op" | "excel" }> = [];
+
+      (opPlans || []).forEach((p: any) => {
+        items.push({
+          key: `op:${p.id}`,
+          label: p.activity_name || "نشاط بدون اسم",
+          subtitle: [p.plan_name, p.initiative, p.strategic_goal].filter(Boolean).join(" • ") || "خطة تشغيلية",
+          source: "op",
+        });
+      });
+
+      (excelPlans || []).forEach((p: any) => {
+        const cols: string[] = Array.isArray(p.columns) ? p.columns : [];
+        const rows: any[] = Array.isArray(p.rows) ? p.rows : [];
+        const actCol = cols.find((c) => String(c).includes("النشاط"));
+        const activitiesCount = actCol
+          ? rows.filter((r) => String(r?.[actCol] ?? "").trim()).length
+          : rows.length;
+        items.push({
+          key: `excel:${p.id}`,
+          label: p.plan_name || "خطة Excel",
+          subtitle: `مرفوعة من Excel • ${activitiesCount} نشاط`,
+          source: "excel",
+        });
+      });
+
+      setAiAvailablePlans(items);
+      // افتراضياً اختر الكل
+      setAiSelectedPlanKeys(new Set(items.map((i) => i.key)));
+    } catch (e) {
+      console.error("loadAiAvailablePlans error:", e);
+    } finally {
+      setAiPlansLoading(false);
+    }
+  };
+
+  // عند فتح نافذة AI، حمّل الخطط المتاحة
+  useEffect(() => {
+    if (isAIDialogOpen) {
+      loadAiAvailablePlans();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAIDialogOpen, selectedYear]);
+
+  const toggleAiPlan = (key: string) => {
+    setAiSelectedPlanKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  const selectAllAiPlans = () => setAiSelectedPlanKeys(new Set(aiAvailablePlans.map((p) => p.key)));
+  const clearAllAiPlans = () => setAiSelectedPlanKeys(new Set());
 
   return (
     <DashboardLayout embedded={embedded}>
@@ -3149,6 +3243,79 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 )}
               </div>
 
+              {/* قائمة الخطط التشغيلية المتاحة (operational + excel) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    اختر الخطط التشغيلية للتوليد منها
+                  </label>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={selectAllAiPlans} className="text-xs h-7 px-2">
+                      تحديد الكل
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={clearAllAiPlans} className="text-xs h-7 px-2">
+                      إلغاء الكل
+                    </Button>
+                  </div>
+                </div>
+
+                {aiPlansLoading ? (
+                  <div className="text-center py-6 text-sm text-gray-500 flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> جاري تحميل الخطط...
+                  </div>
+                ) : aiAvailablePlans.length === 0 ? (
+                  <div className="text-center py-6 text-sm text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    لا توجد خطط تشغيلية لسنة {selectedYear}. أضف خطة من صفحة "الخطط التشغيلية" أولاً.
+                  </div>
+                ) : (
+                  <div className="max-h-56 overflow-y-auto space-y-2 rounded-lg border border-gray-200 p-2 bg-gray-50/50">
+                    {aiAvailablePlans.map((plan) => {
+                      const isSelected = aiSelectedPlanKeys.has(plan.key);
+                      return (
+                        <div
+                          key={plan.key}
+                          onClick={() => toggleAiPlan(plan.key)}
+                          className={cn(
+                            "flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all border-2",
+                            isSelected
+                              ? "bg-emerald-50 border-emerald-400"
+                              : "bg-white hover:bg-gray-50 border-gray-200 hover:border-emerald-200",
+                          )}
+                        >
+                          <Checkbox checked={isSelected} className="pointer-events-none mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-gray-900 truncate">{plan.label}</span>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[10px] px-1.5 py-0",
+                                  plan.source === "excel"
+                                    ? "border-emerald-300 text-emerald-700 bg-emerald-50"
+                                    : "border-blue-300 text-blue-700 bg-blue-50",
+                                )}
+                              >
+                                {plan.source === "excel" ? "Excel" : "تشغيلية"}
+                              </Badge>
+                            </div>
+                            {plan.subtitle && (
+                              <p className="text-xs text-gray-500 mt-0.5 truncate">{plan.subtitle}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {aiAvailablePlans.length > 0 && (
+                  <div className="text-xs text-emerald-700 text-center">
+                    تم اختيار {aiSelectedPlanKeys.size} من {aiAvailablePlans.length}
+                  </div>
+                )}
+              </div>
+
               {/* الموظفين المستهدفين */}
               <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200">
                 <h4 className="font-semibold mb-3 flex items-center gap-2 text-slate-700">
@@ -3193,7 +3360,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               {/* زر التوليد */}
               <Button
                 onClick={handleAIGenerate}
-                disabled={isAIGenerating || aiSelectedMonths.length === 0}
+                disabled={isAIGenerating || aiSelectedMonths.length === 0 || aiSelectedPlanKeys.size === 0}
                 className="w-full gap-3 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 hover:from-purple-700 hover:via-pink-600 hover:to-purple-700 h-14 text-lg font-bold shadow-lg shadow-purple-500/30 transition-all hover:shadow-xl hover:shadow-purple-500/40"
               >
                 {isAIGenerating ? (
