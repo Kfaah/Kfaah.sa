@@ -290,21 +290,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   const [selectedResponsibleEmployee, setSelectedResponsibleEmployee] = useState<string>("");
 
   // الخطط المرفوعة من Excel
-  interface ExcelPlanRow {
-    id: string;
-    plan_name: string;
-    year: number;
-    sheet_name: string | null;
-    columns: string[];
-    rows: Record<string, any>[];
-    use_for_ai: boolean;
-    source_filename: string | null;
-    created_at: string;
-  }
-  const [excelPlans, setExcelPlans] = useState<ExcelPlanRow[]>([]);
-  const [expandedExcelPlanId, setExpandedExcelPlanId] = useState<string | null>(null);
-  const [expandedExcelRows, setExpandedExcelRows] = useState<Record<string, boolean>>({});
-
   const normalizeArabic = (value: string) => value.replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").trim();
   const findColumnByKeywords = (cols: string[], keywords: string[]) => {
     const normalizedKeywords = keywords.map(normalizeArabic);
@@ -343,46 +328,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     fetchEmployees();
     fetchCustomColumns();
     fetchColumnOrder();
-    fetchExcelPlans();
   }, [authUser, isAdmin]);
-
-  const fetchExcelPlans = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("excel_plans" as any)
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      setExcelPlans(((data as any[]) || []) as ExcelPlanRow[]);
-    } catch (err) {
-      console.error("Failed to load excel plans:", err);
-    }
-  };
-
-  const deleteExcelPlan = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذه الخطة المرفوعة؟")) return;
-    try {
-      const { error } = await supabase.from("excel_plans" as any).delete().eq("id", id);
-      if (error) throw error;
-      setExcelPlans((prev) => prev.filter((p) => p.id !== id));
-      toast({ title: "تم الحذف", description: "تم حذف الخطة المرفوعة" });
-    } catch (err: any) {
-      toast({ title: "فشل الحذف", description: err?.message, variant: "destructive" });
-    }
-  };
-
-  const toggleExcelPlanAi = async (id: string, current: boolean) => {
-    try {
-      const { error } = await supabase
-        .from("excel_plans" as any)
-        .update({ use_for_ai: !current })
-        .eq("id", id);
-      if (error) throw error;
-      setExcelPlans((prev) => prev.map((p) => (p.id === id ? { ...p, use_for_ai: !current } : p)));
-    } catch (err: any) {
-      toast({ title: "فشل التحديث", description: err?.message, variant: "destructive" });
-    }
-  };
 
   const fetchCustomColumns = async () => {
     try {
