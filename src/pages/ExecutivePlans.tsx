@@ -1489,31 +1489,53 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       if (orgId) exQuery = exQuery.eq("organization_id", orgId);
       const { data: excelPlans } = await exQuery;
 
-      const items: Array<{ key: string; label: string; subtitle: string; source: "op" | "excel" }> = [];
+      const toItems = (opRows: any[] = [], excelRows: any[] = []) => {
+        const rows: Array<{ key: string; label: string; subtitle: string; source: "op" | "excel" }> = [];
 
-      (opPlans || []).forEach((p: any) => {
-        items.push({
-          key: `op:${p.id}`,
-          label: p.activity_name || "نشاط بدون اسم",
-          subtitle: [p.plan_name, p.initiative, p.strategic_goal].filter(Boolean).join(" • ") || "خطة تشغيلية",
-          source: "op",
+        opRows.forEach((p: any) => {
+          rows.push({
+            key: `op:${p.id}`,
+            label: p.activity_name || "نشاط بدون اسم",
+            subtitle: [p.plan_name, p.initiative, p.strategic_goal].filter(Boolean).join(" • ") || "خطة تشغيلية",
+            source: "op",
+          });
         });
-      });
 
-      (excelPlans || []).forEach((p: any) => {
-        const cols: string[] = Array.isArray(p.columns) ? p.columns : [];
-        const rows: any[] = Array.isArray(p.rows) ? p.rows : [];
-        const actCol = cols.find((c) => String(c).includes("النشاط"));
-        const activitiesCount = actCol
-          ? rows.filter((r) => String(r?.[actCol] ?? "").trim()).length
-          : rows.length;
-        items.push({
-          key: `excel:${p.id}`,
-          label: p.plan_name || "خطة Excel",
-          subtitle: `مرفوعة من Excel • ${activitiesCount} نشاط`,
-          source: "excel",
+        excelRows.forEach((p: any) => {
+          const cols: string[] = Array.isArray(p.columns) ? p.columns : [];
+          const rowsData: any[] = Array.isArray(p.rows) ? p.rows : [];
+          const actCol = cols.find((c) => String(c).includes("النشاط"));
+          const activitiesCount = actCol
+            ? rowsData.filter((r) => String(r?.[actCol] ?? "").trim()).length
+            : rowsData.length;
+          rows.push({
+            key: `excel:${p.id}`,
+            label: p.plan_name || "خطة Excel",
+            subtitle: `مرفوعة من Excel • ${activitiesCount} نشاط`,
+            source: "excel",
+          });
         });
-      });
+
+        return rows;
+      };
+
+      let items = toItems(opPlans || [], excelPlans || []);
+
+      // في حال كانت الخطط معروضة في صفحة الخطط التشغيلية بدون ربط جمعية صريح،
+      // نعرضها هنا أيضاً حتى لا تكون نافذة التوليد فارغة.
+      if (items.length === 0 && orgId) {
+        const [{ data: fallbackOpPlans }, { data: fallbackExcelPlans }] = await Promise.all([
+          supabase
+            .from("operational_plans")
+            .select("id, activity_name, plan_name, strategic_goal, initiative")
+            .eq("year", selectedYear),
+          supabase
+            .from("excel_plans")
+            .select("id, plan_name, columns, rows")
+            .eq("year", selectedYear),
+        ]);
+        items = toItems(fallbackOpPlans || [], fallbackExcelPlans || []);
+      }
 
       setAiAvailablePlans(items);
       // افتراضياً اختر الكل
