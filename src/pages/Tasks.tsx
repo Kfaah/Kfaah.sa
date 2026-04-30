@@ -95,6 +95,16 @@ interface ActivityInfo {
   activity_name: string;
 }
 
+interface TaskGenerationJob {
+  id: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  message: string | null;
+  error_message: string | null;
+  total_employees: number;
+  processed_employees: number;
+  generated_tasks_count: number;
+}
+
 interface TasksProps {
   embedded?: boolean;
 }
@@ -113,6 +123,7 @@ const MONTHS_AR = [
 ];
 
 const TASKS_CACHE_PREFIX = "tasks_page_cache_v1:";
+const TASK_COLUMNS = "id,title,description,user_id,executive_plan_id,priority,status,category,due_date,ai_generated,created_at,completion_percentage,quality_percentage,estimated_time_minutes,actual_time_minutes,started_at";
 
 const Tasks = ({ embedded = false }: TasksProps) => {
   const { toast } = useToast();
