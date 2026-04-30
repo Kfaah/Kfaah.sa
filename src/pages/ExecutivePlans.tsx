@@ -3163,7 +3163,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         )}
 
         <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
-          <DialogContent className="max-w-xl">
+          <DialogContent className="max-w-5xl w-[92vw] max-h-[88vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-xl">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
@@ -3173,7 +3173,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-6 py-4">
+            <div className="space-y-5 py-4">
               {/* شرح العملية */}
               <div className="bg-blue-600 rounded-xl p-5 border border-blue-700 shadow-sm">
                 <h4 className="font-bold text-white mb-3 flex items-center gap-2">
@@ -3233,7 +3233,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                   {MONTHS_AR.map((month, idx) => {
                     const monthNum = idx + 1;
                     const isSelected = aiSelectedMonths.includes(monthNum);
@@ -3291,7 +3291,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     لا توجد خطط تشغيلية لسنة {selectedYear}. أضف خطة من صفحة "الخطط التشغيلية" أولاً.
                   </div>
                 ) : (
-                  <div className="max-h-56 overflow-y-auto space-y-2 rounded-lg border border-gray-200 p-2 bg-gray-50/50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-44 overflow-y-auto rounded-lg border border-gray-200 p-2 bg-gray-50/50">
                     {aiAvailablePlans.map((plan) => {
                       const isSelected = aiSelectedPlanKeys.has(plan.key);
                       return (
