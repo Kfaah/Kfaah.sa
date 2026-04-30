@@ -126,11 +126,7 @@ export function ActivityPhasesPopover({
     return `${base}?${params.toString()}`;
   };
 
-  /**
-   * عند الضغط على شارة "مُرحَّلة" ننتقل إلى صف الموظف المسؤول عن هذه المهمة الفرعية
-   * في الجدول، حيث يجد المستخدم نفس المهمة داخل مراحل النشاط الذي يقوده ذلك الموظف.
-   * إذا لم نجد نسخة مطابقة عند الموظف، نعود إلى موقع المهمة الأصلي.
-   */
+  /** يفتح نفس النشاط داخل صف الموظف المكلّف بهذه المهمة ويبرزها داخل المراحل. */
   async function navigateToAssigneeRow(taskRow: RelatedTask) {
     try {
       setOpen(false);
@@ -180,7 +176,7 @@ export function ActivityPhasesPopover({
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [open, highlightTaskId, loading, tasks.length]);
+  }, [open, highlightTaskId, loading, tasks.length, onAutoOpened]);
 
   useEffect(() => {
     if (!open) return;
