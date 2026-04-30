@@ -378,13 +378,27 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
       }
     }
 
-    // Step 2: Insert generated tasks (replace existing AI-generated undispatched, keep manual)
+    // Step 2: Insert generated tasks — استبدال كامل لمهام AI (حتى المُرحَّلة) لمنع التراكم.
+    // نُبقي فقط المهام اليدوية. نحذف أيضاً المهام المرتبطة في tasks لتلك المهام AI.
+    const { data: oldAiRows } = await admin
+      .from("activity_related_tasks")
+      .select("id, dispatched_task_id")
+      .eq("executive_plan_id", executive_plan_id)
+      .eq("source", "ai");
+
+    const oldDispatchedIds = (oldAiRows ?? [])
+      .map((r: any) => r.dispatched_task_id)
+      .filter((x: any) => !!x);
+
+    if (oldDispatchedIds.length > 0) {
+      await admin.from("tasks").delete().in("id", oldDispatchedIds);
+    }
+
     await admin
       .from("activity_related_tasks")
       .delete()
       .eq("executive_plan_id", executive_plan_id)
-      .eq("source", "ai")
-      .eq("is_dispatched", false);
+      .eq("source", "ai");
 
     const validTasks = (args.tasks ?? []).filter(
       (t: any) => empById.has(t.employee_id) && targetEmpIds.has(t.employee_id)
