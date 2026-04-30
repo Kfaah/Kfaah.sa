@@ -543,10 +543,22 @@ export function ActivityPhasesPopover({
                                   )}
 
                                   {t.is_dispatched && (
-                                    <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                                      <CheckCircle2 className="w-3 h-3" />
-                                      مُرحَّلة
-                                    </span>
+                                    t.dispatched_task_id ? (
+                                      <Link
+                                        to={`/tasks/${t.dispatched_task_id}`}
+                                        title="افتح المهمة في خطة الموظف التنفيذية"
+                                        className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 font-medium bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition-colors"
+                                      >
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        مُرحَّلة
+                                        <ExternalLink className="w-3 h-3" />
+                                      </Link>
+                                    ) : (
+                                      <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        مُرحَّلة
+                                      </span>
+                                    )
                                   )}
                                   {isSaving && <Loader2 className="w-3 h-3 animate-spin text-[hsl(var(--primary))]" />}
                                 </div>
