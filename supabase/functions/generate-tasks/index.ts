@@ -359,8 +359,9 @@ async function processGenerationJob(params: {
   targetMonth: number;
   targetYear: number;
   targetEmployeeId: string | null;
+  operationalPlanIds?: string[] | null;
 }) {
-  const { jobId, supabase, LOVABLE_API_KEY, orgId, targetMonth, targetYear, targetEmployeeId } = params;
+  const { jobId, supabase, LOVABLE_API_KEY, orgId, targetMonth, targetYear, targetEmployeeId, operationalPlanIds } = params;
   const monthName = MONTHS_AR[targetMonth - 1];
   const totalDays = daysInMonth(targetYear, targetMonth);
 
