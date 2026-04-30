@@ -261,12 +261,13 @@ export default function AIGenerateExecutivePlan() {
       // معالجة كل شهر في طلب منفصل لتجنّب حدّ 150 ثانية للـ Edge Function
       let totalDays = 0;
       let lastData: any = null;
-      const operationalPlanIds = selectedPlanKeys
-        .filter((k) => k.startsWith("op:"))
-        .map((k) => k.slice(3));
-      const excelPlanIds = selectedPlanKeys
-        .filter((k) => k.startsWith("excel:"))
-        .map((k) => k.slice(6));
+      const selectedPlans = availablePlans.filter((p) => selectedPlanKeys.includes(p.key));
+      const operationalPlanIds = selectedPlans
+        .filter((p) => p.source === "op")
+        .flatMap((p) => p.ids);
+      const excelPlanIds = selectedPlans
+        .filter((p) => p.source === "excel")
+        .flatMap((p) => p.ids);
       const userIdsScope =
         departmentId !== "all" || selectedEmployeeIds.length > 0 ? effectiveUserIds : undefined;
 
