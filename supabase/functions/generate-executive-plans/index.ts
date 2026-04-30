@@ -60,13 +60,15 @@ serve(async (req) => {
     };
 
     const virtualPlans: VirtualPlan[] = [];
+    let excelPlans: any[] = [];
 
     if (filterExcelIds.length > 0) {
-      const { data: excelPlans } = await supabase
+      const { data: excelPlansData } = await supabase
         .from("excel_plans")
         .select("id, plan_name, year, columns, rows, organization_id")
         .in("id", filterExcelIds)
         .eq("year", targetYear);
+      excelPlans = excelPlansData || [];
 
       // محاولة ربط "مسؤول التنفيذ" بمستخدم/قسم
       const { data: allEmployees } = await supabase
