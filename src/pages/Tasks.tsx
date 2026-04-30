@@ -95,6 +95,16 @@ interface ActivityInfo {
   activity_name: string;
 }
 
+interface TaskGenerationJob {
+  id: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  message: string | null;
+  error_message: string | null;
+  total_employees: number;
+  processed_employees: number;
+  generated_tasks_count: number;
+}
+
 interface TasksProps {
   embedded?: boolean;
 }
@@ -113,6 +123,7 @@ const MONTHS_AR = [
 ];
 
 const TASKS_CACHE_PREFIX = "tasks_page_cache_v1:";
+const TASK_COLUMNS = "id,title,description,user_id,executive_plan_id,priority,status,category,due_date,ai_generated,created_at,completion_percentage,quality_percentage,estimated_time_minutes,actual_time_minutes,started_at";
 
 const Tasks = ({ embedded = false }: TasksProps) => {
   const { toast } = useToast();
@@ -146,6 +157,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState("");
+  const [activeGenerationJobId, setActiveGenerationJobId] = useState<string | null>(null);
 
   // حالة نافذة التعديل
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -180,6 +192,82 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const orgId = currentOrg?.id ?? null;
   const cacheKey = orgId && authUser?.id ? `${TASKS_CACHE_PREFIX}${orgId}:${authUser.id}` : null;
+
+  const refreshTasks = useCallback(async () => {
+    if (!authUser || !orgId) return;
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .select(TASK_COLUMNS)
+      .eq("organization_id", orgId)
+      .order("due_date", { ascending: true })
+      .limit(300);
+
+    if (error) throw error;
+    const nextTasks = (data as Task[]) || [];
+    setTasks(nextTasks);
+
+    if (cacheKey) {
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || "{}");
+      localStorage.setItem(cacheKey, JSON.stringify({ ...cached, tasks: nextTasks, cachedAt: Date.now() }));
+    }
+  }, [authUser, orgId, cacheKey]);
+
+  useEffect(() => {
+    if (!activeGenerationJobId) return;
+
+    let cancelled = false;
+    const pollJob = async () => {
+      const { data, error } = await (supabase as any)
+        .from("task_generation_jobs")
+        .select("id,status,message,error_message,total_employees,processed_employees,generated_tasks_count")
+        .eq("id", activeGenerationJobId)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (error) {
+        setGenerationProgress("تعذر قراءة حالة التوليد، سيتم إعادة المحاولة...");
+        return;
+      }
+
+      const job = data as TaskGenerationJob | null;
+      if (!job) return;
+
+      const progressText = job.total_employees > 0
+        ? `${job.message || "جاري توليد المهام..."} (${job.processed_employees}/${job.total_employees})`
+        : job.message || "جاري تجهيز التوليد...";
+      setGenerationProgress(progressText);
+
+      if (job.status === "completed") {
+        await refreshTasks();
+        if (cancelled) return;
+        toast({
+          title: "تم التوليد بنجاح! ✨",
+          description: job.message || `تم توليد ${job.generated_tasks_count} مهمة بنجاح`,
+        });
+        setActiveGenerationJobId(null);
+        setIsGenerating(false);
+        setGenerationProgress("");
+        setIsGenerateDialogOpen(false);
+      } else if (job.status === "failed") {
+        toast({
+          title: "خطأ",
+          description: job.error_message || job.message || "فشل توليد المهام",
+          variant: "destructive",
+        });
+        setActiveGenerationJobId(null);
+        setIsGenerating(false);
+        setGenerationProgress("");
+      }
+    };
+
+    pollJob();
+    const timer = window.setInterval(pollJob, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [activeGenerationJobId, refreshTasks, toast]);
 
   // فتح نافذة التواصل عند الانتقال من إشعار رسالة
   useEffect(() => {
@@ -271,14 +359,12 @@ const Tasks = ({ embedded = false }: TasksProps) => {
       }
     }
 
-    const taskColumns = "id,title,description,user_id,executive_plan_id,priority,status,category,due_date,ai_generated,created_at,completion_percentage,quality_percentage,estimated_time_minutes,actual_time_minutes,started_at";
-
     const loadFast = async () => {
       try {
         const [tasksRes, employeesRes, departmentsRes] = await Promise.all([
           supabase
             .from("tasks")
-            .select(taskColumns)
+            .select(TASK_COLUMNS)
             .eq("organization_id", orgId)
             .order("due_date", { ascending: true })
             .limit(300),
@@ -365,23 +451,10 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     if (!authUser || !selectedMonth) return;
     
     setIsGenerating(true);
-    setGenerationProgress("جاري تحليل الخطط التشغيلية وملفات الموظفين...");
+    setGenerationProgress("جاري تجهيز طلب التوليد في الخلفية...");
+    let queuedStarted = false;
     
     try {
-      // مراحل تقدم تجميلية للمستخدم بينما يعمل المحرك في الخلفية
-      const progressStages = [
-        "جاري جمع الخطط التشغيلية للسنة...",
-        "جاري قراءة الخطط التنفيذية الشهرية...",
-        "جاري تحليل تخصصات الموظفين وملفاتهم...",
-        "جاري توليد مهام يومية احترافية لكل موظف...",
-        "جاري التحقق من الجودة وتوزيع المهام على الأيام...",
-      ];
-      let stageIdx = 0;
-      const stageTimer = setInterval(() => {
-        stageIdx = Math.min(stageIdx + 1, progressStages.length - 1);
-        setGenerationProgress(progressStages[stageIdx]);
-      }, 4000);
-
       const session = await supabase.auth.getSession();
       const accessToken = session.data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -413,7 +486,6 @@ const Tasks = ({ embedded = false }: TasksProps) => {
           }),
         }
       );
-      clearInterval(stageTimer);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -427,7 +499,18 @@ const Tasks = ({ embedded = false }: TasksProps) => {
       }
       
       const result = await response.json();
-      
+
+      if (result.queued && result.jobId) {
+        queuedStarted = true;
+        setActiveGenerationJobId(result.jobId);
+        setGenerationProgress(result.message || "بدأ توليد المهام في الخلفية...");
+        toast({
+          title: "بدأ التوليد في الخلفية",
+          description: "سيتم تحديث المهام تلقائياً عند اكتمال المعالجة.",
+        });
+        return;
+      }
+
       toast({
         title: "تم التوليد بنجاح! ✨",
         description: result.message,
@@ -442,9 +525,12 @@ const Tasks = ({ embedded = false }: TasksProps) => {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setIsGenerating(false);
       setGenerationProgress("");
+    } finally {
+      if (!queuedStarted) {
+        setIsGenerating(false);
+      }
     }
   };
 
