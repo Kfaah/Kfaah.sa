@@ -1376,6 +1376,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           body: {
             months: [month],
             year: selectedYear,
+            organizationId: activeOrgId,
             userIds,
             operationalPlanIds,
             excelPlanIds,
@@ -1467,7 +1468,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const loadAiAvailablePlans = async () => {
     setAiPlansLoading(true);
     try {
-      const orgId = currentOrg?.id || routeOrgId;
+      const orgId = activeOrgId;
 
       // 1) operational_plans
       let opQuery = supabase
@@ -1524,11 +1525,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           supabase
             .from("operational_plans")
             .select("id, activity_name, plan_name, strategic_goal, initiative")
-            .eq("year", selectedYear),
+            .eq("year", selectedYear)
+            .is("organization_id", null),
           supabase
             .from("excel_plans")
             .select("id, plan_name, columns, rows")
-            .eq("year", selectedYear),
+            .eq("year", selectedYear)
+            .is("organization_id", null),
         ]);
         items = toItems(fallbackOpPlans || [], fallbackExcelPlans || []);
       }
@@ -1545,11 +1548,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
 
   // عند فتح نافذة AI، حمّل الخطط المتاحة
   useEffect(() => {
-    if (isAIDialogOpen) {
+    if (isAIDialogOpen && (!slug || activeOrgId)) {
       loadAiAvailablePlans();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAIDialogOpen, selectedYear]);
+  }, [isAIDialogOpen, selectedYear, activeOrgId]);
 
   const toggleAiPlan = (key: string) => {
     setAiSelectedPlanKeys((prev) => {
