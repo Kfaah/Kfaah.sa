@@ -1476,20 +1476,18 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                 <FileSpreadsheet className="w-4 h-4" />
                 رفع ملف Excel
               </Button>
-              {isAdmin && (
-                <Button
-                  className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
-                  onClick={() => setIsAIChoiceDialogOpen(true)}
-                  disabled={isAIGenerating}
-                >
-                  {isAIGenerating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
-                  )}
-                  توليد بالذكاء الاصطناعي
-                </Button>
-              )}
+              <Button
+                className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
+                onClick={() => setIsAIChoiceDialogOpen(true)}
+                disabled={isAIGenerating}
+              >
+                {isAIGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                توليد بالذكاء الاصطناعي
+              </Button>
               <Button
                 className={`gap-2 border ${
                   isEditMode
@@ -2949,7 +2947,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
 
         {/* نافذة التوليد بالذكاء الاصطناعي */}
         {/* Dialog اختيار طريقة التوليد بالذكاء الاصطناعي - خياران */}
-        {isAdmin && isAIChoiceDialogOpen && (
+        {isAIChoiceDialogOpen && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
             onClick={() => setIsAIChoiceDialogOpen(false)}

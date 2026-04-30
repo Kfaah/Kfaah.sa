@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAvailableYears, getCurrentYear } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useScopedView } from "@/hooks/useScopedView";
+import { useAuth } from "@/hooks/useAuth";
 
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
@@ -40,6 +42,9 @@ export default function AIGenerateExecutivePlan() {
   const { slug } = useParams<{ slug?: string }>();
   const { currentOrg } = useOrganization();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { roleLevel, myEmployeeId } = useScopedView("scope:exec-ai");
+  const { user: authUser } = useAuth();
+  const isPlainEmployee = roleLevel === "employee";
 
   const withFiles = params.get("withFiles") === "1";
 
@@ -95,12 +100,16 @@ export default function AIGenerateExecutivePlan() {
 
   // Effective userIds to send (undefined => no filter, generate for all)
   const effectiveUserIds = useMemo(() => {
+    // Plain employees can only generate for themselves
+    if (isPlainEmployee && authUser?.id) {
+      return [authUser.id];
+    }
     const pool = selectedEmployeeIds.length > 0
       ? employees.filter((e) => selectedEmployeeIds.includes(e.id))
       : filteredEmployees;
     const ids = pool.map((e) => e.user_id).filter((v): v is string => !!v);
     return ids;
-  }, [employees, filteredEmployees, selectedEmployeeIds]);
+  }, [employees, filteredEmployees, selectedEmployeeIds, isPlainEmployee, authUser?.id]);
 
   const years = getAvailableYears();
 
@@ -311,7 +320,18 @@ export default function AIGenerateExecutivePlan() {
           </div>
         </div>
 
-        {/* فلاتر الأقسام والموظفين */}
+        {/* فلاتر الأقسام والموظفين — مخفي للموظف العادي (يولد لنفسه فقط) */}
+        {isPlainEmployee ? (
+          <div className="bg-indigo-50/50 rounded-2xl border border-indigo-200 p-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
+              <User className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-sm text-gray-900">سيتم التوليد لخططك التشغيلية فقط</p>
+              <p className="text-xs text-gray-600">الذكاء الاصطناعي سيولّد خطة تنفيذية مخصصة لك بناءً على خططك التشغيلية للسنة المختارة.</p>
+            </div>
+          </div>
+        ) : (
         <div className="bg-white rounded-2xl border border-indigo-100 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div className="flex items-center gap-2">
@@ -388,6 +408,7 @@ export default function AIGenerateExecutivePlan() {
             })}
           </div>
         </div>
+        )}
 
         {/* الملفات المرجعية - تظهر دائماً لكن أبرز عند withFiles */}
         <div className={cn(

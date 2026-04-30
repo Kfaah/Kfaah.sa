@@ -385,6 +385,17 @@ const Tasks = ({ embedded = false }: TasksProps) => {
       const session = await supabase.auth.getSession();
       const accessToken = session.data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+      // الموظف العادي يولّد مهامه فقط — جلب سجل الموظف
+      let scopeEmployeeId: string | null = null;
+      if (!isAdmin && authUser) {
+        const { data: empRow } = await supabase
+          .from("employees")
+          .select("id")
+          .eq("user_id", authUser.id)
+          .maybeSingle();
+        scopeEmployeeId = empRow?.id ?? null;
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-tasks`,
         {
@@ -398,6 +409,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
             month: selectedMonth,
             year: selectedYear,
             organization_id: orgId,
+            ...(scopeEmployeeId ? { employee_id: scopeEmployeeId } : {}),
           }),
         }
       );
