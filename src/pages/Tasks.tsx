@@ -303,14 +303,12 @@ const Tasks = ({ embedded = false }: TasksProps) => {
       }
     }
 
-    const taskColumns = "id,title,description,user_id,executive_plan_id,priority,status,category,due_date,ai_generated,created_at,completion_percentage,quality_percentage,estimated_time_minutes,actual_time_minutes,started_at";
-
     const loadFast = async () => {
       try {
         const [tasksRes, employeesRes, departmentsRes] = await Promise.all([
           supabase
             .from("tasks")
-            .select(taskColumns)
+            .select(TASK_COLUMNS)
             .eq("organization_id", orgId)
             .order("due_date", { ascending: true })
             .limit(300),
