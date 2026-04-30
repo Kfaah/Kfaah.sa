@@ -423,8 +423,8 @@ ${i + 1}. النشاط: ${p.activityName}
 
       const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      // قائمة النماذج للتجربة (fallback) - نبدأ بـ Gemini لأنه يدعم temperature
-      const models = ["google/gemini-2.5-flash", "google/gemini-3-flash-preview"];
+      // قائمة النماذج للتجربة (fallback) - نبدأ بالأسرع لتقليل وقت الاستجابة
+      const models = ["google/gemini-2.5-flash"];
 
       const buildAiBody = (model: string) => {
         const body: any = {
