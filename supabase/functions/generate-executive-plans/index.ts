@@ -199,7 +199,13 @@ serve(async (req) => {
               matchedRole = byName.job_role || "";
             } else {
               // مطابقة بالقسم: أولاً بالضبط، ثم بأقرب تطابق رمزي
-              let deptKey: string | null = employeesByDept.has(respNorm) ? respNorm : null;
+              let deptKey: string | null = null;
+              for (const [id, name] of deptNamesById.entries()) {
+                if (norm(name) === respNorm) {
+                  deptKey = id;
+                  break;
+                }
+              }
               if (!deptKey) deptKey = findDeptByTokens(respText);
               if (deptKey) {
                 const picked = pickFromDept(deptKey);
