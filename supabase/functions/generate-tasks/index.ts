@@ -629,6 +629,9 @@ serve(async (req) => {
     const targetMonth = safeMonth(body.month);
     const targetYear = safeYear(body.year);
     const targetEmployeeId = body.employee_id || null;
+    const operationalPlanIds = Array.isArray(body.operational_plan_ids) && body.operational_plan_ids.length > 0
+      ? body.operational_plan_ids
+      : null;
     const orgId = await resolveOrganizationId(supabase, user.id, body.organization_id);
 
     if (!orgId) {
@@ -674,6 +677,7 @@ serve(async (req) => {
           year: targetYear,
           organization_id: orgId,
           employee_id: targetEmployeeId,
+          operational_plan_ids: operationalPlanIds,
         },
         message: "تم وضع طلب توليد المهام في قائمة المعالجة.",
       })
@@ -692,6 +696,7 @@ serve(async (req) => {
       targetMonth,
       targetYear,
       targetEmployeeId,
+      operationalPlanIds,
     });
 
     // Return immediately to avoid the 150s HTTP idle timeout, then continue the heavy AI work in the background.
