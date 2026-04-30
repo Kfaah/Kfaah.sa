@@ -1020,10 +1020,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           };
           dateMap.get(dayPlan.day)!.activities.push(baseActivity);
 
-          relatedTasks
-            .filter((task) => task.executive_plan_id === dayPlan.id && task.employee_id !== employeeId)
-            .forEach((task) => {
-              const relatedEmp = employees.find((e) => e.id === task.employee_id);
+          const relatedEmployeeIds = Array.from(new Set(
+            relatedTasks
+              .filter((task) => task.executive_plan_id === dayPlan.id && task.employee_id !== employeeId)
+              .map((task) => task.employee_id)
+          ));
+          relatedEmployeeIds.forEach((relatedEmployeeId) => {
+              const relatedEmp = employees.find((e) => e.id === relatedEmployeeId);
               if (!relatedEmp) return;
               dateMap.get(dayPlan.day)!.activities.push({
                 ...baseActivity,
