@@ -3059,35 +3059,35 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             
             <div className="space-y-6 py-4">
               {/* شرح العملية */}
-              <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <div className="bg-blue-600 rounded-xl p-5 border border-blue-700 shadow-sm">
+                <h4 className="font-bold text-white mb-3 flex items-center gap-2">
                   <Zap className="w-5 h-5" />
                   ماذا سيفعل الذكاء الاصطناعي؟
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-emerald-700">1</span>
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-white">1</span>
                     </div>
-                    <p className="text-sm text-slate-700">تحليل الخطط التشغيلية والمستهدفات الشهرية</p>
+                    <p className="text-sm text-white">تحليل الخطط التشغيلية والمستهدفات الشهرية</p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-emerald-700">2</span>
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-white">2</span>
                     </div>
-                    <p className="text-sm text-slate-700">توزيع المستهدفات على أيام العمل بذكاء</p>
+                    <p className="text-sm text-white">توزيع المستهدفات على أيام العمل بذكاء</p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-emerald-700">3</span>
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-white">3</span>
                     </div>
-                    <p className="text-sm text-slate-700">تجنب عطلات نهاية الأسبوع تلقائياً</p>
+                    <p className="text-sm text-white">تجنب عطلات نهاية الأسبوع تلقائياً</p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-emerald-700">4</span>
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-white">4</span>
                     </div>
-                    <p className="text-sm text-slate-700">إنشاء مهام مرتبطة بكل يوم تنفيذي</p>
+                    <p className="text-sm text-white">إنشاء مهام مرتبطة بكل يوم تنفيذي</p>
                   </div>
                 </div>
               </div>
