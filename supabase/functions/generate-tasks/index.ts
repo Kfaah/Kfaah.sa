@@ -239,9 +239,10 @@ serve(async (req) => {
     // 7) لكل موظف: نولّد دفعة واحدة (call AI واحد) تحوي مهام جميع أيام الشهر التي له فيها أنشطة
     const allTasks: any[] = [];
     let processedEmployees = 0;
+    let creditExhausted = false;
 
-    for (const [, bucket] of buckets) {
-      processedEmployees++;
+    const processBucket = async (bucket: EmpBucket) => {
+      if (creditExhausted) return;
       const emp = bucket.employee || {};
       const workMinutes = minutesBetween(emp.work_start_time, emp.work_end_time);
 
@@ -321,14 +322,17 @@ ${planIdsByDay}
 المطلوب: ولّد قائمة مهام يومية احترافية وفق القواعد. أنشئ مهام لكل يوم من الأيام المذكورة أعلاه فقط (لا تتجاوزها).`;
 
       try {
+        const aiController = new AbortController();
+        const aiTimeout = setTimeout(() => aiController.abort(), 90_000);
         const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
+          signal: aiController.signal,
           headers: {
             Authorization: `Bearer ${LOVABLE_API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-pro",
+            model: "google/gemini-2.5-flash",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
@@ -369,27 +373,26 @@ ${planIdsByDay}
             tool_choice: { type: "function", function: { name: "generate_daily_tasks" } },
           }),
         });
+        clearTimeout(aiTimeout);
 
         if (!response.ok) {
           if (response.status === 402) {
-            return new Response(
-              JSON.stringify({ error: "نفد رصيد الذكاء الاصطناعي. يرجى إضافة رصيد." }),
-              { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
+            creditExhausted = true;
+            return;
           }
           if (response.status === 429) {
             console.warn("Rate limit for employee:", bucket.userId);
             await new Promise(r => setTimeout(r, 2000));
-            continue;
+            return;
           }
           const errTxt = await response.text();
           console.error("AI error:", response.status, errTxt);
-          continue;
+          return;
         }
 
         const data = await response.json();
         const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-        if (!toolCall) continue;
+        if (!toolCall) return;
         const parsed = JSON.parse(toolCall.function.arguments);
         const validIds = new Set(bucket.items.map(i => i.id));
 
@@ -423,9 +426,23 @@ ${planIdsByDay}
       } catch (aiError) {
         console.error("AI exception for user:", bucket.userId, aiError);
       }
+    };
 
-      // تأخير صغير لتجنب rate limit
-      await new Promise(r => setTimeout(r, 600));
+    // تشغيل المعالجة بالتوازي على دفعات للحفاظ على الحدود وتجنب timeout
+    const bucketList = Array.from(buckets.values());
+    const CONCURRENCY = 4;
+    for (let i = 0; i < bucketList.length; i += CONCURRENCY) {
+      if (creditExhausted) break;
+      const slice = bucketList.slice(i, i + CONCURRENCY);
+      processedEmployees += slice.length;
+      await Promise.all(slice.map(processBucket));
+    }
+
+    if (creditExhausted && allTasks.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "نفد رصيد الذكاء الاصطناعي. يرجى إضافة رصيد." }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (allTasks.length === 0) {
