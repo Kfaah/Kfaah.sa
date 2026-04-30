@@ -1524,9 +1524,10 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                   if (!confirm(`⚠️ سيتم حذف جميع الخطط التنفيذية للسنة ${selectedYear} نهائياً. هل أنت متأكد؟`)) return;
                   if (!confirm(`تأكيد نهائي: حذف كل الخطط التنفيذية لسنة ${selectedYear}؟`)) return;
                   try {
-                    const baseQuery: any = supabase.from("executive_plans").delete().eq("year", selectedYear);
-                    const finalQuery = activeOrgId ? baseQuery.eq("organization_id", activeOrgId) : baseQuery;
-                    const { error } = await finalQuery;
+                    const client: any = supabase;
+                    let q = client.from("executive_plans").delete().eq("year", selectedYear);
+                    if (activeOrgId) q = q.eq("organization_id", activeOrgId);
+                    const { error } = await q;
                     if (error) throw error;
                     toast({ title: "تم الحذف", description: `تم حذف جميع الخطط التنفيذية لسنة ${selectedYear}` });
                     window.location.reload();
