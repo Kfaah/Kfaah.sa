@@ -1525,11 +1525,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           supabase
             .from("operational_plans")
             .select("id, activity_name, plan_name, strategic_goal, initiative")
-            .eq("year", selectedYear),
+            .eq("year", selectedYear)
+            .is("organization_id", null),
           supabase
             .from("excel_plans")
             .select("id, plan_name, columns, rows")
-            .eq("year", selectedYear),
+            .eq("year", selectedYear)
+            .is("organization_id", null),
         ]);
         items = toItems(fallbackOpPlans || [], fallbackExcelPlans || []);
       }
