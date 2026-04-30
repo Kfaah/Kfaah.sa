@@ -57,6 +57,12 @@ interface Props {
   activityYear: number;
   isPreparing?: boolean;
   allEmployees: EmployeeOption[];
+  /** فتح القائمة تلقائياً عند التحميل (للتنقل من رابط مهمة مُرحَّلة) */
+  autoOpen?: boolean;
+  /** إبراز مهمة معينة داخل القائمة */
+  highlightTaskId?: string | null;
+  /** يُستدعى بعد فتح القائمة تلقائياً (لمسح query params) */
+  onAutoOpened?: () => void;
 }
 
 interface RelatedTask {
@@ -107,6 +113,9 @@ export function ActivityPhasesPopover({
   activityYear,
   isPreparing = false,
   allEmployees,
+  autoOpen = false,
+  highlightTaskId = null,
+  onAutoOpened,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -123,6 +132,27 @@ export function ActivityPhasesPopover({
     for (const e of allEmployees) m.set(e.id, e);
     return m;
   }, [allEmployees]);
+
+  // فتح تلقائي عند التنقل من رابط مهمة مُرحَّلة
+  useEffect(() => {
+    if (autoOpen && !open) {
+      setOpen(true);
+      onAutoOpened?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen]);
+
+  // سكرول إلى المهمة المُبرزة بعد التحميل
+  useEffect(() => {
+    if (!open || !highlightTaskId || loading) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(`related-task-${highlightTaskId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [open, highlightTaskId, loading, tasks.length]);
 
   useEffect(() => {
     if (!open) return;
