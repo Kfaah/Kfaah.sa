@@ -1612,13 +1612,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 <Plus className="w-4 h-4" />
                 إضافة خطة يدوياً
               </Button>
-              <Button
-                className="gap-2 bg-emerald-500 text-white hover:bg-emerald-600 border border-emerald-400"
-                onClick={() => navigate("/operational-plans/upload")}
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                رفع ملف Excel
-              </Button>
               {isAdmin && (
                 <Button
                   className="gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 backdrop-blur-sm"
