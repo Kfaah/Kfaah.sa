@@ -542,6 +542,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
             year: selectedYear,
             organization_id: orgId,
             ...(scopeEmployeeId ? { employee_id: scopeEmployeeId } : {}),
+            ...(selectedOpPlanIds.length > 0 ? { operational_plan_ids: selectedOpPlanIds } : {}),
           }),
         }
       );
