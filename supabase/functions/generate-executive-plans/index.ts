@@ -205,6 +205,71 @@ serve(async (req) => {
     let totalActivitiesProcessed = 0;
     const processedMonths: string[] = [];
 
+    // ===== تجسيد الخطط الافتراضية من Excel إلى operational_plans حقيقية =====
+    // مفتاح: excelPlanId|rowIndex -> operationalPlanId
+    const materializedPlanIds = new Map<string, string>();
+
+    async function ensureMaterializedForMonth(targetMonth: number): Promise<Array<{ planId: string; planMonthId: string; meta: any }>> {
+      const out: Array<{ planId: string; planMonthId: string; meta: any }> = [];
+      for (const vp of virtualPlans) {
+        const key = `${vp.excelPlanId}|${vp.rowIndex}`;
+        let opId = materializedPlanIds.get(key);
+
+        if (!opId) {
+          // إنشاء operational_plan جديد
+          const { data: opIns, error: opErr } = await supabase
+            .from("operational_plans")
+            .insert({
+              user_id: vp.userId,
+              activity_name: vp.activityName,
+              annual_target: vp.annualTarget,
+              year: targetYear,
+              strategic_goal: vp.strategicGoal,
+              initiative: vp.initiative,
+              plan_name: "مولّدة من Excel",
+            })
+            .select("id")
+            .single();
+          if (opErr || !opIns) {
+            console.error("Failed to materialize op plan:", opErr);
+            continue;
+          }
+          opId = opIns.id;
+          materializedPlanIds.set(key, opId);
+        }
+
+        // إنشاء/جلب صف الشهر
+        const monthlyTarget = Math.max(1, Math.round(vp.annualTarget / 12));
+        const { data: existingMonth } = await supabase
+          .from("operational_plan_months")
+          .select("id")
+          .eq("operational_plan_id", opId)
+          .eq("month", targetMonth)
+          .maybeSingle();
+
+        let monthId = existingMonth?.id;
+        if (!monthId) {
+          const { data: monthIns, error: monthErr } = await supabase
+            .from("operational_plan_months")
+            .insert({ operational_plan_id: opId, month: targetMonth, monthly_target: monthlyTarget })
+            .select("id")
+            .single();
+          if (monthErr || !monthIns) {
+            console.error("Failed to insert month:", monthErr);
+            continue;
+          }
+          monthId = monthIns.id;
+        }
+
+        out.push({
+          planId: opId,
+          planMonthId: monthId,
+          meta: { ...vp, monthlyTarget },
+        });
+      }
+      return out;
+    }
+
     // معالجة كل شهر على حدة (فقط الأشهر التي فيها خطط تشغيلية)
     for (const targetMonth of filteredTargetMonths) {
       // جلب الخطط التشغيلية مع أشهرها
@@ -232,6 +297,14 @@ serve(async (req) => {
         query = query.in("user_id", userIds);
       }
 
+      // تصفية حسب خطط تشغيلية محددة
+      if (filterOperationalIds.length > 0) {
+        query = query.in("id", filterOperationalIds);
+      } else if (hasPlanFilter && filterExcelIds.length > 0 && filterOperationalIds.length === 0) {
+        // المستخدم اختار فقط خطط Excel — لا نريد جلب operational_plans غير محددة
+        query = query.in("id", ["00000000-0000-0000-0000-000000000000"]);
+      }
+
       const { data: operationalPlans, error: fetchError } = await query;
 
       if (fetchError) {
@@ -239,13 +312,16 @@ serve(async (req) => {
         continue; // تجاوز الشهر والمتابعة
       }
 
-      if (!operationalPlans || operationalPlans.length === 0) {
+      // تجسيد الخطط من Excel للشهر الحالي
+      const materialized = virtualPlans.length > 0 ? await ensureMaterializedForMonth(targetMonth) : [];
+
+      if ((!operationalPlans || operationalPlans.length === 0) && materialized.length === 0) {
         console.log(`No operational plans for month ${targetMonth}`);
         continue;
       }
 
       // جلب أسماء الموظفين
-      const allUserIds = [...new Set(operationalPlans.map(p => p.user_id))];
+      const allUserIds = [...new Set((operationalPlans || []).map(p => p.user_id))];
       const { data: employees } = await supabase
         .from("employees")
         .select("id, full_name, user_id, job_role, department_id")
@@ -254,7 +330,7 @@ serve(async (req) => {
       const employeeMap = new Map(employees?.map(e => [e.user_id, e]) || []);
 
       // تجهيز البيانات للذكاء الاصطناعي
-      const plansData = operationalPlans.map((plan: any) => {
+      const plansData = (operationalPlans || []).map((plan: any) => {
         const planMonth = plan.operational_plan_months[0];
         const employee = employeeMap.get(plan.user_id);
         return {
@@ -270,6 +346,27 @@ serve(async (req) => {
           jobRole: employee?.job_role || "",
         };
       });
+
+      // إضافة الخطط المُجسّدة من Excel
+      for (const m of materialized) {
+        plansData.push({
+          planId: m.planId,
+          planMonthId: m.planMonthId,
+          activityName: m.meta.activityName,
+          initiative: m.meta.initiative,
+          strategicGoal: m.meta.strategicGoal,
+          monthlyTarget: m.meta.monthlyTarget,
+          annualTarget: m.meta.annualTarget,
+          userId: m.meta.userId,
+          employeeName: m.meta.employeeName,
+          jobRole: m.meta.jobRole,
+        });
+      }
+
+      if (plansData.length === 0) {
+        console.log(`No plans data for month ${targetMonth}`);
+        continue;
+      }
 
       const monthName = MONTHS_AR[targetMonth - 1];
       const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
