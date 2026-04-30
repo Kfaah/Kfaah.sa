@@ -131,6 +131,14 @@ interface Task {
   category: string | null;
 }
 
+interface ActivityRelatedTask {
+  id: string;
+  executive_plan_id: string;
+  employee_id: string;
+  phase: "before" | "during" | "after";
+  title: string;
+}
+
 const MONTHS_AR = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
@@ -300,27 +308,37 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [searchParams, setSearchParams] = useSearchParams();
   const focusActivityId = searchParams.get("activity");
   const focusTaskId = searchParams.get("task");
+  const focusEmployeeId = searchParams.get("emp");
 
   // سكرول إلى صف النشاط المُركَّز عليه عند الوصول من رابط مهمة مُرحَّلة
   useEffect(() => {
     if (!focusActivityId) return;
-    const t = setTimeout(() => {
-      const el = document.getElementById(`activity-row-${focusActivityId}`);
+    let attempts = 0;
+    const scrollToFocusedActivity = () => {
+      const selector = focusEmployeeId
+        ? `[data-activity-row-target="${focusActivityId}"][data-activity-employee-target="${focusEmployeeId}"]`
+        : `[data-activity-row-target="${focusActivityId}"]`;
+      const el = document.querySelector<HTMLElement>(selector) ?? document.getElementById(`activity-row-${focusActivityId}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         el.classList.add("ring-2", "ring-amber-400", "ring-offset-2", "rounded-lg");
         setTimeout(() => {
           el.classList.remove("ring-2", "ring-amber-400", "ring-offset-2", "rounded-lg");
         }, 3000);
+      } else if (attempts < 12) {
+        attempts += 1;
+        window.setTimeout(scrollToFocusedActivity, 250);
       }
-    }, 800);
+    };
+    const t = window.setTimeout(scrollToFocusedActivity, 800);
     return () => clearTimeout(t);
-  }, [focusActivityId]);
+  }, [focusActivityId, focusEmployeeId]);
 
   const clearFocusParams = () => {
     const next = new URLSearchParams(searchParams);
     next.delete("activity");
     next.delete("task");
+    next.delete("emp");
     setSearchParams(next, { replace: true });
   };
   const [isAdmin, setIsAdmin] = useState(false);
@@ -334,6 +352,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [planMonths, setPlanMonths] = useState<OperationalPlanMonth[]>([]);
   const [executivePlans, setExecutivePlans] = useState<ExecutivePlan[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [relatedTasks, setRelatedTasks] = useState<ActivityRelatedTask[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -744,6 +763,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           setOperationalPlans([]);
           setPlanMonths([]);
           setExecutivePlans([]);
+          setRelatedTasks([]);
           setLoading(false);
           return;
         }
@@ -790,6 +810,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         if (allPlans.length === 0) {
           setPlanMonths([]);
           setExecutivePlans([]);
+          setRelatedTasks([]);
           setLoading(false);
           return;
         }
@@ -828,6 +849,22 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           }
           executive.sort((a, b) => a.day - b.day);
           setExecutivePlans(executive);
+
+          const visibleExecIds = new Set(executive.map((e) => e.id));
+          let nextRelatedTasks: ActivityRelatedTask[] = [];
+          if (executive.length > 0) {
+            for (const ids of chunkArray(executive.map((e) => e.id))) {
+              let query = supabase
+                .from("activity_related_tasks")
+                .select("id, executive_plan_id, employee_id, phase, title")
+                .in("executive_plan_id", ids);
+              if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+              const { data: relatedChunk, error: relatedError } = await query;
+              if (relatedError) throw relatedError;
+              if (relatedChunk) nextRelatedTasks.push(...(relatedChunk as ActivityRelatedTask[]));
+            }
+          }
+          setRelatedTasks(nextRelatedTasks.filter((task) => visibleExecIds.has(task.executive_plan_id)));
           
           // جلب المهام المرتبطة بالخطط التنفيذية
           if (executive.length > 0) {
@@ -848,6 +885,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           }
         } else {
           setExecutivePlans([]);
+          setRelatedTasks([]);
           setTasks([]);
         }
       } catch (error: any) {
@@ -968,7 +1006,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               activities: [],
             });
           }
-          dateMap.get(dayPlan.day)!.activities.push({
+          const baseActivity = {
             id: dayPlan.id,
             activityName: plan.activity_name,
             dailyTarget: dayPlan.dailyTarget,
@@ -984,7 +1022,25 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
             planMonthId: pm.id,
             day: dayPlan.day,
             month,
-          });
+          };
+          dateMap.get(dayPlan.day)!.activities.push(baseActivity);
+
+          const relatedEmployeeIds = Array.from(new Set(
+            relatedTasks
+              .filter((task) => task.executive_plan_id === dayPlan.id && task.employee_id !== employeeId)
+              .map((task) => task.employee_id)
+          ));
+          relatedEmployeeIds.forEach((relatedEmployeeId) => {
+              const relatedEmp = employees.find((e) => e.id === relatedEmployeeId);
+              if (!relatedEmp) return;
+              dateMap.get(dayPlan.day)!.activities.push({
+                ...baseActivity,
+                employeeId: relatedEmp.id,
+                employeeName: relatedEmp.full_name,
+                departmentId: relatedEmp.department_id ?? null,
+                departmentName: relatedEmp.department_name ?? "بدون قسم",
+              });
+            });
         });
       });
       
@@ -999,7 +1055,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
     }
     
     return groups;
-  }, [planMonths, operationalPlans, executivePlans, selectedYear, filterMonths, selectedPlanNames, employees]);
+  }, [planMonths, operationalPlans, executivePlans, relatedTasks, selectedYear, filterMonths, selectedPlanNames, employees]);
 
   useEffect(() => {
     if (globalViewMode !== "dates" || groupedPlans.length === 0) return;
@@ -2447,8 +2503,12 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                     <div className="flex flex-col gap-1">
                                       {l.acts.map((act, i) => {
                                         const isEditingThis = isEditMode && cellEdit?.kind === "activity_name" && (cellEdit as any).execPlanId === act.id;
-                                        return (
-                                          <div key={`act-wrap-${act.id}`} data-activity-row-target={act.id}>
+                                          return (
+                                           <div
+                                             key={`act-wrap-${act.id}-${(act as any).employeeId ?? "none"}-${i}`}
+                                             data-activity-row-target={act.id}
+                                             data-activity-employee-target={(act as any).employeeId || undefined}
+                                           >
                                           {/* مرساة للتنقل من رابط مهمة مُرحَّلة */}
                                           <div id={`activity-row-${act.id}`} />
                                           <div
@@ -2519,8 +2579,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                                   activityDay={(act as any).day ?? l.day}
                                                   activityMonth={(act as any).month ?? monthGroup.month}
                                                   activityYear={selectedYear}
-                                                  autoOpen={focusActivityId === act.id}
-                                                  highlightTaskId={focusActivityId === act.id ? focusTaskId : null}
+                                                  autoOpen={focusActivityId === act.id && (!focusEmployeeId || focusEmployeeId === (act as any).employeeId)}
+                                                  highlightTaskId={focusActivityId === act.id && (!focusEmployeeId || focusEmployeeId === (act as any).employeeId) ? focusTaskId : null}
                                                   onAutoOpened={clearFocusParams}
                                                   allEmployees={employees.map((e) => ({
                                                     id: e.id,
