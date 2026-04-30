@@ -423,8 +423,8 @@ ${i + 1}. النشاط: ${p.activityName}
 
       const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      // قائمة النماذج للتجربة (fallback) - نبدأ بـ Gemini لأنه يدعم temperature
-      const models = ["google/gemini-2.5-flash", "google/gemini-3-flash-preview"];
+      // قائمة النماذج للتجربة (fallback) - نبدأ بالأسرع لتقليل وقت الاستجابة
+      const models = ["google/gemini-2.5-flash"];
 
       const buildAiBody = (model: string) => {
         const body: any = {
@@ -509,9 +509,9 @@ ${i + 1}. النشاط: ${p.activityName}
 
       // محاولة مع كل نموذج حتى النجاح
       modelLoop: for (const model of models) {
-        for (let attempt = 1; attempt <= 2; attempt++) {
+        for (let attempt = 1; attempt <= 1; attempt++) {
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 55_000);
+          const timeout = setTimeout(() => controller.abort(), 120_000);
 
           try {
             console.log(`Trying model ${model}, attempt ${attempt} for month ${targetMonth}`);
