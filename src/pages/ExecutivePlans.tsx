@@ -372,6 +372,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isAIChoiceDialogOpen, setIsAIChoiceDialogOpen] = useState(false);
   const [aiSelectedMonths, setAiSelectedMonths] = useState<number[]>([new Date().getMonth() + 1]);
+  // الخطط المختارة للتوليد بالذكاء الاصطناعي (operational + excel)
+  // الصيغة: "op:<uuid>" أو "excel:<uuid>"
+  const [aiAvailablePlans, setAiAvailablePlans] = useState<
+    Array<{ key: string; label: string; subtitle: string; source: "op" | "excel" }>
+  >([]);
+  const [aiSelectedPlanKeys, setAiSelectedPlanKeys] = useState<Set<string>>(new Set());
+  const [aiPlansLoading, setAiPlansLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   // فلترة الخطط المختارة (فارغة = الكل)
   const [selectedPlanNames, setSelectedPlanNames] = useState<Set<string>>(new Set());
