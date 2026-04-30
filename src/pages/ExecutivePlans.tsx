@@ -297,6 +297,32 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const makeOrgUrl = (path: string) => (slug ? `/${slug}${path}` : path);
   const { currentOrg } = useOrganization();
   const scopedView = useScopedView("scope:executive-plans");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusActivityId = searchParams.get("activity");
+  const focusTaskId = searchParams.get("task");
+
+  // سكرول إلى صف النشاط المُركَّز عليه عند الوصول من رابط مهمة مُرحَّلة
+  useEffect(() => {
+    if (!focusActivityId) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(`activity-row-${focusActivityId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-amber-400", "ring-offset-2", "rounded-lg");
+        setTimeout(() => {
+          el.classList.remove("ring-2", "ring-amber-400", "ring-offset-2", "rounded-lg");
+        }, 3000);
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [focusActivityId]);
+
+  const clearFocusParams = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("activity");
+    next.delete("task");
+    setSearchParams(next, { replace: true });
+  };
   const [isAdmin, setIsAdmin] = useState(false);
   const [routeOrgId, setRouteOrgId] = useState<string | null>(null);
   
