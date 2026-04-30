@@ -227,6 +227,7 @@ serve(async (req) => {
               strategic_goal: vp.strategicGoal,
               initiative: vp.initiative,
               plan_name: "مولّدة من Excel",
+              organization_id: (excelPlans || []).find((p: any) => p.id === vp.excelPlanId)?.organization_id || null,
             })
             .select("id")
             .single();
