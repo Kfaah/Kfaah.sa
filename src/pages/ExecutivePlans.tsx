@@ -758,6 +758,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           setOperationalPlans([]);
           setPlanMonths([]);
           setExecutivePlans([]);
+          setRelatedTasks([]);
           setLoading(false);
           return;
         }
@@ -804,6 +805,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
         if (allPlans.length === 0) {
           setPlanMonths([]);
           setExecutivePlans([]);
+          setRelatedTasks([]);
           setLoading(false);
           return;
         }
@@ -842,6 +844,22 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           }
           executive.sort((a, b) => a.day - b.day);
           setExecutivePlans(executive);
+
+          const visibleExecIds = new Set(executive.map((e) => e.id));
+          let nextRelatedTasks: ActivityRelatedTask[] = [];
+          if (executive.length > 0) {
+            for (const ids of chunkArray(executive.map((e) => e.id))) {
+              let query = supabase
+                .from("activity_related_tasks")
+                .select("id, executive_plan_id, employee_id, phase, title")
+                .in("executive_plan_id", ids);
+              if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+              const { data: relatedChunk, error: relatedError } = await query;
+              if (relatedError) throw relatedError;
+              if (relatedChunk) nextRelatedTasks.push(...(relatedChunk as ActivityRelatedTask[]));
+            }
+          }
+          setRelatedTasks(nextRelatedTasks.filter((task) => visibleExecIds.has(task.executive_plan_id)));
           
           // جلب المهام المرتبطة بالخطط التنفيذية
           if (executive.length > 0) {
@@ -862,6 +880,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
           }
         } else {
           setExecutivePlans([]);
+          setRelatedTasks([]);
           setTasks([]);
         }
       } catch (error: any) {
