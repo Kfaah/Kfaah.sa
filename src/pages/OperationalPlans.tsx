@@ -519,24 +519,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     return true;
   });
 
-  // قائمة أسماء الخطط المتاحة في السنة الحالية (يدوية + Excel)
+  // قائمة أسماء الخطط المتاحة في السنة الحالية
   const availablePlanNames = Array.from(
-    new Set([
-      ...plans
+    new Set(
+      plans
         .filter((p) => p.year === filterYear)
-        .map((p) => p.plan_name || "الخطة الأولى"),
-      ...excelPlans
-        .filter((p) => p.year === filterYear)
-        .map((p) => p.plan_name || "الخطة الأولى"),
-    ])
+        .map((p) => p.plan_name || "الخطة الأولى")
+    )
   );
-
-  // الخطط المرفوعة من Excel بعد تطبيق نفس الفلاتر (السنة + اسم الخطة)
-  const filteredExcelPlans = excelPlans.filter((ep) => {
-    if (ep.year !== filterYear) return false;
-    if (filterPlanName !== "all" && (ep.plan_name || "الخطة الأولى") !== filterPlanName) return false;
-    return true;
-  });
 
   // إحصاءات الخطة المختارة (تعتمد على filteredPlans)
   const selectedPlanStats = (() => {
@@ -552,16 +542,11 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
       totalTarget += Number(p.annual_target || 0);
       totalBudget += Number(p.estimated_budget || 0);
     });
-    // إضافة عدد صفوف الأنشطة من خطط Excel المفلترة
-    let excelActivities = 0;
-    filteredExcelPlans.forEach((ep) => {
-      excelActivities += Array.isArray(ep.rows) ? ep.rows.length : 0;
-    });
     return {
       goals: goalsSet.size,
       initiatives: initsSet.size,
       subInitiatives: subInitsSet.size,
-      activities: filteredPlans.length + excelActivities,
+      activities: filteredPlans.length,
       totalTarget,
       totalBudget,
     };
