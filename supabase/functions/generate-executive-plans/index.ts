@@ -635,6 +635,7 @@ ${i + 1}. النشاط: ${p.activityName}
             achieved: 0,
             status: "pending",
             notes: `تم التوليد بالذكاء الاصطناعي - ${planData.activityName}`,
+            organization_id: planData.organizationId || null,
           });
           
           planMetadata.push({
@@ -642,6 +643,7 @@ ${i + 1}. النشاط: ${p.activityName}
             day: dayData.day,
             activityName: planData.activityName,
             userId: planData.userId,
+            organizationId: planData.organizationId || null,
             dailyTarget: dayData.target,
             tasks: dayData.tasks || { before: [], during: [], after: [] },
           });
