@@ -131,6 +131,14 @@ interface Task {
   category: string | null;
 }
 
+interface ActivityRelatedTask {
+  id: string;
+  executive_plan_id: string;
+  employee_id: string;
+  phase: "before" | "during" | "after";
+  title: string;
+}
+
 const MONTHS_AR = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
@@ -300,12 +308,16 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [searchParams, setSearchParams] = useSearchParams();
   const focusActivityId = searchParams.get("activity");
   const focusTaskId = searchParams.get("task");
+  const focusEmployeeId = searchParams.get("emp");
 
   // سكرول إلى صف النشاط المُركَّز عليه عند الوصول من رابط مهمة مُرحَّلة
   useEffect(() => {
     if (!focusActivityId) return;
     const t = setTimeout(() => {
-      const el = document.getElementById(`activity-row-${focusActivityId}`);
+      const selector = focusEmployeeId
+        ? `[data-activity-row-target="${focusActivityId}"][data-activity-employee-target="${focusEmployeeId}"]`
+        : `[data-activity-row-target="${focusActivityId}"]`;
+      const el = document.querySelector<HTMLElement>(selector) ?? document.getElementById(`activity-row-${focusActivityId}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         el.classList.add("ring-2", "ring-amber-400", "ring-offset-2", "rounded-lg");
@@ -315,12 +327,13 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
       }
     }, 800);
     return () => clearTimeout(t);
-  }, [focusActivityId]);
+  }, [focusActivityId, focusEmployeeId]);
 
   const clearFocusParams = () => {
     const next = new URLSearchParams(searchParams);
     next.delete("activity");
     next.delete("task");
+    next.delete("emp");
     setSearchParams(next, { replace: true });
   };
   const [isAdmin, setIsAdmin] = useState(false);
@@ -334,6 +347,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [planMonths, setPlanMonths] = useState<OperationalPlanMonth[]>([]);
   const [executivePlans, setExecutivePlans] = useState<ExecutivePlan[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [relatedTasks, setRelatedTasks] = useState<ActivityRelatedTask[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
