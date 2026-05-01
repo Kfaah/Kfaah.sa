@@ -43,6 +43,11 @@ export default {
           border: "hsl(var(--op-month-green-border))",
           foreground: "hsl(var(--op-month-green-foreground))",
         },
+        "op-month-teal": {
+          DEFAULT: "hsl(var(--op-month-teal))",
+          border: "hsl(var(--op-month-teal-border))",
+          foreground: "hsl(var(--op-month-teal-foreground))",
+        },
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
