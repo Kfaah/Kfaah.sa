@@ -2156,10 +2156,11 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     
                     groupedPlans.forEach((group, groupIndex) => {
                       const color = GOAL_COLORS[group.colorIndex];
-                      // حساب إجمالي الصفوف لهذا الهدف (التوزيع الشهري أصبح داخل نفس صف النشاط فلا يُضاف كصف مستقل)
+                      // حساب إجمالي الصفوف لهذا الهدف. كل نشاط موسّع يضيف صف توزيع شهري إضافياً.
                       const totalRowsInGoal =
                         group.initiatives.reduce((sum, init) => {
                           const planRows = init.plans.length;
+                          const expandedRows = init.plans.filter(p => expandedPlanId === p.id).length;
 
                           // نضيف صف "إضافة نشاط" فقط عندما يكون المستخدم فعلاً يضيف نشاطاً تحت هذه المبادرة
                           const addActivityRow =
@@ -2169,7 +2170,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               ? 1
                               : 0;
 
-                          return sum + planRows + addActivityRow;
+                          return sum + planRows + expandedRows + addActivityRow;
                         }, 0) +
                         // في وضع التعديل نضيف صف "إضافة مبادرة جديدة" (إما زر أو نموذج) أسفل الهدف
                         (isEditMode ? 1 : 0);
@@ -2185,7 +2186,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             ? 1
                             : 0;
 
-                        const totalRowsInInitiative = initGroup.plans.length + addActivityRowForThisInitiative;
+                        const expandedInInitiative = initGroup.plans.filter(p => expandedPlanId === p.id).length;
+                        const totalRowsInInitiative = initGroup.plans.length + expandedInInitiative + addActivityRowForThisInitiative;
                         let initRowRendered = false;
                         // إذا لم يكن لأي نشاط في هذه المبادرة "مبادرة فرعية"، نُلغي العمود ونوسّع خلية النشاط
                         const initiativeHasNoSubInitiatives = initGroup.plans.every(
