@@ -73,6 +73,11 @@ export default function AIGeneratePlan() {
   };
 
   const handleGenerate = async () => {
+    if (slug && !activeOrgId) {
+      toast({ title: "جاري تحديد الجمعية، حاول بعد لحظة", variant: "destructive" });
+      return;
+    }
+
     if (!planName.trim()) {
       toast({ title: "أدخل اسم الخطة", variant: "destructive" });
       return;
