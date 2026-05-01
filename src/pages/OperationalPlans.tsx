@@ -2379,9 +2379,9 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                           className="inline-flex items-baseline gap-1.5 group/exp mx-auto transition-colors"
                                           title={isExpanded ? "طي التوزيع الشهري" : "عرض التوزيع الشهري"}
                                         >
-                                          <span className={`text-2xl font-black tabular-nums tracking-tight ${isExpanded ? 'text-primary' : 'text-gray-900 group-hover/exp:text-primary'}`}>{formatNumber(plan.annual_target)}</span>
+                                          <span className={`text-base font-bold tabular-nums tracking-tight ${isExpanded ? 'text-emerald-700' : 'text-emerald-600 group-hover/exp:text-emerald-700'}`}>{formatNumber(plan.annual_target)}</span>
                                           <ChevronDown
-                                            className={`w-3.5 h-3.5 self-center transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400 group-hover/exp:text-primary'}`}
+                                            className={`w-3.5 h-3.5 self-center transition-transform ${isExpanded ? 'rotate-180 text-emerald-700' : 'text-gray-400 group-hover/exp:text-emerald-600'}`}
                                           />
                                         </button>
                                       </td>
@@ -2398,8 +2398,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     }).format(estimatedCost);
                                     return (
                                       <td key={col.id} className="w-40 py-4 px-3 text-center border-l-2 border-gray-200">
-                                        <span className="text-2xl font-black text-gray-900 tabular-nums tracking-tight">
-                                          {formattedCost}
+                                        <span className="inline-flex items-center justify-center min-w-[64px] h-9 px-3 rounded-full bg-blue-50 border border-blue-200">
+                                          <span className="text-sm font-bold text-blue-700 tabular-nums tracking-tight">
+                                            {formattedCost}
+                                          </span>
                                         </span>
                                       </td>
                                     );
