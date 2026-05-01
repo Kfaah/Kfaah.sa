@@ -2106,10 +2106,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     return (
                                       <div
                                         key={monthNum}
-                                        className="flex flex-col items-center justify-center rounded-md border border-green-700 bg-green-600 py-2 px-1 shadow-sm"
+                                        className="flex flex-col items-center justify-center rounded-md border border-op-month-green-border bg-op-month-green py-2 px-1 shadow-sm"
                                       >
-                                        <span className="text-[11px] text-white/90 mb-1">{monthName}</span>
-                                        <span className="text-sm font-bold text-white">{formatNumber(value)}</span>
+                                        <span className="text-[11px] text-op-month-green-foreground/90 mb-1">{monthName}</span>
+                                        <span className="text-sm font-bold text-op-month-green-foreground">{formatNumber(value)}</span>
                                       </div>
                                     );
                                   })}
