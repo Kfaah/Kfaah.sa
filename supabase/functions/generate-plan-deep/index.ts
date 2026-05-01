@@ -246,7 +246,7 @@ Deno.serve(async (req) => {
     // Gather organization context in parallel
     const [orgRow, employeesRow, goalsRow, initiativesRow, prevPlansRow, tasksRow, excelPlansRow] = await Promise.all([
       organization_id ? admin.from("organizations").select("name, slug").eq("id", organization_id).maybeSingle() : Promise.resolve({ data: null }),
-      organization_id ? admin.from("employees").select("id, full_name, job_role, department_id").eq("organization_id", organization_id).limit(100) : admin.from("employees").select("id, full_name, job_role, department_id").limit(100),
+      organization_id ? admin.from("employees").select("id, full_name, user_id, job_role, department_id").eq("organization_id", organization_id).limit(100) : admin.from("employees").select("id, full_name, user_id, job_role, department_id").limit(100),
       organization_id ? admin.from("strategic_goals").select("name, description").eq("organization_id", organization_id).limit(50) : admin.from("strategic_goals").select("name, description").limit(50),
       organization_id ? admin.from("initiatives").select("name, strategic_goal_id").eq("organization_id", organization_id).limit(100) : admin.from("initiatives").select("name, strategic_goal_id").limit(100),
       organization_id ? admin.from("operational_plans").select("strategic_goal, initiative, activity_name, annual_target, estimated_budget, year").eq("organization_id", organization_id).order("created_at", { ascending: false }).limit(60) : admin.from("operational_plans").select("strategic_goal, initiative, activity_name, annual_target, estimated_budget, year").order("created_at", { ascending: false }).limit(60),
@@ -413,23 +413,25 @@ ${fileSummaries.length ? fileSummaries.join("\n\n---\n\n") : "(لم يتم رف�
       });
     }
 
+    const employeeRows = employeesRow.data || [];
     const employeeByName = new Map(
-      (employeesRow.data || []).map((employee: any) => [String(employee.full_name || "").trim(), employee.id]),
+      employeeRows.map((employee: any) => [String(employee.full_name || "").trim(), employee]),
     );
 
     // Persist as real operational plan rows so the generated plan appears immediately in the table
     const finalName = `${planName} — مولّدة بالذكاء الاصطناعي`;
-    const planRows = plan.rows.map((row) => {
+    const planRows = plan.rows.map((row, index) => {
       const responsibleName = String(row["مسؤول التنفيذ"] || "").trim();
+      const matchedEmployee = employeeByName.get(responsibleName) || employeeRows[index % Math.max(employeeRows.length, 1)] || null;
       return {
         organization_id,
-        user_id: user.id,
+        user_id: matchedEmployee?.user_id || user.id,
         plan_name: finalName,
         year,
         strategic_goal: String(row["الهدف الاستراتيجي"] || "").trim() || null,
         initiative: String(row["المبادرة الرئيسية"] || "").trim() || null,
         activity_name: String(row["النشاط"] || "").trim() || "نشاط مولّد بالذكاء الاصطناعي",
-        responsible_employee_id: employeeByName.get(responsibleName) || null,
+        responsible_employee_id: matchedEmployee?.id || null,
         annual_target: parseArabicNumber(row["المستهدف السنوي"]),
         estimated_budget: parseArabicNumber(row["التكلفة التقديرية (ريال)"]),
       };
