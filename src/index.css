@@ -36,8 +36,8 @@
     --success: 160 70% 40%;
     --success-foreground: 0 0% 100%;
 
-    --op-month-green: 145 100% 35%;
-    --op-month-green-border: 145 100% 27%;
+    --op-month-green: 107 46% 56%;
+    --op-month-green-border: 107 46% 42%;
     --op-month-green-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
@@ -111,8 +111,8 @@
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --op-month-green: 145 100% 35%;
-    --op-month-green-border: 145 100% 27%;
+    --op-month-green: 107 46% 56%;
+    --op-month-green-border: 107 46% 42%;
     --op-month-green-foreground: 0 0% 100%;
 
     --border: 210 40% 20%;
