@@ -421,11 +421,6 @@ serve(async (req) => {
         .eq("year", targetYear)
         .eq("operational_plan_months.month", targetMonth);
 
-      // تصفية حسب الموظفين المحددين
-      if (userIds && userIds.length > 0) {
-        query = query.in("user_id", userIds);
-      }
-
       // تصفية حسب خطط تشغيلية محددة
       if (filterOperationalIds.length > 0) {
         query = query.in("id", filterOperationalIds);
@@ -452,19 +447,32 @@ serve(async (req) => {
         continue;
       }
 
+      const scopedOperationalPlans = (operationalPlans || []).filter((plan: any) => {
+        const userMatch = filterUserIds.length === 0 || filterUserIds.includes(plan.user_id);
+        const employeeMatch = filterEmployeeIds.length === 0 || (plan.responsible_employee_id && filterEmployeeIds.includes(plan.responsible_employee_id));
+        return filterUserIds.length === 0 && filterEmployeeIds.length === 0 ? true : userMatch || employeeMatch;
+      });
+
       // جلب أسماء الموظفين
-      const allUserIds = [...new Set((operationalPlans || []).map(p => p.user_id))];
+      const allUserIds = [...new Set(scopedOperationalPlans.map((p: any) => p.user_id).filter(Boolean))];
+      const allResponsibleIds = [...new Set(scopedOperationalPlans.map((p: any) => p.responsible_employee_id).filter(Boolean))];
       const { data: employees } = await supabase
         .from("employees")
         .select("id, full_name, user_id, job_role, department_id")
-        .in("user_id", allUserIds);
+        .or([
+          allUserIds.length ? `user_id.in.(${allUserIds.join(",")})` : "",
+          allResponsibleIds.length ? `id.in.(${allResponsibleIds.join(",")})` : "",
+        ].filter(Boolean).join(","));
 
       const employeeMap = new Map(employees?.map(e => [e.user_id, e]) || []);
+      const employeeByIdMap = new Map(employees?.map(e => [e.id, e]) || []);
 
       // تجهيز البيانات للذكاء الاصطناعي
-      const plansData = (operationalPlans || []).map((plan: any) => {
+      const plansData = scopedOperationalPlans.map((plan: any) => {
         const planMonth = plan.operational_plan_months[0];
-        const employee = employeeMap.get(plan.user_id);
+        const employee = plan.responsible_employee_id
+          ? employeeByIdMap.get(plan.responsible_employee_id)
+          : employeeMap.get(plan.user_id);
         return {
           planId: plan.id,
           planMonthId: planMonth.id,
@@ -473,7 +481,7 @@ serve(async (req) => {
           strategicGoal: plan.strategic_goal,
           monthlyTarget: planMonth.monthly_target,
           annualTarget: plan.annual_target,
-          userId: plan.user_id,
+          userId: employee?.user_id || plan.user_id,
           organizationId: plan.organization_id,
           employeeName: employee?.full_name || "موظف",
           jobRole: employee?.job_role || "",
