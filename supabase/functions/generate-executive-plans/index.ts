@@ -118,8 +118,8 @@ serve(async (req) => {
         const list = employeesByDept.get(deptKey);
         if (!list || list.length === 0) return null;
         // فلترة بناء على userIds المختارة إن وُجدت
-        const filtered = (userIds && userIds.length > 0)
-          ? list.filter((e) => userIds.includes(e.user_id))
+        const filtered = filterUserIds.length > 0
+          ? list.filter((e) => filterUserIds.includes(e.user_id))
           : list;
         const pool = filtered.length > 0 ? filtered : list;
         const i = (deptCursor.get(deptKey) ?? 0) % pool.length;
@@ -227,7 +227,7 @@ serve(async (req) => {
           }
 
           // فلترة بالموظفين المحددين
-          if (userIds && userIds.length > 0 && !userIds.includes(matchedUserId)) return;
+          if (filterUserIds.length > 0 && !filterUserIds.includes(matchedUserId)) return;
 
           virtualPlans.push({
             planId: `excel:${ep.id}:${idx}`,
