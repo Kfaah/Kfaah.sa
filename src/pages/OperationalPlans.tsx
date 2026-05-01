@@ -362,9 +362,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
         .order("display_order", { ascending: true });
 
       if (error) throw error;
-      setColumnOrder(data || []);
+      setColumnOrder(data?.length ? data : [...DEFAULT_OPERATIONAL_PLAN_COLUMNS]);
     } catch (error) {
       console.error("Error fetching column order:", error);
+      setColumnOrder([...DEFAULT_OPERATIONAL_PLAN_COLUMNS]);
     }
   };
 
