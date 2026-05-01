@@ -600,12 +600,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     
     if (!plansLoaded) setLoading(true);
     try {
-      const { data: plansData, error } = await supabase
+      let query = supabase
         .from("operational_plans")
         .select("*, responsible_employee:responsible_employee_id(full_name)")
         .order("display_order", { ascending: true });
 
       if (activeOrgId) query = query.eq("organization_id", activeOrgId);
+
+      const { data: plansData, error } = await query;
 
       if (error) throw error;
 
