@@ -256,6 +256,7 @@ serve(async (req) => {
         operational_plans!inner (
           id,
           user_id,
+          responsible_employee_id,
           organization_id,
           year
         )
@@ -263,9 +264,6 @@ serve(async (req) => {
       .eq("operational_plans.year", targetYear)
       .gt("monthly_target", 0);
 
-    if (userIds && userIds.length > 0) {
-      monthsQuery = monthsQuery.in("operational_plans.user_id", userIds);
-    }
     if (activeOrganizationId) {
       monthsQuery = monthsQuery.eq("operational_plans.organization_id", activeOrganizationId);
     }
@@ -278,7 +276,8 @@ serve(async (req) => {
     console.log("[months-query]", {
       targetYear,
       targetMonths,
-      userIds: userIds?.length || 0,
+      userIds: filterUserIds.length,
+      employeeIds: filterEmployeeIds.length,
       activeOrganizationId,
       filterOperationalIds: filterOperationalIds.length,
       availableMonthsCount: availableMonths?.length || 0,
@@ -294,6 +293,12 @@ serve(async (req) => {
     const monthsWithOperational = [...new Set(
       (availableMonths || [])
         .filter((m: any) => Number(m.monthly_target || 0) > 0)
+        .filter((m: any) => {
+          const plan = m.operational_plans || {};
+          const userMatch = filterUserIds.length === 0 || filterUserIds.includes(plan.user_id);
+          const employeeMatch = filterEmployeeIds.length === 0 || (plan.responsible_employee_id && filterEmployeeIds.includes(plan.responsible_employee_id));
+          return filterUserIds.length === 0 && filterEmployeeIds.length === 0 ? true : userMatch || employeeMatch;
+        })
         .map((m: any) => m.month)
     )];
     // الخطط من Excel ليس لها أشهر محددة، لذا نعتبرها متاحة لأي شهر مُختار
