@@ -2376,12 +2376,12 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                             e.stopPropagation();
                                             setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id);
                                           }}
-                                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all group/exp mx-auto ${isExpanded ? 'bg-primary/10 border-primary/40 shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-primary/5 hover:border-primary/30'}`}
+                                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all shadow-sm group/exp mx-auto ${isExpanded ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                                           title={isExpanded ? "طي التوزيع الشهري" : "عرض التوزيع الشهري"}
                                         >
-                                          <span className={`text-lg font-extrabold tabular-nums tracking-tight ${isExpanded ? 'text-primary' : 'text-gray-900 group-hover/exp:text-primary'}`}>{formatNumber(plan.annual_target)}</span>
+                                          <span className="text-base font-extrabold tabular-nums tracking-tight text-white">{formatNumber(plan.annual_target)}</span>
                                           <ChevronDown
-                                            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-500 group-hover/exp:text-primary'}`}
+                                            className={`w-4 h-4 text-white/90 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                                           />
                                         </button>
                                       </td>
@@ -2398,8 +2398,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     }).format(estimatedCost);
                                     return (
                                       <td key={col.id} className="w-40 py-4 px-3 text-center border-l-2 border-gray-200">
-                                        <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200">
-                                          <span className="text-lg font-extrabold text-gray-900 tabular-nums tracking-tight">
+                                        <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-600 shadow-sm">
+                                          <span className="text-base font-extrabold text-white tabular-nums tracking-tight">
                                             {formattedCost}
                                           </span>
                                         </span>
