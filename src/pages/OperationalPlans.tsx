@@ -2093,12 +2093,12 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         {expandedPlanId === plan.id && (
                           <tr className="bg-primary/5 border-b border-border">
                             <td colSpan={isEditMode ? 8 : 7} className="py-4 px-4">
-                              <div className="rounded-lg bg-card border border-border overflow-hidden">
-                                <div className="px-4 py-2 bg-primary/10 text-primary font-semibold text-sm flex items-center gap-2">
+                              <div className="rounded-lg overflow-hidden border border-primary/30 shadow-sm">
+                                <div className="px-4 py-2 bg-primary text-primary-foreground font-semibold text-sm flex items-center gap-2">
                                   <Calendar className="w-4 h-4" />
                                   التوزيع الشهري للمستهدف خلال السنة
                                 </div>
-                                <div className="grid grid-cols-6 md:grid-cols-12 gap-2 p-3">
+                                <div className="grid grid-cols-6 md:grid-cols-12 gap-2 p-3 bg-primary/90">
                                   {MONTHS_AR.map((monthName, mIdx) => {
                                     const monthNum = mIdx + 1;
                                     const monthData = plan.months?.find(m => m.month === monthNum);
@@ -2106,10 +2106,10 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     return (
                                       <div
                                         key={monthNum}
-                                        className="flex flex-col items-center justify-center rounded-md border border-border bg-muted/30 py-2 px-1"
+                                        className="flex flex-col items-center justify-center rounded-md border border-primary-foreground/20 bg-primary-foreground/10 py-2 px-1"
                                       >
-                                        <span className="text-[11px] text-muted-foreground mb-1">{monthName}</span>
-                                        <span className="text-sm font-bold text-primary">{formatNumber(value)}</span>
+                                        <span className="text-[11px] text-primary-foreground/80 mb-1">{monthName}</span>
+                                        <span className="text-sm font-bold text-primary-foreground">{formatNumber(value)}</span>
                                       </div>
                                     );
                                   })}
