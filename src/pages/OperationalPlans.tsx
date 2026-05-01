@@ -2028,8 +2028,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         );
                       })
                       .map((plan, index) => (
+                        <Fragment key={plan.id}>
                         <tr
-                          key={plan.id}
                           className={`${index % 2 === 0 ? "bg-card" : "bg-muted/20"} border-b border-border hover:bg-primary/5 transition-colors`}
                         >
                           <td className="py-4 px-4 align-top border-l border-border text-right font-medium text-foreground leading-relaxed">
@@ -2045,7 +2045,19 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             {plan.responsible_employee_name || "غير محدد"}
                           </td>
                           <td className="py-4 px-4 align-top border-l border-border text-center font-bold text-primary">
-                            {formatNumber(plan.annual_target)}
+                            <button
+                              type="button"
+                              onClick={() => setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id)}
+                              className="inline-flex items-center gap-1.5 hover:text-primary/80 transition-colors group"
+                              title="عرض التوزيع الشهري"
+                            >
+                              <span>{formatNumber(plan.annual_target)}</span>
+                              {expandedPlanId === plan.id ? (
+                                <ChevronUp className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                              )}
+                            </button>
                           </td>
                           <td className="py-4 px-4 align-top border-l border-border text-center text-foreground">
                             {plan.year}
@@ -2078,6 +2090,35 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             </td>
                           )}
                         </tr>
+                        {expandedPlanId === plan.id && (
+                          <tr className="bg-primary/5 border-b border-border">
+                            <td colSpan={isEditMode ? 8 : 7} className="py-4 px-4">
+                              <div className="rounded-lg bg-card border border-border overflow-hidden">
+                                <div className="px-4 py-2 bg-primary/10 text-primary font-semibold text-sm flex items-center gap-2">
+                                  <Calendar className="w-4 h-4" />
+                                  التوزيع الشهري للمستهدف خلال السنة
+                                </div>
+                                <div className="grid grid-cols-6 md:grid-cols-12 gap-2 p-3">
+                                  {MONTHS_AR.map((monthName, mIdx) => {
+                                    const monthNum = mIdx + 1;
+                                    const monthData = plan.months?.find(m => m.month === monthNum);
+                                    const value = monthData?.monthly_target ?? 0;
+                                    return (
+                                      <div
+                                        key={monthNum}
+                                        className="flex flex-col items-center justify-center rounded-md border border-border bg-muted/30 py-2 px-1"
+                                      >
+                                        <span className="text-[11px] text-muted-foreground mb-1">{monthName}</span>
+                                        <span className="text-sm font-bold text-primary">{formatNumber(value)}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        </Fragment>
                       ))}
                   </tbody>
                 </table>
