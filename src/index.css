@@ -119,6 +119,10 @@
     --op-month-green-border: 107 46% 42%;
     --op-month-green-foreground: 0 0% 100%;
 
+    --op-month-teal: 184 64% 48%;
+    --op-month-teal-border: 184 64% 38%;
+    --op-month-teal-foreground: 0 0% 100%;
+
     --border: 210 40% 20%;
     --input: 210 40% 20%;
     --ring: 174 52% 52%;
