@@ -36,6 +36,10 @@
     --success: 160 70% 40%;
     --success-foreground: 0 0% 100%;
 
+    --op-month-green: 145 63% 32%;
+    --op-month-green-border: 145 72% 24%;
+    --op-month-green-foreground: 0 0% 100%;
+
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
@@ -106,6 +110,10 @@
     --signature-ink: 210 100% 70%;
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
+
+    --op-month-green: 145 63% 32%;
+    --op-month-green-border: 145 72% 24%;
+    --op-month-green-foreground: 0 0% 100%;
 
     --border: 210 40% 20%;
     --input: 210 40% 20%;
