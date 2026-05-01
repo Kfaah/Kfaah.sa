@@ -1,7 +1,7 @@
 // Edge function: generate-plan-deep
 // Deep AI-powered operational plan generation.
 // Studies: organization data + uploaded reference files + previous plans + tasks
-// Produces: a complete, professional operational plan saved as an excel_plan.
+// Produces: a complete, professional operational plan saved as visible operational plan rows.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -12,6 +12,21 @@ const corsHeaders = {
 };
 
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+function parseArabicNumber(value: unknown): number {
+  const normalized = String(value ?? "")
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+    .replace(/[^0-9.-]/g, "");
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : 0;
+}
+
+function distributeMonthlyTarget(total: number) {
+  const base = Math.floor(total / 12);
+  const remainder = total % 12;
+  return Array.from({ length: 12 }, (_, index) => base + (index >= 12 - remainder ? 1 : 0));
+}
 
 // --- Relevance gate prompt ---
 const RELEVANCE_SYSTEM = `أنت مدقّق ملفات لخطة تشغيلية لجمعية خيرية.
@@ -218,7 +233,7 @@ Deno.serve(async (req) => {
     // Gather organization context in parallel
     const [orgRow, employeesRow, goalsRow, initiativesRow, prevPlansRow, tasksRow, excelPlansRow] = await Promise.all([
       organization_id ? admin.from("organizations").select("name, slug").eq("id", organization_id).maybeSingle() : Promise.resolve({ data: null }),
-      admin.from("employees").select("full_name, job_title, department_id").limit(100),
+      admin.from("employees").select("id, full_name, job_title, department_id").limit(100),
       admin.from("strategic_goals").select("name, description").limit(50),
       admin.from("initiatives").select("name, strategic_goal_id").limit(100),
       admin.from("operational_plans").select("strategic_goal, initiative, activity_name, annual_target, estimated_budget, year").order("created_at", { ascending: false }).limit(60),
@@ -385,33 +400,34 @@ ${fileSummaries.length ? fileSummaries.join("\n\n---\n\n") : "(لم يتم رف�
       });
     }
 
-    const columns = [
-      "الهدف الاستراتيجي",
-      "المبادرة الرئيسية",
-      "النشاط",
-      "مسؤول التنفيذ",
-      "المستهدف السنوي",
-      "التكلفة التقديرية (ريال)",
-    ];
+    const employeeByName = new Map(
+      (employeesRow.data || []).map((employee: any) => [String(employee.full_name || "").trim(), employee.id]),
+    );
 
-    // Persist as excel_plan so it shows up in the Operational Plans page
+    // Persist as real operational plan rows so the generated plan appears immediately in the table
     const finalName = `${planName} — مولّدة بالذكاء الاصطناعي`;
-    const { data: inserted, error: insertErr } = await admin
-      .from("excel_plans")
-      .insert({
+    const planRows = plan.rows.map((row) => {
+      const responsibleName = String(row["مسؤول التنفيذ"] || "").trim();
+      return {
         organization_id,
         user_id: user.id,
         plan_name: finalName,
         year,
-        sheet_name: "خطة AI عميقة",
-        columns,
-        rows: plan.rows,
-        source_filename: filePaths.length ? `${filePaths.length} ملف مرجعي` : "توليد بدون ملفات",
-      })
-      .select("id")
-      .single();
+        strategic_goal: String(row["الهدف الاستراتيجي"] || "").trim() || null,
+        initiative: String(row["المبادرة الرئيسية"] || "").trim() || null,
+        activity_name: String(row["النشاط"] || "").trim() || "نشاط مولّد بالذكاء الاصطناعي",
+        responsible_employee_id: employeeByName.get(responsibleName) || null,
+        annual_target: parseArabicNumber(row["المستهدف السنوي"]),
+        estimated_budget: parseArabicNumber(row["التكلفة التقديرية (ريال)"]),
+      };
+    });
 
-    if (insertErr) {
+    const { data: insertedPlans, error: insertErr } = await admin
+      .from("operational_plans")
+      .insert(planRows)
+      .select("id, annual_target");
+
+    if (insertErr || !insertedPlans?.length) {
       console.error("insert error", insertErr);
       return new Response(JSON.stringify({ error: "فشل حفظ الخطة" }), {
         status: 500,
@@ -419,12 +435,24 @@ ${fileSummaries.length ? fileSummaries.join("\n\n---\n\n") : "(لم يتم رف�
       });
     }
 
+    const monthRows = insertedPlans.flatMap((created: any) =>
+      distributeMonthlyTarget(Number(created.annual_target || 0)).map((monthlyTarget, index) => ({
+        organization_id,
+        operational_plan_id: created.id,
+        month: index + 1,
+        monthly_target: monthlyTarget,
+      })),
+    );
+
+    const { error: monthsInsertErr } = await admin.from("operational_plan_months").insert(monthRows);
+    if (monthsInsertErr) console.error("months insert error", monthsInsertErr);
+
     return new Response(
       JSON.stringify({
         success: true,
-        excel_plan_id: inserted.id,
+        operational_plan_ids: insertedPlans.map((row: any) => row.id),
         plan_name: finalName,
-        rows_count: plan.rows.length,
+        rows_count: insertedPlans.length,
         executive_summary: plan.executive_summary,
         accepted_files: acceptedFiles,
         rejected_files: rejectedFiles,

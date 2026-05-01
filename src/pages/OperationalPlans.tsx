@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -159,6 +159,7 @@ interface GroupedPlans {
 
 export default function OperationalPlans({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: authUser } = useAuth();
   const { user, previewAsEmployee } = useUser();
   const { toast } = useToast();
@@ -279,6 +280,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   const [filterEmployeeId, setFilterEmployeeId] = useState<string>("all");
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
   const [filterPlanName, setFilterPlanName] = useState<string>("all");
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const yearParam = Number(params.get("year"));
+    const planParam = params.get("plan");
+    if (Number.isFinite(yearParam) && yearParam > 0) setFilterYear(yearParam);
+    if (planParam) setFilterPlanName(planParam);
+  }, [location.search]);
   
   // توليد AI
   const [isAIGenerating, setIsAIGenerating] = useState(false);

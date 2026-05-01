@@ -140,8 +140,9 @@ export default function AIGeneratePlan() {
         description: `${data.rows_count} نشاط ضمن "${data.plan_name}"`,
       });
 
-      // العودة إلى الصفحة السابقة (لوحة الجمعية / الخطط) بدل التوجيه القسري
-      setTimeout(() => navigate(-1), 800);
+      // العودة لصفحة الخطط مع نفس السنة والخطة المولّدة حتى تظهر النتيجة مباشرة
+      const generatedPlanName = encodeURIComponent(data.plan_name || planName.trim());
+      setTimeout(() => navigate(`/operational-plans?year=${year}&plan=${generatedPlanName}`), 800);
     } catch (e: any) {
       console.error(e);
       toast({ title: "خطأ غير متوقع", description: e?.message || "", variant: "destructive" });
