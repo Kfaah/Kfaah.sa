@@ -113,7 +113,7 @@ const DEFAULT_OPERATIONAL_PLAN_COLUMNS = [
   { id: "default-activity", column_key: "activity", column_name: "النشاط", display_order: 3, is_visible: true, is_standard: true },
   { id: "default-responsible", column_key: "responsible_employee", column_name: "مسؤول التنفيذ", display_order: 4, is_visible: true, is_standard: true },
   { id: "default-annual-target", column_key: "annual_target", column_name: "المستهدف السنوي", display_order: 5, is_visible: true, is_standard: true },
-  { id: "default-monthly-average", column_key: "monthly_average", column_name: "المتوسط الشهري", display_order: 6, is_visible: true, is_standard: true },
+  { id: "default-monthly-average", column_key: "monthly_average", column_name: "التكلفة التقديرية", display_order: 6, is_visible: true, is_standard: true },
 ] as const;
 
 // ألوان رسمية وبسيطة
