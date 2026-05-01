@@ -38,6 +38,11 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
+        "op-month-green": {
+          DEFAULT: "hsl(var(--op-month-green))",
+          border: "hsl(var(--op-month-green-border))",
+          foreground: "hsl(var(--op-month-green-foreground))",
+        },
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
