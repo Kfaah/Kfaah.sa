@@ -1979,15 +1979,45 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
         </div>
 
 
-        {/* الجدول الموحد للخطط التشغيلية */}
-        <Card className="overflow-hidden border-border/70">
-          <CardHeader className="border-b bg-muted/40 px-6 py-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Target className="w-5 h-5 text-primary" />
-              النموذج الموحد للخطط التشغيلية
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
+        {/* Plans Table */}
+        <Card className="overflow-hidden border-emerald-200/60">
+          {(() => {
+            if (filteredPlans.length === 0) return null;
+            const planName = filteredPlans[0]?.plan_name || "الخطة الأولى";
+            const goalsCount = new Set(filteredPlans.map(p => p.strategic_goal).filter(Boolean)).size;
+            return (
+              <div className="px-6 py-4 bg-gradient-to-l from-green-700 via-green-600 to-green-700 border-b border-green-800 flex items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0 backdrop-blur-sm">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-white truncate text-lg">
+                      {planName}
+                      <span className="text-sm text-white/80 font-normal mr-2">· {filterYear}</span>
+                    </div>
+                    <div className="text-sm text-white/80 truncate">
+                      {filteredPlans.length} نشاط · {goalsCount} هدف استراتيجي
+                    </div>
+                  </div>
+                </div>
+                {filteredPlans.length > 0 && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:text-white hover:bg-white/15"
+                      onClick={() => handleDeleteWholePlan(planName)}
+                      title="حذف الخطة بالكامل"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          <CardContent className="pt-4">
             {loading && !plansLoaded ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -1997,146 +2027,799 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                 لا توجد خطط تشغيلية حتى الآن
               </div>
             ) : (
-              <div className="op-plans-table-wrap overflow-x-auto bg-card">
-                <table className="w-full min-w-[1080px] border-collapse text-sm">
+              <div className="op-plans-table-wrap rounded-lg border border-gray-200 overflow-x-auto bg-white">
+                <table className="w-full">
+                  {/* رأس الجدول */}
                   <thead>
-                    <tr className="bg-primary text-primary-foreground">
-                      <th className="w-[18%] py-4 px-4 text-right font-semibold border-l border-primary-foreground/20">الهدف الاستراتيجي</th>
-                      <th className="w-[18%] py-4 px-4 text-right font-semibold border-l border-primary-foreground/20">المبادرة الرئيسية</th>
-                      <th className="w-[26%] py-4 px-4 text-right font-semibold border-l border-primary-foreground/20">النشاط</th>
-                      <th className="w-[14%] py-4 px-4 text-right font-semibold border-l border-primary-foreground/20">مسؤول التنفيذ</th>
-                      <th className="w-[9%] py-4 px-4 text-center font-semibold border-l border-primary-foreground/20">المستهدف</th>
-                      <th className="w-[7%] py-4 px-4 text-center font-semibold border-l border-primary-foreground/20">السنة</th>
-                      <th className="w-[10%] py-4 px-4 text-center font-semibold border-l border-primary-foreground/20">تكلفة تقديرية</th>
+                    <tr className="bg-[hsl(var(--primary))] shadow-sm">
+                      {/* عرض الأعمدة حسب الترتيب من columnOrder */}
+                      {columnOrder.filter(c => c.is_visible).map((col, idx) => {
+                        // تحديد خصائص العمود
+                        const isFirst = idx === 0;
+                        const isNumeric = ['annual_target', 'monthly_average'].includes(col.column_key);
+                        
+                        return (
+                          <>
+                            <th 
+                              key={col.id} 
+                              className={`py-4 px-5 sticky top-0 z-30 bg-[hsl(var(--primary))] ${isNumeric ? 'w-28 px-3 text-center' : 'text-right'} ${!isFirst ? 'border-r border-white/20' : ''}`}
+                            >
+                              <span className="text-sm font-semibold text-white">{col.column_name}</span>
+                            </th>
+                            {col.column_key === 'initiative' && (
+                              <th
+                                key={`${col.id}-sub`}
+                                className="py-4 px-5 sticky top-0 z-30 bg-[hsl(var(--primary))] text-right border-r border-white/20"
+                              >
+                                <span className="text-sm font-semibold text-white">المبادرة الفرعية</span>
+                              </th>
+                            )}
+                          </>
+                        );
+                      })}
                       {isEditMode && (
-                        <th className="w-24 py-4 px-3 text-center font-semibold bg-primary/90">إجراء</th>
+                        <th className="w-24 py-4 px-3 sticky top-0 z-30 text-center border-r border-white/20 bg-amber-600">
+                          <span className="text-sm font-semibold text-white">إجراء</span>
+                        </th>
                       )}
                     </tr>
                   </thead>
+                  
                   <tbody>
-                    {[...filteredPlans]
-                      .sort((a, b) => {
-                        const goalA = strategicGoals.find(g => g.id === a.strategic_goal_id || g.name === a.strategic_goal);
-                        const goalB = strategicGoals.find(g => g.id === b.strategic_goal_id || g.name === b.strategic_goal);
-                        const initA = initiatives.find(i => i.id === a.initiative_id || i.name === a.initiative);
-                        const initB = initiatives.find(i => i.id === b.initiative_id || i.name === b.initiative);
-                        return (
-                          (goalA?.display_order ?? 999) - (goalB?.display_order ?? 999) ||
-                          (initA?.display_order ?? 999) - (initB?.display_order ?? 999) ||
-                          (a.display_order ?? 999) - (b.display_order ?? 999) ||
-                          a.activity_name.localeCompare(b.activity_name, 'ar')
+                  {(() => {
+                    // تجميع الخطط حسب الهدف الاستراتيجي ثم المبادرة
+                    const groupedPlans: GroupedPlans[] = [];
+                    const goalMap = new Map<string, { initiatives: Map<string, OperationalPlan[]> }>();
+                    
+                    filteredPlans.forEach(plan => {
+                      const goal = plan.strategic_goal || "بدون هدف";
+                      const init = plan.initiative || "بدون مبادرة";
+                      
+                      if (!goalMap.has(goal)) {
+                        goalMap.set(goal, { initiatives: new Map() });
+                      }
+                      const goalData = goalMap.get(goal)!;
+                      
+                      if (!goalData.initiatives.has(init)) {
+                        goalData.initiatives.set(init, []);
+                      }
+                      goalData.initiatives.get(init)!.push(plan);
+                    });
+                    
+                    // ترتيب الأهداف حسب display_order من strategicGoals
+                    const sortedGoalNames = [...goalMap.keys()].sort((a, b) => {
+                      const goalA = strategicGoals.find(g => g.name === a);
+                      const goalB = strategicGoals.find(g => g.name === b);
+                      const orderA = goalA?.display_order ?? 999;
+                      const orderB = goalB?.display_order ?? 999;
+                      return orderA - orderB;
+                    });
+                    
+                    let colorIndex = 0;
+                    sortedGoalNames.forEach((goalName) => {
+                      const goalData = goalMap.get(goalName)!;
+                      const inits: { initiative: string; plans: OperationalPlan[] }[] = [];
+                      
+                      const goalIdForSort = strategicGoals.find(g => g.name === goalName)?.id;
+                      
+                      // ترتيب المبادرات حسب display_order (استخدم أول initiative_id غير فارغ داخل المجموعة إن وجد)
+                      const sortedInitNames = [...goalData.initiatives.keys()].sort((a, b) => {
+                        const aPlans = goalData.initiatives.get(a) || [];
+                        const bPlans = goalData.initiatives.get(b) || [];
+
+                        const aInitId = aPlans.find(p => !!p.initiative_id)?.initiative_id;
+                        const bInitId = bPlans.find(p => !!p.initiative_id)?.initiative_id;
+
+                        const initA =
+                          (aInitId ? initiatives.find(i => i.id === aInitId) : undefined) ||
+                          initiatives.find(i => i.name === a && (!goalIdForSort || i.strategic_goal_id === goalIdForSort));
+
+                        const initB =
+                          (bInitId ? initiatives.find(i => i.id === bInitId) : undefined) ||
+                          initiatives.find(i => i.name === b && (!goalIdForSort || i.strategic_goal_id === goalIdForSort));
+
+                        const orderA = initA?.display_order ?? 999;
+                        const orderB = initB?.display_order ?? 999;
+                        return orderA - orderB;
+                      });
+                      
+                      sortedInitNames.forEach(initName => {
+                        const plans = goalData.initiatives.get(initName)!;
+                        // ترتيب الأنشطة حسب display_order
+                        const sortedPlans = [...plans].sort((a, b) => 
+                          (a.display_order || 999) - (b.display_order || 999)
                         );
-                      })
-                      .map((plan, index) => (
-                        <Fragment key={plan.id}>
-                        <tr
-                          className={`${index % 2 === 0 ? "bg-card" : "bg-muted/20"} border-b border-border hover:bg-primary/5 transition-colors`}
-                        >
-                          <td className="py-4 px-4 align-top border-l border-border text-right font-medium text-foreground leading-relaxed">
-                            {plan.strategic_goal || "—"}
-                          </td>
-                          <td className="py-4 px-4 align-top border-l border-border text-right text-foreground leading-relaxed">
-                            {plan.initiative || "—"}
-                          </td>
-                          <td className="py-4 px-4 align-top border-l border-border text-right text-foreground leading-relaxed">
-                            {plan.activity_name}
-                          </td>
-                          <td className="py-4 px-4 align-top border-l border-border text-right text-muted-foreground leading-relaxed">
-                            {plan.responsible_employee_name || "غير محدد"}
-                          </td>
-                          <td className="py-4 px-4 align-top border-l border-border text-center font-bold text-primary">
-                            <button
-                              type="button"
-                              onClick={() => setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id)}
-                              className="inline-flex items-center gap-1.5 hover:text-primary/80 transition-colors group"
-                              title="عرض التوزيع الشهري"
+                        inits.push({ initiative: initName, plans: sortedPlans });
+                      });
+                      
+                      groupedPlans.push({
+                        strategicGoal: goalName,
+                        colorIndex: colorIndex % GOAL_COLORS.length,
+                        initiatives: inits
+                      });
+                      colorIndex++;
+                    });
+                    
+                    const rows: JSX.Element[] = [];
+                    
+                    groupedPlans.forEach((group, groupIndex) => {
+                      const color = GOAL_COLORS[group.colorIndex];
+                      // حساب إجمالي الصفوف لهذا الهدف (التوزيع الشهري أصبح داخل نفس صف النشاط فلا يُضاف كصف مستقل)
+                      const totalRowsInGoal =
+                        group.initiatives.reduce((sum, init) => {
+                          const planRows = init.plans.length;
+
+                          // نضيف صف "إضافة نشاط" فقط عندما يكون المستخدم فعلاً يضيف نشاطاً تحت هذه المبادرة
+                          const addActivityRow =
+                            isEditMode &&
+                            addingActivityUnder?.strategicGoal === group.strategicGoal &&
+                            addingActivityUnder?.initiative === init.initiative
+                              ? 1
+                              : 0;
+
+                          return sum + planRows + addActivityRow;
+                        }, 0) +
+                        // في وضع التعديل نضيف صف "إضافة مبادرة جديدة" (إما زر أو نموذج) أسفل الهدف
+                        (isEditMode ? 1 : 0);
+                      
+                      let goalRowRendered = false;
+                      
+                      group.initiatives.forEach((initGroup, initIndex) => {
+                        // حساب الصفوف للمبادرة (التوزيع الشهري داخل نفس صف النشاط حتى لا يختل الجدول)
+                        const addActivityRowForThisInitiative =
+                          isEditMode &&
+                          addingActivityUnder?.strategicGoal === group.strategicGoal &&
+                          addingActivityUnder?.initiative === initGroup.initiative
+                            ? 1
+                            : 0;
+
+                        const totalRowsInInitiative = initGroup.plans.length + addActivityRowForThisInitiative;
+                        let initRowRendered = false;
+                        // إذا لم يكن لأي نشاط في هذه المبادرة "مبادرة فرعية"، نُلغي العمود ونوسّع خلية النشاط
+                        const initiativeHasNoSubInitiatives = initGroup.plans.every(
+                          (p) => !p.sub_initiative || !p.sub_initiative.trim()
+                        );
+                        
+                        initGroup.plans.forEach((plan, planIndex) => {
+                          const isExpanded = expandedPlanId === plan.id;
+                          const isFirstRowOfGoal = !goalRowRendered;
+                          const isFirstRowOfInit = !initRowRendered;
+                          const isLastInInitiative = planIndex === initGroup.plans.length - 1;
+                          const isLastInitiative = initIndex === group.initiatives.length - 1;
+                          const isLastGoal = groupIndex === groupedPlans.length - 1;
+                          const isEditingThisMonth = isEditingMonths === plan.id;
+                          const currentMonthlyValues = editingMonthlyTargets[plan.id] || [];
+                          
+                          // تحديد نوع الفاصل السفلي
+                          let bottomBorder = 'border-b border-gray-200';
+                          if (isLastInInitiative && isLastInitiative && !isLastGoal) {
+                            // فاصل بين الأهداف الاستراتيجية
+                            bottomBorder = 'border-b-[3px] border-gray-400';
+                          } else if (isLastInInitiative && !isLastInitiative) {
+                            // فاصل بين المبادرات
+                            bottomBorder = 'border-b-2 border-gray-300';
+                          }
+                          
+                          // البحث بالـ ID أولاً ثم بالاسم
+                          const goalData = strategicGoals.find(g => g.id === plan.strategic_goal_id) 
+                            || strategicGoals.find(g => g.name === group.strategicGoal);
+                          const initData = initiatives.find(i => i.id === plan.initiative_id)
+                            || initiatives.find(i => i.name === initGroup.initiative);
+                          
+                          rows.push(
+                            <tr 
+                              key={plan.id} 
+                              className={`group/row ${color.bg} ${color.hover} border-r-4 ${color.border} transition-colors ${isExpanded ? 'bg-primary/5' : ''} ${bottomBorder}`}
                             >
-                              <span>{formatNumber(plan.annual_target)}</span>
-                              {expandedPlanId === plan.id ? (
-                                <ChevronUp className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                              {/* الهدف الاستراتيجي */}
+                              {isFirstRowOfGoal && (
+                                <td 
+                                  rowSpan={totalRowsInGoal} 
+                                  className={`py-4 px-5 align-middle ${color.bg} border-l-2 border-gray-200`}
+                                >
+                                  <div className="flex flex-col items-center justify-center text-center gap-2">
+                                    <div className="w-full">
+                                      <p className={`font-semibold text-sm ${color.text} leading-relaxed mb-2 text-center`}>{group.strategicGoal}</p>
+                                      {/* الأقسام */}
+                                      {goalData?.departments && goalData.departments.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 justify-center">
+                                          {goalData.departments.map((d) => (
+                                            <Badge 
+                                              key={d.id} 
+                                              variant="outline" 
+                                              className={`text-[10px] px-2 py-0.5 ${color.badge}`}
+                                            >
+                                              {d.name}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    {isEditMode && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100 mx-auto"
+                                        onClick={() => {
+                                          const actualGoalName = goalData?.name || group.strategicGoal;
+                                          openEditDialog("strategic_goal", actualGoalName, undefined, plan);
+                                        }}
+                                        title="تعديل الهدف"
+                                      >
+                                        <Settings2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </td>
                               )}
-                            </button>
-                          </td>
-                          <td className="py-4 px-4 align-top border-l border-border text-center text-foreground">
-                            {plan.year}
-                          </td>
-                          <td className="py-4 px-4 align-top border-l border-border text-center text-foreground">
-                            {formatNumber(Number(plan.estimated_budget || 0))}
-                          </td>
-                          {isEditMode && (
-                            <td className="py-3 px-3 align-top text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-primary hover:bg-primary/10"
-                                  onClick={() => openEditDialog("activity", plan.strategic_goal || undefined, plan.initiative || undefined, plan)}
-                                  title="تعديل النشاط"
+                              
+                              {/* المبادرة */}
+                              {isFirstRowOfInit && (
+                                <td 
+                                  rowSpan={totalRowsInInitiative} 
+                                  className="py-4 px-5 align-middle bg-gray-50/50 border-l-2 border-gray-200"
                                 >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleDeletePlan(plan.id)}
-                                  title="حذف النشاط"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                        {expandedPlanId === plan.id && (
-                          <tr className="bg-primary/5 border-b border-border">
-                            <td colSpan={isEditMode ? 8 : 7} className="py-4 px-4">
-                              <div className="rounded-2xl overflow-hidden border-2 border-op-month-teal-border bg-card shadow-md max-w-3xl">
-                                {/* الشريط التركوازي العلوي */}
-                                <div className="px-4 py-2.5 bg-op-month-teal text-op-month-teal-foreground font-bold text-sm flex items-center justify-between gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setExpandedPlanId(null)}
-                                    className="rounded-full hover:bg-white/20 p-0.5 transition-colors"
-                                    title="إغلاق"
+                                  <div className="flex flex-col items-center justify-center text-center gap-2">
+                                    <div className="w-full">
+                                      <p className="text-gray-700 text-sm font-medium leading-relaxed mb-2 text-center">{initGroup.initiative}</p>
+                                      {/* الأقسام */}
+                                      {initData?.departments && initData.departments.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 justify-center">
+                                          {initData.departments.map((d) => (
+                                            <Badge 
+                                              key={d.id} 
+                                              variant="outline" 
+                                              className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 border-gray-200"
+                                            >
+                                              {d.name}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    {isEditMode && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 flex-shrink-0 opacity-0 group-hover/row:opacity-100 text-gray-400 hover:text-primary hover:bg-gray-100 mx-auto"
+                                        onClick={() => {
+                                          const actualInitName = initData?.name || initGroup.initiative;
+                                          openEditDialog("initiative", group.strategicGoal, actualInitName, plan);
+                                        }}
+                                        title="تعديل المبادرة"
+                                      >
+                                        <Settings2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </td>
+                              )}
+                              
+                              {/* المبادرة الفرعية */}
+                              {!initiativeHasNoSubInitiatives && (
+                                <td className="py-4 px-5 align-middle border-l-2 border-gray-200">
+                                  {plan.sub_initiative ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-violet-500 text-xs">↳</span>
+                                      <span className="text-sm text-violet-700 font-medium">{plan.sub_initiative}</span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-300 text-xs">—</span>
+                                  )}
+                                </td>
+                              )}
+
+                              {/* النشاط (يمتد على عمودين عند انعدام المبادرات الفرعية) */}
+                              <td
+                                colSpan={initiativeHasNoSubInitiatives ? 2 : 1}
+                                className="py-4 px-5 border-l-2 border-gray-200 align-top"
+                              >
+                                <div className="flex flex-col gap-3 min-w-[320px] max-w-[560px]">
+                                  <div 
+                                    className="flex items-center justify-between gap-2 cursor-pointer group/activity"
+                                    onClick={() => handleViewPlan(plan)}
+                                  >
+                                    <div className="flex flex-col gap-1 min-w-0">
+                                      <p className={`text-sm leading-relaxed ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
+                                    </div>
+                                    <ChevronDown 
+                                      className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
+                                    />
+                                  </div>
+
+                                  {isExpanded && (
+                                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                                      <div className="flex items-center justify-between gap-3 rounded-md bg-green-600 px-3 py-2 mb-3">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <div className="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center flex-shrink-0">
+                                            <Calendar className="w-3.5 h-3.5 text-white" />
+                                          </div>
+                                          <span className="text-xs font-semibold text-white truncate">التوزيع الشهري</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                          {isEditMode && (isEditingThisMonth ? (
+                                            <>
+                                              <Button size="sm" variant="ghost" className="h-7 px-2 text-white hover:bg-white/15" onClick={() => handleSaveMonthlyTargets(plan)}>
+                                                <Check className="w-3.5 h-3.5" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 px-2 text-white hover:bg-white/15"
+                                                onClick={() => {
+                                                  setIsEditingMonths(null);
+                                                  setEditingMonthlyTargets(prev => {
+                                                    const updated = { ...prev };
+                                                    delete updated[plan.id];
+                                                    return updated;
+                                                  });
+                                                }}
+                                              >
+                                                <X className="w-3.5 h-3.5" />
+                                              </Button>
+                                            </>
+                                          ) : (
+                                            <Button size="sm" variant="ghost" className="h-7 px-2 text-white hover:bg-white/15" onClick={() => handleStartEditMonths(plan)}>
+                                              <Pencil className="w-3.5 h-3.5" />
+                                            </Button>
+                                          ))}
+                                          <Button size="sm" variant="ghost" className="h-7 px-2 text-white hover:bg-white/15" onClick={() => setExpandedPlanId(null)}>
+                                            <X className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-4 gap-1.5">
+                                        {MONTHS_AR.map((month, index) => {
+                                          const monthData = plan.months?.find(m => m.month === index + 1);
+                                          const target = isEditingThisMonth
+                                            ? (currentMonthlyValues[index] || 0)
+                                            : (monthData?.monthly_target || 0);
+
+                                          return (
+                                            <div key={index} className="rounded-md bg-blue-500 border border-blue-600 px-2 py-1.5 text-center min-h-[54px]">
+                                              <div className="text-[11px] text-white/90 leading-none mb-1.5">{month}</div>
+                                              {isEditingThisMonth ? (
+                                                <Input
+                                                  type="number"
+                                                  min="0"
+                                                  value={target}
+                                                  onChange={(e) => handleMonthTargetChange(plan.id, index, parseInt(e.target.value) || 0)}
+                                                  className="h-7 text-center text-xs font-bold px-1"
+                                                />
+                                              ) : (
+                                                <div className={`text-sm font-bold ${target > 0 ? 'text-white' : 'text-white/50'}`}>{formatNumber(target)}</div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+
+                                      <div className="mt-2 rounded-md bg-green-600 border border-green-700 px-3 py-2 flex items-center justify-between">
+                                        <span className="text-xs font-medium text-white">المجموع</span>
+                                        <span className="text-base font-bold text-white">
+                                          {formatNumber(isEditingThisMonth
+                                            ? currentMonthlyValues.reduce((sum, val) => sum + (val || 0), 0)
+                                            : plan.annual_target
+                                          )}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              
+                              {/* الأعمدة المتحركة (بعد النشاط) */}
+                              {columnOrder
+                                .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
+                                .map((col) => {
+                                  // مسؤول التنفيذ
+                                  if (col.column_key === 'responsible_employee') {
+                                    return (
+                                      <td key={col.id} className="py-4 px-5 border-l-2 border-gray-200">
+                                        {plan.responsible_employee_name ? (
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                                              <span className="text-xs font-semibold text-primary">{plan.responsible_employee_name.charAt(0)}</span>
+                                            </div>
+                                            <span className="text-gray-700 text-sm">{plan.responsible_employee_name}</span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-gray-400 text-sm">غير محدد</span>
+                                        )}
+                                      </td>
+                                    );
+                                  }
+                                  
+                                  // المستهدف السنوي
+                                  if (col.column_key === 'annual_target') {
+                                    return (
+                                      <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
+                                        <span className="text-lg font-bold text-gray-800">{formatNumber(plan.annual_target)}</span>
+                                      </td>
+                                    );
+                                  }
+                                  
+                                  // الحمل الشهري المتوسط
+                                  if (col.column_key === 'monthly_average') {
+                                    return (
+                                      <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
+                                        <span className="text-lg font-bold text-[hsl(var(--primary))]">
+                                          {formatNumber(Math.round(plan.annual_target / 12))}
+                                        </span>
+                                      </td>
+                                    );
+                                  }
+                                  
+                                  // الأعمدة المخصصة
+                                  return (
+                                    <td key={col.id} className="py-4 px-3 text-center border-l-2 border-gray-200">
+                                      <span className="text-sm text-gray-500">—</span>
+                                    </td>
+                                  );
+                                })
+                              }
+                              
+                              {/* عمود الإجراء - يظهر فقط في وضع التعديل */}
+                              {isEditMode && (
+                                <td className="w-24 py-4 px-3 text-center">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-amber-600 hover:bg-amber-50"
+                                      onClick={() => openEditDialog("activity", group.strategicGoal, initGroup.initiative, plan)}
+                                      title="تعديل النشاط"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-red-500 hover:bg-red-50"
+                                      onClick={() => handleDeletePlan(plan.id)}
+                                      title="حذف النشاط"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                          
+                          goalRowRendered = true;
+                          initRowRendered = true;
+                        });
+                        
+                        // صف إضافة نشاط جديد تحت هذه المبادرة (يظهر فقط في وضع التعديل)
+                        if (isEditMode) {
+                          const isAddingHere = addingActivityUnder?.strategicGoal === group.strategicGoal && 
+                                               addingActivityUnder?.initiative === initGroup.initiative;
+                          
+                          if (isAddingHere) {
+                            rows.push(
+                              <tr 
+                                key={`add-activity-${group.strategicGoal}-${initGroup.initiative}`} 
+                                className={`${color.bg} border-r-4 ${color.border} bg-green-50/50`}
+                              >
+                                {/* ملاحظة: الهدف الاستراتيجي والمبادرة يغطيان هذا الصف عبر rowSpan */}
+                                {/* المبادرة الفرعية - فارغة */}
+                                <td className="py-2 px-4 border-l-2 border-gray-300"></td>
+                                {/* النشاط */}
+                                <td className="py-2 px-4 border-l-2 border-gray-300">
+                                  <Input
+                                    value={newActivityName}
+                                    onChange={(e) => setNewActivityName(e.target.value)}
+                                    className="h-8 text-sm"
+                                    placeholder="اسم النشاط الجديد"
+                                    autoFocus
+                                  />
+                                </td>
+                                {/* خلايا فارغة للأعمدة المتحركة */}
+                                {columnOrder
+                                  .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
+                                  .map((col) => {
+                                    if (col.column_key === 'annual_target') {
+                                      return (
+                                        <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300">
+                                          <Input
+                                            type="number"
+                                            value={newActivityTarget}
+                                            onChange={(e) => setNewActivityTarget(e.target.value)}
+                                            className="h-8 text-sm text-center"
+                                            placeholder="المستهدف"
+                                          />
+                                        </td>
+                                      );
+                                    }
+                                    return (
+                                      <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                    );
+                                  })
+                                }
+                                {/* إجراء */}
+                                <td className="py-2 px-2 text-center">
+                                  <div className="flex justify-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-green-600 hover:bg-green-100 rounded-full h-8 w-8"
+                                      onClick={handleAddActivityUnder}
+                                      disabled={!newActivityName.trim()}
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-red-600 hover:bg-red-100 rounded-full h-8 w-8"
+                                      onClick={() => {
+                                        setAddingActivityUnder(null);
+                                        setNewActivityName("");
+                                        setNewActivityTarget("");
+                                      }}
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          }
+                        }
+                      });
+                      
+                      // صف إضافة مبادرة جديدة تحت هذا الهدف (يظهر فقط في وضع التعديل)
+                      if (isEditMode) {
+                        const isAddingInitHere = addingInitiativeUnder === group.strategicGoal;
+                        
+                        if (isAddingInitHere) {
+                          rows.push(
+                            <tr 
+                              key={`add-initiative-${group.strategicGoal}`} 
+                              className={`${color.bg} border-r-4 ${color.border} bg-blue-50/50`}
+                            >
+                              {/* ملاحظة: الهدف الاستراتيجي يغطي هذا الصف عبر rowSpan */}
+                              {/* المبادرة */}
+                              <td className="py-2 px-4 border-l-2 border-gray-300">
+                                <Input
+                                  value={newInlineInitiativeName}
+                                  onChange={(e) => setNewInlineInitiativeName(e.target.value)}
+                                  className="h-8 text-sm"
+                                  placeholder="اسم المبادرة الجديدة"
+                                  autoFocus
+                                />
+                              </td>
+                              {/* المبادرة الفرعية - فارغة */}
+                              <td className="py-2 px-4 border-l-2 border-gray-300"></td>
+                              {/* النشاط */}
+                              <td className="py-2 px-4 border-l-2 border-gray-300">
+                                <Input
+                                  value={newInlineActivityName}
+                                  onChange={(e) => setNewInlineActivityName(e.target.value)}
+                                  className="h-8 text-sm"
+                                  placeholder="اسم النشاط"
+                                />
+                              </td>
+                              {/* خلايا فارغة للأعمدة المتحركة */}
+                              {columnOrder
+                                .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
+                                .map((col) => {
+                                  if (col.column_key === 'annual_target') {
+                                    return (
+                                      <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300">
+                                        <Input
+                                          type="number"
+                                          value={newInlineActivityTarget}
+                                          onChange={(e) => setNewInlineActivityTarget(e.target.value)}
+                                          className="h-8 text-sm text-center"
+                                          placeholder="المستهدف"
+                                        />
+                                      </td>
+                                    );
+                                  }
+                                  return (
+                                    <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                  );
+                                })
+                              }
+                              {/* إجراء */}
+                              <td className="py-2 px-2 text-center">
+                                <div className="flex justify-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-green-600 hover:bg-green-100 rounded-full h-8 w-8"
+                                    onClick={handleAddInitiativeUnder}
+                                    disabled={!newInlineInitiativeName.trim() || !newInlineActivityName.trim()}
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-red-600 hover:bg-red-100 rounded-full h-8 w-8"
+                                    onClick={() => {
+                                      setAddingInitiativeUnder(null);
+                                      setNewInlineInitiativeName("");
+                                      setNewInlineActivityName("");
+                                      setNewInlineActivityTarget("");
+                                    }}
                                   >
                                     <X className="w-4 h-4" />
-                                  </button>
-                                  <div className="flex items-center gap-2">
-                                    <span>التوزيع الشهري</span>
-                                    <Calendar className="w-4 h-4" />
-                                  </div>
+                                  </Button>
                                 </div>
-                                {/* كروت الأشهر الخضراء */}
-                                <div className="grid grid-cols-4 gap-2.5 p-3 bg-card" dir="rtl">
-                                  {MONTHS_AR.map((monthName, mIdx) => {
-                                    const monthNum = mIdx + 1;
-                                    const monthData = plan.months?.find(m => m.month === monthNum);
-                                    const value = monthData?.monthly_target ?? 0;
-                                    return (
-                                      <div
-                                        key={monthNum}
-                                        className="flex flex-col items-center justify-center rounded-lg border border-op-month-green-border bg-op-month-green py-2.5 px-2 shadow-sm"
-                                      >
-                                        <span className="text-[12px] text-op-month-green-foreground/95 mb-0.5 font-medium">{monthName}</span>
-                                        <span className="text-base font-bold text-op-month-green-foreground">{formatNumber(value)}</span>
-                                      </div>
-                                    );
-                                  })}
+                              </td>
+                            </tr>
+                          );
+                        } else {
+                          rows.push(
+                            <tr 
+                              key={`add-init-btn-${group.strategicGoal}`} 
+                              className={`${color.bg} border-r-4 ${color.border} hover:bg-gray-50/50 transition-colors border-b-4 border-b-gray-400`}
+                            >
+                              <td colSpan={columnOrder.filter(c => c.is_visible && !['strategic_goal'].includes(c.column_key)).length + 2} className="py-3 px-4">
+                                <div className="flex justify-center items-center gap-3">
+                                  {/* زر إضافة مبادرة جديدة */}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-4 text-xs font-medium text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-400"
+                                    onClick={() => {
+                                      setAddItemDialogType("initiative");
+                                      setAddItemDialogParentGoal(group.strategicGoal);
+                                      setAddItemDialogParentInit("");
+                                      setAddItemDialogOpen(true);
+                                    }}
+                                  >
+                                    <Plus className="w-3.5 h-3.5 ml-1" />
+                                    إضافة مبادرة
+                                  </Button>
+                                  {/* زر إضافة نشاط جديد - يفتح حوار لاختيار المبادرة */}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-4 text-xs font-medium text-teal-700 border-teal-300 bg-teal-50 hover:bg-teal-100 hover:text-teal-800 hover:border-teal-400"
+                                    onClick={() => {
+                                      setAddItemDialogType("activity");
+                                      setAddItemDialogParentGoal(group.strategicGoal);
+                                      setAddItemDialogParentInit(""); // لا تحديد مبادرة مسبقاً - المستخدم يختار
+                                      setAddItemDialogOpen(true);
+                                    }}
+                                  >
+                                    <Plus className="w-3.5 h-3.5 ml-1" />
+                                    إضافة نشاط
+                                  </Button>
                                 </div>
-                                {/* الشريط التركوازي السفلي - المجموع */}
-                                <div className="mx-3 mb-3 px-4 py-2.5 rounded-lg bg-op-month-teal text-op-month-teal-foreground font-bold text-sm flex items-center justify-between">
-                                  <span className="text-base">{formatNumber(plan.annual_target ?? 0)}</span>
-                                  <span>المجموع</span>
-                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+                      }
+                    });
+                    
+                    // صف إضافة هدف استراتيجي جديد
+                    if (isEditMode) {
+                      if (isAddingNewStrategicGoal) {
+                        rows.push(
+                          <tr 
+                            key="add-new-strategic-goal" 
+                            className="bg-purple-50/50 border-r-4 border-purple-400"
+                          >
+                            {/* الهدف الاستراتيجي */}
+                            <td className="py-2 px-4 border-l-2 border-gray-300">
+                              <Input
+                                value={newInlineGoalName}
+                                onChange={(e) => setNewInlineGoalName(e.target.value)}
+                                className="h-8 text-sm"
+                                placeholder="الهدف الاستراتيجي"
+                                autoFocus
+                              />
+                            </td>
+                            {/* المبادرة */}
+                            <td className="py-2 px-4 border-l-2 border-gray-300">
+                              <Input
+                                value={newInlineGoalInitiative}
+                                onChange={(e) => setNewInlineGoalInitiative(e.target.value)}
+                                className="h-8 text-sm"
+                                placeholder="المبادرة"
+                              />
+                            </td>
+                            {/* المبادرة الفرعية - فارغة */}
+                            <td className="py-2 px-4 border-l-2 border-gray-300"></td>
+                            {/* النشاط */}
+                            <td className="py-2 px-4 border-l-2 border-gray-300">
+                              <Input
+                                value={newInlineGoalActivity}
+                                onChange={(e) => setNewInlineGoalActivity(e.target.value)}
+                                className="h-8 text-sm"
+                                placeholder="النشاط"
+                              />
+                            </td>
+                            {/* خلايا فارغة للأعمدة المتحركة */}
+                            {columnOrder
+                              .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
+                              .map((col) => {
+                                if (col.column_key === 'annual_target') {
+                                  return (
+                                    <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300">
+                                      <Input
+                                        type="number"
+                                        value={newInlineGoalTarget}
+                                        onChange={(e) => setNewInlineGoalTarget(e.target.value)}
+                                        className="h-8 text-sm text-center"
+                                        placeholder="المستهدف"
+                                      />
+                                    </td>
+                                  );
+                                }
+                                return (
+                                  <td key={col.id} className="py-2 px-2 border-l-2 border-gray-300"></td>
+                                );
+                              })
+                            }
+                            {/* إجراء */}
+                            <td className="py-2 px-2 text-center">
+                              <div className="flex justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-green-600 hover:bg-green-100 rounded-full h-8 w-8"
+                                  onClick={handleAddNewStrategicGoal}
+                                  disabled={!newInlineGoalName.trim() || !newInlineGoalInitiative.trim() || !newInlineGoalActivity.trim()}
+                                >
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-600 hover:bg-red-100 rounded-full h-8 w-8"
+                                  onClick={() => {
+                                    setIsAddingNewStrategicGoal(false);
+                                    setNewInlineGoalName("");
+                                    setNewInlineGoalInitiative("");
+                                    setNewInlineGoalActivity("");
+                                    setNewInlineGoalTarget("");
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
                               </div>
                             </td>
                           </tr>
-                        )}
-                        </Fragment>
-                      ))}
+                        );
+                      } else {
+                        rows.push(
+                          <tr 
+                            key="add-goal-btn" 
+                            className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
+                          >
+                            <td colSpan={columnOrder.filter(c => c.is_visible).length + 2} className="py-3 px-4">
+                              <div className="flex justify-center">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 px-4 text-xs font-medium text-purple-700 border-purple-300 bg-purple-50 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-400"
+                                  onClick={() => {
+                                    setAddItemDialogType("strategic_goal");
+                                    setAddItemDialogParentGoal("");
+                                    setAddItemDialogParentInit("");
+                                    setAddItemDialogOpen(true);
+                                  }}
+                                >
+                                  <Plus className="w-3.5 h-3.5 ml-1" />
+                                  إضافة هدف استراتيجي
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      }
+                    }
+                    
+                    return rows;
+                  })()}
                   </tbody>
                 </table>
               </div>
