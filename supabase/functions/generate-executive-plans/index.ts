@@ -453,16 +453,24 @@ serve(async (req) => {
         return filterUserIds.length === 0 && filterEmployeeIds.length === 0 ? true : userMatch || employeeMatch;
       });
 
+      if (scopedOperationalPlans.length === 0 && materialized.length === 0) {
+        console.log(`No scoped operational plans for month ${targetMonth}`);
+        continue;
+      }
+
       // جلب أسماء الموظفين
       const allUserIds = [...new Set(scopedOperationalPlans.map((p: any) => p.user_id).filter(Boolean))];
       const allResponsibleIds = [...new Set(scopedOperationalPlans.map((p: any) => p.responsible_employee_id).filter(Boolean))];
-      const { data: employees } = await supabase
-        .from("employees")
-        .select("id, full_name, user_id, job_role, department_id")
-        .or([
-          allUserIds.length ? `user_id.in.(${allUserIds.join(",")})` : "",
-          allResponsibleIds.length ? `id.in.(${allResponsibleIds.join(",")})` : "",
-        ].filter(Boolean).join(","));
+      const employeeOrFilter = [
+        allUserIds.length ? `user_id.in.(${allUserIds.join(",")})` : "",
+        allResponsibleIds.length ? `id.in.(${allResponsibleIds.join(",")})` : "",
+      ].filter(Boolean).join(",");
+      const { data: employees } = employeeOrFilter
+        ? await supabase
+            .from("employees")
+            .select("id, full_name, user_id, job_role, department_id")
+            .or(employeeOrFilter)
+        : { data: [] } as any;
 
       const employeeMap = new Map(employees?.map(e => [e.user_id, e]) || []);
       const employeeByIdMap = new Map(employees?.map(e => [e.id, e]) || []);
