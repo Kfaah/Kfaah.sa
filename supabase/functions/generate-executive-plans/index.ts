@@ -295,7 +295,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: `لا توجد خطط تشغيلية للأشهر المحددة (${requestedMonthsText}) لعام ${targetYear}`,
+          error: `لا توجد مستهدفات شهرية للأشهر المحددة (${requestedMonthsText}) لعام ${targetYear}. يُعتبر الشهر "مخططاً" فقط عندما يكون له مستهدف شهري أكبر من صفر في إحدى الأهداف.`,
           monthsRequested: targetMonths,
           monthsWithPlans: monthsWithPlans,
           year: targetYear,
