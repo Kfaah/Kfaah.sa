@@ -2082,7 +2082,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
-                            className={cn("top-0 text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
+                            className={cn("text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
+                            style={{ top: stickyHeaderTop }}
                           >
                             {isEditMode ? (
                               <input
