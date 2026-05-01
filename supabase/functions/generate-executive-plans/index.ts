@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const MONTHS_AR = [
@@ -17,9 +17,11 @@ serve(async (req) => {
   }
 
   try {
-    const { month, months, year, userIds, operationalPlanIds, excelPlanIds, organizationId } = await req.json();
+    const { month, months, year, userIds, employeeIds, operationalPlanIds, excelPlanIds, organizationId } = await req.json();
     const filterOperationalIds: string[] = Array.isArray(operationalPlanIds) ? operationalPlanIds : [];
     const filterExcelIds: string[] = Array.isArray(excelPlanIds) ? excelPlanIds : [];
+    const filterUserIds: string[] = Array.isArray(userIds) ? userIds.filter(Boolean) : [];
+    const filterEmployeeIds: string[] = Array.isArray(employeeIds) ? employeeIds.filter(Boolean) : [];
     const hasPlanFilter = filterOperationalIds.length > 0 || filterExcelIds.length > 0;
     const activeOrganizationId = typeof organizationId === "string" && organizationId.trim() ? organizationId.trim() : null;
 
