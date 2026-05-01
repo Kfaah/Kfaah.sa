@@ -113,7 +113,7 @@ const DEFAULT_OPERATIONAL_PLAN_COLUMNS = [
   { id: "default-activity", column_key: "activity", column_name: "النشاط", display_order: 3, is_visible: true, is_standard: true },
   { id: "default-responsible", column_key: "responsible_employee", column_name: "مسؤول التنفيذ", display_order: 4, is_visible: true, is_standard: true },
   { id: "default-annual-target", column_key: "annual_target", column_name: "المستهدف السنوي", display_order: 5, is_visible: true, is_standard: true },
-  { id: "default-monthly-average", column_key: "monthly_average", column_name: "المتوسط الشهري", display_order: 6, is_visible: true, is_standard: true },
+  { id: "default-monthly-average", column_key: "monthly_average", column_name: "التكلفة التقديرية", display_order: 6, is_visible: true, is_standard: true },
 ] as const;
 
 // ألوان رسمية وبسيطة
@@ -2334,9 +2334,6 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     <div className="flex flex-col gap-1 min-w-0">
                                       <p className={`text-sm leading-relaxed ${isExpanded ? 'text-primary font-semibold' : 'text-gray-700 group-hover/activity:text-primary'}`}>{plan.activity_name}</p>
                                     </div>
-                                    <ChevronDown 
-                                      className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
-                                    />
                                   </div>
 
                                   {isExpanded && (
@@ -2447,7 +2444,20 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   if (col.column_key === 'annual_target') {
                                     return (
                                       <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
-                                        <span className="text-lg font-bold text-gray-800">{formatNumber(plan.annual_target)}</span>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id);
+                                          }}
+                                          className="inline-flex items-center gap-1.5 group/exp mx-auto"
+                                          title={isExpanded ? "طي التوزيع الشهري" : "عرض التوزيع الشهري"}
+                                        >
+                                          <span className={`text-lg font-bold ${isExpanded ? 'text-primary' : 'text-gray-800 group-hover/exp:text-primary'}`}>{formatNumber(plan.annual_target)}</span>
+                                          <ChevronDown
+                                            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400 group-hover/exp:text-primary'}`}
+                                          />
+                                        </button>
                                       </td>
                                     );
                                   }
