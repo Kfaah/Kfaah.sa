@@ -2078,6 +2078,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                       ))}
                     </colgroup>
                     <TableHeader>
+                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]" >
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
