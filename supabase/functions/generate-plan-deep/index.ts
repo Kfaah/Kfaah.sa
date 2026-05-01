@@ -120,6 +120,7 @@ async function classifyFileRelevance(
 interface RequestBody {
   plan_name?: string;
   year?: number;
+  organizationId?: string;
   user_brief?: string; // free-text instructions from the user
   reference_file_paths?: string[]; // storage paths in ai-plan-references bucket
 }
@@ -220,25 +221,37 @@ Deno.serve(async (req) => {
     const user = userData.user;
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Resolve organization
-    const { data: orgIdRow } = await admin.rpc("get_user_organization_id", { _user_id: user.id });
-    const organization_id = orgIdRow as string | null;
-
     const body: RequestBody = await req.json().catch(() => ({} as RequestBody));
     const planName = (body.plan_name || "خطة تشغيلية مولّدة بالذكاء الاصطناعي").trim();
     const year = body.year ?? new Date().getFullYear();
     const userBrief = (body.user_brief || "").trim();
     const filePaths = Array.isArray(body.reference_file_paths) ? body.reference_file_paths : [];
 
+    // Resolve organization: prefer the route-selected org, not the user's fallback/default org.
+    const requestedOrgId = typeof body.organizationId === "string" && body.organizationId.trim()
+      ? body.organizationId.trim()
+      : null;
+    const { data: fallbackOrgId } = await admin.rpc("get_user_organization_id", { _user_id: user.id });
+    let organization_id = requestedOrgId || (fallbackOrgId as string | null);
+    if (requestedOrgId) {
+      const { data: canUseOrg } = await admin.rpc("user_belongs_to_org", { _user_id: user.id, _org_id: requestedOrgId });
+      if (!canUseOrg) {
+        return new Response(JSON.stringify({ error: "غير مصرح باستخدام هذه الجمعية" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     // Gather organization context in parallel
     const [orgRow, employeesRow, goalsRow, initiativesRow, prevPlansRow, tasksRow, excelPlansRow] = await Promise.all([
       organization_id ? admin.from("organizations").select("name, slug").eq("id", organization_id).maybeSingle() : Promise.resolve({ data: null }),
-      admin.from("employees").select("id, full_name, job_title, department_id").limit(100),
-      admin.from("strategic_goals").select("name, description").limit(50),
-      admin.from("initiatives").select("name, strategic_goal_id").limit(100),
-      admin.from("operational_plans").select("strategic_goal, initiative, activity_name, annual_target, estimated_budget, year").order("created_at", { ascending: false }).limit(60),
-      admin.from("tasks").select("title, status, priority").order("created_at", { ascending: false }).limit(40),
-      admin.from("excel_plans").select("plan_name, year, columns, rows").order("created_at", { ascending: false }).limit(5),
+      organization_id ? admin.from("employees").select("id, full_name, user_id, job_role, department_id").eq("organization_id", organization_id).limit(100) : admin.from("employees").select("id, full_name, user_id, job_role, department_id").limit(100),
+      organization_id ? admin.from("strategic_goals").select("name, description").eq("organization_id", organization_id).limit(50) : admin.from("strategic_goals").select("name, description").limit(50),
+      organization_id ? admin.from("initiatives").select("name, strategic_goal_id").eq("organization_id", organization_id).limit(100) : admin.from("initiatives").select("name, strategic_goal_id").limit(100),
+      organization_id ? admin.from("operational_plans").select("strategic_goal, initiative, activity_name, annual_target, estimated_budget, year").eq("organization_id", organization_id).order("created_at", { ascending: false }).limit(60) : admin.from("operational_plans").select("strategic_goal, initiative, activity_name, annual_target, estimated_budget, year").order("created_at", { ascending: false }).limit(60),
+      organization_id ? admin.from("tasks").select("title, status, priority").eq("organization_id", organization_id).order("created_at", { ascending: false }).limit(40) : admin.from("tasks").select("title, status, priority").order("created_at", { ascending: false }).limit(40),
+      organization_id ? admin.from("excel_plans").select("plan_name, year, columns, rows").eq("organization_id", organization_id).order("created_at", { ascending: false }).limit(5) : admin.from("excel_plans").select("plan_name, year, columns, rows").order("created_at", { ascending: false }).limit(5),
     ]);
 
     // Read & classify uploaded reference files. Reject irrelevant ones up-front.
@@ -300,7 +313,7 @@ Deno.serve(async (req) => {
 
     const orgContext = {
       organization: orgRow?.data || null,
-      employees: (employeesRow.data || []).map((e: any) => ({ name: e.full_name, title: e.job_title })),
+      employees: (employeesRow.data || []).map((e: any) => ({ name: e.full_name, title: e.job_role })),
       strategic_goals: goalsRow.data || [],
       initiatives: initiativesRow.data || [],
       previous_operational_plans: prevPlansRow.data || [],
@@ -400,23 +413,25 @@ ${fileSummaries.length ? fileSummaries.join("\n\n---\n\n") : "(لم يتم رف�
       });
     }
 
+    const employeeRows = employeesRow.data || [];
     const employeeByName = new Map(
-      (employeesRow.data || []).map((employee: any) => [String(employee.full_name || "").trim(), employee.id]),
+      employeeRows.map((employee: any) => [String(employee.full_name || "").trim(), employee]),
     );
 
     // Persist as real operational plan rows so the generated plan appears immediately in the table
     const finalName = `${planName} — مولّدة بالذكاء الاصطناعي`;
-    const planRows = plan.rows.map((row) => {
+    const planRows = plan.rows.map((row, index) => {
       const responsibleName = String(row["مسؤول التنفيذ"] || "").trim();
+      const matchedEmployee = employeeByName.get(responsibleName) || employeeRows[index % Math.max(employeeRows.length, 1)] || null;
       return {
         organization_id,
-        user_id: user.id,
+        user_id: matchedEmployee?.user_id || user.id,
         plan_name: finalName,
         year,
         strategic_goal: String(row["الهدف الاستراتيجي"] || "").trim() || null,
         initiative: String(row["المبادرة الرئيسية"] || "").trim() || null,
         activity_name: String(row["النشاط"] || "").trim() || "نشاط مولّد بالذكاء الاصطناعي",
-        responsible_employee_id: employeeByName.get(responsibleName) || null,
+        responsible_employee_id: matchedEmployee?.id || null,
         annual_target: parseArabicNumber(row["المستهدف السنوي"]),
         estimated_budget: parseArabicNumber(row["التكلفة التقديرية (ريال)"]),
       };

@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const MONTHS_AR = [
@@ -17,9 +17,11 @@ serve(async (req) => {
   }
 
   try {
-    const { month, months, year, userIds, operationalPlanIds, excelPlanIds, organizationId } = await req.json();
+    const { month, months, year, userIds, employeeIds, operationalPlanIds, excelPlanIds, organizationId } = await req.json();
     const filterOperationalIds: string[] = Array.isArray(operationalPlanIds) ? operationalPlanIds : [];
     const filterExcelIds: string[] = Array.isArray(excelPlanIds) ? excelPlanIds : [];
+    const filterUserIds: string[] = Array.isArray(userIds) ? userIds.filter(Boolean) : [];
+    const filterEmployeeIds: string[] = Array.isArray(employeeIds) ? employeeIds.filter(Boolean) : [];
     const hasPlanFilter = filterOperationalIds.length > 0 || filterExcelIds.length > 0;
     const activeOrganizationId = typeof organizationId === "string" && organizationId.trim() ? organizationId.trim() : null;
 
@@ -116,8 +118,8 @@ serve(async (req) => {
         const list = employeesByDept.get(deptKey);
         if (!list || list.length === 0) return null;
         // فلترة بناء على userIds المختارة إن وُجدت
-        const filtered = (userIds && userIds.length > 0)
-          ? list.filter((e) => userIds.includes(e.user_id))
+        const filtered = filterUserIds.length > 0
+          ? list.filter((e) => filterUserIds.includes(e.user_id))
           : list;
         const pool = filtered.length > 0 ? filtered : list;
         const i = (deptCursor.get(deptKey) ?? 0) % pool.length;
@@ -225,7 +227,7 @@ serve(async (req) => {
           }
 
           // فلترة بالموظفين المحددين
-          if (userIds && userIds.length > 0 && !userIds.includes(matchedUserId)) return;
+          if (filterUserIds.length > 0 && !filterUserIds.includes(matchedUserId)) return;
 
           virtualPlans.push({
             planId: `excel:${ep.id}:${idx}`,
@@ -254,6 +256,7 @@ serve(async (req) => {
         operational_plans!inner (
           id,
           user_id,
+          responsible_employee_id,
           organization_id,
           year
         )
@@ -261,9 +264,6 @@ serve(async (req) => {
       .eq("operational_plans.year", targetYear)
       .gt("monthly_target", 0);
 
-    if (userIds && userIds.length > 0) {
-      monthsQuery = monthsQuery.in("operational_plans.user_id", userIds);
-    }
     if (activeOrganizationId) {
       monthsQuery = monthsQuery.eq("operational_plans.organization_id", activeOrganizationId);
     }
@@ -276,7 +276,8 @@ serve(async (req) => {
     console.log("[months-query]", {
       targetYear,
       targetMonths,
-      userIds: userIds?.length || 0,
+      userIds: filterUserIds.length,
+      employeeIds: filterEmployeeIds.length,
       activeOrganizationId,
       filterOperationalIds: filterOperationalIds.length,
       availableMonthsCount: availableMonths?.length || 0,
@@ -292,6 +293,13 @@ serve(async (req) => {
     const monthsWithOperational = [...new Set(
       (availableMonths || [])
         .filter((m: any) => Number(m.monthly_target || 0) > 0)
+        .filter((m: any) => {
+          const plan = m.operational_plans || {};
+          const hasPeopleFilter = filterUserIds.length > 0 || filterEmployeeIds.length > 0;
+          const userMatch = filterUserIds.length > 0 && filterUserIds.includes(plan.user_id);
+          const employeeMatch = filterEmployeeIds.length > 0 && plan.responsible_employee_id && filterEmployeeIds.includes(plan.responsible_employee_id);
+          return !hasPeopleFilter || userMatch || employeeMatch;
+        })
         .map((m: any) => m.month)
     )];
     // الخطط من Excel ليس لها أشهر محددة، لذا نعتبرها متاحة لأي شهر مُختار
@@ -414,11 +422,6 @@ serve(async (req) => {
         .eq("year", targetYear)
         .eq("operational_plan_months.month", targetMonth);
 
-      // تصفية حسب الموظفين المحددين
-      if (userIds && userIds.length > 0) {
-        query = query.in("user_id", userIds);
-      }
-
       // تصفية حسب خطط تشغيلية محددة
       if (filterOperationalIds.length > 0) {
         query = query.in("id", filterOperationalIds);
@@ -445,19 +448,41 @@ serve(async (req) => {
         continue;
       }
 
+      const scopedOperationalPlans = (operationalPlans || []).filter((plan: any) => {
+        const hasPeopleFilter = filterUserIds.length > 0 || filterEmployeeIds.length > 0;
+        const userMatch = filterUserIds.length > 0 && filterUserIds.includes(plan.user_id);
+        const employeeMatch = filterEmployeeIds.length > 0 && plan.responsible_employee_id && filterEmployeeIds.includes(plan.responsible_employee_id);
+        return !hasPeopleFilter || userMatch || employeeMatch;
+      });
+
+      if (scopedOperationalPlans.length === 0 && materialized.length === 0) {
+        console.log(`No scoped operational plans for month ${targetMonth}`);
+        continue;
+      }
+
       // جلب أسماء الموظفين
-      const allUserIds = [...new Set((operationalPlans || []).map(p => p.user_id))];
-      const { data: employees } = await supabase
-        .from("employees")
-        .select("id, full_name, user_id, job_role, department_id")
-        .in("user_id", allUserIds);
+      const allUserIds = [...new Set(scopedOperationalPlans.map((p: any) => p.user_id).filter(Boolean))];
+      const allResponsibleIds = [...new Set(scopedOperationalPlans.map((p: any) => p.responsible_employee_id).filter(Boolean))];
+      const employeeOrFilter = [
+        allUserIds.length ? `user_id.in.(${allUserIds.join(",")})` : "",
+        allResponsibleIds.length ? `id.in.(${allResponsibleIds.join(",")})` : "",
+      ].filter(Boolean).join(",");
+      const { data: employees } = employeeOrFilter
+        ? await supabase
+            .from("employees")
+            .select("id, full_name, user_id, job_role, department_id")
+            .or(employeeOrFilter)
+        : { data: [] } as any;
 
       const employeeMap = new Map(employees?.map(e => [e.user_id, e]) || []);
+      const employeeByIdMap = new Map(employees?.map(e => [e.id, e]) || []);
 
       // تجهيز البيانات للذكاء الاصطناعي
-      const plansData = (operationalPlans || []).map((plan: any) => {
+      const plansData = scopedOperationalPlans.map((plan: any) => {
         const planMonth = plan.operational_plan_months[0];
-        const employee = employeeMap.get(plan.user_id);
+        const employee = plan.responsible_employee_id
+          ? employeeByIdMap.get(plan.responsible_employee_id)
+          : employeeMap.get(plan.user_id);
         return {
           planId: plan.id,
           planMonthId: planMonth.id,
@@ -466,7 +491,7 @@ serve(async (req) => {
           strategicGoal: plan.strategic_goal,
           monthlyTarget: planMonth.monthly_target,
           annualTarget: plan.annual_target,
-          userId: plan.user_id,
+          userId: employee?.user_id || plan.user_id,
           organizationId: plan.organization_id,
           employeeName: employee?.full_name || "موظف",
           jobRole: employee?.job_role || "",

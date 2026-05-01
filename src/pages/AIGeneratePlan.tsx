@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Sparkles, Upload, FileText, X, Loader2, Brain, ArrowRight, CheckCircle2
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getAvailableYears, getCurrentYear } from "@/lib/utils";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
@@ -24,6 +25,9 @@ function fileIcon(name: string) {
 
 export default function AIGeneratePlan() {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug?: string }>();
+  const makeOrgUrl = (path: string) => (slug ? `/${slug}${path}` : path);
+  const { currentOrg } = useOrganization();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [planName, setPlanName] = useState("");
@@ -31,8 +35,20 @@ export default function AIGeneratePlan() {
   const [brief, setBrief] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [stage, setStage] = useState<"idle" | "uploading" | "analyzing" | "done">("idle");
+  const [routeOrgId, setRouteOrgId] = useState<string | null>(null);
+  const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
 
   const years = getAvailableYears();
+
+  useEffect(() => {
+    const resolveRouteOrg = async () => {
+      if (!slug) { setRouteOrgId(null); return; }
+      if (currentOrg?.slug === slug) { setRouteOrgId(currentOrg.id); return; }
+      const { data } = await supabase.from("organizations").select("id").eq("slug", slug).maybeSingle();
+      setRouteOrgId(data?.id ?? null);
+    };
+    resolveRouteOrg();
+  }, [slug, currentOrg?.id, currentOrg?.slug]);
 
   const handleFiles = (incoming: FileList | null) => {
     if (!incoming) return;
@@ -57,6 +73,11 @@ export default function AIGeneratePlan() {
   };
 
   const handleGenerate = async () => {
+    if (slug && !activeOrgId) {
+      toast({ title: "جاري تحديد الجمعية، حاول بعد لحظة", variant: "destructive" });
+      return;
+    }
+
     if (!planName.trim()) {
       toast({ title: "أدخل اسم الخطة", variant: "destructive" });
       return;
@@ -91,6 +112,7 @@ export default function AIGeneratePlan() {
         body: {
           plan_name: planName.trim(),
           year,
+          organizationId: activeOrgId,
           user_brief: brief.trim(),
           reference_file_paths: uploadedPaths,
         },
@@ -142,7 +164,7 @@ export default function AIGeneratePlan() {
 
       // العودة لصفحة الخطط مع نفس السنة والخطة المولّدة حتى تظهر النتيجة مباشرة
       const generatedPlanName = encodeURIComponent(data.plan_name || planName.trim());
-      setTimeout(() => navigate(`/operational-plans?year=${year}&plan=${generatedPlanName}`), 800);
+      setTimeout(() => navigate(makeOrgUrl(`/operational-plans?year=${year}&plan=${generatedPlanName}`)), 800);
     } catch (e: any) {
       console.error(e);
       toast({ title: "خطأ غير متوقع", description: e?.message || "", variant: "destructive" });
@@ -163,7 +185,7 @@ export default function AIGeneratePlan() {
             <Button
               variant="outline"
               className="gap-2 bg-white/15 text-white border-white/30 hover:bg-white/25"
-              onClick={() => navigate("/operational-plans")}
+              onClick={() => navigate(makeOrgUrl("/operational-plans"))}
             >
               <ArrowRight className="w-4 h-4" />
               رجوع
