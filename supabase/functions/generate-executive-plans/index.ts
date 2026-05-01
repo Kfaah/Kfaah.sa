@@ -250,12 +250,14 @@ serve(async (req) => {
       .from("operational_plan_months")
       .select(`
         month,
+        monthly_target,
         operational_plans!inner (
           user_id,
           year
         )
       `)
-      .eq("operational_plans.year", targetYear);
+      .eq("operational_plans.year", targetYear)
+      .gt("monthly_target", 0);
 
     if (userIds && userIds.length > 0) {
       monthsQuery = monthsQuery.in("operational_plans.user_id", userIds);
@@ -270,8 +272,12 @@ serve(async (req) => {
       console.error("Error fetching available months:", monthsError);
     }
 
-    // استخراج الأشهر المتاحة فقط
-    const monthsWithOperational = [...new Set((availableMonths || []).map((m: any) => m.month))];
+    // استخراج الأشهر المتاحة فقط (التي لها مستهدفات شهرية > 0)
+    const monthsWithOperational = [...new Set(
+      (availableMonths || [])
+        .filter((m: any) => Number(m.monthly_target || 0) > 0)
+        .map((m: any) => m.month)
+    )];
     // الخطط من Excel ليس لها أشهر محددة، لذا نعتبرها متاحة لأي شهر مُختار
     const monthsWithPlans = virtualPlans.length > 0
       ? [...new Set([...monthsWithOperational, ...targetMonths])]
