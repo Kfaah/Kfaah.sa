@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +34,7 @@ import { ManageCustomColumnsDialog } from "@/components/operational-plans/Manage
 import { formatNumber, getAvailableYears } from "@/lib/utils";
 import { useScopedView } from "@/hooks/useScopedView";
 import { ScopeToggle } from "@/components/scope/ScopeToggle";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Employee {
   id: string;
@@ -160,6 +161,9 @@ interface GroupedPlans {
 export default function OperationalPlans({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { slug } = useParams<{ slug?: string }>();
+  const makeOrgUrl = (path: string) => (slug ? `/${slug}${path}` : path);
+  const { currentOrg } = useOrganization();
   const { user: authUser } = useAuth();
   const { user, previewAsEmployee } = useUser();
   const { toast } = useToast();
@@ -280,6 +284,18 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   const [filterEmployeeId, setFilterEmployeeId] = useState<string>("all");
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
   const [filterPlanName, setFilterPlanName] = useState<string>("all");
+  const [routeOrgId, setRouteOrgId] = useState<string | null>(null);
+  const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
+
+  useEffect(() => {
+    const resolveRouteOrg = async () => {
+      if (!slug) { setRouteOrgId(null); return; }
+      if (currentOrg?.slug === slug) { setRouteOrgId(currentOrg.id); return; }
+      const { data } = await supabase.from("organizations").select("id").eq("slug", slug).maybeSingle();
+      setRouteOrgId(data?.id ?? null);
+    };
+    resolveRouteOrg();
+  }, [slug, currentOrg?.id, currentOrg?.slug]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -348,7 +364,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     fetchEmployees();
     fetchCustomColumns();
     fetchColumnOrder();
-  }, [authUser, isAdmin]);
+  }, [authUser, isAdmin, activeOrgId]);
 
   const fetchCustomColumns = async () => {
     try {
@@ -576,7 +592,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   // توليد AI للخطط التشغيلية: انتقل لصفحة الرفع لاختيار ملف ثم التوليد
   const handleAIGeneratePlans = async () => {
     setIsAIDialogOpen(false);
-    navigate("/operational-plans/upload");
+    navigate(makeOrgUrl("/operational-plans/upload"));
   };
 
   const fetchPlans = async () => {
@@ -588,6 +604,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
         .from("operational_plans")
         .select("*, responsible_employee:responsible_employee_id(full_name)")
         .order("display_order", { ascending: true });
+
+      if (activeOrgId) query = query.eq("organization_id", activeOrgId);
 
       if (error) throw error;
 
@@ -1559,7 +1577,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
             <>
               <Button
                 className="gap-2 bg-white text-primary hover:bg-white/90"
-                onClick={() => navigate("/operational-plans/add")}
+                onClick={() => navigate(makeOrgUrl("/operational-plans/add"))}
               >
                 <Plus className="w-4 h-4" />
                 إضافة خطة يدوياً
@@ -1668,7 +1686,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     type="button"
                     onClick={() => {
                       setIsAIDialogOpen(false);
-                      navigate("/operational-plans/ai-generate");
+                      navigate(makeOrgUrl("/operational-plans/ai-generate"));
                     }}
                     className="group text-right p-5 rounded-xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-white hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 transition-all"
                   >
@@ -1690,7 +1708,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                     type="button"
                     onClick={() => {
                       setIsAIDialogOpen(false);
-                      navigate("/operational-plans/ai-generate?withFiles=1");
+                      navigate(makeOrgUrl("/operational-plans/ai-generate?withFiles=1"));
                     }}
                     className="group text-right p-5 rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 transition-all"
                   >
