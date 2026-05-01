@@ -1,7 +1,7 @@
 // Edge function: generate-plan-deep
 // Deep AI-powered operational plan generation.
 // Studies: organization data + uploaded reference files + previous plans + tasks
-// Produces: a complete, professional operational plan saved as an excel_plan.
+// Produces: a complete, professional operational plan saved as visible operational plan rows.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -12,6 +12,21 @@ const corsHeaders = {
 };
 
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+function parseArabicNumber(value: unknown): number {
+  const normalized = String(value ?? "")
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+    .replace(/[^0-9.-]/g, "");
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : 0;
+}
+
+function distributeMonthlyTarget(total: number) {
+  const base = Math.floor(total / 12);
+  const remainder = total % 12;
+  return Array.from({ length: 12 }, (_, index) => base + (index >= 12 - remainder ? 1 : 0));
+}
 
 // --- Relevance gate prompt ---
 const RELEVANCE_SYSTEM = `أنت مدقّق ملفات لخطة تشغيلية لجمعية خيرية.
