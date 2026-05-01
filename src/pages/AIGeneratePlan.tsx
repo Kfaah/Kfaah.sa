@@ -140,7 +140,8 @@ export default function AIGeneratePlan() {
         description: `${data.rows_count} نشاط ضمن "${data.plan_name}"`,
       });
 
-      setTimeout(() => navigate("/operational-plans"), 800);
+      // العودة إلى الصفحة السابقة (لوحة الجمعية / الخطط) بدل التوجيه القسري
+      setTimeout(() => navigate(-1), 800);
     } catch (e: any) {
       console.error(e);
       toast({ title: "خطأ غير متوقع", description: e?.message || "", variant: "destructive" });
