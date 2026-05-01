@@ -65,6 +65,7 @@ interface OperationalPlan {
   initiative_id: string | null;
   sub_initiative_id?: string | null;
   annual_target: number;
+  estimated_budget?: number;
   year: number;
   status: string;
   created_at: string;
@@ -119,6 +120,7 @@ export function EditPlanDialog({
   // النشاط
   const [activityName, setActivityName] = useState("");
   const [annualTarget, setAnnualTarget] = useState<number>(0);
+  const [estimatedBudget, setEstimatedBudget] = useState<number>(0);
   const [responsibleEmployeeId, setResponsibleEmployeeId] = useState<string>("none");
   const [subInitiative, setSubInitiative] = useState<string>("");
 
@@ -173,6 +175,7 @@ export function EditPlanDialog({
       } else if (editType === "activity" && plan) {
         setActivityName(plan.activity_name);
         setAnnualTarget(plan.annual_target);
+        setEstimatedBudget(Number(plan.estimated_budget) || 0);
         setResponsibleEmployeeId(plan.responsible_employee_id || "none");
         setSubInitiative(plan.sub_initiative || "");
       }
@@ -321,6 +324,7 @@ export function EditPlanDialog({
           .update({
             activity_name: activityName,
             annual_target: annualTarget,
+            estimated_budget: estimatedBudget,
             responsible_employee_id: responsibleEmployeeId === "none" ? null : responsibleEmployeeId,
             sub_initiative: subInitiative.trim() || null,
           })
@@ -545,6 +549,20 @@ export function EditPlanDialog({
                   onChange={(e) => setAnnualTarget(parseFloat(e.target.value) || 0)}
                   placeholder="أدخل المستهدف السنوي"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>التكلفة التقديرية (ر.س)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={estimatedBudget}
+                  onChange={(e) => setEstimatedBudget(parseFloat(e.target.value) || 0)}
+                  placeholder="أدخل التكلفة التقديرية بالريال السعودي"
+                />
+                <p className="text-xs text-muted-foreground">
+                  المبلغ المالي التقديري لتنفيذ هذا النشاط خلال السنة.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">
