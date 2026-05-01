@@ -295,9 +295,10 @@ serve(async (req) => {
         .filter((m: any) => Number(m.monthly_target || 0) > 0)
         .filter((m: any) => {
           const plan = m.operational_plans || {};
-          const userMatch = filterUserIds.length === 0 || filterUserIds.includes(plan.user_id);
-          const employeeMatch = filterEmployeeIds.length === 0 || (plan.responsible_employee_id && filterEmployeeIds.includes(plan.responsible_employee_id));
-          return filterUserIds.length === 0 && filterEmployeeIds.length === 0 ? true : userMatch || employeeMatch;
+          const hasPeopleFilter = filterUserIds.length > 0 || filterEmployeeIds.length > 0;
+          const userMatch = filterUserIds.length > 0 && filterUserIds.includes(plan.user_id);
+          const employeeMatch = filterEmployeeIds.length > 0 && plan.responsible_employee_id && filterEmployeeIds.includes(plan.responsible_employee_id);
+          return !hasPeopleFilter || userMatch || employeeMatch;
         })
         .map((m: any) => m.month)
     )];
@@ -448,9 +449,10 @@ serve(async (req) => {
       }
 
       const scopedOperationalPlans = (operationalPlans || []).filter((plan: any) => {
-        const userMatch = filterUserIds.length === 0 || filterUserIds.includes(plan.user_id);
-        const employeeMatch = filterEmployeeIds.length === 0 || (plan.responsible_employee_id && filterEmployeeIds.includes(plan.responsible_employee_id));
-        return filterUserIds.length === 0 && filterEmployeeIds.length === 0 ? true : userMatch || employeeMatch;
+        const hasPeopleFilter = filterUserIds.length > 0 || filterEmployeeIds.length > 0;
+        const userMatch = filterUserIds.length > 0 && filterUserIds.includes(plan.user_id);
+        const employeeMatch = filterEmployeeIds.length > 0 && plan.responsible_employee_id && filterEmployeeIds.includes(plan.responsible_employee_id);
+        return !hasPeopleFilter || userMatch || employeeMatch;
       });
 
       if (scopedOperationalPlans.length === 0 && materialized.length === 0) {
