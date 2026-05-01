@@ -2369,19 +2369,19 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   // المستهدف السنوي
                                   if (col.column_key === 'annual_target') {
                                     return (
-                                      <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
+                                      <td key={col.id} className="w-32 py-4 px-3 text-center border-l-2 border-gray-200">
                                         <button
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id);
                                           }}
-                                          className="inline-flex items-center gap-1.5 group/exp mx-auto"
+                                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all group/exp mx-auto ${isExpanded ? 'bg-primary/10 border-primary/40 shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-primary/5 hover:border-primary/30'}`}
                                           title={isExpanded ? "طي التوزيع الشهري" : "عرض التوزيع الشهري"}
                                         >
-                                          <span className={`text-lg font-bold ${isExpanded ? 'text-primary' : 'text-gray-800 group-hover/exp:text-primary'}`}>{formatNumber(plan.annual_target)}</span>
+                                          <span className={`text-lg font-extrabold tabular-nums tracking-tight ${isExpanded ? 'text-primary' : 'text-gray-900 group-hover/exp:text-primary'}`}>{formatNumber(plan.annual_target)}</span>
                                           <ChevronDown
-                                            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-400 group-hover/exp:text-primary'}`}
+                                            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180 text-primary' : 'text-gray-500 group-hover/exp:text-primary'}`}
                                           />
                                         </button>
                                       </td>
@@ -2397,9 +2397,11 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                       maximumFractionDigits: 0,
                                     }).format(estimatedCost);
                                     return (
-                                      <td key={col.id} className="w-36 py-4 px-3 text-center border-l-2 border-gray-200">
-                                        <span className="text-lg font-bold text-gray-800 tabular-nums">
-                                          {formattedCost}
+                                      <td key={col.id} className="w-40 py-4 px-3 text-center border-l-2 border-gray-200">
+                                        <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200">
+                                          <span className="text-lg font-extrabold text-gray-900 tabular-nums tracking-tight">
+                                            {formattedCost}
+                                          </span>
                                         </span>
                                       </td>
                                     );
