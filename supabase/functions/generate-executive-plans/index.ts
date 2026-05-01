@@ -252,7 +252,9 @@ serve(async (req) => {
         month,
         monthly_target,
         operational_plans!inner (
+          id,
           user_id,
+          organization_id,
           year
         )
       `)
@@ -265,8 +267,22 @@ serve(async (req) => {
     if (activeOrganizationId) {
       monthsQuery = monthsQuery.eq("operational_plans.organization_id", activeOrganizationId);
     }
+    // قَيِّد البحث على الخطط المختارة فقط (إن وُجدت)
+    if (filterOperationalIds.length > 0) {
+      monthsQuery = monthsQuery.in("operational_plans.id", filterOperationalIds);
+    }
 
     const { data: availableMonths, error: monthsError } = await monthsQuery;
+    console.log("[months-query]", {
+      targetYear,
+      targetMonths,
+      userIds: userIds?.length || 0,
+      activeOrganizationId,
+      filterOperationalIds: filterOperationalIds.length,
+      availableMonthsCount: availableMonths?.length || 0,
+      error: monthsError?.message,
+      sample: (availableMonths || []).slice(0, 3),
+    });
     
     if (monthsError) {
       console.error("Error fetching available months:", monthsError);
