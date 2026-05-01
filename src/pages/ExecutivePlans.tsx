@@ -2078,11 +2078,11 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                       ))}
                     </colgroup>
                     <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]" >
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
-                            className={cn("top-0 text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
+                            className={cn("text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
+                            style={{ top: stickyHeaderTop }}
                           >
                             {isEditMode ? (
                               <input
