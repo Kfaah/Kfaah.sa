@@ -400,15 +400,6 @@ ${fileSummaries.length ? fileSummaries.join("\n\n---\n\n") : "(لم يتم رف�
       });
     }
 
-    const columns = [
-      "الهدف الاستراتيجي",
-      "المبادرة الرئيسية",
-      "النشاط",
-      "مسؤول التنفيذ",
-      "المستهدف السنوي",
-      "التكلفة التقديرية (ريال)",
-    ];
-
     const employeeByName = new Map(
       (employeesRow.data || []).map((employee: any) => [String(employee.full_name || "").trim(), employee.id]),
     );
