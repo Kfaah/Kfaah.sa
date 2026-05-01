@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
     // Gather organization context in parallel
     const [orgRow, employeesRow, goalsRow, initiativesRow, prevPlansRow, tasksRow, excelPlansRow] = await Promise.all([
       organization_id ? admin.from("organizations").select("name, slug").eq("id", organization_id).maybeSingle() : Promise.resolve({ data: null }),
-      admin.from("employees").select("full_name, job_title, department_id").limit(100),
+      admin.from("employees").select("id, full_name, job_title, department_id").limit(100),
       admin.from("strategic_goals").select("name, description").limit(50),
       admin.from("initiatives").select("name, strategic_goal_id").limit(100),
       admin.from("operational_plans").select("strategic_goal, initiative, activity_name, annual_target, estimated_budget, year").order("created_at", { ascending: false }).limit(60),
