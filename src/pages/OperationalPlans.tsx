@@ -2390,19 +2390,22 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   
                                   // الحمل الشهري المتوسط
                                   if (col.column_key === 'monthly_average') {
-                                    // التكلفة التقديرية: مبلغ مالي مشتق من المستهدف السنوي
-                                    // (افتراض تقريبي: 150 ريال لكل وحدة مستهدفة، بحد أدنى 5,000 ريال)
-                                    const estimatedCost = Math.max(5000, (plan.annual_target || 0) * 150);
+                                    // التكلفة التقديرية: مبلغ مالي مُدخل يدوياً من نموذج تعديل النشاط
+                                    const estimatedCost = Number(plan.estimated_budget) || 0;
                                     const formattedCost = new Intl.NumberFormat('en-US', {
                                       maximumFractionDigits: 0,
                                     }).format(estimatedCost);
                                     return (
                                       <td key={col.id} className="w-40 py-4 px-3 text-center border-l-2 border-gray-200">
-                                        <span className="inline-flex items-center justify-center min-w-[64px] h-9 px-3 rounded-full bg-blue-50 border border-blue-200">
-                                          <span className="text-sm font-bold text-blue-700 tabular-nums tracking-tight">
-                                            {formattedCost}
+                                        {estimatedCost > 0 ? (
+                                          <span className="inline-flex items-center justify-center min-w-[64px] h-9 px-3 rounded-full bg-blue-50 border border-blue-200">
+                                            <span className="text-sm font-bold text-blue-700 tabular-nums tracking-tight">
+                                              {formattedCost}
+                                            </span>
                                           </span>
-                                        </span>
+                                        ) : (
+                                          <span className="text-gray-300 text-sm">—</span>
+                                        )}
                                       </td>
                                     );
                                   }
