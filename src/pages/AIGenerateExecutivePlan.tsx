@@ -213,6 +213,11 @@ export default function AIGenerateExecutivePlan() {
   };
 
   const handleGenerate = async () => {
+    if (slug && !activeOrgId) {
+      toast({ title: "جاري تحديد الجمعية، حاول بعد لحظة", variant: "destructive" });
+      return;
+    }
+
     if (selectedMonths.length === 0) {
       toast({ title: "اختر شهر واحد على الأقل", variant: "destructive" });
       return;
