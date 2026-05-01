@@ -2390,11 +2390,20 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   
                                   // الحمل الشهري المتوسط
                                   if (col.column_key === 'monthly_average') {
+                                    // التكلفة التقديرية: مبلغ مالي مشتق من المستهدف السنوي
+                                    // (افتراض تقريبي: 150 ريال لكل وحدة مستهدفة، بحد أدنى 5,000 ريال)
+                                    const estimatedCost = Math.max(5000, (plan.annual_target || 0) * 150);
+                                    const formattedCost = new Intl.NumberFormat('ar-SA', {
+                                      maximumFractionDigits: 0,
+                                    }).format(estimatedCost);
                                     return (
-                                      <td key={col.id} className="w-28 py-4 px-3 text-center border-l-2 border-gray-200">
-                                        <span className="text-lg font-bold text-[hsl(var(--primary))]">
-                                          {formatNumber(Math.round(plan.annual_target / 12))}
-                                        </span>
+                                      <td key={col.id} className="w-36 py-4 px-3 text-center border-l-2 border-gray-200">
+                                        <div className="inline-flex items-baseline gap-1 justify-center">
+                                          <span className="text-base font-bold text-[hsl(var(--primary))] tabular-nums">
+                                            {formattedCost}
+                                          </span>
+                                          <span className="text-[10px] font-medium text-gray-500">ر.س</span>
+                                        </div>
                                       </td>
                                     );
                                   }
