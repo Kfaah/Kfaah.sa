@@ -107,15 +107,16 @@ async function resolveOrganizationId(supabase: any, userId: string, requestedOrg
 async function findAvailableMonths(supabase: any, targetYear: number, orgId: string | null) {
   try {
     let availQuery = supabase
-      .from("executive_plans")
-      .select(`operational_plan_months!inner(month, operational_plans!inner(year, organization_id))`)
-      .eq("operational_plan_months.operational_plans.year", targetYear);
-    if (orgId) availQuery = availQuery.eq("operational_plan_months.operational_plans.organization_id", orgId);
+      .from("operational_plan_months")
+      .select(`month, monthly_target, operational_plans!inner(year, organization_id)`)
+      .eq("operational_plans.year", targetYear)
+      .gt("monthly_target", 0);
+    if (orgId) availQuery = availQuery.eq("operational_plans.organization_id", orgId);
 
     const { data: avail } = await availQuery;
     const set = new Set<number>();
     (avail || []).forEach((r: any) => {
-      const m = r.operational_plan_months?.month;
+      const m = r?.month;
       if (m) set.add(Number(m));
     });
     return Array.from(set).sort((a, b) => a - b);
@@ -126,26 +127,27 @@ async function findAvailableMonths(supabase: any, targetYear: number, orgId: str
 
 async function validateGenerationPrerequisites(supabase: any, targetYear: number, targetMonth: number, orgId: string | null) {
   let epQuery = supabase
-    .from("executive_plans")
-    .select("id, operational_plan_months!inner(month, operational_plans!inner(year, organization_id))")
-    .eq("operational_plan_months.month", targetMonth)
-    .eq("operational_plan_months.operational_plans.year", targetYear)
+    .from("operational_plan_months")
+    .select("id, month, monthly_target, operational_plans!inner(year, organization_id)")
+    .eq("month", targetMonth)
+    .eq("operational_plans.year", targetYear)
+    .gt("monthly_target", 0)
     .limit(1);
 
-  if (orgId) epQuery = epQuery.eq("operational_plan_months.operational_plans.organization_id", orgId);
+  if (orgId) epQuery = epQuery.eq("operational_plans.organization_id", orgId);
 
   const { data, error } = await epQuery;
-  if (error) throw new Error("فشل في التحقق من الخطط التنفيذية");
+  if (error) throw new Error("فشل في التحقق من الخطط التشغيلية");
   if (data && data.length > 0) return null;
 
   const availableMonths = await findAvailableMonths(supabase, targetYear, orgId);
   const monthsListAr = availableMonths.length > 0
     ? availableMonths.map((m) => MONTHS_AR[m - 1]).join("، ")
     : "";
-  const baseMsg = `لا توجد خطط تنفيذية لشهر ${MONTHS_AR[targetMonth - 1]} ${targetYear}.`;
+  const baseMsg = `لا توجد مستهدفات شهرية لشهر ${MONTHS_AR[targetMonth - 1]} ${targetYear}.`;
   const hint = availableMonths.length > 0
-    ? ` الأشهر المتاحة حالياً: ${monthsListAr}. اختر أحدها أو أضف خططاً تنفيذية لهذا الشهر أولاً.`
-    : ` لم يتم العثور على أي خطط تنفيذية لسنة ${targetYear}. يرجى الانتقال إلى صفحة الخطط التنفيذية وتوليدها أو إضافتها أولاً.`;
+    ? ` الأشهر التي تحتوي مستهدفات: ${monthsListAr}. اختر أحدها أو أضف مستهدفات لهذا الشهر في الخطة التشغيلية أولاً.`
+    : ` لم يتم العثور على أي مستهدفات شهرية لسنة ${targetYear}. يرجى الانتقال إلى صفحة الخطط التشغيلية وإضافة مستهدفات للأشهر أولاً.`;
 
   return { error: baseMsg + hint, available_months: availableMonths };
 }
