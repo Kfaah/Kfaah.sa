@@ -40,6 +40,7 @@ export default function AIGenerateExecutivePlan() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { slug } = useParams<{ slug?: string }>();
+  const makeOrgUrl = (path: string) => (slug ? `/${slug}${path}` : path);
   const { currentOrg } = useOrganization();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { roleLevel, myEmployeeId } = useScopedView("scope:exec-ai");
@@ -151,22 +152,7 @@ export default function AIGenerateExecutivePlan() {
           }));
           return [...opGrouped, ...excelMapped];
         };
-        let merged = mergePlans(ops || [], excels || []);
-        if (merged.length === 0 && activeOrgId) {
-          const [{ data: fallbackOps }, { data: fallbackExcels }] = await Promise.all([
-            supabase
-              .from("operational_plans")
-              .select("id, activity_name, plan_name, strategic_goal, initiative, year")
-              .eq("year", year)
-              .order("created_at", { ascending: false }),
-            supabase
-              .from("excel_plans")
-              .select("id, plan_name, sheet_name, year, source_filename")
-              .eq("year", year)
-              .order("created_at", { ascending: false }),
-          ]);
-          merged = mergePlans(fallbackOps || [], fallbackExcels || []);
-        }
+        const merged = mergePlans(ops || [], excels || []);
         setAvailablePlans(merged);
         setSelectedPlanKeys([]); // إعادة تعيين عند تغيير السنة
       } finally {
@@ -270,6 +256,11 @@ export default function AIGenerateExecutivePlan() {
         .flatMap((p) => p.ids);
       const userIdsScope =
         departmentId !== "all" || selectedEmployeeIds.length > 0 ? effectiveUserIds : undefined;
+      const employeeIdsScope = isPlainEmployee
+        ? (myEmployeeId ? [myEmployeeId] : undefined)
+        : departmentId !== "all" || selectedEmployeeIds.length > 0
+          ? (selectedEmployeeIds.length > 0 ? selectedEmployeeIds : filteredEmployees.map((e) => e.id))
+          : undefined;
 
       for (const m of selectedMonths) {
         const { data, error } = await supabase.functions.invoke("generate-executive-plans", {
@@ -279,7 +270,9 @@ export default function AIGenerateExecutivePlan() {
             plan_name: planName.trim() || undefined,
             user_brief: brief.trim() || undefined,
             reference_file_paths: uploadedPaths,
+            organizationId: activeOrgId,
             userIds: userIdsScope,
+            employeeIds: employeeIdsScope,
             operationalPlanIds,
             excelPlanIds,
           },
@@ -315,7 +308,7 @@ export default function AIGenerateExecutivePlan() {
         description: `${totalDays} يوم تنفيذي تم إنشاؤها`,
       });
 
-      setTimeout(() => navigate("/executive-plans"), 800);
+      setTimeout(() => navigate(makeOrgUrl("/executive-plans")), 800);
     } catch (e: any) {
       console.error(e);
       toast({ title: "خطأ غير متوقع", description: e?.message || "", variant: "destructive" });
@@ -338,7 +331,7 @@ export default function AIGenerateExecutivePlan() {
             <Button
               variant="outline"
               className="gap-2 bg-white/15 text-white border-white/30 hover:bg-white/25"
-              onClick={() => navigate("/executive-plans")}
+              onClick={() => navigate(makeOrgUrl("/executive-plans"))}
             >
               <ArrowRight className="w-4 h-4" />
               رجوع
