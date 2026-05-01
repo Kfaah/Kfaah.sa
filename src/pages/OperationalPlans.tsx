@@ -328,6 +328,8 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     (init) => init.strategic_goal_id === selectedGoalId
   );
 
+  const visibleColumnOrder = columnOrder.length ? columnOrder : [...DEFAULT_OPERATIONAL_PLAN_COLUMNS];
+
   useEffect(() => {
     fetchPlans();
     fetchStrategicGoals();
@@ -2043,7 +2045,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                   <thead>
                     <tr className="bg-[hsl(var(--primary))] shadow-sm">
                       {/* عرض الأعمدة حسب الترتيب من columnOrder */}
-                      {columnOrder.filter(c => c.is_visible).map((col, idx) => {
+                      {visibleColumnOrder.filter(c => c.is_visible).map((col, idx) => {
                         // تحديد خصائص العمود
                         const isFirst = idx === 0;
                         const isNumeric = ['annual_target', 'monthly_average'].includes(col.column_key);
@@ -2420,7 +2422,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               </td>
                               
                               {/* الأعمدة المتحركة (بعد النشاط) */}
-                              {columnOrder
+                              {visibleColumnOrder
                                 .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
                                 .map((col) => {
                                   // مسؤول التنفيذ
@@ -2527,7 +2529,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                   />
                                 </td>
                                 {/* خلايا فارغة للأعمدة المتحركة */}
-                                {columnOrder
+                                {visibleColumnOrder
                                   .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
                                   .map((col) => {
                                     if (col.column_key === 'annual_target') {
@@ -2613,7 +2615,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                 />
                               </td>
                               {/* خلايا فارغة للأعمدة المتحركة */}
-                              {columnOrder
+                              {visibleColumnOrder
                                 .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
                                 .map((col) => {
                                   if (col.column_key === 'annual_target') {
@@ -2669,7 +2671,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               key={`add-init-btn-${group.strategicGoal}`} 
                               className={`${color.bg} border-r-4 ${color.border} hover:bg-gray-50/50 transition-colors border-b-4 border-b-gray-400`}
                             >
-                              <td colSpan={columnOrder.filter(c => c.is_visible && !['strategic_goal'].includes(c.column_key)).length + 2} className="py-3 px-4">
+                              <td colSpan={visibleColumnOrder.filter(c => c.is_visible && !['strategic_goal'].includes(c.column_key)).length + 2} className="py-3 px-4">
                                 <div className="flex justify-center items-center gap-3">
                                   {/* زر إضافة مبادرة جديدة */}
                                   <Button
@@ -2748,7 +2750,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                               />
                             </td>
                             {/* خلايا فارغة للأعمدة المتحركة */}
-                            {columnOrder
+                            {visibleColumnOrder
                               .filter(c => c.is_visible && !['strategic_goal', 'initiative', 'activity'].includes(c.column_key))
                               .map((col) => {
                                 if (col.column_key === 'annual_target') {
@@ -2805,7 +2807,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                             key="add-goal-btn" 
                             className="bg-purple-50/30 hover:bg-purple-100/50 transition-colors"
                           >
-                            <td colSpan={columnOrder.filter(c => c.is_visible).length + 2} className="py-3 px-4">
+                            <td colSpan={visibleColumnOrder.filter(c => c.is_visible).length + 2} className="py-3 px-4">
                               <div className="flex justify-center">
                                 <Button
                                   variant="outline"
