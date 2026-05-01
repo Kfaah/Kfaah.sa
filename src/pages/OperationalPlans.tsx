@@ -2093,12 +2093,24 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                         {expandedPlanId === plan.id && (
                           <tr className="bg-primary/5 border-b border-border">
                             <td colSpan={isEditMode ? 8 : 7} className="py-4 px-4">
-                              <div className="rounded-lg overflow-hidden border border-border bg-card shadow-sm">
-                                <div className="px-4 py-2 bg-muted/40 text-foreground font-semibold text-sm flex items-center gap-2 border-b border-border">
-                                  <Calendar className="w-4 h-4 text-green-700" />
-                                  التوزيع الشهري للمستهدف خلال السنة
+                              <div className="rounded-2xl overflow-hidden border-2 border-op-month-teal-border bg-card shadow-md max-w-3xl">
+                                {/* الشريط التركوازي العلوي */}
+                                <div className="px-4 py-2.5 bg-op-month-teal text-op-month-teal-foreground font-bold text-sm flex items-center justify-between gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedPlanId(null)}
+                                    className="rounded-full hover:bg-white/20 p-0.5 transition-colors"
+                                    title="إغلاق"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <span>التوزيع الشهري</span>
+                                    <Calendar className="w-4 h-4" />
+                                  </div>
                                 </div>
-                                <div className="grid grid-cols-6 md:grid-cols-12 gap-2 p-3 bg-card">
+                                {/* كروت الأشهر الخضراء */}
+                                <div className="grid grid-cols-4 gap-2.5 p-3 bg-card" dir="rtl">
                                   {MONTHS_AR.map((monthName, mIdx) => {
                                     const monthNum = mIdx + 1;
                                     const monthData = plan.months?.find(m => m.month === monthNum);
@@ -2106,13 +2118,18 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                                     return (
                                       <div
                                         key={monthNum}
-                                        className="flex flex-col items-center justify-center rounded-md border border-op-month-green-border bg-op-month-green py-2 px-1 shadow-sm"
+                                        className="flex flex-col items-center justify-center rounded-lg border border-op-month-green-border bg-op-month-green py-2.5 px-2 shadow-sm"
                                       >
-                                        <span className="text-[11px] text-op-month-green-foreground/90 mb-1">{monthName}</span>
-                                        <span className="text-sm font-bold text-op-month-green-foreground">{formatNumber(value)}</span>
+                                        <span className="text-[12px] text-op-month-green-foreground/95 mb-0.5 font-medium">{monthName}</span>
+                                        <span className="text-base font-bold text-op-month-green-foreground">{formatNumber(value)}</span>
                                       </div>
                                     );
                                   })}
+                                </div>
+                                {/* الشريط التركوازي السفلي - المجموع */}
+                                <div className="mx-3 mb-3 px-4 py-2.5 rounded-lg bg-op-month-teal text-op-month-teal-foreground font-bold text-sm flex items-center justify-between">
+                                  <span className="text-base">{formatNumber(plan.annual_target ?? 0)}</span>
+                                  <span>المجموع</span>
                                 </div>
                               </div>
                             </td>
