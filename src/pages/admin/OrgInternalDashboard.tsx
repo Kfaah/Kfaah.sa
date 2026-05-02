@@ -1404,7 +1404,7 @@ function EmployeesShowcase({
   useEffect(() => { setLocalEmployees(employees); }, [employees]);
 
   const handleDelete = async (employeeId: string, employeeName: string) => {
-    if (!confirm(`حذف الموظف "${employeeName}" نهائياً؟ سيتم حذف حسابه وارتباطه بالجمعية. لا يمكن التراجع.`)) return;
+    if (!confirm(`حذف الموظف "${employeeName}" نهائياً؟ سيتم حذف سجله وحسابه (إن وجد) من الجمعية. لا يمكن التراجع.`)) return;
     try {
       setDeletingId(employeeId);
       const { data, error } = await supabase.functions.invoke("delete-employee", {
