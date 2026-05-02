@@ -141,6 +141,7 @@ export default function OrgInternalDashboard({
   const params = useParams<{ orgId: string }>();
   const orgId = orgIdProp ?? params.orgId;
   const navigate = useNavigate();
+  const { isSuperAdmin } = useOrganization();
 
   const [org, setOrg] = useState<OrgInfo | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
