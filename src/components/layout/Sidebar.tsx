@@ -574,10 +574,16 @@ export function Sidebar() {
 
                 {/* Name and Role - Right side, centered vertically */}
                 <div className="flex-1 flex min-w-0 flex-col items-stretch justify-center gap-2">
-                  <h3 className="w-full rounded-full border border-white/35 bg-[hsl(107_46%_55%)] px-4 py-2 text-center text-base font-bold leading-tight text-white shadow-sm">
+                  <h3
+                    className="w-full rounded-full border border-white/35 px-4 py-2 text-center text-base font-bold leading-tight text-white shadow-sm"
+                    style={{ backgroundColor: branding.primary || "hsl(107 46% 55%)" }}
+                  >
                     {user.firstName} {user.lastName}
                   </h3>
-                  <span className="w-full rounded-full border border-white/30 bg-[hsl(186_81%_44%)] px-3 py-1.5 text-center text-xs font-bold leading-tight text-white shadow-sm">
+                  <span
+                    className="w-full rounded-full border border-white/30 px-3 py-1.5 text-center text-xs font-bold leading-tight text-white shadow-sm"
+                    style={{ backgroundColor: branding.accent || branding.secondary || "hsl(186 81% 44%)" }}
+                  >
                     {user.role}
                   </span>
                 </div>
