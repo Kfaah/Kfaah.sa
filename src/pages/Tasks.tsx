@@ -1417,16 +1417,28 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                       const statusConfig = getStatusConfig(task.status);
                       const priorityConfig = getPriorityConfig(task.priority);
                       const isFirstInGroup = taskIndex === 0;
+                      const isLastInGroup = taskIndex === group.tasks.length - 1;
                       
                       return (
-                        <TableRow key={task.id} className={cn(rowBgClass, "hover:bg-[hsl(var(--primary)/0.2)]")}>
+                        <TableRow
+                          key={task.id}
+                          className={cn(
+                            rowBgClass,
+                            "hover:bg-[hsl(var(--primary)/0.2)]",
+                            isLastInGroup && "border-b-4 border-b-[hsl(var(--primary))]"
+                          )}
+                        >
                           {/* النشاط - يظهر فقط في أول مهمة من كل مجموعة */}
                           {isFirstInGroup ? (
                             <TableCell 
-                              className={cn("border-l border-[hsl(var(--primary)/0.2)] font-semibold", activityColorClass)}
+                              className={cn(
+                                "border-l border-[hsl(var(--primary)/0.2)] font-semibold align-top p-0",
+                                rowBgClass,
+                                activityColorClass
+                              )}
                               rowSpan={group.tasks.length}
                             >
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col gap-1 sticky top-12 p-4">
                                 <div className="flex items-center gap-2">
                                   <Target className="w-4 h-4 flex-shrink-0" />
                                   <span className="line-clamp-3">{group.activityName}</span>
