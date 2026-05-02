@@ -473,29 +473,13 @@ export default function OrgAuth() {
           </CardContent>
         </Card>
 
-        {/* Contact info chip */}
-        {(org.contact_phone || org.contact_email) && (
-          <div
-            className="mt-4 flex items-center justify-center gap-3 text-xs px-4 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 shadow-sm w-fit mx-auto"
-            style={{ color: `hsl(${primaryHsl})` }}
-          >
-            {org.contact_phone && (
-              <span className="inline-flex items-center gap-1.5 font-medium" dir="ltr">
-                <Phone className="w-3.5 h-3.5" />
-                {org.contact_phone}
-              </span>
-            )}
-            {org.contact_phone && org.contact_email && (
-              <span className="w-px h-3" style={{ background: `hsl(${primaryHsl} / 0.3)` }} />
-            )}
-            {org.contact_email && (
-              <span className="inline-flex items-center gap-1.5 font-medium" dir="ltr">
-                <Mail className="w-3.5 h-3.5" />
-                {org.contact_email}
-              </span>
-            )}
-          </div>
-        )}
+        {/* Copyright */}
+        <div
+          className="mt-4 text-center text-xs font-medium px-4 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 shadow-sm w-fit mx-auto"
+          style={{ color: `hsl(${primaryHsl})` }}
+        >
+          © {new Date().getFullYear()} جميع الحقوق محفوظة لـ{org.name}
+        </div>
 
       </div>
     </div>
