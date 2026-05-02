@@ -338,10 +338,10 @@ function AppContent() {
   if (isPublicEntry) {
     return (
       <PreviewModeProvider>
-        <TooltipProvider>
+        <Suspense fallback={null}>
           <Sonner />
           <AppRoutes />
-        </TooltipProvider>
+        </Suspense>
       </PreviewModeProvider>
     );
   }
