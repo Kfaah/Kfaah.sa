@@ -500,30 +500,34 @@ async function processGenerationJob(params: {
 
     const allTasks: any[] = [];
     let processedEmployees = 0;
-    const CONCURRENCY = 3;
+    // Process ALL employees fully in parallel (each bucket = 1 AI call).
+    // Lovable AI gateway handles concurrency well; this collapses total wall time
+    // from O(N) to ~O(1 single AI call), turning 3+ minutes into ~30-60 seconds.
+    const settled = await Promise.allSettled(
+      bucketList.map(async (bucket) => {
+        const tasks = await callAIForBucket({
+          LOVABLE_API_KEY, bucket, filesByUser,
+          operationalPlans: operationalPlans || [],
+          orgInfo, targetYear, targetMonth, totalDays, orgId,
+        });
+        // Live progress update as each employee finishes
+        processedEmployees += 1;
+        allTasks.push(...tasks);
+        updateJob(supabase, jobId, {
+          processed_employees: processedEmployees,
+          generated_tasks_count: allTasks.length,
+          message: `تمت معالجة ${processedEmployees} من ${bucketList.length} موظف...`,
+        }).catch(() => {});
+        return tasks;
+      })
+    );
 
-    for (let i = 0; i < bucketList.length; i += CONCURRENCY) {
-      const slice = bucketList.slice(i, i + CONCURRENCY);
-      const results = await Promise.allSettled(slice.map((bucket) =>
-        callAIForBucket({ LOVABLE_API_KEY, bucket, filesByUser, operationalPlans: operationalPlans || [], orgInfo, targetYear, targetMonth, totalDays, orgId })
-      ));
-
-      for (const result of results) {
-        if (result.status === "fulfilled") {
-          allTasks.push(...result.value);
-        } else {
-          const reason: any = result.reason;
-          if (reason?.status === 402) throw reason;
-          console.error("AI bucket failed:", reason);
-        }
+    for (const result of settled) {
+      if (result.status === "rejected") {
+        const reason: any = result.reason;
+        if (reason?.status === 402) throw reason;
+        console.error("AI bucket failed:", reason);
       }
-
-      processedEmployees += slice.length;
-      await updateJob(supabase, jobId, {
-        processed_employees: processedEmployees,
-        generated_tasks_count: allTasks.length,
-        message: `تمت معالجة ${processedEmployees} من ${bucketList.length} موظف...`,
-      });
     }
 
     if (allTasks.length === 0) {
