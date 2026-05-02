@@ -60,7 +60,7 @@ function hexToHsl(hex: string | null | undefined): string | null {
 export default function OrgAuth() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [org, setOrg] = useState<OrgInfo | null>(null);
   const [orgLoading, setOrgLoading] = useState(true);
@@ -124,21 +124,21 @@ export default function OrgAuth() {
     (async () => {
       const { data: superCheck } = await supabase.rpc("is_super_admin", { _user_id: user.id });
       if (!superCheck) {
-        const { data: membership } = await supabase
-          .from("user_organizations")
-          .select("organization_id")
-          .eq("user_id", user.id)
-          .eq("organization_id", org.id)
-          .maybeSingle();
+        const { data: userOrgId } = await supabase.rpc("get_user_organization_id", { _user_id: user.id });
 
-        if (membership) {
+        if (userOrgId === org.id) {
           navigate(`/${slug}/app`, { replace: true });
         } else {
-          await signOut();
+          const { data: ownOrg } = await supabase
+            .from("organizations")
+            .select("slug")
+            .eq("id", userOrgId as string)
+            .maybeSingle();
+          navigate(`/${ownOrg?.slug || ""}/app`, { replace: true });
         }
       }
     })();
-  }, [user, authLoading, navigate, slug, org, signOut]);
+  }, [user, authLoading, navigate, slug, org]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
