@@ -76,6 +76,7 @@ import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/util
 import { useScopedView } from "@/hooks/useScopedView";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { ActivityPhasesPopover } from "@/components/executive-plans/ActivityPhasesPopover";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 
 interface Employee {
@@ -299,6 +300,7 @@ function wrapTextByChars(text: string, maxChars = 30): string {
 
 export default function ExecutivePlans({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
+  const confirm = useConfirm();
   const { user: authUser } = useAuth();
   const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
@@ -1641,8 +1643,14 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               <Button
                 className="gap-2 bg-red-500/90 text-white hover:bg-red-600 border border-red-300/50"
                 onClick={async () => {
-                  if (!confirm(`⚠️ سيتم حذف جميع الخطط التنفيذية للسنة ${selectedYear} نهائياً. هل أنت متأكد؟`)) return;
-                  if (!confirm(`تأكيد نهائي: حذف كل الخطط التنفيذية لسنة ${selectedYear}؟`)) return;
+                  const ok = await confirm({
+                    title: `حذف جميع الخطط التنفيذية لسنة ${selectedYear}`,
+                    description: `سيتم حذف جميع الخطط التنفيذية للسنة ${selectedYear} نهائياً. هذا إجراء حساس لا يمكن التراجع عنه. اكتب "حذف" للتأكيد.`,
+                    confirmText: "نعم، احذف الكل",
+                    variant: "danger",
+                    requireText: "حذف",
+                  });
+                  if (!ok) return;
                   try {
                     const client: any = supabase;
                     let q = client.from("executive_plans").delete().eq("year", selectedYear);
