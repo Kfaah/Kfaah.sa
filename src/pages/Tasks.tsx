@@ -93,6 +93,7 @@ interface Department {
 interface ActivityInfo {
   executive_plan_id: string;
   activity_name: string;
+  execution_date?: string | null;
 }
 
 interface TaskGenerationJob {
@@ -423,9 +424,12 @@ const Tasks = ({ embedded = false }: TasksProps) => {
           .from("executive_plans")
           .select(`
             id,
+            day,
             operational_plan_month:operational_plan_months!inner (
+              month,
               operational_plan:operational_plans!inner (
-                activity_name
+                activity_name,
+                year
               )
             )
           `)
@@ -433,10 +437,20 @@ const Tasks = ({ embedded = false }: TasksProps) => {
           .limit(300);
         if (error) throw error;
         if (cancelled) return;
-        const activitiesMap: ActivityInfo[] = (data || []).map((ep: any) => ({
-          executive_plan_id: ep.id,
-          activity_name: ep.operational_plan_month?.operational_plan?.activity_name || "غير محدد",
-        }));
+        const activitiesMap: ActivityInfo[] = (data || []).map((ep: any) => {
+          const y = ep.operational_plan_month?.operational_plan?.year;
+          const m = ep.operational_plan_month?.month;
+          const d = ep.day;
+          let execution_date: string | null = null;
+          if (y && m && d) {
+            execution_date = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          }
+          return {
+            executive_plan_id: ep.id,
+            activity_name: ep.operational_plan_month?.operational_plan?.activity_name || "غير محدد",
+            execution_date,
+          };
+        });
         setActivities(activitiesMap);
         if (cacheKey) {
           const cached = JSON.parse(localStorage.getItem(cacheKey) || "{}");
@@ -937,8 +951,8 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   }, [employees]);
 
   const activityByPlan = useMemo(() => {
-    const map = new Map<string, string>();
-    activities.forEach((activity) => map.set(activity.executive_plan_id, activity.activity_name));
+    const map = new Map<string, { name: string; execution_date?: string | null }>();
+    activities.forEach((activity) => map.set(activity.executive_plan_id, { name: activity.activity_name, execution_date: activity.execution_date }));
     return map;
   }, [activities]);
 
@@ -951,19 +965,26 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   // الحصول على اسم النشاط من executive_plan_id
   const getActivityName = (executivePlanId: string | null) => {
     if (!executivePlanId) return "غير محدد";
-    return activityByPlan.get(executivePlanId) || "غير محدد";
+    return activityByPlan.get(executivePlanId)?.name || "غير محدد";
+  };
+
+  // الحصول على تاريخ تنفيذ النشاط
+  const getActivityExecutionDate = (executivePlanId: string | null) => {
+    if (!executivePlanId) return null;
+    return activityByPlan.get(executivePlanId)?.execution_date || null;
   };
 
   // تجميع المهام حسب النشاط - مع التخزين المؤقت
   const groupTasksByActivity = useCallback((tasksToGroup: Task[]) => {
-    const grouped: { [key: string]: { activityName: string; tasks: Task[] } } = {};
+    const grouped: { [key: string]: { activityName: string; activityExecutionDate: string | null; tasks: Task[] } } = {};
     
     tasksToGroup.forEach(task => {
       const activityName = getActivityName(task.executive_plan_id);
+      const activityExecutionDate = getActivityExecutionDate(task.executive_plan_id);
       const key = task.executive_plan_id || "no-activity";
       
       if (!grouped[key]) {
-        grouped[key] = { activityName, tasks: [] };
+        grouped[key] = { activityName, activityExecutionDate, tasks: [] };
       }
       grouped[key].tasks.push(task);
     });
@@ -1398,9 +1419,24 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                               className={cn("border-l border-[hsl(var(--primary)/0.2)] font-semibold", activityColorClass)}
                               rowSpan={group.tasks.length}
                             >
-                              <div className="flex items-center gap-2">
-                                <Target className="w-4 h-4" />
-                                <span className="line-clamp-3">{group.activityName}</span>
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <Target className="w-4 h-4 flex-shrink-0" />
+                                  <span className="line-clamp-3">{group.activityName}</span>
+                                </div>
+                                {group.activityExecutionDate && (() => {
+                                  const d = formatDateWithHijri(group.activityExecutionDate);
+                                  return (
+                                    <div className="flex flex-col gap-0.5 pr-6 text-muted-foreground" dir="rtl">
+                                      <span className="text-xs font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                        {d.gregorian}
+                                      </span>
+                                      <span className="text-[10px]" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                        {d.hijri}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </TableCell>
                           ) : null}
@@ -1430,7 +1466,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                             {(() => {
                               const dates = formatDateWithHijri(task.due_date);
                               return (
-                                <div className="flex flex-col items-center justify-center gap-0.5">
+                                <div className="flex flex-col items-center justify-center gap-0.5" dir="rtl">
                                   <span className="text-sm font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
                                     {dates.gregorian}
                                   </span>
