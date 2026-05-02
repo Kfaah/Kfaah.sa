@@ -200,6 +200,8 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const orgId = currentOrg?.id ?? null;
   const cacheKey = orgId && authUser?.id ? `${TASKS_CACHE_PREFIX}${orgId}:${authUser.id}` : null;
+  const TASKS_HEADER_TOP = embedded ? "0px" : "72px";
+  const TASKS_HEADER_HEIGHT = 48;
 
   const refreshTasks = useCallback(async () => {
     if (!authUser || !orgId) return;
@@ -1386,19 +1388,19 @@ const Tasks = ({ embedded = false }: TasksProps) => {
               <table className="w-full min-w-[1180px] caption-bottom text-sm">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-right font-bold text-white border-l border-white/20 w-48">النشاط</TableHead>
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-right font-bold text-white border-l border-white/20">المهمة</TableHead>
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20">تاريخ التنفيذ</TableHead>
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20">الأولوية</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-right font-bold text-white border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))] w-48">النشاط</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-right font-bold text-white border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">المهمة</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">تاريخ التنفيذ</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">الأولوية</TableHead>
                     {isAdmin && (
-                      <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-32 border-l border-white/20">المنفذ</TableHead>
+                      <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-32 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">المنفذ</TableHead>
                     )}
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20">الوقت المقدر</TableHead>
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20">الوقت الفعلي</TableHead>
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20">المرفقات والتواصل</TableHead>
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20">التقييم</TableHead>
-                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-24">إجراء</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">الوقت المقدر</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">الوقت الفعلي</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">المرفقات والتواصل</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-32 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">الحالة</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">التقييم</TableHead>
+                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 shadow-[0_2px_0_0_hsl(var(--primary))]">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
