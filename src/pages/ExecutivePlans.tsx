@@ -588,15 +588,12 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const [addingMonth, setAddingMonth] = useState<number>(1);
   const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
-  const stickyHeaderTop = embedded ? "52px" : "0px";
-  // رأس الجدول = شريط زخرفي (40px) + صف العناوين (48px) = 88px
-  // فيجب أن تلتصق خلايا الجسم تحته
+  // الجدول داخل حاوية تمرير خاصة به (overflow-auto) لذا الـ sticky top = 0
+  const stickyHeaderTop = "0px";
   const DECOR_BAR_HEIGHT = 0;
   const HEADER_ROW_HEIGHT = 48;
-  const stickyTitlesRowTop = embedded ? `52px` : `0px`;
-  const stickyBodyTop = embedded
-    ? `${52 + HEADER_ROW_HEIGHT}px`
-    : `${HEADER_ROW_HEIGHT}px`;
+  const stickyTitlesRowTop = "0px";
+  const stickyBodyTop = `${HEADER_ROW_HEIGHT}px`;
 
 
 
@@ -2087,7 +2084,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     </colgroup>
                     <TableHeader>
                       {/* صف العناوين الفعلي */}
-                      <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]">
+                      <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-40 [&>th]:bg-[hsl(var(--primary))] [&>th]:shadow-[0_2px_0_0_hsl(var(--primary))]">
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
