@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* تصغير حجم العرض بنسبة 10% على المستوى العام */
+html {
+  font-size: 90%;
+  zoom: 0.9;
+}
+
 @layer base {
   :root {
     /* ألوان جمعية عطف - الأزرق الداكن والتركوازي */
