@@ -1402,9 +1402,17 @@ function EmployeesShowcase({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [localEmployees, setLocalEmployees] = useState(employees);
   useEffect(() => { setLocalEmployees(employees); }, [employees]);
+  const confirm = useConfirm();
 
   const handleDelete = async (employeeId: string, employeeName: string) => {
-    if (!confirm(`حذف الموظف "${employeeName}" نهائياً؟ سيتم حذف سجله وحسابه (إن وجد) من الجمعية. لا يمكن التراجع.`)) return;
+    const ok = await confirm({
+      title: "حذف الموظف",
+      description: `سيتم حذف سجل "${employeeName}" نهائياً مع حسابه (إن وُجد) من الجمعية. لا يمكن التراجع عن هذا الإجراء.`,
+      confirmText: "نعم، احذف",
+      cancelText: "إلغاء",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       setDeletingId(employeeId);
       const { data, error } = await supabase.functions.invoke("delete-employee", {
@@ -1422,7 +1430,14 @@ function EmployeesShowcase({
   };
 
   const handleImpersonate = async (employeeId: string, employeeName: string) => {
-    if (!confirm(`الدخول بحساب ${employeeName}؟ سيتم تسجيل خروجك من حسابك الحالي.`)) return;
+    const ok = await confirm({
+      title: "الدخول بحساب موظف",
+      description: `سيتم تسجيل خروجك من حسابك الحالي ثم الدخول بحساب "${employeeName}" لمعاينة ما يراه. هل تريد المتابعة؟`,
+      confirmText: "نعم، ادخل",
+      cancelText: "إلغاء",
+      variant: "info",
+    });
+    if (!ok) return;
     try {
       setImpersonatingId(employeeId);
       const { data, error } = await supabase.functions.invoke("impersonate-user", {
