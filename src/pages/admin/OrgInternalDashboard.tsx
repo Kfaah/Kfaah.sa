@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { SourceLink } from "@/components/admin/SourceLink";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { LogIn } from "lucide-react";
 const OperationalPlans = lazy(() => import("@/pages/OperationalPlans"));
 const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 const TasksPage = lazy(() => import("@/pages/Tasks"));
@@ -139,6 +141,7 @@ export default function OrgInternalDashboard({
   const params = useParams<{ orgId: string }>();
   const orgId = orgIdProp ?? params.orgId;
   const navigate = useNavigate();
+  const { isSuperAdmin } = useOrganization();
 
   const [org, setOrg] = useState<OrgInfo | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -613,6 +616,7 @@ export default function OrgInternalDashboard({
             empSearch={empSearch}
             setEmpSearch={setEmpSearch}
             orgSlug={org?.slug}
+            canImpersonate={isSuperAdmin}
           />
         </TabsContent>
 
@@ -1383,6 +1387,7 @@ function EmployeesShowcase({
   empSearch,
   setEmpSearch,
   orgSlug,
+  canImpersonate,
 }: {
   employees: Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null }>;
   loading: boolean;
@@ -1390,8 +1395,35 @@ function EmployeesShowcase({
   empSearch: string;
   setEmpSearch: (v: string) => void;
   orgSlug: string | undefined;
+  canImpersonate: boolean;
 }) {
   const branding = useOrgBranding();
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+
+  const handleImpersonate = async (employeeId: string, employeeName: string) => {
+    if (!confirm(`الدخول بحساب ${employeeName}؟ سيتم تسجيل خروجك من حسابك الحالي.`)) return;
+    try {
+      setImpersonatingId(employeeId);
+      const { data, error } = await supabase.functions.invoke("impersonate-user", {
+        body: { employee_id: employeeId },
+      });
+      if (error) throw error;
+      if (!data?.token_hash || !data?.email) throw new Error("استجابة غير صالحة");
+      // Sign out current session, then verify the magic link to sign in as the employee.
+      await supabase.auth.signOut();
+      const { error: vErr } = await supabase.auth.verifyOtp({
+        type: "magiclink",
+        token_hash: data.token_hash,
+      });
+      if (vErr) throw vErr;
+      toast.success(`تم الدخول بحساب ${data.employee_name ?? employeeName}`);
+      window.location.href = "/";
+    } catch (e: any) {
+      toast.error(e?.message ?? "تعذر الدخول كموظف");
+      setImpersonatingId(null);
+    }
+  };
+
   const filtered = employees.filter((e) => {
     if (!empSearch.trim()) return true;
     const q = empSearch.trim().toLowerCase();
@@ -1567,6 +1599,23 @@ function EmployeesShowcase({
                     تعديل
                   </Link>
                 </div>
+                {canImpersonate && (
+                  <button
+                    type="button"
+                    onClick={() => handleImpersonate(e.id, e.full_name)}
+                    disabled={impersonatingId === e.id}
+                    className="relative mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-50"
+                    style={{ borderColor: ORG_PRIMARY_RING }}
+                    title="الدخول إلى حساب هذا الموظف لمعاينة ما يراه"
+                  >
+                    {impersonatingId === e.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <LogIn className="h-3 w-3" />
+                    )}
+                    دخول كموظف
+                  </button>
+                )}
               </div>
             );
           })}
