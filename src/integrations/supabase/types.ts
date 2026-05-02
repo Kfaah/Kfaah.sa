@@ -2422,6 +2422,112 @@ export type Database = {
           },
         ]
       }
+      intelligence_profile_options: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          label: string
+          question_id: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          label: string
+          question_id: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          question_id?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_profile_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_profile_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_profile_questions: {
+        Row: {
+          created_at: string
+          data_field: string
+          display_order: number
+          helper_text: string | null
+          id: string
+          is_active: boolean
+          is_required: boolean
+          label: string
+          max_value: number | null
+          min_value: number | null
+          organization_id: string | null
+          placeholder: string | null
+          question_key: string
+          question_type: string
+          step_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_field: string
+          display_order?: number
+          helper_text?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          label: string
+          max_value?: number | null
+          min_value?: number | null
+          organization_id?: string | null
+          placeholder?: string | null
+          question_key: string
+          question_type: string
+          step_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_field?: string
+          display_order?: number
+          helper_text?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          label?: string
+          max_value?: number | null
+          min_value?: number | null
+          organization_id?: string | null
+          placeholder?: string | null
+          question_key?: string
+          question_type?: string
+          step_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_profile_questions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_roles: {
         Row: {
           color: string | null
@@ -3924,6 +4030,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_intelligence_profile: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       create_direct_conversation: {
         Args: { _other_user_id: string }
         Returns: string
