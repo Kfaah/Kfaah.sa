@@ -10,11 +10,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNumber } from "@/lib/utils";
 
 const positiveMessages = [
-  "أهلاً بك! يومك سعيد 🌟",
-  "نتمنى لك يوماً مليئاً بالإنجازات ✨",
-  "رائع! استمر في العمل المميز 💪",
-  "بارك الله في جهودك 🙏",
-  "معاً نحو النجاح 🚀",
+  (name: string) => `أهلاً بك يا ${name}! يومك سعيد 🌟`,
+  (name: string) => `نتمنى لك يوماً مليئاً بالإنجازات يا ${name} ✨`,
+  (name: string) => `رائع يا ${name}! استمر في العمل المميز 💪`,
+  (name: string) => `بارك الله في جهودك يا ${name} 🙏`,
+  (name: string) => `معاً نحو النجاح يا ${name} 🚀`,
 ];
 
 interface EmployeeStats {
@@ -66,9 +66,19 @@ const Index = () => {
   }, [location.state, location.key]);
 
   useEffect(() => {
-    const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
-    setCurrentMessage(randomMessage);
-  }, []);
+    const name = user.firstName?.trim();
+    if (!name) {
+      setCurrentMessage("");
+      return;
+    }
+    // اختيار رسالة ثابتة لكل يوم لكل موظف (بدلاً من العشوائية)
+    const dayOfYear = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
+    const idx = dayOfYear % positiveMessages.length;
+    setCurrentMessage(positiveMessages[idx](name));
+  }, [user.firstName]);
 
   useEffect(() => {
     const checkRoleAndFetchData = async () => {
