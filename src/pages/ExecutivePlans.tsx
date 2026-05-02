@@ -2087,13 +2087,15 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     </colgroup>
                     <TableHeader>
                       {/* صف العناوين الفعلي */}
-                      <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(180_60%_92%)]">
+                      <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]">
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
                             className={cn(
-                              "text-right font-bold text-slate-800 border-b-2 border-[hsl(var(--primary))]",
-                              idx < arr.length - 1 && "border-l border-slate-300/60",
+                              "text-right font-bold text-white",
+                              idx < arr.length - 1 && "border-l border-white/30",
+                              idx === 0 && "rounded-tr-2xl",
+                              idx === arr.length - 1 && "rounded-tl-2xl",
                             )}
                             style={{ top: stickyTitlesRowTop, height: `${HEADER_ROW_HEIGHT}px` }}
                           >
@@ -2101,7 +2103,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                               <input
                                 value={columnTitles[c.key] ?? ""}
                                 onChange={(e) => updateColumnTitle(c.key, e.target.value)}
-                                className="bg-white/70 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 px-2 py-1 rounded border border-slate-300 outline-none text-right w-full transition-colors"
+                                className="bg-white/90 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 px-2 py-1 rounded border border-white outline-none text-right w-full transition-colors"
                                 placeholder="عنوان"
                               />
                             ) : (
