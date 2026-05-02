@@ -61,7 +61,12 @@ export function WelcomeScreen() {
     const now = new Date();
     const dayOfMonth = now.getDate(); // 1-31
     const quoteIndex = (dayOfMonth - 1) % quotes.length;
-    setCurrentQuote(quotes[quoteIndex]);
+    const selected = quotes[quoteIndex];
+    const name = user.firstName?.trim() || "";
+    setCurrentQuote({
+      ...selected,
+      quote: selected.quote.replace(/\{name\}/g, name),
+    });
     
     // اختيار خلفية بناءً على اليوم فقط إذا لم توجد خلفية رئيسية
     if (!hasFeaturedBg) {
@@ -71,7 +76,7 @@ export function WelcomeScreen() {
       const bgIndex = dayOfYear % backgrounds.length;
       setCurrentBg(backgrounds[bgIndex]);
     }
-  }, [quotes, backgrounds, hasFeaturedBg]);
+  }, [quotes, backgrounds, hasFeaturedBg, user.firstName]);
 
   const fetchContent = async () => {
     try {
