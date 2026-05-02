@@ -1387,6 +1387,7 @@ function EmployeesShowcase({
   empSearch,
   setEmpSearch,
   orgSlug,
+  canImpersonate,
 }: {
   employees: Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null }>;
   loading: boolean;
@@ -1394,8 +1395,35 @@ function EmployeesShowcase({
   empSearch: string;
   setEmpSearch: (v: string) => void;
   orgSlug: string | undefined;
+  canImpersonate: boolean;
 }) {
   const branding = useOrgBranding();
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+
+  const handleImpersonate = async (employeeId: string, employeeName: string) => {
+    if (!confirm(`الدخول بحساب ${employeeName}؟ سيتم تسجيل خروجك من حسابك الحالي.`)) return;
+    try {
+      setImpersonatingId(employeeId);
+      const { data, error } = await supabase.functions.invoke("impersonate-user", {
+        body: { employee_id: employeeId },
+      });
+      if (error) throw error;
+      if (!data?.token_hash || !data?.email) throw new Error("استجابة غير صالحة");
+      // Sign out current session, then verify the magic link to sign in as the employee.
+      await supabase.auth.signOut();
+      const { error: vErr } = await supabase.auth.verifyOtp({
+        type: "magiclink",
+        token_hash: data.token_hash,
+      });
+      if (vErr) throw vErr;
+      toast.success(`تم الدخول بحساب ${data.employee_name ?? employeeName}`);
+      window.location.href = "/";
+    } catch (e: any) {
+      toast.error(e?.message ?? "تعذر الدخول كموظف");
+      setImpersonatingId(null);
+    }
+  };
+
   const filtered = employees.filter((e) => {
     if (!empSearch.trim()) return true;
     const q = empSearch.trim().toLowerCase();
