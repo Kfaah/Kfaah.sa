@@ -439,6 +439,11 @@ const Employees = () => {
 
         if (response.error || response.data?.success === false) {
           console.error("Error updating password:", response.error || response.data);
+          if (response.data?.fieldErrors) {
+            setEditErrors((prev) => ({ ...prev, ...(response.data.fieldErrors as Partial<Record<EditEmployeeField, string>>) }));
+            toast.error(response.data.fieldErrors.password || response.data?.error || "تعذر تحديث كلمة المرور");
+            return;
+          }
           throw new Error(response.data?.error || "تعذر تحديث كلمة المرور");
         }
       }
