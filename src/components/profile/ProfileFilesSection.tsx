@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -107,6 +108,7 @@ const CATEGORY_COLORS = [
 
 export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
@@ -705,10 +707,14 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive gap-2"
-                        onClick={() => {
-                          if (confirm(`هل أنت متأكد من حذف قسم "${cat.name}"؟`)) {
-                            deleteCategoryMutation.mutate(cat.id);
-                          }
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: "حذف القسم",
+                            description: `سيتم حذف قسم "${cat.name}" نهائياً مع جميع ملفاته. لا يمكن التراجع.`,
+                            confirmText: "نعم، احذف",
+                            variant: "danger",
+                          });
+                          if (ok) deleteCategoryMutation.mutate(cat.id);
                         }}
                       >
                         <Trash2 className="w-4 h-4" />
