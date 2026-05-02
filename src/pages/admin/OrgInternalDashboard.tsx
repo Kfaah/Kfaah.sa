@@ -615,6 +615,7 @@ export default function OrgInternalDashboard({
             empSearch={empSearch}
             setEmpSearch={setEmpSearch}
             orgSlug={org?.slug}
+            canImpersonate={isSuperAdmin}
           />
         </TabsContent>
 
