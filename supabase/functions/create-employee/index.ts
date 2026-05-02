@@ -92,7 +92,14 @@ serve(async (req) => {
 
       if (updateError) {
         console.error("Error updating password:", updateError);
-        return json({ success: false, error: "حدث خطأ أثناء تحديث كلمة المرور" }, 500);
+        const code = (updateError as any)?.code;
+        let msg = "حدث خطأ أثناء تحديث كلمة المرور";
+        if (code === "weak_password" || /weak|pwned|known to be/i.test(updateError.message ?? "")) {
+          msg = "كلمة المرور ضعيفة أو مكشوفة في تسريبات معروفة. اختر كلمة مرور أقوى وغير شائعة.";
+        } else if (/at least|short|length/i.test(updateError.message ?? "")) {
+          msg = "كلمة المرور قصيرة جداً. استخدم 8 أحرف على الأقل.";
+        }
+        return json({ success: false, error: msg }, 400);
       }
 
       return json({ success: true, message: "تم تحديث كلمة المرور بنجاح" }, 200);
