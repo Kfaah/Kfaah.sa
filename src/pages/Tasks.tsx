@@ -1432,13 +1432,13 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                           {isFirstInGroup ? (
                             <TableCell 
                               className={cn(
-                                "border-l border-[hsl(var(--primary)/0.2)] font-semibold sticky top-12 z-20 align-top",
+                                "border-l border-[hsl(var(--primary)/0.2)] font-semibold align-top p-0",
                                 rowBgClass,
                                 activityColorClass
                               )}
                               rowSpan={group.tasks.length}
                             >
-                              <div className="flex flex-col gap-1 sticky top-14">
+                              <div className="flex flex-col gap-1 sticky top-12 p-4">
                                 <div className="flex items-center gap-2">
                                   <Target className="w-4 h-4 flex-shrink-0" />
                                   <span className="line-clamp-3">{group.activityName}</span>
