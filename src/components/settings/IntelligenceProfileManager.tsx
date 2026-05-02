@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus, Trash2, RefreshCw, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 type StepKey = "skills" | "personality" | "goals" | "availability";
 
@@ -49,6 +50,7 @@ const STEP_ORDER: StepKey[] = ["skills", "personality", "goals", "availability"]
 export function IntelligenceProfileManager() {
   const { user } = useAuth();
   const { currentOrg } = useOrganization();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [optionsByQ, setOptionsByQ] = useState<Record<string, Option[]>>({});
@@ -200,7 +202,13 @@ export function IntelligenceProfileManager() {
   }
 
   async function deleteOption(q: Question, opt: Option) {
-    if (!confirm(`حذف الخيار "${opt.label}" نهائياً؟`)) return;
+    const ok = await confirm({
+      title: "حذف الخيار",
+      description: `سيتم حذف الخيار "${opt.label}" نهائياً. لا يمكن التراجع.`,
+      confirmText: "نعم، احذف",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       const target = await ensureOrgCopy(q);
       const targetOpts = optionsByQ[target.id] ?? optionsByQ[q.id];
@@ -245,7 +253,13 @@ export function IntelligenceProfileManager() {
 
   async function resetToDefault(q: Question) {
     if (!q.organization_id) return;
-    if (!confirm("استعادة الإعدادات الافتراضية لهذا السؤال؟ سيتم حذف التخصيصات.")) return;
+    const ok = await confirm({
+      title: "استعادة الإعدادات الافتراضية",
+      description: "سيتم حذف جميع تخصيصاتك لهذا السؤال والعودة إلى الإعدادات الافتراضية.",
+      confirmText: "نعم، استعد",
+      variant: "warning",
+    });
+    if (!ok) return;
     try {
       const { error } = await supabase
         .from("intelligence_profile_questions")
