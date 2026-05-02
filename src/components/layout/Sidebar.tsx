@@ -598,7 +598,7 @@ export function Sidebar() {
           }}
         >
           <div className="space-y-2.5" dir="rtl">
-            {visibleNavItems.map((item) => (
+            {finalNavItems.map((item) => (
               <div key={item.href}>
                 <NavLink item={item} />
               </div>
