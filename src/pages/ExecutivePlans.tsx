@@ -2086,16 +2086,6 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                       ))}
                     </colgroup>
                     <TableHeader>
-                      {/* الصف العلوي الزخرفي (gradient) */}
-                      <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-30 [&>th]:p-0">
-                        {DATES_TABLE_COLUMNS.map((c) => (
-                          <TableHead
-                            key={`decor-${c.key}`}
-                            className="h-10 bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] border-0"
-                            style={{ top: stickyHeaderTop, height: `${DECOR_BAR_HEIGHT}px` }}
-                          />
-                        ))}
-                      </TableRow>
                       {/* صف العناوين الفعلي */}
                       <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(180_60%_92%)]">
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
