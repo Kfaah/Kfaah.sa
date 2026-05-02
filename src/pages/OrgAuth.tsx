@@ -120,14 +120,25 @@ export default function OrgAuth() {
   // into this org's workspace. Super admins should still see the org login page
   // so they can sign in as a member of that specific organization if needed.
   useEffect(() => {
-    if (authLoading || !user || !slug) return;
+    if (authLoading || !user || !slug || !org) return;
     (async () => {
       const { data: superCheck } = await supabase.rpc("is_super_admin", { _user_id: user.id });
       if (!superCheck) {
-        navigate(`/${slug}/app`, { replace: true });
+        const { data: userOrgId } = await supabase.rpc("get_user_organization_id", { _user_id: user.id });
+
+        if (userOrgId === org.id) {
+          navigate(`/${slug}/app`, { replace: true });
+        } else {
+          const { data: ownOrg } = await supabase
+            .from("organizations")
+            .select("slug")
+            .eq("id", userOrgId as string)
+            .maybeSingle();
+          navigate(`/${ownOrg?.slug || ""}/app`, { replace: true });
+        }
       }
     })();
-  }, [user, authLoading, navigate, slug]);
+  }, [user, authLoading, navigate, slug, org]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,7 +207,7 @@ export default function OrgAuth() {
         toast.success(`تم إنشاء حسابك في ${org.name}`);
         navigate(`/${slug}/app`, { replace: true });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getArabicErrorMessage(error, "حدث خطأ"));
     } finally {
       setLoading(false);
@@ -236,10 +247,10 @@ export default function OrgAuth() {
 
   const primaryHsl = hexToHsl(org.primary_color) || "210 60% 28%";
   const accentHsl  = hexToHsl(org.accent_color)  || "174 52% 52%";
-  const brandStyle = {
-    ["--brand-primary" as any]: primaryHsl,
-    ["--brand-accent"  as any]: accentHsl,
-  } as React.CSSProperties;
+  const brandStyle: React.CSSProperties & Record<"--brand-primary" | "--brand-accent", string> = {
+    "--brand-primary": primaryHsl,
+    "--brand-accent": accentHsl,
+  };
 
   return (
     <div
