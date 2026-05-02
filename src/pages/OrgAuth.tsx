@@ -170,11 +170,6 @@ export default function OrgAuth() {
           setLoading(false);
           return;
         }
-        if (!email || !phone) {
-          toast.error("يرجى إدخال البريد الإلكتروني ورقم الجوال");
-          setLoading(false);
-          return;
-        }
         const redirectUrl = `${window.location.origin}/${slug}/app`;
         const { error: signUpError } = await supabase.auth.signUp({
           email: loginEmail,
@@ -185,8 +180,6 @@ export default function OrgAuth() {
               first_name: firstName,
               last_name: lastName,
               username,
-              email,
-              phone,
             },
           },
         });
@@ -414,23 +407,6 @@ export default function OrgAuth() {
                   </button>
                 </div>
               </div>
-
-              {!isLogin && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" /> البريد الإلكتروني *
-                    </Label>
-                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="example@email.com" className="h-11" dir="ltr" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="flex items-center gap-2">
-                      <User className="w-4 h-4" /> رقم الجوال *
-                    </Label>
-                    <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="+966 5x xxx xxxx" className="h-11" dir="ltr" />
-                  </div>
-                </>
-              )}
 
               <Button
                 type="submit"
