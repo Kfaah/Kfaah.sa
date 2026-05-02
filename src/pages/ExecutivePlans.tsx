@@ -589,8 +589,14 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
   const stickyHeaderTop = embedded ? "52px" : "0px";
-  // الصف العلوي للعناوين بارتفاع h-12 (48px)، فيجب أن تلتصق خلايا الجسم تحته
-  const stickyBodyTop = embedded ? "100px" : "48px";
+  // رأس الجدول = شريط زخرفي (40px) + صف العناوين (48px) = 88px
+  // فيجب أن تلتصق خلايا الجسم تحته
+  const DECOR_BAR_HEIGHT = 40;
+  const HEADER_ROW_HEIGHT = 48;
+  const stickyTitlesRowTop = embedded ? `${52 + DECOR_BAR_HEIGHT}px` : `${DECOR_BAR_HEIGHT}px`;
+  const stickyBodyTop = embedded
+    ? `${52 + DECOR_BAR_HEIGHT + HEADER_ROW_HEIGHT}px`
+    : `${DECOR_BAR_HEIGHT + HEADER_ROW_HEIGHT}px`;
 
 
 
