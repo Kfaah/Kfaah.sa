@@ -31,15 +31,6 @@ type Tile = {
 
 const tiles: Tile[] = [
   {
-    key: "intelligence",
-    to: "intelligence-profile",
-    label: "أسئلة الملف الذكي",
-    description: "تخصيص أسئلة وخيارات الملف الذكي للموظف",
-    icon: Brain,
-    gradient: "from-violet-500 to-fuchsia-500",
-    requiresAdmin: true,
-  },
-  {
     key: "roles",
     to: "roles-permissions",
     label: "الأدوار والصلاحيات",
@@ -64,6 +55,15 @@ const tiles: Tile[] = [
     description: "ترتيب وإخفاء وإعادة تسمية أيقونات الشريط الجانبي",
     icon: LayoutGrid,
     gradient: "from-amber-500 to-orange-500",
+    requiresAdmin: true,
+  },
+  {
+    key: "intelligence",
+    to: "intelligence-profile",
+    label: "أسئلة الملف الذكي",
+    description: "تخصيص أسئلة وخيارات الملف الذكي للموظف",
+    icon: Brain,
+    gradient: "from-violet-500 to-fuchsia-500",
     requiresAdmin: true,
   },
   {
