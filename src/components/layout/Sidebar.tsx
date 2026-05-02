@@ -57,6 +57,7 @@ const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: [string, string] 
   { match: /مآثر/, lines: ["جمعية مآثر للدعوة والإرشاد", "وتوعية الجاليات بمحافظة العارضة"] },
   { match: /القصبة/, lines: ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بمركز القصبة"] },
   { match: /حرف/, lines: ["جمعية حرف التعليمية", ""] },
+  { match: /التنمية الأهلية|العارضة.*تنمية|tanmiah/i, lines: ["جمعية التنمية الأهلية", "بمحافظة العارضة"] },
 ];
 
 function getShortOrgName(fullName: string): [string, string] | null {
@@ -178,6 +179,9 @@ export function Sidebar() {
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
   const isAtefOrg = /atef|عطف/i.test(
+    `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
+  );
+  const isTanmiahOrg = /tanmiah|التنمية الأهلية/i.test(
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
 
@@ -499,7 +503,9 @@ export function Sidebar() {
                       ? "h-[108px] w-[174px] scale-100 translate-x-0 translate-y-0"
                       : isAtefOrg
                         ? "h-[180px] w-[180px] scale-100"
-                        : "h-[210px] w-[210px] scale-125"
+                        : isTanmiahOrg
+                          ? "h-[170px] w-[170px] scale-100"
+                          : "h-[210px] w-[210px] scale-125"
                   )}
                 />
               ) : (
