@@ -569,7 +569,7 @@ export function Sidebar() {
 
         {/* Navigation Items - Scrollable with Settings inside */}
         <nav
-          className="scrollbar-none min-h-0 flex-1 space-y-2.5 overflow-y-auto py-3 pr-0 pl-0"
+          className="scrollbar-none min-h-0 flex-1 space-y-2.5 overflow-y-auto pt-3 pb-8 pr-0 pl-0"
           dir="ltr"
           style={{
             scrollbarWidth: 'none',
