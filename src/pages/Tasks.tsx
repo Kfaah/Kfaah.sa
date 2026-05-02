@@ -1466,7 +1466,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                             {(() => {
                               const dates = formatDateWithHijri(task.due_date);
                               return (
-                                <div className="flex flex-col items-center justify-center gap-0.5">
+                                <div className="flex flex-col items-center justify-center gap-0.5" dir="rtl">
                                   <span className="text-sm font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
                                     {dates.gregorian}
                                   </span>
