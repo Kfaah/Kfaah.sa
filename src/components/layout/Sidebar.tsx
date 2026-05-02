@@ -181,6 +181,9 @@ export function Sidebar() {
   const isAtefOrg = /atef|عطف/i.test(
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
+  const isTanmiahOrg = /tanmiah|التنمية الأهلية/i.test(
+    `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
+  );
 
   // استثناء: إعادة إظهار "التحليل الذكي" لحساب سعد الغامدي تحديداً
   const SAAD_ALGHAMDI_USER_ID = "041a7464-438e-45c8-8114-16de3a5e3645";
