@@ -20,6 +20,7 @@ interface MembershipRow {
   // Enriched
   display_name?: string;
   username?: string;
+  contact_email?: string;
 }
 
 const statusMeta: Record<MembershipRow["approval_status"], { label: string; cls: string; icon: typeof Check }> = {
@@ -32,7 +33,6 @@ export default function MembersSettings() {
   const { slug } = useParams<{ slug?: string }>();
   const base = slug ? `/${slug}/settings` : "/settings";
   const { user } = useAuth();
-  const [orgId, setOrgId] = useState<string | null>(null);
   const [rows, setRows] = useState<MembershipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -41,35 +41,11 @@ export default function MembersSettings() {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const { data: oid } = await supabase.rpc("get_user_organization_id", { _user_id: user.id });
-      if (!oid) { setRows([]); setLoading(false); return; }
-      setOrgId(oid as string);
-
-      const { data, error } = await supabase
-        .from("user_organizations")
-        .select("id, user_id, organization_id, approval_status, requested_at, approved_at")
-        .eq("organization_id", oid)
-        .order("requested_at", { ascending: false });
+      const { data, error } = await (supabase as any).rpc("get_org_membership_requests", {
+        _org_slug: slug ?? null,
+      });
       if (error) throw error;
-
-      const list = (data ?? []) as MembershipRow[];
-
-      // Enrich with employee/user info (best-effort)
-      const userIds = list.map((r) => r.user_id);
-      let nameMap = new Map<string, { display_name?: string; username?: string }>();
-      if (userIds.length) {
-        const { data: emps } = await supabase
-          .from("employees")
-          .select("user_id, full_name, username")
-          .in("user_id", userIds);
-        for (const e of emps ?? []) {
-          nameMap.set(e.user_id as string, {
-            display_name: (e as any).full_name ?? undefined,
-            username: (e as any).username ?? undefined,
-          });
-        }
-      }
-      setRows(list.map((r) => ({ ...r, ...(nameMap.get(r.user_id) ?? {}) })));
+      setRows((data ?? []) as MembershipRow[]);
     } catch (e) {
       toast.error("تعذر تحميل قائمة الأعضاء");
     } finally {
@@ -83,27 +59,11 @@ export default function MembersSettings() {
     if (!user?.id) return;
     setBusyId(row.id);
     try {
-      const { error } = await supabase
-        .from("user_organizations")
-        .update({
-          approval_status: status,
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-        })
-        .eq("id", row.id);
-      if (error) throw error;
-
-      // Notify the user about the decision
-      await supabase.from("notifications").insert({
-        user_id: row.user_id,
-        organization_id: row.organization_id,
-        title: status === "approved" ? "تم اعتماد عضويتك" : "تم رفض طلب الانضمام",
-        message:
-          status === "approved"
-            ? "تمت الموافقة على انضمامك إلى الجمعية. يمكنك الآن تسجيل الدخول."
-            : "نأسف، لم تتم الموافقة على طلب انضمامك. يرجى التواصل مع المسؤول.",
-        type: "info",
+      const { error } = await (supabase as any).rpc("review_membership_request", {
+        _membership_id: row.id,
+        _status: status,
       });
+      if (error) throw error;
 
       toast.success(status === "approved" ? "تمت الموافقة" : "تم الرفض");
       await loadData();
@@ -152,6 +112,7 @@ export default function MembersSettings() {
                       <div className="font-semibold">{row.display_name || "مستخدم جديد"}</div>
                       <div className="text-xs text-muted-foreground">
                         {row.username ? `هوية: ${row.username} · ` : ""}
+                        {row.contact_email && !row.contact_email.endsWith("@user.local") ? `بريد: ${row.contact_email} · ` : ""}
                         طلب الانضمام: {new Date(row.requested_at).toLocaleString("ar-SA")}
                       </div>
                     </div>
