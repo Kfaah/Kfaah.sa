@@ -79,7 +79,7 @@ const tiles: Tile[] = [
     key: "members",
     to: "members",
     label: "أعضاء الجمعية",
-    description: "إدارة المستخدمين وتعيين الأدوار",
+    description: "مراجعة طلبات الانضمام واعتماد العضويات",
     icon: Users2,
     gradient: "from-sky-500 to-blue-500",
     requiresAdmin: true,
