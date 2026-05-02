@@ -7,11 +7,11 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeContext";
-import { PreviewModeBanner } from "@/components/preview/PreviewModeBanner";
 // Eagerly-loaded shells (small + likely needed immediately)
 import PublicLanding from "./pages/PublicLanding";
 
 // Lazy-loaded route pages — split into separate chunks to make navigation snappy
+const PreviewModeBanner = lazy(() => import("@/components/preview/PreviewModeBanner").then((m) => ({ default: m.PreviewModeBanner })));
 const OrgAuth = lazy(() => import("./pages/OrgAuth"));
 const ProtectedAppProviders = lazy(() => import("@/components/ProtectedAppProviders"));
 const AdminLayout = lazy(() => import("@/components/admin/AdminLayout").then((m) => ({ default: m.AdminLayout })));
