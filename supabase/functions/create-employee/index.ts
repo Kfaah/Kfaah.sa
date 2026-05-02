@@ -98,7 +98,7 @@ serve(async (req) => {
 
       if (updateError) {
         console.error("Error updating password:", updateError);
-        const code = (updateError as any)?.code;
+        const code = "code" in updateError ? updateError.code : undefined;
         let msg = "حدث خطأ أثناء تحديث كلمة المرور";
         if (code === "weak_password" || /weak|pwned|known to be/i.test(updateError.message ?? "")) {
           msg = "كلمة المرور ضعيفة أو مكشوفة في تسريبات معروفة. اختر كلمة مرور أقوى وغير شائعة.";
