@@ -70,52 +70,22 @@ const priorityLabel: Record<string, string> = {
   high: "عالية",
 };
 
-// خيارات جاهزة لكل حقل — يمكن للموظف اختيار من القائمة أو الإضافة يدوياً
-const SUGGESTIONS: Record<string, string[]> = {
-  technical_skills: [
-    "Excel متقدم",
-    "إدارة المشاريع",
-    "التسويق الرقمي",
-    "إدارة المتبرعين",
-    "تحليل البيانات",
-    "كتابة التقارير",
-    "إعداد العروض التقديمية",
-    "إدارة وسائل التواصل",
-    "خدمة العملاء",
-    "المحاسبة المالية",
-    "إدارة الفعاليات",
-    "التواصل المؤسسي",
-    "العمل التطوعي",
-    "إدارة المتاجر الإلكترونية",
-  ],
-  languages: ["العربية", "الإنجليزية", "الفرنسية", "الأردية", "التركية"],
-  certifications: [
-    "PMP",
-    "شهادة في التسويق الرقمي",
-    "إدارة الجودة",
-    "محاسبة معتمدة",
-    "شهادة في القيادة",
-    "تحليل البيانات",
-  ],
-  development_areas: [
-    "قيادة الفرق",
-    "التخطيط الاستراتيجي",
-    "التحليل المالي",
-    "مهارات التفاوض",
-    "العرض والإلقاء",
-    "إدارة الوقت",
-    "الذكاء الاصطناعي",
-  ],
-  preferred_domains: [
-    "العمل مع المتبرعين",
-    "إعداد التقارير",
-    "إدارة الحملات",
-    "تطوير المحتوى",
-    "خدمة المستفيدين",
-    "العمليات الميدانية",
-    "الأنشطة الرقمية",
-  ],
-};
+// أنواع أسئلة قاعدة البيانات
+interface DbQuestion {
+  id: string;
+  organization_id: string | null;
+  step_key: StepKey;
+  question_key: string;
+  question_type: string;
+  is_active: boolean;
+}
+interface DbOption {
+  id: string;
+  question_id: string;
+  value: string;
+  label: string;
+  is_active: boolean;
+}
 
 export default function EmployeeOnboarding() {
   const { user } = useAuth();
@@ -125,6 +95,8 @@ export default function EmployeeOnboarding() {
   const [saving, setSaving] = useState(false);
 
   const [employee, setEmployee] = useState<any>(null);
+  const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set()); // أسئلة مُفعَّلة
+  const [optionsByKey, setOptionsByKey] = useState<Record<string, { value: string; label: string }[]>>({});
   const [jobDuties, setJobDuties] = useState<JobDuty[]>([]);
   const [draftDuty, setDraftDuty] = useState<JobDuty>({ ...NEW_DUTY });
   const [data, setData] = useState({
@@ -165,6 +137,41 @@ export default function EmployeeOnboarding() {
         .maybeSingle();
       setEmployee(emp);
 
+      // جلب أسئلة الملف الذكي (خاصة بالجمعية + افتراضية)
+      const orgId = emp?.organization_id ?? null;
+      const orFilter = orgId
+        ? `organization_id.eq.${orgId},organization_id.is.null`
+        : `organization_id.is.null`;
+      const { data: qs } = await supabase
+        .from("intelligence_profile_questions")
+        .select("*")
+        .or(orFilter);
+      const dedup = new Map<string, DbQuestion>();
+      (qs ?? []).forEach((q: any) => {
+        const ex = dedup.get(q.question_key);
+        if (!ex || (q.organization_id && !ex.organization_id)) {
+          dedup.set(q.question_key, q as DbQuestion);
+        }
+      });
+      const finalQs = Array.from(dedup.values());
+      setActiveKeys(new Set(finalQs.filter((q) => q.is_active).map((q) => q.question_key)));
+
+      const qIds = finalQs.map((q) => q.id);
+      if (qIds.length > 0) {
+        const { data: opts } = await supabase
+          .from("intelligence_profile_options")
+          .select("id, question_id, value, label, is_active")
+          .in("question_id", qIds);
+        const byKey: Record<string, { value: string; label: string }[]> = {};
+        finalQs.forEach((q) => {
+          const list = (opts ?? [])
+            .filter((o: any) => o.question_id === q.id && o.is_active)
+            .map((o: any) => ({ value: o.value, label: o.label }));
+          byKey[q.question_key] = list;
+        });
+        setOptionsByKey(byKey);
+      }
+
       const { data: existing } = await supabase
         .from("employee_intelligence_profiles")
         .select("*")
@@ -203,6 +210,8 @@ export default function EmployeeOnboarding() {
       setLoading(false);
     })();
   }, [user]);
+
+  const isActive = (key: string) => activeKeys.has(key);
 
   const addChip = (field: keyof typeof chipInputs) => {
     const val = chipInputs[field].trim();
