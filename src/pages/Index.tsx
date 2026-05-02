@@ -106,6 +106,14 @@ const Index = () => {
 
         // إعادة توجيه الموظف العادي للاستبيان الذكي إذا لم يكمله بعد
         if (!admin) {
+          // حسابات الجمعية (viewer) لا تملأ الملف الذكي
+          const { data: isViewer } = await supabase.rpc("is_viewer", {
+            _user_id: authUser.id,
+          });
+          if (isViewer) {
+            await fetchEmployeeStats(authUser.id);
+            return;
+          }
           const { data: profile } = await supabase
             .from("employee_intelligence_profiles")
             .select("onboarding_completed")
