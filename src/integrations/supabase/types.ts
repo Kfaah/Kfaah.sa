@@ -4258,6 +4258,7 @@ export type Database = {
         | "finance_manager"
         | "accountant"
         | "super_admin"
+        | "viewer"
       custom_column_type: "text" | "number" | "date" | "department" | "employee"
       employee_role_level: "employee" | "manager" | "admin"
     }
@@ -4396,6 +4397,7 @@ export const Constants = {
         "finance_manager",
         "accountant",
         "super_admin",
+        "viewer",
       ],
       custom_column_type: ["text", "number", "date", "department", "employee"],
       employee_role_level: ["employee", "manager", "admin"],
