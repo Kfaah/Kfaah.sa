@@ -138,19 +138,32 @@ export function Sidebar() {
     isActuallyAdmin || isAdminArea ? "admin" : "employee"
   );
   const [roleReady, setRoleReady] = useState(isActuallyAdmin || isAdminArea);
+  const [isViewer, setIsViewer] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!authUser) { setIsViewer(false); return; }
+      const { data } = await supabase.rpc("is_viewer", { _user_id: authUser.id });
+      if (!cancelled) setIsViewer(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [authUser]);
 
   // خلفية واحدة ثابتة من أعلى القائمة إلى أسفلها بدون أي تدرج.
   // ملاحظة: لجمعية صواب نفرض خلفية بيضاء بحسب طلب المستخدم.
   const sidebarBgStyle = undefined as React.CSSProperties | undefined;
-  const visibleNavItems = previewAsEmployee
-    ? employeeNavItems
-    : !roleReady
-      ? []
-      : roleLevel === "admin"
-        ? adminNavItems
-        : roleLevel === "manager"
-          ? managerNavItems
-          : employeeNavItems;
+  const visibleNavItems = isViewer
+    ? managerNavItems.filter((it) => it.href !== "/intelligence")
+    : previewAsEmployee
+      ? employeeNavItems
+      : !roleReady
+        ? []
+        : roleLevel === "admin"
+          ? adminNavItems
+          : roleLevel === "manager"
+            ? managerNavItems
+            : employeeNavItems;
   const isSawabOrg = /sawab|صواب/i.test(
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
