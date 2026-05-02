@@ -5,6 +5,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeContext";
+import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 // Eagerly-loaded shells (small + likely needed immediately)
 import PublicLanding from "./pages/PublicLanding";
 
@@ -431,26 +432,30 @@ function AppContent() {
   if (isPublicEntry) {
     return (
       <PreviewModeProvider>
-        <Suspense fallback={null}>
-          <Sonner />
-          <AppRoutes />
-        </Suspense>
+        <ConfirmDialogProvider>
+          <Suspense fallback={null}>
+            <Sonner />
+            <AppRoutes />
+          </Suspense>
+        </ConfirmDialogProvider>
       </PreviewModeProvider>
     );
   }
 
   return (
     <PreviewModeProvider>
-      <Suspense fallback={<RouteFallback />}>
-        <ProtectedAppProviders>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <AppRoutes />
-              <AssistantFab />
-            </TooltipProvider>
-        </ProtectedAppProviders>
-      </Suspense>
+      <ConfirmDialogProvider>
+        <Suspense fallback={<RouteFallback />}>
+          <ProtectedAppProviders>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <AppRoutes />
+                <AssistantFab />
+              </TooltipProvider>
+          </ProtectedAppProviders>
+        </Suspense>
+      </ConfirmDialogProvider>
     </PreviewModeProvider>
   );
 }
