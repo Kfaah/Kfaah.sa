@@ -93,6 +93,7 @@ interface Department {
 interface ActivityInfo {
   executive_plan_id: string;
   activity_name: string;
+  execution_date?: string | null;
 }
 
 interface TaskGenerationJob {
