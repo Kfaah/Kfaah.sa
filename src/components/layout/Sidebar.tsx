@@ -40,6 +40,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useCanAccessSettings } from "@/hooks/useCanAccessSettings";
 import { supabase } from "@/integrations/supabase/client";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
@@ -130,6 +131,7 @@ export function Sidebar() {
   const { signOut, user: authUser } = useAuth();
   const branding = useOrgBranding();
   const { currentOrg } = useOrganization();
+  const { allowed: canAccessSettings } = useCanAccessSettings();
   const isAdminArea = location.pathname.includes("/uploads") || location.pathname.includes("/internal-dashboard");
   const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
   const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">(
@@ -582,9 +584,11 @@ export function Sidebar() {
             ))}
 
             {/* Settings inside scroll */}
-            <div className="pt-3 mt-3 border-t border-white/20">
-              <NavLink item={settingsNavItem} />
-            </div>
+            {canAccessSettings && (
+              <div className="pt-3 mt-3 border-t border-white/20">
+                <NavLink item={settingsNavItem} />
+              </div>
+            )}
 
             {/* زر معاينة كموظف - يظهر فقط للمدير أو عند المعاينة */}
             {(isActuallyAdmin || previewAsEmployee) && (
