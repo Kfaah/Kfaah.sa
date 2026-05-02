@@ -79,11 +79,17 @@ serve(async (req) => {
       const { userId, password } = body;
 
       if (!userId || !password) {
-        return json({ success: false, error: "معرف المستخدم وكلمة المرور مطلوبان" }, 400);
+        return json(
+          { success: false, fieldErrors: { password: "كلمة المرور مطلوبة" }, error: "معرف المستخدم وكلمة المرور مطلوبان" },
+          200
+        );
       }
 
       if (password.length < 6) {
-        return json({ success: false, error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }, 400);
+        return json(
+          { success: false, fieldErrors: { password: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" } },
+          200
+        );
       }
 
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
@@ -99,7 +105,11 @@ serve(async (req) => {
         } else if (/at least|short|length/i.test(updateError.message ?? "")) {
           msg = "كلمة المرور قصيرة جداً. استخدم 8 أحرف على الأقل.";
         }
-        return json({ success: false, error: msg }, 400);
+        const isPasswordValidationError = code === "weak_password" || /weak|pwned|known to be|at least|short|length/i.test(updateError.message ?? "");
+        if (isPasswordValidationError) {
+          return json({ success: false, fieldErrors: { password: msg }, error: msg }, 200);
+        }
+        return json({ success: false, error: msg }, 500);
       }
 
       return json({ success: true, message: "تم تحديث كلمة المرور بنجاح" }, 200);
