@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route, Navigate, BrowserRouter, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -14,10 +14,10 @@ import { PreviewModeBanner } from "@/components/preview/PreviewModeBanner";
 // Eagerly-loaded shells (small + likely needed immediately)
 import PublicLanding from "./pages/PublicLanding";
 import OrgAuth from "./pages/OrgAuth";
-import { AdminLayout } from "@/components/admin/AdminLayout";
-import AdminOverview from "./pages/admin/AdminOverview";
 
 // Lazy-loaded route pages — split into separate chunks to make navigation snappy
+const AdminLayout = lazy(() => import("@/components/admin/AdminLayout").then((m) => ({ default: m.AdminLayout })));
+const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
 const Index = lazy(() => import("./pages/Index"));
 const Employees = lazy(() => import("./pages/Employees"));
 const AddEmployee = lazy(() => import("./pages/AddEmployee"));
@@ -61,7 +61,7 @@ const EmployeeOnboarding = lazy(() => import("./pages/EmployeeOnboarding"));
 const StaffDutiesUpload = lazy(() => import("./pages/StaffDutiesUpload"));
 const MyAssistant = lazy(() => import("./pages/MyAssistant"));
 const PerformanceEvaluation = lazy(() => import("./pages/PerformanceEvaluation"));
-import { AssistantFab } from "@/components/assistant/AssistantFab";
+const AssistantFab = lazy(() => import("@/components/assistant/AssistantFab").then((m) => ({ default: m.AssistantFab })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
