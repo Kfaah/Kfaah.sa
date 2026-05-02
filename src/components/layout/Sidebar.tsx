@@ -94,6 +94,7 @@ const adminNavItems: NavItem[] = [
 
 const managerNavItems: NavItem[] = [
   { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "nav-icon-overview" },
+  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: "nav-icon-analysis" },
   { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "nav-icon-plans" },
   { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive" },
   { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "nav-icon-tasks" },
