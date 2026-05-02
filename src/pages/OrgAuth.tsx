@@ -207,7 +207,7 @@ export default function OrgAuth() {
         toast.success(`تم إنشاء حسابك في ${org.name}`);
         navigate(`/${slug}/app`, { replace: true });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getArabicErrorMessage(error, "حدث خطأ"));
     } finally {
       setLoading(false);
@@ -247,10 +247,10 @@ export default function OrgAuth() {
 
   const primaryHsl = hexToHsl(org.primary_color) || "210 60% 28%";
   const accentHsl  = hexToHsl(org.accent_color)  || "174 52% 52%";
-  const brandStyle = {
-    ["--brand-primary" as any]: primaryHsl,
-    ["--brand-accent"  as any]: accentHsl,
-  } as React.CSSProperties;
+  const brandStyle: React.CSSProperties & Record<"--brand-primary" | "--brand-accent", string> = {
+    "--brand-primary": primaryHsl,
+    "--brand-accent": accentHsl,
+  };
 
   return (
     <div
