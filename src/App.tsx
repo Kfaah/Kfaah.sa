@@ -152,17 +152,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
       const { data: membership } = await supabase
         .from("user_organizations")
-        .select("organization_id")
+        .select("organization_id, approval_status")
         .eq("user_id", user.id)
         .eq("organization_id", org.id)
         .maybeSingle();
       if (cancelled) return;
 
-      if (membership) {
+      if (membership && membership.approval_status === "approved") {
         setRouteOrgAccess("ok");
       } else {
         await signOut();
-        if (!cancelled) setRouteOrgAccess("mismatch");
+        if (!cancelled) {
+          setRouteOrgAccess(
+            membership?.approval_status === "pending" ? "mismatch" : "mismatch"
+          );
+        }
       }
     };
     run();
