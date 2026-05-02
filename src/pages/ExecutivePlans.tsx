@@ -2314,7 +2314,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                       )}
                                       onClick={() => toggleMonth(`month-${monthGroup.month}`)}
                                     >
-                                      <div className="sticky z-20 flex flex-col items-center gap-2 py-4 px-2" style={{ top: stickyHeaderTop }}>
+                                      <div className="sticky z-20 flex flex-col items-center gap-2 py-4 px-2" style={{ top: stickyBodyTop }}>
                                         {/* رأس الشهر */}
                                         <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center shadow-md shadow-[hsl(var(--primary)/0.25)]">
                                           <Calendar className="w-5 h-5 text-white" />
@@ -2351,7 +2351,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                         isLastInDay && daySeparatorClass,
                                         isEditMode && "ring-1 ring-amber-300 ring-inset hover:bg-amber-50"
                                       )}
-                                      style={{ top: stickyHeaderTop }}
+                                      style={{ top: stickyBodyTop }}
                                       onClick={() => {
                                         if (isEditMode && l.acts && l.acts.length > 0) {
                                           const firstAct = l.acts[0] as any;
@@ -2486,7 +2486,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </Button>
                                         </div>
                                       ) : (
-                                       <div className="sticky z-20 flex items-start gap-2 py-3 px-3" style={{ top: stickyHeaderTop }}>
+                                       <div className="sticky z-20 flex items-start gap-2 py-3 px-3" style={{ top: stickyBodyTop }}>
                                          <Building2 className="w-4 h-4 text-[hsl(var(--primary))] shrink-0 mt-0.5" />
                                          <span className="font-bold text-base text-slate-800 leading-snug whitespace-normal break-words flex-1">{l.deptName}</span>
                                          {isEditMode && <Pencil className="w-3 h-3 text-amber-600 mr-auto shrink-0" />}
@@ -2531,7 +2531,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                                           </Button>
                                         </div>
                                       ) : (
-                                      <div className="sticky z-10 flex items-center gap-1.5 py-3 px-3" style={{ top: stickyHeaderTop }}>
+                                      <div className="sticky z-10 flex items-center gap-1.5 py-3 px-3" style={{ top: stickyBodyTop }}>
                                         <Target className="w-3.5 h-3.5 text-[hsl(var(--primary))] shrink-0" />
                                         <span className="text-sm font-semibold text-slate-700 leading-snug">
                                           {l.initName === "_no_init" ? <span className="text-slate-300">—</span> : l.initName}
