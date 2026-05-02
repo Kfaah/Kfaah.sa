@@ -1,6 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState, lazy, Suspense } from "react";
@@ -11,6 +10,7 @@ import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeConte
 import PublicLanding from "./pages/PublicLanding";
 
 // Lazy-loaded route pages — split into separate chunks to make navigation snappy
+const TooltipProvider = lazy(() => import("@/components/ui/tooltip").then((m) => ({ default: m.TooltipProvider })));
 const PreviewModeBanner = lazy(() => import("@/components/preview/PreviewModeBanner").then((m) => ({ default: m.PreviewModeBanner })));
 const OrgAuth = lazy(() => import("./pages/OrgAuth"));
 const ProtectedAppProviders = lazy(() => import("@/components/ProtectedAppProviders"));
