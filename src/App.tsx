@@ -334,6 +334,21 @@ function AppRoutes() {
 }
 
 function AppContent() {
+  const location = useLocation();
+  const isPublicEntry = isPublicEntryPath(location.pathname);
+
+  if (isPublicEntry) {
+    return (
+      <PreviewModeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AppRoutes />
+        </TooltipProvider>
+      </PreviewModeProvider>
+    );
+  }
+
   return (
     <PreviewModeProvider>
       <OrganizationProvider>
