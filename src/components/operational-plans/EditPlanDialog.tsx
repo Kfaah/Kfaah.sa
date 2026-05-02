@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 interface Employee {
   id: string;
@@ -108,6 +109,7 @@ export function EditPlanDialog({
 }: EditPlanDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const confirm = useConfirm();
 
   // الهدف الاستراتيجي
   const [goalName, setGoalName] = useState("");
@@ -348,7 +350,13 @@ export function EditPlanDialog({
 
   const handleDelete = async () => {
     if (editType === "activity" && plan) {
-      if (!confirm("هل أنت متأكد من حذف هذا النشاط؟")) return;
+      const ok = await confirm({
+        title: "حذف النشاط",
+        description: "سيتم حذف هذا النشاط نهائياً ولا يمكن التراجع عن هذا الإجراء.",
+        confirmText: "نعم، احذف",
+        variant: "danger",
+      });
+      if (!ok) return;
       onDelete?.();
       onOpenChange(false);
     }

@@ -13,6 +13,7 @@ import { useAdminAggregates, type DateRange, type OrgMetrics } from "@/hooks/use
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { exportInnovationPpt } from "@/utils/exportInnovationPpt";
 import { Download } from "lucide-react";
@@ -78,6 +79,7 @@ const STATUS_LABEL: Record<Status, string> = {
 
 export default function AdminInnovation() {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
+  const confirm = useConfirm();
   const { metrics, loading: metricsLoading } = useAdminAggregates(range);
   const [orgId, setOrgId] = useState<string>("");
   // Embedded mode (inside org dashboard iframe) — lock to one org via ?org=slug
@@ -155,7 +157,13 @@ export default function AdminInnovation() {
   };
 
   const removeSuggestion = async (id: string) => {
-    if (!confirm("حذف هذه الفكرة نهائيًا؟")) return;
+    const ok = await confirm({
+      title: "حذف الفكرة",
+      description: "سيتم حذف هذه الفكرة الإبداعية نهائياً ولا يمكن التراجع عن هذا الإجراء.",
+      confirmText: "نعم، احذف",
+      variant: "danger",
+    });
+    if (!ok) return;
     const { error } = await supabase.from("innovation_suggestions").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     setSuggestions((prev) => prev.filter((s) => s.id !== id));

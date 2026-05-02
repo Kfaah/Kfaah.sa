@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   Popover,
   PopoverContent,
@@ -120,6 +121,7 @@ export function ActivityPhasesPopover({
 }: Props) {
   const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   // الموظف العادي يرى مهامه فقط داخل المراحل، أما المدير/الأدمن فيرى الجميع
   const { roleLevel, myEmployeeId } = useScopedView("scope:executive-plans");
   const isPlainEmployee = roleLevel === "employee";
@@ -369,7 +371,13 @@ export function ActivityPhasesPopover({
   }
 
   async function deleteTask(id: string) {
-    if (!confirm("حذف هذه المهمة؟")) return;
+    const ok = await confirm({
+      title: "حذف المهمة",
+      description: "سيتم حذف هذه المهمة نهائياً ولا يمكن التراجع عن هذا الإجراء.",
+      confirmText: "نعم، احذف",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       // احذف المهمة المرتبطة في tasks أيضاً
       const { data: row } = await supabase

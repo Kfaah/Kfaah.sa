@@ -14,6 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   Plus, Award, Filter, Loader2, Trash2, Sparkles,
   TrendingUp, CheckCircle2, Star, Clock, Bot,
@@ -135,6 +136,7 @@ function demoScore(uid: string, cid: string): number {
 
 export default function PerformanceEvaluation() {
   const { user } = useAuth();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -281,7 +283,13 @@ export default function PerformanceEvaluation() {
   };
 
   const deleteCriterion = async (id: string) => {
-    if (!confirm("حذف هذا المعيار؟")) return;
+    const ok = await confirm({
+      title: "حذف المعيار",
+      description: "سيتم حذف هذا المعيار من قائمة التقييم. يمكن إعادة تفعيله لاحقاً.",
+      confirmText: "نعم، احذف",
+      variant: "danger",
+    });
+    if (!ok) return;
     const { error } = await supabase.from("evaluation_criteria").update({ is_active: false }).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("تم الحذف");

@@ -35,6 +35,7 @@ import { formatNumber, getAvailableYears } from "@/lib/utils";
 import { useScopedView } from "@/hooks/useScopedView";
 import { ScopeToggle } from "@/components/scope/ScopeToggle";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 interface Employee {
   id: string;
@@ -162,6 +163,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   const navigate = useNavigate();
   const location = useLocation();
   const { slug } = useParams<{ slug?: string }>();
+  const confirm = useConfirm();
   const makeOrgUrl = (path: string) => (slug ? `/${slug}${path}` : path);
   const { currentOrg } = useOrganization();
   const { user: authUser } = useAuth();
@@ -1272,7 +1274,13 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   };
 
   const handleDeletePlan = async (planId: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذه الخطة؟")) return;
+    const ok = await confirm({
+      title: "حذف الخطة",
+      description: "سيتم حذف هذه الخطة التشغيلية نهائياً ولا يمكن التراجع.",
+      confirmText: "نعم، احذف",
+      variant: "danger",
+    });
+    if (!ok) return;
 
     try {
       const { error } = await supabase
@@ -1299,7 +1307,13 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
 
   // حذف خطة كاملة بالاسم (جميع أنشطتها للسنة المحددة)
   const handleDeleteWholePlan = async (planName: string) => {
-    if (!confirm(`سيتم حذف جميع أنشطة "${planName}" للسنة ${filterYear}. هل أنت متأكد؟`)) return;
+    const ok = await confirm({
+      title: "حذف الخطة بالكامل",
+      description: `سيتم حذف جميع أنشطة "${planName}" للسنة ${filterYear}. لا يمكن التراجع عن هذا الإجراء.`,
+      confirmText: "نعم، احذف الكل",
+      variant: "danger",
+    });
+    if (!ok) return;
 
     try {
       const { error } = await supabase
@@ -1663,8 +1677,14 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               <Button
                 className="gap-2 bg-red-500/90 text-white hover:bg-red-600 border border-red-300/50"
                 onClick={async () => {
-                  if (!confirm(`⚠️ سيتم حذف جميع الخطط التشغيلية للسنة ${filterYear} نهائياً. هل أنت متأكد؟`)) return;
-                  if (!confirm(`تأكيد نهائي: حذف كل الخطط التشغيلية لسنة ${filterYear}؟`)) return;
+                  const ok = await confirm({
+                    title: `حذف جميع الخطط لسنة ${filterYear}`,
+                    description: `سيتم حذف جميع الخطط التشغيلية للسنة ${filterYear} نهائياً. هذا إجراء حساس ولا يمكن التراجع عنه. اكتب "حذف" للتأكيد.`,
+                    confirmText: "نعم، احذف الكل",
+                    variant: "danger",
+                    requireText: "حذف",
+                  });
+                  if (!ok) return;
                   try {
                     const { error } = await supabase
                       .from("operational_plans")
