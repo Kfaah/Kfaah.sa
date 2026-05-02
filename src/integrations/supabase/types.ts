@@ -4058,26 +4058,38 @@ export type Database = {
       }
       user_organizations: {
         Row: {
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           id: string
           is_default: boolean
           organization_id: string
+          requested_at: string
           role_in_org: string
           user_id: string
         }
         Insert: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           id?: string
           is_default?: boolean
           organization_id: string
+          requested_at?: string
           role_in_org?: string
           user_id: string
         }
         Update: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           id?: string
           is_default?: boolean
           organization_id?: string
+          requested_at?: string
           role_in_org?: string
           user_id?: string
         }
@@ -4245,6 +4257,10 @@ export type Database = {
       }
       is_manager: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_user_approved_in_org: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_viewer: { Args: { _user_id: string }; Returns: boolean }
       join_organization_by_slug: { Args: { _slug: string }; Returns: string }
       user_belongs_to_org: {
