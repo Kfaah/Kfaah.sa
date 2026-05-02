@@ -2,8 +2,9 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings as SettingsIcon, Palette, Bell, Shield, Database, FileDown } from "lucide-react";
+import { Settings as SettingsIcon, Palette, Bell, Shield, Database, FileDown, Brain } from "lucide-react";
 import { WelcomeContentManager } from "@/components/welcome/WelcomeContentManager";
+import { IntelligenceProfileManager } from "@/components/settings/IntelligenceProfileManager";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 export default function Settings() {
   const { user: authUser } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canManageIntelligence, setCanManageIntelligence] = useState(false);
 
   useEffect(() => {
     const checkAdminRole = async () => {
@@ -22,6 +24,15 @@ export default function Settings() {
         _role: "admin",
       });
       setIsAdmin(data === true);
+
+      // صلاحية إدارة الملف الذكي: super_admin أو أحد الأدوار الإدارية
+      const checks = await Promise.all([
+        supabase.rpc("has_role", { _user_id: authUser.id, _role: "super_admin" }),
+        supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" }),
+        supabase.rpc("has_role", { _user_id: authUser.id, _role: "hr_manager" }),
+        supabase.rpc("has_role", { _user_id: authUser.id, _role: "moderator" }),
+      ]);
+      setCanManageIntelligence(checks.some((r) => r.data === true));
     };
     checkAdminRole();
   }, [authUser]);
@@ -34,6 +45,26 @@ export default function Settings() {
           title="الإعدادات"
           subtitle="إدارة إعدادات النظام"
         />
+
+        {/* الملف الذكي للموظف — قسم عريض مستقل */}
+        {canManageIntelligence && (
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-lg">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                أسئلة الملف الذكي للموظف
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                خصّص الأسئلة التي يعبّيها الموظف عند تسجيله أول مرة — أضف، احذف، أو فعّل/أخفِ كل سؤال أو خيار
+              </p>
+            </CardHeader>
+            <CardContent>
+              <IntelligenceProfileManager />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Settings Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
