@@ -37,6 +37,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getArabicErrorMessage } from "@/lib/errors";
 
+// المسميات التي تمنح صلاحيات إدارية كاملة (admin) داخل الجمعية
+const ADMIN_ROLE_TITLES = ["مدير الجمعية", "مدير التسويق"];
+const isAdminTitle = (value: string) =>
+  ADMIN_ROLE_TITLES.includes(value.trim());
+
 interface Department {
   id: string;
   name: string;
@@ -102,6 +107,7 @@ const EditEmployee = () => {
     password: "",
     user_id: null as string | null,
     roleLevel: "employee" as "employee" | "manager" | "admin",
+    roleTitle: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -148,6 +154,7 @@ const EditEmployee = () => {
           password: "",
           user_id: emp.user_id,
           roleLevel: (emp.role_level as any) || "employee",
+          roleTitle: emp.title || "",
         });
 
         setDepartments(deptsRes.data || []);
@@ -272,8 +279,8 @@ const EditEmployee = () => {
           avatar_url: avatarUrl,
           direct_manager_id: form.directManagerId && form.directManagerId !== "none" ? form.directManagerId : null,
           executive_manager_id: form.executiveManagerId && form.executiveManagerId !== "none" ? form.executiveManagerId : null,
-          title: form.title.trim() || null,
-          role_level: form.roleLevel,
+          title: (form.roleTitle || form.title).trim() || null,
+          role_level: isAdminTitle(form.roleTitle) ? "admin" : "employee",
         })
         .eq("id", employeeId);
 
@@ -281,7 +288,7 @@ const EditEmployee = () => {
 
       // Sync user_roles based on roleLevel (admin vs user)
       if (form.user_id) {
-        const targetRole = form.roleLevel === "admin" ? "admin" : "user";
+        const targetRole = isAdminTitle(form.roleTitle) ? "admin" : "user";
         // Remove other roles, set the right one
         await supabase
           .from("user_roles")
@@ -451,13 +458,27 @@ const EditEmployee = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
-                  <Label className="font-semibold text-foreground">المسمى الوظيفي</Label>
+                  <Label className="font-semibold text-foreground flex items-center gap-2">
+                    <BadgeCheck className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    الدور
+                  </Label>
                 </div>
                 <Input
-                  value={form.title}
-                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="مثال: مدير المشاريع"
+                  list="role-title-suggestions"
+                  value={form.roleTitle}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, roleTitle: e.target.value, title: e.target.value }))
+                  }
+                  placeholder="مثال: أخصائي تسويق، أخصائي حملات..."
                 />
+                <datalist id="role-title-suggestions">
+                  {ADMIN_ROLE_TITLES.map((t) => (
+                    <option key={t} value={t} />
+                  ))}
+                </datalist>
+                <p className="text-xs text-muted-foreground">
+                  اختر <strong>مدير الجمعية</strong> أو <strong>مدير التسويق</strong> لمنح صلاحيات إدارية كاملة، أو اكتب أي مسمى آخر (مثل أخصائي) لصلاحيات موظف عادي.
+                </p>
               </div>
             </div>
 
@@ -767,42 +788,6 @@ const EditEmployee = () => {
             <Separator />
 
             {/* مستوى الصلاحية الإدارية */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
-                <Label className="font-semibold text-foreground flex items-center gap-2">
-                  <BadgeCheck className="w-4 h-4 text-[hsl(var(--primary))]" />
-                  مستوى الصلاحية الإدارية *
-                </Label>
-              </div>
-              <Select
-                value={form.roleLevel}
-                onValueChange={(v) =>
-                  setForm((prev) => ({ ...prev, roleLevel: v as any }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="employee">
-                    👤 موظف عادي — يرى بياناته فقط
-                  </SelectItem>
-                  <SelectItem value="manager">
-                    👥 مدير قسم — يرى بياناته + بيانات فريقه
-                  </SelectItem>
-                  <SelectItem value="admin">
-                    🛡️ مدير نظام — يرى كل بيانات الجمعية
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                يحدد ما يستطيع الموظف رؤيته في الخطط والمهام والتقييم.
-              </p>
-            </div>
-
-            <Separator />
-
             {/* أزرار الإجراءات */}
             <div className="flex items-center justify-end gap-3 pt-4">
               <Button
