@@ -1425,14 +1425,24 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                                   <span className="line-clamp-3">{group.activityName}</span>
                                 </div>
                                 {group.activityExecutionDate && (() => {
+                                  const dt = new Date(group.activityExecutionDate);
+                                  const gY = dt.getFullYear();
+                                  const gM = String(dt.getMonth() + 1).padStart(2, "0");
+                                  const gD = String(dt.getDate()).padStart(2, "0");
                                   const d = formatDateWithHijri(group.activityExecutionDate);
+                                  // Extract hijri YYYY/MM/DD by reformatting
+                                  const hijriRaw = String(d.hijri).replace(/[\u2066-\u2069]/g, "");
+                                  const hijriParts = hijriRaw.split("/");
+                                  const hijriReversed = hijriParts.length === 3
+                                    ? `${hijriParts[2]}/${hijriParts[1]}/${hijriParts[0]}`
+                                    : hijriRaw;
                                   return (
                                     <div className="flex flex-col gap-0.5 pr-6 text-muted-foreground" dir="rtl">
                                       <span className="text-xs font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                        {d.gregorian}
+                                        {`${gY}/${gM}/${gD}`}
                                       </span>
                                       <span className="text-[10px]" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                        {d.hijri}
+                                        {hijriReversed}
                                       </span>
                                     </div>
                                   );
@@ -1464,14 +1474,23 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                           {/* تاريخ التنفيذ */}
                           <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)] py-1">
                             {(() => {
+                              const dt = task.due_date ? new Date(task.due_date) : null;
                               const dates = formatDateWithHijri(task.due_date);
+                              const gStr = dt && !isNaN(dt.getTime())
+                                ? `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, "0")}/${String(dt.getDate()).padStart(2, "0")}`
+                                : "-";
+                              const hijriRaw = String(dates.hijri).replace(/[\u2066-\u2069]/g, "");
+                              const hijriParts = hijriRaw.split("/");
+                              const hijriReversed = hijriParts.length === 3
+                                ? `${hijriParts[2]}/${hijriParts[1]}/${hijriParts[0]}`
+                                : hijriRaw;
                               return (
                                 <div className="flex flex-col items-center justify-center gap-0.5" dir="rtl">
                                   <span className="text-sm font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                    {dates.gregorian}
+                                    {gStr}
                                   </span>
                                   <span className="text-xs text-muted-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                    {dates.hijri}
+                                    {hijriReversed}
                                   </span>
                                 </div>
                               );
