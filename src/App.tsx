@@ -44,6 +44,7 @@ const IntelligenceProfileSettings = lazy(() => import("./pages/settings/Intellig
 const WelcomeSettings = lazy(() => import("./pages/settings/WelcomeSettings"));
 const ExportsSettings = lazy(() => import("./pages/settings/ExportsSettings"));
 const ComingSoonSettings = lazy(() => import("./pages/settings/ComingSoonSettings"));
+import SettingsAccessGuard from "./components/settings/SettingsAccessGuard";
 const Uploads = lazy(() => import("./pages/Uploads"));
 const Organizations = lazy(() => import("./pages/Organizations"));
 const Intelligence = lazy(() => import("./pages/Intelligence"));
@@ -287,16 +288,16 @@ function AppRoutes() {
       <Route path="/operational-plans/ai-generate" element={<ProtectedRoute><AIGeneratePlan /></ProtectedRoute>} />
       <Route path="/operational-plans/:id" element={<ProtectedRoute><OperationalPlanDetails /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/settings/branding" element={<ProtectedRoute><BrandingSettings /></ProtectedRoute>} />
-      <Route path="/settings/roles-permissions" element={<ProtectedRoute><RolesPermissionsSettings /></ProtectedRoute>} />
-      <Route path="/settings/navigation" element={<ProtectedRoute><NavigationSettings /></ProtectedRoute>} />
-      <Route path="/settings/intelligence-profile" element={<ProtectedRoute><IntelligenceProfileSettings /></ProtectedRoute>} />
-      <Route path="/settings/welcome" element={<ProtectedRoute><WelcomeSettings /></ProtectedRoute>} />
-      <Route path="/settings/exports" element={<ProtectedRoute><ExportsSettings /></ProtectedRoute>} />
-      <Route path="/settings/notifications" element={<ProtectedRoute><ComingSoonSettings title="الإشعارات" subtitle="تخصيص قواعد التنبيهات" /></ProtectedRoute>} />
-      <Route path="/settings/security" element={<ProtectedRoute><ComingSoonSettings title="الأمان والخصوصية" /></ProtectedRoute>} />
-      <Route path="/settings/members" element={<ProtectedRoute><ComingSoonSettings title="أعضاء الجمعية" /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsAccessGuard><Settings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/branding" element={<ProtectedRoute><SettingsAccessGuard><BrandingSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/roles-permissions" element={<ProtectedRoute><SettingsAccessGuard><RolesPermissionsSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/navigation" element={<ProtectedRoute><SettingsAccessGuard><NavigationSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/intelligence-profile" element={<ProtectedRoute><SettingsAccessGuard><IntelligenceProfileSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/welcome" element={<ProtectedRoute><SettingsAccessGuard><WelcomeSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/exports" element={<ProtectedRoute><SettingsAccessGuard><ExportsSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/notifications" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الإشعارات" subtitle="تخصيص قواعد التنبيهات" /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/security" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الأمان والخصوصية" /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/members" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="أعضاء الجمعية" /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
       <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
@@ -328,16 +329,16 @@ function AppRoutes() {
       <Route path="/:slug/operational-plans/ai-generate" element={<ProtectedRoute><AIGeneratePlan /></ProtectedRoute>} />
       <Route path="/:slug/operational-plans/:id" element={<ProtectedRoute><OperationalPlanDetails /></ProtectedRoute>} />
       <Route path="/:slug/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/:slug/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/:slug/settings/branding" element={<ProtectedRoute><BrandingSettings /></ProtectedRoute>} />
-      <Route path="/:slug/settings/roles-permissions" element={<ProtectedRoute><RolesPermissionsSettings /></ProtectedRoute>} />
-      <Route path="/:slug/settings/navigation" element={<ProtectedRoute><NavigationSettings /></ProtectedRoute>} />
-      <Route path="/:slug/settings/intelligence-profile" element={<ProtectedRoute><IntelligenceProfileSettings /></ProtectedRoute>} />
-      <Route path="/:slug/settings/welcome" element={<ProtectedRoute><WelcomeSettings /></ProtectedRoute>} />
-      <Route path="/:slug/settings/exports" element={<ProtectedRoute><ExportsSettings /></ProtectedRoute>} />
-      <Route path="/:slug/settings/notifications" element={<ProtectedRoute><ComingSoonSettings title="الإشعارات" /></ProtectedRoute>} />
-      <Route path="/:slug/settings/security" element={<ProtectedRoute><ComingSoonSettings title="الأمان والخصوصية" /></ProtectedRoute>} />
-      <Route path="/:slug/settings/members" element={<ProtectedRoute><ComingSoonSettings title="أعضاء الجمعية" /></ProtectedRoute>} />
+      <Route path="/:slug/settings" element={<ProtectedRoute><SettingsAccessGuard><Settings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/branding" element={<ProtectedRoute><SettingsAccessGuard><BrandingSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/roles-permissions" element={<ProtectedRoute><SettingsAccessGuard><RolesPermissionsSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/navigation" element={<ProtectedRoute><SettingsAccessGuard><NavigationSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/intelligence-profile" element={<ProtectedRoute><SettingsAccessGuard><IntelligenceProfileSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/welcome" element={<ProtectedRoute><SettingsAccessGuard><WelcomeSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/exports" element={<ProtectedRoute><SettingsAccessGuard><ExportsSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/notifications" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الإشعارات" /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/security" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الأمان والخصوصية" /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/members" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="أعضاء الجمعية" /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/:slug/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
       <Route path="/:slug/internal-dashboard" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
