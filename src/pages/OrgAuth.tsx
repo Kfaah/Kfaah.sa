@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone } from "lucide-react";
+import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone, CheckCircle2, Clock, Sparkles } from "lucide-react";
 
 interface OrgInfo {
   id: string;
@@ -69,6 +69,7 @@ export default function OrgAuth() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -229,13 +230,9 @@ export default function OrgAuth() {
         });
         if (joinError) throw joinError;
 
-        // Membership was created as PENDING — sign out and inform the user.
+        // Membership was created as PENDING — sign out and show in-page success state.
         await supabase.auth.signOut();
-        toast.success(
-          `تم إرسال طلب انضمامك إلى ${org.name}. سيتم تفعيل حسابك بعد موافقة إدارة الجمعية.`,
-          { duration: 8000 }
-        );
-        setIsLogin(true);
+        setSignupSuccess(true);
         setPassword("");
       }
     } catch (error: unknown) {
