@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { SourceLink } from "@/components/admin/SourceLink";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { LogIn } from "lucide-react";
 const OperationalPlans = lazy(() => import("@/pages/OperationalPlans"));
 const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 const TasksPage = lazy(() => import("@/pages/Tasks"));
