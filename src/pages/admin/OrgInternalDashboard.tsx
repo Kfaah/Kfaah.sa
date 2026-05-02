@@ -6,7 +6,7 @@ import {
   Loader2, Sparkles, ExternalLink, Target, AlertTriangle, CheckCircle2,
   GitCompareArrows, CalendarCheck, ClipboardList, FileSpreadsheet, XCircle,
   Database, FileText, IdCard, FolderOpen,
-  UserPlus, Briefcase, Search, Mail, Phone, Crown, Pencil,
+  UserPlus, Briefcase, Search, Mail, Phone, Crown, Pencil, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -148,7 +148,7 @@ export default function OrgInternalDashboard({
   const [analysis, setAnalysis] = useState<DeepAnalysis | null>(null);
   const [questions, setQuestions] = useState<AccountabilityQuestion[]>([]);
   const [aTasks, setATasks] = useState<AccountabilityTask[]>([]);
-  const [employees, setEmployees] = useState<Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null }>>([]);
+  const [employees, setEmployees] = useState<Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null; user_id: string | null }>>([]);
   const [empSearch, setEmpSearch] = useState("");
   const [counts, setCounts] = useState({
     employees: 0, tasks: 0, donations: 0, campaigns: 0,
@@ -234,7 +234,7 @@ export default function OrgInternalDashboard({
         supabase.from("deep_analyses").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("accountability_questions").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
         supabase.from("accountability_tasks").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
-        supabase.from("employees").select("id,full_name,job_role,email,phone,avatar_url,title").eq("organization_id", orgId).limit(500),
+        supabase.from("employees").select("id,full_name,job_role,email,phone,avatar_url,title,user_id").eq("organization_id", orgId).limit(500),
       ]);
       setAnalysis((analysisRes.data as unknown as DeepAnalysis) ?? null);
       setQuestions((qRes.data as unknown as AccountabilityQuestion[]) ?? []);
@@ -1389,7 +1389,7 @@ function EmployeesShowcase({
   orgSlug,
   canImpersonate,
 }: {
-  employees: Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null }>;
+  employees: Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null; user_id: string | null }>;
   loading: boolean;
   questions: AccountabilityQuestion[];
   empSearch: string;
@@ -1399,6 +1399,27 @@ function EmployeesShowcase({
 }) {
   const branding = useOrgBranding();
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [localEmployees, setLocalEmployees] = useState(employees);
+  useEffect(() => { setLocalEmployees(employees); }, [employees]);
+
+  const handleDelete = async (employeeId: string, employeeName: string) => {
+    if (!confirm(`حذف الموظف "${employeeName}" نهائياً؟ سيتم حذف حسابه وارتباطه بالجمعية. لا يمكن التراجع.`)) return;
+    try {
+      setDeletingId(employeeId);
+      const { data, error } = await supabase.functions.invoke("delete-employee", {
+        body: { employee_id: employeeId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setLocalEmployees((prev) => prev.filter((e) => e.id !== employeeId));
+      toast.success(`تم حذف ${data?.name ?? employeeName}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "تعذر حذف الموظف");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleImpersonate = async (employeeId: string, employeeName: string) => {
     if (!confirm(`الدخول بحساب ${employeeName}؟ سيتم تسجيل خروجك من حسابك الحالي.`)) return;
@@ -1424,7 +1445,7 @@ function EmployeesShowcase({
     }
   };
 
-  const filtered = employees.filter((e) => {
+  const filtered = localEmployees.filter((e) => {
     if (!empSearch.trim()) return true;
     const q = empSearch.trim().toLowerCase();
     return (
@@ -1549,6 +1570,21 @@ function EmployeesShowcase({
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Link>
+                    {e.user_id && (
+                      <button
+                        type="button"
+                        title="حذف الموظف وحسابه"
+                        onClick={() => handleDelete(e.id, e.full_name)}
+                        disabled={deletingId === e.id}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-destructive/30 bg-background text-destructive shadow-sm opacity-0 transition-all hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100 disabled:opacity-50"
+                      >
+                        {deletingId === e.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="relative mt-4">
