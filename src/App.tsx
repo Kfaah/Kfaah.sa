@@ -104,7 +104,7 @@ function RouteFallback() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { isPreviewMode } = usePreviewMode();
   const location = useLocation();
 
@@ -119,6 +119,55 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("embedded") === "1";
   const isOnboardingPath = location.pathname.includes("/employee-onboarding");
+  const routeSegments = location.pathname.split("/").filter(Boolean);
+  const routeOrgSlug = routeSegments[0] && !PROTECTED_ROOTS.has(routeSegments[0]) ? routeSegments[0] : null;
+  const [routeOrgAccess, setRouteOrgAccess] = useState<"checking" | "ok" | "mismatch">("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!user?.id || isPreviewMode || isEmbedded || !routeOrgSlug) {
+        if (!cancelled) setRouteOrgAccess("ok");
+        return;
+      }
+
+      setRouteOrgAccess("checking");
+      const { data: isSuper } = await supabase.rpc("is_super_admin", { _user_id: user.id });
+      if (cancelled) return;
+      if (isSuper) {
+        setRouteOrgAccess("ok");
+        return;
+      }
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("slug", routeOrgSlug)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!org?.id) {
+        setRouteOrgAccess("ok");
+        return;
+      }
+
+      const { data: membership } = await supabase
+        .from("user_organizations")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .eq("organization_id", org.id)
+        .maybeSingle();
+      if (cancelled) return;
+
+      if (membership) {
+        setRouteOrgAccess("ok");
+      } else {
+        await signOut();
+        if (!cancelled) setRouteOrgAccess("mismatch");
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [user?.id, isPreviewMode, isEmbedded, routeOrgSlug, signOut]);
 
   useEffect(() => {
     let cancelled = false;
@@ -172,6 +221,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/" replace />;
+  }
+
+  if (routeOrgAccess === "checking") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (routeOrgAccess === "mismatch") {
+    return <Navigate to={routeOrgSlug ? `/${routeOrgSlug}` : "/"} replace />;
   }
 
   if (onboardingState === "checking") {
