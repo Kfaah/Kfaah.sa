@@ -4209,6 +4209,20 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_org_membership_requests: {
+        Args: { _org_slug?: string }
+        Returns: {
+          approval_status: string
+          approved_at: string
+          contact_email: string
+          display_name: string
+          id: string
+          organization_id: string
+          requested_at: string
+          user_id: string
+          username: string
+        }[]
+      }
       get_organization_by_slug: {
         Args: { _slug: string }
         Returns: {
@@ -4263,6 +4277,10 @@ export type Database = {
       }
       is_viewer: { Args: { _user_id: string }; Returns: boolean }
       join_organization_by_slug: { Args: { _slug: string }; Returns: string }
+      review_membership_request: {
+        Args: { _membership_id: string; _status: string }
+        Returns: undefined
+      }
       user_belongs_to_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
