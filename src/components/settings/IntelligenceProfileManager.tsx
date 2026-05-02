@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, Trash2, ChevronDown, ChevronUp, RefreshCw, Pencil, Check, X } from "lucide-react";
+import { Loader2, Plus, Trash2, RefreshCw, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 type StepKey = "skills" | "personality" | "goals" | "availability";
