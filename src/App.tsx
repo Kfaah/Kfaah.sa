@@ -37,6 +37,13 @@ const AIGenerateExecutivePlan = lazy(() => import("./pages/AIGenerateExecutivePl
 const AddExecutivePlan = lazy(() => import("./pages/AddExecutivePlan"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Settings = lazy(() => import("./pages/Settings"));
+const BrandingSettings = lazy(() => import("./pages/settings/BrandingSettings"));
+const RolesPermissionsSettings = lazy(() => import("./pages/settings/RolesPermissionsSettings"));
+const NavigationSettings = lazy(() => import("./pages/settings/NavigationSettings"));
+const IntelligenceProfileSettings = lazy(() => import("./pages/settings/IntelligenceProfileSettings"));
+const WelcomeSettings = lazy(() => import("./pages/settings/WelcomeSettings"));
+const ExportsSettings = lazy(() => import("./pages/settings/ExportsSettings"));
+const ComingSoonSettings = lazy(() => import("./pages/settings/ComingSoonSettings"));
 const Uploads = lazy(() => import("./pages/Uploads"));
 const Organizations = lazy(() => import("./pages/Organizations"));
 const Intelligence = lazy(() => import("./pages/Intelligence"));
@@ -281,6 +288,15 @@ function AppRoutes() {
       <Route path="/operational-plans/:id" element={<ProtectedRoute><OperationalPlanDetails /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/settings/branding" element={<ProtectedRoute><BrandingSettings /></ProtectedRoute>} />
+      <Route path="/settings/roles-permissions" element={<ProtectedRoute><RolesPermissionsSettings /></ProtectedRoute>} />
+      <Route path="/settings/navigation" element={<ProtectedRoute><NavigationSettings /></ProtectedRoute>} />
+      <Route path="/settings/intelligence-profile" element={<ProtectedRoute><IntelligenceProfileSettings /></ProtectedRoute>} />
+      <Route path="/settings/welcome" element={<ProtectedRoute><WelcomeSettings /></ProtectedRoute>} />
+      <Route path="/settings/exports" element={<ProtectedRoute><ExportsSettings /></ProtectedRoute>} />
+      <Route path="/settings/notifications" element={<ProtectedRoute><ComingSoonSettings title="الإشعارات" subtitle="تخصيص قواعد التنبيهات" /></ProtectedRoute>} />
+      <Route path="/settings/security" element={<ProtectedRoute><ComingSoonSettings title="الأمان والخصوصية" /></ProtectedRoute>} />
+      <Route path="/settings/members" element={<ProtectedRoute><ComingSoonSettings title="أعضاء الجمعية" /></ProtectedRoute>} />
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
       <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
@@ -313,6 +329,15 @@ function AppRoutes() {
       <Route path="/:slug/operational-plans/:id" element={<ProtectedRoute><OperationalPlanDetails /></ProtectedRoute>} />
       <Route path="/:slug/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/:slug/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/:slug/settings/branding" element={<ProtectedRoute><BrandingSettings /></ProtectedRoute>} />
+      <Route path="/:slug/settings/roles-permissions" element={<ProtectedRoute><RolesPermissionsSettings /></ProtectedRoute>} />
+      <Route path="/:slug/settings/navigation" element={<ProtectedRoute><NavigationSettings /></ProtectedRoute>} />
+      <Route path="/:slug/settings/intelligence-profile" element={<ProtectedRoute><IntelligenceProfileSettings /></ProtectedRoute>} />
+      <Route path="/:slug/settings/welcome" element={<ProtectedRoute><WelcomeSettings /></ProtectedRoute>} />
+      <Route path="/:slug/settings/exports" element={<ProtectedRoute><ExportsSettings /></ProtectedRoute>} />
+      <Route path="/:slug/settings/notifications" element={<ProtectedRoute><ComingSoonSettings title="الإشعارات" /></ProtectedRoute>} />
+      <Route path="/:slug/settings/security" element={<ProtectedRoute><ComingSoonSettings title="الأمان والخصوصية" /></ProtectedRoute>} />
+      <Route path="/:slug/settings/members" element={<ProtectedRoute><ComingSoonSettings title="أعضاء الجمعية" /></ProtectedRoute>} />
       <Route path="/:slug/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/:slug/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
       <Route path="/:slug/internal-dashboard" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
