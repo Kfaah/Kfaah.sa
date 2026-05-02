@@ -1,0 +1,1 @@
+DELETE FROM public.tasks WHERE organization_id = (SELECT id FROM public.organizations WHERE name = 'جمعية صواب لتأهيل المتعافين من الإدمان');
