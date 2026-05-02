@@ -279,8 +279,8 @@ const EditEmployee = () => {
           avatar_url: avatarUrl,
           direct_manager_id: form.directManagerId && form.directManagerId !== "none" ? form.directManagerId : null,
           executive_manager_id: form.executiveManagerId && form.executiveManagerId !== "none" ? form.executiveManagerId : null,
-          title: form.title.trim() || null,
-          role_level: form.roleLevel,
+          title: (form.roleTitle || form.title).trim() || null,
+          role_level: isAdminTitle(form.roleTitle) ? "admin" : "employee",
         })
         .eq("id", employeeId);
 
@@ -288,7 +288,7 @@ const EditEmployee = () => {
 
       // Sync user_roles based on roleLevel (admin vs user)
       if (form.user_id) {
-        const targetRole = form.roleLevel === "admin" ? "admin" : "user";
+        const targetRole = isAdminTitle(form.roleTitle) ? "admin" : "user";
         // Remove other roles, set the right one
         await supabase
           .from("user_roles")
