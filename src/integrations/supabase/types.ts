@@ -1723,6 +1723,7 @@ export type Database = {
           executive_manager_id: string | null
           full_name: string
           id: string
+          is_viewer_account: boolean
           job_role: string
           join_date: string | null
           organization_id: string | null
@@ -1750,6 +1751,7 @@ export type Database = {
           executive_manager_id?: string | null
           full_name: string
           id?: string
+          is_viewer_account?: boolean
           job_role: string
           join_date?: string | null
           organization_id?: string | null
@@ -1777,6 +1779,7 @@ export type Database = {
           executive_manager_id?: string | null
           full_name?: string
           id?: string
+          is_viewer_account?: boolean
           job_role?: string
           join_date?: string | null
           organization_id?: string | null
@@ -4242,6 +4245,7 @@ export type Database = {
       }
       is_manager: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_viewer: { Args: { _user_id: string }; Returns: boolean }
       join_organization_by_slug: { Args: { _slug: string }; Returns: string }
       user_belongs_to_org: {
         Args: { _org_id: string; _user_id: string }
