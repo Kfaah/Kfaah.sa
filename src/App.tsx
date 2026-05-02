@@ -6,16 +6,14 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { UserProvider } from "@/contexts/UserContext";
 import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeContext";
-import { OrganizationProvider } from "@/contexts/OrganizationContext";
-import { OrgBrandingProvider } from "@/contexts/OrgBrandingContext";
 import { PreviewModeBanner } from "@/components/preview/PreviewModeBanner";
 // Eagerly-loaded shells (small + likely needed immediately)
 import PublicLanding from "./pages/PublicLanding";
 
 // Lazy-loaded route pages — split into separate chunks to make navigation snappy
 const OrgAuth = lazy(() => import("./pages/OrgAuth"));
+const ProtectedAppProviders = lazy(() => import("@/components/ProtectedAppProviders"));
 const AdminLayout = lazy(() => import("@/components/admin/AdminLayout").then((m) => ({ default: m.AdminLayout })));
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
 const Index = lazy(() => import("./pages/Index"));
@@ -351,18 +349,16 @@ function AppContent() {
 
   return (
     <PreviewModeProvider>
-      <OrganizationProvider>
-        <OrgBrandingProvider>
-          <UserProvider>
+      <Suspense fallback={<RouteFallback />}>
+        <ProtectedAppProviders>
             <TooltipProvider>
               <Toaster />
               <Sonner />
               <AppRoutes />
               <AssistantFab />
             </TooltipProvider>
-          </UserProvider>
-        </OrgBrandingProvider>
-      </OrganizationProvider>
+        </ProtectedAppProviders>
+      </Suspense>
     </PreviewModeProvider>
   );
 }
