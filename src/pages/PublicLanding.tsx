@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Lock, User, LogIn, Eye, EyeOff, Building2, Shield } from "lucide-react";
 
 const normalizeDigits = (value: string, trim = false) => {
   const input = trim ? value.trim() : value;
@@ -18,6 +17,12 @@ const normalizeDigits = (value: string, trim = false) => {
     .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
     .replace(/[۰-۹]/g, (d) => String(persian.indexOf(d)));
 };
+
+const Icon = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <span className={`inline-flex items-center justify-center ${className}`} aria-hidden="true">
+    {children}
+  </span>
+);
 
 export default function PublicLanding() {
   const navigate = useNavigate();
