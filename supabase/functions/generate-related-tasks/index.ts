@@ -37,14 +37,17 @@ function buildFallbackArgs({
 
   const tasks = employees.flatMap((employee) => {
     const roleHint = employee.job_title ? ` حسب دور ${employee.job_title}` : "";
+    // توزيع متغيّر بحسب دور الموظف (وليس 1-1-1 موحدة)
     const items = employee.primary
       ? [
-          { phase: "before", title: `راجع متطلبات ${activityName} وجهّز قائمة التنفيذ`, day_offset: -3, estimated_minutes: 45, priority: "high" },
-          { phase: "during", title: `نفّذ مسؤوليات ${activityName} وتابع مؤشرات الإنجاز`, day_offset: 0, estimated_minutes: 120, priority: "high" },
+          { phase: "before", title: `راجع متطلبات ${activityName} وحدّد قائمة الموارد والمسؤوليات`, day_offset: -3, estimated_minutes: 45, priority: "high" },
+          { phase: "before", title: `جهّز خطة التنفيذ التفصيلية لـ${activityName} ووزّع الأدوار`, day_offset: -1, estimated_minutes: 60, priority: "high" },
+          { phase: "during", title: `نفّذ ${activityName} وتابع مؤشرات الإنجاز لحظياً`, day_offset: 0, estimated_minutes: 150, priority: "high" },
+          { phase: "during", title: `أدِر التواصل والتنسيق مع الجهات المشاركة في ${activityName}`, day_offset: 0, estimated_minutes: 60, priority: "medium" },
           { phase: "after", title: `وثّق نتائج ${activityName} وارفع التقرير الختامي`, day_offset: 1, estimated_minutes: 60, priority: "medium" },
+          { phase: "after", title: `قيّم أداء ${activityName} واستخلص الدروس المستفادة`, day_offset: 2, estimated_minutes: 45, priority: "low" },
         ]
       : [
-          { phase: "before", title: `نسّق المتطلبات المشتركة لنشاط ${activityName}${roleHint}`, day_offset: -2, estimated_minutes: 30, priority: "medium" },
           { phase: "during", title: `ساند تنفيذ ${activityName}${roleHint} وسجّل الملاحظات`, day_offset: 0, estimated_minutes: 60, priority: "medium" },
           { phase: "after", title: `زوّد المسؤول الرئيسي بمخرجات ${activityName}${roleHint}`, day_offset: 1, estimated_minutes: 30, priority: "low" },
         ];
