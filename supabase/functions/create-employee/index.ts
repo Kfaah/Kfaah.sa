@@ -79,11 +79,17 @@ serve(async (req) => {
       const { userId, password } = body;
 
       if (!userId || !password) {
-        return json({ success: false, error: "معرف المستخدم وكلمة المرور مطلوبان" }, 400);
+        return json(
+          { success: false, fieldErrors: { password: "كلمة المرور مطلوبة" }, error: "معرف المستخدم وكلمة المرور مطلوبان" },
+          200
+        );
       }
 
       if (password.length < 6) {
-        return json({ success: false, error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }, 400);
+        return json(
+          { success: false, fieldErrors: { password: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" } },
+          200
+        );
       }
 
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
@@ -92,14 +98,18 @@ serve(async (req) => {
 
       if (updateError) {
         console.error("Error updating password:", updateError);
-        const code = (updateError as any)?.code;
+        const code = "code" in updateError ? updateError.code : undefined;
         let msg = "حدث خطأ أثناء تحديث كلمة المرور";
         if (code === "weak_password" || /weak|pwned|known to be/i.test(updateError.message ?? "")) {
           msg = "كلمة المرور ضعيفة أو مكشوفة في تسريبات معروفة. اختر كلمة مرور أقوى وغير شائعة.";
         } else if (/at least|short|length/i.test(updateError.message ?? "")) {
           msg = "كلمة المرور قصيرة جداً. استخدم 8 أحرف على الأقل.";
         }
-        return json({ success: false, error: msg }, 400);
+        const isPasswordValidationError = code === "weak_password" || /weak|pwned|known to be|at least|short|length/i.test(updateError.message ?? "");
+        if (isPasswordValidationError) {
+          return json({ success: false, fieldErrors: { password: msg }, error: msg }, 200);
+        }
+        return json({ success: false, error: msg }, 500);
       }
 
       return json({ success: true, message: "تم تحديث كلمة المرور بنجاح" }, 200);
@@ -228,6 +238,21 @@ serve(async (req) => {
       if (createUserError.message.includes("already been registered")) {
         return json(
           { success: false, fieldErrors: { username: "رقم الهوية مسجل مسبقاً" } },
+          200
+        );
+      }
+
+      const createUserCode = "code" in createUserError ? createUserError.code : undefined;
+      if (createUserCode === "weak_password" || /weak|pwned|known to be/i.test(createUserError.message ?? "")) {
+        return json(
+          { success: false, fieldErrors: { password: "كلمة المرور ضعيفة أو مكشوفة في تسريبات معروفة. اختر كلمة مرور أقوى وغير شائعة." } },
+          200
+        );
+      }
+
+      if (/at least|short|length/i.test(createUserError.message ?? "")) {
+        return json(
+          { success: false, fieldErrors: { password: "كلمة المرور قصيرة جداً. استخدم 8 أحرف على الأقل." } },
           200
         );
       }
