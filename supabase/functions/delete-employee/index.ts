@@ -70,12 +70,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Detach subordinates first (avoid FK violation on direct_manager_id)
+    // Detach all manager references first (avoid FK violations when deleting managers)
     const { error: detachErr } = await admin
       .from("employees")
       .update({ direct_manager_id: null })
       .eq("direct_manager_id", emp.id);
     if (detachErr) throw detachErr;
+
+    const { error: detachExecutiveErr } = await admin
+      .from("employees")
+      .update({ executive_manager_id: null })
+      .eq("executive_manager_id", emp.id);
+    if (detachExecutiveErr) throw detachExecutiveErr;
 
     // Detach functional manager links if such column exists (best-effort)
     await admin
