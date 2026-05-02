@@ -7,11 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import {
@@ -200,8 +197,6 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const orgId = currentOrg?.id ?? null;
   const cacheKey = orgId && authUser?.id ? `${TASKS_CACHE_PREFIX}${orgId}:${authUser.id}` : null;
-  const TASKS_HEADER_TOP = embedded ? "0px" : "72px";
-  const TASKS_HEADER_HEIGHT = 48;
 
   const refreshTasks = useCallback(async () => {
     if (!authUser || !orgId) return;
