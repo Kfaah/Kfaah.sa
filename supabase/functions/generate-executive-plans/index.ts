@@ -916,6 +916,28 @@ ${i + 1}. النشاط: ${p.activityName}
       totalPlansGenerated += insertedPlans.length;
       totalActivitiesProcessed += plansData.length;
       processedMonths.push(monthName);
+
+      // توليد المراحل (تحضير/تنفيذ/ختام) في activity_related_tasks تلقائياً لكل خطة جديدة
+      // باستدعاء دالة generate-related-tasks بشكل متوازٍ في الخلفية (fire-and-forget)
+      try {
+        const fnUrl = `${SUPABASE_URL}/functions/v1/generate-related-tasks`;
+        const headers = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+        };
+        // ندفع جميع الاستدعاءات بالتوازي دون انتظار اكتمالها لتسريع الاستجابة
+        for (const plan of insertedPlans) {
+          fetch(fnUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ executive_plan_id: plan.id }),
+          }).catch((e) => console.error("generate-related-tasks bg call failed:", e?.message));
+        }
+        console.log(`Triggered phases generation for ${insertedPlans.length} plans (month ${targetMonth})`);
+      } catch (e) {
+        console.error("Failed to trigger phases generation:", e);
+      }
     }
 
     if (totalPlansGenerated === 0) {

@@ -401,8 +401,21 @@ export default function AddExecutivePlan() {
         .in("operational_plan_month_id", planMonthIds)
         .in("day", selectedDays);
 
-      const { error } = await supabase.from("executive_plans").insert(inserts);
+      const { data: insertedPlans, error } = await supabase
+        .from("executive_plans")
+        .insert(inserts)
+        .select("id");
       if (error) throw error;
+
+      // توليد المراحل (تحضير/تنفيذ/ختام) تلقائياً لكل خطة تنفيذية جديدة
+      // بشكل متوازٍ في الخلفية دون انتظار النتيجة (fire-and-forget)
+      if (insertedPlans && insertedPlans.length > 0) {
+        for (const plan of insertedPlans) {
+          supabase.functions
+            .invoke("generate-related-tasks", { body: { executive_plan_id: plan.id } })
+            .catch((e) => console.error("phases gen failed:", e?.message));
+        }
+      }
 
       toast({
         title: "تم بنجاح",
