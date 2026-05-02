@@ -57,11 +57,27 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       const superAdmin = !!superCheck;
       setIsSuperAdmin(superAdmin);
 
-      // Super admin sees all orgs; regular users see only their joined orgs
-      const { data: orgs, error } = await supabase
+      const orgQuery = supabase
         .from("organizations")
         .select("*")
         .order("created_at", { ascending: true });
+
+      // Super admin can browse all organizations. Regular/viewer accounts must
+      // stay locked to their own organization even if the URL or localStorage
+      // still contains another organization's slug/id from a previous session.
+      let orgsResult;
+      if (superAdmin) {
+        orgsResult = await orgQuery;
+      } else {
+        const { data: userOrgId } = await supabase.rpc("get_user_organization_id", {
+          _user_id: authUser.id,
+        });
+        orgsResult = userOrgId
+          ? await orgQuery.eq("id", userOrgId as string)
+          : { data: [], error: null };
+      }
+
+      const { data: orgs, error } = orgsResult;
 
       if (error) {
         console.error("Failed to load organizations:", error);

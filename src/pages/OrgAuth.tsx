@@ -60,7 +60,7 @@ function hexToHsl(hex: string | null | undefined): string | null {
 export default function OrgAuth() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
 
   const [org, setOrg] = useState<OrgInfo | null>(null);
   const [orgLoading, setOrgLoading] = useState(true);
@@ -120,14 +120,25 @@ export default function OrgAuth() {
   // into this org's workspace. Super admins should still see the org login page
   // so they can sign in as a member of that specific organization if needed.
   useEffect(() => {
-    if (authLoading || !user || !slug) return;
+    if (authLoading || !user || !slug || !org) return;
     (async () => {
       const { data: superCheck } = await supabase.rpc("is_super_admin", { _user_id: user.id });
       if (!superCheck) {
-        navigate(`/${slug}/app`, { replace: true });
+        const { data: membership } = await supabase
+          .from("user_organizations")
+          .select("organization_id")
+          .eq("user_id", user.id)
+          .eq("organization_id", org.id)
+          .maybeSingle();
+
+        if (membership) {
+          navigate(`/${slug}/app`, { replace: true });
+        } else {
+          await signOut();
+        }
       }
     })();
-  }, [user, authLoading, navigate, slug]);
+  }, [user, authLoading, navigate, slug, org, signOut]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
