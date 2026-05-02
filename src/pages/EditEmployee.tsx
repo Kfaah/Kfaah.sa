@@ -245,8 +245,6 @@ const EditEmployee = () => {
     }
     if (!form.email?.trim()) newErrors.email = "البريد الإلكتروني مطلوب";
     if (!form.phone?.trim()) newErrors.phone = "رقم الجوال مطلوب";
-    if (!form.department) newErrors.department = "القسم مطلوب";
-    if (!form.job_role) newErrors.job_role = "الدور الوظيفي مطلوب";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -612,76 +610,8 @@ const EditEmployee = () => {
 
             <Separator />
 
-            {/* القسم والدور والحالة */}
+            {/* الحالة */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
-                  <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Building className="w-4 h-4 text-[hsl(var(--primary))]" />
-                    القسم *
-                  </Label>
-                </div>
-                <Select
-                  value={form.department}
-                  onValueChange={(v) => {
-                    setForm((prev) => ({ ...prev, department: v, job_role: "" }));
-                    if (errors.department) setErrors((prev) => ({ ...prev, department: "" }));
-                  }}
-                >
-                  <SelectTrigger className={errors.department ? "border-destructive" : ""}>
-                    <SelectValue placeholder="اختر القسم" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.name}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.department && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" />
-                    {errors.department}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
-                  <Label className="font-semibold text-foreground flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-[hsl(var(--primary))]" />
-                    الدور الوظيفي *
-                  </Label>
-                </div>
-                <Select
-                  value={form.job_role}
-                  onValueChange={(v) => {
-                    setForm((prev) => ({ ...prev, job_role: v }));
-                    if (errors.job_role) setErrors((prev) => ({ ...prev, job_role: "" }));
-                  }}
-                >
-                  <SelectTrigger className={errors.job_role ? "border-destructive" : ""}>
-                    <SelectValue placeholder="اختر الدور الوظيفي" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    {filteredRoles.map((role) => (
-                      <SelectItem key={role.id} value={role.name}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.job_role && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" />
-                    {errors.job_role}
-                  </p>
-                )}
-              </div>
-
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
