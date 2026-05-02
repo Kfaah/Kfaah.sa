@@ -162,6 +162,38 @@ export default function OrgAuth() {
         });
         if (error) throw error;
 
+        // Check membership approval status before routing into the app
+        const { data: { user: signedInUser } } = await supabase.auth.getUser();
+        if (signedInUser) {
+          const { data: isSuper } = await supabase.rpc("is_super_admin", { _user_id: signedInUser.id });
+          if (!isSuper) {
+            const { data: membership } = await supabase
+              .from("user_organizations")
+              .select("approval_status")
+              .eq("user_id", signedInUser.id)
+              .eq("organization_id", org.id)
+              .maybeSingle();
+            if (!membership) {
+              await supabase.auth.signOut();
+              toast.error("لا تملك حساباً في هذه الجمعية");
+              setLoading(false);
+              return;
+            }
+            if (membership.approval_status === "pending") {
+              await supabase.auth.signOut();
+              toast.info("حسابك قيد المراجعة من قِبَل إدارة الجمعية. سيتم إشعارك عند الموافقة.");
+              setLoading(false);
+              return;
+            }
+            if (membership.approval_status === "rejected") {
+              await supabase.auth.signOut();
+              toast.error("تم رفض طلب انضمامك إلى هذه الجمعية. يرجى التواصل مع المسؤول.");
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
         toast.success("تم تسجيل الدخول بنجاح");
         navigate(`/${slug}/app`, { replace: true });
       } else {
@@ -197,8 +229,14 @@ export default function OrgAuth() {
         });
         if (joinError) throw joinError;
 
-        toast.success(`تم إنشاء حسابك في ${org.name}`);
-        navigate(`/${slug}/app`, { replace: true });
+        // Membership was created as PENDING — sign out and inform the user.
+        await supabase.auth.signOut();
+        toast.success(
+          `تم إرسال طلب انضمامك إلى ${org.name}. سيتم تفعيل حسابك بعد موافقة إدارة الجمعية.`,
+          { duration: 8000 }
+        );
+        setIsLogin(true);
+        setPassword("");
       }
     } catch (error: unknown) {
       toast.error(getArabicErrorMessage(error, "حدث خطأ"));
