@@ -52,11 +52,9 @@ export function IntelligenceProfileManager() {
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [optionsByQ, setOptionsByQ] = useState<Record<string, Option[]>>({});
-  const [expandedQ, setExpandedQ] = useState<string | null>(null);
   const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState("");
-  const [newOptionValue, setNewOptionValue] = useState("");
-  const [newOptionLabel, setNewOptionLabel] = useState("");
+  const [newOptionByQ, setNewOptionByQ] = useState<Record<string, string>>({});
 
   const orgId = currentOrg?.id ?? null;
 
@@ -220,9 +218,8 @@ export function IntelligenceProfileManager() {
   }
 
   async function addOption(q: Question) {
-    const value = (newOptionValue || newOptionLabel).trim();
-    const label = (newOptionLabel || newOptionValue).trim();
-    if (!label) {
+    const draft = (newOptionByQ[q.id] ?? "").trim();
+    if (!draft) {
       toast.error("اكتب اسم الخيار");
       return;
     }
@@ -232,15 +229,14 @@ export function IntelligenceProfileManager() {
       const maxOrder = existing.reduce((m, o) => Math.max(m, o.display_order), 0);
       const { error } = await supabase.from("intelligence_profile_options").insert({
         question_id: target.id,
-        value,
-        label,
+        value: draft,
+        label: draft,
         display_order: maxOrder + 1,
         is_active: true,
       });
       if (error) throw error;
       toast.success("تمت إضافة الخيار");
-      setNewOptionValue("");
-      setNewOptionLabel("");
+      setNewOptionByQ((prev) => ({ ...prev, [q.id]: "" }));
       await loadAll();
     } catch (e: any) {
       toast.error(e.message ?? "تعذّر الإضافة");
@@ -282,6 +278,14 @@ export function IntelligenceProfileManager() {
         💡 يمكنك تفعيل/إخفاء أي سؤال أو خيار، أو تعديل نصوصه، أو إضافة خيارات جديدة.
         التعديلات تُطبَّق على جمعيتك فقط.
       </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+        {STEP_ORDER.map((s) => (
+          <div key={s} className="rounded-md border bg-muted/30 px-3 py-2 text-center">
+            <div className="font-semibold">{STEP_LABELS[s]}</div>
+            <div className="text-muted-foreground mt-0.5">{groupedByStep[s].length} سؤال</div>
+          </div>
+        ))}
+      </div>
       <Tabs defaultValue="skills" dir="rtl">
         <TabsList className="grid grid-cols-4 w-full">
           {STEP_ORDER.map((s) => (
@@ -298,7 +302,6 @@ export function IntelligenceProfileManager() {
             )}
             {groupedByStep[step].map((q) => {
               const opts = optionsByQ[q.id] ?? [];
-              const expanded = expandedQ === q.id;
               const hasOptions = q.question_type === "chips" || q.question_type === "radio";
               return (
                 <Card key={q.id} className={!q.is_active ? "opacity-60" : ""}>
@@ -342,6 +345,11 @@ export function IntelligenceProfileManager() {
                                   q.question_type === "number" ? "رقم" :
                                     q.question_type === "textarea" ? "نص طويل" : "نص"}
                             </Badge>
+                            {hasOptions && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                {opts.length} خيار
+                              </Badge>
+                            )}
                             {q.organization_id && (
                               <Badge className="text-[10px] bg-emerald-100 text-emerald-700 hover:bg-emerald-100">مخصّص</Badge>
                             )}
@@ -353,16 +361,14 @@ export function IntelligenceProfileManager() {
                           <RefreshCw className="w-4 h-4" />
                         </Button>
                       )}
-                      {hasOptions && (
-                        <Button size="sm" variant="ghost" onClick={() => setExpandedQ(expanded ? null : q.id)}>
-                          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </Button>
-                      )}
                     </div>
+                    {q.helper_text && (
+                      <div className="text-xs text-muted-foreground mt-1 pr-12">{q.helper_text}</div>
+                    )}
                   </CardHeader>
-                  {expanded && hasOptions && (
+                  {hasOptions && (
                     <CardContent className="pt-0 space-y-3">
-                      <div className="space-y-1.5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                         {opts.map((o) => (
                           <div key={o.id} className={`flex items-center gap-2 rounded border p-2 ${!o.is_active ? "opacity-50" : ""}`}>
                             <Switch checked={o.is_active} onCheckedChange={(v) => toggleOption(q, o, v)} />
@@ -373,7 +379,9 @@ export function IntelligenceProfileManager() {
                           </div>
                         ))}
                         {opts.length === 0 && (
-                          <div className="text-xs text-muted-foreground py-2">لا توجد خيارات بعد</div>
+                          <div className="col-span-full text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                            ⚠️ لا توجد خيارات بعد — أضف الخيارات حتى يستطيع الموظف الاختيار.
+                          </div>
                         )}
                       </div>
                       <div className="flex items-end gap-2 border-t pt-3">
@@ -381,8 +389,10 @@ export function IntelligenceProfileManager() {
                           <Label className="text-xs">إضافة خيار جديد</Label>
                           <Input
                             placeholder="نص الخيار كما يراه الموظف"
-                            value={newOptionLabel}
-                            onChange={(e) => setNewOptionLabel(e.target.value)}
+                            value={newOptionByQ[q.id] ?? ""}
+                            onChange={(e) =>
+                              setNewOptionByQ((prev) => ({ ...prev, [q.id]: e.target.value }))
+                            }
                             onKeyDown={(e) => {
                               if (e.key === "Enter") addOption(q);
                             }}
