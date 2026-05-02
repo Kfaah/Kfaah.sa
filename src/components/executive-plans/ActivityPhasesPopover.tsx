@@ -149,6 +149,7 @@ export function ActivityPhasesPopover({
   const [newOffset, setNewOffset] = useState<number>(0);
   const [newAssignee, setNewAssignee] = useState<string | null>(null);
   const [empPickerOpenFor, setEmpPickerOpenFor] = useState<string | null>(null);
+  const [generatingAI, setGeneratingAI] = useState(false);
 
   const employeeMap = useMemo(() => {
     const m = new Map<string, EmployeeOption>();
@@ -381,6 +382,32 @@ export function ActivityPhasesPopover({
     }
   }
 
+  async function generateWithAI() {
+    if (generatingAI) return;
+    setGeneratingAI(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-related-tasks", {
+        body: { executive_plan_id: executivePlanId },
+      });
+      if (error) throw error;
+      const inserted = (data as any)?.inserted_tasks ?? (data as any)?.tasks?.length ?? 0;
+      const dispatched = (data as any)?.dispatched_count ?? 0;
+      toast({
+        title: "تم اقتراح المهام بالذكاء الاصطناعي",
+        description: `تمت إضافة ${inserted} مهمة وترحيل ${dispatched} منها لقوائم الموظفين`,
+      });
+      await load();
+    } catch (e: any) {
+      toast({
+        title: "تعذّر الاقتراح بالذكاء",
+        description: e?.message ?? "حاول مرة أخرى لاحقاً",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingAI(false);
+    }
+  }
+
   const byPhase: Record<Phase, RelatedTask[]> = {
     before: tasks.filter((t) => t.phase === "before" && (!isPlainEmployee || t.employee_id === myEmployeeId)),
     during: tasks.filter((t) => t.phase === "during" && (!isPlainEmployee || t.employee_id === myEmployeeId)),
@@ -436,12 +463,30 @@ export function ActivityPhasesPopover({
                 </div>
               </div>
             </div>
-            {totalCount > 0 && (
-              <Badge className="bg-white/25 text-white border-0 text-[11px] gap-1 backdrop-blur shrink-0 px-2 py-1">
-                <Zap className="w-3 h-3" />
-                {totalCount} مهمة
-              </Badge>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {totalCount > 0 && (
+                <Badge className="bg-white/25 text-white border-0 text-[11px] gap-1 backdrop-blur px-2 py-1">
+                  <Zap className="w-3 h-3" />
+                  {totalCount} مهمة
+                </Badge>
+              )}
+              {!isPlainEmployee && (
+                <Button
+                  size="sm"
+                  onClick={generateWithAI}
+                  disabled={generatingAI || loading}
+                  className="h-8 bg-white text-[hsl(var(--primary))] hover:bg-white/90 shadow-md gap-1.5 px-3 font-bold"
+                  title="اقتراح مهام (تحضير/تنفيذ/ختام) لجميع الموظفين المرتبطين بهذا النشاط"
+                >
+                  {generatingAI ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  <span className="text-xs">{generatingAI ? "جارٍ التوليد…" : "اقتراح بالذكاء"}</span>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
