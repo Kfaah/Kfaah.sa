@@ -458,13 +458,27 @@ const EditEmployee = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-5 bg-[hsl(var(--primary))] rounded-full" />
-                  <Label className="font-semibold text-foreground">المسمى الوظيفي</Label>
+                  <Label className="font-semibold text-foreground flex items-center gap-2">
+                    <BadgeCheck className="w-4 h-4 text-[hsl(var(--primary))]" />
+                    الدور
+                  </Label>
                 </div>
                 <Input
-                  value={form.title}
-                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="مثال: مدير المشاريع"
+                  list="role-title-suggestions"
+                  value={form.roleTitle}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, roleTitle: e.target.value, title: e.target.value }))
+                  }
+                  placeholder="مثال: أخصائي تسويق، أخصائي حملات..."
                 />
+                <datalist id="role-title-suggestions">
+                  {ADMIN_ROLE_TITLES.map((t) => (
+                    <option key={t} value={t} />
+                  ))}
+                </datalist>
+                <p className="text-xs text-muted-foreground">
+                  اختر <strong>مدير الجمعية</strong> أو <strong>مدير التسويق</strong> لمنح صلاحيات إدارية كاملة، أو اكتب أي مسمى آخر (مثل أخصائي) لصلاحيات موظف عادي.
+                </p>
               </div>
             </div>
 
