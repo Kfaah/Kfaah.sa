@@ -589,6 +589,8 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
   const activeOrgId = slug ? routeOrgId : currentOrg?.id ?? null;
   const datesTableScrollRef = React.useRef<HTMLDivElement | null>(null);
   const stickyHeaderTop = embedded ? "52px" : "0px";
+  // الصف العلوي للعناوين بارتفاع h-12 (48px)، فيجب أن تلتصق خلايا الجسم تحته
+  const stickyBodyTop = embedded ? "100px" : "48px";
 
 
 
