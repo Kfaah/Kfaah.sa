@@ -122,6 +122,9 @@ export default function OrgAuth() {
   // so they can sign in as a member of that specific organization if needed.
   useEffect(() => {
     if (authLoading || !user || !slug || !org) return;
+    // Don't auto-redirect while we're in the middle of a signup flow
+    // (signup briefly signs the user in to attach the org membership, then signs out).
+    if (loading || signupSuccess) return;
     (async () => {
       const { data: superCheck } = await supabase.rpc("is_super_admin", { _user_id: user.id });
       if (!superCheck) {
@@ -139,7 +142,7 @@ export default function OrgAuth() {
         }
       }
     })();
-  }, [user, authLoading, navigate, slug, org]);
+  }, [user, authLoading, navigate, slug, org, loading, signupSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
