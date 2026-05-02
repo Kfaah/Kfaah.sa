@@ -1380,25 +1380,21 @@ const Tasks = ({ embedded = false }: TasksProps) => {
             <CardContent className="p-0">
               <div className="max-h-[calc(100vh-280px)] overflow-auto">
               <Table>
-                <TableHeader className="sticky top-0 z-20">
-                  <TableRow className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]">
-                    <TableHead className="text-right font-bold text-white border-l border-white/20 w-48">النشاط</TableHead>
-                    <TableHead className="text-right font-bold text-white border-l border-white/20">المهمة</TableHead>
-                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">تاريخ التنفيذ</TableHead>
-                    <TableHead className="text-center font-bold text-white w-24 border-l border-white/20">الأولوية</TableHead>
-                    {/* المنفذ يظهر للمدير فقط */}
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-right font-bold text-white border-l border-white/20 w-48">النشاط</TableHead>
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-right font-bold text-white border-l border-white/20">المهمة</TableHead>
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20">تاريخ التنفيذ</TableHead>
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20">الأولوية</TableHead>
                     {isAdmin && (
-                      <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">المنفذ</TableHead>
+                      <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-32 border-l border-white/20">المنفذ</TableHead>
                     )}
-                    {/* الوقت المقدر والفعلي */}
-                    <TableHead className="text-center font-bold text-white w-24 border-l border-white/20">الوقت المقدر</TableHead>
-                    <TableHead className="text-center font-bold text-white w-24 border-l border-white/20">الوقت الفعلي</TableHead>
-                    {/* المرفقات والتواصل */}
-                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">المرفقات والتواصل</TableHead>
-                    <TableHead className="text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
-                    {/* التقييم يظهر للجميع */}
-                    <TableHead className="text-center font-bold text-white w-28 border-l border-white/20">التقييم</TableHead>
-                    <TableHead className="text-center font-bold text-white w-24">إجراء</TableHead>
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20">الوقت المقدر</TableHead>
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20">الوقت الفعلي</TableHead>
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20">المرفقات والتواصل</TableHead>
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-32 border-l border-white/20">الحالة</TableHead>
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20">التقييم</TableHead>
+                    <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-center font-bold text-white w-24">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
