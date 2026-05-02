@@ -951,8 +951,8 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   }, [employees]);
 
   const activityByPlan = useMemo(() => {
-    const map = new Map<string, string>();
-    activities.forEach((activity) => map.set(activity.executive_plan_id, activity.activity_name));
+    const map = new Map<string, { name: string; execution_date?: string | null }>();
+    activities.forEach((activity) => map.set(activity.executive_plan_id, { name: activity.activity_name, execution_date: activity.execution_date }));
     return map;
   }, [activities]);
 
@@ -965,19 +965,26 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   // الحصول على اسم النشاط من executive_plan_id
   const getActivityName = (executivePlanId: string | null) => {
     if (!executivePlanId) return "غير محدد";
-    return activityByPlan.get(executivePlanId) || "غير محدد";
+    return activityByPlan.get(executivePlanId)?.name || "غير محدد";
+  };
+
+  // الحصول على تاريخ تنفيذ النشاط
+  const getActivityExecutionDate = (executivePlanId: string | null) => {
+    if (!executivePlanId) return null;
+    return activityByPlan.get(executivePlanId)?.execution_date || null;
   };
 
   // تجميع المهام حسب النشاط - مع التخزين المؤقت
   const groupTasksByActivity = useCallback((tasksToGroup: Task[]) => {
-    const grouped: { [key: string]: { activityName: string; tasks: Task[] } } = {};
+    const grouped: { [key: string]: { activityName: string; activityExecutionDate: string | null; tasks: Task[] } } = {};
     
     tasksToGroup.forEach(task => {
       const activityName = getActivityName(task.executive_plan_id);
+      const activityExecutionDate = getActivityExecutionDate(task.executive_plan_id);
       const key = task.executive_plan_id || "no-activity";
       
       if (!grouped[key]) {
-        grouped[key] = { activityName, tasks: [] };
+        grouped[key] = { activityName, activityExecutionDate, tasks: [] };
       }
       grouped[key].tasks.push(task);
     });
