@@ -1599,6 +1599,23 @@ function EmployeesShowcase({
                     تعديل
                   </Link>
                 </div>
+                {canImpersonate && (
+                  <button
+                    type="button"
+                    onClick={() => handleImpersonate(e.id, e.full_name)}
+                    disabled={impersonatingId === e.id}
+                    className="relative mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-50"
+                    style={{ borderColor: ORG_PRIMARY_RING }}
+                    title="الدخول إلى حساب هذا الموظف لمعاينة ما يراه"
+                  >
+                    {impersonatingId === e.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <LogIn className="h-3 w-3" />
+                    )}
+                    دخول كموظف
+                  </button>
+                )}
               </div>
             );
           })}
