@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShieldCheck, ArrowRight, Save } from "lucide-react";
+import { ShieldCheck, ArrowRight, Save, Eye, KeyRound, Loader2, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -57,6 +57,13 @@ export default function RolesPermissionsSettings() {
   const [orgId, setOrgId] = useState<string | null>(null);
   const [matrix, setMatrix] = useState<Record<string, PermRow>>({});
   const [saving, setSaving] = useState(false);
+  const [viewerAccounts, setViewerAccounts] = useState<
+    Array<{ id: string; full_name: string; username: string | null; organization_id: string | null; org_name?: string; org_logo?: string | null }>
+  >([]);
+  const [generating, setGenerating] = useState(false);
+  const [results, setResults] = useState<
+    Array<{ org: string; status: string; username?: string; password?: string; message?: string }>
+  >([]);
 
   useEffect(() => {
     const load = async () => {
@@ -89,9 +96,66 @@ export default function RolesPermissionsSettings() {
         m[cellKey(row.role, row.module)] = row;
       });
       setMatrix(m);
+      await loadViewers();
     };
     load();
   }, [user]);
+
+  const loadViewers = async () => {
+    const { data } = await supabase
+      .from("employees")
+      .select("id, full_name, username, organization_id, avatar_url")
+      .eq("is_viewer_account", true)
+      .order("full_name");
+    if (!data) return;
+    const orgIds = Array.from(new Set(data.map((d: any) => d.organization_id).filter(Boolean)));
+    let orgMap: Record<string, { name: string; logo_url: string | null }> = {};
+    if (orgIds.length) {
+      const { data: orgs } = await supabase
+        .from("organizations")
+        .select("id, name, logo_url")
+        .in("id", orgIds);
+      (orgs || []).forEach((o: any) => {
+        orgMap[o.id] = { name: o.name, logo_url: o.logo_url };
+      });
+    }
+    setViewerAccounts(
+      data.map((d: any) => ({
+        id: d.id,
+        full_name: d.full_name,
+        username: d.username,
+        organization_id: d.organization_id,
+        org_name: d.organization_id ? orgMap[d.organization_id]?.name : undefined,
+        org_logo: d.organization_id ? orgMap[d.organization_id]?.logo_url : null,
+      }))
+    );
+  };
+
+  const generateViewers = async () => {
+    setGenerating(true);
+    setResults([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-org-viewer-accounts");
+      if (error) {
+        toast.error("فشل الإنشاء: " + error.message);
+        return;
+      }
+      setResults(data?.results || []);
+      const created = (data?.results || []).filter((r: any) => r.status === "created").length;
+      const exists = (data?.results || []).filter((r: any) => r.status === "exists").length;
+      toast.success(`تم: ${created} جديد · ${exists} موجود مسبقاً`);
+      await loadViewers();
+    } catch (e: any) {
+      toast.error(e?.message || "حدث خطأ");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const copy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("تم النسخ");
+  };
 
   const toggle = (role: string, mod: string, action: typeof ACTIONS[number]["key"]) => {
     const key = cellKey(role, mod);
@@ -218,6 +282,103 @@ export default function RolesPermissionsSettings() {
           الصلاحيات تُطبَّق لكل جمعية على حدة. مدير النظام (super_admin) يملك
           صلاحية كاملة دائماً ولا يتأثر بهذه المصفوفة.
         </p>
+
+        {/* === حسابات عرض الجمعيات === */}
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                  <Eye className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">حسابات عرض الجمعيات</h3>
+                  <p className="text-sm text-muted-foreground max-w-2xl">
+                    حساب واحد لكل جمعية باسمها وشعارها، صلاحياته العرض فقط (لا يستطيع الإضافة أو التعديل أو الحذف).
+                    يستطيع الدخول لرؤية كل بيانات جمعيته.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={generateViewers} disabled={generating}>
+                {generating ? (
+                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                ) : (
+                  <KeyRound className="w-4 h-4 ml-2" />
+                )}
+                {generating ? "جاري الإنشاء..." : "إنشاء حسابات عرض لكل الجمعيات"}
+              </Button>
+            </div>
+
+            {results.length > 0 && (
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                <p className="font-semibold text-sm">نتيجة آخر تشغيل:</p>
+                <ul className="text-xs space-y-1.5">
+                  {results.map((r, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2 bg-background rounded px-3 py-2">
+                      <span className="font-medium">{r.org}</span>
+                      <span className="flex items-center gap-2">
+                        {r.status === "created" && (
+                          <>
+                            <span className="text-green-600 font-semibold">✓ تم الإنشاء</span>
+                            <code className="bg-muted px-2 py-0.5 rounded">{r.username}</code>
+                            <code className="bg-muted px-2 py-0.5 rounded">{r.password}</code>
+                          </>
+                        )}
+                        {r.status === "exists" && (
+                          <span className="text-muted-foreground">موجود مسبقاً</span>
+                        )}
+                        {r.status === "error" && (
+                          <span className="text-destructive">خطأ: {r.message}</span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[11px] text-muted-foreground">
+                  كلمة المرور الافتراضية موحّدة. يمكنك تغييرها لاحقاً من شاشة تعديل الموظف.
+                </p>
+              </div>
+            )}
+
+            {viewerAccounts.length > 0 && (
+              <div className="space-y-2">
+                <p className="font-semibold text-sm">الحسابات المُنشأة ({viewerAccounts.length}):</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {viewerAccounts.map((v) => (
+                    <div
+                      key={v.id}
+                      className="flex items-center gap-3 rounded-lg border bg-card p-3"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-white border flex items-center justify-center overflow-hidden p-0.5 flex-shrink-0">
+                        {v.org_logo ? (
+                          <img src={v.org_logo} alt={v.full_name} className="w-full h-full object-contain" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{v.full_name}</p>
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <code className="bg-muted px-1.5 py-0.5 rounded">{v.username}</code>
+                          <button
+                            onClick={() => v.username && copy(v.username)}
+                            className="hover:text-primary"
+                            title="نسخ اسم المستخدم"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                      <span className="text-[10px] bg-blue-500/10 text-blue-700 px-2 py-1 rounded-full font-semibold">
+                        عرض فقط
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
