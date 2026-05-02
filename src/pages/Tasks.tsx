@@ -1380,29 +1380,38 @@ const Tasks = ({ embedded = false }: TasksProps) => {
         ) : (
           <Card className="overflow-hidden border border-[hsl(var(--primary)/0.2)] shadow-md">
             <CardContent className="p-0">
-              <div
-                className="max-h-[calc(100vh-280px)] overflow-auto isolate"
-                dir="rtl"
-                tabIndex={0}
-              >
+              <div dir="rtl" className="max-h-[calc(100vh-280px)] overflow-auto isolate" tabIndex={0}>
               <table className="w-full min-w-[1180px] caption-bottom text-sm">
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-right font-bold text-white border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))] w-48">النشاط</TableHead>
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-right font-bold text-white border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">المهمة</TableHead>
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">تاريخ التنفيذ</TableHead>
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">الأولوية</TableHead>
+                <colgroup>
+                  <col className="w-48" />
+                  <col />
+                  <col className="w-28" />
+                  <col className="w-24" />
+                  {isAdmin && <col className="w-32" />}
+                  <col className="w-24" />
+                  <col className="w-24" />
+                  <col className="w-28" />
+                  <col className="w-32" />
+                  <col className="w-28" />
+                  <col className="w-24" />
+                </colgroup>
+                <thead className="sticky top-0 z-50 bg-[hsl(var(--primary))] shadow-[0_2px_0_0_hsl(var(--primary))]">
+                  <tr className="border-b hover:bg-transparent">
+                    <th className="h-12 px-4 align-middle text-right font-bold text-white border-l border-white/20">النشاط</th>
+                    <th className="h-12 px-4 align-middle text-right font-bold text-white border-l border-white/20">المهمة</th>
+                    <th className="h-12 px-4 align-middle text-center font-bold text-white border-l border-white/20">تاريخ التنفيذ</th>
+                    <th className="h-12 px-4 align-middle text-center font-bold text-white border-l border-white/20">الأولوية</th>
                     {isAdmin && (
-                      <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-32 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">المنفذ</TableHead>
+                      <th className="h-12 px-4 align-middle text-center font-bold text-white border-l border-white/20">المنفذ</th>
                     )}
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">الوقت المقدر</TableHead>
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">الوقت الفعلي</TableHead>
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">المرفقات والتواصل</TableHead>
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-32 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">الحالة</TableHead>
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-28 border-l border-white/20 shadow-[0_2px_0_0_hsl(var(--primary))]">التقييم</TableHead>
-                    <TableHead style={{ top: TASKS_HEADER_TOP, height: `${TASKS_HEADER_HEIGHT}px` }} className="sticky z-50 bg-[hsl(var(--primary))] text-center font-bold text-white w-24 shadow-[0_2px_0_0_hsl(var(--primary))]">إجراء</TableHead>
-                  </TableRow>
-                </TableHeader>
+                    <th className="h-12 px-4 align-middle text-center font-bold text-white border-l border-white/20">الوقت المقدر</th>
+                    <th className="h-12 px-4 align-middle text-center font-bold text-white border-l border-white/20">الوقت الفعلي</th>
+                    <th className="h-12 px-4 align-middle text-center font-bold text-white border-l border-white/20">المرفقات والتواصل</th>
+                    <th className="h-12 px-4 align-middle text-center font-bold text-white border-l border-white/20">الحالة</th>
+                    <th className="h-12 px-4 align-middle text-center font-bold text-white border-l border-white/20">التقييم</th>
+                    <th className="h-12 px-4 align-middle text-center font-bold text-white">إجراء</th>
+                  </tr>
+                </thead>
                 <TableBody>
                   {groupedTasks.map((group, groupIndex) => {
                     const isEven = groupIndex % 2 === 0;
