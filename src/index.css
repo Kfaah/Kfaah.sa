@@ -2,9 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* الحجم الطبيعي للموقع */
+/* تصغير الموقع بنسبة 5% */
 html {
-  font-size: 100%;
+  font-size: 95%;
+  zoom: 0.95;
 }
 
 @layer base {
