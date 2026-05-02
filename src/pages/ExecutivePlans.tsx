@@ -2087,7 +2087,7 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                     </colgroup>
                     <TableHeader>
                       {/* صف العناوين الفعلي */}
-                      <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]">
+                      <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-40 [&>th]:bg-[hsl(var(--primary))] [&>th]:shadow-[0_2px_0_0_hsl(var(--primary))]">
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
