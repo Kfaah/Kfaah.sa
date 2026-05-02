@@ -339,7 +339,6 @@ function AppContent() {
     return (
       <PreviewModeProvider>
         <TooltipProvider>
-          <Toaster />
           <Sonner />
           <AppRoutes />
         </TooltipProvider>
