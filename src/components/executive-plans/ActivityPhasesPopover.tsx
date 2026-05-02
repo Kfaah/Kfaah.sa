@@ -199,7 +199,12 @@ export function ActivityPhasesPopover({
         .order("phase")
         .order("display_order");
       if (error) throw error;
-      setTasks((data ?? []) as RelatedTask[]);
+      const list = (data ?? []) as RelatedTask[];
+      setTasks(list);
+      // توليد تلقائي بالذكاء الاصطناعي إذا لم توجد مهام بعد (للمدير/الأدمن فقط)
+      if (list.length === 0 && !isPlainEmployee && !generatingAI) {
+        void generateWithAI({ silent: true });
+      }
     } catch (e: any) {
       toast({ title: "تعذّر التحميل", description: e.message, variant: "destructive" });
     } finally {
@@ -382,7 +387,7 @@ export function ActivityPhasesPopover({
     }
   }
 
-  async function generateWithAI() {
+  async function generateWithAI(opts: { silent?: boolean } = {}) {
     if (generatingAI) return;
     setGeneratingAI(true);
     try {
@@ -392,17 +397,28 @@ export function ActivityPhasesPopover({
       if (error) throw error;
       const inserted = (data as any)?.inserted_tasks ?? (data as any)?.tasks?.length ?? 0;
       const dispatched = (data as any)?.dispatched_count ?? 0;
-      toast({
-        title: "تم اقتراح المهام بالذكاء الاصطناعي",
-        description: `تمت إضافة ${inserted} مهمة وترحيل ${dispatched} منها لقوائم الموظفين`,
-      });
-      await load();
+      if (!opts.silent || inserted > 0) {
+        toast({
+          title: "تم اقتراح المهام بالذكاء الاصطناعي",
+          description: `تمت إضافة ${inserted} مهمة وترحيل ${dispatched} منها لقوائم الموظفين`,
+        });
+      }
+      // إعادة تحميل القائمة بعد التوليد (بدون إطلاق توليد آخر)
+      const { data: refreshed } = await supabase
+        .from("activity_related_tasks")
+        .select("id, employee_id, phase, title, estimated_minutes, priority, day_offset, source, is_dispatched, dispatched_task_id")
+        .eq("executive_plan_id", executivePlanId)
+        .order("phase")
+        .order("display_order");
+      setTasks((refreshed ?? []) as RelatedTask[]);
     } catch (e: any) {
-      toast({
-        title: "تعذّر الاقتراح بالذكاء",
-        description: e?.message ?? "حاول مرة أخرى لاحقاً",
-        variant: "destructive",
-      });
+      if (!opts.silent) {
+        toast({
+          title: "تعذّر الاقتراح بالذكاء",
+          description: e?.message ?? "حاول مرة أخرى لاحقاً",
+          variant: "destructive",
+        });
+      }
     } finally {
       setGeneratingAI(false);
     }
@@ -470,21 +486,11 @@ export function ActivityPhasesPopover({
                   {totalCount} مهمة
                 </Badge>
               )}
-              {!isPlainEmployee && (
-                <Button
-                  size="sm"
-                  onClick={generateWithAI}
-                  disabled={generatingAI || loading}
-                  className="h-8 bg-white text-[hsl(var(--primary))] hover:bg-white/90 shadow-md gap-1.5 px-3 font-bold"
-                  title="اقتراح مهام (تحضير/تنفيذ/ختام) لجميع الموظفين المرتبطين بهذا النشاط"
-                >
-                  {generatingAI ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3.5 h-3.5" />
-                  )}
-                  <span className="text-xs">{generatingAI ? "جارٍ التوليد…" : "اقتراح بالذكاء"}</span>
-                </Button>
+              {generatingAI && (
+                <Badge className="bg-white/25 text-white border-0 text-[11px] gap-1 backdrop-blur px-2 py-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  جارٍ توليد المهام بالذكاء…
+                </Badge>
               )}
             </div>
           </div>
