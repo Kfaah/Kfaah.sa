@@ -23,6 +23,12 @@ interface MembershipRow {
   contact_email?: string;
 }
 
+type MembershipRpcClient = {
+  rpc: <T>(fn: string, args: Record<string, unknown>) => Promise<{ data: T | null; error: { message?: string } | null }>;
+};
+
+const membershipRpcClient = supabase as unknown as MembershipRpcClient;
+
 const statusMeta: Record<MembershipRow["approval_status"], { label: string; cls: string; icon: typeof Check }> = {
   pending:  { label: "قيد المراجعة", cls: "bg-amber-100 text-amber-800 border-amber-300", icon: Clock },
   approved: { label: "موافَق عليه",  cls: "bg-emerald-100 text-emerald-800 border-emerald-300", icon: ShieldCheck },
@@ -41,7 +47,7 @@ export default function MembersSettings() {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const { data, error } = await (supabase as any).rpc("get_org_membership_requests", {
+      const { data, error } = await membershipRpcClient.rpc<MembershipRow[]>("get_org_membership_requests", {
         _org_slug: slug ?? null,
       });
       if (error) throw error;
@@ -51,7 +57,7 @@ export default function MembersSettings() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, slug]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -59,7 +65,7 @@ export default function MembersSettings() {
     if (!user?.id) return;
     setBusyId(row.id);
     try {
-      const { error } = await (supabase as any).rpc("review_membership_request", {
+      const { error } = await membershipRpcClient.rpc<void>("review_membership_request", {
         _membership_id: row.id,
         _status: status,
       });
