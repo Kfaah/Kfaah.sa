@@ -1526,24 +1526,36 @@ function EmployeesShowcase({
             return (
               <div
                 key={e.id}
-                className="group relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
+                className="group relative flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
                 style={{
                   borderColor: 'hsl(var(--border))',
-                  background: `linear-gradient(180deg, ${ORG_PRIMARY_TINT} 0%, hsl(var(--card)) 35%)`,
                 }}
               >
-                {/* شريط هوية علوي بتدرج */}
+                {/* رأس البطاقة: تدرج هوية الجمعية */}
                 <div
-                  className="absolute inset-x-0 top-0 h-1.5"
-                  style={{ background: `linear-gradient(to left, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
-                />
-                <div
-                  className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full opacity-25 blur-2xl"
-                  style={{ background: ORG_ACCENT }}
-                />
-                <div className="relative flex items-start gap-3">
+                  className="relative h-20 overflow-hidden"
+                  style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY} 0%, ${ORG_ACCENT} 100%)` }}
+                >
                   <div
-                    className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white shadow-md ring-2 ring-white/60"
+                    className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full opacity-30 blur-2xl"
+                    style={{ background: 'rgba(255,255,255,0.6)' }}
+                  />
+                  <div
+                    className="pointer-events-none absolute -right-8 -bottom-8 h-24 w-24 rounded-full opacity-20 blur-xl"
+                    style={{ background: ORG_ACCENT }}
+                  />
+                  {isLeader && (
+                    <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold shadow-sm backdrop-blur"
+                      style={{ color: ORG_PRIMARY }}>
+                      <Crown className="h-3 w-3" /> قيادي
+                    </div>
+                  )}
+                </div>
+
+                {/* الصورة الرمزية - متراكبة بين الرأس والمحتوى */}
+                <div className="relative px-5 -mt-10">
+                  <div
+                    className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl text-2xl font-bold text-white shadow-xl ring-4 ring-card"
                     style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
                   >
                     {e.avatar_url ? (
@@ -1552,104 +1564,102 @@ function EmployeesShowcase({
                       <span>{getInitials(e.full_name)}</span>
                     )}
                   </div>
-                  {isLeader && (
-                    <Badge
-                      variant="outline"
-                      className="gap-1 self-center bg-background shadow-sm"
-                      style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
-                    >
-                      <Crown className="h-3 w-3" /> قيادي
-                    </Badge>
-                  )}
-                  <div className="ms-auto flex items-center gap-2">
-                    <Link
-                      to={editHref}
-                      title="تعديل"
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-all hover:bg-muted"
-                      style={{ ['--tw-text-opacity' as string]: 1 }}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Link>
-                    <button
-                      type="button"
-                      title={e.user_id ? "حذف الموظف وحسابه" : "حذف الموظف"}
-                      onClick={() => handleDelete(e.id, e.full_name)}
-                      disabled={deletingId === e.id}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-destructive/30 bg-background text-destructive shadow-sm transition-all hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
-                    >
-                      {deletingId === e.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
                 </div>
-                <div className="relative mt-4">
+
+                {/* المحتوى */}
+                <div className="flex flex-1 flex-col px-5 pt-3 pb-4">
                   <h3 className="truncate text-base font-bold text-foreground">{e.full_name}</h3>
                   {e.title && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                    <p className="mt-1 flex items-center gap-1.5 text-xs font-medium" style={{ color: ORG_PRIMARY }}>
                       <Sparkles className="h-3 w-3" />
-                      {e.title}
+                      <span className="truncate">{e.title}</span>
                     </p>
                   )}
-                  <p className="mt-1 flex items-center gap-1 truncate text-sm text-muted-foreground">
-                    <Briefcase className="h-3.5 w-3.5" />
-                    {e.job_role ?? "بدون دور"}
+                  <p className="mt-1.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
+                    <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="truncate">{e.job_role ?? "بدون دور"}</span>
                   </p>
-                </div>
-                <div className="relative mt-3 space-y-1 text-xs text-muted-foreground">
-                  {e.email && (
-                    <div className="flex items-center gap-1.5 truncate">
-                      <Mail className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{e.email}</span>
+
+                  {/* بيانات التواصل في صندوق ناعم */}
+                  {(e.email || e.phone) && (
+                    <div className="mt-3 space-y-1.5 rounded-xl bg-muted/50 p-2.5 text-xs">
+                      {e.email && (
+                        <div className="flex items-center gap-2 truncate text-muted-foreground" dir="ltr">
+                          <Mail className="h-3 w-3 flex-shrink-0" style={{ color: ORG_PRIMARY }} />
+                          <span className="truncate">{e.email}</span>
+                        </div>
+                      )}
+                      {e.phone && (
+                        <div className="flex items-center gap-2 truncate text-muted-foreground" dir="ltr">
+                          <Phone className="h-3 w-3 flex-shrink-0" style={{ color: ORG_PRIMARY }} />
+                          <span className="truncate">{e.phone}</span>
+                        </div>
+                      )}
                     </div>
                   )}
-                  {e.phone && (
-                    <div className="flex items-center gap-1.5 truncate">
-                      <Phone className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{e.phone}</span>
+
+                  {/* عداد المساءلات */}
+                  <div className="mt-3 flex items-center justify-between rounded-xl border border-border/60 px-3 py-2 text-xs">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      <span>المساءلات</span>
                     </div>
-                  )}
-                </div>
-                <div className="relative mt-4 flex items-center justify-between border-t border-border pt-3">
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">المساءلات:</span>
                     <span
-                      className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-semibold ring-1"
+                      className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-bold"
                       style={
                         qCount > 0
-                          ? { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--foreground))', borderColor: 'hsl(var(--border))' }
-                          : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))', borderColor: 'hsl(var(--border))' }
+                          ? { background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})`, color: 'white' }
+                          : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }
                       }
                     >
                       {qCount}
                     </span>
                   </div>
-                  <Link
-                    to={editHref}
-                    className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    <Pencil className="h-3 w-3" />
-                    تعديل
-                  </Link>
+
+                  {/* شريط الإجراءات الموحد */}
+                  <div className="mt-auto pt-3">
+                    <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 p-1">
+                      <Link
+                        to={editHref}
+                        title="تعديل بيانات الموظف"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-card hover:text-foreground hover:shadow-sm"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        تعديل
+                      </Link>
+                      {canImpersonate && (
+                        <button
+                          type="button"
+                          onClick={() => handleImpersonate(e.id, e.full_name)}
+                          disabled={impersonatingId === e.id}
+                          title="الدخول كهذا الموظف"
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-card hover:text-foreground hover:shadow-sm disabled:opacity-50"
+                          style={{ }}
+                        >
+                          {impersonatingId === e.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <LogIn className="h-3.5 w-3.5" />
+                          )}
+                          دخول
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        title={e.user_id ? "حذف الموظف وحسابه" : "حذف الموظف"}
+                        onClick={() => handleDelete(e.id, e.full_name)}
+                        disabled={deletingId === e.id}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-destructive hover:text-destructive-foreground hover:shadow-sm disabled:opacity-50"
+                      >
+                        {deletingId === e.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                {canImpersonate && (
-                  <button
-                    type="button"
-                    onClick={() => handleImpersonate(e.id, e.full_name)}
-                    disabled={impersonatingId === e.id}
-                    className="relative mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground disabled:opacity-50"
-                    style={{ borderColor: ORG_PRIMARY_RING }}
-                    title="الدخول إلى حساب هذا الموظف لمعاينة ما يراه"
-                  >
-                    {impersonatingId === e.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <LogIn className="h-3 w-3" />
-                    )}
-                    دخول كموظف
-                  </button>
-                )}
               </div>
             );
           })}
