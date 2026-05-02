@@ -1570,21 +1570,19 @@ function EmployeesShowcase({
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Link>
-                    {e.user_id && (
-                      <button
-                        type="button"
-                        title="حذف الموظف وحسابه"
-                        onClick={() => handleDelete(e.id, e.full_name)}
-                        disabled={deletingId === e.id}
-                        className="flex h-8 w-8 items-center justify-center rounded-full border border-destructive/30 bg-background text-destructive shadow-sm opacity-0 transition-all hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100 disabled:opacity-50"
-                      >
-                        {deletingId === e.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      title={e.user_id ? "حذف الموظف وحسابه" : "حذف الموظف"}
+                      onClick={() => handleDelete(e.id, e.full_name)}
+                      disabled={deletingId === e.id}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-destructive/30 bg-background text-destructive shadow-sm opacity-0 transition-all hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100 disabled:opacity-50"
+                    >
+                      {deletingId === e.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
                   </div>
                 </div>
                 <div className="relative mt-4">
