@@ -127,15 +127,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         if (!cancelled) setOnboardingState("ok");
         return;
       }
-      // Admins / super admins / managers bypass the onboarding requirement.
-      const [{ data: isAdmin }, { data: isSuper }, { data: isMgr }] =
+      // Admins / super admins / managers / viewers bypass the onboarding requirement.
+      const [{ data: isAdmin }, { data: isSuper }, { data: isMgr }, { data: isViewer }] =
         await Promise.all([
           supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
           supabase.rpc("is_super_admin", { _user_id: user.id }),
           supabase.rpc("is_manager", { _user_id: user.id }),
+          supabase.rpc("is_viewer", { _user_id: user.id }),
         ]);
       if (cancelled) return;
-      if (isAdmin || isSuper || isMgr) {
+      if (isAdmin || isSuper || isMgr || isViewer) {
         setOnboardingState("ok");
         return;
       }
