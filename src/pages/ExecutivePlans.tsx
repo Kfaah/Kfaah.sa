@@ -2086,18 +2086,32 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
                       ))}
                     </colgroup>
                     <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(var(--primary))]" >
+                      {/* الصف العلوي الزخرفي (gradient) */}
+                      <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-30 [&>th]:p-0">
+                        {DATES_TABLE_COLUMNS.map((c) => (
+                          <TableHead
+                            key={`decor-${c.key}`}
+                            className="h-10 bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] border-0"
+                            style={{ top: stickyHeaderTop, height: `${DECOR_BAR_HEIGHT}px` }}
+                          />
+                        ))}
+                      </TableRow>
+                      {/* صف العناوين الفعلي */}
+                      <TableRow className="hover:bg-transparent border-0 [&>th]:sticky [&>th]:z-30 [&>th]:bg-[hsl(180_60%_92%)]">
                         {DATES_TABLE_COLUMNS.map((c, idx, arr) => (
                           <TableHead
                             key={c.key}
-                            className={cn("text-right font-bold text-white", idx < arr.length - 1 && "border-l border-white/20")}
-                            style={{ top: stickyHeaderTop }}
+                            className={cn(
+                              "text-right font-bold text-slate-800 border-b-2 border-[hsl(var(--primary))]",
+                              idx < arr.length - 1 && "border-l border-slate-300/60",
+                            )}
+                            style={{ top: stickyTitlesRowTop, height: `${HEADER_ROW_HEIGHT}px` }}
                           >
                             {isEditMode ? (
                               <input
                                 value={columnTitles[c.key] ?? ""}
                                 onChange={(e) => updateColumnTitle(c.key, e.target.value)}
-                                className="bg-white/15 hover:bg-white/25 focus:bg-white text-white focus:text-slate-900 placeholder:text-white/60 px-2 py-1 rounded border border-white/30 outline-none text-right w-full transition-colors"
+                                className="bg-white/70 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 px-2 py-1 rounded border border-slate-300 outline-none text-right w-full transition-colors"
                                 placeholder="عنوان"
                               />
                             ) : (
