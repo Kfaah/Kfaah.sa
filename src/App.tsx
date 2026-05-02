@@ -13,9 +13,9 @@ import { OrgBrandingProvider } from "@/contexts/OrgBrandingContext";
 import { PreviewModeBanner } from "@/components/preview/PreviewModeBanner";
 // Eagerly-loaded shells (small + likely needed immediately)
 import PublicLanding from "./pages/PublicLanding";
-import OrgAuth from "./pages/OrgAuth";
 
 // Lazy-loaded route pages — split into separate chunks to make navigation snappy
+const OrgAuth = lazy(() => import("./pages/OrgAuth"));
 const AdminLayout = lazy(() => import("@/components/admin/AdminLayout").then((m) => ({ default: m.AdminLayout })));
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
 const Index = lazy(() => import("./pages/Index"));
@@ -62,6 +62,19 @@ const StaffDutiesUpload = lazy(() => import("./pages/StaffDutiesUpload"));
 const MyAssistant = lazy(() => import("./pages/MyAssistant"));
 const PerformanceEvaluation = lazy(() => import("./pages/PerformanceEvaluation"));
 const AssistantFab = lazy(() => import("@/components/assistant/AssistantFab").then((m) => ({ default: m.AssistantFab })));
+
+const PROTECTED_ROOTS = new Set([
+  "admin", "app", "employees", "roles", "tasks", "plans", "executive-plans",
+  "operational-plans", "profile", "settings", "uploads", "intelligence",
+  "internal-dashboard", "my-accountability", "my-performance", "employee-onboarding",
+  "staff-duties-upload", "my-assistant", "performance", "organizations",
+]);
+
+function isPublicEntryPath(pathname: string) {
+  const segments = pathname.split("/").filter(Boolean);
+  if (pathname === "/" || pathname === "/auth" || segments[0] === "j") return true;
+  return segments.length === 1 && !PROTECTED_ROOTS.has(segments[0]);
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
