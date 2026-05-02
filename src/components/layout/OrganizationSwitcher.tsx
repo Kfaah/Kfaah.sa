@@ -1,6 +1,7 @@
 import { Building2, Check, ChevronsUpDown, Settings2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useIsViewer } from "@/hooks/useIsViewer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +18,12 @@ interface Props {
 
 export function OrganizationSwitcher({ collapsed }: Props) {
   const { currentOrg, availableOrgs, isSuperAdmin, switchOrg, loading } = useOrganization();
+  const { isViewer, loading: viewerLoading } = useIsViewer();
   const navigate = useNavigate();
 
-  if (loading || !currentOrg) return null;
+  if (loading || viewerLoading || !currentOrg) return null;
+  // Viewer accounts are bound to a single association — never show the switcher.
+  if (isViewer) return null;
   // Don't show switcher when there's only one org and user is not super_admin
   if (!isSuperAdmin && availableOrgs.length <= 1) return null;
 
