@@ -242,6 +242,21 @@ serve(async (req) => {
         );
       }
 
+      const createUserCode = "code" in createUserError ? createUserError.code : undefined;
+      if (createUserCode === "weak_password" || /weak|pwned|known to be/i.test(createUserError.message ?? "")) {
+        return json(
+          { success: false, fieldErrors: { password: "كلمة المرور ضعيفة أو مكشوفة في تسريبات معروفة. اختر كلمة مرور أقوى وغير شائعة." } },
+          200
+        );
+      }
+
+      if (/at least|short|length/i.test(createUserError.message ?? "")) {
+        return json(
+          { success: false, fieldErrors: { password: "كلمة المرور قصيرة جداً. استخدم 8 أحرف على الأقل." } },
+          200
+        );
+      }
+
       return json({ success: false, error: "حدث خطأ أثناء إنشاء الحساب" }, 500);
     }
 
