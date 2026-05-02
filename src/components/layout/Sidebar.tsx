@@ -153,8 +153,18 @@ export function Sidebar() {
   // خلفية واحدة ثابتة من أعلى القائمة إلى أسفلها بدون أي تدرج.
   // ملاحظة: لجمعية صواب نفرض خلفية بيضاء بحسب طلب المستخدم.
   const sidebarBgStyle = undefined as React.CSSProperties | undefined;
+  const viewerNavItems: NavItem[] = [
+    { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "nav-icon-overview" },
+    { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "nav-icon-plans" },
+    { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive" },
+    { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "nav-icon-tasks" },
+    { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "nav-icon-performance" },
+    { title: "الخطط من التوصيات", href: "/operational-plans?source=recommendations", icon: ListChecks, iconBg: "nav-icon-recommendations" },
+    { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "nav-icon-reports" },
+    { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "nav-icon-innovation" },
+  ];
   const visibleNavItems = isViewer
-    ? managerNavItems.filter((it) => it.href !== "/intelligence")
+    ? viewerNavItems
     : previewAsEmployee
       ? employeeNavItems
       : !roleReady
