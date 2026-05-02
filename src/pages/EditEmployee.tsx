@@ -102,6 +102,7 @@ const EditEmployee = () => {
     password: "",
     user_id: null as string | null,
     roleLevel: "employee" as "employee" | "manager" | "admin",
+    roleTitle: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -148,6 +149,7 @@ const EditEmployee = () => {
           password: "",
           user_id: emp.user_id,
           roleLevel: (emp.role_level as any) || "employee",
+          roleTitle: emp.title || "",
         });
 
         setDepartments(deptsRes.data || []);
