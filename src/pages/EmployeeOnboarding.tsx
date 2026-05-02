@@ -367,59 +367,71 @@ export default function EmployeeOnboarding() {
           <CardContent className="space-y-6">
             {currentStep.key === "skills" && (
               <>
-                <ChipField
-                  label="المهارات التقنية"
-                  placeholder="أضف مهارة (مثال: Excel، إدارة المشاريع، التسويق الرقمي)"
-                  values={data.technical_skills}
-                  inputValue={chipInputs.technical_skills}
-                  onInputChange={(v) => setChipInputs((p) => ({ ...p, technical_skills: v }))}
-                  onAdd={() => addChip("technical_skills")}
-                  onRemove={(i) => removeChip("technical_skills", i)}
-                  suggestions={SUGGESTIONS.technical_skills}
-                  onPick={(v) => setData((p) => ({ ...p, technical_skills: Array.from(new Set([...p.technical_skills, v])) }))}
-                />
-                <ChipField
-                  label="اللغات"
-                  placeholder="مثال: العربية، الإنجليزية"
-                  values={data.languages}
-                  inputValue={chipInputs.languages}
-                  onInputChange={(v) => setChipInputs((p) => ({ ...p, languages: v }))}
-                  onAdd={() => addChip("languages")}
-                  onRemove={(i) => removeChip("languages", i)}
-                  suggestions={SUGGESTIONS.languages}
-                  onPick={(v) => setData((p) => ({ ...p, languages: Array.from(new Set([...p.languages, v])) }))}
-                />
-                <ChipField
-                  label="الشهادات والدورات"
-                  placeholder="مثال: PMP، شهادة في التسويق"
-                  values={data.certifications}
-                  inputValue={chipInputs.certifications}
-                  onInputChange={(v) => setChipInputs((p) => ({ ...p, certifications: v }))}
-                  onAdd={() => addChip("certifications")}
-                  onRemove={(i) => removeChip("certifications", i)}
-                  suggestions={SUGGESTIONS.certifications}
-                  onPick={(v) => setData((p) => ({ ...p, certifications: Array.from(new Set([...p.certifications, v])) }))}
-                />
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>سنوات الخبرة</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={60}
-                      value={data.years_of_experience}
-                      onChange={(e) => setData((p) => ({ ...p, years_of_experience: Number(e.target.value) }))}
-                    />
+                {isActive("technical_skills") && (
+                  <ChipField
+                    label="المهارات التقنية"
+                    placeholder="أضف مهارة (مثال: Excel، إدارة المشاريع، التسويق الرقمي)"
+                    values={data.technical_skills}
+                    inputValue={chipInputs.technical_skills}
+                    onInputChange={(v) => setChipInputs((p) => ({ ...p, technical_skills: v }))}
+                    onAdd={() => addChip("technical_skills")}
+                    onRemove={(i) => removeChip("technical_skills", i)}
+                    suggestions={(optionsByKey.technical_skills ?? []).map((o) => o.value)}
+                    onPick={(v) => setData((p) => ({ ...p, technical_skills: Array.from(new Set([...p.technical_skills, v])) }))}
+                  />
+                )}
+                {isActive("languages") && (
+                  <ChipField
+                    label="اللغات"
+                    placeholder="مثال: العربية، الإنجليزية"
+                    values={data.languages}
+                    inputValue={chipInputs.languages}
+                    onInputChange={(v) => setChipInputs((p) => ({ ...p, languages: v }))}
+                    onAdd={() => addChip("languages")}
+                    onRemove={(i) => removeChip("languages", i)}
+                    suggestions={(optionsByKey.languages ?? []).map((o) => o.value)}
+                    onPick={(v) => setData((p) => ({ ...p, languages: Array.from(new Set([...p.languages, v])) }))}
+                  />
+                )}
+                {isActive("certifications") && (
+                  <ChipField
+                    label="الشهادات والدورات"
+                    placeholder="مثال: PMP، شهادة في التسويق"
+                    values={data.certifications}
+                    inputValue={chipInputs.certifications}
+                    onInputChange={(v) => setChipInputs((p) => ({ ...p, certifications: v }))}
+                    onAdd={() => addChip("certifications")}
+                    onRemove={(i) => removeChip("certifications", i)}
+                    suggestions={(optionsByKey.certifications ?? []).map((o) => o.value)}
+                    onPick={(v) => setData((p) => ({ ...p, certifications: Array.from(new Set([...p.certifications, v])) }))}
+                  />
+                )}
+                {(isActive("years_of_experience") || isActive("previous_roles")) && (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {isActive("years_of_experience") && (
+                      <div>
+                        <Label>سنوات الخبرة</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={60}
+                          value={data.years_of_experience}
+                          onChange={(e) => setData((p) => ({ ...p, years_of_experience: Number(e.target.value) }))}
+                        />
+                      </div>
+                    )}
+                    {isActive("previous_roles") && (
+                      <div>
+                        <Label>أبرز الأدوار السابقة</Label>
+                        <Input
+                          placeholder="مثال: منسق مشاريع، أخصائي علاقات"
+                          value={data.previous_roles}
+                          onChange={(e) => setData((p) => ({ ...p, previous_roles: e.target.value }))}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <Label>أبرز الأدوار السابقة</Label>
-                    <Input
-                      placeholder="مثال: منسق مشاريع، أخصائي علاقات"
-                      value={data.previous_roles}
-                      onChange={(e) => setData((p) => ({ ...p, previous_roles: e.target.value }))}
-                    />
-                  </div>
-                </div>
+                )}
               </>
             )}
 
@@ -558,128 +570,136 @@ export default function EmployeeOnboarding() {
 
             {currentStep.key === "personality" && (
               <>
-                <RadioBlock
-                  label="أسلوب العمل المفضل"
-                  value={data.work_style}
-                  onChange={(v) => setData((p) => ({ ...p, work_style: v as any }))}
-                  options={[
-                    { v: "solo", l: "أعمل بشكل منفرد وأركّز" },
-                    { v: "team", l: "أعمل ضمن فريق وأتفاعل" },
-                    { v: "hybrid", l: "مختلط حسب المهمة" },
-                  ]}
-                />
-                <RadioBlock
-                  label="التعامل مع الضغط"
-                  value={data.pressure_handling}
-                  onChange={(v) => setData((p) => ({ ...p, pressure_handling: v as any }))}
-                  options={[
-                    { v: "low", l: "أفضّل بيئة هادئة بلا ضغط" },
-                    { v: "medium", l: "أتعامل مع ضغط متوسط بسلاسة" },
-                    { v: "high", l: "أتألق تحت الضغط العالي" },
-                  ]}
-                />
-                <RadioBlock
-                  label="نمط التخطيط"
-                  value={data.planning_preference}
-                  onChange={(v) => setData((p) => ({ ...p, planning_preference: v as any }))}
-                  options={[
-                    { v: "long_term", l: "تخطيط طويل المدى وعميق" },
-                    { v: "short_term", l: "تنفيذ سريع ومهام قصيرة" },
-                    { v: "mixed", l: "مزيج بين الاثنين" },
-                  ]}
-                />
-                <div>
-                  <Label>أسلوب التواصل</Label>
-                  <Input
-                    placeholder="مثال: أفضل التواصل المكتوب، أو الاجتماعات القصيرة"
-                    value={data.communication_style}
-                    onChange={(e) => setData((p) => ({ ...p, communication_style: e.target.value }))}
+                {isActive("work_style") && (
+                  <RadioBlock
+                    label="أسلوب العمل المفضل"
+                    value={data.work_style}
+                    onChange={(v) => setData((p) => ({ ...p, work_style: v as any }))}
+                    options={(optionsByKey.work_style ?? []).map((o) => ({ v: o.value, l: o.label }))}
                   />
-                </div>
-                <div>
-                  <Label>ملاحظات إضافية عن شخصيتك (اختياري)</Label>
-                  <Textarea
-                    rows={3}
-                    placeholder="أي شيء يساعد المنصة على فهمك بشكل أفضل"
-                    value={data.personality_notes}
-                    onChange={(e) => setData((p) => ({ ...p, personality_notes: e.target.value }))}
+                )}
+                {isActive("pressure_handling") && (
+                  <RadioBlock
+                    label="التعامل مع الضغط"
+                    value={data.pressure_handling}
+                    onChange={(v) => setData((p) => ({ ...p, pressure_handling: v as any }))}
+                    options={(optionsByKey.pressure_handling ?? []).map((o) => ({ v: o.value, l: o.label }))}
                   />
-                </div>
+                )}
+                {isActive("planning_preference") && (
+                  <RadioBlock
+                    label="نمط التخطيط"
+                    value={data.planning_preference}
+                    onChange={(v) => setData((p) => ({ ...p, planning_preference: v as any }))}
+                    options={(optionsByKey.planning_preference ?? []).map((o) => ({ v: o.value, l: o.label }))}
+                  />
+                )}
+                {isActive("communication_style") && (
+                  <div>
+                    <Label>أسلوب التواصل</Label>
+                    <Input
+                      placeholder="مثال: أفضل التواصل المكتوب، أو الاجتماعات القصيرة"
+                      value={data.communication_style}
+                      onChange={(e) => setData((p) => ({ ...p, communication_style: e.target.value }))}
+                    />
+                  </div>
+                )}
+                {isActive("personality_notes") && (
+                  <div>
+                    <Label>ملاحظات إضافية عن شخصيتك (اختياري)</Label>
+                    <Textarea
+                      rows={3}
+                      placeholder="أي شيء يساعد المنصة على فهمك بشكل أفضل"
+                      value={data.personality_notes}
+                      onChange={(e) => setData((p) => ({ ...p, personality_notes: e.target.value }))}
+                    />
+                  </div>
+                )}
               </>
             )}
 
             {currentStep.key === "goals" && (
               <>
-                <div>
-                  <Label>أهدافك المهنية</Label>
-                  <Textarea
-                    rows={3}
-                    placeholder="ما الذي تطمح للوصول إليه خلال السنة القادمة؟"
-                    value={data.career_goals}
-                    onChange={(e) => setData((p) => ({ ...p, career_goals: e.target.value }))}
+                {isActive("career_goals") && (
+                  <div>
+                    <Label>أهدافك المهنية</Label>
+                    <Textarea
+                      rows={3}
+                      placeholder="ما الذي تطمح للوصول إليه خلال السنة القادمة؟"
+                      value={data.career_goals}
+                      onChange={(e) => setData((p) => ({ ...p, career_goals: e.target.value }))}
+                    />
+                  </div>
+                )}
+                {isActive("development_areas") && (
+                  <ChipField
+                    label="مجالات تريد التطور فيها"
+                    placeholder="مثال: قيادة الفرق، التحليل المالي"
+                    values={data.development_areas}
+                    inputValue={chipInputs.development_areas}
+                    onInputChange={(v) => setChipInputs((p) => ({ ...p, development_areas: v }))}
+                    onAdd={() => addChip("development_areas")}
+                    onRemove={(i) => removeChip("development_areas", i)}
+                    suggestions={(optionsByKey.development_areas ?? []).map((o) => o.value)}
+                    onPick={(v) => setData((p) => ({ ...p, development_areas: Array.from(new Set([...p.development_areas, v])) }))}
                   />
-                </div>
-                <ChipField
-                  label="مجالات تريد التطور فيها"
-                  placeholder="مثال: قيادة الفرق، التحليل المالي"
-                  values={data.development_areas}
-                  inputValue={chipInputs.development_areas}
-                  onInputChange={(v) => setChipInputs((p) => ({ ...p, development_areas: v }))}
-                  onAdd={() => addChip("development_areas")}
-                  onRemove={(i) => removeChip("development_areas", i)}
-                  suggestions={SUGGESTIONS.development_areas}
-                  onPick={(v) => setData((p) => ({ ...p, development_areas: Array.from(new Set([...p.development_areas, v])) }))}
-                />
-                <ChipField
-                  label="المجالات/المهام المفضلة لديك"
-                  placeholder="مثال: العمل مع المتبرعين، إعداد التقارير"
-                  values={data.preferred_domains}
-                  inputValue={chipInputs.preferred_domains}
-                  onInputChange={(v) => setChipInputs((p) => ({ ...p, preferred_domains: v }))}
-                  onAdd={() => addChip("preferred_domains")}
-                  onRemove={(i) => removeChip("preferred_domains", i)}
-                  suggestions={SUGGESTIONS.preferred_domains}
-                  onPick={(v) => setData((p) => ({ ...p, preferred_domains: Array.from(new Set([...p.preferred_domains, v])) }))}
-                />
+                )}
+                {isActive("preferred_domains") && (
+                  <ChipField
+                    label="المجالات/المهام المفضلة لديك"
+                    placeholder="مثال: العمل مع المتبرعين، إعداد التقارير"
+                    values={data.preferred_domains}
+                    inputValue={chipInputs.preferred_domains}
+                    onInputChange={(v) => setChipInputs((p) => ({ ...p, preferred_domains: v }))}
+                    onAdd={() => addChip("preferred_domains")}
+                    onRemove={(i) => removeChip("preferred_domains", i)}
+                    suggestions={(optionsByKey.preferred_domains ?? []).map((o) => o.value)}
+                    onPick={(v) => setData((p) => ({ ...p, preferred_domains: Array.from(new Set([...p.preferred_domains, v])) }))}
+                  />
+                )}
               </>
             )}
 
             {currentStep.key === "availability" && (
               <>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>ساعات التركيز اليومية</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={12}
-                      value={data.focus_hours_per_day}
-                      onChange={(e) => setData((p) => ({ ...p, focus_hours_per_day: Number(e.target.value) }))}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">عدد الساعات التي تستطيع التركيز فيها بصفاء</p>
+                {(isActive("focus_hours_per_day") || isActive("max_parallel_tasks")) && (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {isActive("focus_hours_per_day") && (
+                      <div>
+                        <Label>ساعات التركيز اليومية</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={12}
+                          value={data.focus_hours_per_day}
+                          onChange={(e) => setData((p) => ({ ...p, focus_hours_per_day: Number(e.target.value) }))}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">عدد الساعات التي تستطيع التركيز فيها بصفاء</p>
+                      </div>
+                    )}
+                    {isActive("max_parallel_tasks") && (
+                      <div>
+                        <Label>الحد الأقصى للمهام المتوازية</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={data.max_parallel_tasks}
+                          onChange={(e) => setData((p) => ({ ...p, max_parallel_tasks: Number(e.target.value) }))}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">كم مهمة تستطيع متابعتها في نفس الوقت</p>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <Label>الحد الأقصى للمهام المتوازية</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={20}
-                      value={data.max_parallel_tasks}
-                      onChange={(e) => setData((p) => ({ ...p, max_parallel_tasks: Number(e.target.value) }))}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">كم مهمة تستطيع متابعتها في نفس الوقت</p>
-                  </div>
-                </div>
-                <RadioBlock
-                  label="أوقات الذروة في إنتاجيتك"
-                  value={data.peak_hours}
-                  onChange={(v) => setData((p) => ({ ...p, peak_hours: v as any }))}
-                  options={[
-                    { v: "morning", l: "الصباح الباكر" },
-                    { v: "afternoon", l: "بعد الظهر" },
-                    { v: "evening", l: "المساء" },
-                  ]}
-                />
+                )}
+                {isActive("peak_hours") && (
+                  <RadioBlock
+                    label="أوقات الذروة في إنتاجيتك"
+                    value={data.peak_hours}
+                    onChange={(v) => setData((p) => ({ ...p, peak_hours: v as any }))}
+                    options={(optionsByKey.peak_hours ?? []).map((o) => ({ v: o.value, l: o.label }))}
+                  />
+                )}
               </>
             )}
 
