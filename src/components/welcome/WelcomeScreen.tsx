@@ -4,6 +4,7 @@ import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useAuth } from "@/hooks/useAuth";
 import atefLogo from "@/assets/atef-logo-icon.jpg";
 
 // العبارات الافتراضية (تستخدم إذا لم توجد عبارات في قاعدة البيانات)
@@ -42,10 +43,23 @@ interface Quote {
   emoji: string;
 }
 
+// عبارات موجَّهة إلى الجمعية ككيان (تُستخدم لحساب الجمعية / viewer)
+const orgQuotes: Quote[] = [
+  { quote: "{org} — جمعية رائدة بأثرٍ يمتد ويتجدّد", emoji: "🌟" },
+  { quote: "{org} كيانٌ متألق، رسالتُه تُلهم وتُحدث الفرق", emoji: "✨" },
+  { quote: "بارك الله في {org} وفي مجلس إدارتها وكل العاملين فيها", emoji: "🙏" },
+  { quote: "{org} — صرحٌ خيريٌّ تتسع آثاره يوماً بعد يوم", emoji: "🚀" },
+  { quote: "{org} رسالةٌ عظيمة وعطاءٌ لا ينقطع بإذن الله", emoji: "💚" },
+  { quote: "{org} — ريادةٌ في الخير وقدوةٌ في العمل المؤسسي", emoji: "🏅" },
+  { quote: "{org} تصنع الأثر وتبني الإنسان", emoji: "🌱" },
+];
+
 export function WelcomeScreen() {
   const { user } = useUser();
   const branding = useOrgBranding();
   const { currentOrg } = useOrganization();
+  const { user: authUser } = useAuth();
+  const [isViewer, setIsViewer] = useState(false);
   const [currentQuote, setCurrentQuote] = useState<Quote>(defaultQuotes[0]);
   const [currentBg, setCurrentBg] = useState<string>(defaultBackgrounds[0]);
   const [quotes, setQuotes] = useState<Quote[]>(defaultQuotes);
@@ -57,15 +71,28 @@ export function WelcomeScreen() {
   }, [currentOrg?.slug]);
 
   useEffect(() => {
-    // اختيار عبارة بناءً على اليوم
+    let cancelled = false;
+    (async () => {
+      if (!authUser?.id) { setIsViewer(false); return; }
+      const { data } = await supabase.rpc("is_viewer", { _user_id: authUser.id });
+      if (!cancelled) setIsViewer(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [authUser?.id]);
+
+  useEffect(() => {
     const now = new Date();
     const dayOfMonth = now.getDate(); // 1-31
-    const quoteIndex = (dayOfMonth - 1) % quotes.length;
-    const selected = quotes[quoteIndex];
+    const orgName = branding.orgName?.trim() || "جمعيتكم";
+    const sourceQuotes = isViewer ? orgQuotes : quotes;
+    const quoteIndex = (dayOfMonth - 1) % sourceQuotes.length;
+    const selected = sourceQuotes[quoteIndex];
     const name = user.firstName?.trim() || "";
     setCurrentQuote({
       ...selected,
-      quote: selected.quote.replace(/\{name\}/g, name),
+      quote: selected.quote
+        .replace(/\{name\}/g, isViewer ? orgName : name)
+        .replace(/\{org\}/g, orgName),
     });
     
     // اختيار خلفية بناءً على اليوم فقط إذا لم توجد خلفية رئيسية
@@ -76,7 +103,7 @@ export function WelcomeScreen() {
       const bgIndex = dayOfYear % backgrounds.length;
       setCurrentBg(backgrounds[bgIndex]);
     }
-  }, [quotes, backgrounds, hasFeaturedBg, user.firstName]);
+  }, [quotes, backgrounds, hasFeaturedBg, user.firstName, isViewer, branding.orgName]);
 
   const fetchContent = async () => {
     try {
@@ -282,7 +309,9 @@ export function WelcomeScreen() {
         >
           <p className="text-lg text-slate-600 mb-1">{getGreeting()}</p>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
-            أهلاً بك، {user.firstName}! 👋
+            {isViewer
+              ? `أهلاً بكم في ${branding.orgName || "جمعيتكم"} 👋`
+              : `أهلاً بك، ${user.firstName}! 👋`}
           </h1>
         </motion.div>
 
