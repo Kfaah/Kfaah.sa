@@ -1526,138 +1526,167 @@ function EmployeesShowcase({
             return (
               <div
                 key={e.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
-                style={{
-                  borderColor: 'hsl(var(--border))',
-                }}
+                className="group relative flex flex-col overflow-hidden rounded-[1.25rem] border bg-card shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.18)]"
+                style={{ borderColor: 'hsl(var(--border))' }}
               >
-                {/* رأس البطاقة: تدرج هوية الجمعية */}
+                {/* خلفية زخرفية: شريط لون قطري + بقعة ضوء */}
                 <div
-                  className="relative h-20 overflow-hidden"
-                  style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY} 0%, ${ORG_ACCENT} 100%)` }}
-                >
-                  <div
-                    className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full opacity-30 blur-2xl"
-                    style={{ background: 'rgba(255,255,255,0.6)' }}
-                  />
-                  <div
-                    className="pointer-events-none absolute -right-8 -bottom-8 h-24 w-24 rounded-full opacity-20 blur-xl"
-                    style={{ background: ORG_ACCENT }}
-                  />
-                  {isLeader && (
-                    <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold shadow-sm backdrop-blur"
-                      style={{ color: ORG_PRIMARY }}>
-                      <Crown className="h-3 w-3" /> قيادي
+                  className="pointer-events-none absolute inset-0 opacity-[0.04] transition-opacity duration-500 group-hover:opacity-[0.08]"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, ${ORG_PRIMARY} 0%, ${ORG_PRIMARY} 50%, transparent 50%, transparent 100%)`,
+                  }}
+                />
+                <div
+                  className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl transition-all duration-500 group-hover:opacity-40"
+                  style={{ background: ORG_ACCENT }}
+                />
+
+                {/* شريط رفيع جانبي للهوية (يمين في RTL) */}
+                <div
+                  className="absolute inset-y-0 right-0 w-[3px]"
+                  style={{ background: `linear-gradient(180deg, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
+                />
+
+                {/* الجسم الرئيسي */}
+                <div className="relative flex flex-col gap-4 p-5">
+                  {/* الصف العلوي: الصورة + الاسم */}
+                  <div className="flex items-start gap-3.5">
+                    <div className="relative flex-shrink-0">
+                      <div
+                        className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl text-lg font-bold text-white shadow-md"
+                        style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
+                      >
+                        {e.avatar_url ? (
+                          <img src={e.avatar_url} alt={e.full_name} className="h-full w-full object-cover" />
+                        ) : (
+                          <span>{getInitials(e.full_name)}</span>
+                        )}
+                      </div>
+                      {isLeader && (
+                        <div
+                          className="absolute -bottom-1 -left-1 flex h-5 w-5 items-center justify-center rounded-full bg-card shadow-md ring-2 ring-card"
+                          title="قيادي"
+                          style={{ color: ORG_PRIMARY }}
+                        >
+                          <Crown className="h-3 w-3 fill-current" />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* الصورة الرمزية - متراكبة بين الرأس والمحتوى */}
-                <div className="relative px-5 -mt-10">
-                  <div
-                    className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl text-2xl font-bold text-white shadow-xl ring-4 ring-card"
-                    style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
-                  >
-                    {e.avatar_url ? (
-                      <img src={e.avatar_url} alt={e.full_name} className="h-full w-full object-cover" />
-                    ) : (
-                      <span>{getInitials(e.full_name)}</span>
-                    )}
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <h3 className="truncate text-[15px] font-bold leading-tight text-foreground">{e.full_name}</h3>
+                      <p className="mt-1 truncate text-[12px] text-muted-foreground">
+                        {e.job_role ?? "بدون دور"}
+                      </p>
+                      {e.title && (
+                        <div
+                          className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                          style={{
+                            backgroundColor: ORG_PRIMARY_TINT,
+                            color: ORG_PRIMARY,
+                          }}
+                        >
+                          <Sparkles className="h-2.5 w-2.5 flex-shrink-0" />
+                          <span className="truncate">{e.title}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* المحتوى */}
-                <div className="flex flex-1 flex-col px-5 pt-3 pb-4">
-                  <h3 className="truncate text-base font-bold text-foreground">{e.full_name}</h3>
-                  {e.title && (
-                    <p className="mt-1 flex items-center gap-1.5 text-xs font-medium" style={{ color: ORG_PRIMARY }}>
-                      <Sparkles className="h-3 w-3" />
-                      <span className="truncate">{e.title}</span>
-                    </p>
-                  )}
-                  <p className="mt-1.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
-                    <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span className="truncate">{e.job_role ?? "بدون دور"}</span>
-                  </p>
-
-                  {/* بيانات التواصل في صندوق ناعم */}
+                  {/* بيانات التواصل: أسطر بأيقونات دقيقة */}
                   {(e.email || e.phone) && (
-                    <div className="mt-3 space-y-1.5 rounded-xl bg-muted/50 p-2.5 text-xs">
+                    <div className="space-y-1.5 border-t border-dashed border-border/70 pt-3">
                       {e.email && (
-                        <div className="flex items-center gap-2 truncate text-muted-foreground" dir="ltr">
-                          <Mail className="h-3 w-3 flex-shrink-0" style={{ color: ORG_PRIMARY }} />
-                          <span className="truncate">{e.email}</span>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground" dir="ltr">
+                          <div
+                            className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md"
+                            style={{ backgroundColor: ORG_PRIMARY_TINT, color: ORG_PRIMARY }}
+                          >
+                            <Mail className="h-2.5 w-2.5" />
+                          </div>
+                          <span className="truncate font-mono text-[10.5px]">{e.email}</span>
                         </div>
                       )}
                       {e.phone && (
-                        <div className="flex items-center gap-2 truncate text-muted-foreground" dir="ltr">
-                          <Phone className="h-3 w-3 flex-shrink-0" style={{ color: ORG_PRIMARY }} />
-                          <span className="truncate">{e.phone}</span>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground" dir="ltr">
+                          <div
+                            className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md"
+                            style={{ backgroundColor: ORG_PRIMARY_TINT, color: ORG_PRIMARY }}
+                          >
+                            <Phone className="h-2.5 w-2.5" />
+                          </div>
+                          <span className="truncate font-mono text-[10.5px]">{e.phone}</span>
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* عداد المساءلات */}
-                  <div className="mt-3 flex items-center justify-between rounded-xl border border-border/60 px-3 py-2 text-xs">
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <ShieldAlert className="h-3.5 w-3.5" />
-                      <span>المساءلات</span>
+                  {/* مؤشر المساءلات: شريط أنيق */}
+                  <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2">
+                    <ShieldAlert className="h-3.5 w-3.5 flex-shrink-0" style={{ color: qCount > 0 ? ORG_PRIMARY : 'hsl(var(--muted-foreground))' }} />
+                    <span className="text-[11px] font-medium text-muted-foreground">المساءلات</span>
+                    <div className="ms-auto flex items-baseline gap-1">
+                      <span
+                        className="text-base font-extrabold leading-none"
+                        style={{ color: qCount > 0 ? ORG_PRIMARY : 'hsl(var(--muted-foreground))' }}
+                      >
+                        {qCount}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground">بند</span>
                     </div>
-                    <span
-                      className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-bold"
-                      style={
-                        qCount > 0
-                          ? { background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})`, color: 'white' }
-                          : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }
-                      }
-                    >
-                      {qCount}
-                    </span>
                   </div>
 
-                  {/* شريط الإجراءات الموحد */}
-                  <div className="mt-auto pt-3">
-                    <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 p-1">
-                      <Link
-                        to={editHref}
-                        title="تعديل بيانات الموظف"
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-card hover:text-foreground hover:shadow-sm"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        تعديل
-                      </Link>
-                      {canImpersonate && (
-                        <button
-                          type="button"
-                          onClick={() => handleImpersonate(e.id, e.full_name)}
-                          disabled={impersonatingId === e.id}
-                          title="الدخول كهذا الموظف"
-                          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-card hover:text-foreground hover:shadow-sm disabled:opacity-50"
-                          style={{ }}
-                        >
-                          {impersonatingId === e.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <LogIn className="h-3.5 w-3.5" />
-                          )}
-                          دخول
-                        </button>
-                      )}
+                  {/* رصيف الإجراءات: أيقونات دائرية أنيقة */}
+                  <div className="mt-auto flex items-center justify-end gap-1.5 border-t border-border/60 pt-3">
+                    <Link
+                      to={editHref}
+                      title="تعديل بيانات الموظف"
+                      className="group/btn flex h-9 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-[11px] font-semibold text-muted-foreground shadow-sm transition-all hover:scale-105 hover:border-transparent hover:text-white hover:shadow-md"
+                      style={{ ['--hover-bg' as string]: ORG_PRIMARY }}
+                      onMouseEnter={(ev) => {
+                        (ev.currentTarget as HTMLElement).style.backgroundColor = ORG_PRIMARY;
+                      }}
+                      onMouseLeave={(ev) => {
+                        (ev.currentTarget as HTMLElement).style.backgroundColor = '';
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      تعديل
+                    </Link>
+                    {canImpersonate && (
                       <button
                         type="button"
-                        title={e.user_id ? "حذف الموظف وحسابه" : "حذف الموظف"}
-                        onClick={() => handleDelete(e.id, e.full_name)}
-                        disabled={deletingId === e.id}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-destructive hover:text-destructive-foreground hover:shadow-sm disabled:opacity-50"
+                        onClick={() => handleImpersonate(e.id, e.full_name)}
+                        disabled={impersonatingId === e.id}
+                        title="الدخول كهذا الموظف"
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-all hover:scale-105 hover:border-transparent hover:text-white hover:shadow-md disabled:opacity-50"
+                        onMouseEnter={(ev) => {
+                          (ev.currentTarget as HTMLElement).style.backgroundColor = ORG_ACCENT;
+                        }}
+                        onMouseLeave={(ev) => {
+                          (ev.currentTarget as HTMLElement).style.backgroundColor = '';
+                        }}
                       >
-                        {deletingId === e.id ? (
+                        {impersonatingId === e.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <LogIn className="h-3.5 w-3.5" />
                         )}
                       </button>
-                    </div>
+                    )}
+                    <button
+                      type="button"
+                      title={e.user_id ? "حذف الموظف وحسابه" : "حذف الموظف"}
+                      onClick={() => handleDelete(e.id, e.full_name)}
+                      disabled={deletingId === e.id}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-all hover:scale-105 hover:border-transparent hover:bg-destructive hover:text-destructive-foreground hover:shadow-md disabled:opacity-50"
+                    >
+                      {deletingId === e.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
