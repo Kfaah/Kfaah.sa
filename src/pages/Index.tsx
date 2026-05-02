@@ -8,6 +8,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNumber } from "@/lib/utils";
+import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 
 const positiveMessages = [
   (name: string) => `أهلاً بك يا ${name}! يومك سعيد 🌟`,
@@ -15,6 +16,17 @@ const positiveMessages = [
   (name: string) => `رائع يا ${name}! استمر في العمل المميز 💪`,
   (name: string) => `بارك الله في جهودك يا ${name} 🙏`,
   (name: string) => `معاً نحو النجاح يا ${name} 🚀`,
+];
+
+// رسائل موجَّهة إلى الجمعية ككيان (تظهر في حساب الجمعية العام / viewer)
+const orgPositiveMessages = [
+  (org: string) => `${org} — جمعية رائدة بأثرٍ يمتد ويتجدّد 🌟`,
+  (org: string) => `${org} كيانٌ متألق، رسالتُه تُلهم وتُحدث الفرق ✨`,
+  (org: string) => `بارك الله في ${org} وفي مجلس إدارتها وكل العاملين فيها 🙏`,
+  (org: string) => `${org} — صرحٌ خيريٌّ تتسع آثاره يوماً بعد يوم 🚀`,
+  (org: string) => `${org} رسالةٌ عظيمة وعطاءٌ لا ينقطع بإذن الله 💚`,
+  (org: string) => `${org} — ريادةٌ في الخير وقدوةٌ في العمل المؤسسي 🏅`,
+  (org: string) => `${org} تصنع الأثر وتبني الإنسان 🌱`,
 ];
 
 interface EmployeeStats {
@@ -38,6 +50,8 @@ const Index = () => {
   const [currentMessage, setCurrentMessage] = useState("");
   const { user, previewAsEmployee, previewingEmployee } = useUser();
   const { user: authUser } = useAuth();
+  const branding = useOrgBranding();
+  const [isViewer, setIsViewer] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [employeeStats, setEmployeeStats] = useState<EmployeeStats>({
@@ -66,19 +80,35 @@ const Index = () => {
   }, [location.state, location.key]);
 
   useEffect(() => {
+    const dayOfYear = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
+    if (isViewer) {
+      const orgName = branding.orgName?.trim() || "جمعيتكم";
+      const idx = dayOfYear % orgPositiveMessages.length;
+      setCurrentMessage(orgPositiveMessages[idx](orgName));
+      return;
+    }
     const name = user.firstName?.trim();
     if (!name) {
       setCurrentMessage("");
       return;
     }
-    // اختيار رسالة ثابتة لكل يوم لكل موظف (بدلاً من العشوائية)
-    const dayOfYear = Math.floor(
-      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
-        (1000 * 60 * 60 * 24)
-    );
     const idx = dayOfYear % positiveMessages.length;
     setCurrentMessage(positiveMessages[idx](name));
-  }, [user.firstName]);
+  }, [user.firstName, isViewer, branding.orgName]);
+
+  // كشف حساب الجمعية (viewer) لاستخدام الرسالة الموجَّهة للكيان
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!authUser?.id) { setIsViewer(false); return; }
+      const { data } = await supabase.rpc("is_viewer", { _user_id: authUser.id });
+      if (!cancelled) setIsViewer(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [authUser?.id]);
 
   useEffect(() => {
     const checkRoleAndFetchData = async () => {
