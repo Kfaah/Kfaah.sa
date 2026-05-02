@@ -14,7 +14,8 @@ const ROLES = [
   { key: "admin", label: "مدير الجمعية" },
   { key: "moderator", label: "مدير قسم / تسويق" },
   { key: "hr_manager", label: "مدير الموارد البشرية" },
-  { key: "manager", label: "رئيس قسم" },
+  { key: "finance_manager", label: "المدير المالي" },
+  { key: "accountant", label: "محاسب" },
   { key: "user", label: "موظف إداري" },
 ] as const;
 
