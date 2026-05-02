@@ -158,6 +158,27 @@ export function Sidebar() {
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
 
+  // استثناء: إعادة إظهار "التحليل الذكي" لحساب سعد الغامدي تحديداً
+  const SAAD_ALGHAMDI_USER_ID = "041a7464-438e-45c8-8114-16de3a5e3645";
+  const isSaadAlGhamdi = authUser?.id === SAAD_ALGHAMDI_USER_ID;
+  const finalNavItems = (() => {
+    if (
+      isSaadAlGhamdi &&
+      (roleLevel === "employee" || previewAsEmployee) &&
+      !visibleNavItems.some((it) => it.href === "/intelligence")
+    ) {
+      const enriched = [...visibleNavItems];
+      enriched.splice(1, 0, {
+        title: "التحليل الذكي",
+        href: "/intelligence",
+        icon: Sparkles,
+        iconBg: "nav-icon-analysis",
+      });
+      return enriched;
+    }
+    return visibleNavItems;
+  })();
+
   // Resolve role_level from employees table to know which menu to show
   useEffect(() => {
     const fetchRoleLevel = async () => {
