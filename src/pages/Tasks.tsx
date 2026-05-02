@@ -1717,6 +1717,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                   })}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         )}
