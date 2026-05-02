@@ -70,6 +70,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Detach subordinates first (avoid FK violation on direct_manager_id)
+    const { error: detachErr } = await admin
+      .from("employees")
+      .update({ direct_manager_id: null })
+      .eq("direct_manager_id", emp.id);
+    if (detachErr) throw detachErr;
+
+    // Detach functional manager links if such column exists (best-effort)
+    await admin
+      .from("employees")
+      .update({ functional_manager_id: null })
+      .eq("functional_manager_id", emp.id)
+      .then(() => {}, () => {});
+
     // Delete employee row
     const { error: delErr } = await admin.from("employees").delete().eq("id", emp.id);
     if (delErr) throw delErr;
