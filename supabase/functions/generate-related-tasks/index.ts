@@ -489,7 +489,6 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
       );
 
       const baseDate = new Date(op.year, opm.month - 1, ep.day);
-      const PHASE_LBL: Record<string, string> = { before: "قبل", during: "أثناء", after: "بعد" };
 
       for (const t of pendingAll as any[]) {
         const userId = userByEmp.get(t.employee_id);
@@ -504,7 +503,7 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
         const { data: tIns, error: tErr } = await admin
           .from("tasks")
           .insert({
-            title: `[${PHASE_LBL[t.phase] ?? ""}] ${t.title}`,
+            title: t.title,
             description: t.description,
             user_id: userId,
             executive_plan_id,
