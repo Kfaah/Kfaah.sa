@@ -1474,14 +1474,23 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                           {/* تاريخ التنفيذ */}
                           <TableCell className="text-center border-l border-[hsl(var(--primary)/0.2)] py-1">
                             {(() => {
+                              const dt = task.due_date ? new Date(task.due_date) : null;
                               const dates = formatDateWithHijri(task.due_date);
+                              const gStr = dt && !isNaN(dt.getTime())
+                                ? `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, "0")}/${String(dt.getDate()).padStart(2, "0")}`
+                                : "-";
+                              const hijriRaw = String(dates.hijri).replace(/[\u2066-\u2069]/g, "");
+                              const hijriParts = hijriRaw.split("/");
+                              const hijriReversed = hijriParts.length === 3
+                                ? `${hijriParts[2]}/${hijriParts[1]}/${hijriParts[0]}`
+                                : hijriRaw;
                               return (
                                 <div className="flex flex-col items-center justify-center gap-0.5" dir="rtl">
                                   <span className="text-sm font-bold text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                    {dates.gregorian}
+                                    {gStr}
                                   </span>
                                   <span className="text-xs text-muted-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                    {dates.hijri}
+                                    {hijriReversed}
                                   </span>
                                 </div>
                               );
