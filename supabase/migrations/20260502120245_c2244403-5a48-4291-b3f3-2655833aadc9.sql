@@ -1,0 +1,1 @@
+UPDATE public.welcome_quotes SET quote = 'أهلاً بك يا {name}، أنت جزء من فريق متميز يصنع الأثر' WHERE id = '81a49705-4a3b-4543-8dc0-4c6234beb26a';
