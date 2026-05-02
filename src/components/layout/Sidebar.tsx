@@ -57,6 +57,7 @@ const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: [string, string] 
   { match: /مآثر/, lines: ["جمعية مآثر للدعوة والإرشاد", "وتوعية الجاليات بمحافظة العارضة"] },
   { match: /القصبة/, lines: ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بمركز القصبة"] },
   { match: /حرف/, lines: ["جمعية حرف التعليمية", ""] },
+  { match: /التنمية الأهلية|العارضة.*تنمية|tanmiah/i, lines: ["جمعية التنمية الأهلية", "بمحافظة العارضة"] },
 ];
 
 function getShortOrgName(fullName: string): [string, string] | null {
