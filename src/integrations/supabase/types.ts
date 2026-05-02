@@ -2685,6 +2685,53 @@ export type Database = {
           },
         ]
       }
+      navigation_customization: {
+        Row: {
+          created_at: string
+          custom_icon: string | null
+          custom_label: string | null
+          display_order: number
+          id: string
+          is_visible: boolean
+          item_key: string
+          organization_id: string | null
+          updated_at: string
+          visible_to_roles: Database["public"]["Enums"]["app_role"][] | null
+        }
+        Insert: {
+          created_at?: string
+          custom_icon?: string | null
+          custom_label?: string | null
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          item_key: string
+          organization_id?: string | null
+          updated_at?: string
+          visible_to_roles?: Database["public"]["Enums"]["app_role"][] | null
+        }
+        Update: {
+          created_at?: string
+          custom_icon?: string | null
+          custom_label?: string | null
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          item_key?: string
+          organization_id?: string | null
+          updated_at?: string
+          visible_to_roles?: Database["public"]["Enums"]["app_role"][] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navigation_customization_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -3046,6 +3093,59 @@ export type Database = {
           },
         ]
       }
+      organization_branding: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          display_name: string | null
+          favicon_url: string | null
+          id: string
+          logo_url: string | null
+          organization_id: string
+          primary_color: string | null
+          secondary_color: string | null
+          site_name: string | null
+          site_tagline: string | null
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string
+          display_name?: string | null
+          favicon_url?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          site_name?: string | null
+          site_tagline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string
+          display_name?: string | null
+          favicon_url?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          site_name?: string | null
+          site_tagline?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_branding_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_profiles: {
         Row: {
           about: string | null
@@ -3253,6 +3353,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "projects_catalog_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          module: string
+          organization_id: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module: string
+          organization_id?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          organization_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
