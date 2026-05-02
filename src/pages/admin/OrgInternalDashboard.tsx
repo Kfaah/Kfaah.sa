@@ -150,6 +150,7 @@ export default function OrgInternalDashboard({
   const [counts, setCounts] = useState({
     employees: 0, tasks: 0, donations: 0, campaigns: 0,
   });
+  const [employeesLoading, setEmployeesLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = Boolean(org);
   const [analyzing, setAnalyzing] = useState(false);
@@ -224,6 +225,7 @@ export default function OrgInternalDashboard({
     });
 
     // Wave 3 — heavier rows used by specific tabs only. Streamed in.
+    setEmployeesLoading(true);
     const wave3 = (async () => {
       const [analysisRes, qRes, tRes, empRes] = await Promise.all([
         supabase.from("deep_analyses").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
@@ -235,6 +237,7 @@ export default function OrgInternalDashboard({
       setQuestions((qRes.data as unknown as AccountabilityQuestion[]) ?? []);
       setATasks((tRes.data as unknown as AccountabilityTask[]) ?? []);
       setEmployees(empRes.data ?? []);
+      setEmployeesLoading(false);
     })();
 
     // Best-effort: resolve once everything is in. Errors in any wave are
@@ -605,6 +608,7 @@ export default function OrgInternalDashboard({
         <TabsContent value="employees" className="mt-6" dir="rtl">
           <EmployeesShowcase
             employees={employees}
+            loading={employeesLoading}
             questions={questions}
             empSearch={empSearch}
             setEmpSearch={setEmpSearch}
@@ -1374,12 +1378,14 @@ const ORG_GRADIENT = `linear-gradient(to left, ${ORG_PRIMARY} 0%, ${ORG_PRIMARY}
 
 function EmployeesShowcase({
   employees,
+  loading,
   questions,
   empSearch,
   setEmpSearch,
   orgSlug,
 }: {
   employees: Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null }>;
+  loading: boolean;
   questions: AccountabilityQuestion[];
   empSearch: string;
   setEmpSearch: (v: string) => void;
@@ -1435,7 +1441,12 @@ function EmployeesShowcase({
       </div>
 
       {/* Grid */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="rounded-2xl border-2 border-dashed border-border bg-muted/30 p-12 text-center">
+          <Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" />
+          <p className="mt-3 text-muted-foreground">جاري تحميل الموظفين...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-border bg-muted/30 p-12 text-center">
           <Users className="mx-auto h-12 w-12 text-muted-foreground/60" />
           <p className="mt-3 text-muted-foreground">
