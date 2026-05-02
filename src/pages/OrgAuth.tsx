@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone } from "lucide-react";
+import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone, CheckCircle2, Clock, Sparkles } from "lucide-react";
 
 interface OrgInfo {
   id: string;
@@ -69,6 +69,7 @@ export default function OrgAuth() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -229,13 +230,9 @@ export default function OrgAuth() {
         });
         if (joinError) throw joinError;
 
-        // Membership was created as PENDING — sign out and inform the user.
+        // Membership was created as PENDING — sign out and show in-page success state.
         await supabase.auth.signOut();
-        toast.success(
-          `تم إرسال طلب انضمامك إلى ${org.name}. سيتم تفعيل حسابك بعد موافقة إدارة الجمعية.`,
-          { duration: 8000 }
-        );
-        setIsLogin(true);
+        setSignupSuccess(true);
         setPassword("");
       }
     } catch (error: unknown) {
@@ -393,6 +390,70 @@ export default function OrgAuth() {
           </div>
         </div>
 
+        {signupSuccess ? (
+          <Card className="shadow-2xl border border-white/60 backdrop-blur-sm bg-white/95 overflow-hidden">
+            <div
+              className="h-1.5 w-full"
+              style={{ background: `linear-gradient(to left, hsl(${accentHsl}), hsl(${primaryHsl}))` }}
+            />
+            <CardContent className="pt-8 pb-7 px-6 text-center space-y-5">
+              <div className="relative mx-auto w-20 h-20">
+                <div
+                  className="absolute inset-0 rounded-full animate-ping opacity-30"
+                  style={{ background: `hsl(${primaryHsl})` }}
+                  aria-hidden="true"
+                />
+                <div
+                  className="relative w-20 h-20 rounded-full flex items-center justify-center shadow-xl"
+                  style={{
+                    background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))`,
+                    boxShadow: `0 15px 40px -10px hsl(${primaryHsl} / 0.5)`,
+                  }}
+                >
+                  <CheckCircle2 className="w-11 h-11 text-white" strokeWidth={2.2} />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="text-2xl font-extrabold" style={{ color: `hsl(${primaryHsl})` }}>
+                  تم إرسال طلبك بنجاح
+                </h2>
+                <p className="text-base text-foreground/80 leading-relaxed">
+                  وصل طلب انضمامك إلى <span className="font-bold">{org.name}</span> إلى إدارة الجمعية.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  سيتم تفعيل حسابك فور موافقة المسؤول، ويمكنك حينها تسجيل الدخول باستخدام نفس بياناتك.
+                </p>
+              </div>
+
+              <div
+                className="flex items-center justify-center gap-2 mx-auto w-fit px-4 py-2 rounded-full text-sm font-medium"
+                style={{
+                  background: `hsl(${accentHsl} / 0.12)`,
+                  color: `hsl(${primaryHsl})`,
+                }}
+              >
+                <Clock className="w-4 h-4" />
+                <span>حسابك قيد المراجعة</span>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  setSignupSuccess(false);
+                  setIsLogin(true);
+                }}
+                className="w-full h-12 gap-2 text-white border-0 hover:opacity-90 mt-2"
+                style={{
+                  background: `linear-gradient(to left, hsl(${accentHsl}), hsl(${primaryHsl}))`,
+                }}
+              >
+                <LogIn className="w-5 h-5" />
+                العودة إلى تسجيل الدخول
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
         <Card className="shadow-2xl border border-white/60 backdrop-blur-sm bg-white/95">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-xl">
@@ -472,6 +533,7 @@ export default function OrgAuth() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Copyright */}
         <div
