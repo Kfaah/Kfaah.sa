@@ -335,6 +335,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
 
   // التحقق من دور المدير - نتحقق من role في user أو من user_roles
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
   
   useEffect(() => {
     const checkUserRole = async () => {
@@ -343,6 +344,23 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
       setUserRole(data);
     };
     checkUserRole();
+  }, [authUser]);
+
+  // جلب employee.id للمستخدم الحالي لاستخدامه في فلترة "أنشطتي" فقط
+  useEffect(() => {
+    const fetchMyEmployee = async () => {
+      if (!authUser) {
+        setCurrentEmployeeId(null);
+        return;
+      }
+      const { data } = await supabase
+        .from("employees")
+        .select("id")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+      setCurrentEmployeeId(data?.id ?? null);
+    };
+    fetchMyEmployee();
   }, [authUser]);
   
   // المدير هو من له دور admin في قاعدة البيانات وليس في وضع المعاينة
@@ -526,6 +544,17 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
 
   // الخطط المفلترة
   const filteredPlans = plans.filter(plan => {
+    // للموظف غير-المدير: اعرض فقط الأنشطة الخاصة به (مالكها أو مسؤولها)
+    if (!isAdmin) {
+      const ownsPlan = plan.user_id === authUser?.id;
+      const isResponsible = currentEmployeeId
+        ? plan.responsible_employee_id === currentEmployeeId
+        : false;
+      if (!ownsPlan && !isResponsible) {
+        return false;
+      }
+    }
+
     // فلتر السنة
     if (plan.year !== filterYear) {
       return false;
