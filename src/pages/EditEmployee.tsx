@@ -37,6 +37,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getArabicErrorMessage } from "@/lib/errors";
 
+// المسميات التي تمنح صلاحيات إدارية كاملة (admin) داخل الجمعية
+const ADMIN_ROLE_TITLES = ["مدير الجمعية", "مدير التسويق"];
+const isAdminTitle = (value: string) =>
+  ADMIN_ROLE_TITLES.includes(value.trim());
+
 interface Department {
   id: string;
   name: string;
