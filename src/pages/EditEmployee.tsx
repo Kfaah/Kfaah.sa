@@ -245,8 +245,6 @@ const EditEmployee = () => {
     }
     if (!form.email?.trim()) newErrors.email = "البريد الإلكتروني مطلوب";
     if (!form.phone?.trim()) newErrors.phone = "رقم الجوال مطلوب";
-    if (!form.department) newErrors.department = "القسم مطلوب";
-    if (!form.job_role) newErrors.job_role = "الدور الوظيفي مطلوب";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
