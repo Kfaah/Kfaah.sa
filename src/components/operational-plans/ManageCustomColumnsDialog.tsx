@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { AddCustomColumnDialog } from "./AddCustomColumnDialog";
 
 interface ColumnOrder {
@@ -70,6 +71,7 @@ export function ManageCustomColumnsDialog({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const confirm = useConfirm();
 
   const fetchColumns = async () => {
     setIsLoading(true);
@@ -128,9 +130,13 @@ export function ManageCustomColumnsDialog({
       return;
     }
 
-    if (!confirm(`هل أنت متأكد من حذف العمود "${column.column_name}"؟ سيتم حذف جميع البيانات المرتبطة به.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: "حذف العمود",
+      description: `سيتم حذف العمود "${column.column_name}" مع جميع البيانات المرتبطة به نهائياً. لا يمكن التراجع.`,
+      confirmText: "نعم، احذف",
+      variant: "danger",
+    });
+    if (!ok) return;
 
     try {
       // Delete from custom columns table
