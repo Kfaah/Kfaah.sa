@@ -24,9 +24,9 @@ export function DashboardLayout({ children, embedded = false }: DashboardLayoutP
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className="mr-[312px] transition-all duration-300">
+      <div className="mr-[320px] transition-all duration-300">
         <main className="px-6 py-8">
-          <div className="mx-auto w-full max-w-[1280px]">{children}</div>
+          <div className="w-full">{children}</div>
         </main>
       </div>
     </div>
