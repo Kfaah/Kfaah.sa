@@ -99,7 +99,7 @@ export default function PublicLanding() {
           {/* Brand side */}
           <div className="text-white space-y-6 text-center md:text-right md:order-1 order-2">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow-[0_10px_40px_-10px_rgba(34,211,238,0.6)] mb-4">
-              <Building2 className="w-10 h-10 text-white" />
+              <Icon className="text-white text-4xl">▦</Icon>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
               نظام إدارة التسويق الإلكتروني
@@ -125,7 +125,7 @@ export default function PublicLanding() {
           <Card className="border-0 shadow-2xl backdrop-blur-sm bg-white md:order-2 order-1">
             <CardHeader className="text-center space-y-2">
               <div className="inline-flex mx-auto items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent">
-                <Shield className="w-6 h-6 text-white" />
+                <Icon className="text-white text-2xl">♢</Icon>
               </div>
               <CardTitle className="text-2xl text-slate-900">دخول مدير النظام</CardTitle>
               <CardDescription className="text-slate-600">
@@ -136,7 +136,7 @@ export default function PublicLanding() {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="username" className="flex items-center gap-2 justify-end text-slate-700">
-                    <User className="w-4 h-4" /> اسم المستخدم / رقم الهوية
+                    <Icon className="text-base">☉</Icon> اسم المستخدم / رقم الهوية
                   </Label>
                   <Input
                     id="username"
@@ -150,7 +150,7 @@ export default function PublicLanding() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password" className="flex items-center gap-2 justify-end text-slate-700">
-                    <Lock className="w-4 h-4" /> كلمة المرور
+                    <Icon className="text-base">⌾</Icon> كلمة المرور
                   </Label>
                   <div className="relative">
                     <Input
@@ -169,7 +169,7 @@ export default function PublicLanding() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPassword ? "◉" : "◎"}
                     </button>
                   </div>
                 </div>
@@ -178,7 +178,7 @@ export default function PublicLanding() {
                   className="w-full h-12 gap-2 bg-gradient-to-l from-accent to-primary hover:opacity-90"
                   disabled={loading}
                 >
-                  {loading ? <span className="animate-spin">⏳</span> : <LogIn className="w-5 h-5" />}
+                  {loading ? <span className="animate-spin">⏳</span> : <Icon className="text-lg">↤</Icon>}
                   تسجيل الدخول
                 </Button>
               </form>
