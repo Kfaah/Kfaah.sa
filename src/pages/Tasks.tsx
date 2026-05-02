@@ -1419,9 +1419,24 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                               className={cn("border-l border-[hsl(var(--primary)/0.2)] font-semibold", activityColorClass)}
                               rowSpan={group.tasks.length}
                             >
-                              <div className="flex items-center gap-2">
-                                <Target className="w-4 h-4" />
-                                <span className="line-clamp-3">{group.activityName}</span>
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <Target className="w-4 h-4 flex-shrink-0" />
+                                  <span className="line-clamp-3">{group.activityName}</span>
+                                </div>
+                                {group.activityExecutionDate && (() => {
+                                  const d = formatDateWithHijri(group.activityExecutionDate);
+                                  return (
+                                    <div className="flex flex-col gap-0.5 pr-6 text-muted-foreground" dir="rtl">
+                                      <span className="text-xs font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                        {d.gregorian}
+                                      </span>
+                                      <span className="text-[10px]" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                        {d.hijri}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </TableCell>
                           ) : null}
