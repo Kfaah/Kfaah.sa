@@ -184,6 +184,9 @@ export function Sidebar() {
   const isTanmiahOrg = /tanmiah|التنمية الأهلية/i.test(
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
+  const isAwonOrg = /awon|عون/i.test(
+    `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
+  );
 
   // استثناء: إعادة إظهار "التحليل الذكي" لحساب سعد الغامدي تحديداً
   const SAAD_ALGHAMDI_USER_ID = "041a7464-438e-45c8-8114-16de3a5e3645";
@@ -505,7 +508,9 @@ export function Sidebar() {
                         ? "h-[180px] w-[180px] scale-100"
                         : isTanmiahOrg
                           ? "h-[170px] w-[170px] scale-100"
-                          : "h-[210px] w-[210px] scale-125"
+                          : isAwonOrg
+                            ? "h-[150px] w-[150px] scale-100"
+                            : "h-[210px] w-[210px] scale-125"
                   )}
                 />
               ) : (
