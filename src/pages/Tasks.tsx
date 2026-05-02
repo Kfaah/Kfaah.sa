@@ -424,9 +424,12 @@ const Tasks = ({ embedded = false }: TasksProps) => {
           .from("executive_plans")
           .select(`
             id,
+            day,
             operational_plan_month:operational_plan_months!inner (
+              month,
               operational_plan:operational_plans!inner (
-                activity_name
+                activity_name,
+                year
               )
             )
           `)
@@ -434,10 +437,20 @@ const Tasks = ({ embedded = false }: TasksProps) => {
           .limit(300);
         if (error) throw error;
         if (cancelled) return;
-        const activitiesMap: ActivityInfo[] = (data || []).map((ep: any) => ({
-          executive_plan_id: ep.id,
-          activity_name: ep.operational_plan_month?.operational_plan?.activity_name || "غير محدد",
-        }));
+        const activitiesMap: ActivityInfo[] = (data || []).map((ep: any) => {
+          const y = ep.operational_plan_month?.operational_plan?.year;
+          const m = ep.operational_plan_month?.month;
+          const d = ep.day;
+          let execution_date: string | null = null;
+          if (y && m && d) {
+            execution_date = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          }
+          return {
+            executive_plan_id: ep.id,
+            activity_name: ep.operational_plan_month?.operational_plan?.activity_name || "غير محدد",
+            execution_date,
+          };
+        });
         setActivities(activitiesMap);
         if (cacheKey) {
           const cached = JSON.parse(localStorage.getItem(cacheKey) || "{}");
