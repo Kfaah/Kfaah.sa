@@ -1378,8 +1378,12 @@ const Tasks = ({ embedded = false }: TasksProps) => {
         ) : (
           <Card className="overflow-hidden border border-[hsl(var(--primary)/0.2)] shadow-md">
             <CardContent className="p-0">
-              <div className="max-h-[calc(100vh-280px)] overflow-auto">
-              <Table>
+              <div
+                className="max-h-[calc(100vh-280px)] overflow-auto isolate"
+                dir="rtl"
+                tabIndex={0}
+              >
+              <table className="w-full min-w-[1180px] caption-bottom text-sm">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="sticky top-0 z-30 bg-[hsl(var(--primary))] text-right font-bold text-white border-l border-white/20 w-48">النشاط</TableHead>
@@ -1712,7 +1716,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                     });
                   })}
                 </TableBody>
-              </Table>
+              </table>
               </div>
             </CardContent>
           </Card>
