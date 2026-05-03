@@ -41,24 +41,24 @@ export function PageHeader({ icon, title, subtitle, actions, className, style }:
         }}
       />
 
-      <div className="relative flex min-h-[128px] flex-col gap-4 px-6 py-7 sm:h-[128px] sm:flex-row sm:items-center sm:justify-between sm:px-7">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="relative flex min-h-[112px] flex-col gap-3 px-4 py-5 sm:min-h-[128px] sm:gap-4 sm:px-7 sm:py-7 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           {icon && (
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-sm [&_svg]:h-6 [&_svg]:w-6">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-sm [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
               {icon}
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-extrabold tracking-tight text-white drop-shadow-sm">
+            <h1 className="truncate text-lg sm:text-2xl font-extrabold tracking-tight text-white drop-shadow-sm">
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-1 text-sm text-white/85">{subtitle}</p>
+              <p className="mt-1 text-xs sm:text-sm text-white/85 line-clamp-2">{subtitle}</p>
             )}
           </div>
         </div>
         {actions && (
-          <div className="flex flex-wrap items-center gap-2">{actions}</div>
+          <div className="flex flex-wrap items-center gap-2 [&_button]:text-xs [&_button]:sm:text-sm">{actions}</div>
         )}
       </div>
     </div>
