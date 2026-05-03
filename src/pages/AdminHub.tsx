@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization, type Organization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 type OrgWithCounts = Organization & { member_count?: number };
 
@@ -49,6 +50,7 @@ function getAdminOrganizationLogo(o: Organization) {
 export default function AdminHub() {
   const navigate = useNavigate();
   const { isSuperAdmin, loading: orgLoading, refresh, switchOrg } = useOrganization();
+  const { signOut } = useAuth();
   const [orgs, setOrgs] = useState<OrgWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -154,7 +156,10 @@ export default function AdminHub() {
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
-  const handleSignOut = () => { navigate("/admin/organizations", { replace: true }); };
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth", { replace: true });
+  };
 
   return (
     <div className="min-h-screen" dir="rtl">
