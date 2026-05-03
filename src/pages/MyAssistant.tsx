@@ -45,6 +45,18 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/employee-ass
 
 export default function MyAssistant() {
   const { user } = useAuth();
+  const [isDemo, setIsDemo] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.rpc("is_demo_user", { _user_id: user.id });
+      if (!cancelled) setIsDemo(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
