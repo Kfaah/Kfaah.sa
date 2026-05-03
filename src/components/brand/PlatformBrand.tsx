@@ -51,7 +51,7 @@ export function PlatformBrand({
       />
       <div className={isStacked ? "text-center" : "text-right leading-tight"}>
         <div
-          className={`${s.name} font-extrabold tracking-tight bg-gradient-to-l from-emerald-600 to-teal-700 bg-clip-text text-transparent`}
+          className={`${s.name} font-extrabold tracking-tight bg-gradient-to-l from-cyan-500 to-slate-800 bg-clip-text text-transparent`}
         >
           كفاءة
         </div>
