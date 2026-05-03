@@ -163,8 +163,8 @@ export default function PublicLanding() {
             >
           <CardHeader className="text-center space-y-3 pb-5 pt-8">
             <CardTitle className="text-3xl md:text-4xl text-white font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
-            <CardDescription className="text-slate-300 text-sm md:text-base">
-              بوابة آمنة للتحكم الكامل بالمنصة وإدارة جميع الجمعيات
+            <CardDescription className="text-slate-300 text-sm md:text-base leading-relaxed px-2">
+              منصة <span className="text-cyan-300 font-bold">كفاءة</span> لإدارة الأداء المؤسسي للجمعيات الخيرية بالذكاء الاصطناعي — منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8">
