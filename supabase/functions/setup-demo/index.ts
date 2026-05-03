@@ -30,8 +30,35 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // 1) Find or create demo user
+    // Fast-path: if demo user already exists with viewer role + org link
+    // and tasks are seeded, return immediately without doing any heavy work.
     let demoUserId: string | null = null;
+    const { data: existingMembership } = await admin
+      .from("user_organizations")
+      .select("user_id")
+      .eq("organization_id", DEMO_ORG_ID)
+      .eq("approval_status", "approved")
+      .limit(1)
+      .maybeSingle();
+    if (existingMembership?.user_id) {
+      const { count: tasksReady } = await admin
+        .from("tasks")
+        .select("id", { head: true, count: "exact" })
+        .eq("organization_id", DEMO_ORG_ID);
+      if ((tasksReady ?? 0) > 0) {
+        return json({
+          ok: true,
+          email: DEMO_EMAIL,
+          password: DEMO_PASSWORD,
+          org_slug: "demo",
+          seeded: [],
+          cached: true,
+        });
+      }
+      demoUserId = existingMembership.user_id;
+    }
+
+    // 1) Find or create demo user
     const { data: list } = await admin.auth.admin.listUsers({
       page: 1,
       perPage: 200,
