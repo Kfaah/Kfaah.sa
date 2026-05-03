@@ -170,8 +170,8 @@ export default function PublicLanding() {
           </CardHeader>
           <CardContent className="px-8 pb-8">
             <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="flex items-center gap-2 justify-end text-slate-200 text-base">
+              <div className="space-y-2 text-right" dir="rtl">
+                <Label htmlFor="username" className="block w-full text-right text-slate-200 text-base">
                   اسم المستخدم / رقم الهوية
                 </Label>
                 <Input
@@ -184,8 +184,8 @@ export default function PublicLanding() {
                   dir="rtl"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center gap-2 justify-end text-slate-200 text-base">
+              <div className="space-y-2 text-right" dir="rtl">
+                <Label htmlFor="password" className="block w-full text-right text-slate-200 text-base">
                   كلمة المرور
                 </Label>
                 <div className="relative">
