@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { kafaaLogo } from "@/components/brand/PlatformBrand";
+import { KafaaLogoArtwork } from "@/components/brand/PlatformBrand";
 
 const normalizeDigits = (value: string, trim = false) => {
   const input = trim ? value.trim() : value;
@@ -130,26 +130,15 @@ export default function PublicLanding() {
               />
             </div>
 
-            {/* Logo — huge, with multi-layer white edge glow for clarity on dark bg */}
-            <div
-              className="relative"
+            {/* Logo — drawn on the page itself, no PNG background */}
+            <KafaaLogoArtwork
+              className="relative h-[26rem] md:h-[34rem] lg:h-[40rem] w-auto animate-pulse-subtle"
               style={{
-                filter:
-                  "drop-shadow(0 0 3px rgba(255,255,255,1)) drop-shadow(0 0 10px rgba(255,255,255,0.95)) drop-shadow(0 0 22px rgba(255,255,255,0.7)) drop-shadow(0 0 40px rgba(255,255,255,0.4)) drop-shadow(0 30px 50px rgba(34,211,238,0.35)) drop-shadow(0 15px 25px rgba(0,0,0,0.55))",
-                animation: "pulse-subtle 5s ease-in-out infinite",
+                transform: "perspective(1100px) rotateX(5deg)",
+                transformStyle: "preserve-3d",
+                filter: "drop-shadow(0 30px 50px hsl(var(--kafaa-logo-accent) / 0.35)) drop-shadow(0 15px 25px hsl(220 75% 3% / 0.55))",
               }}
-            >
-              <img
-                src={kafaaLogo}
-                alt="كفاءة"
-                className="h-[26rem] md:h-[34rem] lg:h-[40rem] w-auto object-contain"
-                loading="eager"
-                style={{
-                  transform: "perspective(1100px) rotateX(5deg)",
-                  transformStyle: "preserve-3d",
-                }}
-              />
-            </div>
+            />
           </div>
 
           {/* LEFT (RTL second): LARGER Login card + feature pills below */}
