@@ -147,7 +147,7 @@ export default function AdminHub() {
   };
 
   const copyOrgLink = async (slug: string) => {
-    const url = `${window.location.origin}/j/${slug}`;
+    const url = `${window.location.origin}/${slug}`;
     await navigator.clipboard.writeText(url);
     setCopiedSlug(slug);
     toast.success("تم نسخ رابط الجمعية");
@@ -267,7 +267,7 @@ export default function AdminHub() {
                       className="w-full mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-muted hover:bg-muted/80 text-xs text-muted-foreground transition-colors"
                     >
                       <Link2 className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span className="truncate flex-1 text-right" dir="ltr">/j/{o.slug}</span>
+                      <span className="truncate flex-1 text-right" dir="ltr">/{o.slug}</span>
                       {copiedSlug === o.slug ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   )}
