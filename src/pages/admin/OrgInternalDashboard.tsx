@@ -489,6 +489,16 @@ export default function OrgInternalDashboard({
           })()}
         </TabsList>}
 
+        {/* شرح تفصيلي للتبويب النشط */}
+        {TAB_GUIDES[activeTab] && (
+          <div className={standaloneTab ? "mt-0 mb-4" : "mt-4"}>
+            <PageGuide
+              description={TAB_GUIDES[activeTab].description}
+              features={TAB_GUIDES[activeTab].features}
+            />
+          </div>
+        )}
+
         {/* OVERVIEW */}
         <TabsContent value="overview" className={standaloneTab ? "mt-0 space-y-4" : "mt-6 space-y-4"} dir="rtl">
           {standaloneTab && (
