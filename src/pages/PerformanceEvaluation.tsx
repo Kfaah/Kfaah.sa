@@ -340,7 +340,7 @@ export default function PerformanceEvaluation({ embedded = false }: PerformanceE
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout embedded={embedded}>
       <div className="space-y-6" dir="rtl">
         <PageHeader
           icon={<Award className="w-6 h-6" />}
