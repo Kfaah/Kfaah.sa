@@ -33,6 +33,14 @@ export function AssistantFab() {
         setShow(false);
         return;
       }
+      // Hide for demo viewers — assistant disabled in demo mode
+      const { data: isDemo } = await supabase.rpc("is_demo_user", {
+        _user_id: user.id,
+      });
+      if (isDemo) {
+        if (!cancelled) setShow(false);
+        return;
+      }
       // Only employees (non-admins) — keep it personal
       const { data: isAdmin } = await supabase.rpc("has_role", {
         _user_id: user.id,
