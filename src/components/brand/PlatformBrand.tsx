@@ -1,20 +1,84 @@
-import kafaaLogoPro from "@/assets/kafaa-logo-pro-v2.png";
+import type { SVGProps } from "react";
 
-const kafaaLogo = kafaaLogoPro;
+const kafaaLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="86" fill="transparent"/><path d="M151 206c33-50 82-80 140-80 42 0 80 16 108 43" fill="none" stroke="hsl(213 58% 16%)" stroke-width="22" stroke-linecap="round"/><path d="M128 239l73 74 178-180" fill="none" stroke="hsl(182 77% 45%)" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/><path d="M133 239l68 69 173-175" fill="none" stroke="hsl(182 77% 45%)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity=".28"/><path d="M168 182h54v117" fill="none" stroke="hsl(213 58% 16%)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M222 238l70-75" fill="none" stroke="hsl(213 58% 16%)" stroke-width="24" stroke-linecap="round"/><text x="256" y="402" text-anchor="middle" font-family="Cairo, Tahoma, Arial, sans-serif" font-size="72" font-weight="800" fill="hsl(213 58% 16%)">كفاءة</text><text x="256" y="448" text-anchor="middle" font-family="Avenir Next, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="3" fill="hsl(182 77% 36%)">KFAAH</text></svg>`;
 
-type KafaaLogoArtworkProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "alt">;
+const kafaaLogo = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(kafaaLogoSvg)}`;
+
+type KafaaLogoArtworkProps = SVGProps<SVGSVGElement>;
 
 export function KafaaLogoArtwork({ className = "", style, ...props }: KafaaLogoArtworkProps) {
   return (
-    <img
-      src={kafaaLogoPro}
-      alt="كفاءة kfaah"
+    <svg
+      viewBox="0 0 512 512"
+      role="img"
+      aria-label="شعار كفاءة KFAAH"
       className={className}
       style={style}
-      width={1024}
-      height={1024}
       {...props}
-    />
+    >
+      <path
+        d="M151 206c33-50 82-80 140-80 42 0 80 16 108 43"
+        fill="none"
+        stroke="hsl(213 58% 16%)"
+        strokeWidth="22"
+        strokeLinecap="round"
+      />
+      <path
+        d="M128 239l73 74 178-180"
+        fill="none"
+        stroke="hsl(182 77% 45%)"
+        strokeWidth="38"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M133 239l68 69 173-175"
+        fill="none"
+        stroke="hsl(182 77% 45%)"
+        strokeWidth="18"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.28"
+      />
+      <path
+        d="M168 182h54v117"
+        fill="none"
+        stroke="hsl(213 58% 16%)"
+        strokeWidth="24"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M222 238l70-75"
+        fill="none"
+        stroke="hsl(213 58% 16%)"
+        strokeWidth="24"
+        strokeLinecap="round"
+      />
+      <text
+        x="256"
+        y="402"
+        textAnchor="middle"
+        fontFamily="Cairo, Tahoma, Arial, sans-serif"
+        fontSize="72"
+        fontWeight="800"
+        fill="hsl(213 58% 16%)"
+      >
+        كفاءة
+      </text>
+      <text
+        x="256"
+        y="448"
+        textAnchor="middle"
+        fontFamily="Avenir Next, Arial, sans-serif"
+        fontSize="34"
+        fontWeight="700"
+        letterSpacing="3"
+        fill="hsl(182 77% 36%)"
+      >
+        KFAAH
+      </text>
+    </svg>
   );
 }
 
