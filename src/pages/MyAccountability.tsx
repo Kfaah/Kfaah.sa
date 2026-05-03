@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageGuide } from "@/components/layout/PageGuide";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,6 +122,16 @@ export default function MyAccountability() {
           icon={<ShieldAlert className="w-6 h-6" />}
           title="مساءلاتي"
           subtitle="الأسئلة المُولّدة من تحليل الجمعية والموجَّهة إليك. أجب وارفع رابط الإثبات — يفحص النظام صحة الإثبات تلقائيًا."
+        />
+        <PageGuide
+          description="هذه الصفحة تعرض جميع المساءلات الموجَّهة إليك من نظام التحليل الذكي. كل مساءلة تطلب منك إجابة + رابط إثبات (ملف، مستند، تقرير)؛ ويفحص النظام تلقائياً صحة الإثبات ويصنّف المساءلة (مفتوحة، قيد المراجعة، معتمدة، مرفوضة)."
+          features={[
+            "استلام المساءلات المُولّدة من التحليل الذكي",
+            "إرفاق إجابة ورابط إثبات لكل مساءلة",
+            "فحص آلي لصحة الإثبات بالذكاء الاصطناعي",
+            "متابعة حالة كل مساءلة بشكل مرئي",
+            "أرشيف كامل للمساءلات السابقة",
+          ]}
         />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
