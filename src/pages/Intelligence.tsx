@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageGuide } from "@/components/layout/PageGuide";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +134,16 @@ const Intelligence = () => {
               {running ? "جاري التحليل..." : "تشغيل تحليل ذكي الآن"}
             </Button>
           }
+        />
+        <PageGuide
+          description="هذه الصفحة هي عقل النظام الذكي. تقوم بفحص جميع بيانات الجمعية (الموظفون، الخطط، المهام، التقارير، المساءلات) باستخدام نماذج الذكاء الاصطناعي، ثم تستخرج رؤى عميقة، تحدد نقاط القوة والضعف، وتقترح مهام وأفكار تطويرية قابلة للتنفيذ مباشرة."
+          features={[
+            "تحليل شامل لكافة بيانات الجمعية بالذكاء الاصطناعي",
+            "استخراج رؤى عملية حول الأداء والمخاطر",
+            "توليد مهام ذكية مرتبطة بالتوصيات",
+            "اقتراح أفكار ابتكارية لتطوير الخدمات",
+            "إمكانية إعادة التحليل في أي وقت",
+          ]}
         />
 
         {/* آخر تشغيل */}
