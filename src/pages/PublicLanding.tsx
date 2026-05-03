@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { PlatformBrand, kafaaLogo } from "@/components/brand/PlatformBrand";
+import kafaaLogo from "@/assets/kafaa-logo-transparent.png";
 
 const normalizeDigits = (value: string, trim = false) => {
   const input = trim ? value.trim() : value;
@@ -76,134 +76,174 @@ export default function PublicLanding() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen relative overflow-hidden flex flex-col"
       dir="rtl"
       style={{
         background:
-          "linear-gradient(135deg, hsl(210 65% 18%) 0%, hsl(200 60% 14%) 55%, hsl(195 70% 10%) 100%)",
+          "radial-gradient(ellipse at 30% 20%, hsl(195 80% 22%) 0%, hsl(210 70% 14%) 45%, hsl(220 75% 8%) 100%)",
       }}
     >
-      {/* Background pattern */}
+      {/* Animated aurora orbs */}
+      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-cyan-400/20 blur-[120px] pointer-events-none animate-pulse-subtle" />
+      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-emerald-500/15 blur-[120px] pointer-events-none animate-pulse-subtle" style={{ animationDelay: "1s" }} />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[100px] pointer-events-none" />
+
+      {/* Subtle grid pattern */}
       <div
-        className="absolute inset-0 opacity-[0.06] pointer-events-none"
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
         }}
       />
 
-      {/* Soft glow orbs to add depth */}
-      <div className="absolute top-10 right-10 w-96 h-96 rounded-full bg-cyan-400/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 left-10 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
-
-      <div className="relative z-10 flex-1 flex items-center justify-center p-4 pt-32 md:pt-40">
-        {/* Platform brand mark — large, centered, no frame (3D floating) */}
-        <div
-          className="absolute top-4 left-1/2 -translate-x-1/2"
-          style={{
-            filter:
-              "drop-shadow(0 20px 40px rgba(34,211,238,0.35)) drop-shadow(0 8px 16px rgba(0,0,0,0.4))",
-          }}
-        >
-          <img
-            src={kafaaLogo}
-            alt="كفاءة"
-            className="h-32 md:h-44 w-auto object-contain"
-            style={{ mixBlendMode: "screen" }}
-            loading="eager"
+      {/* Floating particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 rounded-full bg-cyan-300/40"
+            style={{
+              top: `${(i * 53) % 100}%`,
+              left: `${(i * 37) % 100}%`,
+              animation: `pulse-subtle ${3 + (i % 4)}s ease-in-out infinite`,
+              animationDelay: `${i * 0.2}s`,
+            }}
           />
-        </div>
-
-        <div className="w-full max-w-5xl grid md:grid-cols-2 gap-10 items-center">
-          {/* Brand side */}
-          <div className="text-white space-y-6 text-center md:text-right md:order-1 order-2">
-            <h1 className="text-2xl md:text-3xl font-bold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
-              منصة <span className="text-cyan-300">كفاءة</span>
-              <span className="block text-base md:text-lg text-cyan-300 mt-2 font-semibold">لإدارة الأداء المؤسسي للجمعيات الخيرية</span>
-            </h1>
-            <p className="text-sm md:text-base text-slate-100/90 leading-relaxed max-w-md mx-auto md:mx-0 md:mr-0 md:ml-auto" style={{ textAlign: "right" }}>
-              منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center md:justify-end pt-2">
-              <div className="px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-sm text-white backdrop-blur-sm">
-                إدارة متعددة الجمعيات
-              </div>
-              <div className="px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-sm text-white backdrop-blur-sm">
-                تقارير لحظية
-              </div>
-              <div className="px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-sm text-white backdrop-blur-sm">
-                واجهة عربية كاملة
-              </div>
-            </div>
-          </div>
-
-          {/* Login card */}
-          <Card className="border-0 shadow-2xl backdrop-blur-sm bg-white md:order-2 order-1">
-            <CardHeader className="text-center space-y-2">
-              <div className="inline-flex mx-auto items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent">
-                <Icon className="text-white text-2xl">♢</Icon>
-              </div>
-              <CardTitle className="text-2xl text-slate-900">دخول مدير النظام</CardTitle>
-              <CardDescription className="text-slate-600">
-                هذه الواجهة مخصصة لمدير المنصة. لدخول جمعيتك، استخدم الرابط الخاص بها.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="flex items-center gap-2 justify-end text-slate-700">
-                    <Icon className="text-base">☉</Icon> اسم المستخدم / رقم الهوية
-                  </Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                    placeholder="أدخل رقم الهوية"
-                    className="h-11 text-right"
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="flex items-center gap-2 justify-end text-slate-700">
-                    <Icon className="text-base">⌾</Icon> كلمة المرور
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      placeholder="••••••••"
-                      className="h-11 pe-10"
-                      dir="ltr"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showPassword ? "◉" : "◎"}
-                    </button>
-                  </div>
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full h-12 gap-2 bg-gradient-to-l from-accent to-primary hover:opacity-90"
-                  disabled={loading}
-                >
-                  {loading ? <span className="animate-spin">⏳</span> : <Icon className="text-lg">↤</Icon>}
-                  تسجيل الدخول
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+        ))}
       </div>
 
-      <footer className="relative z-10 text-center text-slate-200/80 text-sm py-4">
-        © {new Date().getFullYear()} نظام إدارة التسويق الإلكتروني للجمعيات
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-10 gap-10">
+        {/* Hero logo — massive, 3D floating, no frame */}
+        <div className="relative flex flex-col items-center animate-fade-in">
+          {/* Glow halo behind logo */}
+          <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
+            <div className="w-[420px] h-[420px] rounded-full bg-gradient-to-br from-cyan-400/30 via-emerald-400/20 to-transparent blur-3xl" />
+          </div>
+
+          {/* Logo with 3D effect */}
+          <div
+            className="relative"
+            style={{
+              filter:
+                "drop-shadow(0 25px 50px rgba(34,211,238,0.45)) drop-shadow(0 10px 20px rgba(0,0,0,0.5)) drop-shadow(0 0 30px rgba(16,185,129,0.3))",
+              animation: "pulse-subtle 4s ease-in-out infinite",
+            }}
+          >
+            <img
+              src={kafaaLogo}
+              alt="كفاءة"
+              className="h-64 md:h-80 lg:h-96 w-auto object-contain"
+              loading="eager"
+              style={{
+                transform: "perspective(800px) rotateX(8deg)",
+                transformStyle: "preserve-3d",
+              }}
+            />
+          </div>
+
+          {/* Reflective floor */}
+          <div
+            className="mt-2 h-32 w-[280px] md:w-[360px] opacity-30 overflow-hidden pointer-events-none"
+            style={{
+              transform: "scaleY(-1)",
+              maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 70%)",
+              WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 70%)",
+            }}
+          >
+            <img
+              src={kafaaLogo}
+              alt=""
+              aria-hidden
+              className="h-64 md:h-80 lg:h-96 w-auto object-contain mx-auto"
+              style={{ filter: "blur(1px)" }}
+            />
+          </div>
+
+          {/* Tagline pills */}
+          <div className="flex flex-wrap gap-2 justify-center mt-4 -translate-y-16">
+            {["إدارة متعددة الجمعيات", "تقارير لحظية", "ذكاء اصطناعي"].map((t) => (
+              <span
+                key={t}
+                className="px-4 py-1.5 rounded-full bg-white/10 border border-cyan-300/30 text-xs md:text-sm text-cyan-100 backdrop-blur-md shadow-lg"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Glassmorphism login card */}
+        <Card
+          className="relative w-full max-w-md border border-white/15 shadow-2xl bg-white/[0.07] backdrop-blur-2xl animate-scale-in -mt-8"
+          style={{
+            boxShadow:
+              "0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)",
+          }}
+        >
+          <CardHeader className="text-center space-y-2 pb-4">
+            <CardTitle className="text-xl text-white font-bold">دخول مدير النظام</CardTitle>
+            <CardDescription className="text-slate-300 text-xs">
+              هذه الواجهة مخصصة لمدير المنصة
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="flex items-center gap-2 justify-end text-slate-200 text-sm">
+                  اسم المستخدم / رقم الهوية
+                </Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  placeholder="أدخل رقم الهوية"
+                  className="h-11 text-right bg-white/10 border-white/20 text-white placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="flex items-center gap-2 justify-end text-slate-200 text-sm">
+                  كلمة المرور
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    placeholder="••••••••"
+                    className="h-11 pe-10 bg-white/10 border-white/20 text-white placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                    dir="ltr"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white"
+                  >
+                    {showPassword ? "◉" : "◎"}
+                  </button>
+                </div>
+              </div>
+              <Button
+                type="submit"
+                className="w-full h-12 gap-2 bg-gradient-to-l from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-bold shadow-lg shadow-cyan-500/30 border-0"
+                disabled={loading}
+              >
+                {loading ? <span className="animate-spin">⏳</span> : <Icon className="text-lg">↤</Icon>}
+                تسجيل الدخول
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+
+      <footer className="relative z-10 text-center text-slate-300/70 text-xs py-4">
+        © {new Date().getFullYear()} منصة كفاءة — إدارة الأداء المؤسسي للجمعيات
       </footer>
     </div>
   );
