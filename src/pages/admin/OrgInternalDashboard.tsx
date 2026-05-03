@@ -529,7 +529,7 @@ export default function OrgInternalDashboard({
               actions={
                 <Button
                   onClick={runDeepAnalysis}
-                  disabled={analyzing}
+                  disabled={analyzing || isDemo}
                   size="lg"
                   className="gap-2 bg-white shadow-md hover:bg-white/90"
                   style={{ color: ORG_PRIMARY }}
