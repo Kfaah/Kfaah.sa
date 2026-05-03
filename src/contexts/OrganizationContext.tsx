@@ -100,6 +100,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         routeSlug = segments[0];
       }
       const slugMatch = routeSlug ? list.find((o) => o.slug === routeSlug) : null;
+      if (routeSlug && !slugMatch && !superAdmin) {
+        localStorage.removeItem(STORAGE_KEY);
+        setCurrentOrg(null);
+        return;
+      }
       const stored = localStorage.getItem(STORAGE_KEY);
       const preferred = stored ? list.find((o) => o.id === stored) : null;
       const nextOrg = slugMatch || preferred || list[0] || null;
@@ -140,6 +145,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     if (!routeSlug) return;
 
     const slugMatch = availableOrgs.find((org) => org.slug === routeSlug);
+    if (!slugMatch && !isSuperAdmin) {
+      localStorage.removeItem(STORAGE_KEY);
+      setCurrentOrg(null);
+      return;
+    }
     if (!slugMatch || slugMatch.id === currentOrg?.id) return;
 
     localStorage.setItem(STORAGE_KEY, slugMatch.id);

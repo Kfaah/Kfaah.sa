@@ -133,12 +133,7 @@ export default function OrgAuth() {
         if (userOrgId === org.id) {
           navigate(`/${slug}/app`, { replace: true });
         } else {
-          const { data: ownOrg } = await supabase
-            .from("organizations")
-            .select("slug")
-            .eq("id", userOrgId as string)
-            .maybeSingle();
-          navigate(`/${ownOrg?.slug || ""}/app`, { replace: true });
+          await supabase.auth.signOut();
         }
       }
     })();

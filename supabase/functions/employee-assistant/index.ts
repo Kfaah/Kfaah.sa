@@ -13,10 +13,10 @@ serve(async (req) => {
   }
 
   try {
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "ANTHROPIC_API_KEY is not configured" }),
+        JSON.stringify({ error: "LOVABLE_API_KEY is not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -45,11 +45,7 @@ serve(async (req) => {
       });
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // Routing مبسّط: استخدام Claude مباشرة عبر Anthropic API
-    //   • Sonnet 4.5  → الافتراضي (ممتاز للبرمجة والتحليل والعربية)
-    //   • Haiku       → للمحادثات القصيرة جداً (توفير التكلفة)
-    // ──────────────────────────────────────────────────────────────
+    // استخدام بوابة الذكاء المدمجة لضمان الاتصال بدون مفاتيح خارجية.
     const lastUserMsg = [...messages]
       .reverse()
       .find((m: any) => m?.role === "user")?.content ?? "";
@@ -58,8 +54,8 @@ serve(async (req) => {
     // استخدم Haiku للرسائل القصيرة جداً (تحية/سؤال بسيط) لتوفير التكلفة
     const isShortChat = text.length < 60;
     const selectedModel = isShortChat
-      ? "claude-haiku-4-5"
-      : "claude-sonnet-4-5";
+      ? "google/gemini-2.5-flash-lite"
+      : "google/gemini-2.5-flash";
     const routedReason = isShortChat ? "short_chat" : "default_sonnet";
 
     // Pull a small employee context for the system prompt
@@ -93,114 +89,51 @@ serve(async (req) => {
       });
     } catch (_) { /* ignore */ }
 
-    // تحويل رسائل OpenAI-style إلى Anthropic-style
-    // (Anthropic لا يقبل دور system داخل messages، يجب فصله)
-    const anthropicMessages = messages
+    const chatMessages = messages
       .filter((m: any) => m?.role === "user" || m?.role === "assistant")
       .map((m: any) => ({
         role: m.role,
         content: typeof m.content === "string" ? m.content : String(m.content ?? ""),
       }));
 
-    const anthropicResp = await fetch("https://api.anthropic.com/v1/messages", {
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: selectedModel,
-        max_tokens: 2048,
-        system: systemPrompt,
-        messages: anthropicMessages,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...chatMessages,
+        ],
         stream: true,
       }),
     });
 
-    if (!anthropicResp.ok) {
-      if (anthropicResp.status === 429) {
+    if (!aiResp.ok) {
+      if (aiResp.status === 429) {
         return new Response(
           JSON.stringify({ error: "تم تجاوز حد الاستخدام، حاول بعد دقيقة." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      if (anthropicResp.status === 401) {
+      if (aiResp.status === 402 || aiResp.status === 403) {
         return new Response(
-          JSON.stringify({ error: "مفتاح Anthropic غير صحيح أو منتهي." }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      if (anthropicResp.status === 402 || anthropicResp.status === 403) {
-        return new Response(
-          JSON.stringify({ error: "نفذ رصيد Anthropic، يرجى الشحن." }),
+          JSON.stringify({ error: "نفذ رصيد الذكاء الاصطناعي." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      const t = await anthropicResp.text();
-      console.error("Anthropic error:", anthropicResp.status, t);
-      return new Response(JSON.stringify({ error: "Anthropic API error" }), {
+      const t = await aiResp.text();
+      console.error("AI gateway error:", aiResp.status, t);
+      return new Response(JSON.stringify({ error: "AI gateway error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // تحويل Anthropic SSE إلى OpenAI-compatible SSE حتى يعمل الـ frontend الحالي بدون تغيير
-    const stream = new ReadableStream({
-      async start(controller) {
-        const reader = anthropicResp.body!.getReader();
-        const decoder = new TextDecoder();
-        const encoder = new TextEncoder();
-        let buffer = "";
-
-        const emit = (delta: string) => {
-          const chunk = {
-            choices: [{ delta: { content: delta }, index: 0, finish_reason: null }],
-          };
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
-        };
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-
-            let idx;
-            while ((idx = buffer.indexOf("\n")) !== -1) {
-              let line = buffer.slice(0, idx);
-              buffer = buffer.slice(idx + 1);
-              if (line.endsWith("\r")) line = line.slice(0, -1);
-              if (!line.startsWith("data: ")) continue;
-
-              const payload = line.slice(6).trim();
-              if (!payload) continue;
-
-              try {
-                const evt = JSON.parse(payload);
-                if (
-                  evt.type === "content_block_delta" &&
-                  evt.delta?.type === "text_delta" &&
-                  typeof evt.delta?.text === "string"
-                ) {
-                  emit(evt.delta.text);
-                } else if (evt.type === "message_stop") {
-                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                }
-              } catch (_) {
-                /* skip malformed chunk */
-              }
-            }
-          }
-          controller.close();
-        } catch (err) {
-          console.error("stream error:", err);
-          controller.error(err);
-        }
-      },
-    });
-
-    return new Response(stream, {
+    return new Response(aiResp.body, {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",

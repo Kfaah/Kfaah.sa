@@ -212,7 +212,7 @@ export default function MyAssistant() {
       if (!resp.ok) {
         if (resp.status === 429) toast.error("تم تجاوز حد الاستخدام، حاول بعد دقيقة.");
         else if (resp.status === 402) toast.error("نفذ رصيد الذكاء الاصطناعي.");
-        else toast.error("تعذّر الاتصال بالمساعد.");
+        else toast.error("المساعد الذكي غير متصل حالياً، يرجى المحاولة لاحقاً.");
         setStreaming(false);
         return;
       }
@@ -254,7 +254,7 @@ export default function MyAssistant() {
       );
     } catch (e) {
       console.error(e);
-      toast.error("حدث خطأ غير متوقع.");
+      toast.error("المساعد الذكي غير متصل حالياً، يرجى المحاولة لاحقاً.");
     } finally {
       setStreaming(false);
     }
@@ -271,26 +271,24 @@ export default function MyAssistant() {
     <DashboardLayout>
       <div className="p-6 space-y-6 max-w-7xl mx-auto" dir="rtl">
         {/* Header */}
-        <div className="rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 text-white p-6 shadow-2xl shadow-fuchsia-500/30 relative overflow-hidden">
-          <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-10 -right-10 w-48 h-48 rounded-full bg-pink-300/20 blur-3xl" />
+        <div className="rounded-3xl bg-primary text-primary-foreground p-6 shadow-2xl shadow-primary/20 relative overflow-hidden">
           <div className="relative flex items-start justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/15 ring-2 ring-white/40 flex items-center justify-center backdrop-blur">
+              <div className="w-14 h-14 rounded-2xl bg-primary-foreground/15 ring-2 ring-primary-foreground/40 flex items-center justify-center backdrop-blur">
                 <Sparkles className="h-7 w-7" />
               </div>
               <div>
                 <h1 className="text-3xl font-extrabold">المساعد الذكي</h1>
-                <p className="text-white/85 mt-1">
+                <p className="text-primary-foreground/85 mt-1">
                   مدعوم بـ Gemini & GPT — يحلّل أداءك ويدعمك في كل مهمة.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-xl px-3 py-1.5 ring-1 ring-white/30">
-              <span className="text-xs text-white/85">الفترة</span>
+            <div className="flex items-center gap-2 bg-primary-foreground/10 backdrop-blur rounded-xl px-3 py-1.5 ring-1 ring-primary-foreground/30">
+              <span className="text-xs text-primary-foreground/85">الفترة</span>
               <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-                <SelectTrigger className="w-32 h-8 bg-white/20 border-white/30 text-white">
+                <SelectTrigger className="w-32 h-8 bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -339,10 +337,10 @@ export default function MyAssistant() {
         </div>
 
         {/* Chat */}
-        <Card className="border-2 border-fuchsia-100 dark:border-fuchsia-900/30 shadow-xl">
+        <Card className="border-2 border-primary/15 shadow-xl">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-fuchsia-600" />
+              <Bot className="h-5 w-5 text-primary" />
               محادثة مع المساعد
             </CardTitle>
             <CardDescription>اطلب اقتراحات أداء، تنظيم مهام، أو طرق ذكية لاستخدام AI.</CardDescription>
@@ -365,7 +363,7 @@ export default function MyAssistant() {
                       "h-9 w-9 shrink-0 rounded-full flex items-center justify-center",
                       m.role === "user"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-gradient-to-br from-violet-500 to-pink-500 text-white",
+                        : "bg-accent text-accent-foreground",
                     )}
                   >
                     {m.role === "user" ? <UserIcon className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
@@ -405,7 +403,7 @@ export default function MyAssistant() {
               <Button
                 onClick={send}
                 disabled={!input.trim() || streaming}
-                className="bg-gradient-to-br from-violet-600 to-pink-600 hover:opacity-90 h-[60px] w-[60px] p-0"
+                className="h-[60px] w-[60px] p-0"
                 aria-label="إرسال"
               >
                 {streaming ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
