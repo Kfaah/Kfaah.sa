@@ -303,21 +303,18 @@ export default function OrgAuth() {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-7xl grid md:grid-cols-[1.3fr_minmax(220px,1fr)_1fr] gap-4 lg:gap-6 items-center justify-items-center">
-          {/* RIGHT (RTL first): MASSIVE Kafa'a platform logo */}
-          <div className="relative flex items-center justify-end animate-fade-in order-1 min-h-[500px] md:min-h-[700px] w-full">
+        <div className="w-full max-w-7xl grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
+          {/* RIGHT (RTL first): Kafa'a platform logo + tagline + links */}
+          <div className="order-1 flex flex-col items-center text-center gap-6 animate-fade-in">
             <KafaaLogoArtwork
-              className="relative h-[26rem] md:h-[36rem] lg:h-[46rem] w-auto"
+              className="h-[22rem] md:h-[30rem] lg:h-[36rem] w-auto"
               style={{
                 filter:
                   "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
               }}
             />
-          </div>
 
-          {/* CENTER: tagline + about/support links */}
-          <div className="order-2 flex flex-col items-center text-center gap-5 animate-fade-in w-full max-w-xs">
-            <div className="space-y-3">
+            <div className="space-y-3 max-w-md">
               <div className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-300/30 text-cyan-200 text-[11px] font-semibold tracking-wide">
                 منصة موحدة
               </div>
@@ -327,7 +324,6 @@ export default function OrgAuth() {
               </p>
             </div>
 
-            {/* About & Support links */}
             <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-sm">
               <a
                 href="/about"
@@ -347,8 +343,8 @@ export default function OrgAuth() {
             </div>
           </div>
 
-          {/* LEFT (RTL third): Org logo + login card */}
-          <div className="flex flex-col gap-5 order-3 animate-scale-in w-full max-w-md mx-auto">
+          {/* LEFT (RTL second): Org logo + login card */}
+          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md mx-auto">
 
         {/* Org branding header (above login card) */}
         <div className="text-center">
