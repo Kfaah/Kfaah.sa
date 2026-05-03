@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import kafaaLogo from "@/assets/kafaa-logo-transparent.png";
+import { kafaaLogo } from "@/components/brand/PlatformBrand";
 
 const normalizeDigits = (value: string, trim = false) => {
   const input = trim ? value.trim() : value;
