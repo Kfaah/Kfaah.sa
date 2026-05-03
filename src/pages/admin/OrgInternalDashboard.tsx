@@ -681,13 +681,9 @@ export default function OrgInternalDashboard({
           className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
           dir="rtl"
         >
-          <EmbeddedOrgPage
-            slug={org?.slug}
-            path="/admin/reports"
-            title="التقارير"
-            embedSlug={false}
-            isActive={visitedTabs.has("reports")}
-          />
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            {visitedTabs.has("reports") ? <AdminReports embedded /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+          </Suspense>
         </TabsContent>
         <TabsContent
           value="innovation"
@@ -695,13 +691,9 @@ export default function OrgInternalDashboard({
           className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
           dir="rtl"
         >
-          <EmbeddedOrgPage
-            slug={org?.slug}
-            path="/admin/innovation"
-            title="الابتكار والتحديث"
-            embedSlug={false}
-            isActive={visitedTabs.has("innovation")}
-          />
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            {visitedTabs.has("innovation") ? <AdminInnovation embedded /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+          </Suspense>
         </TabsContent>
         <TabsContent value="uploads" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
@@ -712,13 +704,9 @@ export default function OrgInternalDashboard({
           className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
           dir="rtl"
         >
-          <EmbeddedOrgPage
-            slug={org?.slug}
-            path="/admin/action-plans"
-            title="الخطط من التوصيات"
-            embedSlug={false}
-            isActive={visitedTabs.has("operational-plans")}
-          />
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            {visitedTabs.has("operational-plans") ? <AdminActionPlans embedded /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+          </Suspense>
         </TabsContent>
         <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
