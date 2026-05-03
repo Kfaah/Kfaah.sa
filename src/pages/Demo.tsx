@@ -38,7 +38,10 @@ export default function Demo() {
 
         if (!cancelled) {
           setStatus("ready");
-          navigate(`/demo/internal-dashboard`, { replace: true });
+          // امسح علامة الترحيب لضمان عرض شاشة الترحيب دائماً عند الدخول من /demo
+          try { sessionStorage.removeItem("demo_welcome_seen"); } catch {}
+          // وجّه إلى الصفحة الرئيسية ليظهر الترحيب ثم يختار الزائر من القائمة
+          navigate(`/`, { replace: true });
         }
       } catch (e) {
         console.error("Demo init failed", e);
