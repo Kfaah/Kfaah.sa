@@ -1,8 +1,6 @@
-import type { SVGProps } from "react";
 import kafaaLogoPro from "@/assets/kafaa-logo-pro.png";
 
-const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 760"><defs><filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="white" flood-opacity=".92"/><feDropShadow dx="0" dy="0" stdDeviation="18" flood-color="white" flood-opacity=".5"/></filter></defs><g filter="url(#glow)"><path fill="hsl(210 58% 14%)" d="M170 86h104v252L491 86h127L380 359l255 315H499L274 395v279H170z"/><path fill="hsl(178 58% 47%)" d="M359 395 515 225l65 65-156 170 222 176-76 77z"/><circle cx="681" cy="161" r="22" fill="hsl(178 58% 47%)"/><circle cx="736" cy="236" r="16" fill="hsl(178 58% 47%)"/><circle cx="699" cy="307" r="11" fill="hsl(178 58% 47%)"/><path fill="hsl(178 58% 47%)" d="m756 110 14 29 32 5-23 23 6 32-29-15-29 15 6-32-23-23 32-5z"/><text x="505" y="570" text-anchor="middle" direction="rtl" unicode-bidi="bidi-override" font-family="Tajawal, Arial, sans-serif" font-weight="800" font-size="130" fill="hsl(210 58% 14%)">كفاءة</text><text x="510" y="651" text-anchor="middle" font-family="Tajawal, Arial, sans-serif" font-weight="700" font-size="78" letter-spacing="7" fill="hsl(178 58% 47%)">kfaah</text><path d="M249 690h521" stroke="hsl(178 58% 47%)" stroke-width="10" stroke-linecap="round"/></g></svg>`;
-const kafaaLogo = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(logoSvg)}`;
+const kafaaLogo = kafaaLogoPro;
 
 type KafaaLogoArtworkProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "alt">;
 
