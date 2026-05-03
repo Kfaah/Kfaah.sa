@@ -543,10 +543,20 @@ export default function OrgAuth() {
 
         {/* Copyright */}
         <div
-          className="mt-4 text-center text-xs font-medium px-4 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 shadow-sm w-fit mx-auto"
+          className="mt-4 mx-auto w-fit max-w-[92%] text-center text-[11px] leading-relaxed font-medium px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 shadow-sm"
           style={{ color: `hsl(${primaryHsl})` }}
         >
-          © {new Date().getFullYear()} جميع الحقوق محفوظة لـ{org.name}
+          © {new Date().getFullYear()} جميع الحقوق محفوظة لمنصة كفاءة لإدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي
+        </div>
+
+        {/* About platform link */}
+        <div className="mt-3 text-center">
+          <a
+            href="/about"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+          >
+            عن المنصة
+          </a>
         </div>
 
       </div>
