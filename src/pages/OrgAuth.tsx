@@ -580,42 +580,15 @@ export default function OrgAuth() {
         </Card>
         )}
 
-        {/* Copyright */}
-        <div
-          className="mt-2 mx-auto w-fit max-w-[92%] text-center text-[11px] leading-relaxed font-medium px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-sm text-slate-200"
-        >
-          © {new Date().getFullYear()} جميع الحقوق محفوظة لمنصة كفاءة لإدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي
-        </div>
-
-        {/* About & Support links */}
-        <div className="mx-auto w-fit">
-          <div
-            className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-sm"
-          >
-            <a
-              href="/about"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-slate-100 hover:bg-white/10 transition-colors"
-            >
-              <Info className="w-3.5 h-3.5" />
-              عن المنصة
-            </a>
-            <span
-              className="w-px h-4 bg-white/30"
-              aria-hidden="true"
-            />
-            <a
-              href="/support"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-slate-100 hover:bg-white/10 transition-colors"
-            >
-              <LifeBuoy className="w-3.5 h-3.5" />
-              الدعم الفني
-            </a>
-          </div>
-        </div>
-
           </div>
         </div>
       </main>
+
+      <footer className="relative z-10 text-center py-4 px-4">
+        <p className="text-xs text-slate-300/80">
+          © {new Date().getFullYear()} جميع الحقوق محفوظة لمنصة <span className="font-bold text-cyan-300">كفاءة</span> لإدارة التسويق الإلكتروني للجمعيات
+        </p>
+      </footer>
     </div>
   );
 }
