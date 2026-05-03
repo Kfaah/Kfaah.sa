@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNumber } from "@/lib/utils";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
+import { useIsDemo } from "@/hooks/useIsDemo";
 
 const positiveMessages = [
   (name: string) => `أهلاً بك يا ${name}! يومك سعيد 🌟`,
@@ -46,7 +47,9 @@ interface AdminStats {
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [showWelcome, setShowWelcome] = useState(true);
+  const { isDemo, loading: demoLoading } = useIsDemo();
+  // شاشة الترحيب مخصّصة لجمعية النموذج التجريبي فقط — لا تظهر لبقية الجمعيات.
+  const [showWelcome, setShowWelcome] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
   const { user, previewAsEmployee, previewingEmployee } = useUser();
   const { user: authUser } = useAuth();
@@ -70,6 +73,8 @@ const Index = () => {
 
   // تتبع تغيير الصفحة لإخفاء/إظهار شاشة الترحيب
   useEffect(() => {
+    // غير مسموح بشاشة الترحيب إلا لمستخدمي الديمو
+    if (!isDemo) { setShowWelcome(false); return; }
     // إذا جاء من القائمة الجانبية، أخفي شاشة الترحيب
     if (location.state?.fromNavigation) {
       setShowWelcome(false);
@@ -77,7 +82,7 @@ const Index = () => {
       // إذا ضغط على الشعار أو دخل الموقع لأول مرة، أظهر شاشة الترحيب
       setShowWelcome(true);
     }
-  }, [location.state, location.key]);
+  }, [location.state, location.key, isDemo]);
 
   useEffect(() => {
     const dayOfYear = Math.floor(
