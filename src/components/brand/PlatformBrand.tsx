@@ -9,15 +9,15 @@ const logoStyle = {
   "--kafaa-logo-glow": "hsl(var(--kafaa-logo-glow))",
 } as CSSProperties;
 
-export function KafaaLogoArtwork({ className = "", ...props }: SVGProps<SVGSVGElement>) {
+export function KafaaLogoArtwork({ className = "", style, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg
       viewBox="0 0 900 760"
       role="img"
       aria-label="كفاءة kfaah"
       className={className}
-      style={{ ...logoStyle, ...props.style }}
       {...props}
+      style={{ ...logoStyle, ...style }}
     >
       <defs>
         <filter id="kafaa-white-edge-glow" x="-24%" y="-24%" width="148%" height="148%">
