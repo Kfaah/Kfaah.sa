@@ -337,10 +337,10 @@ export default function MyAssistant() {
         </div>
 
         {/* Chat */}
-        <Card className="border-2 border-fuchsia-100 dark:border-fuchsia-900/30 shadow-xl">
+        <Card className="border-2 border-primary/15 shadow-xl">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-fuchsia-600" />
+              <Bot className="h-5 w-5 text-primary" />
               محادثة مع المساعد
             </CardTitle>
             <CardDescription>اطلب اقتراحات أداء، تنظيم مهام، أو طرق ذكية لاستخدام AI.</CardDescription>
@@ -363,7 +363,7 @@ export default function MyAssistant() {
                       "h-9 w-9 shrink-0 rounded-full flex items-center justify-center",
                       m.role === "user"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-gradient-to-br from-violet-500 to-pink-500 text-white",
+                        : "bg-accent text-accent-foreground",
                     )}
                   >
                     {m.role === "user" ? <UserIcon className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
@@ -403,7 +403,7 @@ export default function MyAssistant() {
               <Button
                 onClick={send}
                 disabled={!input.trim() || streaming}
-                className="bg-gradient-to-br from-violet-600 to-pink-600 hover:opacity-90 h-[60px] w-[60px] p-0"
+                className="h-[60px] w-[60px] p-0"
                 aria-label="إرسال"
               >
                 {streaming ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
