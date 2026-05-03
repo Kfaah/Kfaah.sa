@@ -180,8 +180,8 @@ export default function PublicLanding() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   placeholder="أدخل رقم الهوية"
-                  className="h-13 text-right bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
-                  dir="rtl"
+                  className="h-13 text-left bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
+                  dir="ltr"
                 />
               </div>
               <div className="space-y-2">
@@ -197,8 +197,8 @@ export default function PublicLanding() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="h-13 pe-10 text-right bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
-                    dir="rtl"
+                    className="h-13 pe-10 text-left bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
+                    dir="ltr"
                   />
                   <button
                     type="button"
@@ -237,7 +237,14 @@ export default function PublicLanding() {
       </main>
 
       <footer className="relative z-10 text-center text-slate-200/80 text-sm py-4">
-        © {new Date().getFullYear()} منصة إدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي
+        <div className="max-w-3xl mx-auto px-4 space-y-2">
+          <p className="text-sm md:text-base text-slate-200/90 leading-relaxed">
+            <span className="text-cyan-300 font-bold">منصة إدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي</span> — منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
+          </p>
+          <p className="text-xs text-slate-400/70 pt-1">
+            © {new Date().getFullYear()} منصة كفاءة — جميع الحقوق محفوظة
+          </p>
+        </div>
       </footer>
     </div>
   );
