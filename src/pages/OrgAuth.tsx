@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone, CheckCircle2, Clock, Sparkles, Info, LifeBuoy } from "lucide-react";
+import { KafaaLogoArtwork } from "@/components/brand/PlatformBrand";
 
 interface OrgInfo {
   id: string;
@@ -280,31 +281,46 @@ export default function OrgAuth() {
 
   return (
     <div
-      className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
+      className="relative min-h-screen flex flex-col overflow-hidden"
       dir="rtl"
       style={{
         ...brandStyle,
-        background: `radial-gradient(circle at 20% 10%, hsl(${accentHsl} / 0.18), transparent 55%),
-                     radial-gradient(circle at 80% 90%, hsl(${primaryHsl} / 0.18), transparent 55%),
-                     linear-gradient(135deg, hsl(${primaryHsl} / 0.08) 0%, hsl(0 0% 98%) 50%, hsl(${accentHsl} / 0.08) 100%)`,
+        background:
+          "radial-gradient(ellipse at 30% 20%, hsl(195 80% 22%) 0%, hsl(210 70% 14%) 45%, hsl(220 75% 8%) 100%)",
       }}
     >
-      {/* Decorative ambient blobs */}
+      {/* Aurora orbs (matches PublicLanding) */}
+      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-cyan-400/20 blur-[120px] pointer-events-none animate-pulse-subtle" />
+      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-emerald-500/15 blur-[120px] pointer-events-none animate-pulse-subtle" style={{ animationDelay: "1s" }} />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[100px] pointer-events-none" />
       <div
-        className="pointer-events-none absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full blur-3xl opacity-40"
-        style={{ background: `hsl(${primaryHsl} / 0.45)` }}
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute -bottom-32 -left-32 w-[420px] h-[420px] rounded-full blur-3xl opacity-40"
-        style={{ background: `hsl(${accentHsl} / 0.45)` }}
-        aria-hidden="true"
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }}
       />
 
-      <div className="relative w-full max-w-md">
-        {/* Org branding with orbiting rings */}
-        <div className="text-center mb-7">
-          <div className="relative mx-auto w-44 h-44 mb-5">
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-7xl grid md:grid-cols-[1.5fr_1fr] gap-0 items-center justify-items-center">
+          {/* RIGHT (RTL first): MASSIVE Kafa'a platform logo */}
+          <div className="relative flex items-center justify-end animate-fade-in order-1 min-h-[500px] md:min-h-[700px] w-full md:-ml-16 lg:-ml-24">
+            <KafaaLogoArtwork
+              className="relative h-[28rem] md:h-[40rem] lg:h-[52rem] w-auto"
+              style={{
+                filter:
+                  "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
+              }}
+            />
+          </div>
+
+          {/* LEFT (RTL second): Org logo + login card */}
+          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-lg mx-auto">
+
+        {/* Org branding header (above login card) */}
+        <div className="text-center">
+          <div className="relative mx-auto w-32 h-32 mb-4">
             {/* Outer pulsing halo */}
             <div
               className="absolute inset-0 rounded-full org-halo-pulse"
@@ -354,7 +370,7 @@ export default function OrgAuth() {
 
             {/* Logo card center */}
             <div
-              className="absolute inset-6 rounded-full bg-white shadow-2xl flex items-center justify-center overflow-hidden"
+              className="absolute inset-4 rounded-full bg-white shadow-2xl flex items-center justify-center overflow-hidden"
               style={{
                 boxShadow: `0 20px 50px -10px hsl(${primaryHsl} / 0.45), 0 0 0 4px white, 0 0 0 5px hsl(${primaryHsl} / 0.25)`,
               }}
@@ -363,28 +379,27 @@ export default function OrgAuth() {
                 <img
                   src={org.logo_url}
                   alt={org.name}
-                  className="w-full h-full object-contain p-3"
+                  className="w-full h-full object-contain p-2"
                   loading="eager"
                 />
               ) : (
-                <Building2 className="w-12 h-12" style={{ color: `hsl(${primaryHsl})` }} />
+                <Building2 className="w-10 h-10" style={{ color: `hsl(${primaryHsl})` }} />
               )}
             </div>
           </div>
 
           <h1
-            className="text-3xl font-extrabold tracking-tight break-words leading-tight px-2"
-            style={{ color: `hsl(${primaryHsl})` }}
+            className="text-2xl md:text-3xl font-extrabold tracking-tight break-words leading-tight px-2 text-white"
           >
             {org.name}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1.5">منصة إدارة التسويق الإلكتروني بالذكاء الاصطناعي</p>
+          <p className="text-sm text-slate-300 mt-1.5">منصة إدارة التسويق الإلكتروني بالذكاء الاصطناعي</p>
 
           {/* Decorative divider */}
           <div className="flex items-center justify-center gap-2 mt-3" aria-hidden="true">
-            <span className="h-px w-10" style={{ background: `hsl(${primaryHsl} / 0.4)` }} />
+            <span className="h-px w-10 bg-white/30" />
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: `hsl(${accentHsl})` }} />
-            <span className="h-px w-10" style={{ background: `hsl(${primaryHsl} / 0.4)` }} />
+            <span className="h-px w-10 bg-white/30" />
           </div>
         </div>
 
@@ -535,34 +550,30 @@ export default function OrgAuth() {
 
         {/* Copyright */}
         <div
-          className="mt-4 mx-auto w-fit max-w-[92%] text-center text-[11px] leading-relaxed font-medium px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 shadow-sm"
-          style={{ color: `hsl(${primaryHsl})` }}
+          className="mt-2 mx-auto w-fit max-w-[92%] text-center text-[11px] leading-relaxed font-medium px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-sm text-slate-200"
         >
           © {new Date().getFullYear()} جميع الحقوق محفوظة لمنصة كفاءة لإدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي
         </div>
 
         {/* About & Support links */}
-        <div className="mt-3 mx-auto w-fit">
+        <div className="mx-auto w-fit">
           <div
-            className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-white/80 shadow-sm"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-sm"
           >
             <a
               href="/about"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-white transition-colors"
-              style={{ color: `hsl(${primaryHsl})` }}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-slate-100 hover:bg-white/10 transition-colors"
             >
               <Info className="w-3.5 h-3.5" />
               عن المنصة
             </a>
             <span
-              className="w-px h-4"
-              style={{ background: `hsl(${primaryHsl} / 0.25)` }}
+              className="w-px h-4 bg-white/30"
               aria-hidden="true"
             />
             <a
               href="/support"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-white transition-colors"
-              style={{ color: `hsl(${primaryHsl})` }}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-slate-100 hover:bg-white/10 transition-colors"
             >
               <LifeBuoy className="w-3.5 h-3.5" />
               الدعم الفني
@@ -570,7 +581,9 @@ export default function OrgAuth() {
           </div>
         </div>
 
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
