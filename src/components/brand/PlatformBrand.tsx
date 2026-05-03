@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import kafaaLogoPremium from "@/assets/kafaa-logo-premium.png";
 
 /**
  * Kafa'a (كفاءة) — professional brandmark.
@@ -12,84 +13,20 @@ import type { SVGProps } from "react";
 const NAVY = "hsl(215 55% 14%)";
 const TEAL = "hsl(182 80% 38%)";
 
-type KafaaLogoArtworkProps = SVGProps<SVGSVGElement>;
+type KafaaLogoArtworkProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "alt">;
 
-export function KafaaLogoArtwork({ className = "", style, ...props }: KafaaLogoArtworkProps) {
+export function KafaaLogoArtwork({ className = "", ...props }: KafaaLogoArtworkProps) {
   return (
-    <svg
-      viewBox="0 0 640 640"
-      role="img"
-      aria-label="شعار كفاءة KFAAH"
-      className={className}
-      style={style}
+    <img
+      src={kafaaLogoPremium}
+      alt="شعار كفاءة"
+      className={`object-contain ${className}`}
       {...props}
-    >
-      {/* Mark sits in a perfect square at the top */}
-      <g transform="translate(170 70)">
-        {/* Vertical stem of K */}
-        <rect x="0" y="0" width="44" height="300" rx="6" fill={NAVY} />
-
-        {/* Lower diagonal of K (navy) */}
-        <path
-          d="M44 168 L188 300"
-          stroke={NAVY}
-          strokeWidth="44"
-          strokeLinecap="round"
-          fill="none"
-        />
-
-        {/* Upper diagonal of K resolves into a checkmark (teal) */}
-        <path
-          d="M44 168 L120 92 L300 -10"
-          stroke={TEAL}
-          strokeWidth="44"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
-
-        {/* Tiny accent dot — quiet signature */}
-        <circle cx="312" cy="-4" r="10" fill={TEAL} />
-      </g>
-
-      {/* Hairline divider */}
-      <line x1="180" y1="430" x2="460" y2="430" stroke={NAVY} strokeOpacity="0.18" strokeWidth="1.5" />
-
-      {/* Wordmark: Arabic */}
-      <text
-        x="320"
-        y="500"
-        textAnchor="middle"
-        fontFamily="'Cairo', 'Tajawal', Tahoma, Arial, sans-serif"
-        fontSize="86"
-        fontWeight="800"
-        letterSpacing="-1"
-        fill={NAVY}
-      >
-        كفاءة
-      </text>
-
-      {/* Wordmark: Latin — quiet, wide-tracked */}
-      <text
-        x="320"
-        y="560"
-        textAnchor="middle"
-        fontFamily="'Inter', 'Helvetica Neue', Arial, sans-serif"
-        fontSize="26"
-        fontWeight="600"
-        letterSpacing="14"
-        fill={TEAL}
-      >
-        KFAAH
-      </text>
-    </svg>
+    />
   );
 }
 
-// Raster-friendly URL form for places that need an <img src>
-const kafaaLogoSvgString = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'><g transform='translate(170 70)'><rect x='0' y='0' width='44' height='300' rx='6' fill='${NAVY}'/><path d='M44 168 L188 300' stroke='${NAVY}' stroke-width='44' stroke-linecap='round' fill='none'/><path d='M44 168 L120 92 L300 -10' stroke='${TEAL}' stroke-width='44' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='312' cy='-4' r='10' fill='${TEAL}'/></g><line x1='180' y1='430' x2='460' y2='430' stroke='${NAVY}' stroke-opacity='0.18' stroke-width='1.5'/><text x='320' y='500' text-anchor='middle' font-family='Cairo, Tajawal, Tahoma, Arial, sans-serif' font-size='86' font-weight='800' fill='${NAVY}'>كفاءة</text><text x='320' y='560' text-anchor='middle' font-family='Inter, Helvetica Neue, Arial, sans-serif' font-size='26' font-weight='600' letter-spacing='14' fill='${TEAL}'>KFAAH</text></svg>`;
-
-const kafaaLogo = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(kafaaLogoSvgString)}`;
+const kafaaLogo = kafaaLogoPremium;
 
 interface PlatformBrandProps {
   size?: "sm" | "md" | "lg";
