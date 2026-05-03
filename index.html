@@ -91,6 +91,7 @@
           var search = window.location.search || "";
           var seg = path.split("/").filter(Boolean);
           var slug = null;
+          if (seg[0] === "demo") return;
           var qs = new URLSearchParams(search).get("org");
           if (qs) slug = qs;
           else if (seg[0] === "admin" && seg.length >= 3 && /^orgs?$|^organizations?$/.test(seg[1])) slug = seg[2];
