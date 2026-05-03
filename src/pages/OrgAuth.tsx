@@ -303,26 +303,21 @@ export default function OrgAuth() {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-7xl grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="w-full max-w-6xl grid md:grid-cols-2 gap-2 md:gap-4 items-center">
           {/* RIGHT (RTL first): Kafa'a platform logo + tagline + links */}
-          <div className="order-1 flex flex-col items-center text-center gap-6 animate-fade-in">
+          <div className="order-1 flex flex-col items-center text-center gap-3 animate-fade-in md:-ml-8 lg:-ml-12">
             <KafaaLogoArtwork
-              className="h-[22rem] md:h-[30rem] lg:h-[36rem] w-auto"
+              className="h-[22rem] md:h-[30rem] lg:h-[36rem] w-auto -mb-2"
               style={{
                 filter:
                   "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
               }}
             />
 
-            <div className="space-y-3 max-w-md">
-              <div className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-300/30 text-cyan-200 text-[11px] font-semibold tracking-wide">
-                منصة موحدة
-              </div>
-              <p className="text-sm md:text-base text-slate-100 leading-relaxed font-medium">
-                <span className="text-cyan-300 font-bold">منصة إدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي</span>
-                {" "}— تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
-              </p>
-            </div>
+            <p className="text-sm md:text-base text-slate-100 leading-relaxed font-medium max-w-md">
+              <span className="text-cyan-300 font-bold">منصة إدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي</span>
+              {" "}— تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
+            </p>
 
             <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-sm">
               <a
@@ -344,7 +339,7 @@ export default function OrgAuth() {
           </div>
 
           {/* LEFT (RTL second): Org logo + login card */}
-          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md mx-auto">
+          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md mx-auto md:-mr-8 lg:-mr-12">
 
         {/* Org branding header (above login card) */}
         <div className="text-center">
