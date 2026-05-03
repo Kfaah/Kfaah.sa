@@ -1,5 +1,5 @@
-import kafaaLogoSrc from "@/assets/kafaa-logo-clean.png";
-const kafaaLogo = `${kafaaLogoSrc}?v=14`;
+import kafaaLogoSrc from "@/assets/kafaa-logo-turquoise-glow.png";
+const kafaaLogo = `${kafaaLogoSrc}?v=15`;
 
 interface PlatformBrandProps {
   size?: "sm" | "md" | "lg";
