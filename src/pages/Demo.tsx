@@ -88,7 +88,6 @@ export default function Demo() {
             <span>
               {status === "booting" && "جارٍ تجهيز بيئة العرض..."}
               {status === "signing_in" && "جارٍ الدخول كمشاهد..."}
-              {status === "ready" && "جارٍ التحويل إلى لوحة الجمعية..."}
             </span>
           </div>
         )}
