@@ -163,8 +163,8 @@ export default function PublicLanding() {
             >
           <CardHeader className="text-center space-y-3 pb-5 pt-8">
             <CardTitle className="text-3xl md:text-4xl text-white font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
-            <CardDescription className="text-slate-300 text-sm md:text-base leading-relaxed px-2">
-              منصة <span className="text-cyan-300 font-bold">كفاءة</span> لإدارة الأداء المؤسسي للجمعيات الخيرية بالذكاء الاصطناعي — منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
+            <CardDescription className="text-slate-300 text-sm md:text-base">
+              بوابة آمنة للتحكم الكامل بالمنصة
             </CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8">
@@ -236,7 +236,14 @@ export default function PublicLanding() {
       </main>
 
       <footer className="relative z-10 text-center text-slate-300/70 text-xs py-4">
-        © {new Date().getFullYear()} منصة كفاءة — إدارة الأداء المؤسسي للجمعيات
+        <div className="max-w-3xl mx-auto px-4 space-y-2">
+          <p className="text-sm md:text-base text-slate-200/90 leading-relaxed">
+            منصة <span className="text-cyan-300 font-bold">كفاءة</span> لإدارة الأداء المؤسسي للجمعيات الخيرية بالذكاء الاصطناعي — منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
+          </p>
+          <p className="text-xs text-slate-400/70 pt-1">
+            © {new Date().getFullYear()} منصة كفاءة — جميع الحقوق محفوظة
+          </p>
+        </div>
       </footer>
     </div>
   );
