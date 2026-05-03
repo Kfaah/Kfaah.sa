@@ -427,7 +427,9 @@ export function Sidebar() {
     const linkState = { fromNavigation: true };
 
     return (
-      <Link
+      <Tooltip delayDuration={200}>
+        <TooltipTrigger asChild>
+          <Link
         to={scopedHref}
         state={linkState}
         className={cn(
@@ -435,6 +437,7 @@ export function Sidebar() {
           collapsed ? "justify-center px-0" : "gap-3 pr-4 pl-4",
           isActive ? "shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]" : "hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
         )}
+        aria-label={item.description ? `${item.title} — ${item.description}` : item.title}
       >
         <div
           className="sidebar-reference-icon flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sidebar-primary-foreground"
@@ -456,11 +459,29 @@ export function Sidebar() {
             {badgeCount > 9 ? '9+' : formatNumberPlain(badgeCount)}
           </span>
         )}
-      </Link>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent
+          side="left"
+          align="center"
+          sideOffset={10}
+          className="max-w-[280px] text-right"
+        >
+          <div dir="rtl" className="space-y-1">
+            <p className="font-bold text-sm leading-tight">{item.title}</p>
+            {item.description && (
+              <p className="text-xs leading-relaxed opacity-90">
+                {item.description}
+              </p>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
     );
   };
 
   return (
+    <TooltipProvider delayDuration={200}>
     <aside
       className={cn(
         "fixed right-0 top-0 h-screen flex flex-col transition-all duration-300 z-50 overflow-hidden",
