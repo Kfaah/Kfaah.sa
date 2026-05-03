@@ -1,0 +1,2 @@
+UPDATE public.organizations SET logo_url='https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/branding-assets/demo%2Fdemo-org-logo-v2.png' WHERE id='00000000-0000-0000-0000-0000000000de';
+UPDATE public.organization_branding SET logo_url='https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/branding-assets/demo%2Fdemo-org-logo-v2.png' WHERE organization_id='00000000-0000-0000-0000-0000000000de';
