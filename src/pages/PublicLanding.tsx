@@ -95,23 +95,32 @@ export default function PublicLanding() {
       <div className="absolute top-10 right-10 w-96 h-96 rounded-full bg-cyan-400/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 left-10 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 flex-1 flex items-center justify-center p-4">
-        {/* Platform brand badge — top center */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-sm rounded-full px-6 py-2.5 shadow-2xl border border-white/40">
-          <PlatformBrand size="sm" showTagline={false} />
+      <div className="relative z-10 flex-1 flex items-center justify-center p-4 pt-32 md:pt-40">
+        {/* Platform brand mark — large, centered, no frame (3D floating) */}
+        <div
+          className="absolute top-4 left-1/2 -translate-x-1/2"
+          style={{
+            filter:
+              "drop-shadow(0 20px 40px rgba(34,211,238,0.35)) drop-shadow(0 8px 16px rgba(0,0,0,0.4))",
+          }}
+        >
+          <img
+            src={kafaaLogo}
+            alt="كفاءة"
+            className="h-32 md:h-44 w-auto object-contain"
+            style={{ mixBlendMode: "multiply" }}
+            loading="eager"
+          />
         </div>
 
         <div className="w-full max-w-5xl grid md:grid-cols-2 gap-10 items-center">
           {/* Brand side */}
           <div className="text-white space-y-6 text-center md:text-right md:order-1 order-2">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white/95 shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)] mb-4 p-2">
-              <PlatformBrand size="md" variant="icon" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+            <h1 className="text-2xl md:text-3xl font-bold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
               منصة <span className="text-cyan-300">كفاءة</span>
-              <span className="block text-2xl md:text-3xl text-cyan-300 mt-3 font-semibold">لإدارة الأداء المؤسسي للجمعيات الخيرية</span>
+              <span className="block text-base md:text-lg text-cyan-300 mt-2 font-semibold">لإدارة الأداء المؤسسي للجمعيات الخيرية</span>
             </h1>
-            <p className="text-lg text-slate-100/90 leading-relaxed max-w-md mx-auto md:mx-0 md:mr-0 md:ml-auto" style={{ textAlign: "right" }}>
+            <p className="text-sm md:text-base text-slate-100/90 leading-relaxed max-w-md mx-auto md:mx-0 md:mr-0 md:ml-auto" style={{ textAlign: "right" }}>
               منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
             </p>
             <div className="flex flex-wrap gap-3 justify-center md:justify-end pt-2">
