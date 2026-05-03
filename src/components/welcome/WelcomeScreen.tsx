@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { LogIn, Sparkles, UserPlus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
@@ -59,6 +61,7 @@ export function WelcomeScreen() {
   const branding = useOrgBranding();
   const { currentOrg } = useOrganization();
   const { user: authUser } = useAuth();
+  const navigate = useNavigate();
   const [isViewer, setIsViewer] = useState(false);
   const [currentQuote, setCurrentQuote] = useState<Quote>(defaultQuotes[0]);
   const [currentBg, setCurrentBg] = useState<string>(defaultBackgrounds[0]);
@@ -345,6 +348,49 @@ export function WelcomeScreen() {
             اختر من القائمة للبدء في العمل
           </p>
         </motion.div>
+
+        {/* أيقونات الإجراءات السريعة — تظهر فقط في النسخة التجريبية */}
+        {isDemoRoute && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className="mt-8 grid grid-cols-3 gap-3 md:gap-5 w-full max-w-xl"
+          >
+            <button
+              onClick={() => navigate("/auth")}
+              className="group bg-white/90 hover:bg-white backdrop-blur-sm rounded-2xl px-3 py-5 md:px-4 md:py-6 shadow-lg hover:shadow-2xl transition-all hover:-translate-y-1 border border-white/60 flex flex-col items-center gap-2 md:gap-3"
+              aria-label="الدخول إلى المنصة"
+            >
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                <LogIn className="w-6 h-6 md:w-7 md:h-7 text-white" />
+              </div>
+              <span className="text-sm md:text-base font-bold text-slate-700">دخول المنصة</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/features")}
+              className="group bg-white/90 hover:bg-white backdrop-blur-sm rounded-2xl px-3 py-5 md:px-4 md:py-6 shadow-lg hover:shadow-2xl transition-all hover:-translate-y-1 border border-white/60 flex flex-col items-center gap-2 md:gap-3"
+              aria-label="مميزات المنصة"
+            >
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
+              </div>
+              <span className="text-sm md:text-base font-bold text-slate-700">مميزات المنصة</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/subscribe")}
+              className="group bg-white/90 hover:bg-white backdrop-blur-sm rounded-2xl px-3 py-5 md:px-4 md:py-6 shadow-lg hover:shadow-2xl transition-all hover:-translate-y-1 border border-white/60 flex flex-col items-center gap-2 md:gap-3"
+              aria-label="الاشتراك في المنصة"
+            >
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                <UserPlus className="w-6 h-6 md:w-7 md:h-7 text-white" />
+              </div>
+              <span className="text-sm md:text-base font-bold text-slate-700">الاشتراك في المنصة</span>
+            </button>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

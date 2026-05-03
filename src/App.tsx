@@ -37,6 +37,8 @@ const UploadExecutiveExcel = lazy(() => import("./pages/UploadExecutiveExcel"));
 const AIGenerateExecutivePlan = lazy(() => import("./pages/AIGenerateExecutivePlan"));
 const AddExecutivePlan = lazy(() => import("./pages/AddExecutivePlan"));
 const Auth = lazy(() => import("./pages/Auth"));
+const PlatformFeatures = lazy(() => import("./pages/PlatformFeatures"));
+const PlatformSubscribe = lazy(() => import("./pages/PlatformSubscribe"));
 const Settings = lazy(() => import("./pages/Settings"));
 const BrandingSettings = lazy(() => import("./pages/settings/BrandingSettings"));
 const RolesPermissionsSettings = lazy(() => import("./pages/settings/RolesPermissionsSettings"));
@@ -301,6 +303,10 @@ function AppRoutes() {
 
       {/* Public demo organization — auto sign-in as read-only viewer */}
       <Route path="/demo" element={<Demo />} />
+
+      {/* Public marketing pages */}
+      <Route path="/features" element={<PlatformFeatures />} />
+      <Route path="/subscribe" element={<PlatformSubscribe />} />
 
       {/* Legacy direct auth (kept for compatibility) */}
       <Route
