@@ -118,18 +118,6 @@ export default function PublicLanding() {
         <div className="w-full max-w-7xl grid md:grid-cols-[1.3fr_1fr] gap-8 lg:gap-12 items-center">
           {/* RIGHT (RTL first): MASSIVE hero logo with white edge glow */}
           <div className="relative flex items-center justify-center animate-fade-in order-1 min-h-[500px] md:min-h-[600px]">
-            {/* Soft white aura — sits behind the logo, blends with platform bg */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
-              <div
-                className="w-[600px] h-[600px] md:w-[720px] md:h-[720px] rounded-full"
-                style={{
-                  background:
-                    "radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.12) 35%, rgba(34,211,238,0.08) 60%, transparent 80%)",
-                  filter: "blur(30px)",
-                }}
-              />
-            </div>
-
             {/* Logo — drawn on the page itself, no PNG background */}
             <KafaaLogoArtwork
               className="relative h-[26rem] md:h-[34rem] lg:h-[40rem] w-auto animate-pulse-subtle"
