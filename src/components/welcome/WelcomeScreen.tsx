@@ -91,14 +91,14 @@ export function WelcomeScreen() {
     const now = new Date();
     const dayOfMonth = now.getDate(); // 1-31
     const orgName = displayOrgName?.trim() || "جمعيتكم";
-    const sourceQuotes = isViewer ? orgQuotes : quotes;
+    const sourceQuotes = isViewer && !isDemoRoute ? orgQuotes : quotes;
     const quoteIndex = (dayOfMonth - 1) % sourceQuotes.length;
     const selected = sourceQuotes[quoteIndex];
     const name = user.firstName?.trim() || "";
     setCurrentQuote({
       ...selected,
       quote: selected.quote
-        .replace(/\{name\}/g, isViewer ? orgName : name)
+        .replace(/\{name\}/g, isViewer && !isDemoRoute ? orgName : name)
         .replace(/\{org\}/g, orgName),
     });
     
