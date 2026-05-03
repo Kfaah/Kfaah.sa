@@ -299,6 +299,9 @@ function AppRoutes() {
       {/* Per-organization auth via short link (legacy /j/:slug + new short /:slug) */}
       <Route path="/j/:slug" element={<OrgAuth />} />
 
+      {/* Public demo organization — auto sign-in as read-only viewer */}
+      <Route path="/demo" element={<Demo />} />
+
       {/* Legacy direct auth (kept for compatibility) */}
       <Route
         path="/auth"
