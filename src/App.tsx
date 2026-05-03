@@ -304,6 +304,10 @@ function AppRoutes() {
       {/* Public demo organization — auto sign-in as read-only viewer */}
       <Route path="/demo" element={<Demo />} />
 
+      {/* Public marketing pages */}
+      <Route path="/features" element={<PlatformFeatures />} />
+      <Route path="/subscribe" element={<PlatformSubscribe />} />
+
       {/* Legacy direct auth (kept for compatibility) */}
       <Route
         path="/auth"
