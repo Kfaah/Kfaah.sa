@@ -180,8 +180,8 @@ export default function PublicLanding() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   placeholder="أدخل رقم الهوية"
-                  className="h-13 text-left bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
-                  dir="ltr"
+                  className="h-13 text-right bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
+                  dir="rtl"
                 />
               </div>
               <div className="space-y-2">
@@ -197,8 +197,8 @@ export default function PublicLanding() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="h-13 pe-10 text-left bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
-                    dir="ltr"
+                    className="h-13 pe-10 text-right bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
+                    dir="rtl"
                   />
                   <button
                     type="button"
