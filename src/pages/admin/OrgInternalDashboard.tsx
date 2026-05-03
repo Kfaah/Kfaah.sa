@@ -228,6 +228,7 @@ export default function OrgInternalDashboard({
   const orgId = orgIdProp ?? params.orgId;
   const navigate = useNavigate();
   const { isSuperAdmin } = useOrganization();
+  const { isDemo } = useIsDemo();
 
   const [org, setOrg] = useState<OrgInfo | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
