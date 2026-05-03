@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/hooks/useAuth";
-import atefLogo from "@/assets/atef-logo-icon.jpg";
+import demoOrgLogo from "@/assets/demo-org-logo.png";
 
 // العبارات الافتراضية (تستخدم إذا لم توجد عبارات في قاعدة البيانات)
 const defaultQuotes = [
@@ -65,6 +65,9 @@ export function WelcomeScreen() {
   const [quotes, setQuotes] = useState<Quote[]>(defaultQuotes);
   const [backgrounds, setBackgrounds] = useState<string[]>(defaultBackgrounds);
   const [hasFeaturedBg, setHasFeaturedBg] = useState(false);
+  const isDemoRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/demo");
+  const displayLogo = isDemoRoute ? demoOrgLogo : branding.logoUrl;
+  const displayOrgName = isDemoRoute ? "جمعية النموذج الخيرية" : branding.orgName;
 
   useEffect(() => {
     fetchContent();
@@ -83,7 +86,7 @@ export function WelcomeScreen() {
   useEffect(() => {
     const now = new Date();
     const dayOfMonth = now.getDate(); // 1-31
-    const orgName = branding.orgName?.trim() || "جمعيتكم";
+    const orgName = displayOrgName?.trim() || "جمعيتكم";
     const sourceQuotes = isViewer ? orgQuotes : quotes;
     const quoteIndex = (dayOfMonth - 1) % sourceQuotes.length;
     const selected = sourceQuotes[quoteIndex];
@@ -103,7 +106,7 @@ export function WelcomeScreen() {
       const bgIndex = dayOfYear % backgrounds.length;
       setCurrentBg(backgrounds[bgIndex]);
     }
-  }, [quotes, backgrounds, hasFeaturedBg, user.firstName, isViewer, branding.orgName]);
+  }, [quotes, backgrounds, hasFeaturedBg, user.firstName, isViewer, displayOrgName]);
 
   const fetchContent = async () => {
     try {
@@ -276,12 +279,12 @@ export function WelcomeScreen() {
 
           {/* الشعار - دائرة بيضاء مع ظل */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/80">
-            {branding.loading ? (
+            {branding.loading && !isDemoRoute ? (
               <div className="w-44 h-44 rounded-full bg-muted animate-pulse" />
             ) : (
               <img
-                src={branding.logoUrl || atefLogo}
-                alt={branding.orgName || "الجمعية"}
+                src={displayLogo || demoOrgLogo}
+                alt={displayOrgName || "الجمعية"}
                 className="w-44 h-44 object-contain rounded-full"
               />
             )}
@@ -296,7 +299,7 @@ export function WelcomeScreen() {
           className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-2 shadow-lg mb-6"
         >
           <h2 className="text-2xl font-bold text-slate-700">
-            {branding.orgName || "الجمعية"}
+            {displayOrgName || "الجمعية"}
           </h2>
         </motion.div>
 
@@ -310,7 +313,7 @@ export function WelcomeScreen() {
           <p className="text-lg text-slate-600 mb-1">{getGreeting()}</p>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
             {isViewer
-              ? `أهلاً بكم في ${branding.orgName || "جمعيتكم"} 👋`
+              ? `أهلاً بكم في ${displayOrgName || "جمعيتكم"} 👋`
               : `أهلاً بك، ${user.firstName}! 👋`}
           </h1>
         </motion.div>
