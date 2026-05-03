@@ -133,62 +133,7 @@ serve(async (req) => {
       });
     }
 
-    // تحويل Anthropic SSE إلى OpenAI-compatible SSE حتى يعمل الـ frontend الحالي بدون تغيير
-    const stream = new ReadableStream({
-      async start(controller) {
-        const reader = anthropicResp.body!.getReader();
-        const decoder = new TextDecoder();
-        const encoder = new TextEncoder();
-        let buffer = "";
-
-        const emit = (delta: string) => {
-          const chunk = {
-            choices: [{ delta: { content: delta }, index: 0, finish_reason: null }],
-          };
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
-        };
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-
-            let idx;
-            while ((idx = buffer.indexOf("\n")) !== -1) {
-              let line = buffer.slice(0, idx);
-              buffer = buffer.slice(idx + 1);
-              if (line.endsWith("\r")) line = line.slice(0, -1);
-              if (!line.startsWith("data: ")) continue;
-
-              const payload = line.slice(6).trim();
-              if (!payload) continue;
-
-              try {
-                const evt = JSON.parse(payload);
-                if (
-                  evt.type === "content_block_delta" &&
-                  evt.delta?.type === "text_delta" &&
-                  typeof evt.delta?.text === "string"
-                ) {
-                  emit(evt.delta.text);
-                } else if (evt.type === "message_stop") {
-                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                }
-              } catch (_) {
-                /* skip malformed chunk */
-              }
-            }
-          }
-          controller.close();
-        } catch (err) {
-          console.error("stream error:", err);
-          controller.error(err);
-        }
-      },
-    });
-
-    return new Response(stream, {
+    return new Response(aiResp.body, {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
