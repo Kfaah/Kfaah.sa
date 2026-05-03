@@ -596,7 +596,7 @@ export default function OrgInternalDashboard({
               actions={
                 <Button
                   onClick={runDeepAnalysis}
-                  disabled={analyzing}
+                  disabled={analyzing || isDemo}
                   size="lg"
                   className="gap-2 bg-white shadow-md hover:bg-white/90"
                   style={{ color: ORG_PRIMARY }}
@@ -607,7 +607,22 @@ export default function OrgInternalDashboard({
               }
             />
           )}
-          {!analysis ? (
+          {isDemo ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-right" dir="rtl">
+                  <Sparkles className="h-5 w-5 text-muted-foreground" />
+                  التحليل الذكي معطّل في الوضع التجريبي
+                </CardTitle>
+                <CardDescription className="text-right" dir="rtl">
+                  هذه نسخة عرض (Demo) لاستكشاف الواجهات فقط. تشغيل التحليل الذكي الشامل متاح فقط في النسخة الكاملة بعد ربط بيانات الجمعية الفعلية.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-right text-sm text-muted-foreground" dir="rtl">
+                للحصول على نسخة كاملة من النظام مع تحليل ذكي حقيقي لبيانات جمعيتك، تواصل مع فريق المنصة.
+              </CardContent>
+            </Card>
+          ) : !analysis ? (
             <Card>
               <CardContent className="py-12">
                 <EmptyState text="لا يوجد تحليل ذكي بعد. ارفع الملفات أولاً ثم اضغط زر التشغيل أعلاه." />
@@ -622,88 +637,6 @@ export default function OrgInternalDashboard({
               <InsightCard title="شرائح المتبرعين" data={analysis.donors_segmentation} />
               <InsightCard title="ملخص التبرعات" data={analysis.donations_summary} />
             </div>
-          )}
-        </TabsContent>
-
-        {/* ACCOUNTABILITY */}
-        <TabsContent value="accountability" className={standaloneTab ? "mt-0 space-y-4" : "mt-6 space-y-4"} dir="rtl">
-          <PageHeader
-            icon={<ShieldAlert />}
-            title="مساءلات الموظفين"
-            subtitle="أسئلة مولّدة من التحليل الذكي ومُوزّعة بحسب الدور الوظيفي"
-          />
-          <Card>
-            <CardHeader>
-              <CardTitle>مساءلات الموظفين ({questions.length})</CardTitle>
-              <CardDescription>أسئلة مولّدة من التحليل الذكي ومُوزّعة بحسب الدور الوظيفي</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {questions.length === 0 ? (
-                <EmptyState text="لا توجد مساءلات بعد. شغّل التحليل الذكي." onAction={runDeepAnalysis} actionLabel="تشغيل" />
-              ) : (
-                <div className="space-y-3">
-                  {questions.map((q) => {
-                    const emp = q.target_employee_id ? empMap.get(q.target_employee_id) : null;
-                    return (
-                      <div key={q.id} className="border rounded-lg p-4 bg-card hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className={PRIORITY_STYLE[q.priority] ?? ""}>
-                              {PRIORITY_LABEL[q.priority] ?? q.priority}
-                            </Badge>
-                            <Badge variant="secondary">{q.category}</Badge>
-                            <Badge variant="outline">{STATUS_LABEL[q.status] ?? q.status}</Badge>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {emp ? `→ ${emp.full_name}` : `الدور: ${q.target_job_role}`}
-                          </div>
-                        </div>
-                        <h4 className="font-semibold mb-1">{q.title}</h4>
-                        <p className="text-sm text-foreground/85 leading-relaxed">{q.question_text}</p>
-                        {q.context && <p className="text-xs text-muted-foreground mt-2 italic">السياق: {q.context}</p>}
-                        {q.expected_evidence && (
-                          <p className="text-xs mt-2 text-primary">
-                            <span className="font-semibold">الإثبات المتوقع:</span> {q.expected_evidence}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {aTasks.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>مهام مساءلة مولّدة ({aTasks.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">المهمة</TableHead>
-                      <TableHead className="text-right">الأولوية</TableHead>
-                      <TableHead className="text-right">الدور</TableHead>
-                      <TableHead className="text-right">الموظف</TableHead>
-                      <TableHead className="text-right">الحالة</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {aTasks.map((t) => (
-                      <TableRow key={t.id}>
-                        <TableCell className="font-medium">{t.title}</TableCell>
-                        <TableCell><Badge variant="outline" className={PRIORITY_STYLE[t.priority]}>{PRIORITY_LABEL[t.priority] ?? t.priority}</Badge></TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{t.target_job_role ?? "—"}</TableCell>
-                        <TableCell className="text-sm">{t.assigned_employee_id ? empMap.get(t.assigned_employee_id)?.full_name ?? "—" : "—"}</TableCell>
-                        <TableCell><Badge>{STATUS_LABEL[t.status] ?? t.status}</Badge></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
           )}
         </TabsContent>
 
