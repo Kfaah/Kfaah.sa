@@ -5,6 +5,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import OrgInternalDashboard from "@/pages/admin/OrgInternalDashboard";
+import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
+import { useIsDemo } from "@/hooks/useIsDemo";
 
 /**
  * Wrapper around OrgInternalDashboard for org-side access.
@@ -19,9 +21,27 @@ export default function InternalDashboard() {
   const tab = searchParams.get("tab") ?? undefined;
   const isSectionRoute = Boolean(tab);
   const { user } = useAuth();
+  const { isDemo, loading: demoLoading } = useIsDemo();
   const [orgId, setOrgId] = useState<string | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // عرض شاشة الترحيب لمستخدمي النموذج التجريبي عند أول دخول في الجلسة
+  useEffect(() => {
+    if (demoLoading) return;
+    if (!isDemo) return;
+    if (isSectionRoute) return; // لا نعرضها في صفحات التبويبات المستقلة
+    try {
+      const seen = sessionStorage.getItem("demo_welcome_seen");
+      if (!seen) {
+        setShowWelcome(true);
+        sessionStorage.setItem("demo_welcome_seen", "1");
+      }
+    } catch {
+      setShowWelcome(true);
+    }
+  }, [isDemo, demoLoading, isSectionRoute]);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +110,7 @@ export default function InternalDashboard() {
 
   return (
     <DashboardLayout>
+      {showWelcome && <WelcomeScreen />}
       <OrgInternalDashboard orgIdProp={orgId} initialTab={tab} standaloneTab={isSectionRoute} />
     </DashboardLayout>
   );
