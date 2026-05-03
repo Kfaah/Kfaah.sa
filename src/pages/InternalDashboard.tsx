@@ -45,7 +45,7 @@ export default function InternalDashboard() {
 
       // 2) check role: admin / super_admin / employees.role_level=admin
       const { data: roleRow } = await supabase.rpc("get_user_role", { _user_id: user.id });
-      let canSee = roleRow === "admin" || roleRow === "super_admin";
+      let canSee = roleRow === "admin" || roleRow === "super_admin" || roleRow === "viewer";
       if (!canSee) {
         const { data: emp } = await supabase
           .from("employees")
