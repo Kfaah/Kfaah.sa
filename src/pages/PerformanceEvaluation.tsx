@@ -135,7 +135,11 @@ function demoScore(uid: string, cid: string): number {
   return 55 + (h % 46); // 55..100
 }
 
-export default function PerformanceEvaluation() {
+interface PerformanceEvaluationProps {
+  embedded?: boolean;
+}
+
+export default function PerformanceEvaluation({ embedded = false }: PerformanceEvaluationProps = {}) {
   const { user } = useAuth();
   const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
