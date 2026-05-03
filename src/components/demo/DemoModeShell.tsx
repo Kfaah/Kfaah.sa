@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Eye, Lock } from "lucide-react";
 import { useIsDemo } from "@/hooks/useIsDemo";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 /**
  * Wraps the app when the visitor is in demo mode:
@@ -51,13 +53,60 @@ export function DemoModeShell({ children }: { children: React.ReactNode }) {
 
     document.body.classList.add("demo-mode");
 
+    // Patch supabase.storage to block any upload/remove/move/copy operation
+    const originalFrom = supabase.storage.from.bind(supabase.storage);
+    const denied = async () => {
+      toast.error("رفع الملفات معطّل في وضع العرض التجريبي");
+      return {
+        data: null,
+        error: {
+          name: "DemoReadOnly",
+          message: "uploads_disabled_in_demo_mode",
+        } as any,
+      };
+    };
+    (supabase.storage as any).from = (bucket: string) => {
+      const api = originalFrom(bucket);
+      api.upload = denied as any;
+      api.uploadToSignedUrl = denied as any;
+      api.update = denied as any;
+      api.move = denied as any;
+      api.copy = denied as any;
+      api.remove = denied as any;
+      api.createSignedUploadUrl = denied as any;
+      return api;
+    };
+
+    // Block native <input type="file"> selection at capture phase
+    const blockFileInput = (e: Event) => {
+      const t = e.target as HTMLInputElement | null;
+      if (t && t.tagName === "INPUT" && t.type === "file") {
+        e.preventDefault();
+        e.stopPropagation();
+        try { t.value = ""; } catch {}
+        toast.error("رفع الملفات معطّل في وضع العرض التجريبي");
+      }
+    };
+    document.addEventListener("change", blockFileInput, true);
+    document.addEventListener("click", (e) => {
+      const t = e.target as HTMLElement | null;
+      const input = t?.closest?.("input[type=file]") as HTMLInputElement | null;
+      if (input) {
+        e.preventDefault();
+        e.stopPropagation();
+        toast.error("رفع الملفات معطّل في وضع العرض التجريبي");
+      }
+    }, true);
+
     return () => {
       document.removeEventListener("contextmenu", block);
       document.removeEventListener("copy", block);
       document.removeEventListener("cut", block);
       document.removeEventListener("dragstart", block);
       document.removeEventListener("keydown", blockKeys);
+      document.removeEventListener("change", blockFileInput, true);
       document.body.classList.remove("demo-mode");
+      (supabase.storage as any).from = originalFrom;
     };
   }, [isDemo]);
 
