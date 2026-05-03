@@ -717,6 +717,5 @@ export function Sidebar() {
         </nav>
       </div>
     </aside>
-    </TooltipProvider>
   );
 }
