@@ -1,4 +1,4 @@
-import kafaaLogoPro from "@/assets/kafaa-logo-pro.png";
+import kafaaLogoPro from "@/assets/kafaa-logo-pro-v2.png";
 
 const kafaaLogo = kafaaLogoPro;
 
