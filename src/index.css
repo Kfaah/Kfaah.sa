@@ -45,6 +45,9 @@ html {
     /* التركوازي كلون مميز */
     --accent: 179 47% 45%;
     --accent-foreground: 0 0% 100%;
+    --kafaa-logo-ink: 210 58% 14%;
+    --kafaa-logo-accent: 178 58% 47%;
+    --kafaa-logo-glow: 0 0% 100%;
 
     /* لون حبر التوقيع (أزرق فاتح) */
     --signature-ink: 210 100% 62%;
@@ -128,6 +131,9 @@ html {
 
     --accent: 174 52% 52%;
     --accent-foreground: 210 50% 10%;
+    --kafaa-logo-ink: 210 58% 14%;
+    --kafaa-logo-accent: 178 58% 47%;
+    --kafaa-logo-glow: 0 0% 100%;
 
     --signature-ink: 210 100% 70%;
     --destructive: 0 62% 50%;
