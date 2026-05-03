@@ -210,49 +210,51 @@ async function seedDemoData(
     }
   }
 
-  // Strategic goals (note: schema uses activity_name / plan_name / user_id NOT NULL)
+  // Strategic goals — schema only requires `name`
   const { count: goalsExisting } = await admin
     .from("strategic_goals")
     .select("id", { head: true, count: "exact" })
     .eq("organization_id", orgId);
   if ((goalsExisting ?? 0) === 0) {
-    const goalSeeds = [
-      { activity: "تمكين المستفيدين وتحسين جودة الخدمة", plan: "خطة الأثر المجتمعي" },
-      { activity: "بناء قدرات الكوادر وتطوير بيئة العمل", plan: "خطة تطوير الموارد البشرية" },
-      { activity: "تنويع مصادر التمويل وتعزيز الاستدامة", plan: "خطة الاستدامة المالية" },
+    const goalNames = [
+      "تمكين المستفيدين وتحسين جودة الخدمة",
+      "بناء قدرات الكوادر وتطوير بيئة العمل",
+      "تنويع مصادر التمويل وتعزيز الاستدامة",
     ];
     await admin.from("strategic_goals").insert(
-      goalSeeds.map((g, i) => ({
+      goalNames.map((name) => ({
         organization_id: orgId,
-        user_id: demoUserId,
-        activity_name: g.activity,
-        plan_name: g.plan,
-        annual_target: 100,
-        estimated_budget: 250000 + i * 50000,
-        status: "active",
+        name,
+        year: new Date().getFullYear(),
+        color: "bg-emerald-500",
       })),
     );
     seededParts.push("strategic_goals");
   }
 
-  // Operational plans (schema uses `name`, not `title`)
+  // Operational plans — schema requires user_id, activity_name, plan_name, etc.
   const { count: plansExisting } = await admin
     .from("operational_plans")
     .select("id", { head: true, count: "exact" })
     .eq("organization_id", orgId);
   if ((plansExisting ?? 0) === 0) {
-    const planNames = [
-      "خطة الأثر المجتمعي",
-      "خطة تطوير الموارد البشرية",
-      "خطة الاستدامة المالية",
+    const planSeeds = [
+      { activity: "تنفيذ برنامج الأسر المنتجة (مرحلة 1)", plan: "خطة الأثر المجتمعي", target: 120, budget: 180000 },
+      { activity: "تأهيل وتدريب 50 مستفيدًا في الحرف", plan: "خطة الأثر المجتمعي", target: 50, budget: 90000 },
+      { activity: "ورش تطوير القيادات الإدارية", plan: "خطة تطوير الموارد البشرية", target: 8, budget: 60000 },
+      { activity: "نظام تقييم الأداء الربعي", plan: "خطة تطوير الموارد البشرية", target: 12, budget: 25000 },
+      { activity: "حملة سنوية لاستقطاب الداعمين", plan: "خطة الاستدامة المالية", target: 1, budget: 150000 },
+      { activity: "إطلاق متجر إلكتروني للهدايا الخيرية", plan: "خطة الاستدامة المالية", target: 1, budget: 220000 },
     ];
     await admin.from("operational_plans").insert(
-      planNames.map((name, i) => ({
+      planSeeds.map((p) => ({
         organization_id: orgId,
-        name,
-        description: `${name} — للعرض التجريبي`,
-        year: new Date().getFullYear(),
-        color: ["bg-emerald-500", "bg-teal-500", "bg-amber-500"][i],
+        user_id: demoUserId,
+        activity_name: p.activity,
+        plan_name: p.plan,
+        annual_target: p.target,
+        estimated_budget: p.budget,
+        status: "active",
       })),
     );
     seededParts.push("operational_plans");
