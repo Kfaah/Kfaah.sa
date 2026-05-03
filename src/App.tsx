@@ -456,8 +456,10 @@ function AppContent() {
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
-                <AppRoutes />
-                <AssistantFab />
+                <DemoModeShell>
+                  <AppRoutes />
+                  <AssistantFab />
+                </DemoModeShell>
               </TooltipProvider>
           </ProtectedAppProviders>
         </Suspense>
