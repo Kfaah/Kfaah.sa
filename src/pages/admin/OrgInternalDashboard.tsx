@@ -343,6 +343,10 @@ export default function OrgInternalDashboard({
 
   const runDeepAnalysis = async () => {
     if (!orgId) return;
+    if (isDemo) {
+      toast.info("التحليل الذكي معطّل في الوضع التجريبي. هذه نسخة عرض فقط لاستعراض الواجهات.");
+      return;
+    }
     setAnalyzing(true);
     toast.loading("جاري التحليل الذكي الشامل...", { id: "deep" });
     try {
