@@ -435,7 +435,7 @@ function AppContent() {
   const location = useLocation();
   const isPublicEntry = isPublicEntryPath(location.pathname);
 
-  if (isPublicEntry) {
+  if (isPublicEntry && location.pathname !== "/demo") {
     return (
       <PreviewModeProvider>
         <ConfirmDialogProvider>
