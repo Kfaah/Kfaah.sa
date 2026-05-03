@@ -209,6 +209,7 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const routeUsesOrgBranding = useMemo(() => {
     const path = location.pathname;
+    if (path.startsWith("/demo")) return false;
     const isAdminRoute = path.startsWith("/admin");
     const searchOrgSlug = new URLSearchParams(location.search).get("org");
     const isAdminOrgScopedRoute = isAdminRoute && /\/admin\/(orgs?|organizations?)\//.test(path);
