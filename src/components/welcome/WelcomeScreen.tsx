@@ -8,6 +8,7 @@ import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/hooks/useAuth";
 import demoOrgLogo from "@/assets/demo-org-logo.png";
+import { kafaaLogo } from "@/components/brand/PlatformBrand";
 
 // العبارات الافتراضية (تستخدم إذا لم توجد عبارات في قاعدة البيانات)
 const defaultQuotes = [
@@ -69,8 +70,8 @@ export function WelcomeScreen() {
   const [backgrounds, setBackgrounds] = useState<string[]>(defaultBackgrounds);
   const [hasFeaturedBg, setHasFeaturedBg] = useState(false);
   const isDemoRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/demo");
-  const displayLogo = isDemoRoute ? demoOrgLogo : branding.logoUrl;
-  const displayOrgName = isDemoRoute ? "جمعية النموذج الخيرية" : branding.orgName;
+  const displayLogo = isDemoRoute ? kafaaLogo : branding.logoUrl;
+  const displayOrgName = isDemoRoute ? "كفاءة" : branding.orgName;
 
   useEffect(() => {
     fetchContent();
@@ -306,7 +307,13 @@ export function WelcomeScreen() {
           className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-2 shadow-lg mb-6"
         >
           <h2 className="text-2xl font-bold text-slate-700">
-            {displayOrgName || "الجمعية"}
+            {isDemoRoute ? (
+              <span className="bg-gradient-to-l from-emerald-600 to-teal-700 bg-clip-text text-transparent">
+                منصة كفاءة
+              </span>
+            ) : (
+              displayOrgName || "الجمعية"
+            )}
           </h2>
         </motion.div>
 
@@ -319,7 +326,9 @@ export function WelcomeScreen() {
         >
           <p className="text-lg text-slate-600 mb-1">{getGreeting()}</p>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
-            {isViewer
+            {isDemoRoute
+              ? `أهلاً بك أيها الزائر الكريم 👋`
+              : isViewer
               ? `أهلاً بكم في ${displayOrgName || "جمعيتكم"} 👋`
               : `أهلاً بك، ${user.firstName}! 👋`}
           </h1>
