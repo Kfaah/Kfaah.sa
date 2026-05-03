@@ -38,7 +38,7 @@ export default function Demo() {
   }, []);
 
   return (
-    <DashboardLayout>
+    <DashboardLayout embedded>
       <WelcomeScreen />
     </DashboardLayout>
   );
