@@ -45,6 +45,18 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/employee-ass
 
 export default function MyAssistant() {
   const { user } = useAuth();
+  const [isDemo, setIsDemo] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.rpc("is_demo_user", { _user_id: user.id });
+      if (!cancelled) setIsDemo(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
@@ -337,6 +349,19 @@ export default function MyAssistant() {
         </div>
 
         {/* Chat */}
+        {isDemo ? (
+          <Card className="border-2 border-dashed border-primary/30 shadow-xl">
+            <CardContent className="py-12 flex flex-col items-center text-center gap-3">
+              <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center">
+                <Bot className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-bold">المساعد الذكي غير متاح في النسخة التجريبية</h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                هذه الميزة معطّلة في وضع العرض التجريبي. للاستفادة من المساعد الذكي بالكامل، يُرجى استخدام حساب جمعيتكم الفعلي.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
         <Card className="border-2 border-primary/15 shadow-xl">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
@@ -411,6 +436,7 @@ export default function MyAssistant() {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </DashboardLayout>
   );
