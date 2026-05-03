@@ -114,73 +114,63 @@ export default function PublicLanding() {
         ))}
       </div>
 
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-6xl grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
-          {/* RIGHT (RTL first): Hero logo with white glow halo */}
-          <div className="relative flex items-center justify-center animate-fade-in order-1">
-            {/* White luminous halo behind logo */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-7xl grid md:grid-cols-[1.3fr_1fr] gap-8 lg:gap-12 items-center">
+          {/* RIGHT (RTL first): MASSIVE hero logo with white edge glow */}
+          <div className="relative flex items-center justify-center animate-fade-in order-1 min-h-[500px] md:min-h-[600px]">
+            {/* Soft white aura — sits behind the logo, blends with platform bg */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
               <div
-                className="w-[420px] h-[420px] md:w-[480px] md:h-[480px] rounded-full"
+                className="w-[600px] h-[600px] md:w-[720px] md:h-[720px] rounded-full"
                 style={{
                   background:
-                    "radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.25) 30%, rgba(34,211,238,0.15) 55%, transparent 75%)",
-                  filter: "blur(20px)",
-                }}
-              />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
-              <div
-                className="w-[300px] h-[300px] md:w-[360px] md:h-[360px] rounded-full"
-                style={{
-                  background:
-                    "radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 50%, transparent 80%)",
-                  filter: "blur(8px)",
+                    "radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.12) 35%, rgba(34,211,238,0.08) 60%, transparent 80%)",
+                  filter: "blur(30px)",
                 }}
               />
             </div>
 
-            {/* Logo with 3D drop-shadow + white outline glow */}
+            {/* Logo — huge, with multi-layer white edge glow for clarity on dark bg */}
             <div
               className="relative"
               style={{
                 filter:
-                  "drop-shadow(0 0 12px rgba(255,255,255,0.9)) drop-shadow(0 0 25px rgba(255,255,255,0.5)) drop-shadow(0 25px 40px rgba(34,211,238,0.4)) drop-shadow(0 12px 20px rgba(0,0,0,0.5))",
+                  "drop-shadow(0 0 3px rgba(255,255,255,1)) drop-shadow(0 0 10px rgba(255,255,255,0.95)) drop-shadow(0 0 22px rgba(255,255,255,0.7)) drop-shadow(0 0 40px rgba(255,255,255,0.4)) drop-shadow(0 30px 50px rgba(34,211,238,0.35)) drop-shadow(0 15px 25px rgba(0,0,0,0.55))",
                 animation: "pulse-subtle 5s ease-in-out infinite",
               }}
             >
               <img
                 src={kafaaLogo}
                 alt="كفاءة"
-                className="h-72 md:h-96 lg:h-[28rem] w-auto object-contain"
+                className="h-[26rem] md:h-[34rem] lg:h-[40rem] w-auto object-contain"
                 loading="eager"
                 style={{
-                  transform: "perspective(900px) rotateX(6deg)",
+                  transform: "perspective(1100px) rotateX(5deg)",
                   transformStyle: "preserve-3d",
                 }}
               />
             </div>
           </div>
 
-          {/* LEFT (RTL second): Login card + feature pills below */}
-          <div className="flex flex-col gap-5 order-2 animate-scale-in">
+          {/* LEFT (RTL second): LARGER Login card + feature pills below */}
+          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-lg mx-auto">
             <Card
-              className="relative w-full border border-white/15 shadow-2xl bg-white/[0.07] backdrop-blur-2xl"
+              className="relative w-full border border-white/15 shadow-2xl bg-white/[0.08] backdrop-blur-2xl"
               style={{
                 boxShadow:
-                  "0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  "0 30px 60px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15)",
               }}
             >
-          <CardHeader className="text-center space-y-2 pb-4">
-            <CardTitle className="text-xl text-white font-bold">دخول مدير النظام</CardTitle>
-            <CardDescription className="text-slate-300 text-xs">
+          <CardHeader className="text-center space-y-3 pb-5 pt-8">
+            <CardTitle className="text-3xl md:text-4xl text-white font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
+            <CardDescription className="text-slate-300 text-sm md:text-base">
               هذه الواجهة مخصصة لمدير المنصة
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="username" className="flex items-center gap-2 justify-end text-slate-200 text-sm">
+                <Label htmlFor="username" className="flex items-center gap-2 justify-end text-slate-200 text-base">
                   اسم المستخدم / رقم الهوية
                 </Label>
                 <Input
@@ -189,12 +179,12 @@ export default function PublicLanding() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   placeholder="أدخل رقم الهوية"
-                  className="h-11 text-right bg-white/10 border-white/20 text-white placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                  className="h-13 text-right bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
                   dir="ltr"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center gap-2 justify-end text-slate-200 text-sm">
+                <Label htmlFor="password" className="flex items-center gap-2 justify-end text-slate-200 text-base">
                   كلمة المرور
                 </Label>
                 <div className="relative">
@@ -206,7 +196,7 @@ export default function PublicLanding() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="h-11 pe-10 bg-white/10 border-white/20 text-white placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                    className="h-13 pe-10 bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
                     dir="ltr"
                   />
                   <button
@@ -220,10 +210,10 @@ export default function PublicLanding() {
               </div>
               <Button
                 type="submit"
-                className="w-full h-12 gap-2 bg-gradient-to-l from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-bold shadow-lg shadow-cyan-500/30 border-0"
+                className="w-full h-14 gap-2 text-base bg-gradient-to-l from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-bold shadow-lg shadow-cyan-500/40 border-0"
                 disabled={loading}
               >
-                {loading ? <span className="animate-spin">⏳</span> : <Icon className="text-lg">↤</Icon>}
+                {loading ? <span className="animate-spin">⏳</span> : <Icon className="text-xl">↤</Icon>}
                 تسجيل الدخول
               </Button>
             </form>
