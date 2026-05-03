@@ -4269,6 +4269,8 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      is_demo_org: { Args: { _org_id: string }; Returns: boolean }
+      is_demo_user: { Args: { _user_id: string }; Returns: boolean }
       is_manager: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_user_approved_in_org: {
