@@ -271,26 +271,24 @@ export default function MyAssistant() {
     <DashboardLayout>
       <div className="p-6 space-y-6 max-w-7xl mx-auto" dir="rtl">
         {/* Header */}
-        <div className="rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 text-white p-6 shadow-2xl shadow-fuchsia-500/30 relative overflow-hidden">
-          <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-10 -right-10 w-48 h-48 rounded-full bg-pink-300/20 blur-3xl" />
+        <div className="rounded-3xl bg-primary text-primary-foreground p-6 shadow-2xl shadow-primary/20 relative overflow-hidden">
           <div className="relative flex items-start justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/15 ring-2 ring-white/40 flex items-center justify-center backdrop-blur">
+              <div className="w-14 h-14 rounded-2xl bg-primary-foreground/15 ring-2 ring-primary-foreground/40 flex items-center justify-center backdrop-blur">
                 <Sparkles className="h-7 w-7" />
               </div>
               <div>
                 <h1 className="text-3xl font-extrabold">المساعد الذكي</h1>
-                <p className="text-white/85 mt-1">
+                <p className="text-primary-foreground/85 mt-1">
                   مدعوم بـ Gemini & GPT — يحلّل أداءك ويدعمك في كل مهمة.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-xl px-3 py-1.5 ring-1 ring-white/30">
-              <span className="text-xs text-white/85">الفترة</span>
+            <div className="flex items-center gap-2 bg-primary-foreground/10 backdrop-blur rounded-xl px-3 py-1.5 ring-1 ring-primary-foreground/30">
+              <span className="text-xs text-primary-foreground/85">الفترة</span>
               <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-                <SelectTrigger className="w-32 h-8 bg-white/20 border-white/30 text-white">
+                <SelectTrigger className="w-32 h-8 bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
