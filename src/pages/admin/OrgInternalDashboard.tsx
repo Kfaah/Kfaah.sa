@@ -795,12 +795,9 @@ export default function OrgInternalDashboard({
           className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
           dir="rtl"
         >
-          <EmbeddedOrgPage
-            slug={org?.slug}
-            path="/performance"
-            title="تقييم الأداء"
-            isActive={visitedTabs.has("performance")}
-          />
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            {visitedTabs.has("performance") ? <PerformanceEvaluation embedded /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+          </Suspense>
         </TabsContent>
         <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <div className="space-y-4">
