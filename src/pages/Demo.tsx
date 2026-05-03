@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Loader2, Sparkles, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
 
 /**
  * /demo — entry point for the public demo organization.
@@ -10,7 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
  * organization's dashboard.
  */
 export default function Demo() {
-  const navigate = useNavigate();
   const [status, setStatus] = useState<"booting" | "signing_in" | "ready" | "error">("booting");
   const [error, setError] = useState<string | null>(null);
 
@@ -38,10 +38,6 @@ export default function Demo() {
 
         if (!cancelled) {
           setStatus("ready");
-          // امسح علامة الترحيب لضمان عرض شاشة الترحيب دائماً عند الدخول من /demo
-          try { sessionStorage.removeItem("demo_welcome_seen"); } catch {}
-          // وجّه إلى الصفحة الرئيسية ليظهر الترحيب ثم يختار الزائر من القائمة
-          navigate(`/`, { replace: true });
         }
       } catch (e) {
         console.error("Demo init failed", e);
@@ -52,7 +48,15 @@ export default function Demo() {
       }
     })();
     return () => { cancelled = true; };
-  }, [navigate]);
+  }, []);
+
+  if (status === "ready") {
+    return (
+      <DashboardLayout>
+        <WelcomeScreen />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <div
@@ -84,7 +88,6 @@ export default function Demo() {
             <span>
               {status === "booting" && "جارٍ تجهيز بيئة العرض..."}
               {status === "signing_in" && "جارٍ الدخول كمشاهد..."}
-              {status === "ready" && "جارٍ التحويل إلى لوحة الجمعية..."}
             </span>
           </div>
         )}
