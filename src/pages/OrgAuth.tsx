@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone, CheckCircle2, Clock, Sparkles } from "lucide-react";
+import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone, CheckCircle2, Clock, Sparkles, Info, LifeBuoy } from "lucide-react";
 import { PlatformBrand } from "@/components/brand/PlatformBrand";
 
 interface OrgInfo {
@@ -549,14 +549,33 @@ export default function OrgAuth() {
           © {new Date().getFullYear()} جميع الحقوق محفوظة لمنصة كفاءة لإدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي
         </div>
 
-        {/* About platform link */}
-        <div className="mt-3 text-center">
-          <a
-            href="/about"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+        {/* About & Support links */}
+        <div className="mt-3 mx-auto w-fit">
+          <div
+            className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-white/80 shadow-sm"
           >
-            عن المنصة
-          </a>
+            <a
+              href="/about"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-white transition-colors"
+              style={{ color: `hsl(${primaryHsl})` }}
+            >
+              <Info className="w-3.5 h-3.5" />
+              عن المنصة
+            </a>
+            <span
+              className="w-px h-4"
+              style={{ background: `hsl(${primaryHsl} / 0.25)` }}
+              aria-hidden="true"
+            />
+            <a
+              href="/support"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-white transition-colors"
+              style={{ color: `hsl(${primaryHsl})` }}
+            >
+              <LifeBuoy className="w-3.5 h-3.5" />
+              الدعم الفني
+            </a>
+          </div>
         </div>
 
       </div>
