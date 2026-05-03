@@ -94,7 +94,6 @@ const adminNavItems: NavItem[] = [
   { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: "nav-icon-tasks", description: "إنشاء المهام وتوزيعها على الموظفين ومتابعة حالتها وأولوياتها وتواريخ تسليمها." },
   { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "nav-icon-performance", description: "تقييم أداء الموظفين والإدارات بناءً على نسب الإنجاز والجودة ومؤشرات قابلة للقياس." },
   { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations", description: "خطط تشغيلية مولّدة آلياً انطلاقاً من توصيات التحليل الذكي ونتائج التقييم." },
-  { title: "تحليل المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: "nav-icon-accountability", description: "رصد حالات التقصير والمساءلات وتحليل أسبابها وتوزيعها على الموظفين والإدارات." },
   { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير تفصيلية قابلة للتصدير (PDF / Excel / Word) عن الأداء والخطط والمشاريع." },
   { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "بنك الأفكار والمبادرات الابتكارية وتطوير الخدمات بمساعدة الذكاء الاصطناعي." },
   { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "nav-icon-donors", description: "إدارة قاعدة بيانات المتبرعين والداعمين ومتابعة التبرعات والحملات المرتبطة بهم." },
