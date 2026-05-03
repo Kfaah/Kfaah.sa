@@ -6,7 +6,7 @@ const kafaaLogo = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(logoSvg
 export function KafaaLogoArtwork({ className = "", style, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg
-      viewBox="0 0 900 760"
+      viewBox="0 0 900 880"
       role="img"
       aria-label="كفاءة kfaah"
       className={className}
@@ -22,39 +22,50 @@ export function KafaaLogoArtwork({ className = "", style, ...props }: SVGProps<S
       </defs>
 
       <g filter="url(#kafaa-white-edge-glow)">
-        <path fill="hsl(var(--kafaa-logo-ink))" d="M170 86h104v252L491 86h127L380 359l255 315H499L274 395v279H170z" />
-        <path fill="hsl(var(--kafaa-logo-accent))" d="M359 395 515 225l65 65-156 170 222 176-76 77z" />
-        <circle cx="681" cy="161" r="22" fill="hsl(var(--kafaa-logo-accent))" />
-        <circle cx="736" cy="236" r="16" fill="hsl(var(--kafaa-logo-accent))" />
-        <circle cx="699" cy="307" r="11" fill="hsl(var(--kafaa-logo-accent))" />
-        <path fill="hsl(var(--kafaa-logo-accent))" d="m756 110 14 29 32 5-23 23 6 32-29-15-29 15 6-32-23-23 32-5z" />
+        {/* Big K — dark navy (parent / established) */}
+        <path fill="hsl(var(--kafaa-logo-ink))" d="M120 86h104v252L441 86h127L330 359l255 315H449L224 395v279H120z" />
 
+        {/* Small K — turquoise, scaled-down replica of the big K, suggesting growth/competition */}
+        <g transform="translate(605 295) scale(0.42)">
+          <path fill="hsl(var(--kafaa-logo-accent))" d="M120 86h104v252L441 86h127L330 359l255 315H449L224 395v279H120z" />
+        </g>
+
+        {/* Decorative dots (growth particles) */}
+        <circle cx="845" cy="305" r="14" fill="hsl(var(--kafaa-logo-accent))" />
+        <circle cx="868" cy="345" r="9" fill="hsl(var(--kafaa-logo-accent))" />
+        <circle cx="852" cy="382" r="6" fill="hsl(var(--kafaa-logo-accent))" />
+        {/* Sparkle */}
+        <path fill="hsl(var(--kafaa-logo-accent))" d="m820 220 11 23 25 4-18 18 5 25-23-12-23 12 5-25-18-18 25-4z" />
+
+        {/* Underline separating logo from wordmark */}
+        <path d="M180 740h540" stroke="hsl(var(--kafaa-logo-accent))" strokeWidth="6" strokeLinecap="round" opacity="0.55" />
+
+        {/* Wordmark BELOW the logo */}
         <text
-          x="505"
-          y="570"
+          x="450"
+          y="800"
           textAnchor="middle"
           direction="rtl"
           unicodeBidi="bidi-override"
           fontFamily="Tajawal, Arial, sans-serif"
           fontWeight="800"
-          fontSize="130"
+          fontSize="92"
           fill="hsl(var(--kafaa-logo-ink))"
         >
           كفاءة
         </text>
         <text
-          x="510"
-          y="651"
+          x="450"
+          y="858"
           textAnchor="middle"
           fontFamily="Tajawal, Arial, sans-serif"
           fontWeight="700"
-          fontSize="78"
-          letterSpacing="7"
+          fontSize="48"
+          letterSpacing="6"
           fill="hsl(var(--kafaa-logo-accent))"
         >
           kfaah
         </text>
-        <path d="M249 690h521" stroke="hsl(var(--kafaa-logo-accent))" strokeWidth="10" strokeLinecap="round" />
       </g>
     </svg>
   );
