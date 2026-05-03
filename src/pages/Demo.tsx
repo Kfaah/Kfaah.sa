@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
 import { DemoModeShell } from "@/components/demo/DemoModeShell";
+import ProtectedAppProviders from "@/components/ProtectedAppProviders";
 
 /**
  * /demo — entry point for the public demo organization.
@@ -12,7 +13,6 @@ import { DemoModeShell } from "@/components/demo/DemoModeShell";
  */
 export default function Demo() {
   useEffect(() => {
-    let cancelled = false;
     (async () => {
       try {
         const { data, error: fnErr } = await supabase.functions.invoke("setup-demo", {
@@ -31,14 +31,15 @@ export default function Demo() {
         console.error("Demo init failed", e);
       }
     })();
-    return () => { cancelled = true; };
   }, []);
 
   return (
-    <DemoModeShell>
-      <DashboardLayout>
-        <WelcomeScreen />
-      </DashboardLayout>
-    </DemoModeShell>
+    <ProtectedAppProviders>
+      <DemoModeShell>
+        <DashboardLayout>
+          <WelcomeScreen />
+        </DashboardLayout>
+      </DemoModeShell>
+    </ProtectedAppProviders>
   );
 }
