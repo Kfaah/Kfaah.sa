@@ -14,8 +14,8 @@ const json = (body: unknown, status = 200) =>
   });
 
 const DEMO_ORG_ID = "00000000-0000-0000-0000-0000000000de";
-const DEMO_EMAIL = "demo-viewer@charity-crm.org";
-const DEMO_PASSWORD = "Demo!Viewer#2026$Showcase";
+const DEMO_EMAIL = "111111111@demo.charity-crm.org";
+const DEMO_PASSWORD = "123456";
 const DEMO_FULL_NAME = "زائر تجريبي";
 
 serve(async (req) => {
