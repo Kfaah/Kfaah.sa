@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageGuide } from "@/components/layout/PageGuide";
 
 type Criterion = {
   id: string;
@@ -375,6 +376,16 @@ export default function PerformanceEvaluation() {
               </Dialog>
             </>
           }
+        />
+        <PageGuide
+          description="هذه الصفحة تقيّم أداء جميع موظفي الجمعية وفق معايير قابلة للتخصيص (مثل: الالتزام، جودة العمل، التعاون). يتم احتساب التقييم النهائي كمتوسط حسابي لكل المعايير، مع تصفية النتائج حسب القسم والموظف والفترة الزمنية."
+          features={[
+            "إضافة معايير تقييم مخصّصة للجمعية",
+            "تقييم الموظفين على كل معيار باستقلالية",
+            "حساب متوسط الأداء على مستوى الموظف والقسم",
+            "تصفية حسب القسم والفترة الزمنية",
+            "إبراز الأعلى أداءً ومتوسط أداء الجمعية",
+          ]}
         />
 
         {/* Filters */}

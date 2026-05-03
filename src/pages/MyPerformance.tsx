@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageGuide } from "@/components/layout/PageGuide";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -84,6 +85,16 @@ export default function MyPerformance() {
           icon={<Award className="w-6 h-6" />}
           title="أدائي"
           subtitle={`${employee?.full_name ?? ""}${employee?.job_role ? " — " + employee.job_role : ""}`}
+        />
+        <PageGuide
+          description="هذه الصفحة هي بطاقتك الشخصية للأداء. تجمع نسب إنجاز مهامك، نتائج المساءلات، ومتوسط درجة إثباتاتك من فحص النظام التلقائي، لتمنحك صورة شاملة عن وضعك الوظيفي وفرص تطورك."
+          features={[
+            "متوسط درجة الإثباتات من الفحص التلقائي",
+            "نسبة المساءلات المعتمدة مقابل المرفوضة",
+            "نسبة إنجاز المهام العادية ومهام المساءلة",
+            "توزيع تفصيلي لحالة المساءلات",
+            "تتبّع التطور عبر الزمن",
+          ]}
         />
 
         {/* Top KPIs */}

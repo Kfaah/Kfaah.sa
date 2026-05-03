@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageGuide } from "@/components/layout/PageGuide";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1669,6 +1670,16 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
               </Button>
             </>
           }
+        />
+        <PageGuide
+          description="هذه الصفحة تحوّل الخطط التشغيلية السنوية إلى جداول زمنية تنفيذية تفصيلية. توزّع المستهدفات الشهرية على أيام محددة، تحدد المسؤول عن كل مرحلة، وتمنحك رؤية يومية وشهرية واضحة لما يجب تنفيذه."
+          features={[
+            "توزيع المستهدفات الشهرية على أيام محددة",
+            "إضافة الخطط يدوياً أو من ملف Excel",
+            "توليد جدولة كاملة بالذكاء الاصطناعي",
+            "تعديل المراحل بمرونة عبر السحب والإفلات",
+            "عرض شهري ويومي وقابلية التعديل المباشر",
+          ]}
         />
         {/* الفلاتر */}
         <div className="bg-gradient-to-r from-slate-50 via-white to-slate-50 rounded-2xl border border-slate-200 p-5 shadow-sm">

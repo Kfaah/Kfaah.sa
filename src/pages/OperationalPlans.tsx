@@ -2,6 +2,7 @@ import { useState, useEffect, Fragment } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageGuide } from "@/components/layout/PageGuide";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1703,6 +1704,16 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
               </Button>
             </>
           }
+        />
+        <PageGuide
+          description="هذه الصفحة مخصّصة لبناء وإدارة الخطط التشغيلية السنوية للجمعية. تربط كل نشاط بالهدف الاستراتيجي والمبادرة المنبثقة منه، وتحدد المستهدف السنوي والميزانية والمسؤول، مع متابعة دقيقة لنسب الإنجاز."
+          features={[
+            "إضافة الخطط يدوياً أو توليدها بالذكاء الاصطناعي",
+            "ربط الأنشطة بالأهداف الاستراتيجية والمبادرات",
+            "تحديد المستهدفات السنوية والميزانيات",
+            "إنشاء أعمدة مخصّصة وصيغ حسابية",
+            "تصدير الخطة لـ Excel ومتابعة الإنجاز",
+          ]}
         />
 
         <div>

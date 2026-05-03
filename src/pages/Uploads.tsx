@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageGuide } from "@/components/layout/PageGuide";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -367,6 +368,16 @@ export default function Uploads() {
           icon={<Upload className="w-6 h-6" />}
           title="رفع الملفات"
           subtitle="مكان موحّد لرفع جميع ملفات الجمعية — اختر الفئة وسيقوم النظام بالقراءة، الربط، والتحليل تلقائياً"
+        />
+        <PageGuide
+          description="هذه الصفحة هي البوابة الموحّدة لرفع جميع ملفات الجمعية إلى النظام (مستندات Word، جداول Excel، ملفات PDF، صور). يقوم النظام بقراءة الملف تلقائياً، استخراج البيانات منه، وربطه بالقسم الصحيح (موظفون، خطط، مهام، تقارير) ثم تحليل محتواه بالذكاء الاصطناعي لاستخراج ملخّص ومؤشرات."
+          features={[
+            "اختيار فئة الملف لتوجيهه للقسم المناسب",
+            "قراءة محتوى Excel وWord وPDF آلياً",
+            "ربط البيانات بسجلات الموظفين والخطط",
+            "تحليل ذكي للمحتوى واستخراج ملخّص",
+            "حفظ المرفقات والرجوع إليها لاحقاً",
+          ]}
         />
 
         {/* Category selector */}
