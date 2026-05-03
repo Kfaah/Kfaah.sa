@@ -36,6 +36,12 @@ import {
   Award,
 } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
@@ -74,45 +80,46 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
   iconBg: string;
+  description?: string;
 }
 
 // كل أيقونة بلونها المميز — ثابت دائمًا لتجنب تبدّل الألوان أو اهتزاز القائمة عند التنقل.
 const adminNavItems: NavItem[] = [
-  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "nav-icon-upload" },
-  { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "nav-icon-analysis" },
-  { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "nav-icon-overview" },
-  { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "nav-icon-people" },
-  { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "nav-icon-plans" },
-  { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive" },
-  { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: "nav-icon-tasks" },
-  { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "nav-icon-performance" },
-  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations" },
-  { title: "تحليل المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: "nav-icon-accountability" },
-  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports" },
-  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation" },
-  { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "nav-icon-donors" },
+  { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "nav-icon-upload", description: "رفع ملفات الجمعية (لوائح، خطط، تقارير، مرفقات Excel) ليتم تحليلها ومعالجتها داخل النظام." },
+  { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "nav-icon-analysis", description: "تحليل آلي شامل لبيانات الجمعية بالذكاء الاصطناعي لاستخراج نقاط القوة والفرص والمخاطر." },
+  { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "nav-icon-overview", description: "ملخّص لوحات المؤشرات الرئيسية للجمعية: الأداء، المهام، الخطط والمستفيدين في شاشة واحدة." },
+  { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "nav-icon-people", description: "إدارة بيانات الموظفين والإدارات وتعيين المدراء المباشرين والصلاحيات." },
+  { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "nav-icon-plans", description: "بناء ومتابعة الخطط التشغيلية السنوية المرتبطة بالأهداف الاستراتيجية والمبادرات." },
+  { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive", description: "جدولة مراحل التنفيذ الزمنية للأنشطة وتوزيع المسؤوليات على فريق العمل." },
+  { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: "nav-icon-tasks", description: "إنشاء المهام وتوزيعها على الموظفين ومتابعة حالتها وأولوياتها وتواريخ تسليمها." },
+  { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "nav-icon-performance", description: "تقييم أداء الموظفين والإدارات بناءً على نسب الإنجاز والجودة ومؤشرات قابلة للقياس." },
+  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations", description: "خطط تشغيلية مولّدة آلياً انطلاقاً من توصيات التحليل الذكي ونتائج التقييم." },
+  { title: "تحليل المساءلات", href: "/internal-dashboard?tab=accountability", icon: ShieldAlert, iconBg: "nav-icon-accountability", description: "رصد حالات التقصير والمساءلات وتحليل أسبابها وتوزيعها على الموظفين والإدارات." },
+  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير تفصيلية قابلة للتصدير (PDF / Excel / Word) عن الأداء والخطط والمشاريع." },
+  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "بنك الأفكار والمبادرات الابتكارية وتطوير الخدمات بمساعدة الذكاء الاصطناعي." },
+  { title: "المتبرعون", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "nav-icon-donors", description: "إدارة قاعدة بيانات المتبرعين والداعمين ومتابعة التبرعات والحملات المرتبطة بهم." },
 ];
 
 const managerNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "nav-icon-overview" },
-  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: "nav-icon-analysis" },
-  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "nav-icon-plans" },
-  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive" },
-  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "nav-icon-tasks" },
-  { title: "مساءلاتي", href: "/my-accountability", icon: ShieldAlert, iconBg: "nav-icon-analysis" },
-  { title: "أدائي", href: "/my-performance", icon: Award, iconBg: "nav-icon-innovation" },
-  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "nav-icon-performance" },
+  { title: "نظرة عامة", href: "/app", icon: LayoutDashboard, iconBg: "nav-icon-overview", description: "ملخّص لمؤشرات الأداء الخاصة بإدارتك ومتابعة فريقك في شاشة واحدة." },
+  { title: "التحليل الذكي", href: "/intelligence", icon: Sparkles, iconBg: "nav-icon-analysis", description: "تحليل آلي لأداء إدارتك بالذكاء الاصطناعي مع توصيات للتحسين." },
+  { title: "الخطط التشغيلية", href: "/operational-plans", icon: Target, iconBg: "nav-icon-plans", description: "إدارة الخطط التشغيلية لإدارتك ومتابعة الأنشطة والمؤشرات السنوية." },
+  { title: "الخطط التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive", description: "جدولة مراحل التنفيذ الزمنية لأنشطة فريقك وتوزيع المهام بين الأعضاء." },
+  { title: "المهام", href: "/tasks", icon: ClipboardList, iconBg: "nav-icon-tasks", description: "إسناد المهام لأعضاء الفريق ومتابعة حالتها وأولوياتها." },
+  { title: "مساءلاتي", href: "/my-accountability", icon: ShieldAlert, iconBg: "nav-icon-analysis", description: "متابعة المساءلات الموجَّهة إليك مع تحليل أسبابها." },
+  { title: "أدائي", href: "/my-performance", icon: Award, iconBg: "nav-icon-innovation", description: "نتائج تقييم أدائك الشخصي ونسب الإنجاز والجودة." },
+  { title: "تقييم الأداء", href: "/performance", icon: FileText, iconBg: "nav-icon-performance", description: "تقييم أداء أعضاء فريقك بناءً على المؤشرات والمهام المنجزة." },
 ];
 
 const employeeNavItems: NavItem[] = [
-  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "nav-icon-overview" },
-  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "nav-icon-plans" },
-  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive" },
-  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "nav-icon-tasks" },
-  { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: "nav-icon-performance" },
-  { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: "nav-icon-analysis" },
-  { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "nav-icon-reports" },
-  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "nav-icon-innovation" },
+  { title: "نظرة عامة", href: "/app", icon: TrendingUp, iconBg: "nav-icon-overview", description: "ملخّص يومي لمهامك ومؤشرات أدائك الشخصية." },
+  { title: "الخطة التشغيلية", href: "/operational-plans", icon: Target, iconBg: "nav-icon-plans", description: "اطّلع على الأنشطة المسندة إليك ضمن الخطة التشغيلية للجمعية." },
+  { title: "الخطة التنفيذية", href: "/executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive", description: "جدولك الزمني التفصيلي لتنفيذ مراحل أنشطتك." },
+  { title: "مهامي اليومية", href: "/tasks", icon: ClipboardList, iconBg: "nav-icon-tasks", description: "قائمة المهام اليومية الموكلة إليك وتحديث حالتها ونسبة إنجازها." },
+  { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: "nav-icon-performance", description: "نتائج تقييم أدائك الشخصي ونسب الإنجاز والجودة." },
+  { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: "nav-icon-analysis", description: "متابعة المساءلات الموجَّهة إليك وتحليل أسبابها للتحسين." },
+  { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير شخصية قابلة للتصدير عن إنجازاتك ومهامك." },
+  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "اقترح أفكاراً ومبادرات لتطوير عمل الجمعية." },
 ];
 
 const settingsNavItem: NavItem = {
@@ -120,6 +127,7 @@ const settingsNavItem: NavItem = {
   href: "/settings",
   icon: Settings,
   iconBg: "nav-icon-settings",
+  description: "إعدادات الجمعية: الهوية البصرية، الأعضاء، الأدوار والصلاحيات، وإعدادات النظام.",
 };
 
 export function Sidebar() {
