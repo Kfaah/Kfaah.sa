@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import kafaaLogo from "@/assets/kafaa-logo-transparent.png";
+import kafaaLogo from "@/assets/kafaa-kmark.png";
 
 const normalizeDigits = (value: string, trim = false) => {
   const input = trim ? value.trim() : value;
@@ -116,8 +116,8 @@ export default function PublicLanding() {
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-7xl grid md:grid-cols-[1.3fr_1fr] gap-8 lg:gap-12 items-center">
-          {/* RIGHT (RTL first): MASSIVE hero logo with white edge glow */}
-          <div className="relative flex items-center justify-center animate-fade-in order-1 min-h-[500px] md:min-h-[600px]">
+          {/* RIGHT (RTL first): MASSIVE K-mark + small Kafa'a/كفاءة text + tagline */}
+          <div className="relative flex flex-col items-center justify-center animate-fade-in order-1 min-h-[500px] md:min-h-[600px]">
             {/* Soft white aura — sits behind the logo, blends with platform bg */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
               <div
@@ -142,13 +142,38 @@ export default function PublicLanding() {
               <img
                 src={kafaaLogo}
                 alt="كفاءة"
-                className="h-[26rem] md:h-[34rem] lg:h-[40rem] w-auto object-contain"
+                className="h-[20rem] md:h-[26rem] lg:h-[30rem] w-auto object-contain"
                 loading="eager"
                 style={{
                   transform: "perspective(1100px) rotateX(5deg)",
                   transformStyle: "preserve-3d",
                 }}
               />
+            </div>
+
+            {/* Brand wordmark — smaller, under the K */}
+            <div className="mt-2 flex flex-col items-center gap-1 text-center">
+              <div
+                className="text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-none"
+                style={{
+                  textShadow:
+                    "0 0 8px rgba(255,255,255,0.6), 0 0 18px rgba(34,211,238,0.55), 0 0 30px rgba(34,211,238,0.35)",
+                }}
+              >
+                كفاءة
+              </div>
+              <div
+                className="text-2xl md:text-3xl font-bold text-cyan-100 tracking-wide leading-none"
+                style={{
+                  textShadow:
+                    "0 0 6px rgba(255,255,255,0.5), 0 0 14px rgba(34,211,238,0.5)",
+                }}
+              >
+                Kafa&apos;a
+              </div>
+              <p className="mt-3 text-sm md:text-base text-slate-200/90 font-medium max-w-md leading-relaxed">
+                منصة إدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي
+              </p>
             </div>
           </div>
 
@@ -235,15 +260,8 @@ export default function PublicLanding() {
         </div>
       </main>
 
-      <footer className="relative z-10 text-center text-slate-300/70 text-xs py-4">
-        <div className="max-w-3xl mx-auto px-4 space-y-2">
-          <p className="text-sm md:text-base text-slate-200/90 leading-relaxed">
-            منصة <span className="text-cyan-300 font-bold">كفاءة</span> لإدارة الأداء المؤسسي للجمعيات الخيرية بالذكاء الاصطناعي — منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
-          </p>
-          <p className="text-xs text-slate-400/70 pt-1">
-            © {new Date().getFullYear()} منصة كفاءة — جميع الحقوق محفوظة
-          </p>
-        </div>
+      <footer className="relative z-10 text-center text-slate-200/80 text-sm py-4">
+        © {new Date().getFullYear()} نظام إدارة التسويق الإلكتروني للجمعيات
       </footer>
     </div>
   );
