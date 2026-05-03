@@ -115,9 +115,9 @@ export default function PublicLanding() {
       </div>
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-7xl grid md:grid-cols-[1.3fr_1fr] gap-8 lg:gap-12 items-center">
+        <div className="w-full max-w-6xl grid md:grid-cols-[1fr_1fr] gap-2 md:gap-4 lg:gap-6 items-center justify-items-center">
           {/* RIGHT (RTL first): MASSIVE hero logo with white edge glow */}
-          <div className="relative flex items-center justify-center animate-fade-in order-1 min-h-[500px] md:min-h-[600px]">
+          <div className="relative flex items-center justify-end md:justify-start animate-fade-in order-1 min-h-[500px] md:min-h-[600px] w-full md:-mr-8 lg:-mr-12">
             {/* Logo — drawn on the page itself, no PNG background */}
             <KafaaLogoArtwork
               className="relative h-[26rem] md:h-[34rem] lg:h-[42rem] w-auto"
