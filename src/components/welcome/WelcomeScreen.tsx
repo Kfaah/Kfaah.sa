@@ -314,7 +314,7 @@ export function WelcomeScreen() {
         >
           <h2 className="text-2xl font-bold text-slate-700">
             {isDemoRoute ? (
-              <span className="bg-gradient-to-l from-emerald-600 to-teal-700 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-l from-cyan-500 to-slate-800 bg-clip-text text-transparent">
                 منصة كفاءة
               </span>
             ) : (
