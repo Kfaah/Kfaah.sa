@@ -13,10 +13,10 @@ serve(async (req) => {
   }
 
   try {
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "ANTHROPIC_API_KEY is not configured" }),
+        JSON.stringify({ error: "LOVABLE_API_KEY is not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -45,11 +45,7 @@ serve(async (req) => {
       });
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // Routing مبسّط: استخدام Claude مباشرة عبر Anthropic API
-    //   • Sonnet 4.5  → الافتراضي (ممتاز للبرمجة والتحليل والعربية)
-    //   • Haiku       → للمحادثات القصيرة جداً (توفير التكلفة)
-    // ──────────────────────────────────────────────────────────────
+    // استخدام بوابة الذكاء المدمجة لضمان الاتصال بدون مفاتيح خارجية.
     const lastUserMsg = [...messages]
       .reverse()
       .find((m: any) => m?.role === "user")?.content ?? "";
@@ -58,8 +54,8 @@ serve(async (req) => {
     // استخدم Haiku للرسائل القصيرة جداً (تحية/سؤال بسيط) لتوفير التكلفة
     const isShortChat = text.length < 60;
     const selectedModel = isShortChat
-      ? "claude-haiku-4-5"
-      : "claude-sonnet-4-5";
+      ? "google/gemini-2.5-flash-lite"
+      : "google/gemini-2.5-flash";
     const routedReason = isShortChat ? "short_chat" : "default_sonnet";
 
     // Pull a small employee context for the system prompt
