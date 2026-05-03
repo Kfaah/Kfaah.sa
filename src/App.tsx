@@ -70,6 +70,8 @@ const StaffDutiesUpload = lazy(() => import("./pages/StaffDutiesUpload"));
 const MyAssistant = lazy(() => import("./pages/MyAssistant"));
 const PerformanceEvaluation = lazy(() => import("./pages/PerformanceEvaluation"));
 const AssistantFab = lazy(() => import("@/components/assistant/AssistantFab").then((m) => ({ default: m.AssistantFab })));
+const Demo = lazy(() => import("./pages/Demo"));
+const DemoModeShell = lazy(() => import("@/components/demo/DemoModeShell").then((m) => ({ default: m.DemoModeShell })));
 
 const PROTECTED_ROOTS = new Set([
   "admin", "app", "employees", "roles", "tasks", "plans", "executive-plans",
@@ -81,6 +83,7 @@ const PROTECTED_ROOTS = new Set([
 function isPublicEntryPath(pathname: string) {
   const segments = pathname.split("/").filter(Boolean);
   if (pathname === "/" || pathname === "/auth" || segments[0] === "j") return true;
+  if (segments[0] === "demo" && segments.length === 1) return true;
   return segments.length === 1 && !PROTECTED_ROOTS.has(segments[0]);
 }
 
