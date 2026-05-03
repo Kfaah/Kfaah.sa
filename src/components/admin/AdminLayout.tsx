@@ -40,7 +40,7 @@ const navItems = [
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   // Embedded mode: when this admin page is rendered inside an iframe of the
   // org internal dashboard, hide the admin sidebar so only the page content
@@ -135,7 +135,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     .join("")
     .toUpperCase() || "م";
 
-  const handleSignOut = () => { navigate("/admin/organizations", { replace: true }); };
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth", { replace: true });
+  };
 
   if (isEmbedded) {
     return (
