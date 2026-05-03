@@ -89,53 +89,45 @@ serve(async (req) => {
       });
     } catch (_) { /* ignore */ }
 
-    // تحويل رسائل OpenAI-style إلى Anthropic-style
-    // (Anthropic لا يقبل دور system داخل messages، يجب فصله)
-    const anthropicMessages = messages
+    const chatMessages = messages
       .filter((m: any) => m?.role === "user" || m?.role === "assistant")
       .map((m: any) => ({
         role: m.role,
         content: typeof m.content === "string" ? m.content : String(m.content ?? ""),
       }));
 
-    const anthropicResp = await fetch("https://api.anthropic.com/v1/messages", {
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: selectedModel,
-        max_tokens: 2048,
-        system: systemPrompt,
-        messages: anthropicMessages,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...chatMessages,
+        ],
         stream: true,
       }),
     });
 
-    if (!anthropicResp.ok) {
-      if (anthropicResp.status === 429) {
+    if (!aiResp.ok) {
+      if (aiResp.status === 429) {
         return new Response(
           JSON.stringify({ error: "تم تجاوز حد الاستخدام، حاول بعد دقيقة." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      if (anthropicResp.status === 401) {
+      if (aiResp.status === 402 || aiResp.status === 403) {
         return new Response(
-          JSON.stringify({ error: "مفتاح Anthropic غير صحيح أو منتهي." }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      if (anthropicResp.status === 402 || anthropicResp.status === 403) {
-        return new Response(
-          JSON.stringify({ error: "نفذ رصيد Anthropic، يرجى الشحن." }),
+          JSON.stringify({ error: "نفذ رصيد الذكاء الاصطناعي." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      const t = await anthropicResp.text();
-      console.error("Anthropic error:", anthropicResp.status, t);
-      return new Response(JSON.stringify({ error: "Anthropic API error" }), {
+      const t = await aiResp.text();
+      console.error("AI gateway error:", aiResp.status, t);
+      return new Response(JSON.stringify({ error: "AI gateway error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
