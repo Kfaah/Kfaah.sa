@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone, CheckCircle2, Clock, Sparkles } from "lucide-react";
+import { PlatformBrand } from "@/components/brand/PlatformBrand";
 
 interface OrgInfo {
   id: string;
@@ -302,6 +303,13 @@ export default function OrgAuth() {
       />
 
       <div className="relative w-full max-w-md">
+        {/* Platform identity — always shown above the organization brand */}
+        <div className="flex justify-center mb-5">
+          <div className="bg-white/80 backdrop-blur-sm rounded-full px-5 py-2 shadow-md border border-white/60">
+            <PlatformBrand size="sm" showTagline={false} />
+          </div>
+        </div>
+
         {/* Org branding with orbiting rings */}
         <div className="text-center mb-7">
           <div className="relative mx-auto w-44 h-44 mb-5">
