@@ -108,7 +108,7 @@ export default function PublicLanding() {
             src={kafaaLogo}
             alt="كفاءة"
             className="h-32 md:h-44 w-auto object-contain"
-            style={{ mixBlendMode: "multiply" }}
+            style={{ mixBlendMode: "screen" }}
             loading="eager"
           />
         </div>
