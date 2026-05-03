@@ -281,12 +281,16 @@ export function WelcomeScreen() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/80">
             {branding.loading && !isDemoRoute ? (
               <div className="w-44 h-44 rounded-full bg-muted animate-pulse" />
-            ) : (
+            ) : displayLogo ? (
               <img
-                src={displayLogo || demoOrgLogo}
+                src={displayLogo}
                 alt={displayOrgName || "الجمعية"}
                 className="w-44 h-44 object-contain rounded-full"
               />
+            ) : (
+              <div className="flex h-44 w-44 items-center justify-center rounded-full bg-secondary text-5xl font-black text-primary">
+                {(displayOrgName || "ج").trim().charAt(0)}
+              </div>
             )}
           </div>
         </motion.div>
