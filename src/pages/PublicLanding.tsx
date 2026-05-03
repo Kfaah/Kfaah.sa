@@ -120,11 +120,10 @@ export default function PublicLanding() {
           <div className="relative flex items-center justify-center animate-fade-in order-1 min-h-[500px] md:min-h-[600px]">
             {/* Logo — drawn on the page itself, no PNG background */}
             <KafaaLogoArtwork
-              className="relative h-[30rem] md:h-[40rem] lg:h-[48rem] w-auto animate-pulse-subtle"
+              className="relative h-[26rem] md:h-[34rem] lg:h-[42rem] w-auto"
               style={{
-                transform: "perspective(1100px) rotateX(5deg)",
-                transformStyle: "preserve-3d",
-                filter: "drop-shadow(0 30px 50px hsl(var(--kafaa-logo-accent) / 0.35)) drop-shadow(0 15px 25px hsl(220 75% 3% / 0.55))",
+                filter:
+                  "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
               }}
             />
           </div>
