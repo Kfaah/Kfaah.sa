@@ -37,6 +37,8 @@ const UploadExecutiveExcel = lazy(() => import("./pages/UploadExecutiveExcel"));
 const AIGenerateExecutivePlan = lazy(() => import("./pages/AIGenerateExecutivePlan"));
 const AddExecutivePlan = lazy(() => import("./pages/AddExecutivePlan"));
 const Auth = lazy(() => import("./pages/Auth"));
+const PlatformFeatures = lazy(() => import("./pages/PlatformFeatures"));
+const PlatformSubscribe = lazy(() => import("./pages/PlatformSubscribe"));
 const Settings = lazy(() => import("./pages/Settings"));
 const BrandingSettings = lazy(() => import("./pages/settings/BrandingSettings"));
 const RolesPermissionsSettings = lazy(() => import("./pages/settings/RolesPermissionsSettings"));
