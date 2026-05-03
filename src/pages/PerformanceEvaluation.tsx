@@ -139,6 +139,7 @@ export default function PerformanceEvaluation() {
   const { user } = useAuth();
   const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [scores, setScores] = useState<ScoreRow[]>([]);
@@ -169,7 +170,10 @@ export default function PerformanceEvaluation() {
   );
 
   const loadAll = async () => {
-    setLoading(true);
+    // Only show the full-page spinner on the very first load.
+    // Subsequent refreshes (filter changes) update silently in the background
+    // to avoid the table flashing/blanking on every interaction.
+    setRefreshing(true);
     // Resolve current user's organization to scope the table
     const { data: orgId } = await supabase.rpc("get_user_organization_id", { _user_id: user?.id });
     const [cRes, eRes, sRes, dRes] = await Promise.all([
@@ -213,6 +217,7 @@ export default function PerformanceEvaluation() {
     };
     setScores(all.filter(inRange));
     setLoading(false);
+    setRefreshing(false);
   };
 
   useEffect(() => { loadAll(); }, [period, customFrom, customTo]);
