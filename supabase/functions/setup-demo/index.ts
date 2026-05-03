@@ -91,17 +91,8 @@ serve(async (req) => {
       { onConflict: "user_id,role" },
     );
 
-    // 4) Seed demo data if not seeded yet
-    const { count: empCount } = await admin
-      .from("employees")
-      .select("id", { head: true, count: "exact" })
-      .eq("organization_id", DEMO_ORG_ID);
-
-    let seeded = false;
-    if ((empCount ?? 0) < 3) {
-      await seedDemoData(admin);
-      seeded = true;
-    }
+    // 4) Seed demo data — each section is independently idempotent
+    const seeded = await seedDemoData(admin, demoUserId!);
 
     return json({
       ok: true,
@@ -115,8 +106,12 @@ serve(async (req) => {
   }
 });
 
-async function seedDemoData(admin: ReturnType<typeof createClient>) {
+async function seedDemoData(
+  admin: ReturnType<typeof createClient>,
+  demoUserId: string,
+) {
   const orgId = DEMO_ORG_ID;
+  const seededParts: string[] = [];
 
   await admin.from("organization_branding").upsert(
     {
@@ -128,19 +123,33 @@ async function seedDemoData(admin: ReturnType<typeof createClient>) {
     { onConflict: "organization_id" },
   );
 
-  const departments = [
-    "الإدارة التنفيذية",
-    "الموارد البشرية",
-    "البرامج والمشاريع",
-    "التسويق والاتصال",
-    "المالية",
-  ];
-  const { data: deptInserted } = await admin
+  // Departments
+  const { count: deptCount } = await admin
     .from("departments")
-    .insert(departments.map((name) => ({ organization_id: orgId, name })))
-    .select("id, name");
+    .select("id", { head: true, count: "exact" })
+    .eq("organization_id", orgId);
   const deptByName: Record<string, string> = {};
-  (deptInserted ?? []).forEach((d: any) => (deptByName[d.name] = d.id));
+  if ((deptCount ?? 0) === 0) {
+    const departments = [
+      "الإدارة التنفيذية",
+      "الموارد البشرية",
+      "البرامج والمشاريع",
+      "التسويق والاتصال",
+      "المالية",
+    ];
+    const { data: deptInserted } = await admin
+      .from("departments")
+      .insert(departments.map((name) => ({ organization_id: orgId, name })))
+      .select("id, name");
+    (deptInserted ?? []).forEach((d: any) => (deptByName[d.name] = d.id));
+    seededParts.push("departments");
+  } else {
+    const { data: existing } = await admin
+      .from("departments")
+      .select("id, name")
+      .eq("organization_id", orgId);
+    (existing ?? []).forEach((d: any) => (deptByName[d.name] = d.id));
+  }
 
   const employees = [
     { full_name: "أحمد عبدالله الزهراني", role: "المدير التنفيذي", role_level: "admin", dept: "الإدارة التنفيذية" },
@@ -156,27 +165,42 @@ async function seedDemoData(admin: ReturnType<typeof createClient>) {
     { full_name: "تركي صالح القرني", role: "منسق مشاريع", role_level: "employee", dept: "البرامج والمشاريع" },
     { full_name: "منى يوسف الجهني", role: "محاسبة", role_level: "employee", dept: "المالية" },
   ];
-  const empRows = employees.map((e, i) => ({
-    organization_id: orgId,
-    full_name: e.full_name,
-    username: `demo_emp_${i + 1}`,
-    email: `demo_emp_${i + 1}@demo.local`,
-    job_role: e.role,
-    role_level: e.role_level,
-    department_id: deptByName[e.dept] ?? null,
-    role_color: "bg-primary",
-    status: "active",
-  }));
-  const { data: empInserted } = await admin
+  // Employees
+  const { count: empCount } = await admin
     .from("employees")
-    .insert(empRows)
-    .select("id, full_name, role_level");
-  const all = empInserted ?? [];
+    .select("id", { head: true, count: "exact" })
+    .eq("organization_id", orgId);
+  let all: any[] = [];
+  if ((empCount ?? 0) === 0) {
+    const empRows = employees.map((e, i) => ({
+      organization_id: orgId,
+      full_name: e.full_name,
+      username: `demo_emp_${i + 1}`,
+      email: `demo_emp_${i + 1}@demo.local`,
+      job_role: e.role,
+      role_level: e.role_level,
+      department_id: deptByName[e.dept] ?? null,
+      role_color: "bg-primary",
+      status: "active",
+    }));
+    const { data: empInserted } = await admin
+      .from("employees")
+      .insert(empRows)
+      .select("id, full_name, role_level");
+    all = empInserted ?? [];
+    seededParts.push("employees");
+  } else {
+    const { data: existing } = await admin
+      .from("employees")
+      .select("id, full_name, role_level")
+      .eq("organization_id", orgId);
+    all = existing ?? [];
+  }
   const adminEmp = all.find((e: any) => e.role_level === "admin");
   const managers = all.filter((e: any) => e.role_level === "manager");
   const staff = all.filter((e: any) => e.role_level === "employee");
 
-  if (adminEmp) {
+  if (adminEmp && (empCount ?? 0) === 0) {
     for (const m of managers) {
       await admin.from("employees").update({ direct_manager_id: adminEmp.id }).eq("id", m.id);
     }
@@ -186,24 +210,52 @@ async function seedDemoData(admin: ReturnType<typeof createClient>) {
     }
   }
 
-  const goalRows = [
-    { title: "تمكين المستفيدين وتحسين جودة الخدمة" },
-    { title: "بناء قدرات الكوادر وتطوير بيئة العمل" },
-    { title: "تنويع مصادر التمويل وتعزيز الاستدامة" },
-  ].map((g) => ({ organization_id: orgId, title: g.title }));
-  const { data: goalsIns } = await admin
+  // Strategic goals (note: schema uses activity_name / plan_name / user_id NOT NULL)
+  const { count: goalsExisting } = await admin
     .from("strategic_goals")
-    .insert(goalRows)
-    .select("id, title");
-  const goals = goalsIns ?? [];
+    .select("id", { head: true, count: "exact" })
+    .eq("organization_id", orgId);
+  if ((goalsExisting ?? 0) === 0) {
+    const goalSeeds = [
+      { activity: "تمكين المستفيدين وتحسين جودة الخدمة", plan: "خطة الأثر المجتمعي" },
+      { activity: "بناء قدرات الكوادر وتطوير بيئة العمل", plan: "خطة تطوير الموارد البشرية" },
+      { activity: "تنويع مصادر التمويل وتعزيز الاستدامة", plan: "خطة الاستدامة المالية" },
+    ];
+    await admin.from("strategic_goals").insert(
+      goalSeeds.map((g, i) => ({
+        organization_id: orgId,
+        user_id: demoUserId,
+        activity_name: g.activity,
+        plan_name: g.plan,
+        annual_target: 100,
+        estimated_budget: 250000 + i * 50000,
+        status: "active",
+      })),
+    );
+    seededParts.push("strategic_goals");
+  }
 
-  for (const g of goals) {
-    await admin.from("operational_plans").insert({
-      organization_id: orgId,
-      title: `خطة تشغيلية — ${g.title}`,
-      year: new Date().getFullYear(),
-      strategic_goal_id: g.id,
-    });
+  // Operational plans (schema uses `name`, not `title`)
+  const { count: plansExisting } = await admin
+    .from("operational_plans")
+    .select("id", { head: true, count: "exact" })
+    .eq("organization_id", orgId);
+  if ((plansExisting ?? 0) === 0) {
+    const planNames = [
+      "خطة الأثر المجتمعي",
+      "خطة تطوير الموارد البشرية",
+      "خطة الاستدامة المالية",
+    ];
+    await admin.from("operational_plans").insert(
+      planNames.map((name, i) => ({
+        organization_id: orgId,
+        name,
+        description: `${name} — للعرض التجريبي`,
+        year: new Date().getFullYear(),
+        color: ["bg-emerald-500", "bg-teal-500", "bg-amber-500"][i],
+      })),
+    );
+    seededParts.push("operational_plans");
   }
 
   const taskTitles = [
@@ -223,21 +275,32 @@ async function seedDemoData(admin: ReturnType<typeof createClient>) {
     "تحديث الموقع الإلكتروني",
     "تنظيم لقاء المتبرعين",
   ];
-  const statuses = ["upcoming", "in_progress", "completed", "executed"];
+  // Tasks (schema requires user_id NOT NULL; assigned employee field doesn't exist on tasks)
+  const { count: tasksExisting } = await admin
+    .from("tasks")
+    .select("id", { head: true, count: "exact" })
+    .eq("organization_id", orgId);
+  if ((tasksExisting ?? 0) === 0) {
+    const statuses = ["upcoming", "in_progress", "completed", "executed", "pending"];
   const today = new Date();
   const taskRows = taskTitles.map((title, idx) => {
-    const assignee = all[idx % all.length];
     return {
       organization_id: orgId,
+      user_id: demoUserId,
       title,
       description: `${title} — مهمة تجريبية لعرض إمكانيات المنصة.`,
-      assigned_to: assignee?.id,
       status: statuses[idx % statuses.length],
       priority: ["high", "medium", "low"][idx % 3],
+      completion_percentage: idx % 4 === 2 ? 100 : (idx * 7) % 100,
+      quality_percentage: idx % 4 === 2 ? 90 : (idx * 11) % 100,
       due_date: new Date(today.getTime() + (idx - 5) * 86400000)
         .toISOString()
         .split("T")[0],
     };
   });
-  await admin.from("tasks").insert(taskRows);
+    await admin.from("tasks").insert(taskRows);
+    seededParts.push("tasks");
+  }
+
+  return seededParts;
 }
