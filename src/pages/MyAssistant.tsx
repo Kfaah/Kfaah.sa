@@ -212,7 +212,7 @@ export default function MyAssistant() {
       if (!resp.ok) {
         if (resp.status === 429) toast.error("تم تجاوز حد الاستخدام، حاول بعد دقيقة.");
         else if (resp.status === 402) toast.error("نفذ رصيد الذكاء الاصطناعي.");
-        else toast.error("تعذّر الاتصال بالمساعد.");
+        else toast.error("المساعد الذكي غير متصل حالياً، يرجى المحاولة لاحقاً.");
         setStreaming(false);
         return;
       }
@@ -254,7 +254,7 @@ export default function MyAssistant() {
       );
     } catch (e) {
       console.error(e);
-      toast.error("حدث خطأ غير متوقع.");
+      toast.error("المساعد الذكي غير متصل حالياً، يرجى المحاولة لاحقاً.");
     } finally {
       setStreaming(false);
     }
