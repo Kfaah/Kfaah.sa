@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PageGuide } from "@/components/layout/PageGuide";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1147,6 +1148,16 @@ const Tasks = ({ embedded = false }: TasksProps) => {
               </Button>
             </>
           }
+        />
+        <PageGuide
+          description="هذه الصفحة هي مركز إدارة جميع مهام الجمعية. تنشئ المهام، توزّعها على الموظفين، تحدد أولوياتها وتاريخ تسليمها، وتتابع حالتها (قادمة، قيد التنفيذ، مكتملة، متأخرة) لحظة بلحظة، مع إمكانية توليد المهام تلقائياً من الخطط بالذكاء الاصطناعي."
+          features={[
+            "إنشاء مهام يدوياً أو توليدها بالذكاء الاصطناعي",
+            "تحديد المسؤول والأولوية وتاريخ التسليم",
+            "متابعة حالة المهمة ونسبة الإنجاز والجودة",
+            "ربط المهام بالخطط التشغيلية والتنفيذية",
+            "تصفية المهام حسب الإدارة والحالة والتاريخ",
+          ]}
         />
 
         {/* إحصائيات */}
