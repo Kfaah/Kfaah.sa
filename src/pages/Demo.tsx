@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
@@ -12,6 +12,12 @@ import ProtectedAppProviders from "@/components/ProtectedAppProviders";
  * organization's dashboard.
  */
 export default function Demo() {
+  useLayoutEffect(() => {
+    const gate = document.getElementById("__branding_gate__");
+    if (gate?.parentNode) gate.parentNode.removeChild(gate);
+    document.body.style.visibility = "";
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
