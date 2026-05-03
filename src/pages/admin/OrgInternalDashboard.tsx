@@ -29,6 +29,7 @@ import { LogIn } from "lucide-react";
 const OperationalPlans = lazy(() => import("@/pages/OperationalPlans"));
 const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 const TasksPage = lazy(() => import("@/pages/Tasks"));
+const PerformanceEvaluation = lazy(() => import("@/pages/PerformanceEvaluation"));
 
 // شرح تفصيلي لكل تبويب يظهر للمستخدم أعلى الصفحة عند فتح الأيقونة من الشريط الجانبي.
 const TAB_GUIDES: Record<string, { description: string; features: string[] }> = {
@@ -794,12 +795,9 @@ export default function OrgInternalDashboard({
           className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
           dir="rtl"
         >
-          <EmbeddedOrgPage
-            slug={org?.slug}
-            path="/performance"
-            title="تقييم الأداء"
-            isActive={visitedTabs.has("performance")}
-          />
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            {visitedTabs.has("performance") ? <PerformanceEvaluation embedded /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+          </Suspense>
         </TabsContent>
         <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <div className="space-y-4">
