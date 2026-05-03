@@ -60,18 +60,14 @@ export function AssistantFab() {
       className={cn(
         "fixed bottom-6 left-6 z-50 group",
         "flex items-center gap-2 rounded-full",
-        "text-white shadow-2xl",
+        "bg-primary text-primary-foreground shadow-2xl",
         "px-5 py-3 transition-all hover:scale-105",
-        "ring-2 ring-white/30 hover:ring-white/60",
+        "ring-2 ring-primary/20 hover:bg-primary/90 hover:ring-primary/35",
       )}
-      style={{
-        background: "radial-gradient(circle at 30% 30%, #48876b 0%, #6f8f5c 45%, #b09b43 100%)",
-        boxShadow: "0 10px 30px -5px rgba(111, 143, 92, 0.6)",
-      }}
     >
       <span className="relative">
         <Sparkles className="h-5 w-5" />
-        <span className="absolute -inset-1 rounded-full bg-white/30 blur opacity-0 group-hover:opacity-100 transition" />
+        <span className="absolute -inset-1 rounded-full bg-primary-foreground/25 blur opacity-0 group-hover:opacity-100 transition" />
       </span>
       <span className="font-bold text-sm">المساعد الذكي</span>
     </button>
