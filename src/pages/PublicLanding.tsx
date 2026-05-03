@@ -164,7 +164,7 @@ export default function PublicLanding() {
           <CardHeader className="text-center space-y-3 pb-5 pt-8">
             <CardTitle className="text-3xl md:text-4xl text-white font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
             <CardDescription className="text-slate-300 text-sm md:text-base">
-              هذه الواجهة مخصصة لمدير المنصة
+              بوابة آمنة للتحكم الكامل بالمنصة وإدارة جميع الجمعيات
             </CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8">
@@ -180,7 +180,7 @@ export default function PublicLanding() {
                   required
                   placeholder="أدخل رقم الهوية"
                   className="h-13 text-right bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
-                  dir="ltr"
+                  dir="rtl"
                 />
               </div>
               <div className="space-y-2">
@@ -196,8 +196,8 @@ export default function PublicLanding() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="h-13 pe-10 bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
-                    dir="ltr"
+                    className="h-13 pe-10 text-right bg-white/10 border-white/20 text-white text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50 py-3"
+                    dir="rtl"
                   />
                   <button
                     type="button"
