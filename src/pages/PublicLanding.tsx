@@ -114,74 +114,63 @@ export default function PublicLanding() {
         ))}
       </div>
 
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-10 gap-10">
-        {/* Hero logo — massive, 3D floating, no frame */}
-        <div className="relative flex flex-col items-center animate-fade-in">
-          {/* Glow halo behind logo */}
-          <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
-            <div className="w-[420px] h-[420px] rounded-full bg-gradient-to-br from-cyan-400/30 via-emerald-400/20 to-transparent blur-3xl" />
-          </div>
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-6xl grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
+          {/* RIGHT (RTL first): Hero logo with white glow halo */}
+          <div className="relative flex items-center justify-center animate-fade-in order-1">
+            {/* White luminous halo behind logo */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
+              <div
+                className="w-[420px] h-[420px] md:w-[480px] md:h-[480px] rounded-full"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.25) 30%, rgba(34,211,238,0.15) 55%, transparent 75%)",
+                  filter: "blur(20px)",
+                }}
+              />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
+              <div
+                className="w-[300px] h-[300px] md:w-[360px] md:h-[360px] rounded-full"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 50%, transparent 80%)",
+                  filter: "blur(8px)",
+                }}
+              />
+            </div>
 
-          {/* Logo with 3D effect */}
-          <div
-            className="relative"
-            style={{
-              filter:
-                "drop-shadow(0 25px 50px rgba(34,211,238,0.45)) drop-shadow(0 10px 20px rgba(0,0,0,0.5)) drop-shadow(0 0 30px rgba(16,185,129,0.3))",
-              animation: "pulse-subtle 4s ease-in-out infinite",
-            }}
-          >
-            <img
-              src={kafaaLogo}
-              alt="كفاءة"
-              className="h-64 md:h-80 lg:h-96 w-auto object-contain"
-              loading="eager"
+            {/* Logo with 3D drop-shadow + white outline glow */}
+            <div
+              className="relative"
               style={{
-                transform: "perspective(800px) rotateX(8deg)",
-                transformStyle: "preserve-3d",
+                filter:
+                  "drop-shadow(0 0 12px rgba(255,255,255,0.9)) drop-shadow(0 0 25px rgba(255,255,255,0.5)) drop-shadow(0 25px 40px rgba(34,211,238,0.4)) drop-shadow(0 12px 20px rgba(0,0,0,0.5))",
+                animation: "pulse-subtle 5s ease-in-out infinite",
               }}
-            />
+            >
+              <img
+                src={kafaaLogo}
+                alt="كفاءة"
+                className="h-72 md:h-96 lg:h-[28rem] w-auto object-contain"
+                loading="eager"
+                style={{
+                  transform: "perspective(900px) rotateX(6deg)",
+                  transformStyle: "preserve-3d",
+                }}
+              />
+            </div>
           </div>
 
-          {/* Reflective floor */}
-          <div
-            className="mt-2 h-32 w-[280px] md:w-[360px] opacity-30 overflow-hidden pointer-events-none"
-            style={{
-              transform: "scaleY(-1)",
-              maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 70%)",
-              WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 70%)",
-            }}
-          >
-            <img
-              src={kafaaLogo}
-              alt=""
-              aria-hidden
-              className="h-64 md:h-80 lg:h-96 w-auto object-contain mx-auto"
-              style={{ filter: "blur(1px)" }}
-            />
-          </div>
-
-          {/* Tagline pills */}
-          <div className="flex flex-wrap gap-2 justify-center mt-4 -translate-y-16">
-            {["إدارة متعددة الجمعيات", "تقارير لحظية", "ذكاء اصطناعي"].map((t) => (
-              <span
-                key={t}
-                className="px-4 py-1.5 rounded-full bg-white/10 border border-cyan-300/30 text-xs md:text-sm text-cyan-100 backdrop-blur-md shadow-lg"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Glassmorphism login card */}
-        <Card
-          className="relative w-full max-w-md border border-white/15 shadow-2xl bg-white/[0.07] backdrop-blur-2xl animate-scale-in -mt-8"
-          style={{
-            boxShadow:
-              "0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)",
-          }}
-        >
+          {/* LEFT (RTL second): Login card + feature pills below */}
+          <div className="flex flex-col gap-5 order-2 animate-scale-in">
+            <Card
+              className="relative w-full border border-white/15 shadow-2xl bg-white/[0.07] backdrop-blur-2xl"
+              style={{
+                boxShadow:
+                  "0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)",
+              }}
+            >
           <CardHeader className="text-center space-y-2 pb-4">
             <CardTitle className="text-xl text-white font-bold">دخول مدير النظام</CardTitle>
             <CardDescription className="text-slate-300 text-xs">
@@ -240,6 +229,20 @@ export default function PublicLanding() {
             </form>
           </CardContent>
         </Card>
+
+            {/* Feature pills below the login card */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {["إدارة متعددة الجمعيات", "تقارير لحظية", "ذكاء اصطناعي"].map((t) => (
+                <span
+                  key={t}
+                  className="px-4 py-1.5 rounded-full bg-white/10 border border-cyan-300/30 text-xs md:text-sm text-cyan-100 backdrop-blur-md shadow-lg"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </main>
 
       <footer className="relative z-10 text-center text-slate-300/70 text-xs py-4">
