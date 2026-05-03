@@ -21,6 +21,13 @@ export default function Demo() {
   useEffect(() => {
     (async () => {
       try {
+        // If already signed in as the demo viewer, skip the heavy setup call.
+        const { data: sessionData } = await supabase.auth.getSession();
+        const currentEmail = sessionData?.session?.user?.email?.toLowerCase();
+        if (currentEmail === "111111111@user.local") {
+          return;
+        }
+
         const { data, error: fnErr } = await supabase.functions.invoke("setup-demo", {
           body: {},
         });
