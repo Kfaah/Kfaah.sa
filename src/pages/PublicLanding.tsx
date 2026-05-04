@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
+import SpaceScene from "@/components/space/SpaceScene";
 
 const normalizeDigits = (value: string, trim = false) => {
   const input = trim ? value.trim() : value;
@@ -80,43 +81,20 @@ export default function PublicLanding() {
       dir="rtl"
       style={{
         background:
-          "radial-gradient(ellipse at 30% 20%, hsl(195 80% 22%) 0%, hsl(210 70% 14%) 45%, hsl(220 75% 8%) 100%)",
+          "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)",
       }}
     >
-      {/* Animated aurora orbs - drifting like stars */}
-      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-cyan-400/20 blur-[120px] pointer-events-none animate-orb-drift-1" />
-      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-emerald-500/15 blur-[120px] pointer-events-none animate-orb-drift-2" style={{ animationDelay: "2s" }} />
-      <div className="absolute top-1/3 left-1/2 w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[100px] pointer-events-none animate-orb-drift-3" style={{ animationDelay: "4s" }} />
+      {/* 3D space scene: stars, planets, nebulae */}
+      <SpaceScene />
 
-      {/* Subtle grid pattern */}
+      {/* Soft vignette to keep UI readable */}
       <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
+          background:
+            "radial-gradient(ellipse at center, transparent 40%, hsl(230 80% 3% / 0.6) 100%)",
         }}
       />
-
-      {/* Floating particles */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(60)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white animate-star-drift"
-            style={{
-              top: `${(i * 53) % 100}%`,
-              left: `${(i * 37) % 100}%`,
-              width: `${1 + (i % 3)}px`,
-              height: `${1 + (i % 3)}px`,
-              opacity: 0.5 + ((i % 5) * 0.1),
-              animationDuration: `${40 + (i % 8) * 6}s`,
-              animationDelay: `-${(i * 1.7) % 30}s`,
-              boxShadow: "0 0 4px hsl(190 100% 90% / 0.8)",
-            }}
-          />
-        ))}
-      </div>
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-0 items-center justify-items-center">
