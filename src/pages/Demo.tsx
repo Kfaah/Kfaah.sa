@@ -137,9 +137,23 @@ export default function Demo() {
                     }}
                     aria-hidden="true"
                   />
+                  {/* Three small orbiting circles around the logo */}
+                  <div className="absolute inset-0 org-spin-slow pointer-events-none" aria-hidden="true">
+                    {[0, 120, 240].map((deg) => (
+                      <span
+                        key={deg}
+                        className="absolute left-1/2 top-1/2 block h-2.5 w-2.5 rounded-full"
+                        style={{
+                          background: deg === 120 ? `hsl(${accentHsl})` : `hsl(${primaryHsl})`,
+                          transform: `translate(-50%, -50%) rotate(${deg}deg) translateY(-4rem)`,
+                          boxShadow: `0 0 10px hsl(${deg === 120 ? accentHsl : primaryHsl} / 0.8)`,
+                        }}
+                      />
+                    ))}
+                  </div>
                   {/* Logo center */}
                   <div
-                    className="absolute inset-6 rounded-full bg-white shadow-2xl flex items-center justify-center overflow-hidden"
+                    className="absolute inset-5 rounded-full bg-white shadow-2xl flex items-center justify-center overflow-hidden"
                     style={{
                       boxShadow: `0 14px 36px -8px hsl(${primaryHsl} / 0.6), 0 0 0 4px white, 0 0 0 5px hsl(${primaryHsl} / 0.3)`,
                     }}
@@ -147,7 +161,7 @@ export default function Demo() {
                     <img
                       src={namozajLogo}
                       alt={DEMO_NAME}
-                      className="w-full h-full object-cover"
+                      className="w-[88%] h-[88%] object-contain"
                     />
                   </div>
                 </div>
