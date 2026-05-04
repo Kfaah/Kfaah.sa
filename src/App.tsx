@@ -312,6 +312,7 @@ function AppRoutes() {
       <Route path="/subscribe" element={<PlatformSubscribe />} />
       <Route path="/about" element={<PlatformAbout />} />
       <Route path="/about/creator" element={<AboutCreator />} />
+      <Route path="/about/quick" element={<PlatformQuick />} />
 
       {/* Legacy direct auth (kept for compatibility) */}
       <Route
