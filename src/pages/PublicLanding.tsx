@@ -217,7 +217,7 @@ export default function PublicLanding() {
             <span className="text-cyan-300 font-bold">منصة إدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي</span> — منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
           </p>
           <p className="text-xs text-slate-400/70 pt-1">
-            © {new Date().getFullYear()} منصة كفاءة — جميع الحقوق محفوظة
+            جميع الحقوق محفوظة لمنصة كفاءة الإلكترونية © {new Date().getFullYear()}
           </p>
         </div>
       </footer>
