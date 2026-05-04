@@ -101,7 +101,7 @@ export default function Demo() {
         <div className="w-full max-w-5xl flex flex-col items-center gap-8">
           <div className="w-full flex flex-col md:flex-row items-stretch justify-center gap-4 md:gap-5 lg:gap-6">
             {/* Kafa'a platform logo — height matches the login column */}
-            <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 shrink-0 w-[20rem] h-[25rem] lg:w-[22rem] lg:h-[27rem] md:mt-48 lg:mt-48 overflow-visible">
+            <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 shrink-0 w-[20rem] h-[25rem] lg:w-[22rem] lg:h-[27rem] md:mt-[15rem] lg:mt-[15rem] overflow-visible">
               <KafaaLogoArtworkCropped
                 className="relative h-full w-full object-contain"
                 style={{
