@@ -291,7 +291,7 @@ export default function OrgAuth() {
       style={{
         ...brandStyle,
         background:
-          `radial-gradient(ellipse at 30% 20%, hsl(${primaryHue} 70% 14%) 0%, hsl(${primaryHue} 80% 8%) 45%, hsl(${primaryHue} 85% 5%) 100%)`,
+          "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)",
       }}
     >
       {/* 3D space scene */}
@@ -300,7 +300,7 @@ export default function OrgAuth() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            `radial-gradient(ellipse at center, transparent 40%, hsl(${primaryHue} 85% 5% / 0.6) 100%)`,
+            "radial-gradient(ellipse at center, transparent 40%, hsl(230 80% 3% / 0.6) 100%)",
         }}
       />
 
