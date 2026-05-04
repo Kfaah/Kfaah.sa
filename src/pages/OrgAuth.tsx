@@ -308,7 +308,7 @@ export default function OrgAuth() {
             {/* RIGHT (RTL first): Kafa'a platform logo — vertically aligned with login card */}
             <div className="flex flex-col items-center text-center animate-fade-in shrink-0">
               <KafaaLogoArtwork
-                className="h-[22rem] md:h-[30rem] lg:h-[34rem] w-auto"
+                className="h-64 md:h-80 lg:h-96 w-auto"
                 style={{
                   filter:
                     "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
