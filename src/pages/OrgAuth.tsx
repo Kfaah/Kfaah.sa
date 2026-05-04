@@ -305,13 +305,13 @@ export default function OrgAuth() {
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-5xl flex flex-col items-center gap-8">
           <div className="w-full flex flex-col md:flex-row items-stretch justify-center gap-6 md:gap-10">
-            {/* RIGHT (RTL first): Kafa'a platform logo — matches org panel height */}
-            <div className="flex flex-col items-center justify-center text-center animate-fade-in shrink-0">
+            {/* RIGHT (RTL first): Kafa'a platform logo — secondary, balanced with org panel */}
+            <div className="flex flex-col items-center justify-center text-center animate-fade-in shrink-0 md:w-72 lg:w-80">
               <KafaaLogoArtwork
-                className="h-72 md:h-[22rem] lg:h-[26rem] w-auto"
+                className="h-44 md:h-56 lg:h-64 w-auto opacity-95"
                 style={{
                   filter:
-                    "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
+                    "drop-shadow(0 0 18px hsl(0 0% 100% / 0.28)) drop-shadow(0 16px 32px hsl(220 75% 3% / 0.42))",
                 }}
               />
             </div>
