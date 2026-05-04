@@ -306,7 +306,7 @@ export default function OrgAuth() {
         <div className="w-full max-w-5xl flex flex-col items-center gap-8">
           <div className="w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-5 lg:gap-6">
           {/* RIGHT (RTL first): Kafa'a platform logo — balanced with the login area */}
-          <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 shrink-0 w-[18rem] h-[23rem] lg:w-[20rem] lg:h-[25rem] md:mt-52 lg:mt-48 overflow-visible">
+          <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 shrink-0 w-[18rem] h-[23rem] lg:w-[20rem] lg:h-[25rem] md:mt-64 lg:mt-60 overflow-visible">
             <KafaaLogoArtworkCropped
               className="relative h-full w-full object-contain"
               style={{
