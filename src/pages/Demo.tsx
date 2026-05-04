@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Mail, Lock, User, LogIn, Eye, Building2, Info, LifeBuoy, Sparkles } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
+import namozajLogo from "@/assets/namozaj-logo.png";
 import { toast } from "sonner";
 
 const DEMO_NAME = "جمعية النموذج الخيري";
@@ -143,7 +144,11 @@ export default function Demo() {
                       boxShadow: `0 14px 36px -8px hsl(${primaryHsl} / 0.6), 0 0 0 4px white, 0 0 0 5px hsl(${primaryHsl} / 0.3)`,
                     }}
                   >
-                    <Building2 className="w-10 h-10" style={{ color: `hsl(${primaryHsl})` }} />
+                    <img
+                      src={namozajLogo}
+                      alt={DEMO_NAME}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
                 <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight break-words leading-tight px-2 text-white">
