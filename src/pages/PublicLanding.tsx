@@ -83,10 +83,10 @@ export default function PublicLanding() {
           "radial-gradient(ellipse at 30% 20%, hsl(195 80% 22%) 0%, hsl(210 70% 14%) 45%, hsl(220 75% 8%) 100%)",
       }}
     >
-      {/* Animated aurora orbs */}
-      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-cyan-400/20 blur-[120px] pointer-events-none animate-pulse-subtle" />
-      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-emerald-500/15 blur-[120px] pointer-events-none animate-pulse-subtle" style={{ animationDelay: "1s" }} />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[100px] pointer-events-none" />
+      {/* Animated aurora orbs - drifting like stars */}
+      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-cyan-400/20 blur-[120px] pointer-events-none animate-orb-drift-1" />
+      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-emerald-500/15 blur-[120px] pointer-events-none animate-orb-drift-2" style={{ animationDelay: "2s" }} />
+      <div className="absolute top-1/3 left-1/2 w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[100px] pointer-events-none animate-orb-drift-3" style={{ animationDelay: "4s" }} />
 
       {/* Subtle grid pattern */}
       <div
@@ -100,15 +100,16 @@ export default function PublicLanding() {
 
       {/* Floating particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(40)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 rounded-full bg-cyan-300/40"
+            className="absolute w-[2px] h-[2px] rounded-full bg-cyan-200 animate-twinkle"
             style={{
               top: `${(i * 53) % 100}%`,
               left: `${(i * 37) % 100}%`,
-              animation: `pulse-subtle ${3 + (i % 4)}s ease-in-out infinite`,
-              animationDelay: `${i * 0.2}s`,
+              animationDuration: `${2 + (i % 5)}s`,
+              animationDelay: `${(i * 0.17) % 4}s`,
+              boxShadow: "0 0 6px hsl(190 100% 80% / 0.9)",
             }}
           />
         ))}
