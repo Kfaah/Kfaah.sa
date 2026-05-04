@@ -256,7 +256,10 @@ export function Sidebar() {
   // جلب عدد الإشعارات غير المقروءة
   useEffect(() => {
     const fetchUnreadCount = async () => {
-      if (!authUser) return;
+      if (!authUser) {
+        setUnreadCount(0);
+        return;
+      }
 
       const { count, error } = await supabase
         .from("notifications")
@@ -267,6 +270,11 @@ export function Sidebar() {
         setUnreadCount(count);
       }
     };
+
+    if (!authUser) {
+      setUnreadCount(0);
+      return;
+    }
 
     fetchUnreadCount();
 
@@ -289,13 +297,16 @@ export function Sidebar() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [authUser]);
+  }, [authUser?.id]);
 
   // جلب عدد الرسائل غير المقروءة
   useEffect(() => {
-    const fetchUnreadMessages = async () => {
-      if (!authUser) return;
+    if (!authUser) {
+      setUnreadMessagesCount(0);
+      return;
+    }
 
+    const fetchUnreadMessages = async () => {
       try {
         // جلب المحادثات الخاصة بالمستخدم
         const { data: convRows } = await supabase.rpc(
@@ -385,7 +396,7 @@ export function Sidebar() {
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(participantsChannel);
     };
-  }, [authUser]);
+  }, [authUser?.id]);
 
   const handleSignOut = async () => {
     setPreviewAsEmployee(false);

@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
-import ProtectedAppProviders from "@/components/ProtectedAppProviders";
 
 /**
  * /demo — entry point for the public demo organization.
@@ -46,10 +45,8 @@ export default function Demo() {
   }, []);
 
   return (
-    <ProtectedAppProviders>
-      <DashboardLayout>
-        <WelcomeScreen />
-      </DashboardLayout>
-    </ProtectedAppProviders>
+    <DashboardLayout>
+      <WelcomeScreen />
+    </DashboardLayout>
   );
 }
