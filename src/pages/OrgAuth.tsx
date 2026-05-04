@@ -308,7 +308,7 @@ export default function OrgAuth() {
             {/* RIGHT (RTL first): Kafa'a platform logo — matches org panel height */}
             <div className="flex flex-col items-center justify-center text-center animate-fade-in shrink-0">
               <KafaaLogoArtwork
-                className="h-[26rem] md:h-[34rem] lg:h-[40rem] w-auto"
+                className="h-72 md:h-[22rem] lg:h-[26rem] w-auto"
                 style={{
                   filter:
                     "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
