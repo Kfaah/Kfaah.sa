@@ -304,11 +304,11 @@ export default function OrgAuth() {
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-5xl flex flex-col items-center gap-8">
-          <div className="w-full grid grid-cols-1 md:grid-cols-[1.08fr_1fr] gap-0 items-center justify-items-center">
+          <div className="w-full grid grid-cols-1 md:grid-cols-[1fr_0.86fr] gap-0 items-center justify-items-center">
           {/* RIGHT (RTL first): Kafa'a platform logo — larger, no frame */}
-          <div className="relative flex items-center justify-center md:justify-end animate-fade-in order-1 w-full min-h-[28rem] md:min-h-[34rem] md:-ml-12 lg:-ml-16">
+          <div className="relative flex items-center justify-center md:justify-start animate-fade-in order-1 w-full min-h-[28rem] md:min-h-[34rem] md:-mr-28 lg:-mr-40">
             <KafaaLogoArtwork
-              className="relative w-full max-w-[30rem] md:max-w-[36rem] lg:max-w-[39rem] h-auto transform-gpu md:-translate-x-8 lg:-translate-x-10"
+              className="relative w-full max-w-[30rem] md:max-w-[36rem] lg:max-w-[39rem] h-auto"
               style={{
                 filter:
                   "drop-shadow(0 0 30px hsl(0 0% 100% / 0.35)) drop-shadow(0 24px 48px hsl(220 75% 3% / 0.55))",
@@ -317,7 +317,7 @@ export default function OrgAuth() {
           </div>
 
           {/* LEFT (RTL second): Org logo + login card */}
-          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md md:justify-self-start md:-mr-10 lg:-mr-14 justify-center">
+          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md md:justify-self-end justify-center">
 
         {/* Org branding header (above login card) */}
         <div className="text-center">
