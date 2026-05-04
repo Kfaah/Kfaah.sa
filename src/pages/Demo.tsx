@@ -149,36 +149,6 @@ export default function Demo() {
             <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md justify-center md:z-10">
               {/* Org branding header */}
               <div className="text-center">
-                <div className="relative mx-auto w-32 h-32 mb-4">
-                  <div
-                    className="absolute inset-0 rounded-full org-halo-pulse"
-                    style={{ background: `radial-gradient(circle, hsl(${accentHsl} / 0.35) 0%, transparent 70%)` }}
-                    aria-hidden="true"
-                  />
-                  <div
-                    className="absolute inset-0 rounded-full org-spin-slow"
-                    style={{ border: `2px dashed hsl(${primaryHsl} / 0.45)` }}
-                    aria-hidden="true"
-                  />
-                  <div
-                    className="absolute inset-2 rounded-full org-spin-reverse"
-                    style={{
-                      background: `conic-gradient(from 0deg, hsl(${primaryHsl}) 0%, transparent 30%, hsl(${accentHsl}) 60%, transparent 90%, hsl(${primaryHsl}) 100%)`,
-                      WebkitMask: "radial-gradient(circle, transparent 62%, #000 64%, #000 70%, transparent 72%)",
-                      mask: "radial-gradient(circle, transparent 62%, #000 64%, #000 70%, transparent 72%)",
-                    }}
-                    aria-hidden="true"
-                  />
-                  <div
-                    className="absolute inset-4 rounded-full bg-white shadow-2xl flex items-center justify-center overflow-hidden"
-                    style={{
-                      boxShadow: `0 20px 50px -10px hsl(${primaryHsl} / 0.45), 0 0 0 4px white, 0 0 0 5px hsl(${primaryHsl} / 0.25)`,
-                    }}
-                  >
-                    <Building2 className="w-12 h-12" style={{ color: `hsl(${primaryHsl})` }} />
-                  </div>
-                </div>
-
                 <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight break-words leading-tight px-2 text-white">
                   {DEMO_NAME}
                 </h1>
