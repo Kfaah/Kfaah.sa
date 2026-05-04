@@ -117,7 +117,7 @@ export default function PublicLanding() {
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-0 items-center justify-items-center">
           {/* RIGHT (RTL first): logo matched to the login block height */}
-          <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 w-[22rem] h-[24rem] translate-y-4 md:-ml-6 lg:-ml-8 overflow-visible">
+          <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 w-[22rem] h-[24rem] translate-y-24 md:-ml-6 lg:-ml-8 overflow-visible">
             <KafaaLogoArtworkCropped
               className="relative h-full w-full object-contain"
               style={{
