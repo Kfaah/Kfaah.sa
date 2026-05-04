@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Mail, Lock, User, LogIn, Eye, Building2, Info, LifeBuoy, Sparkles } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
+import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
 import { toast } from "sonner";
 
 const DEMO_NAME = "جمعية النموذج الخيري";
@@ -97,58 +98,54 @@ export default function Demo() {
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-5xl flex flex-col items-center gap-8">
           <div className="w-full flex flex-col md:flex-row items-stretch justify-center gap-4 md:gap-5 lg:gap-6">
-            {/* Demo org logo with rotating halos — replaces the platform logo on this page */}
-            <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 shrink-0 w-[20rem] h-[20rem] lg:w-[24rem] lg:h-[24rem] md:mt-[12rem] lg:mt-[12rem] overflow-visible">
-              {/* Outer pulsing halo */}
-              <div
-                className="absolute inset-0 rounded-full org-halo-pulse pointer-events-none"
-                style={{ background: `radial-gradient(circle, hsl(${accentHsl} / 0.45) 0%, transparent 70%)` }}
-                aria-hidden="true"
-              />
-              {/* Outer ring — slow clockwise dashed */}
-              <div
-                className="absolute inset-4 rounded-full org-spin-slow pointer-events-none"
-                style={{ border: `2px dashed hsl(${primaryHsl} / 0.55)` }}
-                aria-hidden="true"
-              />
-              {/* Mid ring — reverse conic */}
-              <div
-                className="absolute inset-10 rounded-full org-spin-reverse pointer-events-none"
+            {/* Platform (كفاءة) logo — stays in place on the left */}
+            <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 w-[22rem] h-[24rem] -translate-y-6 overflow-visible">
+              <KafaaLogoArtworkCropped
+                className="relative h-full w-full object-contain"
                 style={{
-                  background: `conic-gradient(from 0deg, hsl(${primaryHsl}) 0%, transparent 30%, hsl(${accentHsl}) 60%, transparent 90%, hsl(${primaryHsl}) 100%)`,
-                  WebkitMask: "radial-gradient(circle, transparent 62%, #000 64%, #000 70%, transparent 72%)",
-                  mask: "radial-gradient(circle, transparent 62%, #000 64%, #000 70%, transparent 72%)",
+                  filter:
+                    "drop-shadow(0 0 30px hsl(0 0% 100% / 0.35)) drop-shadow(0 24px 48px hsl(220 75% 3% / 0.55))",
                 }}
-                aria-hidden="true"
               />
-              {/* Orbiting dots */}
-              <div className="absolute inset-4 org-spin-medium pointer-events-none" aria-hidden="true">
-                <span
-                  className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-3.5 h-3.5 rounded-full"
-                  style={{ background: `hsl(${accentHsl})`, boxShadow: `0 0 14px hsl(${accentHsl})` }}
-                />
-              </div>
-              <div className="absolute inset-4 org-spin-reverse pointer-events-none" aria-hidden="true">
-                <span
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-3 h-3 rounded-full"
-                  style={{ background: `hsl(${primaryHsl})`, boxShadow: `0 0 12px hsl(${primaryHsl})` }}
-                />
-              </div>
-              {/* Logo center */}
-              <div
-                className="absolute inset-16 rounded-full bg-white shadow-2xl flex items-center justify-center overflow-hidden"
-                style={{
-                  boxShadow: `0 20px 50px -10px hsl(${primaryHsl} / 0.5), 0 0 0 6px white, 0 0 0 7px hsl(${primaryHsl} / 0.25)`,
-                }}
-              >
-                <Building2 className="w-20 h-20" style={{ color: `hsl(${primaryHsl})` }} />
-              </div>
             </div>
 
             {/* Login card */}
             <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md justify-center md:z-10">
-              {/* Org branding header */}
-              <div className="text-center">
+              {/* Org branding header — demo org logo with rotating halos above the title */}
+              <div className="text-center flex flex-col items-center">
+                <div className="relative flex items-center justify-center w-32 h-32 mb-3 overflow-visible">
+                  {/* Outer pulsing halo */}
+                  <div
+                    className="absolute inset-0 rounded-full org-halo-pulse pointer-events-none"
+                    style={{ background: `radial-gradient(circle, hsl(${accentHsl} / 0.5) 0%, transparent 70%)` }}
+                    aria-hidden="true"
+                  />
+                  {/* Outer dashed ring */}
+                  <div
+                    className="absolute inset-1 rounded-full org-spin-slow pointer-events-none"
+                    style={{ border: `2px dashed hsl(${primaryHsl} / 0.7)` }}
+                    aria-hidden="true"
+                  />
+                  {/* Mid conic ring */}
+                  <div
+                    className="absolute inset-3 rounded-full org-spin-reverse pointer-events-none"
+                    style={{
+                      background: `conic-gradient(from 0deg, hsl(${primaryHsl}) 0%, transparent 30%, hsl(${accentHsl}) 60%, transparent 90%, hsl(${primaryHsl}) 100%)`,
+                      WebkitMask: "radial-gradient(circle, transparent 60%, #000 62%, #000 70%, transparent 72%)",
+                      mask: "radial-gradient(circle, transparent 60%, #000 62%, #000 70%, transparent 72%)",
+                    }}
+                    aria-hidden="true"
+                  />
+                  {/* Logo center */}
+                  <div
+                    className="absolute inset-6 rounded-full bg-white shadow-2xl flex items-center justify-center overflow-hidden"
+                    style={{
+                      boxShadow: `0 14px 36px -8px hsl(${primaryHsl} / 0.6), 0 0 0 4px white, 0 0 0 5px hsl(${primaryHsl} / 0.3)`,
+                    }}
+                  >
+                    <Building2 className="w-10 h-10" style={{ color: `hsl(${primaryHsl})` }} />
+                  </div>
+                </div>
                 <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight break-words leading-tight px-2 text-white">
                   {DEMO_NAME}
                 </h1>
