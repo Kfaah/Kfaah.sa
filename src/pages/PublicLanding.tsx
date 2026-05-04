@@ -117,12 +117,12 @@ export default function PublicLanding() {
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-stretch justify-items-stretch">
           {/* RIGHT (RTL first): logo without frame, larger */}
-          <div className="relative flex items-center justify-center animate-fade-in order-1 w-full min-h-[26rem] md:min-h-[28rem]">
+          <div className="relative flex items-center justify-center animate-fade-in order-1 w-full min-h-[26rem] md:min-h-[32rem]">
             <KafaaLogoArtwork
-              className="relative w-full max-w-[34rem] md:max-w-[40rem] lg:max-w-[46rem] h-auto"
+              className="relative w-[120%] max-w-none md:w-[130%] lg:w-[140%] h-auto -mx-8"
               style={{
                 filter:
-                  "drop-shadow(0 0 28px hsl(0 0% 100% / 0.35)) drop-shadow(0 24px 48px hsl(220 75% 3% / 0.55))",
+                  "drop-shadow(0 0 36px hsl(0 0% 100% / 0.4)) drop-shadow(0 28px 56px hsl(220 75% 3% / 0.6))",
               }}
             />
           </div>
