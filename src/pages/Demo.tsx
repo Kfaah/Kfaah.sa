@@ -99,9 +99,9 @@ export default function Demo() {
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-5xl flex flex-col items-center gap-8">
-          <div className="w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-5 lg:gap-6">
-            {/* Kafa'a platform logo */}
-            <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 shrink-0 w-[18rem] h-[26rem] lg:w-[20rem] lg:h-[28rem] overflow-visible">
+          <div className="w-full flex flex-col md:flex-row items-stretch justify-center gap-4 md:gap-5 lg:gap-6">
+            {/* Kafa'a platform logo — height matches the login column */}
+            <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 shrink-0 w-[14rem] lg:w-[16rem]">
               <KafaaLogoArtworkCropped
                 className="relative h-full w-full object-contain"
                 style={{
