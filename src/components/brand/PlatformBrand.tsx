@@ -1,5 +1,6 @@
 import type { SVGProps } from "react";
 import kafaaLogoPremium from "@/assets/kafaa-logo-premium.png";
+import kafaaLogoPremiumCropped from "@/assets/kafaa-logo-premium-cropped.png";
 
 /**
  * Kafa'a (كفاءة) — professional brandmark.
@@ -19,6 +20,17 @@ export function KafaaLogoArtwork({ className = "", ...props }: KafaaLogoArtworkP
   return (
     <img
       src={kafaaLogoPremium}
+      alt="شعار كفاءة"
+      className={`object-contain ${className}`}
+      {...props}
+    />
+  );
+}
+
+export function KafaaLogoArtworkCropped({ className = "", ...props }: KafaaLogoArtworkProps) {
+  return (
+    <img
+      src={kafaaLogoPremiumCropped}
       alt="شعار كفاءة"
       className={`object-contain ${className}`}
       {...props}
