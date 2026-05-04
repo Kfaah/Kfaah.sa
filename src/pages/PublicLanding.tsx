@@ -100,47 +100,6 @@ export default function PublicLanding() {
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-0 items-center justify-items-center">
           {/* RIGHT (RTL first): logo matched to the login block height */}
           <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 w-[22rem] h-[24rem] -translate-y-6 md:-ml-6 lg:-ml-8 overflow-visible">
-            {/* Outer pulsing halo */}
-            <div
-              className="absolute inset-0 rounded-full org-halo-pulse pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(circle, hsl(190 100% 70% / 0.25) 0%, transparent 70%)",
-              }}
-              aria-hidden="true"
-            />
-            {/* Outer ring — slow clockwise, dashed */}
-            <div
-              className="absolute inset-2 rounded-full org-spin-slow pointer-events-none"
-              style={{ border: "2px dashed hsl(190 100% 75% / 0.45)" }}
-              aria-hidden="true"
-            />
-            {/* Mid ring — reverse direction, gradient conic */}
-            <div
-              className="absolute inset-8 rounded-full org-spin-reverse pointer-events-none"
-              style={{
-                background:
-                  "conic-gradient(from 0deg, hsl(190 100% 60%) 0%, transparent 30%, hsl(160 80% 55%) 60%, transparent 90%, hsl(190 100% 60%) 100%)",
-                WebkitMask:
-                  "radial-gradient(circle, transparent 62%, #000 64%, #000 70%, transparent 72%)",
-                mask: "radial-gradient(circle, transparent 62%, #000 64%, #000 70%, transparent 72%)",
-              }}
-              aria-hidden="true"
-            />
-            {/* Orbiting dots */}
-            <div className="absolute inset-2 org-spin-medium pointer-events-none" aria-hidden="true">
-              <span
-                className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-3 h-3 rounded-full"
-                style={{ background: "hsl(190 100% 60%)", boxShadow: "0 0 14px hsl(190 100% 60%)" }}
-              />
-            </div>
-            <div className="absolute inset-2 org-spin-reverse pointer-events-none" aria-hidden="true">
-              <span
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-2.5 h-2.5 rounded-full"
-                style={{ background: "hsl(160 80% 55%)", boxShadow: "0 0 12px hsl(160 80% 55%)" }}
-              />
-            </div>
-
             <KafaaLogoArtworkCropped
               className="relative h-full w-full object-contain"
               style={{
@@ -154,24 +113,22 @@ export default function PublicLanding() {
           <div className="flex flex-col justify-center gap-4 order-2 animate-scale-in w-full max-w-md md:justify-self-start md:-mr-10 lg:-mr-14">
             <Card
               dir="rtl"
-              className="relative w-full border border-slate-700/60 shadow-2xl"
+              className="relative w-full border border-cyan-200/70 shadow-2xl bg-white"
               style={{
-                background:
-                  "linear-gradient(180deg, hsl(222 45% 12%) 0%, hsl(224 50% 9%) 100%)",
                 boxShadow:
-                  "0 30px 60px -12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06)",
+                  "0 30px 60px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(8,145,178,0.08)",
               }}
             >
           <CardHeader className="text-center space-y-2 pb-4 pt-7">
-            <CardTitle className="text-2xl md:text-3xl text-white font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
-            <CardDescription className="text-slate-300 text-sm">
+            <CardTitle className="text-2xl md:text-3xl text-cyan-700 font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
+            <CardDescription className="text-slate-600 text-sm">
               بوابة آمنة للتحكم الكامل بالمنصة
             </CardDescription>
           </CardHeader>
           <CardContent className="px-7 pb-7">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2 text-right" dir="rtl">
-                <Label htmlFor="username" className="block w-full text-right text-slate-200 text-sm">
+                <Label htmlFor="username" className="block w-full text-right text-cyan-700 text-sm font-semibold">
                   اسم المستخدم / رقم الهوية
                 </Label>
                 <Input
@@ -180,12 +137,12 @@ export default function PublicLanding() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   placeholder="أدخل رقم الهوية"
-                  className="h-11 text-right bg-white/10 border-white/20 text-white text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                  className="h-11 text-right bg-white border-cyan-200 text-slate-900 text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
                   dir="rtl"
                 />
               </div>
               <div className="space-y-2 text-right" dir="rtl">
-                <Label htmlFor="password" className="block w-full text-right text-slate-200 text-sm">
+                <Label htmlFor="password" className="block w-full text-right text-cyan-700 text-sm font-semibold">
                   كلمة المرور
                 </Label>
                 <div className="relative">
@@ -197,13 +154,13 @@ export default function PublicLanding() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="h-11 pe-10 text-right bg-white/10 border-white/20 text-white text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                    className="h-11 pe-10 text-right bg-white border-cyan-200 text-slate-900 text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
                     dir="rtl"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-600 hover:text-cyan-800"
                   >
                     {showPassword ? "◉" : "◎"}
                   </button>
@@ -226,11 +183,7 @@ export default function PublicLanding() {
               {["إدارة متعددة الجمعيات", "تقارير لحظية", "ذكاء اصطناعي"].map((t) => (
                 <span
                   key={t}
-                  className="px-4 py-1.5 rounded-full border border-cyan-300/40 text-xs md:text-sm text-cyan-100 shadow-lg"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, hsl(222 45% 14%) 0%, hsl(224 50% 10%) 100%)",
-                  }}
+                  className="px-4 py-1.5 rounded-full border border-cyan-300/70 bg-white text-xs md:text-sm text-cyan-700 font-semibold shadow-lg"
                 >
                   {t}
                 </span>
