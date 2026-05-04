@@ -115,9 +115,9 @@ export default function PublicLanding() {
       </div>
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-2 lg:gap-3 items-center justify-items-center">
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-0 items-center justify-items-center">
           {/* RIGHT (RTL first): logo without frame, larger */}
-          <div className="relative flex items-center justify-center animate-fade-in order-1 w-full min-h-[26rem] md:min-h-[30rem]">
+          <div className="relative flex items-center justify-center md:justify-start animate-fade-in order-1 w-full min-h-[26rem] md:min-h-[30rem] md:-ml-8 lg:-ml-12">
             <KafaaLogoArtwork
               className="relative w-full max-w-[28rem] md:max-w-[32rem] lg:max-w-[36rem] h-auto"
               style={{
@@ -128,7 +128,7 @@ export default function PublicLanding() {
           </div>
 
           {/* LEFT (RTL second): Login card + feature pills below */}
-          <div className="flex flex-col justify-center gap-4 order-2 animate-scale-in w-full max-w-md mx-auto">
+          <div className="flex flex-col justify-center gap-4 order-2 animate-scale-in w-full max-w-md mx-auto md:-mr-8 lg:-mr-12">
             <Card
               dir="rtl"
               className="relative w-full border border-white/15 shadow-2xl bg-white/[0.08] backdrop-blur-2xl"
