@@ -548,7 +548,11 @@ export function Sidebar() {
           {!collapsed && (
             <div className="text-center space-y-1 mt-2">
               <div className="relative">
-                {branding.orgName && (() => {
+                {isDemoRoute ? (
+                  <div className="drop-shadow-sm leading-tight text-white">
+                    <p className="font-bold whitespace-nowrap text-base">جمعية النموذج الخيري</p>
+                  </div>
+                ) : branding.orgName && (() => {
                   const short = getShortOrgName(branding.orgName);
                   if (short) {
                     return (
