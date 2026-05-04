@@ -99,7 +99,7 @@ export default function Demo() {
         <div className="w-full max-w-5xl flex flex-col items-center gap-8">
           <div className="w-full flex flex-col md:flex-row items-stretch justify-center gap-4 md:gap-5 lg:gap-6">
             {/* Platform (كفاءة) logo — stays in place on the left */}
-            <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 w-[22rem] h-[24rem] -translate-y-6 overflow-visible">
+            <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 w-[22rem] h-[24rem] translate-y-6 overflow-visible">
               <KafaaLogoArtworkCropped
                 className="relative h-full w-full object-contain"
                 style={{
