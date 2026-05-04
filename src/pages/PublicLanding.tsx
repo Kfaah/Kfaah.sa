@@ -115,20 +115,20 @@ export default function PublicLanding() {
       </div>
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-6 lg:gap-10 items-center justify-items-stretch">
+        <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center justify-items-stretch">
           {/* RIGHT (RTL first): logo without frame, larger */}
-          <div className="relative flex items-center justify-center animate-fade-in order-1 w-full min-h-[26rem] md:min-h-[32rem]">
+          <div className="relative flex items-center justify-center animate-fade-in order-1 w-full min-h-[26rem] md:min-h-[30rem]">
             <KafaaLogoArtwork
-              className="relative w-[120%] max-w-none md:w-[130%] lg:w-[140%] h-auto -mx-8"
+              className="relative w-full max-w-[28rem] md:max-w-[32rem] lg:max-w-[36rem] h-auto"
               style={{
                 filter:
-                  "drop-shadow(0 0 36px hsl(0 0% 100% / 0.4)) drop-shadow(0 28px 56px hsl(220 75% 3% / 0.6))",
+                  "drop-shadow(0 0 30px hsl(0 0% 100% / 0.35)) drop-shadow(0 24px 48px hsl(220 75% 3% / 0.55))",
               }}
             />
           </div>
 
           {/* LEFT (RTL second): Login card + feature pills below */}
-          <div className="flex flex-col justify-center gap-4 order-2 animate-scale-in w-full max-w-sm mx-auto">
+          <div className="flex flex-col justify-center gap-4 order-2 animate-scale-in w-full max-w-md mx-auto">
             <Card
               dir="rtl"
               className="relative w-full border border-white/15 shadow-2xl bg-white/[0.08] backdrop-blur-2xl"
@@ -137,15 +137,15 @@ export default function PublicLanding() {
                   "0 30px 60px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15)",
               }}
             >
-          <CardHeader className="text-center space-y-2 pb-3 pt-5">
-            <CardTitle className="text-xl md:text-2xl text-white font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
-            <CardDescription className="text-slate-300 text-xs">
+          <CardHeader className="text-center space-y-2 pb-4 pt-7">
+            <CardTitle className="text-2xl md:text-3xl text-white font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
+            <CardDescription className="text-slate-300 text-sm">
               بوابة آمنة للتحكم الكامل بالمنصة
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-5 pb-5">
-            <form onSubmit={handleLogin} className="space-y-3">
-              <div className="space-y-1.5 text-right" dir="rtl">
+          <CardContent className="px-7 pb-7">
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2 text-right" dir="rtl">
                 <Label htmlFor="username" className="block w-full text-right text-slate-200 text-sm">
                   اسم المستخدم / رقم الهوية
                 </Label>
@@ -155,11 +155,11 @@ export default function PublicLanding() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   placeholder="أدخل رقم الهوية"
-                  className="h-10 text-right bg-white/10 border-white/20 text-white text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                  className="h-11 text-right bg-white/10 border-white/20 text-white text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
                   dir="rtl"
                 />
               </div>
-              <div className="space-y-1.5 text-right" dir="rtl">
+              <div className="space-y-2 text-right" dir="rtl">
                 <Label htmlFor="password" className="block w-full text-right text-slate-200 text-sm">
                   كلمة المرور
                 </Label>
@@ -172,7 +172,7 @@ export default function PublicLanding() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="h-10 pe-9 text-right bg-white/10 border-white/20 text-white text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                    className="h-11 pe-10 text-right bg-white/10 border-white/20 text-white text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
                     dir="rtl"
                   />
                   <button
@@ -186,10 +186,10 @@ export default function PublicLanding() {
               </div>
               <Button
                 type="submit"
-                className="w-full h-10 gap-2 text-sm bg-gradient-to-l from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-bold shadow-lg shadow-cyan-500/40 border-0"
+                className="w-full h-12 gap-2 text-base bg-gradient-to-l from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-bold shadow-lg shadow-cyan-500/40 border-0"
                 disabled={loading}
               >
-                {loading ? <span className="animate-spin">⏳</span> : <Icon className="text-base">↤</Icon>}
+                {loading ? <span className="animate-spin">⏳</span> : <Icon className="text-lg">↤</Icon>}
                 تسجيل الدخول
               </Button>
             </form>
