@@ -303,43 +303,21 @@ export default function OrgAuth() {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-6xl grid md:grid-cols-2 gap-2 md:gap-4 items-center">
-          {/* RIGHT (RTL first): Kafa'a platform logo + tagline + links */}
-          <div className="order-1 flex flex-col items-center text-center gap-3 animate-fade-in md:-ml-8 lg:-ml-12">
-            <KafaaLogoArtwork
-              className="h-[22rem] md:h-[30rem] lg:h-[36rem] w-auto -mb-2"
-              style={{
-                filter:
-                  "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
-              }}
-            />
-
-            <p className="text-sm md:text-base text-slate-100 leading-relaxed font-medium max-w-md">
-              <span className="text-cyan-300 font-bold">منصة إدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي</span>
-              {" "}— تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
-            </p>
-
-            <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-sm">
-              <a
-                href="/about"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-slate-100 hover:bg-white/10 transition-colors"
-              >
-                <Info className="w-3.5 h-3.5" />
-                عن المنصة
-              </a>
-              <span className="w-px h-4 bg-white/30" aria-hidden="true" />
-              <a
-                href="/support"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-slate-100 hover:bg-white/10 transition-colors"
-              >
-                <LifeBuoy className="w-3.5 h-3.5" />
-                الدعم الفني
-              </a>
+        <div className="w-full max-w-5xl flex flex-col items-center gap-6">
+          <div className="w-full grid md:grid-cols-2 gap-0 md:gap-2 items-center justify-items-center">
+            {/* RIGHT (RTL first): Kafa'a platform logo */}
+            <div className="order-1 flex flex-col items-center text-center animate-fade-in md:justify-self-end">
+              <KafaaLogoArtwork
+                className="h-[22rem] md:h-[30rem] lg:h-[34rem] w-auto"
+                style={{
+                  filter:
+                    "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
+                }}
+              />
             </div>
-          </div>
 
-          {/* LEFT (RTL second): Org logo + login card */}
-          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md mx-auto md:-mr-8 lg:-mr-12">
+            {/* LEFT (RTL second): Org logo + login card */}
+            <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md md:justify-self-start">
 
         {/* Org branding header (above login card) */}
         <div className="text-center">
@@ -572,12 +550,39 @@ export default function OrgAuth() {
         )}
 
           </div>
+          </div>
+
+          {/* Tagline + links below both columns */}
+          <div className="flex flex-col items-center text-center gap-3 animate-fade-in max-w-2xl">
+            <p className="text-sm md:text-base text-slate-100 leading-relaxed font-medium">
+              <span className="text-cyan-300 font-bold">منصة كفاءة لإدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي</span>
+              {" "}— تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
+            </p>
+
+            <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-sm">
+              <a
+                href="/about"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-slate-100 hover:bg-white/10 transition-colors"
+              >
+                <Info className="w-3.5 h-3.5" />
+                عن المنصة
+              </a>
+              <span className="w-px h-4 bg-white/30" aria-hidden="true" />
+              <a
+                href="/support"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-slate-100 hover:bg-white/10 transition-colors"
+              >
+                <LifeBuoy className="w-3.5 h-3.5" />
+                الدعم الفني
+              </a>
+            </div>
+          </div>
         </div>
       </main>
 
       <footer className="relative z-10 text-center py-4 px-4">
         <p className="text-xs text-slate-300/80">
-          © {new Date().getFullYear()} جميع الحقوق محفوظة لمنصة <span className="font-bold text-cyan-300">كفاءة</span> لإدارة التسويق الإلكتروني للجمعيات
+          © {new Date().getFullYear()} جميع الحقوق محفوظة لمنصة <span className="font-bold text-cyan-300">كفاءة</span> الإلكترونية
         </p>
       </footer>
     </div>
