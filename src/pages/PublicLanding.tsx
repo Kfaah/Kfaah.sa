@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { KafaaLogoArtwork } from "@/components/brand/PlatformBrand";
+import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
 
 const normalizeDigits = (value: string, trim = false) => {
   const input = trim ? value.trim() : value;
@@ -116,10 +116,10 @@ export default function PublicLanding() {
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-0 items-center justify-items-center">
-          {/* RIGHT (RTL first): logo without frame, larger */}
-          <div className="relative flex items-center justify-center md:justify-end animate-fade-in order-1 w-full min-h-[28rem] md:min-h-[34rem] md:-ml-10 lg:-ml-14">
-            <KafaaLogoArtwork
-              className="relative w-full max-w-[31rem] md:max-w-[38rem] lg:max-w-[42rem] h-auto"
+          {/* RIGHT (RTL first): logo matched to the login block height */}
+          <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 w-[22rem] h-[24rem] -translate-y-6 md:-ml-6 lg:-ml-8 overflow-visible">
+            <KafaaLogoArtworkCropped
+              className="relative h-full w-full object-contain"
               style={{
                 filter:
                   "drop-shadow(0 0 30px hsl(0 0% 100% / 0.35)) drop-shadow(0 24px 48px hsl(220 75% 3% / 0.55))",
