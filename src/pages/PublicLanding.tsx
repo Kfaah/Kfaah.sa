@@ -100,16 +100,19 @@ export default function PublicLanding() {
 
       {/* Floating particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(40)].map((_, i) => (
+        {[...Array(60)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-[2px] h-[2px] rounded-full bg-cyan-200 animate-twinkle"
+            className="absolute rounded-full bg-white animate-star-drift"
             style={{
               top: `${(i * 53) % 100}%`,
               left: `${(i * 37) % 100}%`,
-              animationDuration: `${2 + (i % 5)}s`,
-              animationDelay: `${(i * 0.17) % 4}s`,
-              boxShadow: "0 0 6px hsl(190 100% 80% / 0.9)",
+              width: `${1 + (i % 3)}px`,
+              height: `${1 + (i % 3)}px`,
+              opacity: 0.5 + ((i % 5) * 0.1),
+              animationDuration: `${40 + (i % 8) * 6}s`,
+              animationDelay: `-${(i * 1.7) % 30}s`,
+              boxShadow: "0 0 4px hsl(190 100% 90% / 0.8)",
             }}
           />
         ))}
