@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, Building2, ArrowRight, Phone, CheckCircle2, Clock, Sparkles, Info, LifeBuoy } from "lucide-react";
-import { KafaaLogoArtwork } from "@/components/brand/PlatformBrand";
+import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
 
 interface OrgInfo {
   id: string;
@@ -307,8 +307,8 @@ export default function OrgAuth() {
           <div className="w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 lg:gap-8">
           {/* RIGHT (RTL first): Kafa'a platform logo — larger, no frame */}
           <div className="relative flex items-center justify-center animate-fade-in order-1 w-full md:w-[25rem] lg:w-[27rem] min-h-[28rem] md:min-h-[34rem] overflow-visible">
-            <KafaaLogoArtwork
-              className="relative w-full max-w-[30rem] md:max-w-[36rem] lg:max-w-[38rem] h-auto transform-gpu md:-translate-x-14 lg:-translate-x-20"
+            <KafaaLogoArtworkCropped
+              className="relative w-full max-w-[15rem] md:max-w-[20rem] lg:max-w-[22rem] h-auto"
               style={{
                 filter:
                   "drop-shadow(0 0 30px hsl(0 0% 100% / 0.35)) drop-shadow(0 24px 48px hsl(220 75% 3% / 0.55))",
