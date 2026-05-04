@@ -115,24 +115,29 @@ export default function PublicLanding() {
       </div>
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-7xl grid md:grid-cols-[1.5fr_1fr] gap-0 md:gap-0 items-center justify-items-center">
-          {/* RIGHT (RTL first): MASSIVE hero logo with white edge glow */}
-          <div className="relative flex items-center justify-end md:justify-end animate-fade-in order-1 min-h-[500px] md:min-h-[700px] w-full md:-ml-16 lg:-ml-24">
-            {/* Logo — drawn on the page itself, no PNG background */}
+        <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-stretch justify-items-stretch">
+          {/* RIGHT (RTL first): logo panel aligned with the login panel */}
+          <div
+            className="relative flex items-center justify-center animate-fade-in order-1 w-full min-h-[26rem] md:min-h-[28rem] rounded-[1.25rem] border border-white/15 bg-white/[0.06] backdrop-blur-xl shadow-2xl overflow-hidden"
+            style={{
+              boxShadow:
+                "0 30px 60px -12px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.12)",
+            }}
+          >
             <KafaaLogoArtwork
-              className="relative h-[32rem] md:h-[44rem] lg:h-[56rem] w-auto"
+              className="relative w-[72%] max-w-[25rem] md:max-w-[26rem] lg:max-w-[28rem] h-auto"
               style={{
                 filter:
-                  "drop-shadow(0 0 24px hsl(0 0% 100% / 0.35)) drop-shadow(0 20px 40px hsl(220 75% 3% / 0.5))",
+                  "drop-shadow(0 0 18px hsl(0 0% 100% / 0.28)) drop-shadow(0 18px 36px hsl(220 75% 3% / 0.45))",
               }}
             />
           </div>
 
-          {/* LEFT (RTL second): LARGER Login card + feature pills below */}
-          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-lg mx-auto">
+          {/* LEFT (RTL second): Login card + feature pills below */}
+          <div className="flex flex-col justify-center gap-5 order-2 animate-scale-in w-full min-h-[26rem] md:min-h-[28rem]">
             <Card
               dir="rtl"
-              className="relative w-full border border-white/15 shadow-2xl bg-white/[0.08] backdrop-blur-2xl"
+              className="relative w-full h-full min-h-[22rem] border border-white/15 shadow-2xl bg-white/[0.08] backdrop-blur-2xl"
               style={{
                 boxShadow:
                   "0 30px 60px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15)",
