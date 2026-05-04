@@ -303,7 +303,8 @@ export default function OrgAuth() {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-0 items-center justify-items-center">
+        <div className="w-full max-w-5xl flex flex-col items-center gap-8">
+          <div className="w-full grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-0 items-center justify-items-center">
           {/* RIGHT (RTL first): Kafa'a platform logo — larger, no frame */}
           <div className="relative flex items-center justify-center md:justify-end animate-fade-in order-1 w-full min-h-[28rem] md:min-h-[34rem] md:-ml-10 lg:-ml-14">
             <KafaaLogoArtwork
