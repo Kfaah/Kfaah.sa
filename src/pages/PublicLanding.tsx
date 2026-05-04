@@ -116,19 +116,13 @@ export default function PublicLanding() {
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-stretch justify-items-stretch">
-          {/* RIGHT (RTL first): logo panel aligned with the login panel */}
-          <div
-            className="relative flex items-center justify-center animate-fade-in order-1 w-full min-h-[26rem] md:min-h-[28rem] rounded-[1.25rem] border border-white/15 bg-white/[0.06] backdrop-blur-xl shadow-2xl overflow-hidden"
-            style={{
-              boxShadow:
-                "0 30px 60px -12px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.12)",
-            }}
-          >
+          {/* RIGHT (RTL first): logo without frame, larger */}
+          <div className="relative flex items-center justify-center animate-fade-in order-1 w-full min-h-[26rem] md:min-h-[28rem]">
             <KafaaLogoArtwork
-              className="relative w-[72%] max-w-[25rem] md:max-w-[26rem] lg:max-w-[28rem] h-auto"
+              className="relative w-full max-w-[34rem] md:max-w-[40rem] lg:max-w-[46rem] h-auto"
               style={{
                 filter:
-                  "drop-shadow(0 0 18px hsl(0 0% 100% / 0.28)) drop-shadow(0 18px 36px hsl(220 75% 3% / 0.45))",
+                  "drop-shadow(0 0 28px hsl(0 0% 100% / 0.35)) drop-shadow(0 24px 48px hsl(220 75% 3% / 0.55))",
               }}
             />
           </div>
