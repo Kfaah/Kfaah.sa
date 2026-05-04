@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { Menu, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
+import namozajLogo from "@/assets/namozaj-logo.png";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -18,6 +19,9 @@ export function DashboardLayout({ children, embedded = false }: DashboardLayoutP
 
   const location = useLocation();
   const branding = useOrgBranding();
+  const isDemoRoute = location.pathname.startsWith("/demo");
+  const headerLogo = isDemoRoute ? namozajLogo : branding.logoUrl;
+  const headerName = isDemoRoute ? "جمعية النموذج الخيري" : (branding.orgName || "الجمعية");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Close drawer on route change
@@ -56,13 +60,13 @@ export function DashboardLayout({ children, embedded = false }: DashboardLayoutP
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-2 min-w-0">
-          {branding.logoUrl && (
-            <div className="h-9 w-9 rounded-full bg-white p-1 shadow-sm flex-shrink-0">
-              <img src={branding.logoUrl} alt="" className="h-full w-full object-contain" />
+          {headerLogo && (
+            <div className="h-9 w-9 rounded-full bg-white p-1 shadow-sm flex-shrink-0 overflow-hidden">
+              <img src={headerLogo} alt="" className="h-full w-full object-cover rounded-full" />
             </div>
           )}
           <span className="text-white font-bold text-sm truncate">
-            {branding.orgName || "الجمعية"}
+            {headerName}
           </span>
         </div>
       </header>

@@ -9,6 +9,7 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/hooks/useAuth";
 import demoOrgLogo from "@/assets/demo-org-logo.png";
 import { kafaaLogo } from "@/components/brand/PlatformBrand";
+import namozajLogo from "@/assets/namozaj-logo.png";
 
 // العبارات الافتراضية (تستخدم إذا لم توجد عبارات في قاعدة البيانات)
 const defaultQuotes = [
@@ -70,8 +71,8 @@ export function WelcomeScreen() {
   const [backgrounds, setBackgrounds] = useState<string[]>(defaultBackgrounds);
   const [hasFeaturedBg, setHasFeaturedBg] = useState(false);
   const isDemoRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/demo");
-  const displayLogo = isDemoRoute ? kafaaLogo : branding.logoUrl;
-  const displayOrgName = isDemoRoute ? "كفاءة" : branding.orgName;
+  const displayLogo = isDemoRoute ? namozajLogo : branding.logoUrl;
+  const displayOrgName = isDemoRoute ? "جمعية النموذج الخيري" : branding.orgName;
 
   useEffect(() => {
     fetchContent();
@@ -287,9 +288,9 @@ export function WelcomeScreen() {
               <div className="w-44 h-44 rounded-full bg-muted animate-pulse" />
             ) : isDemoRoute ? (
               <img
-                src={kafaaLogo}
-                alt="منصة كفاءة"
-                className="w-48 h-48 object-contain"
+                src={namozajLogo}
+                alt="جمعية النموذج الخيري"
+                className="w-48 h-48 object-cover rounded-full"
               />
             ) : displayLogo ? (
               <img
@@ -314,8 +315,8 @@ export function WelcomeScreen() {
         >
           <h2 className="text-2xl font-bold text-slate-700">
             {isDemoRoute ? (
-              <span className="bg-gradient-to-l from-cyan-500 to-slate-800 bg-clip-text text-transparent">
-                منصة كفاءة
+              <span className="bg-gradient-to-l from-emerald-600 to-slate-800 bg-clip-text text-transparent">
+                جمعية النموذج الخيري
               </span>
             ) : (
               displayOrgName || "الجمعية"
