@@ -545,33 +545,6 @@ export default function OrgAuth() {
                 </button>
               </div>
             )}
-
-            {/* Visitor / demo entry — sends the visitor to the public demo organization */}
-            <div className="mt-6 pt-5 border-t border-border/60">
-              <div className="flex items-center gap-3 mb-3" aria-hidden="true">
-                <span className="h-px flex-1 bg-border" />
-                <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">
-                  أو تصفّح المنصة كزائر
-                </span>
-                <span className="h-px flex-1 bg-border" />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/demo")}
-                className="w-full h-12 gap-2 font-semibold border-2 hover:bg-muted/50"
-                style={{
-                  borderColor: `hsl(${primaryHsl} / 0.45)`,
-                  color: `hsl(${primaryHsl})`,
-                }}
-              >
-                <EyeIcon className="w-5 h-5" />
-                تسجيل الدخول كزائر (افتراضي)
-              </Button>
-              <p className="mt-2 text-[11px] text-center text-muted-foreground leading-relaxed">
-                جولة تعريفية على منصة <span className="font-bold">كفاءة</span> ببيانات نموذجية للقراءة فقط.
-              </p>
-            </div>
           </CardContent>
         </Card>
         )}
