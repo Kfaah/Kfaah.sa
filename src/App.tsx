@@ -40,6 +40,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const PlatformFeatures = lazy(() => import("./pages/PlatformFeatures"));
 const PlatformSubscribe = lazy(() => import("./pages/PlatformSubscribe"));
 const PlatformAbout = lazy(() => import("./pages/PlatformAbout"));
+const AboutCreator = lazy(() => import("./pages/AboutCreator"));
 const Settings = lazy(() => import("./pages/Settings"));
 const BrandingSettings = lazy(() => import("./pages/settings/BrandingSettings"));
 const RolesPermissionsSettings = lazy(() => import("./pages/settings/RolesPermissionsSettings"));
@@ -309,6 +310,7 @@ function AppRoutes() {
       <Route path="/features" element={<PlatformFeatures />} />
       <Route path="/subscribe" element={<PlatformSubscribe />} />
       <Route path="/about" element={<PlatformAbout />} />
+      <Route path="/about/creator" element={<AboutCreator />} />
 
       {/* Legacy direct auth (kept for compatibility) */}
       <Route
