@@ -303,10 +303,10 @@ export default function OrgAuth() {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-5xl flex flex-col items-center gap-6">
-          <div className="w-full grid md:grid-cols-2 gap-0 md:gap-2 items-center justify-items-center">
-            {/* RIGHT (RTL first): Kafa'a platform logo */}
-            <div className="order-1 flex flex-col items-center text-center animate-fade-in md:justify-self-end">
+        <div className="w-full max-w-5xl flex flex-col items-center gap-8">
+          <div className="w-full flex flex-col md:flex-row items-center justify-center gap-2 md:gap-0">
+            {/* RIGHT (RTL first): Kafa'a platform logo — pulled toward the login card */}
+            <div className="flex flex-col items-center text-center animate-fade-in md:-ml-10 lg:-ml-16 shrink-0">
               <KafaaLogoArtwork
                 className="h-[22rem] md:h-[30rem] lg:h-[34rem] w-auto"
                 style={{
@@ -316,8 +316,8 @@ export default function OrgAuth() {
               />
             </div>
 
-            {/* LEFT (RTL second): Org logo + login card */}
-            <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md md:justify-self-start">
+            {/* LEFT (RTL second): Org logo + login card — pulled toward the K logo */}
+            <div className="flex flex-col gap-5 animate-scale-in w-full max-w-md md:-mr-6 lg:-mr-10">
 
         {/* Org branding header (above login card) */}
         <div className="text-center">
