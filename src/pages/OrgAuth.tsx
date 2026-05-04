@@ -280,6 +280,10 @@ export default function OrgAuth() {
     "--brand-accent": accentHsl,
   };
 
+  // Extract just the hue from the org primary color so we can tint the
+  // space background with a darker shade pulled from the org's brand.
+  const primaryHue = (primaryHsl.split(" ")[0] || "210").trim();
+
   return (
     <div
       className="relative min-h-screen flex flex-col overflow-hidden"
@@ -287,7 +291,7 @@ export default function OrgAuth() {
       style={{
         ...brandStyle,
         background:
-          "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)",
+          `radial-gradient(ellipse at 30% 20%, hsl(${primaryHue} 70% 14%) 0%, hsl(${primaryHue} 80% 8%) 45%, hsl(${primaryHue} 85% 5%) 100%)`,
       }}
     >
       {/* 3D space scene */}
@@ -296,7 +300,7 @@ export default function OrgAuth() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse at center, transparent 40%, hsl(230 80% 3% / 0.6) 100%)",
+            `radial-gradient(ellipse at center, transparent 40%, hsl(${primaryHue} 85% 5% / 0.6) 100%)`,
         }}
       />
 
