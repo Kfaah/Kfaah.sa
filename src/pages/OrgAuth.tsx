@@ -303,21 +303,20 @@ export default function OrgAuth() {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-6xl flex flex-col items-center gap-8">
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 items-stretch gap-6 md:gap-10">
-            {/* RIGHT (RTL first): Kafa'a platform logo — equal column, matches login height */}
-            <div className="flex flex-col items-center justify-center text-center animate-fade-in w-full h-full min-h-[28rem] md:min-h-[32rem]">
-              <KafaaLogoArtwork
-                className="h-auto w-full max-w-sm md:max-w-md lg:max-w-lg opacity-95"
-                style={{
-                  filter:
-                    "drop-shadow(0 0 18px hsl(0 0% 100% / 0.28)) drop-shadow(0 16px 32px hsl(220 75% 3% / 0.42))",
-                }}
-              />
-            </div>
+        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-0 items-center justify-items-center">
+          {/* RIGHT (RTL first): Kafa'a platform logo — larger, no frame */}
+          <div className="relative flex items-center justify-center md:justify-end animate-fade-in order-1 w-full min-h-[28rem] md:min-h-[34rem] md:-ml-10 lg:-ml-14">
+            <KafaaLogoArtwork
+              className="relative w-full max-w-[31rem] md:max-w-[38rem] lg:max-w-[42rem] h-auto"
+              style={{
+                filter:
+                  "drop-shadow(0 0 30px hsl(0 0% 100% / 0.35)) drop-shadow(0 24px 48px hsl(220 75% 3% / 0.55))",
+              }}
+            />
+          </div>
 
-            {/* LEFT (RTL second): Org logo + login card */}
-            <div className="flex flex-col gap-5 animate-scale-in w-full max-w-md mx-auto justify-center">
+          {/* LEFT (RTL second): Org logo + login card */}
+          <div className="flex flex-col gap-5 order-2 animate-scale-in w-full max-w-md md:justify-self-start md:-mr-10 lg:-mr-14 justify-center">
 
         {/* Org branding header (above login card) */}
         <div className="text-center">
