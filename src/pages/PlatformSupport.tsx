@@ -81,7 +81,7 @@ export default function PlatformSupport() {
     {
       id: "contact" as View,
       icon: MessagesSquare,
-      title: "تواصل معنا",
+      title: "راسلنا",
       desc: "نظام التواصل الذكي — أرسل رسالتك وسنرد عليك",
       gradient: "from-emerald-400 to-teal-600",
     },
