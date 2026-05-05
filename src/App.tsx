@@ -42,6 +42,8 @@ const PlatformSubscribe = lazy(() => import("./pages/PlatformSubscribe"));
 const PlatformAbout = lazy(() => import("./pages/PlatformAbout"));
 const AboutCreator = lazy(() => import("./pages/AboutCreator"));
 const PlatformQuick = lazy(() => import("./pages/PlatformQuick"));
+const PlatformVisionMission = lazy(() => import("./pages/PlatformVisionMission"));
+const PlatformGoals = lazy(() => import("./pages/PlatformGoals"));
 const Settings = lazy(() => import("./pages/Settings"));
 const BrandingSettings = lazy(() => import("./pages/settings/BrandingSettings"));
 const RolesPermissionsSettings = lazy(() => import("./pages/settings/RolesPermissionsSettings"));
@@ -313,6 +315,8 @@ function AppRoutes() {
       <Route path="/about" element={<PlatformAbout />} />
       <Route path="/about/creator" element={<AboutCreator />} />
       <Route path="/about/quick" element={<PlatformQuick />} />
+      <Route path="/about/vision-mission" element={<PlatformVisionMission />} />
+      <Route path="/about/goals" element={<PlatformGoals />} />
 
       {/* Legacy direct auth (kept for compatibility) */}
       <Route
