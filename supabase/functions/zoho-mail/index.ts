@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
         return json({ error: "unknown_action" }, 400);
     }
   } catch (e: any) {
-    console.error("zoho-mail error:", e?.message || e);
-    return json({ error: e?.message || "internal_error" }, 500);
+    console.error("zoho-mail error:", e?.message, e?.stack, JSON.stringify(e));
+    return json({ error: e?.message || "internal_error", stack: e?.stack }, 500);
   }
 });
