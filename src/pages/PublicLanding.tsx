@@ -39,6 +39,13 @@ export default function PublicLanding() {
   useEffect(() => {
     if (authLoading || !user) return;
     (async () => {
+      // Honor stored admin destination (e.g. /inbox, /platform-mail)
+      const dest = sessionStorage.getItem("adminPostLoginPath");
+      if (dest) {
+        sessionStorage.removeItem("adminPostLoginPath");
+        navigate(dest, { replace: true });
+        return;
+      }
       const { data: superCheck } = await supabase.rpc("is_super_admin", { _user_id: user.id });
       navigate(superCheck ? "/admin" : "/app", { replace: true });
     })();
@@ -63,6 +70,14 @@ export default function PublicLanding() {
         password: normalizedPassword,
       });
       if (error) throw error;
+
+      const dest = sessionStorage.getItem("adminPostLoginPath");
+      if (dest) {
+        sessionStorage.removeItem("adminPostLoginPath");
+        toast.success("تم تسجيل الدخول بنجاح");
+        navigate(dest, { replace: true });
+        return;
+      }
 
       const { data: superCheck } = await supabase.rpc("is_super_admin", {
         _user_id: data.user.id,
@@ -183,7 +198,14 @@ export default function PublicLanding() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => navigate("/inbox")}
+                onClick={() => {
+                  if (!user) {
+                    sessionStorage.setItem("adminPostLoginPath", "/inbox");
+                    toast.info("يرجى تسجيل الدخول أولاً للوصول إلى نظام التواصل");
+                    return;
+                  }
+                  navigate("/inbox");
+                }}
                 className="group flex items-center justify-center gap-2 rounded-xl py-3 px-4 bg-white/95 hover:bg-white text-cyan-700 font-bold text-sm shadow-lg shadow-black/20 hover:-translate-y-0.5 transition-all border border-cyan-200/70"
               >
                 <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
@@ -193,7 +215,14 @@ export default function PublicLanding() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/platform-mail")}
+                onClick={() => {
+                  if (!user) {
+                    sessionStorage.setItem("adminPostLoginPath", "/platform-mail");
+                    toast.info("يرجى تسجيل الدخول أولاً للوصول إلى بريد المنصة");
+                    return;
+                  }
+                  navigate("/platform-mail");
+                }}
                 className="group flex items-center justify-center gap-2 rounded-xl py-3 px-4 bg-white/95 hover:bg-white text-cyan-700 font-bold text-sm shadow-lg shadow-black/20 hover:-translate-y-0.5 transition-all border border-cyan-200/70"
               >
                 <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
