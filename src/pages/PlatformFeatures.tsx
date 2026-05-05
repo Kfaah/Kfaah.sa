@@ -6,6 +6,7 @@ import {
   Workflow, Bot, LineChart, Megaphone, FileSpreadsheet, Layers,
 } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
+import BackToAboutButton from "@/components/platform/BackToAboutButton";
 
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
