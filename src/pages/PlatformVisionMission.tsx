@@ -100,9 +100,7 @@ export default function PlatformVisionMission() {
           </motion.section>
 
           <div className="mt-10 flex justify-center">
-            <button onClick={() => navigate("/about")} className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors">
-              <ArrowRight className="w-4 h-4" /> العودة إلى عن المنصة
-            </button>
+            <BackToAboutButton onClick={() => navigate("/about")} />
           </div>
         </div>
       </main>
