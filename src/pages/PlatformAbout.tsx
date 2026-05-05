@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, UserCircle2, Sparkles, Compass, Target, Zap, LogIn } from "lucide-react";
@@ -52,6 +53,28 @@ const cards = [
 
 export default function PlatformAbout() {
   const navigate = useNavigate();
+  const loginPathRef = useRef<string>("/auth");
+
+  useEffect(() => {
+    // Remember the page the user came from (e.g. org login) so the back button
+    // always returns there even after navigating to sub-pages and back.
+    const stored = sessionStorage.getItem("platformAboutOrigin");
+    const referrer = document.referrer;
+    let origin = stored;
+    if (!origin) {
+      try {
+        if (referrer && new URL(referrer).origin === window.location.origin) {
+          const refPath = new URL(referrer).pathname;
+          if (!refPath.startsWith("/about")) origin = refPath;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!origin) origin = "/auth";
+    sessionStorage.setItem("platformAboutOrigin", origin);
+    loginPathRef.current = origin;
+  }, []);
 
   return (
     <div
@@ -160,7 +183,11 @@ export default function PlatformAbout() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            const target = sessionStorage.getItem("platformAboutOrigin") || loginPathRef.current || "/auth";
+            sessionStorage.removeItem("platformAboutOrigin");
+            navigate(target);
+          }}
           className="group mt-12 inline-flex items-center gap-3 rounded-full px-6 py-3 bg-white/[0.06] backdrop-blur-xl border border-white/20 hover:border-white/50 hover:bg-white/[0.12] shadow-[0_12px_40px_-12px_hsl(220_75%_3%/0.7)] transition-all duration-500 hover:-translate-y-0.5"
         >
           <span
