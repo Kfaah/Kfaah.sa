@@ -47,6 +47,7 @@ const PlatformGoals = lazy(() => import("./pages/PlatformGoals"));
 const PlatformSupport = lazy(() => import("./pages/PlatformSupport"));
 const SupportInbox = lazy(() => import("./pages/SupportInbox"));
 const PlatformMail = lazy(() => import("./pages/PlatformMail"));
+const Messages = lazy(() => import("./pages/Messages"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const Settings = lazy(() => import("./pages/Settings"));
 const BrandingSettings = lazy(() => import("./pages/settings/BrandingSettings"));
@@ -324,6 +325,7 @@ function AppRoutes() {
       <Route path="/support" element={<PlatformSupport />} />
       <Route path="/inbox" element={<SupportInbox />} />
       <Route path="/platform-mail" element={<PlatformMail />} />
+      <Route path="/messages" element={<Messages />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
 
       {/* Legacy direct auth (kept for compatibility) */}
