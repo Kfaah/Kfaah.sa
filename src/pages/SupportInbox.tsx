@@ -11,9 +11,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import SpaceScene from "@/components/space/SpaceScene";
 
-const primaryHsl = "210 60% 28%";
-const accentHsl = "179 47% 45%";
+const primaryHsl = "168 76% 28%";
+const accentHsl = "44 92% 55%";
 
 type SupportMsg = {
   id: string;
@@ -55,13 +56,13 @@ type Draft = {
 type FolderId = "inbox" | "starred" | "sent" | "drafts" | "archive" | "spam" | "trash";
 
 const FOLDERS: { id: FolderId; label: string; icon: any; color: string }[] = [
-  { id: "inbox", label: "صندوق الوارد", icon: Inbox, color: "text-blue-600" },
-  { id: "starred", label: "المميّزة", icon: Star, color: "text-amber-500" },
-  { id: "sent", label: "المُرسَلة", icon: Send, color: "text-emerald-600" },
-  { id: "drafts", label: "المسودات", icon: FileEdit, color: "text-slate-600" },
-  { id: "archive", label: "الأرشيف", icon: Archive, color: "text-violet-600" },
-  { id: "spam", label: "غير الهام", icon: AlertOctagon, color: "text-orange-600" },
-  { id: "trash", label: "المحذوفات", icon: Trash2, color: "text-rose-600" },
+  { id: "inbox", label: "صندوق الوارد", icon: Inbox, color: "text-cyan-300" },
+  { id: "starred", label: "المميّزة", icon: Star, color: "text-amber-300" },
+  { id: "sent", label: "المُرسَلة", icon: Send, color: "text-emerald-300" },
+  { id: "drafts", label: "المسودات", icon: FileEdit, color: "text-slate-300" },
+  { id: "archive", label: "الأرشيف", icon: Archive, color: "text-violet-300" },
+  { id: "spam", label: "غير الهام", icon: AlertOctagon, color: "text-orange-300" },
+  { id: "trash", label: "المحذوفات", icon: Trash2, color: "text-rose-300" },
 ];
 
 export default function SupportInbox() {
