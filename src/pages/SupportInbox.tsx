@@ -33,6 +33,7 @@ type SupportMsg = {
   is_archived: boolean;
   labels: string[];
   created_at: string;
+  user_id?: string | null;
 };
 
 type Reply = {
