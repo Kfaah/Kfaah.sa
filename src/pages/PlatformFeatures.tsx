@@ -6,6 +6,7 @@ import {
   Workflow, Bot, LineChart, Megaphone, FileSpreadsheet, Layers,
 } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
+import BackToAboutButton from "@/components/platform/BackToAboutButton";
 
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
@@ -83,21 +84,8 @@ export default function PlatformFeatures() {
             </p>
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={() => navigate("/subscribe")}
-              className="text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all hover:scale-105"
-              style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
-            >
-              اشترك في المنصة
-            </button>
-            <button
-              onClick={() => navigate("/about")}
-              className="bg-white/10 text-white font-bold px-6 py-3 rounded-2xl border border-white/20 hover:bg-white/20 transition-all flex items-center gap-2"
-            >
-              <ArrowRight className="w-4 h-4 rotate-180" />
-              العودة إلى عن المنصة
-            </button>
+          <div className="mt-10 flex justify-center">
+            <BackToAboutButton onClick={() => navigate("/about")} />
           </div>
         </div>
       </main>

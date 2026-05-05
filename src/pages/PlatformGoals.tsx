@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Target, Megaphone, HeartHandshake, BarChart3, Workflow } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
+import BackToAboutButton from "@/components/platform/BackToAboutButton";
 
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
@@ -75,9 +76,7 @@ export default function PlatformGoals() {
           </motion.section>
 
           <div className="mt-10 flex justify-center">
-            <button onClick={() => navigate("/about")} className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors">
-              <ArrowRight className="w-4 h-4" /> العودة إلى عن المنصة
-            </button>
+            <BackToAboutButton onClick={() => navigate("/about")} />
           </div>
         </div>
       </main>

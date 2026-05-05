@@ -5,6 +5,7 @@ import {
   Building2, MessageSquare, FolderKanban, Settings2, BarChart3,
 } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
+import BackToAboutButton from "@/components/platform/BackToAboutButton";
 
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
@@ -91,16 +92,9 @@ export default function PlatformQuick() {
           ))}
         </div>
 
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          onClick={() => navigate("/about")}
-          className="mt-10 inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors"
-        >
-          <ArrowRight className="w-4 h-4" />
-          العودة لصفحة عن المنصة
-        </motion.button>
+        <div className="mt-10 flex justify-center">
+          <BackToAboutButton onClick={() => navigate("/about")} />
+        </div>
       </main>
     </div>
   );
