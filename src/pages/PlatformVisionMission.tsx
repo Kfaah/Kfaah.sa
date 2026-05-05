@@ -81,28 +81,20 @@ export default function PlatformVisionMission() {
                 قيم منصة كفاءة
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {values.map((v, i) => {
-                  const isLight = i % 2 === 0;
-                  return (
+                {values.map((v) => (
+                  <div
+                    key={v.label}
+                    className="rounded-2xl p-4 text-center transition-colors border border-white/15 bg-white/[0.04] hover:border-white/35"
+                  >
                     <div
-                      key={v.label}
-                      className={
-                        "rounded-2xl p-4 text-center transition-colors " +
-                        (isLight
-                          ? "bg-white border border-white shadow-[0_18px_50px_-15px_hsl(220_75%_3%/0.7)]"
-                          : "border border-white/15 bg-white/[0.04] hover:border-white/35")
-                      }
+                      className="w-10 h-10 mx-auto rounded-xl flex items-center justify-center mb-2"
+                      style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
                     >
-                      <div
-                        className="w-10 h-10 mx-auto rounded-xl flex items-center justify-center mb-2"
-                        style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
-                      >
-                        <v.icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div className={`text-sm font-bold ${isLight ? "text-slate-900" : "text-white"}`}>{v.label}</div>
+                      <v.icon className="w-5 h-5 text-white" />
                     </div>
-                  );
-                })}
+                    <div className="text-sm font-bold text-white">{v.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.section>

@@ -50,35 +50,27 @@ export default function PlatformGoals() {
               غير الربحي. من خلال أدوات متقدمة تعتمد على تحليل البيانات والذكاء الاصطناعي، تُمكّن المنصة الجمعيات من:
             </p>
             <div className="grid md:grid-cols-2 gap-4">
-              {goals.map((g, i) => {
-                const isLight = i % 2 === 1;
-                return (
-                  <motion.div
-                    key={g.title}
-                    initial={{ opacity: 0, y: 16 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.08 }}
-                    className={
-                      "rounded-2xl p-5 flex items-start gap-4 transition-colors " +
-                      (isLight
-                        ? "bg-white border border-white shadow-[0_18px_50px_-15px_hsl(220_75%_3%/0.7)]"
-                        : "border border-white/15 bg-white/[0.04] hover:border-white/35")
-                    }
+              {goals.map((g, i) => (
+                <motion.div
+                  key={g.title}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08 }}
+                  className="rounded-2xl p-5 flex items-start gap-4 transition-colors border border-white/15 bg-white/[0.04] hover:border-white/35"
+                >
+                  <div
+                    className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
                   >
-                    <div
-                      className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
-                    >
-                      <g.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h4 className={`font-bold mb-1 ${isLight ? "text-slate-900" : "text-white"}`}>{g.title}</h4>
-                      <p className={`text-sm leading-relaxed ${isLight ? "text-slate-600" : "text-slate-300"}`}>{g.desc}</p>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                    <g.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-1 text-white">{g.title}</h4>
+                    <p className="text-sm leading-relaxed text-slate-300">{g.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </motion.section>
 
