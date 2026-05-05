@@ -207,12 +207,29 @@ export default function SupportInbox() {
       });
       if (error) throw error;
 
-      if (selected.sender_email) {
+      // Determine the best email to send a copy to:
+      // - If the message is linked to a registered account, use that account's email
+      // - Otherwise fall back to the email from the contact form
+      let targetEmail: string | null = selected.sender_email || null;
+      if (selected.user_id) {
+        try {
+          const { data: accountEmail } = await supabase.rpc("get_user_account_email", {
+            _user_id: selected.user_id,
+          });
+          if (accountEmail && typeof accountEmail === "string") {
+            targetEmail = accountEmail;
+          }
+        } catch (e) {
+          console.warn("account email lookup failed", e);
+        }
+      }
+
+      if (targetEmail) {
         try {
           await supabase.functions.invoke("send-transactional-email", {
             body: {
               templateName: "support-reply",
-              recipientEmail: selected.sender_email,
+              recipientEmail: targetEmail,
               templateData: {
                 senderName: selected.sender_name,
                 originalSubject: selected.subject,
@@ -224,7 +241,11 @@ export default function SupportInbox() {
         } catch (e) { console.warn("email send failed", e); }
       }
       setReplyText("");
-      toast.success("تم إرسال الرد إلى بريد المرسل");
+      toast.success(
+        selected.user_id
+          ? "تم إرسال الرد إلى حساب المستخدم وبريده المسجَّل"
+          : "تم إرسال الرد إلى بريد المرسل"
+      );
     } catch (err: any) {
       toast.error(err?.message || "تعذّر الإرسال");
     } finally { setSending(false); }
