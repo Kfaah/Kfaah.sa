@@ -318,15 +318,15 @@ export default function PlatformSubscribe() {
   );
 }
 
-function Selector<T extends string>({
+function Selector({
   icon: Icon, label, hint, value, onChange, options,
 }: {
   icon: any;
   label: string;
   hint?: string;
-  value: T;
-  onChange: (v: T) => void;
-  options: { v: T; label: string; sub?: string }[];
+  value: string;
+  onChange: (v: string) => void;
+  options: { v: string; label: string; sub?: string }[];
 }) {
   return (
     <div>
