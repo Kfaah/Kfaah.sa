@@ -133,7 +133,7 @@ export default function PlatformSubscribe() {
               label="الحملة التسويقية على منصات التواصل"
               hint="يعكس حجم النشاط الذي تحتاجه المنصة من أدوات تسويق وتحليلات"
               value={campaign}
-              onChange={setCampaign}
+              onChange={(v) => setCampaign(v as typeof campaign)}
               options={[
                 { v: "none", label: "لا توجد", sub: "حضور رمزي" },
                 { v: "light", label: "خفيفة", sub: "نشاط شهري" },
@@ -147,7 +147,7 @@ export default function PlatformSubscribe() {
               label="عدد المتبرعين"
               hint="حجم قاعدة بياناتك من المتبرعين الحاليين"
               value={donors}
-              onChange={setDonors}
+              onChange={(v) => setDonors(v as typeof donors)}
               options={[
                 { v: "lt500", label: "أقل من 500" },
                 { v: "500_2000", label: "500 — 2,000" },
@@ -161,7 +161,7 @@ export default function PlatformSubscribe() {
               label="عمر الجمعية"
               hint="الجمعيات الأقدم تحتاج بنية بيانات أعمق"
               value={age}
-              onChange={setAge}
+              onChange={(v) => setAge(v as typeof age)}
               options={[
                 { v: "lt2", label: "أقل من سنتين" },
                 { v: "2_5", label: "من 2 إلى 5 سنوات" },
@@ -175,7 +175,7 @@ export default function PlatformSubscribe() {
               label="عدد الموظفين"
               hint="يحدد عدد الحسابات وحجم وحدة الموارد البشرية"
               value={staff}
-              onChange={setStaff}
+              onChange={(v) => setStaff(v as typeof staff)}
               options={[
                 { v: "lt5", label: "أقل من 5" },
                 { v: "5_15", label: "من 5 إلى 15" },
