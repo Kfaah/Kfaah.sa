@@ -143,9 +143,29 @@ export default function SupportInbox() {
         author_user_id: user!.id,
       });
       if (error) throw error;
+      // Send email reply to the original sender (form-based contact)
+      const msg = messages.find((m) => m.id === selectedId);
+      if (msg?.sender_email) {
+        try {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "support-reply",
+              recipientEmail: msg.sender_email,
+              templateData: {
+                senderName: msg.sender_name,
+                originalSubject: msg.subject,
+                originalMessage: msg.message,
+                replyBody: replyText.trim().slice(0, 5000),
+              },
+            },
+          });
+        } catch (e) {
+          console.warn("email send failed", e);
+        }
+      }
       setReplyText("");
       await loadReplies(selectedId);
-      toast.success("تم حفظ الرد");
+      toast.success("تم إرسال الرد إلى بريد المرسل");
     } catch (err: any) {
       toast.error(err?.message || "تعذّر إرسال الرد");
     } finally {
