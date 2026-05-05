@@ -3893,12 +3893,61 @@ export type Database = {
           },
         ]
       }
+      support_drafts: {
+        Row: {
+          author_user_id: string
+          body: string | null
+          created_at: string
+          id: string
+          reply_to_message_id: string | null
+          subject: string | null
+          to_email: string | null
+          to_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_user_id: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          reply_to_message_id?: string | null
+          subject?: string | null
+          to_email?: string | null
+          to_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_user_id?: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          reply_to_message_id?: string | null
+          subject?: string | null
+          to_email?: string | null
+          to_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_drafts_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "support_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_messages: {
         Row: {
           category: string
           created_at: string
           id: string
+          is_archived: boolean
           is_read: boolean
+          is_spam: boolean
+          is_starred: boolean
+          is_trashed: boolean
+          labels: string[]
           message: string
           organization_name: string | null
           sender_email: string
@@ -3913,7 +3962,12 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          is_archived?: boolean
           is_read?: boolean
+          is_spam?: boolean
+          is_starred?: boolean
+          is_trashed?: boolean
+          labels?: string[]
           message: string
           organization_name?: string | null
           sender_email: string
@@ -3928,7 +3982,12 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          is_archived?: boolean
           is_read?: boolean
+          is_spam?: boolean
+          is_starred?: boolean
+          is_trashed?: boolean
+          labels?: string[]
           message?: string
           organization_name?: string | null
           sender_email?: string
