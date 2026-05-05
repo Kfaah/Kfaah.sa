@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, UserCircle2, Sparkles, BookOpen } from "lucide-react";
+import { ArrowRight, UserCircle2, Sparkles, Compass, Target, Zap } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
 
@@ -17,20 +17,36 @@ const cards = [
     gradient: "from-amber-400 via-amber-500 to-orange-500",
   },
   {
+    id: "vision",
+    icon: Compass,
+    title: "الرؤية والرسالة",
+    desc: "تعريف المنصة، رؤيتها، رسالتها، والقيم التي تنطلق منها.",
+    href: "/about/vision-mission",
+    gradient: "from-cyan-400 via-teal-500 to-emerald-500",
+  },
+  {
+    id: "goals",
+    icon: Target,
+    title: "أهداف المنصة",
+    desc: "ما تسعى كفاءة لتحقيقه من نتائج وأثر في القطاع غير الربحي.",
+    href: "/about/goals",
+    gradient: "from-amber-300 via-orange-400 to-rose-500",
+  },
+  {
+    id: "features",
+    icon: Zap,
+    title: "مميزات المنصة",
+    desc: "أبرز القدرات الذكية والمميزات التقنية التي تقدّمها كفاءة.",
+    href: "/features",
+    gradient: "from-violet-400 via-purple-500 to-fuchsia-500",
+  },
+  {
     id: "quick",
     icon: Sparkles,
     title: "نقاط سريعة",
     desc: "نظرة خاطفة على أبرز ما تقدّمه المنصة في سطور موجزة.",
     href: "/about/quick",
-    gradient: "from-cyan-400 via-teal-500 to-emerald-500",
-  },
-  {
-    id: "detailed",
-    icon: BookOpen,
-    title: "شرح مفصل",
-    desc: "غُص في تفاصيل المنصة وميزاتها وآلية عملها بشكل وافٍ.",
-    href: "/features",
-    gradient: "from-violet-400 via-purple-500 to-fuchsia-500",
+    gradient: "from-sky-400 via-blue-500 to-indigo-500",
   },
 ];
 
@@ -105,8 +121,8 @@ export default function PlatformAbout() {
           </div>
         </motion.div>
 
-        {/* 3 elegant icon cards */}
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
+        {/* elegant icon cards */}
+        <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 md:gap-6">
           {cards.map((c, i) => (
             <motion.button
               key={c.id}
