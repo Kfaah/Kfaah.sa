@@ -11,9 +11,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import SpaceScene from "@/components/space/SpaceScene";
 
-const primaryHsl = "210 60% 28%";
-const accentHsl = "179 47% 45%";
+const primaryHsl = "168 76% 28%";
+const accentHsl = "44 92% 55%";
 
 type SupportMsg = {
   id: string;
@@ -55,13 +56,13 @@ type Draft = {
 type FolderId = "inbox" | "starred" | "sent" | "drafts" | "archive" | "spam" | "trash";
 
 const FOLDERS: { id: FolderId; label: string; icon: any; color: string }[] = [
-  { id: "inbox", label: "صندوق الوارد", icon: Inbox, color: "text-blue-600" },
-  { id: "starred", label: "المميّزة", icon: Star, color: "text-amber-500" },
-  { id: "sent", label: "المُرسَلة", icon: Send, color: "text-emerald-600" },
-  { id: "drafts", label: "المسودات", icon: FileEdit, color: "text-slate-600" },
-  { id: "archive", label: "الأرشيف", icon: Archive, color: "text-violet-600" },
-  { id: "spam", label: "غير الهام", icon: AlertOctagon, color: "text-orange-600" },
-  { id: "trash", label: "المحذوفات", icon: Trash2, color: "text-rose-600" },
+  { id: "inbox", label: "صندوق الوارد", icon: Inbox, color: "text-cyan-300" },
+  { id: "starred", label: "المميّزة", icon: Star, color: "text-amber-300" },
+  { id: "sent", label: "المُرسَلة", icon: Send, color: "text-emerald-300" },
+  { id: "drafts", label: "المسودات", icon: FileEdit, color: "text-slate-300" },
+  { id: "archive", label: "الأرشيف", icon: Archive, color: "text-violet-300" },
+  { id: "spam", label: "غير الهام", icon: AlertOctagon, color: "text-orange-300" },
+  { id: "trash", label: "المحذوفات", icon: Trash2, color: "text-rose-300" },
 ];
 
 export default function SupportInbox() {
@@ -291,63 +292,75 @@ export default function SupportInbox() {
   };
 
   if (authLoading || isOwner === null) {
-    return <div dir="rtl" className="min-h-screen flex items-center justify-center text-muted-foreground">جارٍ التحميل...</div>;
+    return (
+      <div dir="rtl" className="relative min-h-screen flex items-center justify-center text-slate-300"
+           style={{ background: "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)" }}>
+        <SpaceScene />
+        <div className="relative z-10">جارٍ التحميل...</div>
+      </div>
+    );
   }
   if (!isOwner) {
     return (
-      <div dir="rtl" className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 className="text-2xl font-bold mb-2">صفحة محصورة</h1>
-        <p className="text-muted-foreground mb-4">هذه الصفحة متاحة فقط لمالك المنصة.</p>
-        <button onClick={() => navigate("/")} className="text-primary font-bold">العودة للرئيسية</button>
+      <div dir="rtl" className="relative min-h-screen flex flex-col items-center justify-center p-6 text-center overflow-hidden"
+           style={{ background: "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)" }}>
+        <SpaceScene />
+        <div className="relative z-10">
+          <h1 className="text-2xl font-bold mb-2 text-white">صفحة محصورة</h1>
+          <p className="text-slate-300 mb-4">هذه الصفحة متاحة فقط لمالك المنصة.</p>
+          <button onClick={() => navigate("/")} className="text-cyan-300 font-bold">العودة للرئيسية</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30">
+    <div dir="rtl" className="relative min-h-screen overflow-hidden"
+         style={{ background: "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)" }}>
+      <SpaceScene />
       {/* Top bar */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-200">
+      <header className="sticky top-0 z-30 bg-white/[0.04] backdrop-blur-xl border-b border-white/10">
         <div className="max-w-[1500px] mx-auto px-4 py-3 flex items-center gap-4">
           <div className="flex items-center gap-3 shrink-0">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-black/40"
               style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
             >
               <Mail className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-base md:text-lg font-extrabold text-slate-800">بريد كفاءة</h1>
-              <p className="text-[11px] text-slate-500">info@kfaah.org</p>
+              <h1 className="text-base md:text-lg font-extrabold text-white">بريد كفاءة</h1>
+              <p className="text-[11px] text-slate-400">info@kfaah.org</p>
             </div>
           </div>
 
           <div className="flex-1 max-w-2xl mx-auto relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="ابحث في البريد..."
-              className="pr-10 bg-slate-100/70 border-slate-200 focus-visible:bg-white"
+              className="pr-10 bg-white/[0.06] border-white/15 text-white placeholder:text-slate-500 focus-visible:bg-white/[0.1] focus-visible:border-cyan-400/40"
             />
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <button onClick={loadAll} className="p-2 rounded-lg hover:bg-slate-100" title="تحديث">
-              <RefreshCcw className="w-4 h-4 text-slate-600" />
+            <button onClick={loadAll} className="p-2 rounded-lg hover:bg-white/10" title="تحديث">
+              <RefreshCcw className="w-4 h-4 text-slate-300" />
             </button>
-            <button onClick={() => navigate("/")} className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100">
+            <button onClick={() => navigate("/")} className="text-xs font-bold text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10">
               للرئيسية <ArrowRight className="inline w-3 h-3 mr-1 rotate-180" />
             </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-[1500px] mx-auto p-3 grid grid-cols-1 lg:grid-cols-[230px_360px_1fr] gap-3 h-[calc(100vh-72px)]">
+      <div className="relative z-10 max-w-[1500px] mx-auto p-3 grid grid-cols-1 lg:grid-cols-[230px_360px_1fr] gap-3 h-[calc(100vh-72px)]">
         {/* Right sidebar (folders) */}
-        <aside className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 overflow-y-auto">
+        <aside className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl shadow-black/30 p-3 overflow-y-auto">
           <button
             onClick={() => openCompose()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white font-bold text-sm shadow-md hover:shadow-lg transition-all mb-3"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg shadow-black/40 hover:-translate-y-0.5 transition-all mb-3"
             style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
           >
             <PenSquare className="w-4 h-4" />
@@ -363,17 +376,17 @@ export default function SupportInbox() {
                   key={f.id}
                   onClick={() => { setFolder(f.id); setSelectedId(null); setComposing(false); }}
                   className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
-                    active ? "bg-gradient-to-l from-cyan-50 to-blue-50 text-slate-900 shadow-sm border border-blue-100"
-                           : "text-slate-600 hover:bg-slate-50"
+                    active ? "bg-white/[0.12] text-white shadow-inner border border-white/20"
+                           : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Icon className={`w-4 h-4 ${active ? f.color : "text-slate-400"}`} />
+                    <Icon className={`w-4 h-4 ${active ? f.color : "text-slate-500"}`} />
                     {f.label}
                   </span>
                   {count > 0 && (
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                      active ? "bg-white/80 text-slate-700" : "bg-slate-100 text-slate-500"
+                      active ? "bg-white/20 text-white" : "bg-white/10 text-slate-300"
                     }`}>{count}</span>
                   )}
                 </button>
@@ -381,12 +394,12 @@ export default function SupportInbox() {
             })}
           </nav>
 
-          <div className="mt-5 pt-4 border-t border-slate-100">
-            <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 px-2">تصنيفات</p>
+          <div className="mt-5 pt-4 border-t border-white/10">
+            <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 px-2">تصنيفات</p>
             <div className="space-y-1 text-xs">
               {["استفسار عام", "مشكلة تقنية", "الاشتراك", "تدريب"].map(l => (
-                <div key={l} className="flex items-center gap-2 px-3 py-1.5 text-slate-500 hover:bg-slate-50 rounded-lg cursor-default">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400" /> {l}
+                <div key={l} className="flex items-center gap-2 px-3 py-1.5 text-slate-400 hover:bg-white/5 rounded-lg cursor-default">
+                  <span className="w-2 h-2 rounded-full bg-cyan-300" /> {l}
                 </div>
               ))}
             </div>
@@ -394,9 +407,9 @@ export default function SupportInbox() {
         </aside>
 
         {/* Middle: list */}
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+        <section className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl shadow-black/30 overflow-hidden flex flex-col">
+          <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+            <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
               {(() => {
                 const f = FOLDERS.find(x => x.id === folder)!;
                 const Icon = f.icon;
@@ -418,16 +431,16 @@ export default function SupportInbox() {
                 <button
                   key={d.id}
                   onClick={() => openCompose({ to: d.to_email || "", subject: d.subject || "", body: d.body || "", draftId: d.id })}
-                  className={`w-full text-right p-3 border-b border-slate-100 hover:bg-slate-50 transition-colors ${
-                    selectedDraftId === d.id ? "bg-cyan-50/60 border-r-4 border-r-cyan-500" : ""
+                  className={`w-full text-right p-3 border-b border-white/5 hover:bg-white/[0.05] transition-colors ${
+                    selectedDraftId === d.id ? "bg-cyan-400/10 border-r-4 border-r-cyan-400" : ""
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-sm text-slate-800 truncate">إلى: {d.to_email || "(بدون مستلم)"}</span>
-                    <span className="text-[10px] text-slate-400">{formatDate(d.updated_at)}</span>
+                    <span className="font-bold text-sm text-white truncate">إلى: {d.to_email || "(بدون مستلم)"}</span>
+                    <span className="text-[10px] text-slate-500">{formatDate(d.updated_at)}</span>
                   </div>
-                  <div className="text-xs font-semibold text-slate-700 truncate">{d.subject || "(بدون موضوع)"}</div>
-                  <div className="text-xs text-slate-500 line-clamp-1 mt-0.5">{d.body || "..."}</div>
+                  <div className="text-xs font-semibold text-slate-200 truncate">{d.subject || "(بدون موضوع)"}</div>
+                  <div className="text-xs text-slate-400 line-clamp-1 mt-0.5">{d.body || "..."}</div>
                 </button>
               ))
             ) : folderMessages.length === 0 ? (
@@ -436,9 +449,9 @@ export default function SupportInbox() {
               <div
                 key={m.id}
                 onClick={() => selectMessage(m)}
-                className={`group cursor-pointer p-3 border-b border-slate-100 hover:bg-slate-50/80 transition-colors ${
-                  selectedId === m.id ? "bg-cyan-50/60 border-r-4 border-r-cyan-500" : ""
-                } ${!m.is_read ? "bg-amber-50/30" : ""}`}
+                className={`group cursor-pointer p-3 border-b border-white/5 hover:bg-white/[0.05] transition-colors ${
+                  selectedId === m.id ? "bg-cyan-400/10 border-r-4 border-r-cyan-400" : ""
+                } ${!m.is_read ? "bg-amber-400/[0.04]" : ""}`}
               >
                 <div className="flex items-start gap-2 mb-1">
                   <button
@@ -447,16 +460,16 @@ export default function SupportInbox() {
                     title="تمييز"
                   >
                     {m.is_starred
-                      ? <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      : <Star className="w-4 h-4 text-slate-300 hover:text-amber-400" />}
+                      ? <Star className="w-4 h-4 fill-amber-300 text-amber-300" />
+                      : <Star className="w-4 h-4 text-slate-500 hover:text-amber-300" />}
                   </button>
-                  {!m.is_read && <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 mt-1.5" />}
-                  <span className={`flex-1 truncate text-sm ${m.is_read ? "font-semibold text-slate-700" : "font-extrabold text-slate-900"}`}>
+                  {!m.is_read && <span className="w-2 h-2 rounded-full bg-amber-300 shrink-0 mt-1.5 shadow-[0_0_8px_rgba(252,211,77,0.6)]" />}
+                  <span className={`flex-1 truncate text-sm ${m.is_read ? "font-semibold text-slate-300" : "font-extrabold text-white"}`}>
                     {m.sender_name}
                   </span>
-                  <span className="text-[10px] text-slate-400 shrink-0">{formatDate(m.created_at)}</span>
+                  <span className="text-[10px] text-slate-500 shrink-0">{formatDate(m.created_at)}</span>
                 </div>
-                <div className={`text-xs truncate mb-0.5 mr-6 ${m.is_read ? "text-slate-600" : "text-slate-800 font-bold"}`}>
+                <div className={`text-xs truncate mb-0.5 mr-6 ${m.is_read ? "text-slate-400" : "text-slate-100 font-bold"}`}>
                   {m.subject}
                 </div>
                 <div className="text-xs text-slate-500 line-clamp-1 mr-6">{m.message}</div>
@@ -466,7 +479,7 @@ export default function SupportInbox() {
         </section>
 
         {/* Detail / Compose */}
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <section className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl shadow-black/30 overflow-hidden flex flex-col">
           {composing ? (
             <ComposeView
               to={composeTo} setTo={setComposeTo}
@@ -480,14 +493,14 @@ export default function SupportInbox() {
             />
           ) : !selected ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-              <Mail className="w-16 h-16 text-slate-200 mb-4" />
-              <p className="text-slate-500 mb-1 font-bold">اختر رسالة لعرضها</p>
-              <p className="text-xs text-slate-400">أو ابدأ رسالة جديدة من الزر في الأعلى</p>
+              <Mail className="w-16 h-16 text-white/15 mb-4" />
+              <p className="text-slate-300 mb-1 font-bold">اختر رسالة لعرضها</p>
+              <p className="text-xs text-slate-500">أو ابدأ رسالة جديدة من الزر في الأعلى</p>
             </div>
           ) : (
             <>
               {/* Toolbar */}
-              <div className="px-4 py-2.5 border-b border-slate-100 flex items-center gap-1 flex-wrap">
+              <div className="px-4 py-2.5 border-b border-white/10 flex items-center gap-1 flex-wrap">
                 <ToolbarButton icon={Reply} label="رد" onClick={() => {}} />
                 <ToolbarButton icon={Forward} label="تحويل" onClick={() => openCompose({
                   to: "", subject: `Fwd: ${selected.subject}`,
@@ -509,8 +522,8 @@ export default function SupportInbox() {
               </div>
 
               {/* Header */}
-              <div className="p-5 border-b border-slate-100">
-                <h2 className="text-xl font-extrabold text-slate-800 mb-3">{selected.subject}</h2>
+              <div className="p-5 border-b border-white/10">
+                <h2 className="text-xl font-extrabold text-white mb-3">{selected.subject}</h2>
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0"
                        style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}>
@@ -518,10 +531,10 @@ export default function SupportInbox() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-sm text-slate-800">{selected.sender_name}</span>
-                      <span className="text-xs text-slate-500" dir="ltr">&lt;{selected.sender_email}&gt;</span>
+                      <span className="font-bold text-sm text-white">{selected.sender_name}</span>
+                      <span className="text-xs text-slate-400" dir="ltr">&lt;{selected.sender_email}&gt;</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 mt-1">
+                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 mt-1">
                       {selected.organization_name && (
                         <span className="inline-flex items-center gap-1"><Building2 className="w-3 h-3" />{selected.organization_name}</span>
                       )}
@@ -535,34 +548,34 @@ export default function SupportInbox() {
               </div>
 
               {/* Conversation */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-slate-50/40">
-                <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{selected.message}</p>
+              <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                <div className="bg-white/[0.06] backdrop-blur rounded-2xl p-4 border border-white/15">
+                  <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">{selected.message}</p>
                 </div>
                 {selectedReplies.map(r => (
                   <div key={r.id}
-                    className={`rounded-2xl p-4 border shadow-sm ${
-                      r.from_owner ? "bg-emerald-50/70 border-emerald-200 mr-8" : "bg-white border-slate-200 ml-8"
+                    className={`rounded-2xl p-4 border backdrop-blur ${
+                      r.from_owner ? "bg-emerald-400/10 border-emerald-300/30 mr-8" : "bg-white/[0.06] border-white/15 ml-8"
                     }`}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-700">
+                      <span className="text-xs font-bold text-slate-200">
                         {r.from_owner ? "ردّك (أُرسل بالبريد)" : selected.sender_name}
                       </span>
                       <span className="text-[10px] text-slate-400">{formatDateFull(r.created_at)}</span>
                     </div>
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{r.body}</p>
+                    <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">{r.body}</p>
                   </div>
                 ))}
               </div>
 
               {/* Reply box */}
-              <div className="p-4 border-t border-slate-100 bg-white">
+              <div className="p-4 border-t border-white/10 bg-white/[0.03]">
                 <Textarea
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder={`اكتب ردك إلى ${selected.sender_name}...`}
                   rows={4} maxLength={5000}
-                  className="resize-none mb-2"
+                  className="resize-none mb-2 bg-white/[0.06] border-white/15 text-white placeholder:text-slate-500 focus-visible:bg-white/[0.1]"
                 />
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[10px] text-slate-400">
@@ -571,7 +584,7 @@ export default function SupportInbox() {
                   <button
                     onClick={sendReply}
                     disabled={sending || !replyText.trim()}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white font-bold text-sm shadow-md disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white font-bold text-sm shadow-lg shadow-black/40 disabled:opacity-50 hover:-translate-y-0.5 transition-all"
                     style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
                   >
                     <Send className="w-3.5 h-3.5" />
@@ -592,7 +605,7 @@ function ToolbarButton({ icon: Icon, label, onClick, danger }: any) {
     <button
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-        danger ? "text-rose-600 hover:bg-rose-50" : "text-slate-600 hover:bg-slate-100"
+        danger ? "text-rose-300 hover:bg-rose-500/10" : "text-slate-300 hover:bg-white/10 hover:text-white"
       }`}
     >
       <Icon className="w-3.5 h-3.5" />
@@ -600,11 +613,11 @@ function ToolbarButton({ icon: Icon, label, onClick, danger }: any) {
     </button>
   );
 }
-function Sep() { return <span className="w-px h-5 bg-slate-200 mx-1" />; }
+function Sep() { return <span className="w-px h-5 bg-white/15 mx-1" />; }
 function EmptyState({ icon: Icon, text }: any) {
   return (
     <div className="p-12 text-center">
-      <Icon className="w-12 h-12 text-slate-200 mx-auto mb-3" />
+      <Icon className="w-12 h-12 text-white/15 mx-auto mb-3" />
       <p className="text-sm text-slate-400">{text}</p>
     </div>
   );
@@ -613,47 +626,47 @@ function EmptyState({ icon: Icon, text }: any) {
 function ComposeView({ to, setTo, subject, setSubject, body, setBody, onClose, onSend, onSaveDraft, onDeleteDraft, sending }: any) {
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-gradient-to-l from-cyan-50/40 to-transparent">
-        <h2 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-          <PenSquare className="w-4 h-4 text-cyan-600" />
+      <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-l from-cyan-400/10 to-transparent">
+        <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
+          <PenSquare className="w-4 h-4 text-cyan-300" />
           رسالة جديدة
         </h2>
-        <button onClick={onClose} className="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-100">
+        <button onClick={onClose} className="text-xs font-bold text-slate-300 hover:text-white px-2 py-1 rounded hover:bg-white/10">
           إغلاق
         </button>
       </div>
-      <div className="p-4 space-y-3 border-b border-slate-100">
+      <div className="p-4 space-y-3 border-b border-white/10">
         <Field label="إلى">
-          <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="email@example.com" dir="ltr" className="border-0 border-b border-slate-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-cyan-500" />
+          <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="email@example.com" dir="ltr" className="bg-transparent border-0 border-b border-white/15 rounded-none px-0 text-white placeholder:text-slate-500 focus-visible:ring-0 focus-visible:border-cyan-300" />
         </Field>
         <Field label="الموضوع">
-          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="موضوع الرسالة" className="border-0 border-b border-slate-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-cyan-500" />
+          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="موضوع الرسالة" className="bg-transparent border-0 border-b border-white/15 rounded-none px-0 text-white placeholder:text-slate-500 focus-visible:ring-0 focus-visible:border-cyan-300" />
         </Field>
       </div>
       <div className="flex-1 overflow-hidden p-4">
         <Textarea
           value={body} onChange={(e) => setBody(e.target.value)}
           placeholder="اكتب رسالتك هنا..."
-          className="w-full h-full resize-none border-0 focus-visible:ring-0 text-sm leading-relaxed"
+          className="w-full h-full resize-none bg-white/[0.04] border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-0 text-sm leading-relaxed"
         />
       </div>
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+      <div className="p-3 border-t border-white/10 bg-white/[0.03] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             onClick={onSend}
             disabled={sending}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-white font-bold text-sm shadow-md disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-white font-bold text-sm shadow-lg shadow-black/40 disabled:opacity-50 hover:-translate-y-0.5 transition-all"
             style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
           >
             <Send className="w-3.5 h-3.5" />
             {sending ? "جارٍ الإرسال..." : "إرسال"}
           </button>
-          <button onClick={onSaveDraft} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200">
+          <button onClick={onSaveDraft} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-slate-300 hover:bg-white/10 hover:text-white">
             <FileEdit className="w-3.5 h-3.5" /> حفظ كمسودة
           </button>
         </div>
         {onDeleteDraft && (
-          <button onClick={onDeleteDraft} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50">
+          <button onClick={onDeleteDraft} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-rose-300 hover:bg-rose-500/10">
             <Trash2 className="w-3.5 h-3.5" /> حذف المسودة
           </button>
         )}
@@ -665,7 +678,7 @@ function ComposeView({ to, setTo, subject, setSubject, body, setBody, onClose, o
 function Field({ label, children }: any) {
   return (
     <div className="flex items-center gap-3">
-      <label className="text-xs font-bold text-slate-500 w-16 shrink-0">{label}</label>
+      <label className="text-xs font-bold text-slate-400 w-16 shrink-0">{label}</label>
       <div className="flex-1">{children}</div>
     </div>
   );
