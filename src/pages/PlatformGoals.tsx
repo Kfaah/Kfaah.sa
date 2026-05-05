@@ -1,6 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Target, Megaphone, HeartHandshake, BarChart3, Workflow } from "lucide-react";
+import SpaceScene from "@/components/space/SpaceScene";
+
+const primaryHsl = "168 76% 28%";
+const accentHsl = "44 92% 55%";
 
 const goals = [
   { icon: Megaphone, title: "تحسين الحملات التسويقية", desc: "تصميم وتشغيل حملات أكثر استهدافًا وأعلى تأثيرًا اعتمادًا على بيانات حقيقية." },
@@ -12,29 +16,36 @@ const goals = [
 export default function PlatformGoals() {
   const navigate = useNavigate();
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 py-12 px-4">
-      <div className="max-w-5xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-md mb-4">
-            <Target className="w-5 h-5 text-amber-600" />
-            <span className="text-sm font-bold text-slate-700">منصة كفاءة</span>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-slate-800 mb-3">أهداف المنصة</h1>
-          <p className="text-slate-600">نحو أداء أكثر احترافية… ونتائج قابلة للقياس</p>
-        </motion.div>
+    <div
+      dir="rtl"
+      className="relative min-h-screen flex flex-col overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)",
+      }}
+    >
+      <SpaceScene />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 40%, hsl(230 80% 3% / 0.6) 100%)",
+        }}
+      />
 
-        <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white rounded-3xl shadow-md border border-slate-100 overflow-hidden">
-          <div className="bg-gradient-to-l from-amber-500 to-orange-500 px-6 md:px-10 py-6 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <Target className="w-6 h-6 text-white" />
+      <main className="relative z-10 flex-1 px-4 py-12 overflow-y-auto">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/15 mb-5">
+              <Target className="w-4 h-4" style={{ color: `hsl(${accentHsl})` }} />
+              <span className="text-xs font-bold text-white">منصة كفاءة</span>
             </div>
-            <div className="text-white">
-              <h2 className="text-2xl font-extrabold">أهداف المنصة</h2>
-              <p className="text-sm opacity-90">ما الذي تسعى كفاءة لتحقيقه</p>
-            </div>
-          </div>
-          <div className="p-6 md:p-10">
-            <p className="text-slate-600 leading-loose mb-6">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-3">أهداف المنصة</h1>
+            <p className="text-sm md:text-base text-slate-300">نحو أداء أكثر احترافية… ونتائج قابلة للقياس</p>
+          </motion.div>
+
+          <motion.section initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.55 }} className="bg-white/[0.06] backdrop-blur-xl rounded-3xl border border-white/15 p-6 md:p-10">
+            <p className="text-slate-300 leading-loose mb-8 text-sm md:text-base">
               كفاءة ليست مجرد منصة إلكترونية فحسب، بل منظومة ذكية تُعيد تعريف طريقة إدارة التسويق في القطاع
               غير الربحي. من خلال أدوات متقدمة تعتمد على تحليل البيانات والذكاء الاصطناعي، تُمكّن المنصة الجمعيات من:
             </p>
@@ -45,28 +56,31 @@ export default function PlatformGoals() {
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.06 }}
-                  className="rounded-2xl border border-slate-100 bg-gradient-to-br from-amber-50/60 to-white p-5 flex items-start gap-4 hover:shadow-md transition-shadow"
+                  transition={{ delay: i * 0.08 }}
+                  className="rounded-2xl border border-white/15 bg-white/[0.04] p-5 flex items-start gap-4 hover:border-white/35 transition-colors"
                 >
-                  <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md">
+                  <div
+                    className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
+                  >
                     <g.icon className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-800 mb-1">{g.title}</h4>
-                    <p className="text-sm text-slate-600 leading-relaxed">{g.desc}</p>
+                    <h4 className="font-bold text-white mb-1">{g.title}</h4>
+                    <p className="text-sm text-slate-300 leading-relaxed">{g.desc}</p>
                   </div>
                 </motion.div>
               ))}
             </div>
-          </div>
-        </motion.section>
+          </motion.section>
 
-        <div className="mt-10 flex justify-center">
-          <button onClick={() => navigate("/about")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
-            <ArrowRight className="w-4 h-4" /> العودة إلى عن المنصة
-          </button>
+          <div className="mt-10 flex justify-center">
+            <button onClick={() => navigate("/about")} className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors">
+              <ArrowRight className="w-4 h-4" /> العودة إلى عن المنصة
+            </button>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
