@@ -5,6 +5,7 @@ import {
   Phone, Globe, MapPin, Calendar, Heart, BookOpen, Megaphone,
 } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
+import BackToAboutButton from "@/components/platform/BackToAboutButton";
 import creatorPortrait from "@/assets/creator-portrait.png";
 
 const primaryHsl = "168 76% 28%";
@@ -88,7 +89,7 @@ export default function AboutCreator() {
           <motion.section {...fadeUp(0.15)} className="bg-white/[0.06] backdrop-blur-xl rounded-3xl border border-white/15 p-6 md:p-8">
             <h2 className="flex items-center gap-2 text-lg font-bold text-white mb-3">
               <BookOpen className="w-5 h-5" style={{ color: `hsl(${accentHsl})` }} />
-              النبذة الاحترافية
+              نبذة تعريفية
             </h2>
             <p className="text-sm md:text-base text-slate-300 leading-relaxed">
               قيادي في القطاع غير الربحي بخبرة تمتد لـ 15 سنة في تأسيس وإدارة الجمعيات والمبادرات المجتمعية،
@@ -257,13 +258,7 @@ export default function AboutCreator() {
 
           {/* Back */}
           <motion.div {...fadeUp(0.55)} className="flex justify-center pb-6">
-            <button
-              onClick={() => navigate("/about")}
-              className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors"
-            >
-              <ArrowRight className="w-4 h-4" />
-              العودة لصفحة عن المنصة
-            </button>
+            <BackToAboutButton onClick={() => navigate("/about")} />
           </motion.div>
         </div>
       </main>
