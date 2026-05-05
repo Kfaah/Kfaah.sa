@@ -1,156 +1,106 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Sparkles, Target, Lightbulb,
+  ArrowRight, Sparkles, Lightbulb,
   ListChecks, BrainCircuit, Database, HeartHandshake,
   Workflow, Bot, LineChart, Megaphone, FileSpreadsheet, Layers,
 } from "lucide-react";
+import SpaceScene from "@/components/space/SpaceScene";
+
+const primaryHsl = "168 76% 28%";
+const accentHsl = "44 92% 55%";
 
 const features = [
-  {
-    icon: Workflow,
-    title: "أتمتة كاملة لإدارة العمل",
-    desc: "المنصة تبني نظامًا إلكترونيًا متكاملًا يدير دورة العمل من التخطيط حتى التنفيذ والتقييم دون تدخل بشري.",
-  },
-  {
-    icon: Layers,
-    title: "إعداد الخطط تلقائيًا",
-    desc: "تفهم المنصة طبيعة الجمعية وتُعد الخطط التشغيلية والتنفيذية والمهام بشكل متكامل ومترابط.",
-  },
-  {
-    icon: ListChecks,
-    title: "تنزيل المهام اليومية",
-    desc: "توزيع المهام يوميًا على الموظفين أوتوماتيكيًا بناءً على ملفات الجمعية أو الربط المباشر مع المتجر الإلكتروني.",
-  },
-  {
-    icon: Bot,
-    title: "تقييم الموظفين بالذكاء الاصطناعي",
-    desc: "تقييمات دورية وآلية لأداء الموظفين بناءً على جودة الإنجاز والالتزام والإنتاجية.",
-  },
-  {
-    icon: BrainCircuit,
-    title: "تعلّم ذاتي مستمر",
-    desc: "تُعيد المنصة برمجة نفسها لتتعرف في كل مرة على طبيعة عمل الجمعية من خلال البيانات المُدخلة.",
-  },
-  {
-    icon: Lightbulb,
-    title: "أفكار ومبادرات وابتكارات",
-    desc: "اقتراحات وتوصيات ذكية لإدارة العمل التسويقي وإطلاق مبادرات جديدة قابلة للتنفيذ.",
-  },
-  {
-    icon: HeartHandshake,
-    title: "فهم سلوك المتبرعين",
-    desc: "تتعرف المنصة على أنماط المتبرعين وتُرشد الجمعية للتعامل الأمثل مع كل شريحة.",
-  },
-  {
-    icon: Megaphone,
-    title: "ربط ذكي بين التبرعات",
-    desc: "ربط تبرعات المتبرعين عبر الحملات والمشاريع، مع تذكيرات وأفكار للتعامل معها بأفضل صورة.",
-  },
-  {
-    icon: LineChart,
-    title: "استخراج البيانات والمؤشرات",
-    desc: "استخراج أرقام ومؤشرات تسويقية مفيدة وتحويلها إلى رؤى عملية للقرار والتنفيذ.",
-  },
-  {
-    icon: Database,
-    title: "قاعدة بيانات متكاملة",
-    desc: "قاعدة شاملة من البيانات والتحليلات عن كل متبرع وكل مشروع وكل حملة في مكان واحد.",
-  },
-  {
-    icon: FileSpreadsheet,
-    title: "تكامل مع متجر الجمعية",
-    desc: "ربط مباشر مع المتجر الإلكتروني لتغذية النظام بالبيانات وتحديث الخطط والمهام تلقائيًا.",
-  },
-  {
-    icon: Target,
-    title: "متابعة دقيقة للأداء",
-    desc: "لوحات تحكم حيّة لمتابعة المؤشرات في الوقت الفعلي، وتقارير قابلة للتصدير بصيغ احترافية.",
-  },
+  { icon: Workflow, title: "أتمتة كاملة لإدارة العمل", desc: "نظام يدير دورة العمل من التخطيط حتى التنفيذ والتقييم دون تدخل بشري." },
+  { icon: Layers, title: "إعداد الخطط تلقائيًا", desc: "تفهم المنصة طبيعة الجمعية وتُعد الخطط التشغيلية والتنفيذية بشكل مترابط." },
+  { icon: ListChecks, title: "تنزيل المهام اليومية", desc: "توزيع المهام يوميًا على الموظفين أوتوماتيكيًا بناءً على بيانات الجمعية." },
+  { icon: Bot, title: "تقييم الموظفين بالذكاء الاصطناعي", desc: "تقييمات دورية وآلية بناءً على جودة الإنجاز والالتزام والإنتاجية." },
+  { icon: BrainCircuit, title: "تعلّم ذاتي مستمر", desc: "تُعيد المنصة برمجة نفسها لتتعرف على طبيعة الجمعية من بياناتها المُدخلة." },
+  { icon: Lightbulb, title: "أفكار ومبادرات وابتكارات", desc: "اقتراحات وتوصيات ذكية لإطلاق مبادرات جديدة قابلة للتنفيذ." },
+  { icon: HeartHandshake, title: "فهم سلوك المتبرعين", desc: "تتعرف المنصة على أنماط المتبرعين وترشد للتعامل الأمثل مع كل شريحة." },
+  { icon: Megaphone, title: "ربط ذكي بين التبرعات", desc: "ربط تبرعات المتبرعين عبر الحملات والمشاريع مع تذكيرات وأفكار للتعامل معها." },
+  { icon: LineChart, title: "استخراج البيانات والمؤشرات", desc: "استخراج أرقام ومؤشرات تسويقية وتحويلها إلى رؤى عملية للقرار." },
+  { icon: Database, title: "قاعدة بيانات متكاملة", desc: "قاعدة شاملة عن كل متبرع وكل مشروع وكل حملة في مكان واحد." },
+  { icon: FileSpreadsheet, title: "تكامل مع متجر الجمعية", desc: "ربط مباشر مع المتجر الإلكتروني لتغذية النظام وتحديث الخطط تلقائيًا." },
 ];
 
 export default function PlatformFeatures() {
   const navigate = useNavigate();
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 py-12 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
-        >
-          <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-md mb-4">
-            <Sparkles className="w-5 h-5 text-violet-600" />
-            <span className="text-sm font-bold text-slate-700">منصة كفاءة</span>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-slate-800 mb-3">مميزات المنصة</h1>
-          <p className="text-slate-600">كيف تُسهم كفاءة في أتمتة العمل وبناء نظام إلكتروني متكامل</p>
-        </motion.div>
+    <div
+      dir="rtl"
+      className="relative min-h-screen flex flex-col overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)",
+      }}
+    >
+      <SpaceScene />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 40%, hsl(230 80% 3% / 0.6) 100%)",
+        }}
+      />
 
-        {/* Features */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-12 bg-white rounded-3xl shadow-md border border-slate-100 overflow-hidden"
-        >
-          <div className="bg-gradient-to-l from-violet-600 to-fuchsia-600 px-6 md:px-10 py-6 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
+      <main className="relative z-10 flex-1 px-4 py-12 overflow-y-auto">
+        <div className="max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/15 mb-5">
+              <Sparkles className="w-4 h-4" style={{ color: `hsl(${accentHsl})` }} />
+              <span className="text-xs font-bold text-white">منصة كفاءة</span>
             </div>
-            <div className="text-white">
-              <h2 className="text-2xl font-extrabold">مميزات المنصة</h2>
-              <p className="text-sm opacity-90">كيف تُسهم كفاءة في أتمتة العمل وبناء نظام إلكتروني متكامل</p>
-            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-3">مميزات المنصة</h1>
+            <p className="text-sm md:text-base text-slate-300">قدرات ذكية تُسهم في أتمتة العمل واتخاذ القرار</p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.04, duration: 0.45 }}
+                className="bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/15 p-5 text-right hover:border-white/35 hover:-translate-y-0.5 transition-all"
+              >
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
+                  style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
+                >
+                  <f.icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1.5">{f.title}</h3>
+                <p className="text-xs md:text-sm text-slate-300 leading-relaxed">{f.desc}</p>
+              </motion.div>
+            ))}
           </div>
-          <div className="p-6 md:p-10">
-            <p className="text-slate-600 leading-loose mb-6">
-              تعمل كفاءة كعقلٍ رقميٍّ ذكيّ يتكامل مع جميع جوانب العمل التسويقي في الجمعية،
-              ويتعلّم باستمرار من بياناتها ليمنحها أدوات قرار وتنفيذ في كل مرحلة:
+
+          <div className="mt-10 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/15 text-center p-6">
+            <p className="text-sm md:text-base text-slate-200 leading-relaxed">
+              نحو أداء أكثر احترافية… ونتائج قابلة للقياس.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.04 }}
-                  className="bg-gradient-to-br from-violet-50/40 to-white rounded-2xl p-5 border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all"
-            >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center mb-4 shadow-md">
-                <f.icon className="w-6 h-6 text-white" />
-              </div>
-                  <h3 className="text-base font-bold text-slate-800 mb-2">{f.title}</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-            <div className="mt-8 rounded-2xl bg-gradient-to-l from-slate-900 to-slate-800 text-white p-6 md:p-8 text-center">
-              <p className="text-base md:text-lg leading-relaxed">
-                نحو أداء أكثر احترافية… ونتائج قابلة للقياس.
-              </p>
-            </div>
           </div>
-        </motion.section>
 
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
-          <button
-            onClick={() => navigate("/subscribe")}
-            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all hover:scale-105"
-          >
-            اشترك في المنصة
-          </button>
-          <button
-            onClick={() => navigate("/about")}
-            className="bg-white text-slate-700 font-bold px-6 py-3 rounded-2xl shadow-lg border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-2"
-          >
-            <ArrowRight className="w-4 h-4 rotate-180" />
-            العودة إلى عن المنصة
-          </button>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => navigate("/subscribe")}
+              className="text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all hover:scale-105"
+              style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
+            >
+              اشترك في المنصة
+            </button>
+            <button
+              onClick={() => navigate("/about")}
+              className="bg-white/10 text-white font-bold px-6 py-3 rounded-2xl border border-white/20 hover:bg-white/20 transition-all flex items-center gap-2"
+            >
+              <ArrowRight className="w-4 h-4 rotate-180" />
+              العودة إلى عن المنصة
+            </button>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
