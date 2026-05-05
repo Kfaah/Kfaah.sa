@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getArabicErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, MessageCircle } from "lucide-react";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 export default function Auth() {
@@ -21,6 +21,8 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = searchParams.get("next") || "/";
 
   const normalizeDigits = (value: string, options?: { trim?: boolean }) => {
     const shouldTrim = options?.trim ?? false;
@@ -69,7 +71,7 @@ export default function Auth() {
         });
         if (error) throw error;
         toast.success("تم تسجيل الدخول بنجاح");
-        navigate("/");
+        navigate(nextPath);
       } else {
         // Validate required fields for signup
         if (!email || !phone) {
