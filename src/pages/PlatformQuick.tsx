@@ -1,25 +1,23 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Sparkles, ListTodo, Target, BarChart3, Brain, Users,
-  Calendar, FileText, Bell, Shield, Zap,
+  ArrowRight, Layers, ListTodo, ClipboardList, Users,
+  Building2, MessageSquare, FolderKanban, Settings2, BarChart3,
 } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
 
-const points = [
-  { icon: ListTodo, title: "إدارة المهام الذكية", desc: "تتبع المهام، إشعارات تلقائية، وتقييم جودة الإنجاز بالذكاء الاصطناعي." },
-  { icon: Target, title: "الخطط التشغيلية", desc: "بناء خطط تشغيلية متكاملة بأهداف ومبادرات ومؤشرات أداء واضحة." },
-  { icon: BarChart3, title: "تقارير وتحليلات", desc: "لوحات تحكم تفاعلية ومؤشرات أداء آنية لاتخاذ قرارات مبنية على البيانات." },
-  { icon: Brain, title: "الذكاء الاصطناعي", desc: "مساعد ذكي يدعم الموظف، توليد خطط تلقائي، وتحليل الأداء بدقة." },
-  { icon: Users, title: "إدارة الموظفين", desc: "ملفات ذكية للموظفين، هيكل تنظيمي، وتقييمات دورية شاملة." },
-  { icon: Calendar, title: "التقويم والمتابعة", desc: "متابعة المواعيد والاستحقاقات بالتقويمين الميلادي والهجري." },
-  { icon: FileText, title: "التقارير المؤسسية", desc: "تقارير قابلة للتصدير بصيغ احترافية تدعم اللغة العربية بالكامل." },
-  { icon: Bell, title: "إشعارات لحظية", desc: "نظام إشعارات متقدم يضمن وصول التحديثات للأشخاص المعنيين فوراً." },
-  { icon: Shield, title: "أمان وخصوصية", desc: "حماية متقدمة للبيانات وصلاحيات دقيقة لكل مستخدم وكل دور." },
-  { icon: Zap, title: "أداء فائق", desc: "واجهة سريعة وسلسة مصممة خصيصاً للجمعيات الخيرية." },
+const modules = [
+  { icon: FolderKanban, title: "الخطط التشغيلية والتنفيذية", desc: "مساحة عمل لبناء الخطط ومتابعة الأهداف والمبادرات والمؤشرات." },
+  { icon: ListTodo, title: "إدارة المهام", desc: "توزيع المهام، متابعة الإنجاز، والتواصل حول كل مهمة في مكان واحد." },
+  { icon: Users, title: "ملفات الموظفين", desc: "ملف متكامل لكل موظف يضم بياناته ومهامه وتقييماته وأداءه." },
+  { icon: BarChart3, title: "لوحات الأداء", desc: "مؤشرات حيّة لأداء الجمعية والموظفين تظهر الصورة الكاملة فورًا." },
+  { icon: MessageSquare, title: "المساعد الذكي", desc: "مساعد محادثة يجيب عن الأسئلة ويقترح القرارات بناءً على بيانات الجمعية." },
+  { icon: Building2, title: "الملف المؤسسي", desc: "تعريف بالجمعية ومجالاتها ومنتجاتها لتغذية المنصة بسياقٍ ذكي." },
+  { icon: ClipboardList, title: "التقييم والمحاسبة", desc: "تقييمات دورية وآلية مع سجل واضح للمسؤوليات والإنجازات." },
+  { icon: Settings2, title: "الإعدادات والصلاحيات", desc: "تحكم دقيق في الأدوار والصلاحيات وهوية الجمعية داخل المنصة." },
 ];
 
 export default function PlatformQuick() {
@@ -51,36 +49,44 @@ export default function PlatformQuick() {
           className="text-center mb-10 max-w-2xl"
         >
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/15 mb-5">
-            <Sparkles className="w-4 h-4" style={{ color: `hsl(${accentHsl})` }} />
-            <span className="text-xs font-bold text-white">نقاط سريعة</span>
+            <Layers className="w-4 h-4" style={{ color: `hsl(${accentHsl})` }} />
+            <span className="text-xs font-bold text-white">وحدات النظام</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-3">
-            منصة متكاملة لإدارة الجمعيات الخيرية
+            الأقسام التي تتكوّن منها كفاءة
           </h1>
           <p className="text-sm md:text-base text-slate-300 leading-relaxed">
-            كل ما تحتاجه جمعيتك في مكان واحد — مدعوم بالذكاء الاصطناعي ومصمم خصيصاً للعمل الخيري.
+            نظرة على الوحدات التشغيلية داخل المنصة وكيف يستخدمها فريق الجمعية في عمله اليومي.
           </p>
         </motion.div>
 
-        <div className="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-          {points.map((p, i) => (
+        <div className="w-full max-w-4xl space-y-3">
+          {modules.map((m, i) => (
             <motion.div
-              key={p.title}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 + i * 0.05, duration: 0.5 }}
-              className="bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/15 p-5 text-right hover:border-white/35 transition-colors"
+              key={m.title}
+              initial={{ opacity: 0, x: 18 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.15 + i * 0.05, duration: 0.45 }}
+              className="group flex items-start gap-4 bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/15 p-4 md:p-5 text-right hover:border-white/35 hover:bg-white/[0.08] transition-all"
             >
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+                className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
                 style={{
                   background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))`,
                 }}
               >
-                <p.icon className="w-5 h-5 text-white" />
+                <m.icon className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-base font-bold text-white mb-1.5">{p.title}</h3>
-              <p className="text-xs text-slate-300 leading-relaxed">{p.desc}</p>
+              <div className="flex-1">
+                <h3 className="text-base md:text-lg font-bold text-white mb-1">{m.title}</h3>
+                <p className="text-xs md:text-sm text-slate-300 leading-relaxed">{m.desc}</p>
+              </div>
+              <span
+                className="hidden md:block text-xs font-bold mt-1.5"
+                style={{ color: `hsl(${accentHsl})` }}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
             </motion.div>
           ))}
         </div>
