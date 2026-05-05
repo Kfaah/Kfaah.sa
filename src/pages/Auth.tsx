@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, MessagesSquare, Inbox } from "lucide-react";
+import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 export default function Auth() {
@@ -363,30 +363,6 @@ export default function Auth() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Admin shortcuts: نظام التواصل + بريد المنصة */}
-      <div className="w-full max-w-md relative z-10 mt-4 grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => navigate("/inbox")}
-          className="group flex items-center justify-center gap-2 rounded-xl py-3 px-4 bg-white/95 hover:bg-white text-foreground font-bold text-sm shadow-lg shadow-black/20 hover:-translate-y-0.5 transition-all border border-white/40"
-        >
-          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-            <MessagesSquare className="w-4 h-4 text-white" />
-          </span>
-          نظام التواصل
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate("/platform-mail")}
-          className="group flex items-center justify-center gap-2 rounded-xl py-3 px-4 bg-white/95 hover:bg-white text-foreground font-bold text-sm shadow-lg shadow-black/20 hover:-translate-y-0.5 transition-all border border-white/40"
-        >
-          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-            <Inbox className="w-4 h-4 text-white" />
-          </span>
-          بريد المنصة
-        </button>
-      </div>
     </div>
   );
 }
