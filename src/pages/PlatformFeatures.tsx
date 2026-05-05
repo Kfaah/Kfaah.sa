@@ -122,7 +122,7 @@ export default function PlatformFeatures() {
               <Compass className="w-6 h-6 text-white" />
             </div>
             <div className="text-white">
-              <h2 className="text-2xl font-extrabold">هوية المنصة</h2>
+              <h2 className="text-2xl font-extrabold">الرؤية والرسالة</h2>
               <p className="text-sm opacity-90">التعريف · الرؤية · الرسالة · القيم</p>
             </div>
           </div>
