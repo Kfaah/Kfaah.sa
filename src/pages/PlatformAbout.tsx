@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, UserCircle2, Sparkles, Compass, Target, Zap } from "lucide-react";
+import { ArrowRight, UserCircle2, Sparkles, Compass, Target, Zap, LogIn } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
 
@@ -157,14 +157,20 @@ export default function PlatformAbout() {
         </div>
 
         <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
-          onClick={() => navigate(-1)}
-          className="mt-10 inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors"
+          onClick={() => navigate("/auth")}
+          className="group mt-12 inline-flex items-center gap-3 rounded-full px-6 py-3 bg-white/[0.06] backdrop-blur-xl border border-white/20 hover:border-white/50 hover:bg-white/[0.12] shadow-[0_12px_40px_-12px_hsl(220_75%_3%/0.7)] transition-all duration-500 hover:-translate-y-0.5"
         >
-          <ArrowRight className="w-4 h-4" />
-          العودة
+          <span
+            className="w-9 h-9 rounded-full flex items-center justify-center shadow-lg shadow-black/30 group-hover:scale-110 transition-transform duration-500"
+            style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
+          >
+            <LogIn className="w-4 h-4 text-white rotate-180" />
+          </span>
+          <span className="text-sm font-bold text-white">العودة لتسجيل الدخول</span>
+          <ArrowRight className="w-4 h-4 text-white/60 group-hover:text-white group-hover:-translate-x-1 transition-all" />
         </motion.button>
       </main>
     </div>
