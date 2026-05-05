@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, UserCircle2, Sparkles, Compass, Target, Zap, LogIn } from "lucide-react";
+import { ArrowRight, UserCircle2, Sparkles, Compass, Target, Zap, LogIn, LifeBuoy } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
 
@@ -48,6 +48,14 @@ const cards = [
     desc: "تعرّف على الأقسام والوحدات التشغيلية التي تتكوّن منها منصة كفاءة.",
     href: "/about/quick",
     gradient: "from-sky-400 via-blue-500 to-indigo-500",
+  },
+  {
+    id: "support",
+    icon: LifeBuoy,
+    title: "الدعم الفني",
+    desc: "تواصل مباشر مع فريق كفاءة — استفسر، اطلب تدريباً، أو ابدأ رحلة الاشتراك.",
+    href: "/support",
+    gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
   },
 ];
 

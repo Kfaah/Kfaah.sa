@@ -3806,6 +3806,89 @@ export type Database = {
           },
         ]
       }
+      support_messages: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          organization_name: string | null
+          sender_email: string
+          sender_name: string
+          sender_phone: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          organization_name?: string | null
+          sender_email: string
+          sender_name: string
+          sender_phone?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          organization_name?: string | null
+          sender_email?: string
+          sender_name?: string
+          sender_phone?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      support_replies: {
+        Row: {
+          author_user_id: string | null
+          body: string
+          created_at: string
+          from_owner: boolean
+          id: string
+          message_id: string
+        }
+        Insert: {
+          author_user_id?: string | null
+          body: string
+          created_at?: string
+          from_owner?: boolean
+          id?: string
+          message_id: string
+        }
+        Update: {
+          author_user_id?: string | null
+          body?: string
+          created_at?: string
+          from_owner?: boolean
+          id?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_replies_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "support_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_generation_jobs: {
         Row: {
           completed_at: string | null
