@@ -25,9 +25,12 @@ async function withImap<T>(fn: (c: ImapFlow) => Promise<T>): Promise<T> {
     port: 993,
     secure: true,
     auth: { user: USER, pass: PASS },
-    logger: false,
-    emitLogs: false,
-    disableAutoEnable: true,
+    logger: {
+      debug: (o: any) => console.log("imap-debug", JSON.stringify(o)),
+      info: (o: any) => console.log("imap-info", JSON.stringify(o)),
+      warn: (o: any) => console.warn("imap-warn", JSON.stringify(o)),
+      error: (o: any) => console.error("imap-error", JSON.stringify(o)),
+    },
   });
   await client.connect();
   try {
