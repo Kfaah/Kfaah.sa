@@ -43,8 +43,8 @@ const cards = [
   {
     id: "quick",
     icon: Sparkles,
-    title: "نقاط سريعة",
-    desc: "نظرة خاطفة على أبرز ما تقدّمه المنصة في سطور موجزة.",
+    title: "وحدات النظام",
+    desc: "تعرّف على الأقسام والوحدات التشغيلية التي تتكوّن منها منصة كفاءة.",
     href: "/about/quick",
     gradient: "from-sky-400 via-blue-500 to-indigo-500",
   },
