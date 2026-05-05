@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getArabicErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, MessageCircle } from "lucide-react";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 
 export default function Auth() {
@@ -21,6 +21,8 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = searchParams.get("next") || "/";
 
   const normalizeDigits = (value: string, options?: { trim?: boolean }) => {
     const shouldTrim = options?.trim ?? false;
@@ -69,7 +71,7 @@ export default function Auth() {
         });
         if (error) throw error;
         toast.success("تم تسجيل الدخول بنجاح");
-        navigate("/");
+        navigate(nextPath);
       } else {
         // Validate required fields for signup
         if (!email || !phone) {
@@ -359,6 +361,17 @@ export default function Auth() {
               className="text-accent hover:underline font-medium"
             >
               {isLogin ? "ليس لديك حساب؟ أنشئ حساباً جديداً" : "لديك حساب؟ سجل الدخول"}
+            </button>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-border/50 text-center">
+            <button
+              type="button"
+              onClick={() => navigate("/messages")}
+              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-accent transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              راسلنا — افتح محادثتك معنا
             </button>
           </div>
         </CardContent>
