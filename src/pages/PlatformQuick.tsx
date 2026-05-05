@@ -61,34 +61,42 @@ export default function PlatformQuick() {
         </motion.div>
 
         <div className="w-full max-w-4xl space-y-3">
-          {modules.map((m, i) => (
-            <motion.div
-              key={m.title}
-              initial={{ opacity: 0, x: 18 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.15 + i * 0.05, duration: 0.45 }}
-              className="group flex items-start gap-4 bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/15 p-4 md:p-5 text-right hover:border-white/35 hover:bg-white/[0.08] transition-all"
-            >
-              <div
-                className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{
-                  background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))`,
-                }}
+          {modules.map((m, i) => {
+            const isLight = [1, 4, 7].includes(i);
+            return (
+              <motion.div
+                key={m.title}
+                initial={{ opacity: 0, x: 18 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 + i * 0.05, duration: 0.45 }}
+                className={
+                  "group flex items-start gap-4 rounded-2xl p-4 md:p-5 text-right transition-all " +
+                  (isLight
+                    ? "bg-white border border-white shadow-[0_18px_50px_-15px_hsl(220_75%_3%/0.7)]"
+                    : "bg-white/[0.05] backdrop-blur-xl border border-white/15 hover:border-white/35 hover:bg-white/[0.08]")
+                }
               >
-                <m.icon className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-base md:text-lg font-bold text-white mb-1">{m.title}</h3>
-                <p className="text-xs md:text-sm text-slate-300 leading-relaxed">{m.desc}</p>
-              </div>
-              <span
-                className="hidden md:block text-xs font-bold mt-1.5"
-                style={{ color: `hsl(${accentHsl})` }}
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
-            </motion.div>
-          ))}
+                <div
+                  className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))`,
+                  }}
+                >
+                  <m.icon className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className={`text-base md:text-lg font-bold mb-1 ${isLight ? "text-slate-900" : "text-white"}`}>{m.title}</h3>
+                  <p className={`text-xs md:text-sm leading-relaxed ${isLight ? "text-slate-600" : "text-slate-300"}`}>{m.desc}</p>
+                </div>
+                <span
+                  className="hidden md:block text-xs font-bold mt-1.5"
+                  style={{ color: `hsl(${accentHsl})` }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+              </motion.div>
+            );
+          })}
         </div>
 
         <motion.button

@@ -56,25 +56,32 @@ export default function PlatformFeatures() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-            {features.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.04, duration: 0.45 }}
-                className="bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/15 p-5 text-right hover:border-white/35 hover:-translate-y-0.5 transition-all"
-              >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-                  style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
+            {features.map((f, i) => {
+              const isLight = [0, 4, 8].includes(i);
+              return (
+                <motion.div
+                  key={f.title}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.04, duration: 0.45 }}
+                  className={
+                    isLight
+                      ? "bg-white rounded-2xl border border-white shadow-[0_18px_50px_-15px_hsl(220_75%_3%/0.7)] p-5 text-right hover:-translate-y-0.5 transition-all"
+                      : "bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/15 p-5 text-right hover:border-white/35 hover:-translate-y-0.5 transition-all"
+                  }
                 >
-                  <f.icon className="w-5 h-5 text-white" />
-                </div>
-                <h3 className="text-base font-bold text-white mb-1.5">{f.title}</h3>
-                <p className="text-xs md:text-sm text-slate-300 leading-relaxed">{f.desc}</p>
-              </motion.div>
-            ))}
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
+                    style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
+                  >
+                    <f.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className={`text-base font-bold mb-1.5 ${isLight ? "text-slate-900" : "text-white"}`}>{f.title}</h3>
+                  <p className={`text-xs md:text-sm leading-relaxed ${isLight ? "text-slate-600" : "text-slate-300"}`}>{f.desc}</p>
+                </motion.div>
+              );
+            })}
           </div>
 
           <div className="mt-10 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/15 text-center p-6">
