@@ -26,6 +26,8 @@ async function withImap<T>(fn: (c: ImapFlow) => Promise<T>): Promise<T> {
     secure: true,
     auth: { user: USER, pass: PASS },
     logger: false,
+    emitLogs: false,
+    disableAutoEnable: true,
   });
   await client.connect();
   try {
