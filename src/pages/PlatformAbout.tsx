@@ -160,7 +160,7 @@ export default function PlatformAbout() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
-          onClick={() => navigate("/auth")}
+          onClick={() => navigate(-1)}
           className="group mt-12 inline-flex items-center gap-3 rounded-full px-6 py-3 bg-white/[0.06] backdrop-blur-xl border border-white/20 hover:border-white/50 hover:bg-white/[0.12] shadow-[0_12px_40px_-12px_hsl(220_75%_3%/0.7)] transition-all duration-500 hover:-translate-y-0.5"
         >
           <span
