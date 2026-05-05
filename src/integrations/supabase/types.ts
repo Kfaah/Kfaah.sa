@@ -3948,6 +3948,7 @@ export type Database = {
           is_starred: boolean
           is_trashed: boolean
           labels: string[]
+          last_user_activity_at: string
           message: string
           organization_name: string | null
           sender_email: string
@@ -3968,6 +3969,7 @@ export type Database = {
           is_starred?: boolean
           is_trashed?: boolean
           labels?: string[]
+          last_user_activity_at?: string
           message: string
           organization_name?: string | null
           sender_email: string
@@ -3988,6 +3990,7 @@ export type Database = {
           is_starred?: boolean
           is_trashed?: boolean
           labels?: string[]
+          last_user_activity_at?: string
           message?: string
           organization_name?: string | null
           sender_email?: string
@@ -4008,6 +4011,7 @@ export type Database = {
           from_owner: boolean
           id: string
           message_id: string
+          read_by_user: boolean
         }
         Insert: {
           author_user_id?: string | null
@@ -4016,6 +4020,7 @@ export type Database = {
           from_owner?: boolean
           id?: string
           message_id: string
+          read_by_user?: boolean
         }
         Update: {
           author_user_id?: string | null
@@ -4024,6 +4029,7 @@ export type Database = {
           from_owner?: boolean
           id?: string
           message_id?: string
+          read_by_user?: boolean
         }
         Relationships: [
           {
