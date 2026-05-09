@@ -5,6 +5,7 @@ import { Send, MessageCircle, ChevronRight, Sparkles, Loader2 } from "lucide-rea
 import SpaceScene from "@/components/space/SpaceScene";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePreviewMode } from "@/contexts/PreviewModeContext";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ type Reply = {
 export default function Messages() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { isPreviewMode } = usePreviewMode();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,11 +41,11 @@ export default function Messages() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
+    if (!user && !isPreviewMode) {
       navigate("/auth?next=/messages");
       return;
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, isPreviewMode, navigate]);
 
   const load = async () => {
     if (!user) return;
