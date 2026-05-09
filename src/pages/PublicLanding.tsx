@@ -10,8 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
 import SpaceScene from "@/components/space/SpaceScene";
-import { MessagesSquare, Inbox } from "lucide-react";
-
 const normalizeDigits = (value: string, trim = false) => {
   const input = trim ? value.trim() : value;
   const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
@@ -193,44 +191,6 @@ export default function PublicLanding() {
             </form>
           </CardContent>
         </Card>
-
-            {/* Admin shortcuts: نظام التواصل الداخلي + بريد المنصة */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!user) {
-                    sessionStorage.setItem("adminPostLoginPath", "/internal-inbox");
-                    toast.info("يرجى تسجيل الدخول أولاً للوصول إلى نظام التواصل");
-                    return;
-                  }
-                  navigate("/internal-inbox");
-                }}
-                className="group flex items-center justify-center gap-2 rounded-xl py-3 px-4 bg-white/95 hover:bg-white text-cyan-700 font-bold text-sm shadow-lg shadow-black/20 hover:-translate-y-0.5 transition-all border border-cyan-200/70"
-              >
-                <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-                  <MessagesSquare className="w-4 h-4 text-white" />
-                </span>
-                نظام التواصل
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!user) {
-                    sessionStorage.setItem("adminPostLoginPath", "/inbox");
-                    toast.info("يرجى تسجيل الدخول أولاً للوصول إلى بريد المنصة");
-                    return;
-                  }
-                  navigate("/inbox");
-                }}
-                className="group flex items-center justify-center gap-2 rounded-xl py-3 px-4 bg-white/95 hover:bg-white text-cyan-700 font-bold text-sm shadow-lg shadow-black/20 hover:-translate-y-0.5 transition-all border border-cyan-200/70"
-              >
-                <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-                  <Inbox className="w-4 h-4 text-white" />
-                </span>
-                بريد المنصة
-              </button>
-            </div>
 
             {/* Feature pills below the login card */}
             <div className="flex flex-wrap gap-2 justify-center">
