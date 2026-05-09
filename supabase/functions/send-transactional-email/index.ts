@@ -64,7 +64,10 @@ Deno.serve(async (req) => {
     const body = await req.json()
     templateName = body.templateName || body.template_name
     recipientEmail = body.recipientEmail || body.recipient_email
-    messageId = crypto.randomUUID()
+    const requestedMessageId = body.messageId || body.message_id
+    messageId = typeof requestedMessageId === 'string' && requestedMessageId.trim()
+      ? requestedMessageId.trim().slice(0, 255)
+      : crypto.randomUUID()
     idempotencyKey = body.idempotencyKey || body.idempotency_key || messageId
     if (body.templateData && typeof body.templateData === 'object') {
       templateData = body.templateData
