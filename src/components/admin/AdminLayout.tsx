@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, GitCompareArrows, Sparkles, FileBarChart2,
   Building2, LogOut, ArrowLeftCircle, ListChecks, Lightbulb, Settings,
+  MessagesSquare, Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -36,6 +37,12 @@ const navItems = [
   { to: "/admin/innovation", label: "الابتكار والتحديث", icon: Lightbulb, end: false,
     desc: "أفكار AI ابتكارية ونقاش تفاعلي",
     color: ICON_COLOR, bg: "bg-gradient-to-br from-amber-400 to-orange-500", ring: "ring-amber-400/40" },
+  { to: "/internal-inbox", label: "نظام التواصل", icon: MessagesSquare, end: false,
+    desc: "رسائل داخل المنصة من المستخدمين",
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-emerald-400 to-teal-600", ring: "ring-emerald-400/40" },
+  { to: "/inbox", label: "بريد المنصة", icon: Inbox, end: false,
+    desc: "البريد الإلكتروني info@kfaah.org",
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-amber-400 to-orange-600", ring: "ring-amber-400/40" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
