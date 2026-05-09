@@ -1,5 +1,6 @@
 import type { ComponentType } from 'npm:react@18.3.1'
 import { template as supportReply } from './support-reply.tsx'
+import { template as platformMail } from './platform-mail.tsx'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -11,4 +12,5 @@ export interface TemplateEntry {
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'support-reply': supportReply,
+  'platform-mail': platformMail,
 }
