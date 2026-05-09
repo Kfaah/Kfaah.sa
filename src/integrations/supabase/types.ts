@@ -2659,7 +2659,7 @@ export type Database = {
           id: string
           last_message_at: string
           member_user_id: string
-          organization_id: string
+          organization_id: string | null
           subject: string | null
           unread_for_admin: boolean
           unread_for_member: boolean
@@ -2670,7 +2670,7 @@ export type Database = {
           id?: string
           last_message_at?: string
           member_user_id: string
-          organization_id: string
+          organization_id?: string | null
           subject?: string | null
           unread_for_admin?: boolean
           unread_for_member?: boolean
@@ -2681,7 +2681,7 @@ export type Database = {
           id?: string
           last_message_at?: string
           member_user_id?: string
-          organization_id?: string
+          organization_id?: string | null
           subject?: string | null
           unread_for_admin?: boolean
           unread_for_member?: boolean

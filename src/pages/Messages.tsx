@@ -31,7 +31,6 @@ export default function Messages() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [thread, setThread] = useState<Thread | null>(null);
-  const [orgId, setOrgId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState("");
@@ -50,18 +49,6 @@ export default function Messages() {
   const load = async () => {
     if (!user) return;
     setLoading(true);
-
-    // Find user's organization (first approved membership)
-    const { data: org } = await supabase
-      .from("user_organizations")
-      .select("organization_id")
-      .eq("user_id", user.id)
-      .eq("approval_status", "approved")
-      .order("is_default", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const _orgId = (org as any)?.organization_id ?? null;
-    setOrgId(_orgId);
 
     // Fetch most recent thread for this member
     const { data: t } = await supabase
@@ -116,10 +103,6 @@ export default function Messages() {
       toast.error("اكتب رسالتك أولاً");
       return;
     }
-    if (!orgId) {
-      toast.error("لم يتم العثور على جمعيتك");
-      return;
-    }
     setSending(true);
     try {
       let threadId = thread?.id;
@@ -127,9 +110,8 @@ export default function Messages() {
         const { data: created, error: tErr } = await supabase
           .from("internal_threads")
           .insert({
-            organization_id: orgId,
             member_user_id: user.id,
-            subject: subject.trim().slice(0, 200) || "رسالة من العضو",
+            subject: subject.trim().slice(0, 200) || "تواصل مع إدارة المنصة",
           })
           .select("id,subject,organization_id,last_message_at")
           .single();

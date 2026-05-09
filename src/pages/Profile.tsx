@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, 
+  Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, MessageCircle, ChevronLeft,
   Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList, 
   MessageSquare, ExternalLink, PenTool, FileText, FolderOpen 
 } from "lucide-react";
@@ -569,6 +569,23 @@ export default function Profile() {
               onEditClick={handleEdit}
               onImageClick={() => fileInputRef.current?.click()}
             />
+
+            {/* Contact Platform Admin */}
+            <button
+              onClick={() => navigate("/messages")}
+              className="w-full flex items-center justify-between gap-4 rounded-2xl border border-border bg-gradient-to-l from-accent/10 via-card to-primary/10 hover:from-accent/20 hover:to-primary/20 px-5 py-4 transition-all shadow-sm hover:shadow-md group"
+            >
+              <div className="flex items-center gap-3 text-right">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+                  <MessageCircle className="w-5 h-5" />
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-foreground">تواصل مع إدارة المنصة</div>
+                  <div className="text-xs text-muted-foreground">الدعم الفني والاستفسارات — رسالة مباشرة من حسابك</div>
+                </div>
+              </div>
+              <ChevronLeft className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </button>
 
 
 
