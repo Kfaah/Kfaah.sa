@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Send, MessageCircle, ChevronRight, Sparkles, Loader2 } from "lucide-react";
+import { Send, Inbox, ChevronRight, Sparkles, Loader2, User2 } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 const primaryHsl = "168 76% 28%";
@@ -16,7 +15,10 @@ type Thread = {
   id: string;
   subject: string | null;
   organization_id: string;
+  member_user_id: string;
   last_message_at: string;
+  unread_for_admin: boolean;
+  member_name?: string;
 };
 type Msg = {
   id: string;
@@ -27,78 +29,72 @@ type Msg = {
   created_at: string;
 };
 
-export default function Messages() {
+export default function InternalInbox() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [thread, setThread] = useState<Thread | null>(null);
-  const [orgId, setOrgId] = useState<string | null>(null);
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      navigate("/auth?next=/messages");
-      return;
+      navigate("/auth?next=/internal-inbox");
     }
   }, [user, authLoading, navigate]);
 
-  const load = async () => {
+  const loadThreads = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-
-    // Find user's organization (first approved membership)
-    const { data: org } = await supabase
-      .from("user_organizations")
-      .select("organization_id")
-      .eq("user_id", user.id)
-      .eq("approval_status", "approved")
-      .order("is_default", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const _orgId = (org as any)?.organization_id ?? null;
-    setOrgId(_orgId);
-
-    // Fetch most recent thread for this member
     const { data: t } = await supabase
       .from("internal_threads")
-      .select("id,subject,organization_id,last_message_at")
-      .eq("member_user_id", user.id)
-      .order("last_message_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    setThread((t as Thread) ?? null);
+      .select("id,subject,organization_id,member_user_id,last_message_at,unread_for_admin")
+      .order("last_message_at", { ascending: false });
+    const list = (t as Thread[]) || [];
 
-    if (t) {
-      const { data: msgs } = await supabase
-        .from("internal_messages")
-        .select("id,thread_id,sender_user_id,from_admin,body,created_at")
-        .eq("thread_id", (t as any).id)
-        .order("created_at", { ascending: true });
-      setMessages((msgs as Msg[]) || []);
-
-      // mark as read for member
-      await supabase
-        .from("internal_threads")
-        .update({ unread_for_member: false })
-        .eq("id", (t as any).id);
-    } else {
-      setMessages([]);
+    // enrich with member display name
+    const userIds = Array.from(new Set(list.map((x) => x.member_user_id)));
+    if (userIds.length > 0) {
+      const { data: emps } = await supabase
+        .from("employees")
+        .select("user_id,full_name")
+        .in("user_id", userIds);
+      const nameMap = new Map<string, string>();
+      (emps || []).forEach((e: any) => nameMap.set(e.user_id, e.full_name || "عضو"));
+      list.forEach((x) => (x.member_name = nameMap.get(x.member_user_id) || "عضو"));
     }
+    setThreads(list);
+    if (!selectedId && list.length > 0) setSelectedId(list[0].id);
     setLoading(false);
-  };
+  }, [user, selectedId]);
+
+  const loadMessages = useCallback(async (tid: string) => {
+    const { data } = await supabase
+      .from("internal_messages")
+      .select("id,thread_id,sender_user_id,from_admin,body,created_at")
+      .eq("thread_id", tid)
+      .order("created_at", { ascending: true });
+    setMessages((data as Msg[]) || []);
+    await supabase
+      .from("internal_threads")
+      .update({ unread_for_admin: false })
+      .eq("id", tid);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
-    load();
+    loadThreads();
     const ch = supabase
-      .channel("internal-messages-user")
-      .on("postgres_changes", { event: "*", schema: "public", table: "internal_threads" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "internal_messages" }, load)
+      .channel("internal-inbox-admin")
+      .on("postgres_changes", { event: "*", schema: "public", table: "internal_threads" }, loadThreads)
+      .on("postgres_changes", { event: "*", schema: "public", table: "internal_messages" }, () => {
+        loadThreads();
+        if (selectedId) loadMessages(selectedId);
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -107,47 +103,30 @@ export default function Messages() {
   }, [user?.id]);
 
   useEffect(() => {
+    if (selectedId) loadMessages(selectedId);
+  }, [selectedId, loadMessages]);
+
+  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
   const send = async () => {
-    if (!user) return;
+    if (!user || !selectedId) return;
     if (!body.trim()) {
-      toast.error("اكتب رسالتك أولاً");
-      return;
-    }
-    if (!orgId) {
-      toast.error("لم يتم العثور على جمعيتك");
+      toast.error("اكتب ردّك أولاً");
       return;
     }
     setSending(true);
     try {
-      let threadId = thread?.id;
-      if (!threadId) {
-        const { data: created, error: tErr } = await supabase
-          .from("internal_threads")
-          .insert({
-            organization_id: orgId,
-            member_user_id: user.id,
-            subject: subject.trim().slice(0, 200) || "رسالة من العضو",
-          })
-          .select("id,subject,organization_id,last_message_at")
-          .single();
-        if (tErr) throw tErr;
-        threadId = (created as any).id;
-        setThread(created as Thread);
-      }
       const { error } = await supabase.from("internal_messages").insert({
-        thread_id: threadId,
+        thread_id: selectedId,
         sender_user_id: user.id,
-        from_admin: false,
+        from_admin: true,
         body: body.trim().slice(0, 5000),
       });
       if (error) throw error;
       setBody("");
-      setSubject("");
-      toast.success("تم الإرسال");
-      load();
+      loadMessages(selectedId);
     } catch (e: any) {
       toast.error(e?.message || "تعذّر الإرسال");
     } finally {
@@ -158,25 +137,20 @@ export default function Messages() {
   const fmt = (iso: string) =>
     new Date(iso).toLocaleString("ar-SA", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
 
+  const selected = threads.find((t) => t.id === selectedId);
+
   return (
     <div
       dir="rtl"
       className="relative min-h-screen flex flex-col overflow-hidden"
-      style={{
-        background:
-          "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)",
-      }}
+      style={{ background: "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)" }}
     >
       <SpaceScene />
-      <main className="relative z-10 flex-1 flex flex-col items-center px-4 py-10">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-3xl"
-        >
+      <main className="relative z-10 flex-1 flex flex-col items-center px-4 py-6">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-6xl">
           <button
             onClick={() => navigate("/")}
-            className="mb-4 inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white"
+            className="mb-3 inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white"
           >
             <ChevronRight className="w-4 h-4" />
             العودة
@@ -184,84 +158,115 @@ export default function Messages() {
 
           <div className="rounded-3xl bg-white/[0.05] backdrop-blur-xl border border-white/15 shadow-[0_20px_60px_-20px_hsl(220_75%_3%/0.9)] overflow-hidden">
             <div
-              className="px-6 py-5 flex items-center gap-3 border-b border-white/10"
-              style={{ background: `linear-gradient(135deg, hsl(${primaryHsl} / 0.35), hsl(${accentHsl} / 0.18))` }}
+              className="px-6 py-4 flex items-center gap-3 border-b border-white/10"
+              style={{ background: `linear-gradient(135deg, hsl(${primaryHsl} / 0.4), hsl(${accentHsl} / 0.18))` }}
             >
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-black/30">
-                <MessageCircle className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-black/30">
+                <Inbox className="w-5 h-5 text-white" />
               </div>
-              <div className="text-right">
-                <div className="text-base font-extrabold text-white">محادثتي مع فريق كفاءة</div>
+              <div className="text-right flex-1">
+                <div className="text-base font-extrabold text-white">صندوق التواصل الداخلي</div>
                 <div className="text-[11px] text-slate-300 inline-flex items-center gap-1">
                   <Sparkles className="w-3 h-3" style={{ color: `hsl(${accentHsl})` }} />
-                  ردود فورية، آمنة، داخل حسابك
+                  رسائل أعضاء جمعيتك مباشرة من حساباتهم
                 </div>
               </div>
             </div>
 
-            <div ref={scrollRef} className="max-h-[55vh] min-h-[40vh] overflow-y-auto px-5 py-5 space-y-3">
-              {loading ? (
-                <div className="flex items-center justify-center py-10 text-slate-300">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="text-center py-12 text-slate-300 text-sm">
-                  ابدأ محادثتك — اكتب رسالتك الأولى في الأسفل وسنرد عليك بأسرع وقت.
-                </div>
-              ) : (
-                messages.map((it) => {
-                  const mine = !it.from_admin;
-                  return (
-                    <div key={it.id} className={`flex ${mine ? "justify-start" : "justify-end"}`}>
-                      <div
-                        className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed border shadow-sm ${
-                          mine
-                            ? "bg-white/[0.08] border-white/15 text-white"
-                            : "border-amber-300/30 text-white"
-                        }`}
-                        style={
-                          !mine
-                            ? { background: `linear-gradient(135deg, hsl(${primaryHsl} / 0.55), hsl(${accentHsl} / 0.25))` }
-                            : undefined
-                        }
-                      >
-                        <div className="whitespace-pre-wrap">{it.body}</div>
-                        <div className="text-[10px] text-slate-300/80 mt-1.5 text-left" dir="ltr">{fmt(it.created_at)}</div>
+            <div className="grid grid-cols-1 md:grid-cols-[300px,1fr] min-h-[60vh]">
+              {/* Threads list */}
+              <div className="border-l border-white/10 max-h-[70vh] overflow-y-auto">
+                {loading ? (
+                  <div className="p-8 text-center text-slate-300">
+                    <Loader2 className="w-5 h-5 animate-spin inline" />
+                  </div>
+                ) : threads.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 text-sm">لا توجد رسائل بعد</div>
+                ) : (
+                  threads.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedId(t.id)}
+                      className={`w-full text-right px-4 py-3 border-b border-white/5 hover:bg-white/[0.04] transition ${
+                        selectedId === t.id ? "bg-white/[0.06]" : ""
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                            <User2 className="w-4 h-4 text-slate-200" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold text-white truncate">{t.member_name}</div>
+                            <div className="text-[11px] text-slate-400 truncate">{t.subject || "بدون موضوع"}</div>
+                          </div>
+                        </div>
+                        {t.unread_for_admin && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                        )}
                       </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+                      <div className="text-[10px] text-slate-500 mt-1 text-left" dir="ltr">{fmt(t.last_message_at)}</div>
+                    </button>
+                  ))
+                )}
+              </div>
 
-            <div className="border-t border-white/10 p-4 space-y-2 bg-white/[0.02]">
-              {!thread && (
-                <Input
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="موضوع الرسالة (اختياري)"
-                  maxLength={200}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
-                />
-              )}
-              <div className="flex items-end gap-2">
-                <Textarea
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  placeholder="اكتب رسالتك..."
-                  rows={2}
-                  maxLength={5000}
-                  className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-slate-400 resize-none"
-                />
-                <button
-                  onClick={send}
-                  disabled={sending}
-                  className="shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-black/30 disabled:opacity-60 hover:-translate-y-0.5 transition-all"
-                  style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
-                >
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  إرسال
-                </button>
+              {/* Conversation */}
+              <div className="flex flex-col">
+                <div ref={scrollRef} className="flex-1 max-h-[55vh] overflow-y-auto px-5 py-5 space-y-3">
+                  {!selected ? (
+                    <div className="text-center py-12 text-slate-400 text-sm">اختر محادثة من القائمة</div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400 text-sm">لا توجد رسائل في هذه المحادثة</div>
+                  ) : (
+                    messages.map((m) => {
+                      const mine = m.from_admin;
+                      return (
+                        <div key={m.id} className={`flex ${mine ? "justify-start" : "justify-end"}`}>
+                          <div
+                            className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed border shadow-sm ${
+                              mine
+                                ? "border-amber-300/30 text-white"
+                                : "bg-white/[0.08] border-white/15 text-white"
+                            }`}
+                            style={
+                              mine
+                                ? { background: `linear-gradient(135deg, hsl(${primaryHsl} / 0.55), hsl(${accentHsl} / 0.25))` }
+                                : undefined
+                            }
+                          >
+                            <div className="whitespace-pre-wrap">{m.body}</div>
+                            <div className="text-[10px] text-slate-300/80 mt-1.5 text-left" dir="ltr">{fmt(m.created_at)}</div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {selected && (
+                  <div className="border-t border-white/10 p-4 bg-white/[0.02]">
+                    <div className="flex items-end gap-2">
+                      <Textarea
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        placeholder="اكتب ردّك للعضو..."
+                        rows={2}
+                        maxLength={5000}
+                        className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-slate-400 resize-none"
+                      />
+                      <button
+                        onClick={send}
+                        disabled={sending}
+                        className="shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-black/30 disabled:opacity-60"
+                        style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
+                      >
+                        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        إرسال
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
