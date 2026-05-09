@@ -367,11 +367,11 @@ export default function Auth() {
           <div className="mt-4 pt-4 border-t border-border/50 text-center">
             <button
               type="button"
-              onClick={() => navigate("/messages")}
+              onClick={() => navigate("/support")}
               className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-accent transition-colors"
             >
               <MessageCircle className="w-4 h-4" />
-              راسلنا — افتح محادثتك معنا
+              راسلنا — عبر نموذج التواصل
             </button>
           </div>
         </CardContent>
