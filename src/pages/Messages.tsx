@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Send, MessageCircle, ChevronRight, Sparkles, Loader2 } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { usePreviewMode } from "@/contexts/PreviewModeContext";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -13,26 +12,27 @@ import { toast } from "sonner";
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
 
+type Thread = {
+  id: string;
+  subject: string | null;
+  organization_id: string;
+  last_message_at: string;
+};
 type Msg = {
   id: string;
-  subject: string;
-  message: string;
-  created_at: string;
-};
-type Reply = {
-  id: string;
-  message_id: string;
+  thread_id: string;
+  sender_user_id: string;
+  from_admin: boolean;
   body: string;
-  from_owner: boolean;
   created_at: string;
 };
 
 export default function Messages() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { isPreviewMode } = usePreviewMode();
+  const [thread, setThread] = useState<Thread | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [replies, setReplies] = useState<Reply[]>([]);
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -41,28 +41,54 @@ export default function Messages() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user && !isPreviewMode) {
+    if (!user) {
       navigate("/auth?next=/messages");
       return;
     }
-  }, [user, authLoading, isPreviewMode, navigate]);
+  }, [user, authLoading, navigate]);
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const [m, r] = await Promise.all([
-      supabase
-        .from("support_messages")
-        .select("id,subject,message,created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("support_replies")
-        .select("id,message_id,body,from_owner,created_at")
-        .order("created_at", { ascending: true }),
-    ]);
-    setMessages((m.data as Msg[]) || []);
-    setReplies((r.data as Reply[]) || []);
+
+    // Find user's organization (first approved membership)
+    const { data: org } = await supabase
+      .from("user_organizations")
+      .select("organization_id")
+      .eq("user_id", user.id)
+      .eq("approval_status", "approved")
+      .order("is_default", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const _orgId = (org as any)?.organization_id ?? null;
+    setOrgId(_orgId);
+
+    // Fetch most recent thread for this member
+    const { data: t } = await supabase
+      .from("internal_threads")
+      .select("id,subject,organization_id,last_message_at")
+      .eq("member_user_id", user.id)
+      .order("last_message_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setThread((t as Thread) ?? null);
+
+    if (t) {
+      const { data: msgs } = await supabase
+        .from("internal_messages")
+        .select("id,thread_id,sender_user_id,from_admin,body,created_at")
+        .eq("thread_id", (t as any).id)
+        .order("created_at", { ascending: true });
+      setMessages((msgs as Msg[]) || []);
+
+      // mark as read for member
+      await supabase
+        .from("internal_threads")
+        .update({ unread_for_member: false })
+        .eq("id", (t as any).id);
+    } else {
+      setMessages([]);
+    }
     setLoading(false);
   };
 
@@ -70,9 +96,9 @@ export default function Messages() {
     if (!user) return;
     load();
     const ch = supabase
-      .channel("user-messages")
-      .on("postgres_changes", { event: "*", schema: "public", table: "support_messages" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "support_replies" }, load)
+      .channel("internal-messages-user")
+      .on("postgres_changes", { event: "*", schema: "public", table: "internal_threads" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "internal_messages" }, load)
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -80,20 +106,9 @@ export default function Messages() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const timeline = useMemo(() => {
-    const items: { kind: "msg" | "reply"; id: string; text: string; subject?: string; from_owner?: boolean; at: string }[] = [];
-    messages.forEach((m) => {
-      items.push({ kind: "msg", id: m.id, text: m.message, subject: m.subject, at: m.created_at });
-      replies
-        .filter((r) => r.message_id === m.id)
-        .forEach((r) => items.push({ kind: "reply", id: r.id, text: r.body, from_owner: r.from_owner, at: r.created_at }));
-    });
-    return items;
-  }, [messages, replies]);
-
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [timeline.length]);
+  }, [messages.length]);
 
   const send = async () => {
     if (!user) return;
@@ -101,36 +116,38 @@ export default function Messages() {
       toast.error("اكتب رسالتك أولاً");
       return;
     }
+    if (!orgId) {
+      toast.error("لم يتم العثور على جمعيتك");
+      return;
+    }
     setSending(true);
     try {
-      // If we have an open conversation, append a reply; otherwise create a new message
-      const last = messages[messages.length - 1];
-      if (last) {
-        const { error } = await supabase.from("support_replies").insert({
-          message_id: last.id,
-          body: body.trim().slice(0, 5000),
-          from_owner: false,
-          author_user_id: user.id,
-        });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("support_messages").insert({
-          user_id: user.id,
-          sender_name:
-            (user.user_metadata?.first_name || "") +
-              (user.user_metadata?.last_name ? ` ${user.user_metadata.last_name}` : "") ||
-            user.email?.split("@")[0] ||
-            "مستخدم",
-          sender_email: user.email || "user@kfaah.org",
-          subject: subject.trim().slice(0, 200) || "رسالة من المستخدم",
-          message: body.trim().slice(0, 5000),
-          category: "general",
-        } as any);
-        if (error) throw error;
+      let threadId = thread?.id;
+      if (!threadId) {
+        const { data: created, error: tErr } = await supabase
+          .from("internal_threads")
+          .insert({
+            organization_id: orgId,
+            member_user_id: user.id,
+            subject: subject.trim().slice(0, 200) || "رسالة من العضو",
+          })
+          .select("id,subject,organization_id,last_message_at")
+          .single();
+        if (tErr) throw tErr;
+        threadId = (created as any).id;
+        setThread(created as Thread);
       }
+      const { error } = await supabase.from("internal_messages").insert({
+        thread_id: threadId,
+        sender_user_id: user.id,
+        from_admin: false,
+        body: body.trim().slice(0, 5000),
+      });
+      if (error) throw error;
       setBody("");
       setSubject("");
       toast.success("تم الإرسال");
+      load();
     } catch (e: any) {
       toast.error(e?.message || "تعذّر الإرسال");
     } finally {
@@ -187,13 +204,13 @@ export default function Messages() {
                 <div className="flex items-center justify-center py-10 text-slate-300">
                   <Loader2 className="w-5 h-5 animate-spin" />
                 </div>
-              ) : timeline.length === 0 ? (
+              ) : messages.length === 0 ? (
                 <div className="text-center py-12 text-slate-300 text-sm">
                   ابدأ محادثتك — اكتب رسالتك الأولى في الأسفل وسنرد عليك بأسرع وقت.
                 </div>
               ) : (
-                timeline.map((it) => {
-                  const mine = it.kind === "msg" || (it.kind === "reply" && !it.from_owner);
+                messages.map((it) => {
+                  const mine = !it.from_admin;
                   return (
                     <div key={it.id} className={`flex ${mine ? "justify-start" : "justify-end"}`}>
                       <div
@@ -208,11 +225,8 @@ export default function Messages() {
                             : undefined
                         }
                       >
-                        {it.kind === "msg" && it.subject && (
-                          <div className="text-[11px] font-bold text-amber-200 mb-1">{it.subject}</div>
-                        )}
-                        <div className="whitespace-pre-wrap">{it.text}</div>
-                        <div className="text-[10px] text-slate-300/80 mt-1.5 text-left" dir="ltr">{fmt(it.at)}</div>
+                        <div className="whitespace-pre-wrap">{it.body}</div>
+                        <div className="text-[10px] text-slate-300/80 mt-1.5 text-left" dir="ltr">{fmt(it.created_at)}</div>
                       </div>
                     </div>
                   );
@@ -221,7 +235,7 @@ export default function Messages() {
             </div>
 
             <div className="border-t border-white/10 p-4 space-y-2 bg-white/[0.02]">
-              {messages.length === 0 && (
+              {!thread && (
                 <Input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}

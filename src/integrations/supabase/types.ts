@@ -2618,6 +2618,85 @@ export type Database = {
           },
         ]
       }
+      internal_messages: {
+        Row: {
+          body: string
+          created_at: string
+          from_admin: boolean
+          id: string
+          sender_user_id: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          from_admin?: boolean
+          id?: string
+          sender_user_id: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          from_admin?: boolean
+          id?: string
+          sender_user_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "internal_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internal_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          member_user_id: string
+          organization_id: string
+          subject: string | null
+          unread_for_admin: boolean
+          unread_for_member: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          member_user_id: string
+          organization_id: string
+          subject?: string | null
+          unread_for_admin?: boolean
+          unread_for_member?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          member_user_id?: string
+          organization_id?: string
+          subject?: string | null
+          unread_for_admin?: boolean
+          unread_for_member?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_threads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_roles: {
         Row: {
           color: string | null
@@ -4540,6 +4619,10 @@ export type Database = {
       is_demo_org: { Args: { _org_id: string }; Returns: boolean }
       is_demo_user: { Args: { _user_id: string }; Returns: boolean }
       is_manager: { Args: { _user_id: string }; Returns: boolean }
+      is_org_admin: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_user_approved_in_org: {
         Args: { _org_id: string; _user_id: string }
