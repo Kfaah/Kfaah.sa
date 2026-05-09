@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.fetch-platform-email-replies]
 verify_jwt = false
+
+[functions.inbound-platform-email]
+verify_jwt = false
