@@ -3499,6 +3499,30 @@ export type Database = {
           },
         ]
       }
+      platform_email_sync_settings: {
+        Row: {
+          created_at: string
+          id: boolean
+          last_synced_at: string | null
+          sync_token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: boolean
+          last_synced_at?: string | null
+          sync_token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: boolean
+          last_synced_at?: string | null
+          sync_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_email_threads: {
         Row: {
           created_at: string
