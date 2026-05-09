@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, 
+  Camera, Save, User, Mail, Phone, Building, MapPin, Pencil, X, MessageCircle, ChevronLeft,
   Briefcase, AtSign, Bell, CheckCircle, Trash2, ClipboardList, 
   MessageSquare, ExternalLink, PenTool, FileText, FolderOpen 
 } from "lucide-react";
