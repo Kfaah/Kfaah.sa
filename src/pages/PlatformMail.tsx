@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, ChevronRight, Loader2, Send, Sparkles, ExternalLink, PenSquare } from "lucide-react";
+import { Mail, ChevronRight, Loader2, Send, Sparkles, PenSquare, Inbox } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -23,13 +23,15 @@ export default function PlatformMail() {
     }
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke("zoho-mail", {
+      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
-          action: "send",
-          to: compose.to.trim(),
-          subject: compose.subject.trim(),
-          text: compose.body,
-          html: compose.body.replace(/\n/g, "<br/>"),
+          templateName: "platform-mail",
+          recipientEmail: compose.to.trim(),
+          templateData: {
+            subject: compose.subject.trim(),
+            body: compose.body,
+            recipientName: compose.to.trim(),
+          },
         },
       });
       if (error) throw error;
@@ -64,7 +66,7 @@ export default function PlatformMail() {
               </div>
               <div className="text-[11px] text-slate-300 inline-flex items-center gap-1">
                 <Sparkles className="w-3 h-3" style={{ color: `hsl(${accentHsl})` }} />
-                info@kfaah.org — Zoho Mail
+                info@kfaah.org — إرسال مباشر من المنصة
               </div>
             </div>
           </div>
@@ -72,21 +74,19 @@ export default function PlatformMail() {
           {/* Inbox notice */}
           <div className="rounded-2xl bg-white/[0.05] backdrop-blur-xl border border-white/15 p-4 mb-4 flex items-center justify-between gap-3">
             <div className="text-right">
-              <div className="text-sm font-extrabold text-white">قراءة البريد الوارد</div>
+              <div className="text-sm font-extrabold text-white">الاستقبال داخل المنصة</div>
               <div className="text-[11px] text-slate-300 mt-0.5">
-                خطة Zoho المجانية لا تُتيح IMAP الخارجي. افتح صندوق الوارد مباشرة على Zoho Mail.
+                الرسائل الواردة من نماذج التواصل تظهر مباشرة في صندوق بريد كفاءة داخل المنصة، بدون الاعتماد على Zoho.
               </div>
             </div>
-            <a
-              href="https://mail.zoho.com"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => navigate("/inbox")}
               className="shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-lg shadow-black/30 hover:-translate-y-0.5 transition-all"
               style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
             >
-              <ExternalLink className="w-4 h-4" />
-              فتح Zoho Mail
-            </a>
+              <Inbox className="w-4 h-4" />
+              فتح الوارد
+            </button>
           </div>
 
           {/* Composer */}
