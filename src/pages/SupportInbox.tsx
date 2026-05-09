@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePreviewMode } from "@/contexts/PreviewModeContext";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -69,6 +70,7 @@ const FOLDERS: { id: FolderId; label: string; icon: any; color: string }[] = [
 export default function SupportInbox() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { isPreviewMode } = usePreviewMode();
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
 
   const [messages, setMessages] = useState<SupportMsg[]>([]);
@@ -89,14 +91,17 @@ export default function SupportInbox() {
   // Auth
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { navigate("/auth"); return; }
+    if (!user) {
+      if (isPreviewMode) { setIsOwner(true); return; }
+      navigate("/auth"); return;
+    }
     (async () => {
       const { data } = await supabase
         .from("user_roles").select("role")
         .eq("user_id", user.id).eq("role", "super_admin").maybeSingle();
       setIsOwner(!!data);
     })();
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, isPreviewMode, navigate]);
 
   // Loaders
   const loadAll = useCallback(async () => {
