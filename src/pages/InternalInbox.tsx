@@ -44,10 +44,13 @@ export default function InternalInbox() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Compose state
+  const [composeOrgId, setComposeOrgId] = useState("");
   const [composeRecipient, setComposeRecipient] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [recipients, setRecipients] = useState<{ user_id: string; full_name: string }[]>([]);
+  const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([]);
+  const [allEmployees, setAllEmployees] = useState<{ user_id: string; full_name: string; organization_id: string | null }[]>([]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -89,12 +92,27 @@ export default function InternalInbox() {
   const loadRecipients = useCallback(async () => {
     const { data } = await supabase
       .from("employees")
-      .select("user_id,full_name")
+      .select("user_id,full_name,organization_id")
       .not("user_id", "is", null)
       .order("full_name", { ascending: true })
       .limit(500);
-    setRecipients((data as any[]) || []);
+    setAllEmployees((data as any[]) || []);
+    const { data: orgs } = await supabase
+      .from("organizations")
+      .select("id,name")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
+    setOrganizations((orgs as any[]) || []);
   }, []);
+
+  useEffect(() => {
+    if (!composeOrgId) {
+      setRecipients([]);
+    } else {
+      setRecipients(allEmployees.filter((e) => e.organization_id === composeOrgId));
+    }
+    setComposeRecipient("");
+  }, [composeOrgId, allEmployees]);
 
   useEffect(() => {
     if (!user) return;
@@ -178,6 +196,7 @@ export default function InternalInbox() {
       });
       if (mErr) throw mErr;
       toast.success("تم إرسال الرسالة");
+      setComposeOrgId("");
       setComposeRecipient("");
       setComposeSubject("");
       setComposeBody("");
@@ -275,9 +294,9 @@ export default function InternalInbox() {
             <div className="grid grid-cols-1 md:grid-cols-[200px,280px,1fr] min-h-[60vh]">
               {/* Folder nav */}
               <div className="border-l border-white/10 p-3 space-y-1.5">
+                <NavBtn id="compose" icon={PenSquare} label="إنشاء رسالة" />
                 <NavBtn id="inbox" icon={Inbox} label="الوارد" count={unreadCount} />
                 <NavBtn id="sent" icon={Reply} label="الصادر" />
-                <NavBtn id="compose" icon={PenSquare} label="إنشاء رسالة" />
               </div>
 
               {/* Thread list */}
@@ -320,13 +339,27 @@ export default function InternalInbox() {
                 <div className="md:col-span-2 p-6 space-y-3">
                   <div className="text-sm font-bold text-white mb-2">إنشاء رسالة جديدة</div>
                   <div>
-                    <label className="text-[11px] text-slate-300 block mb-1">المستلم</label>
+                    <label className="text-[11px] text-slate-300 block mb-1">الجمعية</label>
+                    <select
+                      value={composeOrgId}
+                      onChange={(e) => setComposeOrgId(e.target.value)}
+                      className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white"
+                    >
+                      <option value="" className="text-slate-900">— اختر جمعية —</option>
+                      {organizations.map((o) => (
+                        <option key={o.id} value={o.id} className="text-slate-900">{o.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-300 block mb-1">الموظف</label>
                     <select
                       value={composeRecipient}
                       onChange={(e) => setComposeRecipient(e.target.value)}
+                      disabled={!composeOrgId}
                       className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white"
                     >
-                      <option value="" className="text-slate-900">— اختر عضوًا —</option>
+                      <option value="" className="text-slate-900">{composeOrgId ? "— اختر موظفًا —" : "اختر الجمعية أولاً"}</option>
                       {recipients.map((r) => (
                         <option key={r.user_id} value={r.user_id} className="text-slate-900">{r.full_name}</option>
                       ))}
