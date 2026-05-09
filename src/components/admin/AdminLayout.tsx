@@ -37,12 +37,6 @@ const navItems = [
   { to: "/admin/innovation", label: "الابتكار والتحديث", icon: Lightbulb, end: false,
     desc: "أفكار AI ابتكارية ونقاش تفاعلي",
     color: ICON_COLOR, bg: "bg-gradient-to-br from-amber-400 to-orange-500", ring: "ring-amber-400/40" },
-  { to: "/internal-inbox", label: "نظام التواصل", icon: MessagesSquare, end: false,
-    desc: "رسائل داخل المنصة من المستخدمين",
-    color: ICON_COLOR, bg: "bg-gradient-to-br from-emerald-400 to-teal-600", ring: "ring-emerald-400/40" },
-  { to: "/inbox", label: "بريد المنصة", icon: Inbox, end: false,
-    desc: "البريد الإلكتروني info@kfaah.org",
-    color: ICON_COLOR, bg: "bg-gradient-to-br from-amber-400 to-orange-600", ring: "ring-amber-400/40" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
@@ -248,6 +242,24 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               <p className="text-amber-200 text-[11px] font-semibold tracking-[0.25em] uppercase">
                 مدير النظام
               </p>
+            </div>
+
+            {/* Quick access: نظام التواصل + بريد المنصة */}
+            <div className="grid grid-cols-2 gap-2 w-full pt-1">
+              <NavLink
+                to="/internal-inbox"
+                className="group flex items-center justify-center gap-1.5 rounded-lg py-2 px-2 bg-white/10 hover:bg-white/20 border border-amber-300/40 hover:border-amber-300/70 ring-1 ring-amber-300/20 text-white text-[11px] font-bold backdrop-blur-sm transition-all"
+              >
+                <MessagesSquare className="w-3.5 h-3.5 text-amber-200" />
+                نظام التواصل
+              </NavLink>
+              <NavLink
+                to="/inbox"
+                className="group flex items-center justify-center gap-1.5 rounded-lg py-2 px-2 bg-white/10 hover:bg-white/20 border border-amber-300/40 hover:border-amber-300/70 ring-1 ring-amber-300/20 text-white text-[11px] font-bold backdrop-blur-sm transition-all"
+              >
+                <Inbox className="w-3.5 h-3.5 text-amber-200" />
+                بريد المنصة
+              </NavLink>
             </div>
           </div>
         </div>
