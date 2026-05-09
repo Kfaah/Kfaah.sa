@@ -3446,6 +3446,119 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_email_messages: {
+        Row: {
+          body: string
+          created_at: string
+          direction: string
+          id: string
+          in_reply_to: string | null
+          provider_message_id: string | null
+          raw_headers: Json
+          received_at: string
+          recipient_email: string | null
+          sender_email: string
+          subject: string | null
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          direction: string
+          id?: string
+          in_reply_to?: string | null
+          provider_message_id?: string | null
+          raw_headers?: Json
+          received_at?: string
+          recipient_email?: string | null
+          sender_email: string
+          subject?: string | null
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          in_reply_to?: string | null
+          provider_message_id?: string | null
+          raw_headers?: Json
+          received_at?: string
+          recipient_email?: string | null
+          sender_email?: string
+          subject?: string | null
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_email_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "platform_email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_email_sync_settings: {
+        Row: {
+          created_at: string
+          id: boolean
+          last_synced_at: string | null
+          sync_token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: boolean
+          last_synced_at?: string | null
+          sync_token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: boolean
+          last_synced_at?: string | null
+          sync_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_email_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          owner_user_id: string | null
+          recipient_email: string
+          recipient_name: string | null
+          subject: string
+          unread_for_owner: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          owner_user_id?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          subject: string
+          unread_for_owner?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          owner_user_id?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          subject?: string
+          unread_for_owner?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
