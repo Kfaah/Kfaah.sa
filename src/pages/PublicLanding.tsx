@@ -194,17 +194,17 @@ export default function PublicLanding() {
           </CardContent>
         </Card>
 
-            {/* Admin shortcuts: نظام التواصل + بريد المنصة */}
+            {/* Admin shortcuts: نظام التواصل الداخلي + بريد المنصة */}
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => {
                   if (!user) {
-                    sessionStorage.setItem("adminPostLoginPath", "/inbox");
+                    sessionStorage.setItem("adminPostLoginPath", "/internal-inbox");
                     toast.info("يرجى تسجيل الدخول أولاً للوصول إلى نظام التواصل");
                     return;
                   }
-                  navigate("/inbox");
+                  navigate("/internal-inbox");
                 }}
                 className="group flex items-center justify-center gap-2 rounded-xl py-3 px-4 bg-white/95 hover:bg-white text-cyan-700 font-bold text-sm shadow-lg shadow-black/20 hover:-translate-y-0.5 transition-all border border-cyan-200/70"
               >
@@ -217,11 +217,11 @@ export default function PublicLanding() {
                 type="button"
                 onClick={() => {
                   if (!user) {
-                    sessionStorage.setItem("adminPostLoginPath", "/platform-mail");
+                    sessionStorage.setItem("adminPostLoginPath", "/inbox");
                     toast.info("يرجى تسجيل الدخول أولاً للوصول إلى بريد المنصة");
                     return;
                   }
-                  navigate("/platform-mail");
+                  navigate("/inbox");
                 }}
                 className="group flex items-center justify-center gap-2 rounded-xl py-3 px-4 bg-white/95 hover:bg-white text-cyan-700 font-bold text-sm shadow-lg shadow-black/20 hover:-translate-y-0.5 transition-all border border-cyan-200/70"
               >
