@@ -210,11 +210,11 @@ export function DonorsHub({ orgId }: { orgId: string }) {
 
 function KpiPill({ icon, label, value, brand }: { icon: React.ReactNode; label: string; value: string; brand: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border bg-white/80 backdrop-blur px-3 py-2 shadow-sm" style={{ borderColor: `${brand}55` }}>
-      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white" style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}>{icon}</div>
+    <div className="flex items-center gap-2.5 rounded-xl border bg-white/80 backdrop-blur px-4 py-2.5 shadow-sm" style={{ borderColor: `${brand}55` }}>
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white" style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}>{icon}</div>
       <div className="leading-tight">
-        <div className="text-[10px] text-slate-500">{label}</div>
-        <div className="text-sm font-bold text-slate-800">{value}</div>
+        <div className="text-xs text-slate-500">{label}</div>
+        <div className="text-base font-bold text-slate-800">{value}</div>
       </div>
     </div>
   );
@@ -247,13 +247,13 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
   return (
     <div className="grid lg:grid-cols-2 gap-5">
       <Card style={{ borderColor: `${brand}33` }}>
-        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4" style={{ color: brand }} />التبرعات حسب السنة</CardTitle></CardHeader>
-        <CardContent className="space-y-2">
+        <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><Calendar className="w-5 h-5" style={{ color: brand }} />التبرعات حسب السنة</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
           {byYear.length === 0 && <p className="text-sm text-slate-500">لا توجد بيانات.</p>}
           {byYear.map(([y, v]) => (
-            <div key={y} className="space-y-1">
-              <div className="flex justify-between text-xs"><span className="font-semibold">{y}</span><span className="font-bold" style={{ color: brand }}>{SAR(v)}</span></div>
-              <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+            <div key={y} className="space-y-1.5">
+              <div className="flex justify-between text-sm"><span className="font-semibold">{y}</span><span className="font-bold text-base" style={{ color: brand }}>{SAR(v)}</span></div>
+              <div className="h-3 rounded-full bg-slate-100 overflow-hidden">
                 <div className="h-full" style={{ width: `${(v / yearMax) * 100}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
               </div>
             </div>
@@ -261,13 +261,13 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
         </CardContent>
       </Card>
       <Card style={{ borderColor: `${brand}33` }}>
-        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Megaphone className="w-4 h-4" style={{ color: brand }} />أعلى 8 مشاريع تبرّعاً</CardTitle></CardHeader>
-        <CardContent className="space-y-2">
+        <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><Megaphone className="w-5 h-5" style={{ color: brand }} />أعلى 8 مشاريع تبرّعاً</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
           {byProject.length === 0 && <p className="text-sm text-slate-500">لا توجد بيانات.</p>}
           {byProject.map(([k, v]) => (
-            <div key={k} className="space-y-1">
-              <div className="flex justify-between text-xs"><span className="font-semibold truncate">{k}</span><span className="font-bold" style={{ color: brand }}>{SAR(v)}</span></div>
-              <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+            <div key={k} className="space-y-1.5">
+              <div className="flex justify-between text-sm"><span className="font-semibold truncate">{k}</span><span className="font-bold text-base" style={{ color: brand }}>{SAR(v)}</span></div>
+              <div className="h-3 rounded-full bg-slate-100 overflow-hidden">
                 <div className="h-full" style={{ width: `${(v / max) * 100}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
               </div>
             </div>
