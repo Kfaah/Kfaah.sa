@@ -72,7 +72,7 @@ export default function Messages() {
   const loadMessages = useCallback(async (tid: string) => {
     const { data } = await supabase
       .from("internal_messages")
-      .select("id,thread_id,sender_user_id,from_admin,body,created_at")
+      .select("id,thread_id,sender_user_id,from_admin,body,created_at,attachments")
       .eq("thread_id", tid)
       .order("created_at", { ascending: true });
     setMessages((data as Msg[]) || []);
@@ -117,19 +117,44 @@ export default function Messages() {
     })();
   }, [threads, user]);
 
+  const uploadFiles = async (files: File[], threadId: string): Promise<Attachment[]> => {
+    const out: Attachment[] = [];
+    for (const f of files) {
+      if (f.size > 20 * 1024 * 1024) {
+        toast.error(`الملف ${f.name} يتجاوز 20MB`);
+        continue;
+      }
+      const ext = f.name.includes(".") ? f.name.split(".").pop() : "";
+      const path = `${threadId}/${crypto.randomUUID()}${ext ? "." + ext : ""}`;
+      const { error } = await supabase.storage
+        .from("internal-message-attachments")
+        .upload(path, f, { contentType: f.type || undefined, upsert: false });
+      if (error) {
+        toast.error(`تعذّر رفع ${f.name}`);
+        continue;
+      }
+      const { data: pub } = supabase.storage.from("internal-message-attachments").getPublicUrl(path);
+      out.push({ name: f.name, url: pub.publicUrl, type: f.type || "application/octet-stream", size: f.size });
+    }
+    return out;
+  };
+
   const sendReply = async () => {
     if (!user || !selectedId) return;
-    if (!body.trim()) return toast.error("اكتب رسالتك أولاً");
+    if (!body.trim() && replyFiles.length === 0) return toast.error("اكتب رسالتك أو أرفق ملفًا");
     setSending(true);
     try {
+      const attachments = replyFiles.length > 0 ? await uploadFiles(replyFiles, selectedId) : [];
       const { error } = await supabase.from("internal_messages").insert({
         thread_id: selectedId,
         sender_user_id: user.id,
         from_admin: false,
         body: body.trim().slice(0, 5000),
+        attachments: attachments as any,
       });
       if (error) throw error;
       setBody("");
+      setReplyFiles([]);
       loadMessages(selectedId);
     } catch (e: any) {
       toast.error(e?.message || "تعذّر الإرسال");
@@ -138,7 +163,7 @@ export default function Messages() {
 
   const sendCompose = async () => {
     if (!user) return;
-    if (!composeBody.trim()) return toast.error("اكتب نص الرسالة");
+    if (!composeBody.trim() && composeFiles.length === 0) return toast.error("اكتب نص الرسالة أو أرفق ملفًا");
     setSending(true);
     try {
       const { data: created, error: tErr } = await supabase
@@ -151,16 +176,19 @@ export default function Messages() {
         .single();
       if (tErr) throw tErr;
       const tid = (created as any).id;
+      const attachments = composeFiles.length > 0 ? await uploadFiles(composeFiles, tid) : [];
       const { error: mErr } = await supabase.from("internal_messages").insert({
         thread_id: tid,
         sender_user_id: user.id,
         from_admin: false,
         body: composeBody.trim().slice(0, 5000),
+        attachments: attachments as any,
       });
       if (mErr) throw mErr;
       toast.success("تم إرسال الرسالة");
       setComposeSubject("");
       setComposeBody("");
+      setComposeFiles([]);
       setSelectedId(tid);
       setFolder("sent");
       loadThreads();
