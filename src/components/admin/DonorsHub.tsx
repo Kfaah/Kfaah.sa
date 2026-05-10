@@ -707,7 +707,7 @@ function CampaignsPanel({ campaigns, projects }: { campaigns: any[]; projects: s
           <SelectTrigger className="w-44 h-9"><SelectValue placeholder="الحالة" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الحالات</SelectItem>
-            {statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {statuses.map((s) => <SelectItem key={s} value={s}>{ar(STATUS_AR, s)}</SelectItem>)}
           </SelectContent>
         </Select>
         <CountChip n={filtered.length} total={campaigns.length} />
@@ -733,7 +733,7 @@ function CampaignsPanel({ campaigns, projects }: { campaigns: any[]; projects: s
               style={c.status === "active"
                 ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
                 : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
-            >{c.status}</Badge>,
+            >{ar(STATUS_AR, c.status)}</Badge>,
           ];
         })}
       />
@@ -763,10 +763,10 @@ function FailedPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
         head={["#", "التاريخ", "المتبرع", "الجوال", "المشروع", "الوسيلة", "المبلغ", "السبب", "حالة الإعادة"]}
         rows={filtered.slice(0, 1000).map((r, i) => [
           String(i + 1), fmtDate(r.attempted_at), r.donor_name || "—", r.donor_phone || "—",
-          r.project_name || "—", r.payment_method || "—",
+          r.project_name || "—", ar(METHOD_AR, r.payment_method),
           <span className="font-bold text-rose-700">{SAR(Number(r.amount))}</span>,
           <span className="text-xs text-slate-600">{r.failure_reason || "—"}</span>,
-          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">{r.retry_status}</Badge>,
+          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">{ar(RETRY_AR, r.retry_status)}</Badge>,
         ])}
       />
     </div>
@@ -798,7 +798,7 @@ function AbandonedPanel({ rows, projects }: { rows: any[]; projects: string[] })
           String(i + 1), fmtDate(r.abandoned_at), r.donor_name || "—", r.donor_phone || "—",
           r.project_name || "—",
           <span className="font-bold text-amber-700">{SAR(Number(r.amount))}</span>,
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{r.follow_up_status}</Badge>,
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{ar(FOLLOWUP_AR, r.follow_up_status)}</Badge>,
           r.recovered
             ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">نعم</Badge>
             : <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">لا</Badge>,
@@ -837,7 +837,7 @@ function SubscriptionsPanel({ rows, projects }: { rows: any[]; projects: string[
           <SelectTrigger className="w-44 h-9"><SelectValue placeholder="الحالة" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الحالات</SelectItem>
-            {statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {statuses.map((s) => <SelectItem key={s} value={s}>{ar(STATUS_AR, s)}</SelectItem>)}
           </SelectContent>
         </Select>
         <CountChip n={filtered.length} total={rows.length} extra={`نشِط: ${active} · شهري متوقع: ${SAR(monthly)}`} />
@@ -853,7 +853,7 @@ function SubscriptionsPanel({ rows, projects }: { rows: any[]; projects: string[
             style={r.status === "active"
               ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
               : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
-          >{r.status}</Badge>,
+          >{ar(STATUS_AR, r.status)}</Badge>,
         ])}
       />
     </div>
