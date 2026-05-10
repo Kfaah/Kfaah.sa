@@ -13,13 +13,13 @@ import { cn } from "@/lib/utils";
 import {
   HeartHandshake, Users, Trophy, Repeat, Megaphone, XCircle, ShoppingCart,
   CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar as CalendarIcon, Wallet, Gift,
-  Crown, Sparkles, Copy, Check,
+  Crown, Sparkles, Copy, Check, Brain, Zap, AlertTriangle, Lightbulb, Send, RefreshCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 
 type SubKey =
   | "overview" | "donors" | "donations" | "top" | "recurring"
-  | "subscriptions" | "campaigns" | "gifts" | "failed" | "abandoned" | "elite";
+  | "subscriptions" | "campaigns" | "gifts" | "failed" | "abandoned" | "elite" | "intelligence";
 
 const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "overview", label: "لوحة عامة", Icon: HeartHandshake, desc: "ملخّص شامل لأداء التبرعات" },
@@ -33,6 +33,7 @@ const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, desc: "محاولات لم تكتمل" },
   { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, desc: "تنبيهات استرداد" },
   { key: "elite", label: "النخبة + AI", Icon: Crown, desc: "متبرعون متعدّدو الأنشطة + رؤى ذكاء اصطناعي" },
+  { key: "intelligence", label: "العقل اليومي", Icon: Brain, desc: "تحليل عميق يومي + مهام ذكية تنزل للموظفين" },
 ];
 
 const SAR = (n: number) => `${(n || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س`;
