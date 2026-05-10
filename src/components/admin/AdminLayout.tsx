@@ -10,6 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import SpaceScene from "@/components/space/SpaceScene";
 
 
 // Distinctive icon colors per nav item — vibrant gradients
@@ -154,19 +155,29 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen relative overflow-hidden"
       dir="rtl"
       style={{
         background:
-          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
+          "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)",
       }}
     >
-      {/* Sidebar — أبيض كلاسيكي يمين الشاشة (RTL) */}
-      <aside
-        className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-amber-300/15 flex flex-col shadow-2xl overflow-hidden"
+      {/* Space scene background — unified platform identity */}
+      <SpaceScene />
+      <div
+        className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, #2f8e8c 0%, #2f8e8c 50%, #2f8e8c 100%)",
+            "radial-gradient(ellipse at center, transparent 40%, hsl(230 80% 3% / 0.6) 100%)",
+        }}
+      />
+
+      {/* Sidebar — أبيض كلاسيكي يمين الشاشة (RTL) */}
+      <aside
+        className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-amber-300/20 flex flex-col shadow-2xl overflow-hidden backdrop-blur-2xl"
+        style={{
+          background:
+            "linear-gradient(180deg, hsl(225 60% 8% / 0.85) 0%, hsl(230 65% 6% / 0.9) 100%)",
         }}
       >
         {/* Subtle radial vignette + noise overlay */}
@@ -265,7 +276,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Nav — white surface */}
-        <nav className="flex-1 overflow-hidden px-2 py-3 bg-white space-y-1.5">
+        <nav className="flex-1 overflow-y-auto px-2 py-3 bg-white/[0.04] space-y-1.5">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
             const active = item.end
@@ -279,8 +290,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 className={cn(
                   "group relative flex items-center gap-3 rounded-lg pr-3 pl-2 py-2 transition-all duration-300 overflow-hidden",
                   active
-                    ? "bg-gradient-to-l from-amber-50 to-white shadow-md ring-1 ring-amber-300/70 -translate-x-0.5"
-                    : "bg-white hover:bg-amber-50/60 ring-1 ring-slate-200/70 hover:ring-amber-300/50 hover:-translate-x-0.5 hover:shadow-sm"
+                    ? "bg-white/[0.12] shadow-lg ring-1 ring-amber-300/60 -translate-x-0.5 backdrop-blur-md"
+                    : "bg-white/[0.04] hover:bg-white/[0.10] ring-1 ring-white/10 hover:ring-amber-300/40 hover:-translate-x-0.5 hover:shadow-md"
                 )}
               >
                 {/* Shimmer sweep on hover */}
@@ -307,13 +318,13 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 <div className="flex-1 min-w-0">
                   <div className={cn(
                     "text-[12.5px] font-bold leading-tight truncate tracking-tight transition-colors",
-                    active ? "text-primary" : "text-slate-800 group-hover:text-primary"
+                    active ? "text-amber-200" : "text-white group-hover:text-amber-200"
                   )}>
                     {item.label}
                   </div>
                   <div className={cn(
                     "text-[10px] leading-tight mt-0.5 truncate transition-colors",
-                    active ? "text-amber-700" : "text-slate-500 group-hover:text-amber-700/80"
+                    active ? "text-amber-100/80" : "text-slate-300 group-hover:text-amber-100/70"
                   )}>
                     {item.desc}
                   </div>
@@ -363,18 +374,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Main content - تدرّج تركوازي بترولي داكن */}
       <main
-        className="mr-72 relative min-h-screen"
-        style={{
-          background:
-            "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
-        }}
+        className="mr-72 relative min-h-screen z-10"
       >
-        <div
-          className="absolute inset-0 opacity-[0.05] pointer-events-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
         <div className="relative z-10 admin-soft-surface">{children}</div>
       </main>
     </div>
