@@ -109,6 +109,13 @@ export default function SupportInbox() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   // Auth
   useEffect(() => {
@@ -300,17 +307,23 @@ export default function SupportInbox() {
   };
   const restore    = (m: SupportMsg) => { patchMsg(m.id, { is_trashed: false, is_spam: false, is_archived: false }); setSelectedId(null); toast.success("تم الاسترجاع"); };
   const purge      = async (m: SupportMsg) => {
-    if (!confirm("حذف نهائي؟ لا يمكن التراجع.")) return;
-    if (m.id.startsWith("pem:")) {
-      const threadId = m.id.slice(4);
-      await supabase.from("platform_email_messages").delete().eq("thread_id", threadId);
-      await supabase.from("platform_email_threads").delete().eq("id", threadId);
-    } else {
-      await supabase.from("support_messages").delete().eq("id", m.id);
-    }
-    setSelectedId(null);
-    toast.success("تم الحذف نهائياً");
-    await loadAll();
+    setConfirmState({
+      title: "تأكيد الحذف النهائي",
+      description: "سيتم حذف هذه الرسالة نهائياً ولا يمكن التراجع عن هذا الإجراء.",
+      confirmLabel: "حذف نهائي",
+      onConfirm: async () => {
+        if (m.id.startsWith("pem:")) {
+          const threadId = m.id.slice(4);
+          await supabase.from("platform_email_messages").delete().eq("thread_id", threadId);
+          await supabase.from("platform_email_threads").delete().eq("id", threadId);
+        } else {
+          await supabase.from("support_messages").delete().eq("id", m.id);
+        }
+        setSelectedId(null);
+        toast.success("تم الحذف نهائياً");
+        await loadAll();
+      },
+    });
   };
 
   // Reply via email + record
