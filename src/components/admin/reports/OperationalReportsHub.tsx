@@ -87,15 +87,16 @@ interface AIResult {
   actions: AISuggestion[];
 }
 
-interface Props { orgId: string }
+interface Props { orgId: string; embedded?: boolean }
 
-export default function OperationalReportsHub({ orgId }: Props) {
+export default function OperationalReportsHub({ orgId, embedded = false }: Props) {
   const [activeReport, setActiveReport] = useState<ReportKey | null>(null);
 
   return (
     <div className="space-y-6" dir="rtl">
       {!activeReport ? (
         <>
+          {!embedded && (
           <Card className="border-primary/30 bg-gradient-to-l from-primary/5 to-accent/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-right">
@@ -107,6 +108,7 @@ export default function OperationalReportsHub({ orgId }: Props) {
               </CardDescription>
             </CardHeader>
           </Card>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {REPORTS.map(r => {
