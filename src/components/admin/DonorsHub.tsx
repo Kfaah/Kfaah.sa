@@ -135,9 +135,15 @@ export function DonorsHub({ orgId }: { orgId: string }) {
 
       {/* Sub-icons / dropdown branches */}
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2">
-        {SUB_TABS.map((t) => {
+        {SUB_TABS.map((t, idx) => {
           const Icon = t.Icon;
           const isActive = active === t.key;
+          // Alternate gradient palettes: brand (cyan/blue) ↔ emerald (green)
+          const palettes = [
+            { from: brand, to: `${brand}cc`, ring: `${brand}55`, soft: `${brand}18`, text: brand },
+            { from: "#10b981", to: "#059669", ring: "#10b98155", soft: "#10b98118", text: "#047857" },
+          ];
+          const p = palettes[idx % 2];
           return (
             <button
               key={t.key}
@@ -149,8 +155,8 @@ export function DonorsHub({ orgId }: { orgId: string }) {
                   : "border-slate-200 hover:shadow-md hover:-translate-y-0.5"
               )}
               style={isActive ? {
-                borderColor: brand,
-                ['--tw-ring-color' as any]: `${brand}55`,
+                borderColor: p.from,
+                ['--tw-ring-color' as any]: p.ring,
               } : undefined}
             >
               <div
@@ -159,25 +165,23 @@ export function DonorsHub({ orgId }: { orgId: string }) {
                   isActive && "scale-110"
                 )}
                 style={{
-                  background: isActive
-                    ? `linear-gradient(135deg, ${brand}, ${brand}cc)`
-                    : `${brand}15`,
-                  ['--tw-ring-color' as any]: `${brand}40`,
+                  background: `linear-gradient(135deg, ${p.from}, ${p.to})`,
+                  ['--tw-ring-color' as any]: p.ring,
                 }}
               >
                 <Icon
                   className="w-5 h-5"
-                  style={{ color: isActive ? "#fff" : brand }}
+                  style={{ color: "#fff" }}
                   strokeWidth={2.4}
                 />
               </div>
               <div className="text-center">
-                <div className="text-[12px] font-bold leading-tight" style={isActive ? { color: brand } : undefined}>
+                <div className="text-[12px] font-bold leading-tight" style={isActive ? { color: p.text } : undefined}>
                   {t.label}
                 </div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-0.5 hidden lg:block">{t.desc}</div>
               </div>
-              {isActive && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rotate-45" style={{ background: brand, boxShadow: `0 0 6px ${brand}b3` }} />}
+              {isActive && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rotate-45" style={{ background: p.from, boxShadow: `0 0 6px ${p.from}b3` }} />}
             </button>
           );
         })}
