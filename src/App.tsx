@@ -91,6 +91,7 @@ const PROTECTED_ROOTS = new Set([
   "operational-plans", "profile", "settings", "uploads", "intelligence",
   "internal-dashboard", "my-accountability", "my-performance", "employee-onboarding",
   "staff-duties-upload", "my-assistant", "performance", "organizations",
+  "messages",
 ]);
 
 function isPublicEntryPath(pathname: string) {
