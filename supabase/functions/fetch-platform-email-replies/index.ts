@@ -72,7 +72,10 @@ Deno.serve(async (req) => {
       console.log('[imap] search returned', (uids || []).length, 'uids')
       stats.fetched = (uids || []).length
 
-      const uidList: number[] = (uids as any[]) || []
+      // Process newest first and cap per-invocation work to avoid 504 timeouts
+      const allUids: number[] = ((uids as any[]) || []).slice().sort((a, b) => b - a)
+      const MAX_PER_RUN = 5
+      const uidList = allUids.slice(0, MAX_PER_RUN)
       console.log('[imap] processing', uidList.length, 'messages')
       for (const uid of uidList) {
         try {
