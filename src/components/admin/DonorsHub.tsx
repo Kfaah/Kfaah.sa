@@ -224,13 +224,14 @@ export function DonorsHub({ orgId }: { orgId: string }) {
   const [failed, setFailed] = useState<any[]>([]);
   const [abandoned, setAbandoned] = useState<any[]>([]);
   const [subs, setSubs] = useState<any[]>([]);
+  const [gifts, setGifts] = useState<any[]>([]);
 
   useEffect(() => {
     if (!orgId) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [dn, dr, cm, fl, ab, sb] = await Promise.all([
+      const [dn, dr, cm, fl, ab, sb, gf] = await Promise.all([
         supabase.from("donations")
           .select("id,donor_id,donor_name,donor_phone,project_name,amount,payment_method,status,donation_date")
           .eq("organization_id", orgId).order("donation_date", { ascending: false }).limit(20000),
@@ -241,6 +242,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
         supabase.from("failed_donations").select("*").eq("organization_id", orgId).order("attempted_at", { ascending: false }).limit(5000),
         supabase.from("abandoned_carts").select("*").eq("organization_id", orgId).order("abandoned_at", { ascending: false }).limit(5000),
         supabase.from("subscriptions").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(5000),
+        supabase.from("gifts").select("*").eq("organization_id", orgId).order("gift_date", { ascending: false }).limit(10000),
       ]);
       if (cancelled) return;
       setDonations((dn.data || []) as any);
@@ -249,6 +251,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
       setFailed(fl.data || []);
       setAbandoned(ab.data || []);
       setSubs(sb.data || []);
+      setGifts(gf.data || []);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -262,8 +265,9 @@ export function DonorsHub({ orgId }: { orgId: string }) {
     failed.forEach((r: any) => r.project_name && set.add(r.project_name));
     abandoned.forEach((r: any) => r.project_name && set.add(r.project_name));
     subs.forEach((r: any) => r.project_name && set.add(r.project_name));
+    gifts.forEach((r: any) => r.project_name && set.add(r.project_name));
     return Array.from(set).sort();
-  }, [donations, campaigns, failed, abandoned, subs]);
+  }, [donations, campaigns, failed, abandoned, subs, gifts]);
 
   const totals = useMemo(() => {
     const total = donations.reduce((s, r) => s + Number(r.amount || 0), 0);
@@ -365,6 +369,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
           {active === "top" && <TopDonorsPanel donors={donors} donations={donations} projects={projects} />}
           {active === "recurring" && <RecurringPanel donors={donors} donations={donations} projects={projects} />}
           {active === "campaigns" && <CampaignsPanel campaigns={campaigns} projects={projects} />}
+          {active === "gifts" && <GiftsPanel rows={gifts} projects={projects} />}
           {active === "failed" && <FailedPanel rows={failed} projects={projects} />}
           {active === "abandoned" && <AbandonedPanel rows={abandoned} projects={projects} />}
           {active === "subscriptions" && <SubscriptionsPanel rows={subs} donations={donations} projects={projects} />}
