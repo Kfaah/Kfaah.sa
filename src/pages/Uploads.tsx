@@ -25,6 +25,10 @@ import {
   ListChecks,
   FolderOpen,
   Sparkles,
+  Repeat,
+  Megaphone,
+  Gift,
+  ShoppingCart,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +41,10 @@ type UploadCategory =
   | "auto"
   | "store_master"
   | "store_daily"
+  | "subscriptions"
+  | "campaigns"
+  | "gifts"
+  | "abandoned_carts"
   | "staff_duties"
   | "reports"
   | "profiles"
@@ -110,6 +118,10 @@ const CATEGORY_OPTIONS: {
   { value: "auto", label: "بيانات عامة عن الجمعية", desc: "أي بيانات عامة عن الجمعية", icon: Sparkles, color: BRAND_GRADIENT_WARM },
   { value: "store_master", label: "ملف المتجر (الضخم)", desc: "ملف تبرعات المتجر منذ تأسيس المتجر", icon: Database, color: BRAND_GRADIENT },
   { value: "store_daily", label: "تبرعات المتجر اليومية", desc: "ملف تبرعات المتجر اليومي", icon: HeartHandshake, color: BRAND_GRADIENT_SOFT },
+  { value: "subscriptions", label: "الاستقطاعات", desc: "ملف المستقطعين والاشتراكات الشهرية المتكررة", icon: Repeat, color: BRAND_GRADIENT },
+  { value: "campaigns", label: "الحملات", desc: "ملف الحملات وأهدافها وتبرعاتها", icon: Megaphone, color: BRAND_GRADIENT_WARM },
+  { value: "gifts", label: "الإهداءات", desc: "ملف التبرعات الإهدائية والمهدى إليهم", icon: Gift, color: BRAND_GRADIENT_SOFT },
+  { value: "abandoned_carts", label: "السلال المتروكة", desc: "ملف السلال غير المكتملة لإعادة الاستهداف", icon: ShoppingCart, color: BRAND_GRADIENT_WARM },
   { value: "staff_duties", label: "مهام موظفي المتجر", desc: "ربط المهام بكل موظف تلقائياً", icon: Users, color: BRAND_GRADIENT },
   { value: "reports", label: "تقارير", desc: "تقارير دورية، ملفات تحليلية", icon: FileText, color: BRAND_GRADIENT_SOFT },
   { value: "profiles", label: "ملفات تعريفية", desc: "بروفايلات، تعاريف موظفين/جمعية", icon: IdCard, color: BRAND_GRADIENT },
