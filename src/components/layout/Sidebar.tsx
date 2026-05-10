@@ -149,6 +149,7 @@ export function Sidebar() {
   );
   const [roleReady, setRoleReady] = useState(isActuallyAdmin || isAdminArea);
   const [isViewer, setIsViewer] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,6 +157,16 @@ export function Sidebar() {
       if (!authUser) { setIsViewer(false); return; }
       const { data } = await supabase.rpc("is_viewer", { _user_id: authUser.id });
       if (!cancelled) setIsViewer(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [authUser]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!authUser) { setIsSuperAdmin(false); return; }
+      const { data } = await supabase.rpc("is_super_admin", { _user_id: authUser.id });
+      if (!cancelled) setIsSuperAdmin(!!data);
     })();
     return () => { cancelled = true; };
   }, [authUser]);
@@ -712,15 +723,17 @@ export function Sidebar() {
 
             {/* Logout and Collapse Buttons - داخل التمرير */}
             <div className="pt-6 mt-6 border-t border-white/20 space-y-2">
-              {/* التواصل مع المنصة (الدعم الفني) */}
-              <Link
-                to="/internal-inbox"
-                state={{ fromNavigation: true }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none bg-white/15 text-white hover:bg-white/25 transition-colors text-sm backdrop-blur-sm"
-              >
-                <LifeBuoy className="w-4 h-4" />
-                {!collapsed && <span className="font-medium">التواصل مع المنصة</span>}
-              </Link>
+              {/* التواصل مع المنصة (الدعم الفني) — يخفى عن مدير النظام */}
+              {!isSuperAdmin && !isActuallyAdmin && (
+                <Link
+                  to="/internal-inbox"
+                  state={{ fromNavigation: true }}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none bg-white/15 text-white hover:bg-white/25 transition-colors text-sm backdrop-blur-sm"
+                >
+                  <LifeBuoy className="w-4 h-4" />
+                  {!collapsed && <span className="font-medium">التواصل مع المنصة</span>}
+                </Link>
+              )}
 
               {/* Logout Button */}
               <button
