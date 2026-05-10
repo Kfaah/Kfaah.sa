@@ -275,7 +275,7 @@ export default function SupportInbox() {
         await supabase.from("platform_email_threads").update({
           is_trashed: !!patch.is_trashed,
           trashed_at: patch.is_trashed ? new Date().toISOString() : null,
-        } as any).eq("id", id.slice(4));
+        }).eq("id", id.slice(4));
       }
       return;
     }
