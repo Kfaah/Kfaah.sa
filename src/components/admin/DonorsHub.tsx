@@ -95,6 +95,10 @@ const DATE_PRESETS: { key: string; label: string }[] = [
   { key: "last_month", label: "الشهر الماضي" },
   { key: "this_year", label: "هذه السنة" },
   { key: "last_year", label: "السنة الماضية" },
+  { key: "last_3_months", label: "آخر 3 أشهر" },
+  { key: "last_6_months", label: "آخر 6 أشهر" },
+  { key: "last_12_months", label: "آخر 12 شهراً" },
+  { key: "last_24_months", label: "آخر 24 شهراً" },
   { key: "custom", label: "فترة مخصصة" },
 ];
 
@@ -113,6 +117,10 @@ function buildDateRange(value: DateValue | string): Range {
     case "last_month": { const f = new Date(now.getFullYear(), now.getMonth() - 1, 1); const t = endOfDay(new Date(now.getFullYear(), now.getMonth(), 0)); return { from: f, to: t }; }
     case "this_year": return { from: new Date(now.getFullYear(), 0, 1), to: endOfDay(now) };
     case "last_year": { const f = new Date(now.getFullYear() - 1, 0, 1); const t = endOfDay(new Date(now.getFullYear() - 1, 11, 31)); return { from: f, to: t }; }
+    case "last_3_months": { const f = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()); return { from: startOfDay(f), to: endOfDay(now) }; }
+    case "last_6_months": { const f = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()); return { from: startOfDay(f), to: endOfDay(now) }; }
+    case "last_12_months": { const f = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()); return { from: startOfDay(f), to: endOfDay(now) }; }
+    case "last_24_months": { const f = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate()); return { from: startOfDay(f), to: endOfDay(now) }; }
     case "custom": return custom ? { from: custom.from ? startOfDay(custom.from) : null, to: custom.to ? endOfDay(custom.to) : null } : { from: null, to: null };
     default: return { from: null, to: null };
   }
@@ -817,8 +825,18 @@ function SubscriptionsPanel({ rows, donations, projects }: { rows: any[]; donati
   const [project, setProject] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [behavior, setBehavior] = useState<string>("all");
-  const [months, setMonths] = useState<number>(12);
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
+  // Derive months window from the date filter (default 12)
+  const months = useMemo(() => {
+    switch (dateKey.key) {
+      case "last_3_months": return 3;
+      case "last_6_months": return 6;
+      case "last_12_months": case "this_year": case "last_year": return 12;
+      case "last_24_months": return 24;
+      case "this_month": case "last_month": return 6;
+      default: return 12;
+    }
+  }, [dateKey]);
 
   const statuses = useMemo(() => Array.from(new Set(rows.map((r) => r.status).filter(Boolean))) as string[], [rows]);
 
@@ -948,14 +966,6 @@ function SubscriptionsPanel({ rows, donations, projects }: { rows: any[]; donati
             <SelectItem value="lapsed">منقطع ({counts.lapsed})</SelectItem>
             <SelectItem value="irregular">متذبذب ({counts.irregular})</SelectItem>
             <SelectItem value="new">جديد ({counts.new})</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
-          <SelectTrigger className="w-32 h-9"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="6">آخر 6 أشهر</SelectItem>
-            <SelectItem value="12">آخر 12 شهراً</SelectItem>
-            <SelectItem value="24">آخر 24 شهراً</SelectItem>
           </SelectContent>
         </Select>
         <CountChip n={filtered.length} total={rows.length} extra={`نشِط: ${counts.regular} · منقطع: ${counts.lapsed} · شهري متوقّع: ${SAR(monthlyExpected)}`} />
