@@ -176,10 +176,10 @@ export function DonorsHub({ orgId }: { orgId: string }) {
                 />
               </div>
               <div className="text-center">
-                <div className="text-[12px] font-bold leading-tight" style={isActive ? { color: p.text } : undefined}>
+                <div className="text-sm font-bold leading-tight" style={isActive ? { color: p.text } : undefined}>
                   {t.label}
                 </div>
-                <div className="text-[10px] text-slate-500 leading-tight mt-0.5 hidden lg:block">{t.desc}</div>
+                <div className="text-[11px] text-slate-500 leading-tight mt-1 hidden lg:block">{t.desc}</div>
               </div>
               {isActive && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rotate-45" style={{ background: p.from, boxShadow: `0 0 6px ${p.from}b3` }} />}
             </button>
