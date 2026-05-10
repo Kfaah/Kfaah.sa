@@ -125,7 +125,9 @@ export default function SupportInbox() {
       const latest = inbound.find((m) => m.thread_id === t.id);
       const latestOut = outbound.slice().reverse().find((m) => m.thread_id === t.id);
       const hasInbound = !!latest;
-      const display = latest || latestOut;
+      const display = [latest, latestOut]
+        .filter(Boolean)
+        .sort((a: any, b: any) => +new Date(b.received_at || b.created_at) - +new Date(a.received_at || a.created_at))[0];
       return {
         id: `pem:${t.id}`,
         sender_name: t.recipient_name || t.recipient_email,
@@ -201,7 +203,10 @@ export default function SupportInbox() {
     starred: messages.filter(m => m.is_starred && !m.is_trashed).length,
     sent: new Set([
       ...allReplies.filter(r => r.from_owner).map(r => r.message_id),
-      ...pemOutbound.map(o => `pem:${o.thread_id}`),
+      ...pemOutbound
+        .map(o => messages.find(m => m.id === `pem:${o.thread_id}`))
+        .filter((m): m is SupportMsg => !!m && !m.is_trashed)
+        .map(m => m.id),
     ]).size,
     drafts: drafts.length,
     archive: messages.filter(m => m.is_archived && !m.is_trashed && !m.is_spam).length,
