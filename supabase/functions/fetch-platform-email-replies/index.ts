@@ -31,21 +31,29 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey)
   const stats = { fetched: 0, inserted: 0, skipped: 0, errors: 0 }
 
+  console.log('[imap] connecting as', user)
   const client = new ImapFlow({
     host: 'imap.zoho.com',
     port: 993,
     secure: true,
     auth: { user, pass },
-    logger: false as any,
+    logger: {
+      debug: () => {},
+      info: (o: any) => console.log('[imap:info]', JSON.stringify(o)),
+      warn: (o: any) => console.warn('[imap:warn]', JSON.stringify(o)),
+      error: (o: any) => console.error('[imap:error]', JSON.stringify(o)),
+    } as any,
     tls: { rejectUnauthorized: false },
-    socketTimeout: 30_000,
-    greetingTimeout: 15_000,
-    connectionTimeout: 15_000,
+    socketTimeout: 20_000,
+    greetingTimeout: 10_000,
+    connectionTimeout: 10_000,
   })
 
   try {
     await client.connect()
+    console.log('[imap] connected, opening INBOX')
     const lock = await client.getMailboxLock('INBOX')
+    console.log('[imap] mailbox locked')
     try {
       // Get last sync time (default to 24h ago first run)
       const { data: settings } = await supabase
@@ -58,12 +66,40 @@ Deno.serve(async (req) => {
         ? new Date(settings.last_synced_at)
         : new Date(Date.now() - 24 * 60 * 60 * 1000)
 
+      console.log('[imap] searching since', since.toISOString())
       const uids = await client.search({ since }, { uid: true })
+      console.log('[imap] search returned', (uids || []).length, 'uids')
       stats.fetched = (uids || []).length
 
-      for await (const msg of client.fetch(uids || [], { source: true, envelope: true, internalDate: true }, { uid: true })) {
+      const uidList: number[] = (uids as any[]) || []
+      console.log('[imap] processing', uidList.length, 'messages')
+      for (const uid of uidList) {
         try {
-          const parsed: any = await simpleParser(msg.source as Uint8Array)
+          console.log('[imap] fetching uid', uid)
+          const msg: any = await (client as any).fetchOne(uid, { envelope: true, internalDate: true }, { uid: true })
+          if (!msg) { console.log('[imap] no envelope for', uid); stats.skipped++; continue }
+          console.log('[imap] downloading source for uid', uid)
+          const dl: any = await (client as any).download(uid, undefined, { uid: true })
+          const chunks: Uint8Array[] = []
+          if (dl?.content) {
+            const reader = dl.content.getReader ? dl.content.getReader() : null
+            if (reader) {
+              while (true) {
+                const { value, done } = await reader.read()
+                if (done) break
+                if (value) chunks.push(value)
+              }
+            } else {
+              for await (const c of dl.content as any) chunks.push(c)
+            }
+          }
+          const total = chunks.reduce((a, c) => a + c.length, 0)
+          const source = new Uint8Array(total)
+          let off = 0
+          for (const c of chunks) { source.set(c, off); off += c.length }
+          console.log('[imap] downloaded', source.length, 'bytes for uid', uid)
+          const parsed: any = await simpleParser(source)
+          ;(msg as any).source = source
           const providerId = normalizeMessageId(parsed.messageId || msg.envelope?.messageId)
           const inReplyTo = normalizeMessageId(parsed.inReplyTo || msg.envelope?.inReplyTo)
           const references: string[] = Array.isArray(parsed.references)
