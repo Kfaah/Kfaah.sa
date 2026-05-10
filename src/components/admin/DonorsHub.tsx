@@ -34,6 +34,38 @@ const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
 const SAR = (n: number) => `${(n || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س`;
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString("ar-SA") : "—";
 
+/* ---------- Arabic label maps ---------- */
+const STATUS_AR: Record<string, string> = {
+  active: "نشِطة", inactive: "متوقفة", paused: "متوقفة مؤقتاً",
+  open: "مفتوحة", closed: "مغلقة", completed: "مكتملة",
+  pending: "قيد الانتظار", cancelled: "ملغاة", canceled: "ملغاة",
+  expired: "منتهية", draft: "مسودة", success: "ناجحة", failed: "فاشلة",
+  scheduled: "مجدولة", running: "جارية",
+};
+const METHOD_AR: Record<string, string> = {
+  mada: "مدى", visa: "فيزا", mastercard: "ماستركارد", amex: "أميكس",
+  applepay: "أبل باي", apple_pay: "أبل باي", "apple-pay": "أبل باي",
+  stcpay: "STC Pay", stc_pay: "STC Pay", "stc-pay": "STC Pay",
+  transfer: "تحويل بنكي", bank_transfer: "تحويل بنكي", "bank-transfer": "تحويل بنكي",
+  cash: "نقدي", sadad: "سداد", paypal: "باي بال", wallet: "محفظة",
+  card: "بطاقة", credit_card: "بطاقة ائتمان",
+};
+const FOLLOWUP_AR: Record<string, string> = {
+  pending: "قيد المتابعة", contacted: "تم التواصل", recovered: "مُسترد",
+  failed: "فشلت المتابعة", ignored: "متجاهَل", scheduled: "مجدولة",
+};
+const RETRY_AR: Record<string, string> = {
+  pending: "بانتظار الإعادة", retrying: "جاري الإعادة", succeeded: "نجحت",
+  failed: "فشلت", abandoned: "تم التخلي", scheduled: "مجدولة",
+};
+const SEGMENT_AR: Record<string, string> = {
+  new: "جديد", regular: "منتظم", vip: "VIP", lapsed: "منقطع",
+  recurring: "متكرر", "one-time": "لمرة واحدة", one_time: "لمرة واحدة",
+  major: "متبرع كبير", small: "متبرع صغير",
+};
+const ar = (map: Record<string, string>, v: string | null | undefined) =>
+  v ? (map[v.toLowerCase()] || v) : "—";
+
 interface Donation {
   id: string; donor_id: string | null; donor_name: string | null; donor_phone: string | null;
   project_name: string | null; amount: number; payment_method: string | null;
