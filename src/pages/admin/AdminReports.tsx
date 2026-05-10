@@ -154,6 +154,7 @@ export default function AdminReports({ embedded: embeddedProp = false }: { embed
 
   return (
     <div className={`${isEmbedded ? "" : "mx-auto max-w-[1280px] p-6"} w-full space-y-6`}>
+      {!isEmbedded && (
       <PageHeader
         icon={<FileBarChart2 className="w-6 h-6" />}
         title="التقارير"
@@ -164,6 +165,7 @@ export default function AdminReports({ embedded: embeddedProp = false }: { embed
           </Button>
         }
       />
+      )}
 
       {/* Mode tabs */}
       <div className="grid md:grid-cols-2 gap-3">
