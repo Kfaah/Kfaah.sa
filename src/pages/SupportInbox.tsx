@@ -109,6 +109,13 @@ export default function SupportInbox() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   // Auth
   useEffect(() => {
@@ -300,17 +307,23 @@ export default function SupportInbox() {
   };
   const restore    = (m: SupportMsg) => { patchMsg(m.id, { is_trashed: false, is_spam: false, is_archived: false }); setSelectedId(null); toast.success("تم الاسترجاع"); };
   const purge      = async (m: SupportMsg) => {
-    if (!confirm("حذف نهائي؟ لا يمكن التراجع.")) return;
-    if (m.id.startsWith("pem:")) {
-      const threadId = m.id.slice(4);
-      await supabase.from("platform_email_messages").delete().eq("thread_id", threadId);
-      await supabase.from("platform_email_threads").delete().eq("id", threadId);
-    } else {
-      await supabase.from("support_messages").delete().eq("id", m.id);
-    }
-    setSelectedId(null);
-    toast.success("تم الحذف نهائياً");
-    await loadAll();
+    setConfirmState({
+      title: "تأكيد الحذف النهائي",
+      description: "سيتم حذف هذه الرسالة نهائياً ولا يمكن التراجع عن هذا الإجراء.",
+      confirmLabel: "حذف نهائي",
+      onConfirm: async () => {
+        if (m.id.startsWith("pem:")) {
+          const threadId = m.id.slice(4);
+          await supabase.from("platform_email_messages").delete().eq("thread_id", threadId);
+          await supabase.from("platform_email_threads").delete().eq("id", threadId);
+        } else {
+          await supabase.from("support_messages").delete().eq("id", m.id);
+        }
+        setSelectedId(null);
+        toast.success("تم الحذف نهائياً");
+        await loadAll();
+      },
+    });
   };
 
   // Reply via email + record
@@ -808,6 +821,81 @@ export default function SupportInbox() {
           )}
         </section>
       </div>
+
+      {confirmState && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          dir="rtl"
+        >
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            onClick={() => !confirmBusy && setConfirmState(null)}
+          />
+          <div
+            className="relative w-full max-w-md rounded-2xl border border-white/10 shadow-2xl shadow-black/60 overflow-hidden animate-in zoom-in-95 duration-200"
+            style={{
+              background:
+                "radial-gradient(ellipse at top, hsl(220 60% 12%) 0%, hsl(225 70% 7%) 70%, hsl(230 80% 5%) 100%)",
+            }}
+          >
+            <div
+              className="h-1 w-full"
+              style={{ background: `linear-gradient(90deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
+            />
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-900/40"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, hsl(0 80% 50%), hsl(15 85% 55%))",
+                  }}
+                >
+                  <AlertOctagon className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-extrabold text-white mb-1.5">
+                    {confirmState.title}
+                  </h3>
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                    {confirmState.description}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setConfirmState(null)}
+                  disabled={confirmBusy}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-slate-300 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={async () => {
+                    setConfirmBusy(true);
+                    try {
+                      await confirmState.onConfirm();
+                      setConfirmState(null);
+                    } finally {
+                      setConfirmBusy(false);
+                    }
+                  }}
+                  disabled={confirmBusy}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-white font-bold text-sm shadow-lg shadow-rose-900/40 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, hsl(0 80% 45%), hsl(15 85% 50%))",
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {confirmBusy ? "جارٍ الحذف..." : confirmState.confirmLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
