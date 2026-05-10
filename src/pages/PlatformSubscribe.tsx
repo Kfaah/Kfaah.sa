@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { type MouseEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -43,6 +43,20 @@ function calcPricing(opts: {
 
 const fmt = (n: number) => n.toLocaleString("ar-SA");
 
+const openExternalLink = (href: string) => {
+  try {
+    if (window.top && window.top !== window.self) {
+      window.top.location.assign(href);
+      return;
+    }
+  } catch {
+    // Fall back to opening a new tab when the preview frame blocks top navigation.
+  }
+
+  const opened = window.open(href, "_blank", "noopener,noreferrer");
+  if (!opened) window.location.assign(href);
+};
+
 export default function PlatformSubscribe() {
   const navigate = useNavigate();
 
@@ -71,7 +85,13 @@ export default function PlatformSubscribe() {
 أرغب في تأكيد العرض والاشتراك.`;
 
   const whatsappLink = `https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent(summary)}`;
+  const ownershipWhatsappLink = `https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent("السلام عليكم، نرغب في التفاوض على تملّك منصة كفاءة بالكامل لجمعيتنا.")}`;
   const mailLink = `mailto:${OWNER_EMAIL}?subject=${encodeURIComponent("طلب اشتراك في منصة كفاءة")}&body=${encodeURIComponent(summary)}`;
+
+  const openWhatsApp = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    openExternalLink(whatsappLink);
+  };
 
   return (
     <div
@@ -241,6 +261,7 @@ export default function PlatformSubscribe() {
 
             <a
               href={whatsappLink}
+              onClick={openWhatsApp}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full text-center rounded-xl py-3 font-bold text-white shadow-lg shadow-black/30 mb-2 transition-all hover:-translate-y-0.5"
@@ -287,7 +308,11 @@ export default function PlatformSubscribe() {
               </p>
             </div>
             <a
-              href={`https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent("السلام عليكم، نرغب في التفاوض على تملّك منصة كفاءة بالكامل لجمعيتنا.")}`}
+              href={ownershipWhatsappLink}
+              onClick={(event) => {
+                event.preventDefault();
+                openExternalLink(ownershipWhatsappLink);
+              }}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl px-5 py-3 bg-white text-slate-900 font-extrabold shadow-lg hover:-translate-y-0.5 transition-transform whitespace-nowrap"
@@ -380,8 +405,7 @@ function ContactPill({
       onClick={(e) => {
         if (!external) return;
         e.preventDefault();
-        const win = window.open(href, "_blank", "noopener,noreferrer");
-        if (!win) window.location.href = href;
+        openExternalLink(href);
       }}
       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] border border-white/15 text-sm text-white hover:bg-white/[0.12] transition-colors"
     >
