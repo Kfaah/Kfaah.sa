@@ -106,13 +106,43 @@ export default function SupportInbox() {
   // Loaders
   const loadAll = useCallback(async () => {
     setLoading(true);
-    const [msgs, reps, drs] = await Promise.all([
+    const [msgs, reps, drs, pemT, pemM] = await Promise.all([
       supabase.from("support_messages").select("*").order("created_at", { ascending: false }),
       supabase.from("support_replies").select("*").order("created_at", { ascending: true }),
       supabase.from("support_drafts").select("*").order("updated_at", { ascending: false }),
+      supabase.from("platform_email_threads").select("*").order("last_message_at", { ascending: false }).limit(200),
+      supabase.from("platform_email_messages").select("*").eq("direction", "inbound").order("received_at", { ascending: false }),
     ]);
     if (msgs.error) toast.error("تعذّر تحميل الرسائل");
-    setMessages((msgs.data as SupportMsg[]) || []);
+    const baseMsgs = (msgs.data as SupportMsg[]) || [];
+    const threads = (pemT.data as any[]) || [];
+    const inbound = (pemM.data as any[]) || [];
+    const synthetic: SupportMsg[] = threads.map((t) => {
+      const latest = inbound.find((m) => m.thread_id === t.id);
+      return {
+        id: `pem:${t.id}`,
+        sender_name: t.recipient_name || t.recipient_email,
+        sender_email: t.recipient_email,
+        sender_phone: null,
+        organization_name: "بريد المنصة (Zoho)",
+        subject: t.subject || "(بدون موضوع)",
+        message: latest?.body || "(لا يوجد محتوى متوفر)",
+        category: "بريد المنصة",
+        status: "open",
+        is_read: !t.unread_for_owner,
+        is_starred: false,
+        is_spam: false,
+        is_trashed: false,
+        is_archived: false,
+        labels: ["zoho"],
+        created_at: t.last_message_at || new Date().toISOString(),
+        user_id: null,
+      };
+    });
+    const merged = [...baseMsgs, ...synthetic].sort(
+      (a, b) => +new Date(b.created_at) - +new Date(a.created_at)
+    );
+    setMessages(merged);
     setAllReplies((reps.data as Reply[]) || []);
     setDrafts((drs.data as Draft[]) || []);
     setLoading(false);
@@ -128,6 +158,8 @@ export default function SupportInbox() {
       .on("postgres_changes", { event: "*", schema: "public", table: "support_messages" }, loadAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "support_replies" }, loadAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "support_drafts" }, loadAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "platform_email_threads" }, loadAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "platform_email_messages" }, loadAll)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [isOwner, loadAll]);
@@ -177,14 +209,24 @@ export default function SupportInbox() {
     setComposing(false);
     setReplyText("");
     if (!msg.is_read) {
-      await supabase.from("support_messages")
-        .update({ is_read: true, status: msg.status === "new" ? "open" : msg.status })
-        .eq("id", msg.id);
+      if (msg.id.startsWith("pem:")) {
+        await supabase.from("platform_email_threads")
+          .update({ unread_for_owner: false })
+          .eq("id", msg.id.slice(4));
+      } else {
+        await supabase.from("support_messages")
+          .update({ is_read: true, status: msg.status === "new" ? "open" : msg.status })
+          .eq("id", msg.id);
+      }
     }
   };
 
   // Actions
   const patchMsg = async (id: string, patch: Partial<SupportMsg>) => {
+    if (id.startsWith("pem:")) {
+      toast.info("هذه رسالة من بريد المنصة (Zoho) — العمليات على Zoho غير مدعومة هنا");
+      return;
+    }
     await supabase.from("support_messages").update(patch).eq("id", id);
   };
   const toggleStar = (m: SupportMsg) => patchMsg(m.id, { is_starred: !m.is_starred });
