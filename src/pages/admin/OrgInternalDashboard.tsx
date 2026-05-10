@@ -683,7 +683,16 @@ export default function OrgInternalDashboard({
           dir="rtl"
         >
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
-            {visitedTabs.has("reports") ? <AdminReports /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+            {visitedTabs.has("reports") ? (
+              <div className="space-y-8">
+                <OperationalReportsHub orgId={orgId!} />
+                <div className="border-t pt-6">
+                  <AdminReports />
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>
+            )}
           </Suspense>
         </TabsContent>
         <TabsContent
