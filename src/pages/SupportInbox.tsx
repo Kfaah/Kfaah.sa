@@ -246,6 +246,35 @@ export default function SupportInbox() {
     if (!selectedId || !replyText.trim() || !selected) return;
     setSending(true);
     try {
+      // Platform-mail (Zoho) thread: send via outbound email + record in platform_email_messages
+      if (selectedId.startsWith("pem:")) {
+        const threadId = selectedId.slice(4);
+        const subject = selected.subject?.startsWith("Re:") ? selected.subject : `Re: ${selected.subject}`;
+        const messageId = `${crypto.randomUUID()}@kfaah.org`;
+        const { error: sendErr } = await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "platform-mail",
+            recipientEmail: selected.sender_email,
+            messageId,
+            templateData: { subject, body: replyText.trim(), recipientName: selected.sender_name },
+          },
+        });
+        if (sendErr) throw sendErr;
+        await supabase.from("platform_email_messages").insert({
+          thread_id: threadId,
+          direction: "outbound",
+          sender_email: "info@kfaah.org",
+          recipient_email: selected.sender_email.toLowerCase(),
+          subject,
+          body: replyText.trim(),
+          provider_message_id: messageId,
+        });
+        setReplyText("");
+        toast.success("تم إرسال الرد عبر بريد المنصة");
+        await loadAll();
+        return;
+      }
+
       const { error } = await supabase.from("support_replies").insert({
         message_id: selectedId,
         body: replyText.trim().slice(0, 5000),
