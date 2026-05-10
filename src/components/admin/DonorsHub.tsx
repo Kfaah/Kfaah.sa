@@ -12,12 +12,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   HeartHandshake, Users, Trophy, Repeat, Megaphone, XCircle, ShoppingCart,
-  CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar as CalendarIcon, Wallet,
+  CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar as CalendarIcon, Wallet, Gift,
 } from "lucide-react";
 
 type SubKey =
   | "overview" | "donors" | "donations" | "top" | "recurring"
-  | "campaigns" | "failed" | "abandoned" | "subscriptions";
+  | "subscriptions" | "campaigns" | "gifts" | "failed" | "abandoned";
 
 const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "overview", label: "لوحة عامة", Icon: HeartHandshake, desc: "ملخّص شامل لأداء التبرعات" },
@@ -25,10 +25,11 @@ const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "donations", label: "التبرعات", Icon: Wallet, desc: "فلترة بالمشروع والسنة" },
   { key: "top", label: "أعلى المتبرعين", Icon: Trophy, desc: "المتصدّرون بالتبرع" },
   { key: "recurring", label: "متكرّرون", Icon: Repeat, desc: "تبرّعوا مرتين فأكثر" },
+  { key: "subscriptions", label: "المستقطعون", Icon: CalendarClock, desc: "اشتراكات شهرية ودورية" },
   { key: "campaigns", label: "الحملات", Icon: Megaphone, desc: "نتائج وأهداف الحملات" },
+  { key: "gifts", label: "الإهداءات", Icon: Gift, desc: "المهدون وتكرار الإهداء" },
   { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, desc: "محاولات لم تكتمل" },
   { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, desc: "تنبيهات استرداد" },
-  { key: "subscriptions", label: "الاستقطاع المتكرر", Icon: CalendarClock, desc: "اشتراكات شهرية ودورية" },
 ];
 
 const SAR = (n: number) => `${(n || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س`;
@@ -223,13 +224,14 @@ export function DonorsHub({ orgId }: { orgId: string }) {
   const [failed, setFailed] = useState<any[]>([]);
   const [abandoned, setAbandoned] = useState<any[]>([]);
   const [subs, setSubs] = useState<any[]>([]);
+  const [gifts, setGifts] = useState<any[]>([]);
 
   useEffect(() => {
     if (!orgId) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [dn, dr, cm, fl, ab, sb] = await Promise.all([
+      const [dn, dr, cm, fl, ab, sb, gf] = await Promise.all([
         supabase.from("donations")
           .select("id,donor_id,donor_name,donor_phone,project_name,amount,payment_method,status,donation_date")
           .eq("organization_id", orgId).order("donation_date", { ascending: false }).limit(20000),
@@ -240,6 +242,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
         supabase.from("failed_donations").select("*").eq("organization_id", orgId).order("attempted_at", { ascending: false }).limit(5000),
         supabase.from("abandoned_carts").select("*").eq("organization_id", orgId).order("abandoned_at", { ascending: false }).limit(5000),
         supabase.from("subscriptions").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(5000),
+        supabase.from("gifts").select("*").eq("organization_id", orgId).order("gift_date", { ascending: false }).limit(10000),
       ]);
       if (cancelled) return;
       setDonations((dn.data || []) as any);
@@ -248,6 +251,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
       setFailed(fl.data || []);
       setAbandoned(ab.data || []);
       setSubs(sb.data || []);
+      setGifts(gf.data || []);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -261,8 +265,9 @@ export function DonorsHub({ orgId }: { orgId: string }) {
     failed.forEach((r: any) => r.project_name && set.add(r.project_name));
     abandoned.forEach((r: any) => r.project_name && set.add(r.project_name));
     subs.forEach((r: any) => r.project_name && set.add(r.project_name));
+    gifts.forEach((r: any) => r.project_name && set.add(r.project_name));
     return Array.from(set).sort();
-  }, [donations, campaigns, failed, abandoned, subs]);
+  }, [donations, campaigns, failed, abandoned, subs, gifts]);
 
   const totals = useMemo(() => {
     const total = donations.reduce((s, r) => s + Number(r.amount || 0), 0);
@@ -364,6 +369,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
           {active === "top" && <TopDonorsPanel donors={donors} donations={donations} projects={projects} />}
           {active === "recurring" && <RecurringPanel donors={donors} donations={donations} projects={projects} />}
           {active === "campaigns" && <CampaignsPanel campaigns={campaigns} projects={projects} />}
+          {active === "gifts" && <GiftsPanel rows={gifts} projects={projects} />}
           {active === "failed" && <FailedPanel rows={failed} projects={projects} />}
           {active === "abandoned" && <AbandonedPanel rows={abandoned} projects={projects} />}
           {active === "subscriptions" && <SubscriptionsPanel rows={subs} donations={donations} projects={projects} />}
@@ -747,6 +753,97 @@ function CampaignsPanel({ campaigns, projects }: { campaigns: any[]; projects: s
           ];
         })}
       />
+    </div>
+  );
+}
+
+function GiftsPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
+  const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
+  const [project, setProject] = useState<string>("all");
+  const [view, setView] = useState<"givers" | "list">("givers");
+  const [search, setSearch] = useState("");
+  const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
+
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (!inRange(r.gift_date || r.created_at, range)) return false;
+    if (project !== "all" && r.project_name !== project) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const hay = `${r.giver_name || ""} ${r.giver_phone || ""} ${r.recipient_name || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  }), [rows, range, project, search]);
+
+  // aggregate by giver
+  const givers = useMemo(() => {
+    const map = new Map<string, { key: string; name: string; phone: string; count: number; total: number; last: string | null; projects: Set<string> }>();
+    for (const g of filtered) {
+      const key = g.giver_donor_id || g.giver_phone || g.giver_name || "—";
+      const cur = map.get(key) || { key, name: g.giver_name || "—", phone: g.giver_phone || "—", count: 0, total: 0, last: null as string | null, projects: new Set<string>() };
+      cur.count += 1;
+      cur.total += Number(g.amount || 0);
+      const dt = g.gift_date || g.created_at;
+      if (dt && (!cur.last || new Date(dt) > new Date(cur.last))) cur.last = dt;
+      if (g.project_name) cur.projects.add(g.project_name);
+      map.set(key, cur);
+    }
+    return Array.from(map.values()).sort((a, b) => b.count - a.count || b.total - a.total);
+  }, [filtered]);
+
+  const total = filtered.reduce((s, r) => s + Number(r.amount || 0), 0);
+
+  return (
+    <div className="space-y-3">
+      <Toolbar>
+        <DateSelect value={dateKey} onChange={setDateKey} />
+        <ProjectSelect value={project} onChange={setProject} projects={projects} />
+        <Select value={view} onValueChange={(v) => setView(v as any)}>
+          <SelectTrigger className="w-44 h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="givers">حسب المُهدي</SelectItem>
+            <SelectItem value="list">كل الإهداءات</SelectItem>
+          </SelectContent>
+        </Select>
+        <SearchBox value={search} onChange={setSearch} placeholder="ابحث عن مُهدي أو مُستلم…" />
+        <CountChip n={filtered.length} total={rows.length} extra={`المُهدون: ${givers.length} · القيمة: ${SAR(total)}`} />
+      </Toolbar>
+
+      {view === "givers" ? (
+        <DataTable
+          head={["#", "المُهدي", "الجوال", "عدد الإهداءات", "إجمالي القيمة", "آخر إهداء", "المشاريع", "التصنيف"]}
+          rows={givers.slice(0, 1000).map((g, i) => {
+            const tier = g.count >= 10 ? "كثير الإهداء" : g.count >= 4 ? "نشط" : g.count >= 2 ? "متكرر" : "لمرة واحدة";
+            const tierStyle: React.CSSProperties =
+              g.count >= 10 ? { background: `${brand}20`, color: brand, borderColor: `${brand}66` } :
+              g.count >= 4 ? { background: "rgb(219 234 254)", color: "rgb(30 64 175)", borderColor: "rgb(147 197 253)" } :
+              g.count >= 2 ? { background: "rgb(254 243 199)", color: "rgb(146 64 14)", borderColor: "rgb(252 211 77)" } :
+              { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" };
+            return [
+              String(i + 1),
+              <span className="font-medium text-slate-800">{g.name}</span>,
+              <span className="tabular-nums text-slate-600">{g.phone}</span>,
+              <span className="font-bold tabular-nums" style={{ color: brand }}>{g.count}</span>,
+              <span className="font-bold" style={{ color: brand }}>{SAR(g.total)}</span>,
+              fmtDate(g.last),
+              <span className="text-xs text-slate-600">{Array.from(g.projects).slice(0, 2).join("، ") || "—"}{g.projects.size > 2 ? ` +${g.projects.size - 2}` : ""}</span>,
+              <Badge variant="outline" style={tierStyle}>{tier}</Badge>,
+            ];
+          })}
+        />
+      ) : (
+        <DataTable
+          head={["#", "التاريخ", "المُهدي", "جوال المُهدي", "المُستلم", "المناسبة", "المشروع", "المبلغ", "التسليم"]}
+          rows={filtered.slice(0, 1000).map((r, i) => [
+            String(i + 1), fmtDate(r.gift_date), r.giver_name || "—", r.giver_phone || "—",
+            r.recipient_name || "—", r.occasion || "—", r.project_name || "—",
+            <span className="font-bold" style={{ color: brand }}>{SAR(Number(r.amount))}</span>,
+            <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">{ar(STATUS_AR, r.delivery_status) || "—"}</Badge>,
+          ])}
+        />
+      )}
     </div>
   );
 }
