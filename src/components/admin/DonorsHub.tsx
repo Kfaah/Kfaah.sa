@@ -613,8 +613,8 @@ function CountChip({ n, total, extra }: { n: number; total: number; extra?: stri
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
   return (
-    <div className="ml-auto flex items-center gap-2 text-xs">
-      <Badge variant="outline" className="bg-white border-slate-200 text-slate-700 font-semibold">
+    <div className="ml-auto flex items-center gap-2 text-sm">
+      <Badge variant="outline" className="bg-white border-slate-200 text-slate-700 font-semibold text-sm">
         {n.toLocaleString("ar-SA")} / {total.toLocaleString("ar-SA")}
       </Badge>
       {extra && <Badge style={{ background: `${brand}1f`, color: brand, borderColor: `${brand}55` }}>{extra}</Badge>}
@@ -632,13 +632,13 @@ function DataTable({ head, rows }: { head: string[]; rows: (string | number | Re
         <Table>
           <TableHeader className="sticky top-0 bg-slate-50 z-10">
             <TableRow>
-              {head.map((h, i) => <TableHead key={i} className="text-right font-bold text-slate-700 whitespace-nowrap">{h}</TableHead>)}
+          {head.map((h, i) => <TableHead key={i} className="text-right font-bold text-slate-700 whitespace-nowrap text-sm py-3.5">{h}</TableHead>)}
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map((r, i) => (
               <TableRow key={i} className="hover:bg-slate-50">
-                {r.map((c, j) => <TableCell key={j} className="text-right whitespace-nowrap">{c as any}</TableCell>)}
+                {r.map((c, j) => <TableCell key={j} className="text-right whitespace-nowrap text-sm py-3.5">{c as any}</TableCell>)}
               </TableRow>
             ))}
           </TableBody>
