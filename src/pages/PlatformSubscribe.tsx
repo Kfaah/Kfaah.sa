@@ -81,8 +81,8 @@ export default function PlatformSubscribe() {
 
 أرغب في تأكيد العرض والاشتراك.`;
 
-  const whatsappLink = `https://api.whatsapp.com/send?phone=${OWNER_PHONE_INTL}&text=${encodeURIComponent(summary)}`;
-  const ownershipWhatsappLink = `https://api.whatsapp.com/send?phone=${OWNER_PHONE_INTL}&text=${encodeURIComponent("السلام عليكم، نرغب في التفاوض على تملّك منصة كفاءة بالكامل لجمعيتنا.")}`;
+  const whatsappLink = `https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent(summary)}`;
+  const ownershipWhatsappLink = `https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent("السلام عليكم، نرغب في التفاوض على تملّك منصة كفاءة بالكامل لجمعيتنا.")}`;
   const mailLink = `mailto:${OWNER_EMAIL}?subject=${encodeURIComponent("طلب اشتراك في منصة كفاءة")}&body=${encodeURIComponent(summary)}`;
 
   const openWhatsApp = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -327,7 +327,7 @@ export default function PlatformSubscribe() {
           <ContactPill
             icon={MessageCircle}
             label="واتساب مباشر"
-            href={`https://api.whatsapp.com/send?phone=${OWNER_PHONE_INTL}`}
+            href={`https://wa.me/${OWNER_PHONE_INTL}`}
             external
           />
         </div>
