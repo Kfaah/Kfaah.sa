@@ -181,7 +181,7 @@ export default function PlatformMail() {
             <div className="text-right">
               <div className="text-base font-extrabold text-white inline-flex items-center gap-2">
                 <Mail className="w-5 h-5" style={{ color: `hsl(${accentHsl})` }} />
-                بريد كفاءة الرسمي
+                بريد منصة كفاءة
               </div>
               <div className="text-[11px] text-slate-300 inline-flex items-center gap-1">
                 <Sparkles className="w-3 h-3" style={{ color: `hsl(${accentHsl})` }} />
