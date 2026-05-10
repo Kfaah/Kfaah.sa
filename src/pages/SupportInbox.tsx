@@ -887,6 +887,101 @@ export default function SupportInbox() {
         </section>
       </div>
 
+      {settingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" dir="rtl">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => !savingSettings && setSettingsOpen(false)} />
+          <div
+            className="relative w-full max-w-xl rounded-2xl border border-white/10 shadow-2xl shadow-black/60 overflow-hidden animate-in zoom-in-95 duration-200"
+            style={{ background: "radial-gradient(ellipse at top, hsl(220 60% 12%) 0%, hsl(225 70% 7%) 70%, hsl(230 80% 5%) 100%)" }}
+          >
+            <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }} />
+            <div className="p-6">
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg shadow-black/40"
+                       style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}>
+                    <SettingsIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-extrabold text-white">إعدادات بريد المنصة</h3>
+                    <p className="text-xs text-slate-400">تطبق على الرسائل الصادرة والردود</p>
+                  </div>
+                </div>
+                <button onClick={() => !savingSettings && setSettingsOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">اسم المرسل الظاهر</label>
+                  <Input
+                    value={settings.sender_name}
+                    onChange={(e) => setSettings(s => ({ ...s, sender_name: e.target.value }))}
+                    placeholder="منصة كفاءة"
+                    className="bg-white/[0.06] border-white/15 text-white placeholder:text-slate-500"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">يظهر في خانة "من" عند المستقبل (info@kfaah.org يبقى ثابتاً)</p>
+                </div>
+
+                <div className="rounded-xl border border-white/10 p-3 bg-white/[0.03]">
+                  <label className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-sm font-bold text-white">التوقيع</span>
+                    <input
+                      type="checkbox"
+                      checked={settings.signature_enabled}
+                      onChange={(e) => setSettings(s => ({ ...s, signature_enabled: e.target.checked }))}
+                      className="w-4 h-4 accent-cyan-500"
+                    />
+                  </label>
+                  <Textarea
+                    value={settings.signature}
+                    onChange={(e) => setSettings(s => ({ ...s, signature: e.target.value }))}
+                    placeholder={"مثال:\nمع تحيات،\nفريق منصة كفاءة"}
+                    rows={3}
+                    disabled={!settings.signature_enabled}
+                    className="bg-white/[0.06] border-white/15 text-white placeholder:text-slate-500 disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="rounded-xl border border-white/10 p-3 bg-white/[0.03]">
+                  <label className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-sm font-bold text-white">التذييل</span>
+                    <input
+                      type="checkbox"
+                      checked={settings.footer_enabled}
+                      onChange={(e) => setSettings(s => ({ ...s, footer_enabled: e.target.checked }))}
+                      className="w-4 h-4 accent-cyan-500"
+                    />
+                  </label>
+                  <Textarea
+                    value={settings.footer}
+                    onChange={(e) => setSettings(s => ({ ...s, footer: e.target.value }))}
+                    placeholder="نص التذييل المختصر — kfaah.org"
+                    rows={2}
+                    disabled={!settings.footer_enabled}
+                    className="bg-white/[0.06] border-white/15 text-white placeholder:text-slate-500 disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center justify-end gap-2">
+                <button onClick={() => setSettingsOpen(false)} disabled={savingSettings}
+                        className="px-4 py-2 rounded-lg text-sm font-bold text-slate-300 hover:bg-white/10 hover:text-white disabled:opacity-50">
+                  إلغاء
+                </button>
+                <button onClick={saveSettings} disabled={savingSettings}
+                        className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-white font-bold text-sm shadow-lg shadow-black/40 disabled:opacity-60"
+                        style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}>
+                  <CheckCircle2 className="w-4 h-4" />
+                  {savingSettings ? "جارٍ الحفظ..." : "حفظ"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {confirmState && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
