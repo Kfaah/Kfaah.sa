@@ -503,7 +503,7 @@ function DonorsPanel({ donors, donations, projects }: { donors: DonorRow[]; dona
           <SelectTrigger className="w-44 h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الشرائح</SelectItem>
-            {segments.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {segments.map((s) => <SelectItem key={s} value={s}>{ar(SEGMENT_AR, s)}</SelectItem>)}
           </SelectContent>
         </Select>
         <CountChip n={filtered.length} total={donors.length} />
@@ -512,7 +512,7 @@ function DonorsPanel({ donors, donations, projects }: { donors: DonorRow[]; dona
         head={["#", "الاسم", "الجوال", "المدينة", "الشريحة", "عدد التبرعات", "إجمالي التبرع", "آخر تبرع"]}
         rows={filtered.slice(0, 500).map((d, i) => [
           String(i + 1), d.full_name, d.phone || "—", d.city || "—",
-          <Badge variant="outline" style={{ borderColor: `${brand}55`, color: brand, background: `${brand}10` }}>{d.segment}</Badge>,
+          <Badge variant="outline" style={{ borderColor: `${brand}55`, color: brand, background: `${brand}10` }}>{ar(SEGMENT_AR, d.segment)}</Badge>,
           d.donations_count, SAR(Number(d.total_donated)), fmtDate(d.last_donation_at),
         ])}
       />
@@ -551,7 +551,7 @@ function DonationsPanel({ donations, projects }: { donations: Donation[]; projec
           <SelectTrigger className="w-44 h-9"><SelectValue placeholder="وسيلة الدفع" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الوسائل</SelectItem>
-            {methods.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            {methods.map((m) => <SelectItem key={m} value={m}>{ar(METHOD_AR, m)}</SelectItem>)}
           </SelectContent>
         </Select>
         <CountChip n={filtered.length} total={donations.length} extra={SAR(sum)} />
@@ -560,11 +560,11 @@ function DonationsPanel({ donations, projects }: { donations: Donation[]; projec
         head={["#", "التاريخ", "المتبرع", "الجوال", "المشروع", "الوسيلة", "المبلغ", "الحالة"]}
         rows={filtered.slice(0, 1000).map((d, i) => [
           String(i + 1), fmtDate(d.donation_date), d.donor_name || "—", d.donor_phone || "—",
-          d.project_name || "—", d.payment_method || "—",
+          d.project_name || "—", ar(METHOD_AR, d.payment_method),
           <span className="font-bold text-emerald-700">{SAR(Number(d.amount))}</span>,
           <Badge variant="outline" className={cn(
             d.status === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-700 border-slate-200"
-          )}>{d.status}</Badge>,
+          )}>{ar(STATUS_AR, d.status)}</Badge>,
         ])}
       />
     </div>
