@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   HeartHandshake, Users, Trophy, Repeat, Megaphone, XCircle, ShoppingCart,
@@ -44,6 +47,7 @@ interface DonorRow {
 
 /* ---------- Date + Project filter helpers ---------- */
 type Range = { from: Date | null; to: Date | null };
+type DateValue = { key: string; custom?: Range };
 const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const endOfDay = (d: Date) => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; };
 
@@ -57,9 +61,12 @@ const DATE_PRESETS: { key: string; label: string }[] = [
   { key: "last_month", label: "الشهر الماضي" },
   { key: "this_year", label: "هذه السنة" },
   { key: "last_year", label: "السنة الماضية" },
+  { key: "custom", label: "فترة مخصصة" },
 ];
 
-function buildDateRange(key: string): Range {
+function buildDateRange(value: DateValue | string): Range {
+  const key = typeof value === "string" ? value : value.key;
+  const custom = typeof value === "string" ? undefined : value.custom;
   const now = new Date();
   const today = startOfDay(now);
   const dow = now.getDay();
@@ -72,6 +79,7 @@ function buildDateRange(key: string): Range {
     case "last_month": { const f = new Date(now.getFullYear(), now.getMonth() - 1, 1); const t = endOfDay(new Date(now.getFullYear(), now.getMonth(), 0)); return { from: f, to: t }; }
     case "this_year": return { from: new Date(now.getFullYear(), 0, 1), to: endOfDay(now) };
     case "last_year": { const f = new Date(now.getFullYear() - 1, 0, 1); const t = endOfDay(new Date(now.getFullYear() - 1, 11, 31)); return { from: f, to: t }; }
+    case "custom": return custom ? { from: custom.from ? startOfDay(custom.from) : null, to: custom.to ? endOfDay(custom.to) : null } : { from: null, to: null };
     default: return { from: null, to: null };
   }
 }
@@ -83,14 +91,65 @@ function inRange(d: string | null | undefined, r: Range) {
   if (r.to && t > r.to.getTime()) return false;
   return true;
 }
-function DateSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function DateSelect({ value, onChange }: { value: DateValue; onChange: (v: DateValue) => void }) {
+  const [openCustom, setOpenCustom] = useState(false);
+  const [tempFrom, setTempFrom] = useState<Date | undefined>(value.custom?.from || undefined);
+  const [tempTo, setTempTo] = useState<Date | undefined>(value.custom?.to || undefined);
+  const customLabel = value.key === "custom" && value.custom?.from && value.custom?.to
+    ? `${value.custom.from.toLocaleDateString("ar-SA")} – ${value.custom.to.toLocaleDateString("ar-SA")}`
+    : null;
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-40 h-9"><SelectValue placeholder="الفترة" /></SelectTrigger>
-      <SelectContent>
-        {DATE_PRESETS.map((p) => <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>)}
-      </SelectContent>
-    </Select>
+    <div className="flex items-center gap-1.5">
+      <Select
+        value={value.key}
+        onValueChange={(v) => {
+          if (v === "custom") { setOpenCustom(true); return; }
+          onChange({ key: v });
+        }}
+      >
+        <SelectTrigger className="w-40 h-9"><SelectValue placeholder="الفترة" /></SelectTrigger>
+        <SelectContent>
+          {DATE_PRESETS.map((p) => <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Popover open={openCustom} onOpenChange={setOpenCustom}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn("h-9 px-3 text-xs font-semibold", value.key === "custom" && "bg-accent text-accent-foreground border-accent")}
+            onClick={() => setOpenCustom(true)}
+          >
+            {customLabel || "اختر تواريخ…"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-3 bg-popover" align="end">
+          <div className="flex gap-3 flex-wrap">
+            <div>
+              <div className="text-xs font-semibold mb-1 text-muted-foreground">من</div>
+              <Calendar mode="single" selected={tempFrom} onSelect={setTempFrom} className={cn("p-0 pointer-events-auto")} />
+            </div>
+            <div>
+              <div className="text-xs font-semibold mb-1 text-muted-foreground">إلى</div>
+              <Calendar mode="single" selected={tempTo} onSelect={setTempTo} className={cn("p-0 pointer-events-auto")} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-3">
+            <Button size="sm" variant="ghost" onClick={() => setOpenCustom(false)}>إلغاء</Button>
+            <Button
+              size="sm"
+              disabled={!tempFrom || !tempTo}
+              onClick={() => {
+                if (tempFrom && tempTo) {
+                  onChange({ key: "custom", custom: { from: tempFrom, to: tempTo } });
+                  setOpenCustom(false);
+                }
+              }}
+            >تطبيق</Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
 function ProjectSelect({ value, onChange, projects }: { value: string; onChange: (v: string) => void; projects: string[] }) {
