@@ -76,6 +76,7 @@ export default function SupportInbox() {
   const [messages, setMessages] = useState<SupportMsg[]>([]);
   const [allReplies, setAllReplies] = useState<Reply[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [pemOutbound, setPemOutbound] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [folder, setFolder] = useState<FolderId>("inbox");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -107,19 +108,24 @@ export default function SupportInbox() {
   // Loaders
   const loadAll = useCallback(async () => {
     setLoading(true);
-    const [msgs, reps, drs, pemT, pemM] = await Promise.all([
+    const [msgs, reps, drs, pemT, pemM, pemOut] = await Promise.all([
       supabase.from("support_messages").select("*").order("created_at", { ascending: false }),
       supabase.from("support_replies").select("*").order("created_at", { ascending: true }),
       supabase.from("support_drafts").select("*").order("updated_at", { ascending: false }),
       supabase.from("platform_email_threads").select("*").order("last_message_at", { ascending: false }).limit(200),
       supabase.from("platform_email_messages").select("*").eq("direction", "inbound").order("received_at", { ascending: false }),
+      supabase.from("platform_email_messages").select("*").eq("direction", "outbound").order("received_at", { ascending: true }),
     ]);
     if (msgs.error) toast.error("تعذّر تحميل الرسائل");
     const baseMsgs = (msgs.data as SupportMsg[]) || [];
     const threads = (pemT.data as any[]) || [];
     const inbound = (pemM.data as any[]) || [];
+    const outbound = (pemOut.data as any[]) || [];
     const synthetic: SupportMsg[] = threads.map((t) => {
       const latest = inbound.find((m) => m.thread_id === t.id);
+      const latestOut = outbound.slice().reverse().find((m) => m.thread_id === t.id);
+      const hasInbound = !!latest;
+      const display = latest || latestOut;
       return {
         id: `pem:${t.id}`,
         sender_name: t.recipient_name || t.recipient_email,
@@ -127,7 +133,7 @@ export default function SupportInbox() {
         sender_phone: null,
         organization_name: "بريد المنصة (Zoho)",
         subject: t.subject || "(بدون موضوع)",
-        message: latest?.body || "(لا يوجد محتوى متوفر)",
+        message: display?.body || "(لا يوجد محتوى متوفر)",
         category: "بريد المنصة",
         status: "open",
         is_read: !t.unread_for_owner,
@@ -135,7 +141,7 @@ export default function SupportInbox() {
         is_spam: false,
         is_trashed: false,
         is_archived: false,
-        labels: ["zoho"],
+        labels: hasInbound ? ["zoho"] : ["zoho", "sent-only"],
         created_at: t.last_message_at || new Date().toISOString(),
         user_id: null,
       };
@@ -146,6 +152,7 @@ export default function SupportInbox() {
     setMessages(merged);
     setAllReplies((reps.data as Reply[]) || []);
     setDrafts((drs.data as Draft[]) || []);
+    setPemOutbound(outbound);
     setLoading(false);
   }, []);
 
@@ -174,9 +181,10 @@ export default function SupportInbox() {
     else if (folder === "starred") list = list.filter(m => m.is_starred && !m.is_trashed);
     else if (folder === "sent") {
       const repliedIds = new Set(allReplies.filter(r => r.from_owner).map(r => r.message_id));
-      list = list.filter(m => repliedIds.has(m.id) && !m.is_trashed);
+      const pemSentThreads = new Set(pemOutbound.map(o => `pem:${o.thread_id}`));
+      list = list.filter(m => (repliedIds.has(m.id) || pemSentThreads.has(m.id)) && !m.is_trashed);
     }
-    else if (folder === "inbox") list = list.filter(m => !m.is_trashed && !m.is_spam && !m.is_archived);
+    else if (folder === "inbox") list = list.filter(m => !m.is_trashed && !m.is_spam && !m.is_archived && !(m.labels?.includes("sent-only")));
 
     const s = search.trim().toLowerCase();
     if (s) list = list.filter(m =>
@@ -186,23 +194,38 @@ export default function SupportInbox() {
       m.message.toLowerCase().includes(s)
     );
     return list;
-  }, [messages, folder, search, allReplies]);
+  }, [messages, folder, search, allReplies, pemOutbound]);
 
   const counts = useMemo(() => ({
     inbox: messages.filter(m => !m.is_trashed && !m.is_spam && !m.is_archived && !m.is_read).length,
     starred: messages.filter(m => m.is_starred && !m.is_trashed).length,
-    sent: new Set(allReplies.filter(r => r.from_owner).map(r => r.message_id)).size,
+    sent: new Set([
+      ...allReplies.filter(r => r.from_owner).map(r => r.message_id),
+      ...pemOutbound.map(o => `pem:${o.thread_id}`),
+    ]).size,
     drafts: drafts.length,
     archive: messages.filter(m => m.is_archived && !m.is_trashed && !m.is_spam).length,
     spam: messages.filter(m => m.is_spam && !m.is_trashed).length,
     trash: messages.filter(m => m.is_trashed).length,
-  }), [messages, allReplies, drafts]);
+  }), [messages, allReplies, drafts, pemOutbound]);
 
   const selected = useMemo(() => messages.find(m => m.id === selectedId) || null, [messages, selectedId]);
-  const selectedReplies = useMemo(
-    () => allReplies.filter(r => r.message_id === selectedId),
-    [allReplies, selectedId]
-  );
+  const selectedReplies = useMemo(() => {
+    if (!selectedId) return [];
+    if (selectedId.startsWith("pem:")) {
+      const threadId = selectedId.slice(4);
+      return pemOutbound
+        .filter(o => o.thread_id === threadId)
+        .map(o => ({
+          id: o.id,
+          message_id: selectedId,
+          body: o.body || "",
+          from_owner: true,
+          created_at: o.received_at || o.created_at,
+        })) as Reply[];
+    }
+    return allReplies.filter(r => r.message_id === selectedId);
+  }, [allReplies, selectedId, pemOutbound]);
 
   const selectMessage = async (msg: SupportMsg) => {
     setSelectedId(msg.id);
@@ -225,7 +248,7 @@ export default function SupportInbox() {
   // Actions
   const patchMsg = async (id: string, patch: Partial<SupportMsg>) => {
     if (id.startsWith("pem:")) {
-      toast.info("هذه رسالة من بريد المنصة (Zoho) — العمليات على Zoho غير مدعومة هنا");
+      // For pem threads we only support trash = delete-thread. Other patches are no-ops.
       return;
     }
     await supabase.from("support_messages").update(patch).eq("id", id);
@@ -233,13 +256,34 @@ export default function SupportInbox() {
   const toggleStar = (m: SupportMsg) => patchMsg(m.id, { is_starred: !m.is_starred });
   const toArchive  = (m: SupportMsg) => { patchMsg(m.id, { is_archived: true }); setSelectedId(null); toast.success("تم أرشفة الرسالة"); };
   const toSpam     = (m: SupportMsg) => { patchMsg(m.id, { is_spam: true, is_archived: false }); setSelectedId(null); toast.success("تم نقلها إلى غير الهام"); };
-  const toTrash    = (m: SupportMsg) => { patchMsg(m.id, { is_trashed: true }); setSelectedId(null); toast.success("تم نقلها إلى المحذوفات"); };
+  const toTrash    = async (m: SupportMsg) => {
+    if (m.id.startsWith("pem:")) {
+      if (!confirm("حذف هذه المحادثة من بريد المنصة نهائياً؟")) return;
+      const threadId = m.id.slice(4);
+      await supabase.from("platform_email_messages").delete().eq("thread_id", threadId);
+      await supabase.from("platform_email_threads").delete().eq("id", threadId);
+      setSelectedId(null);
+      toast.success("تم حذف المحادثة");
+      await loadAll();
+      return;
+    }
+    patchMsg(m.id, { is_trashed: true });
+    setSelectedId(null);
+    toast.success("تم نقلها إلى المحذوفات");
+  };
   const restore    = (m: SupportMsg) => { patchMsg(m.id, { is_trashed: false, is_spam: false, is_archived: false }); setSelectedId(null); toast.success("تم الاسترجاع"); };
   const purge      = async (m: SupportMsg) => {
     if (!confirm("حذف نهائي؟ لا يمكن التراجع.")) return;
-    await supabase.from("support_messages").delete().eq("id", m.id);
+    if (m.id.startsWith("pem:")) {
+      const threadId = m.id.slice(4);
+      await supabase.from("platform_email_messages").delete().eq("thread_id", threadId);
+      await supabase.from("platform_email_threads").delete().eq("id", threadId);
+    } else {
+      await supabase.from("support_messages").delete().eq("id", m.id);
+    }
     setSelectedId(null);
     toast.success("تم الحذف نهائياً");
+    await loadAll();
   };
 
   // Reply via email + record
