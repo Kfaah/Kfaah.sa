@@ -17,16 +17,16 @@ type SubKey =
   | "overview" | "donors" | "donations" | "top" | "recurring"
   | "campaigns" | "failed" | "abandoned" | "subscriptions";
 
-const SUB_TABS: { key: SubKey; label: string; Icon: any; gradient: string; ring: string; desc: string }[] = [
-  { key: "overview", label: "لوحة عامة", Icon: HeartHandshake, gradient: "from-rose-500 to-pink-600", ring: "ring-rose-300/50", desc: "ملخّص شامل لأداء التبرعات" },
-  { key: "donors", label: "كل المتبرعين", Icon: Users, gradient: "from-indigo-500 to-blue-600", ring: "ring-indigo-300/50", desc: "قائمة وبحث وتصنيف" },
-  { key: "donations", label: "التبرعات", Icon: Wallet, gradient: "from-emerald-500 to-teal-600", ring: "ring-emerald-300/50", desc: "فلترة بالمشروع والسنة" },
-  { key: "top", label: "أعلى المتبرعين", Icon: Trophy, gradient: "from-amber-500 to-orange-500", ring: "ring-amber-300/50", desc: "المتصدّرون بالتبرع" },
-  { key: "recurring", label: "متكرّرون", Icon: Repeat, gradient: "from-fuchsia-500 to-purple-600", ring: "ring-fuchsia-300/50", desc: "تبرّعوا مرتين فأكثر" },
-  { key: "campaigns", label: "الحملات", Icon: Megaphone, gradient: "from-cyan-500 to-sky-600", ring: "ring-cyan-300/50", desc: "نتائج وأهداف الحملات" },
-  { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, gradient: "from-red-500 to-rose-600", ring: "ring-red-300/50", desc: "محاولات لم تكتمل" },
-  { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, gradient: "from-yellow-500 to-amber-600", ring: "ring-yellow-300/50", desc: "تنبيهات استرداد" },
-  { key: "subscriptions", label: "الاستقطاع المتكرر", Icon: CalendarClock, gradient: "from-violet-500 to-indigo-600", ring: "ring-violet-300/50", desc: "اشتراكات شهرية ودورية" },
+const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
+  { key: "overview", label: "لوحة عامة", Icon: HeartHandshake, desc: "ملخّص شامل لأداء التبرعات" },
+  { key: "donors", label: "كل المتبرعين", Icon: Users, desc: "قائمة وبحث وتصنيف" },
+  { key: "donations", label: "التبرعات", Icon: Wallet, desc: "فلترة بالمشروع والسنة" },
+  { key: "top", label: "أعلى المتبرعين", Icon: Trophy, desc: "المتصدّرون بالتبرع" },
+  { key: "recurring", label: "متكرّرون", Icon: Repeat, desc: "تبرّعوا مرتين فأكثر" },
+  { key: "campaigns", label: "الحملات", Icon: Megaphone, desc: "نتائج وأهداف الحملات" },
+  { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, desc: "محاولات لم تكتمل" },
+  { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, desc: "تنبيهات استرداد" },
+  { key: "subscriptions", label: "الاستقطاع المتكرر", Icon: CalendarClock, desc: "اشتراكات شهرية ودورية" },
 ];
 
 const SAR = (n: number) => `${(n || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س`;
@@ -153,13 +153,23 @@ export function DonorsHub({ orgId }: { orgId: string }) {
                 ['--tw-ring-color' as any]: `${brand}55`,
               } : undefined}
             >
-              <div className={cn(
-                "w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-sm ring-1 transition-transform",
-                t.gradient, t.ring,
-                "group-hover:scale-110 group-hover:rotate-3",
-                isActive && "scale-110"
-              )}>
-                <Icon className="w-5 h-5 text-white" strokeWidth={2.4} />
+              <div
+                className={cn(
+                  "w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ring-1 transition-transform group-hover:scale-110",
+                  isActive && "scale-110"
+                )}
+                style={{
+                  background: isActive
+                    ? `linear-gradient(135deg, ${brand}, ${brand}cc)`
+                    : `${brand}15`,
+                  ['--tw-ring-color' as any]: `${brand}40`,
+                }}
+              >
+                <Icon
+                  className="w-5 h-5"
+                  style={{ color: isActive ? "#fff" : brand }}
+                  strokeWidth={2.4}
+                />
               </div>
               <div className="text-center">
                 <div className="text-[12px] font-bold leading-tight" style={isActive ? { color: brand } : undefined}>
@@ -209,6 +219,8 @@ function KpiPill({ icon, label, value, brand }: { icon: React.ReactNode; label: 
 /* ---------- Panels ---------- */
 
 function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }: any) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const byYear = useMemo(() => {
     const map = new Map<number, number>();
     donations.forEach((d: Donation) => {
@@ -230,47 +242,50 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
 
   return (
     <div className="grid lg:grid-cols-2 gap-5">
-      <Card className="border-emerald-200">
-        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4 text-emerald-600" />التبرعات حسب السنة</CardTitle></CardHeader>
+      <Card style={{ borderColor: `${brand}33` }}>
+        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4" style={{ color: brand }} />التبرعات حسب السنة</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           {byYear.length === 0 && <p className="text-sm text-slate-500">لا توجد بيانات.</p>}
           {byYear.map(([y, v]) => (
             <div key={y} className="space-y-1">
-              <div className="flex justify-between text-xs"><span className="font-semibold">{y}</span><span className="text-emerald-700 font-bold">{SAR(v)}</span></div>
+              <div className="flex justify-between text-xs"><span className="font-semibold">{y}</span><span className="font-bold" style={{ color: brand }}>{SAR(v)}</span></div>
               <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-gradient-to-l from-emerald-400 to-teal-500" style={{ width: `${(v / yearMax) * 100}%` }} />
+                <div className="h-full" style={{ width: `${(v / yearMax) * 100}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
-      <Card className="border-cyan-200">
-        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Megaphone className="w-4 h-4 text-cyan-600" />أعلى 8 مشاريع تبرّعاً</CardTitle></CardHeader>
+      <Card style={{ borderColor: `${brand}33` }}>
+        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Megaphone className="w-4 h-4" style={{ color: brand }} />أعلى 8 مشاريع تبرّعاً</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           {byProject.length === 0 && <p className="text-sm text-slate-500">لا توجد بيانات.</p>}
           {byProject.map(([k, v]) => (
             <div key={k} className="space-y-1">
-              <div className="flex justify-between text-xs"><span className="font-semibold truncate">{k}</span><span className="text-cyan-700 font-bold">{SAR(v)}</span></div>
+              <div className="flex justify-between text-xs"><span className="font-semibold truncate">{k}</span><span className="font-bold" style={{ color: brand }}>{SAR(v)}</span></div>
               <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-gradient-to-l from-cyan-400 to-sky-500" style={{ width: `${(v / max) * 100}%` }} />
+                <div className="h-full" style={{ width: `${(v / max) * 100}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:col-span-2">
-        <MiniStat label="حملات" value={campaigns.length} grad="from-cyan-500 to-sky-600" />
-        <MiniStat label="تبرعات فاشلة" value={failed.length} grad="from-red-500 to-rose-600" />
-        <MiniStat label="سلال متروكة" value={abandoned.length} grad="from-yellow-500 to-amber-600" />
-        <MiniStat label="اشتراكات" value={subs.length} grad="from-violet-500 to-indigo-600" />
+        <MiniStat label="حملات" value={campaigns.length} brand={brand} />
+        <MiniStat label="تبرعات فاشلة" value={failed.length} brand={brand} />
+        <MiniStat label="سلال متروكة" value={abandoned.length} brand={brand} />
+        <MiniStat label="اشتراكات" value={subs.length} brand={brand} />
       </div>
     </div>
   );
 }
 
-function MiniStat({ label, value, grad }: { label: string; value: number; grad: string }) {
+function MiniStat({ label, value, brand }: { label: string; value: number; brand: string }) {
   return (
-    <div className={cn("rounded-xl p-4 text-white shadow-md bg-gradient-to-br", grad)}>
+    <div
+      className="rounded-xl p-4 text-white shadow-md"
+      style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}
+    >
       <div className="text-3xl font-extrabold">{value.toLocaleString("ar-SA")}</div>
       <div className="text-xs mt-1 opacity-90">{label}</div>
     </div>
@@ -278,6 +293,8 @@ function MiniStat({ label, value, grad }: { label: string; value: number; grad: 
 }
 
 function DonorsPanel({ donors }: { donors: DonorRow[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const [q, setQ] = useState("");
   const [seg, setSeg] = useState<string>("all");
   const segments = useMemo(() => Array.from(new Set(donors.map((d) => d.segment))), [donors]);
@@ -306,7 +323,7 @@ function DonorsPanel({ donors }: { donors: DonorRow[] }) {
         head={["#", "الاسم", "الجوال", "المدينة", "الشريحة", "عدد التبرعات", "إجمالي التبرع", "آخر تبرع"]}
         rows={filtered.slice(0, 500).map((d, i) => [
           String(i + 1), d.full_name, d.phone || "—", d.city || "—",
-          <Badge variant="outline" className="border-rose-200 text-rose-700 bg-rose-50">{d.segment}</Badge>,
+          <Badge variant="outline" style={{ borderColor: `${brand}55`, color: brand, background: `${brand}10` }}>{d.segment}</Badge>,
           d.donations_count, SAR(Number(d.total_donated)), fmtDate(d.last_donation_at),
         ])}
       />
@@ -315,6 +332,8 @@ function DonorsPanel({ donors }: { donors: DonorRow[] }) {
 }
 
 function DonationsPanel({ donations }: { donations: Donation[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const [q, setQ] = useState("");
   const [year, setYear] = useState<string>("all");
   const [project, setProject] = useState<string>("all");
@@ -368,10 +387,13 @@ function DonationsPanel({ donations }: { donations: Donation[] }) {
         rows={filtered.slice(0, 1000).map((d, i) => [
           String(i + 1), fmtDate(d.donation_date), d.donor_name || "—", d.donor_phone || "—",
           d.project_name || "—", d.payment_method || "—",
-          <span className="font-bold text-emerald-700">{SAR(Number(d.amount))}</span>,
-          <Badge variant="outline" className={cn(
-            d.status === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-700 border-slate-200"
-          )}>{d.status}</Badge>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(Number(d.amount))}</span>,
+          <Badge
+            variant="outline"
+            style={d.status === "success"
+              ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
+              : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
+          >{d.status}</Badge>,
         ])}
       />
     </div>
@@ -379,6 +401,8 @@ function DonationsPanel({ donations }: { donations: Donation[] }) {
 }
 
 function TopDonorsPanel({ donors }: { donors: DonorRow[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const [limit, setLimit] = useState<string>("50");
   const top = useMemo(() => [...donors].sort((a, b) => Number(b.total_donated) - Number(a.total_donated)).slice(0, Number(limit)), [donors, limit]);
   return (
@@ -394,10 +418,10 @@ function TopDonorsPanel({ donors }: { donors: DonorRow[] }) {
       <DataTable
         head={["#", "الاسم", "الجوال", "المدينة", "عدد التبرعات", "إجمالي التبرع", "أول تبرع", "آخر تبرع"]}
         rows={top.map((d, i) => [
-          <span className={cn("font-bold", i < 3 ? "text-amber-600" : "text-slate-700")}>{i + 1}</span>,
+          <span className="font-bold" style={i < 3 ? { color: brand } : { color: "rgb(51 65 85)" }}>{i + 1}</span>,
           d.full_name, d.phone || "—", d.city || "—",
           d.donations_count,
-          <span className="font-bold text-amber-700">{SAR(Number(d.total_donated))}</span>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(Number(d.total_donated))}</span>,
           fmtDate(d.first_donation_at), fmtDate(d.last_donation_at),
         ])}
       />
@@ -406,6 +430,8 @@ function TopDonorsPanel({ donors }: { donors: DonorRow[] }) {
 }
 
 function RecurringPanel({ donors }: { donors: DonorRow[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const [min, setMin] = useState<string>("2");
   const list = useMemo(() => donors.filter((d) => d.donations_count >= Number(min)).sort((a, b) => b.donations_count - a.donations_count), [donors, min]);
   return (
@@ -423,8 +449,8 @@ function RecurringPanel({ donors }: { donors: DonorRow[] }) {
         head={["#", "الاسم", "الجوال", "عدد التبرعات", "إجمالي", "آخر تبرع"]}
         rows={list.slice(0, 1000).map((d, i) => [
           String(i + 1), d.full_name, d.phone || "—",
-          <Badge className="bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200">{d.donations_count}</Badge>,
-          <span className="font-bold text-fuchsia-700">{SAR(Number(d.total_donated))}</span>,
+          <Badge style={{ background: `${brand}1f`, color: brand, borderColor: `${brand}55` }}>{d.donations_count}</Badge>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(Number(d.total_donated))}</span>,
           fmtDate(d.last_donation_at),
         ])}
       />
@@ -433,6 +459,8 @@ function RecurringPanel({ donors }: { donors: DonorRow[] }) {
 }
 
 function CampaignsPanel({ campaigns }: { campaigns: any[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   return (
     <DataTable
       head={["#", "اسم الحملة", "الهدف", "المُحصّل", "نسبة الإنجاز", "عدد التبرعات", "البداية", "النهاية", "الحالة"]}
@@ -442,15 +470,20 @@ function CampaignsPanel({ campaigns }: { campaigns: any[] }) {
         const pct = goal > 0 ? Math.round((got / goal) * 100) : 0;
         return [
           String(i + 1), c.name, goal ? SAR(goal) : "—",
-          <span className="font-bold text-emerald-700">{SAR(got)}</span>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(got)}</span>,
           <div className="flex items-center gap-2 min-w-[110px]">
             <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full bg-gradient-to-l from-cyan-400 to-sky-500" style={{ width: `${Math.min(100, pct)}%` }} />
+              <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
             </div>
             <span className="text-xs font-semibold text-slate-700 w-9 text-left">{pct}%</span>
           </div>,
           c.donations_count || 0, fmtDate(c.start_date), fmtDate(c.end_date),
-          <Badge variant="outline" className={cn(c.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-700 border-slate-200")}>{c.status}</Badge>,
+          <Badge
+            variant="outline"
+            style={c.status === "active"
+              ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
+              : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
+          >{c.status}</Badge>,
         ];
       })}
     />
@@ -458,6 +491,8 @@ function CampaignsPanel({ campaigns }: { campaigns: any[] }) {
 }
 
 function FailedPanel({ rows }: { rows: any[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
   return (
     <>
@@ -469,9 +504,9 @@ function FailedPanel({ rows }: { rows: any[] }) {
         rows={rows.slice(0, 1000).map((r, i) => [
           String(i + 1), fmtDate(r.attempted_at), r.donor_name || "—", r.donor_phone || "—",
           r.project_name || "—", r.payment_method || "—",
-          <span className="font-bold text-red-700">{SAR(Number(r.amount))}</span>,
+          <span className="font-bold text-slate-800">{SAR(Number(r.amount))}</span>,
           <span className="text-xs text-slate-600">{r.failure_reason || "—"}</span>,
-          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">{r.retry_status}</Badge>,
+          <Badge variant="outline" style={{ background: `${brand}10`, color: brand, borderColor: `${brand}55` }}>{r.retry_status}</Badge>,
         ])}
       />
     </>
@@ -479,6 +514,8 @@ function FailedPanel({ rows }: { rows: any[] }) {
 }
 
 function AbandonedPanel({ rows }: { rows: any[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const recovered = rows.filter((r) => r.recovered).length;
   const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
   return (
@@ -491,10 +528,10 @@ function AbandonedPanel({ rows }: { rows: any[] }) {
         rows={rows.slice(0, 1000).map((r, i) => [
           String(i + 1), fmtDate(r.abandoned_at), r.donor_name || "—", r.donor_phone || "—",
           r.project_name || "—",
-          <span className="font-bold text-amber-700">{SAR(Number(r.amount))}</span>,
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{r.follow_up_status}</Badge>,
+          <span className="font-bold text-slate-800">{SAR(Number(r.amount))}</span>,
+          <Badge variant="outline" style={{ background: `${brand}10`, color: brand, borderColor: `${brand}55` }}>{r.follow_up_status}</Badge>,
           r.recovered
-            ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">نعم</Badge>
+            ? <Badge style={{ background: `${brand}1f`, color: brand, borderColor: `${brand}55` }}>نعم</Badge>
             : <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">لا</Badge>,
         ])}
       />
@@ -503,6 +540,8 @@ function AbandonedPanel({ rows }: { rows: any[] }) {
 }
 
 function SubscriptionsPanel({ rows }: { rows: any[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const active = rows.filter((r) => r.status === "active").length;
   const monthly = rows.filter((r) => r.status === "active").reduce((s, r) => s + Number(r.amount || 0), 0);
   return (
@@ -514,13 +553,14 @@ function SubscriptionsPanel({ rows }: { rows: any[] }) {
         head={["#", "المتبرع", "الجوال", "المشروع", "المبلغ", "البداية", "الاستقطاع التالي", "الحالة"]}
         rows={rows.slice(0, 1000).map((r, i) => [
           String(i + 1), r.donor_name || "—", r.donor_phone || "—", r.project_name || "—",
-          <span className="font-bold text-violet-700">{SAR(Number(r.amount))}</span>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(Number(r.amount))}</span>,
           fmtDate(r.start_date), fmtDate(r.next_charge_date),
-          <Badge variant="outline" className={cn(
-            r.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : r.status === "cancelled" ? "bg-rose-50 text-rose-700 border-rose-200"
-              : "bg-slate-50 text-slate-700 border-slate-200"
-          )}>{r.status}</Badge>,
+          <Badge
+            variant="outline"
+            style={r.status === "active"
+              ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
+              : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
+          >{r.status}</Badge>,
         ])}
       />
     </>
@@ -548,12 +588,14 @@ function SearchBox({ value, onChange, placeholder }: { value: string; onChange: 
 }
 
 function CountChip({ n, total, extra }: { n: number; total: number; extra?: string }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   return (
     <div className="ml-auto flex items-center gap-2 text-xs">
       <Badge variant="outline" className="bg-white border-slate-200 text-slate-700 font-semibold">
         {n.toLocaleString("ar-SA")} / {total.toLocaleString("ar-SA")}
       </Badge>
-      {extra && <Badge className="bg-rose-100 text-rose-700 border-rose-200">{extra}</Badge>}
+      {extra && <Badge style={{ background: `${brand}1f`, color: brand, borderColor: `${brand}55` }}>{extra}</Badge>}
     </div>
   );
 }
@@ -573,7 +615,7 @@ function DataTable({ head, rows }: { head: string[]; rows: (string | number | Re
           </TableHeader>
           <TableBody>
             {rows.map((r, i) => (
-              <TableRow key={i} className="hover:bg-rose-50/40">
+              <TableRow key={i} className="hover:bg-slate-50">
                 {r.map((c, j) => <TableCell key={j} className="text-right whitespace-nowrap">{c as any}</TableCell>)}
               </TableRow>
             ))}
