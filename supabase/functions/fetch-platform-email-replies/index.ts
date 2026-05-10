@@ -51,7 +51,9 @@ Deno.serve(async (req) => {
 
   try {
     await client.connect()
+    console.log('[imap] connected, opening INBOX')
     const lock = await client.getMailboxLock('INBOX')
+    console.log('[imap] mailbox locked')
     try {
       // Get last sync time (default to 24h ago first run)
       const { data: settings } = await supabase
