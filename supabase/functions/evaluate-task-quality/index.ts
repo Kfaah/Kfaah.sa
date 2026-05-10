@@ -35,7 +35,7 @@ serve(async (req) => {
 
     const { data: task, error: tErr } = await admin
       .from("tasks")
-      .select("id, title, description, status, due_date, priority, category, completion_percentage, quality_percentage, estimated_time_minutes, actual_time_minutes, started_at, updated_at, user_id, organization_id")
+      .select("id, title, description, status, due_date, priority, category, source, metadata, completion_percentage, quality_percentage, estimated_time_minutes, actual_time_minutes, started_at, updated_at, user_id, organization_id")
       .eq("id", taskId)
       .maybeSingle();
     if (tErr || !task) {
@@ -52,6 +52,58 @@ serve(async (req) => {
       );
     }
 
+    // ---- Compute expected vs actual minutes from learned baselines ----
+    let actualMin = Number(task.actual_time_minutes) || 0;
+    if ((!actualMin || actualMin <= 0) && task.started_at) {
+      const startedTs = new Date(task.started_at).getTime();
+      const updatedTs = new Date(task.updated_at).getTime();
+      if (Number.isFinite(startedTs) && Number.isFinite(updatedTs) && updatedTs > startedTs) {
+        actualMin = (updatedTs - startedTs) / 60000;
+      }
+    }
+
+    const channel = (task as any)?.metadata?.channel ?? null;
+    const baselineKeys: string[] = [];
+    if (task.source) baselineKeys.push(`source:${task.source}`);
+    if (task.category) baselineKeys.push(`category:${task.category}`);
+    if (channel) baselineKeys.push(`channel:${channel}`);
+
+    let expectedMin = Number(task.estimated_time_minutes) || 0;
+    let baselineSource = "estimated";
+    if (baselineKeys.length && task.organization_id) {
+      const { data: bl } = await admin
+        .from("task_time_baselines")
+        .select("baseline_key, avg_minutes, samples")
+        .eq("organization_id", task.organization_id)
+        .in("baseline_key", baselineKeys);
+      if (bl && bl.length) {
+        // weighted avg by samples
+        const tot = bl.reduce((a: number, r: any) => a + (Number(r.samples) || 1), 0);
+        const w = bl.reduce(
+          (a: number, r: any) => a + (Number(r.avg_minutes) || 0) * (Number(r.samples) || 1),
+          0,
+        );
+        if (tot > 0) {
+          expectedMin = Math.max(3, Math.min(240, w / tot));
+          baselineSource = "learned";
+        }
+      }
+    }
+    if (!expectedMin || expectedMin <= 0) expectedMin = 15;
+
+    const ratio = actualMin > 0 ? actualMin / expectedMin : null;
+    // Efficiency curve: =1.0 → 100, ≤0.6 → 100, 1.5 → 70, 2.0 → 50, 3.0 → 25, ≥4 → 10
+    function efficiencyFromRatio(r: number | null): number {
+      if (r == null) return 70;
+      if (r <= 1.0) return 100;
+      if (r <= 1.25) return 90;
+      if (r <= 1.5) return 75;
+      if (r <= 2.0) return 55;
+      if (r <= 3.0) return 30;
+      return 12;
+    }
+    const timeEfficiency = efficiencyFromRatio(ratio);
+
     const userPrompt = `قيّم جودة إنجاز هذه المهمة من 0 إلى 100.
 
 - العنوان: ${task.title}
@@ -60,12 +112,14 @@ serve(async (req) => {
 - الأولوية: ${task.priority}
 - نسبة الإكمال (المُسجّلة): ${task.completion_percentage ?? 0}%
 - جودة ذاتية مُسجّلة: ${task.quality_percentage ?? "—"}
-- الوقت المقدّر (دقائق): ${task.estimated_time_minutes ?? "—"}
-- الوقت الفعلي (دقائق): ${task.actual_time_minutes ?? "—"}
+- الوقت المتوقع وفق التعلّم (دقائق): ${expectedMin.toFixed(1)} (${baselineSource})
+- الوقت الفعلي (دقائق): ${actualMin ? actualMin.toFixed(1) : "—"}
+- نسبة الفعلي/المتوقع: ${ratio ? ratio.toFixed(2) : "—"}
+- درجة كفاءة الوقت المُحتسبة: ${timeEfficiency}/100
 - موعد التسليم: ${task.due_date ?? "—"}
 - آخر تحديث: ${task.updated_at}
 
-أعطِ تقييماً موضوعياً مع نقاط القوة والتحسين.`;
+أعطِ تقييماً موضوعياً للجودة. **اخفِض درجة الجودة بشكل ملموس إذا تجاوز الوقت الفعلي ضعف المتوقع، أو إذا بدا الموظف يتباطأ بلا مبرر.** اذكر صراحةً ملاحظة عن استثمار الوقت.`;
 
     const aiRes = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -101,8 +155,12 @@ serve(async (req) => {
                     summary: { type: "string" },
                     strengths: { type: "array", items: { type: "string" } },
                     improvements: { type: "array", items: { type: "string" } },
+                    efficiency_notes: {
+                      type: "string",
+                      description: "ملاحظة قصيرة عن استثمار الوقت ومدى تناسبه مع طبيعة المهمة.",
+                    },
                   },
-                  required: ["quality_score", "summary", "strengths", "improvements"],
+                  required: ["quality_score", "summary", "strengths", "improvements", "efficiency_notes"],
                   additionalProperties: false,
                 },
               },
@@ -151,6 +209,11 @@ serve(async (req) => {
           summary: args.summary,
           strengths: args.strengths ?? [],
           improvements: args.improvements ?? [],
+          time_efficiency_score: timeEfficiency,
+          expected_minutes: expectedMin,
+          actual_minutes: actualMin || null,
+          time_ratio: ratio,
+          efficiency_notes: args.efficiency_notes ?? null,
           ai_model: "google/gemini-3-flash-preview",
           evaluated_at: new Date().toISOString(),
         },
@@ -166,7 +229,14 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ ok: true, quality_score: score }),
+      JSON.stringify({
+        ok: true,
+        quality_score: score,
+        time_efficiency_score: timeEfficiency,
+        expected_minutes: expectedMin,
+        actual_minutes: actualMin || null,
+        time_ratio: ratio,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
