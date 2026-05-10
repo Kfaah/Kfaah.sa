@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { type MouseEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -73,7 +73,7 @@ export default function PlatformSubscribe() {
   const whatsappLink = `https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent(summary)}`;
   const mailLink = `mailto:${OWNER_EMAIL}?subject=${encodeURIComponent("طلب اشتراك في منصة كفاءة")}&body=${encodeURIComponent(summary)}`;
 
-  const openWhatsApp = (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const openWhatsApp = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     const opened = window.open(whatsappLink, "_blank", "noopener,noreferrer");
 
