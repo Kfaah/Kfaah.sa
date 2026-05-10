@@ -364,7 +364,11 @@ export default function PlatformSupport() {
         </AnimatePresence>
 
         <div className="mt-10 flex justify-center">
-          <BackToAboutButton onClick={() => navigate("/about")} />
+          {view === "home" ? (
+            <BackToAboutButton onClick={() => navigate("/about")} />
+          ) : (
+            <BackToAboutButton onClick={() => { setView("home"); setDone(false); }} label="العودة إلى الدعم الفني" />
+          )}
         </div>
       </main>
     </div>
