@@ -17,16 +17,16 @@ type SubKey =
   | "overview" | "donors" | "donations" | "top" | "recurring"
   | "campaigns" | "failed" | "abandoned" | "subscriptions";
 
-const SUB_TABS: { key: SubKey; label: string; Icon: any; gradient: string; ring: string; desc: string }[] = [
-  { key: "overview", label: "لوحة عامة", Icon: HeartHandshake, gradient: "from-rose-500 to-pink-600", ring: "ring-rose-300/50", desc: "ملخّص شامل لأداء التبرعات" },
-  { key: "donors", label: "كل المتبرعين", Icon: Users, gradient: "from-indigo-500 to-blue-600", ring: "ring-indigo-300/50", desc: "قائمة وبحث وتصنيف" },
-  { key: "donations", label: "التبرعات", Icon: Wallet, gradient: "from-emerald-500 to-teal-600", ring: "ring-emerald-300/50", desc: "فلترة بالمشروع والسنة" },
-  { key: "top", label: "أعلى المتبرعين", Icon: Trophy, gradient: "from-amber-500 to-orange-500", ring: "ring-amber-300/50", desc: "المتصدّرون بالتبرع" },
-  { key: "recurring", label: "متكرّرون", Icon: Repeat, gradient: "from-fuchsia-500 to-purple-600", ring: "ring-fuchsia-300/50", desc: "تبرّعوا مرتين فأكثر" },
-  { key: "campaigns", label: "الحملات", Icon: Megaphone, gradient: "from-cyan-500 to-sky-600", ring: "ring-cyan-300/50", desc: "نتائج وأهداف الحملات" },
-  { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, gradient: "from-red-500 to-rose-600", ring: "ring-red-300/50", desc: "محاولات لم تكتمل" },
-  { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, gradient: "from-yellow-500 to-amber-600", ring: "ring-yellow-300/50", desc: "تنبيهات استرداد" },
-  { key: "subscriptions", label: "الاستقطاع المتكرر", Icon: CalendarClock, gradient: "from-violet-500 to-indigo-600", ring: "ring-violet-300/50", desc: "اشتراكات شهرية ودورية" },
+const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
+  { key: "overview", label: "لوحة عامة", Icon: HeartHandshake, desc: "ملخّص شامل لأداء التبرعات" },
+  { key: "donors", label: "كل المتبرعين", Icon: Users, desc: "قائمة وبحث وتصنيف" },
+  { key: "donations", label: "التبرعات", Icon: Wallet, desc: "فلترة بالمشروع والسنة" },
+  { key: "top", label: "أعلى المتبرعين", Icon: Trophy, desc: "المتصدّرون بالتبرع" },
+  { key: "recurring", label: "متكرّرون", Icon: Repeat, desc: "تبرّعوا مرتين فأكثر" },
+  { key: "campaigns", label: "الحملات", Icon: Megaphone, desc: "نتائج وأهداف الحملات" },
+  { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, desc: "محاولات لم تكتمل" },
+  { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, desc: "تنبيهات استرداد" },
+  { key: "subscriptions", label: "الاستقطاع المتكرر", Icon: CalendarClock, desc: "اشتراكات شهرية ودورية" },
 ];
 
 const SAR = (n: number) => `${(n || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س`;
@@ -153,13 +153,23 @@ export function DonorsHub({ orgId }: { orgId: string }) {
                 ['--tw-ring-color' as any]: `${brand}55`,
               } : undefined}
             >
-              <div className={cn(
-                "w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-sm ring-1 transition-transform",
-                t.gradient, t.ring,
-                "group-hover:scale-110 group-hover:rotate-3",
-                isActive && "scale-110"
-              )}>
-                <Icon className="w-5 h-5 text-white" strokeWidth={2.4} />
+              <div
+                className={cn(
+                  "w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ring-1 transition-transform group-hover:scale-110",
+                  isActive && "scale-110"
+                )}
+                style={{
+                  background: isActive
+                    ? `linear-gradient(135deg, ${brand}, ${brand}cc)`
+                    : `${brand}15`,
+                  ['--tw-ring-color' as any]: `${brand}40`,
+                }}
+              >
+                <Icon
+                  className="w-5 h-5"
+                  style={{ color: isActive ? "#fff" : brand }}
+                  strokeWidth={2.4}
+                />
               </div>
               <div className="text-center">
                 <div className="text-[12px] font-bold leading-tight" style={isActive ? { color: brand } : undefined}>
