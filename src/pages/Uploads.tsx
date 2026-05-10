@@ -269,12 +269,21 @@ export default function Uploads() {
         ) {
           result = await archiveFile(pf, pf.category);
         } else {
-          // auto / store_master / store_daily — تمر عبر معالج البيانات الذكي
+          // auto / store_master / store_daily / subscriptions / campaigns / gifts / abandoned_carts
+          // تمر جميعها عبر معالج البيانات الذكي ليتولى الكشف والإدراج في الجدول المناسب.
           const formData = new FormData();
           formData.append("file", pf.file);
           if (forDate) formData.append("for_date", forDate);
           if (pf.category === "store_master") formData.append("source_kind", "store_master");
           if (pf.category === "store_daily") formData.append("source_kind", "store_daily");
+          if (
+            pf.category === "subscriptions" ||
+            pf.category === "campaigns" ||
+            pf.category === "gifts" ||
+            pf.category === "abandoned_carts"
+          ) {
+            formData.append("source_kind", pf.category);
+          }
           const { data, error } = await supabase.functions.invoke("process-upload", {
             body: formData,
           });
@@ -315,6 +324,10 @@ export default function Uploads() {
         category === "auto" ||
         category === "store_master" ||
         category === "store_daily" ||
+        category === "subscriptions" ||
+        category === "campaigns" ||
+        category === "gifts" ||
+        category === "abandoned_carts" ||
         category === "staff_duties";
       const arr = Array.from(files).filter((f) => {
         if (isDataCategory) return /\.(xlsx|xls|csv)$/i.test(f.name);
