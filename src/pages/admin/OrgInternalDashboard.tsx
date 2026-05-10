@@ -34,6 +34,7 @@ const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
 const AdminInnovation = lazy(() => import("@/pages/admin/AdminInnovation"));
 const AdminActionPlans = lazy(() => import("@/pages/admin/AdminActionPlans"));
 import { useIsDemo } from "@/hooks/useIsDemo";
+import { DonorsHub } from "@/components/admin/DonorsHub";
 
 // شرح تفصيلي لكل تبويب يظهر للمستخدم أعلى الصفحة عند فتح الأيقونة من الشريط الجانبي.
 const TAB_GUIDES: Record<string, { description: string; features: string[] }> = {
@@ -729,13 +730,7 @@ export default function OrgInternalDashboard({
           </Suspense>
         </TabsContent>
         <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <div className="space-y-4">
-            <PageHeader
-              icon={<HeartHandshake />}
-              title="المتبرعون"
-              subtitle={`إجمالي التبرعات المسجلة: ${counts.donations}. شريحة مفصّلة قادمة بعد رفع الملف الضخم.`}
-            />
-          </div>
+          {orgId ? <DonorsHub orgId={orgId} /> : null}
         </TabsContent>
       </Tabs>
     </div>
