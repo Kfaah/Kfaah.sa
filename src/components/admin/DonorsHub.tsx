@@ -293,6 +293,8 @@ function MiniStat({ label, value, brand }: { label: string; value: number; brand
 }
 
 function DonorsPanel({ donors }: { donors: DonorRow[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const [q, setQ] = useState("");
   const [seg, setSeg] = useState<string>("all");
   const segments = useMemo(() => Array.from(new Set(donors.map((d) => d.segment))), [donors]);
@@ -321,7 +323,7 @@ function DonorsPanel({ donors }: { donors: DonorRow[] }) {
         head={["#", "الاسم", "الجوال", "المدينة", "الشريحة", "عدد التبرعات", "إجمالي التبرع", "آخر تبرع"]}
         rows={filtered.slice(0, 500).map((d, i) => [
           String(i + 1), d.full_name, d.phone || "—", d.city || "—",
-          <Badge variant="outline" className="border-rose-200 text-rose-700 bg-rose-50">{d.segment}</Badge>,
+          <Badge variant="outline" style={{ borderColor: `${brand}55`, color: brand, background: `${brand}10` }}>{d.segment}</Badge>,
           d.donations_count, SAR(Number(d.total_donated)), fmtDate(d.last_donation_at),
         ])}
       />
@@ -330,6 +332,8 @@ function DonorsPanel({ donors }: { donors: DonorRow[] }) {
 }
 
 function DonationsPanel({ donations }: { donations: Donation[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const [q, setQ] = useState("");
   const [year, setYear] = useState<string>("all");
   const [project, setProject] = useState<string>("all");
@@ -383,10 +387,13 @@ function DonationsPanel({ donations }: { donations: Donation[] }) {
         rows={filtered.slice(0, 1000).map((d, i) => [
           String(i + 1), fmtDate(d.donation_date), d.donor_name || "—", d.donor_phone || "—",
           d.project_name || "—", d.payment_method || "—",
-          <span className="font-bold text-emerald-700">{SAR(Number(d.amount))}</span>,
-          <Badge variant="outline" className={cn(
-            d.status === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-700 border-slate-200"
-          )}>{d.status}</Badge>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(Number(d.amount))}</span>,
+          <Badge
+            variant="outline"
+            style={d.status === "success"
+              ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
+              : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
+          >{d.status}</Badge>,
         ])}
       />
     </div>
@@ -394,6 +401,8 @@ function DonationsPanel({ donations }: { donations: Donation[] }) {
 }
 
 function TopDonorsPanel({ donors }: { donors: DonorRow[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const [limit, setLimit] = useState<string>("50");
   const top = useMemo(() => [...donors].sort((a, b) => Number(b.total_donated) - Number(a.total_donated)).slice(0, Number(limit)), [donors, limit]);
   return (
@@ -409,10 +418,10 @@ function TopDonorsPanel({ donors }: { donors: DonorRow[] }) {
       <DataTable
         head={["#", "الاسم", "الجوال", "المدينة", "عدد التبرعات", "إجمالي التبرع", "أول تبرع", "آخر تبرع"]}
         rows={top.map((d, i) => [
-          <span className={cn("font-bold", i < 3 ? "text-amber-600" : "text-slate-700")}>{i + 1}</span>,
+          <span className="font-bold" style={i < 3 ? { color: brand } : { color: "rgb(51 65 85)" }}>{i + 1}</span>,
           d.full_name, d.phone || "—", d.city || "—",
           d.donations_count,
-          <span className="font-bold text-amber-700">{SAR(Number(d.total_donated))}</span>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(Number(d.total_donated))}</span>,
           fmtDate(d.first_donation_at), fmtDate(d.last_donation_at),
         ])}
       />
@@ -421,6 +430,8 @@ function TopDonorsPanel({ donors }: { donors: DonorRow[] }) {
 }
 
 function RecurringPanel({ donors }: { donors: DonorRow[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const [min, setMin] = useState<string>("2");
   const list = useMemo(() => donors.filter((d) => d.donations_count >= Number(min)).sort((a, b) => b.donations_count - a.donations_count), [donors, min]);
   return (
@@ -438,8 +449,8 @@ function RecurringPanel({ donors }: { donors: DonorRow[] }) {
         head={["#", "الاسم", "الجوال", "عدد التبرعات", "إجمالي", "آخر تبرع"]}
         rows={list.slice(0, 1000).map((d, i) => [
           String(i + 1), d.full_name, d.phone || "—",
-          <Badge className="bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200">{d.donations_count}</Badge>,
-          <span className="font-bold text-fuchsia-700">{SAR(Number(d.total_donated))}</span>,
+          <Badge style={{ background: `${brand}1f`, color: brand, borderColor: `${brand}55` }}>{d.donations_count}</Badge>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(Number(d.total_donated))}</span>,
           fmtDate(d.last_donation_at),
         ])}
       />
@@ -448,6 +459,8 @@ function RecurringPanel({ donors }: { donors: DonorRow[] }) {
 }
 
 function CampaignsPanel({ campaigns }: { campaigns: any[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   return (
     <DataTable
       head={["#", "اسم الحملة", "الهدف", "المُحصّل", "نسبة الإنجاز", "عدد التبرعات", "البداية", "النهاية", "الحالة"]}
@@ -457,15 +470,20 @@ function CampaignsPanel({ campaigns }: { campaigns: any[] }) {
         const pct = goal > 0 ? Math.round((got / goal) * 100) : 0;
         return [
           String(i + 1), c.name, goal ? SAR(goal) : "—",
-          <span className="font-bold text-emerald-700">{SAR(got)}</span>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(got)}</span>,
           <div className="flex items-center gap-2 min-w-[110px]">
             <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full bg-gradient-to-l from-cyan-400 to-sky-500" style={{ width: `${Math.min(100, pct)}%` }} />
+              <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
             </div>
             <span className="text-xs font-semibold text-slate-700 w-9 text-left">{pct}%</span>
           </div>,
           c.donations_count || 0, fmtDate(c.start_date), fmtDate(c.end_date),
-          <Badge variant="outline" className={cn(c.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-700 border-slate-200")}>{c.status}</Badge>,
+          <Badge
+            variant="outline"
+            style={c.status === "active"
+              ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
+              : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
+          >{c.status}</Badge>,
         ];
       })}
     />
@@ -473,6 +491,8 @@ function CampaignsPanel({ campaigns }: { campaigns: any[] }) {
 }
 
 function FailedPanel({ rows }: { rows: any[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
   return (
     <>
@@ -484,9 +504,9 @@ function FailedPanel({ rows }: { rows: any[] }) {
         rows={rows.slice(0, 1000).map((r, i) => [
           String(i + 1), fmtDate(r.attempted_at), r.donor_name || "—", r.donor_phone || "—",
           r.project_name || "—", r.payment_method || "—",
-          <span className="font-bold text-red-700">{SAR(Number(r.amount))}</span>,
+          <span className="font-bold text-slate-800">{SAR(Number(r.amount))}</span>,
           <span className="text-xs text-slate-600">{r.failure_reason || "—"}</span>,
-          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">{r.retry_status}</Badge>,
+          <Badge variant="outline" style={{ background: `${brand}10`, color: brand, borderColor: `${brand}55` }}>{r.retry_status}</Badge>,
         ])}
       />
     </>
@@ -494,6 +514,8 @@ function FailedPanel({ rows }: { rows: any[] }) {
 }
 
 function AbandonedPanel({ rows }: { rows: any[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const recovered = rows.filter((r) => r.recovered).length;
   const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
   return (
@@ -506,10 +528,10 @@ function AbandonedPanel({ rows }: { rows: any[] }) {
         rows={rows.slice(0, 1000).map((r, i) => [
           String(i + 1), fmtDate(r.abandoned_at), r.donor_name || "—", r.donor_phone || "—",
           r.project_name || "—",
-          <span className="font-bold text-amber-700">{SAR(Number(r.amount))}</span>,
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{r.follow_up_status}</Badge>,
+          <span className="font-bold text-slate-800">{SAR(Number(r.amount))}</span>,
+          <Badge variant="outline" style={{ background: `${brand}10`, color: brand, borderColor: `${brand}55` }}>{r.follow_up_status}</Badge>,
           r.recovered
-            ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">نعم</Badge>
+            ? <Badge style={{ background: `${brand}1f`, color: brand, borderColor: `${brand}55` }}>نعم</Badge>
             : <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">لا</Badge>,
         ])}
       />
@@ -518,6 +540,8 @@ function AbandonedPanel({ rows }: { rows: any[] }) {
 }
 
 function SubscriptionsPanel({ rows }: { rows: any[] }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const active = rows.filter((r) => r.status === "active").length;
   const monthly = rows.filter((r) => r.status === "active").reduce((s, r) => s + Number(r.amount || 0), 0);
   return (
@@ -529,13 +553,14 @@ function SubscriptionsPanel({ rows }: { rows: any[] }) {
         head={["#", "المتبرع", "الجوال", "المشروع", "المبلغ", "البداية", "الاستقطاع التالي", "الحالة"]}
         rows={rows.slice(0, 1000).map((r, i) => [
           String(i + 1), r.donor_name || "—", r.donor_phone || "—", r.project_name || "—",
-          <span className="font-bold text-violet-700">{SAR(Number(r.amount))}</span>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(Number(r.amount))}</span>,
           fmtDate(r.start_date), fmtDate(r.next_charge_date),
-          <Badge variant="outline" className={cn(
-            r.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : r.status === "cancelled" ? "bg-rose-50 text-rose-700 border-rose-200"
-              : "bg-slate-50 text-slate-700 border-slate-200"
-          )}>{r.status}</Badge>,
+          <Badge
+            variant="outline"
+            style={r.status === "active"
+              ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
+              : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
+          >{r.status}</Badge>,
         ])}
       />
     </>
@@ -563,12 +588,14 @@ function SearchBox({ value, onChange, placeholder }: { value: string; onChange: 
 }
 
 function CountChip({ n, total, extra }: { n: number; total: number; extra?: string }) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   return (
     <div className="ml-auto flex items-center gap-2 text-xs">
       <Badge variant="outline" className="bg-white border-slate-200 text-slate-700 font-semibold">
         {n.toLocaleString("ar-SA")} / {total.toLocaleString("ar-SA")}
       </Badge>
-      {extra && <Badge className="bg-rose-100 text-rose-700 border-rose-200">{extra}</Badge>}
+      {extra && <Badge style={{ background: `${brand}1f`, color: brand, borderColor: `${brand}55` }}>{extra}</Badge>}
     </div>
   );
 }
@@ -588,7 +615,7 @@ function DataTable({ head, rows }: { head: string[]; rows: (string | number | Re
           </TableHeader>
           <TableBody>
             {rows.map((r, i) => (
-              <TableRow key={i} className="hover:bg-rose-50/40">
+              <TableRow key={i} className="hover:bg-slate-50">
                 {r.map((c, j) => <TableCell key={j} className="text-right whitespace-nowrap">{c as any}</TableCell>)}
               </TableRow>
             ))}
