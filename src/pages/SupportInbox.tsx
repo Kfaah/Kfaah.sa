@@ -314,6 +314,22 @@ export default function SupportInbox() {
       onConfirm: async () => {
         if (m.id.startsWith("pem:")) {
           const threadId = m.id.slice(4);
+          // Tombstone provider IDs so the IMAP sync doesn't re-import them
+          const { data: msgs } = await supabase
+            .from("platform_email_messages")
+            .select("provider_message_id")
+            .eq("thread_id", threadId);
+          const ids = (msgs || [])
+            .map((r) => r.provider_message_id)
+            .filter((v): v is string => !!v);
+          if (ids.length) {
+            await supabase
+              .from("platform_email_deleted_ids")
+              .upsert(
+                ids.map((provider_message_id) => ({ provider_message_id })),
+                { onConflict: "provider_message_id" }
+              );
+          }
           await supabase.from("platform_email_messages").delete().eq("thread_id", threadId);
           await supabase.from("platform_email_threads").delete().eq("id", threadId);
         } else {

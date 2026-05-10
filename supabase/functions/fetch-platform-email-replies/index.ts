@@ -108,6 +108,12 @@ Deno.serve(async (req) => {
           }
           const envelopeProviderId = normalizeMessageId(msg.envelope?.messageId)
           if (envelopeProviderId) {
+            const { data: tomb } = await supabase
+              .from('platform_email_deleted_ids')
+              .select('id')
+              .eq('provider_message_id', envelopeProviderId)
+              .maybeSingle()
+            if (tomb) { stats.skipped++; continue }
             const { data: existing } = await supabase
               .from('platform_email_messages')
               .select('id')
@@ -145,6 +151,12 @@ Deno.serve(async (req) => {
 
           // Dedupe by provider_message_id
           if (providerId) {
+            const { data: tomb2 } = await supabase
+              .from('platform_email_deleted_ids')
+              .select('id')
+              .eq('provider_message_id', providerId)
+              .maybeSingle()
+            if (tomb2) { stats.skipped++; continue }
             const { data: existing } = await supabase
               .from('platform_email_messages')
               .select('id').eq('provider_message_id', providerId).maybeSingle()

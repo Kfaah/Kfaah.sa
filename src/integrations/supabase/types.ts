@@ -3446,6 +3446,24 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_email_deleted_ids: {
+        Row: {
+          deleted_at: string
+          id: string
+          provider_message_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          id?: string
+          provider_message_id: string
+        }
+        Update: {
+          deleted_at?: string
+          id?: string
+          provider_message_id?: string
+        }
+        Relationships: []
+      }
       platform_email_messages: {
         Row: {
           body: string
