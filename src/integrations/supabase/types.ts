@@ -3517,6 +3517,36 @@ export type Database = {
           },
         ]
       }
+      platform_email_settings: {
+        Row: {
+          footer: string
+          footer_enabled: boolean
+          id: boolean
+          sender_name: string
+          signature: string
+          signature_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          footer?: string
+          footer_enabled?: boolean
+          id?: boolean
+          sender_name?: string
+          signature?: string
+          signature_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          footer?: string
+          footer_enabled?: boolean
+          id?: boolean
+          sender_name?: string
+          signature?: string
+          signature_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_email_sync_settings: {
         Row: {
           created_at: string

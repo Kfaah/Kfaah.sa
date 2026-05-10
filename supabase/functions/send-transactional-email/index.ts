@@ -286,6 +286,31 @@ Deno.serve(async (req) => {
   }
 
   // 4. Render React Email template to HTML and plain text
+  // Apply platform email settings (sender name, signature, footer) for platform templates
+  let resolvedFromName = 'منصة كفاءة'
+  if (templateName === 'platform-mail' || templateName === 'support-reply') {
+    const { data: settings } = await supabase
+      .from('platform_email_settings')
+      .select('sender_name, signature, signature_enabled, footer, footer_enabled')
+      .eq('id', true)
+      .maybeSingle()
+    if (settings) {
+      if (settings.sender_name && settings.sender_name.trim()) {
+        resolvedFromName = settings.sender_name.trim()
+      }
+      const bodyKey = templateName === 'platform-mail' ? 'body' : 'replyBody'
+      const baseBody = String(templateData?.[bodyKey] ?? '')
+      const parts: string[] = [baseBody]
+      if (settings.signature_enabled && settings.signature?.trim()) {
+        parts.push('', settings.signature.trim())
+      }
+      if (settings.footer_enabled && settings.footer?.trim()) {
+        parts.push('', settings.footer.trim())
+      }
+      templateData = { ...templateData, [bodyKey]: parts.join('\n') }
+    }
+  }
+
   const html = await renderAsync(
     React.createElement(template.component, templateData)
   )
@@ -316,7 +341,7 @@ Deno.serve(async (req) => {
     payload: {
       message_id: messageId,
       to: effectiveRecipient,
-      from: `منصة كفاءة <info@kfaah.org>`,
+      from: `${resolvedFromName} <info@kfaah.org>`,
       reply_to: 'info@kfaah.org',
       sender_domain: SENDER_DOMAIN,
       subject: resolvedSubject,
