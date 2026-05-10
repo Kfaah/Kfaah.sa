@@ -55,6 +55,24 @@ type Draft = {
   updated_at: string;
 };
 
+type PlatformEmailThread = {
+  id: string;
+  recipient_email: string;
+  recipient_name: string | null;
+  subject: string | null;
+  last_message_at: string | null;
+  unread_for_owner: boolean | null;
+  is_trashed?: boolean | null;
+};
+
+type PlatformEmailMessage = {
+  id: string;
+  thread_id: string;
+  body: string | null;
+  received_at: string | null;
+  created_at: string | null;
+};
+
 type FolderId = "inbox" | "starred" | "sent" | "drafts" | "archive" | "spam" | "trash";
 
 const FOLDERS: { id: FolderId; label: string; icon: any; color: string }[] = [
@@ -76,7 +94,7 @@ export default function SupportInbox() {
   const [messages, setMessages] = useState<SupportMsg[]>([]);
   const [allReplies, setAllReplies] = useState<Reply[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [pemOutbound, setPemOutbound] = useState<any[]>([]);
+  const [pemOutbound, setPemOutbound] = useState<PlatformEmailMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [folder, setFolder] = useState<FolderId>("inbox");
   const [selectedId, setSelectedId] = useState<string | null>(null);
