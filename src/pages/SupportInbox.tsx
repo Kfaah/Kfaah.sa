@@ -812,7 +812,7 @@ export default function SupportInbox() {
   );
 }
 
-function ToolbarButton({ icon: Icon, label, onClick, danger }: any) {
+function ToolbarButton({ icon: Icon, label, onClick, danger }: { icon: ComponentType<{ className?: string }>; label: string; onClick: () => void; danger?: boolean }) {
   return (
     <button
       onClick={onClick}
@@ -826,7 +826,7 @@ function ToolbarButton({ icon: Icon, label, onClick, danger }: any) {
   );
 }
 function Sep() { return <span className="w-px h-5 bg-white/15 mx-1" />; }
-function EmptyState({ icon: Icon, text }: any) {
+function EmptyState({ icon: Icon, text }: { icon: ComponentType<{ className?: string }>; text: string }) {
   return (
     <div className="p-12 text-center">
       <Icon className="w-12 h-12 text-white/15 mx-auto mb-3" />
@@ -835,7 +835,19 @@ function EmptyState({ icon: Icon, text }: any) {
   );
 }
 
-function ComposeView({ to, setTo, subject, setSubject, body, setBody, onClose, onSend, onSaveDraft, onDeleteDraft, sending }: any) {
+function ComposeView({ to, setTo, subject, setSubject, body, setBody, onClose, onSend, onSaveDraft, onDeleteDraft, sending }: {
+  to: string;
+  setTo: Dispatch<SetStateAction<string>>;
+  subject: string;
+  setSubject: Dispatch<SetStateAction<string>>;
+  body: string;
+  setBody: Dispatch<SetStateAction<string>>;
+  onClose: () => void;
+  onSend: () => void;
+  onSaveDraft: () => void;
+  onDeleteDraft?: () => void;
+  sending: boolean;
+}) {
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-l from-cyan-400/10 to-transparent">
@@ -887,7 +899,7 @@ function ComposeView({ to, setTo, subject, setSubject, body, setBody, onClose, o
   );
 }
 
-function Field({ label, children }: any) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-3">
       <label className="text-xs font-bold text-slate-400 w-16 shrink-0">{label}</label>
