@@ -7,6 +7,7 @@ import {
   GitCompareArrows, CalendarCheck, ClipboardList, FileSpreadsheet, XCircle,
   Database, FileText, IdCard, FolderOpen,
   UserPlus, Briefcase, Search, Mail, Phone, Crown, Pencil, Trash2,
+  BrainCircuit, ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
