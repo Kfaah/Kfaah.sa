@@ -2620,6 +2620,7 @@ export type Database = {
       }
       internal_messages: {
         Row: {
+          attachments: Json
           body: string
           created_at: string
           from_admin: boolean
@@ -2628,6 +2629,7 @@ export type Database = {
           thread_id: string
         }
         Insert: {
+          attachments?: Json
           body: string
           created_at?: string
           from_admin?: boolean
@@ -2636,6 +2638,7 @@ export type Database = {
           thread_id: string
         }
         Update: {
+          attachments?: Json
           body?: string
           created_at?: string
           from_admin?: boolean

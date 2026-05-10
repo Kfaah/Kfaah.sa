@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Inbox, Loader2, Reply, PenSquare, LifeBuoy, Shield } from "lucide-react";
+import { Send, Inbox, Loader2, Reply, PenSquare, LifeBuoy, Shield, Paperclip, X, FileText, Download } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +23,98 @@ type Msg = {
   from_admin: boolean;
   body: string;
   created_at: string;
+  attachments?: Attachment[] | null;
 };
+
+type Attachment = { name: string; url: string; type: string; size: number };
+
+function fmtSize(n: number) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function FilePickList({
+  files, onAdd, onRemove, inputRef, compact,
+}: {
+  files: File[];
+  onAdd: (fs: File[]) => void;
+  onRemove: (idx: number) => void;
+  inputRef: React.RefObject<HTMLInputElement>;
+  compact?: boolean;
+}) {
+  return (
+    <div className={compact ? "space-y-1" : "space-y-2"}>
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const fs = Array.from(e.target.files || []);
+          if (fs.length) onAdd(fs);
+          if (inputRef.current) inputRef.current.value = "";
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+      >
+        <Paperclip className="w-3.5 h-3.5" />
+        إرفاق ملفات
+      </button>
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {files.map((f, i) => (
+            <div key={i} className="inline-flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1 text-xs max-w-[260px]">
+              <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{f.name}</span>
+              <span className="text-muted-foreground shrink-0">{fmtSize(f.size)}</span>
+              <button type="button" onClick={() => onRemove(i)} className="text-muted-foreground hover:text-destructive">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AttachmentList({ items, mine }: { items: Attachment[]; mine: boolean }) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {items.map((a, i) => {
+        const isImg = a.type?.startsWith("image/");
+        if (isImg) {
+          return (
+            <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="block">
+              <img src={a.url} alt={a.name} className="max-h-40 rounded-lg border border-border object-cover" />
+            </a>
+          );
+        }
+        return (
+          <a
+            key={i}
+            href={a.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium border ${
+              mine
+                ? "bg-background border-border text-foreground hover:bg-muted"
+                : "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/20"
+            }`}
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="truncate max-w-[180px]">{a.name}</span>
+            <span className="opacity-70">{fmtSize(a.size)}</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
 
 type Folder = "inbox" | "sent" | "compose";
 
@@ -42,6 +133,12 @@ export default function Messages() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [hasMemberSent, setHasMemberSent] = useState<Record<string, boolean>>({});
+
+  // Attachment state
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [composeFiles, setComposeFiles] = useState<File[]>([]);
+  const replyFileInputRef = useRef<HTMLInputElement>(null);
+  const composeFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -63,7 +160,7 @@ export default function Messages() {
   const loadMessages = useCallback(async (tid: string) => {
     const { data } = await supabase
       .from("internal_messages")
-      .select("id,thread_id,sender_user_id,from_admin,body,created_at")
+      .select("id,thread_id,sender_user_id,from_admin,body,created_at,attachments")
       .eq("thread_id", tid)
       .order("created_at", { ascending: true });
     setMessages((data as Msg[]) || []);
@@ -108,19 +205,44 @@ export default function Messages() {
     })();
   }, [threads, user]);
 
+  const uploadFiles = async (files: File[], threadId: string): Promise<Attachment[]> => {
+    const out: Attachment[] = [];
+    for (const f of files) {
+      if (f.size > 20 * 1024 * 1024) {
+        toast.error(`الملف ${f.name} يتجاوز 20MB`);
+        continue;
+      }
+      const ext = f.name.includes(".") ? f.name.split(".").pop() : "";
+      const path = `${threadId}/${crypto.randomUUID()}${ext ? "." + ext : ""}`;
+      const { error } = await supabase.storage
+        .from("internal-message-attachments")
+        .upload(path, f, { contentType: f.type || undefined, upsert: false });
+      if (error) {
+        toast.error(`تعذّر رفع ${f.name}`);
+        continue;
+      }
+      const { data: pub } = supabase.storage.from("internal-message-attachments").getPublicUrl(path);
+      out.push({ name: f.name, url: pub.publicUrl, type: f.type || "application/octet-stream", size: f.size });
+    }
+    return out;
+  };
+
   const sendReply = async () => {
     if (!user || !selectedId) return;
-    if (!body.trim()) return toast.error("اكتب رسالتك أولاً");
+    if (!body.trim() && replyFiles.length === 0) return toast.error("اكتب رسالتك أو أرفق ملفًا");
     setSending(true);
     try {
+      const attachments = replyFiles.length > 0 ? await uploadFiles(replyFiles, selectedId) : [];
       const { error } = await supabase.from("internal_messages").insert({
         thread_id: selectedId,
         sender_user_id: user.id,
         from_admin: false,
         body: body.trim().slice(0, 5000),
+        attachments: attachments as any,
       });
       if (error) throw error;
       setBody("");
+      setReplyFiles([]);
       loadMessages(selectedId);
     } catch (e: any) {
       toast.error(e?.message || "تعذّر الإرسال");
@@ -129,7 +251,7 @@ export default function Messages() {
 
   const sendCompose = async () => {
     if (!user) return;
-    if (!composeBody.trim()) return toast.error("اكتب نص الرسالة");
+    if (!composeBody.trim() && composeFiles.length === 0) return toast.error("اكتب نص الرسالة أو أرفق ملفًا");
     setSending(true);
     try {
       const { data: created, error: tErr } = await supabase
@@ -142,16 +264,19 @@ export default function Messages() {
         .single();
       if (tErr) throw tErr;
       const tid = (created as any).id;
+      const attachments = composeFiles.length > 0 ? await uploadFiles(composeFiles, tid) : [];
       const { error: mErr } = await supabase.from("internal_messages").insert({
         thread_id: tid,
         sender_user_id: user.id,
         from_admin: false,
         body: composeBody.trim().slice(0, 5000),
+        attachments: attachments as any,
       });
       if (mErr) throw mErr;
       toast.success("تم إرسال الرسالة");
       setComposeSubject("");
       setComposeBody("");
+      setComposeFiles([]);
       setSelectedId(tid);
       setFolder("sent");
       loadThreads();
@@ -253,6 +378,12 @@ export default function Messages() {
                     className="resize-none"
                   />
                 </div>
+                <FilePickList
+                  files={composeFiles}
+                  onAdd={(fs) => setComposeFiles((prev) => [...prev, ...fs])}
+                  onRemove={(i) => setComposeFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                  inputRef={composeFileInputRef}
+                />
                 <div className="flex justify-end">
                   <Button onClick={sendCompose} disabled={sending} className="gap-2">
                     {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -279,7 +410,10 @@ export default function Messages() {
                                 : "bg-primary text-primary-foreground border-primary"
                             }`}
                           >
-                            <div className="whitespace-pre-wrap">{m.body}</div>
+                            {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
+                            {m.attachments && m.attachments.length > 0 && (
+                              <AttachmentList items={m.attachments} mine={mine} />
+                            )}
                             <div className={`text-[10px] mt-1.5 text-left ${mine ? "text-muted-foreground" : "text-primary-foreground/80"}`} dir="ltr">{fmt(m.created_at)}</div>
                           </div>
                         </div>
@@ -289,7 +423,14 @@ export default function Messages() {
                 </div>
 
                 {selected && (
-                  <div className="border-t border-border p-4 bg-muted/30">
+                  <div className="border-t border-border p-4 bg-muted/30 space-y-2">
+                    <FilePickList
+                      files={replyFiles}
+                      onAdd={(fs) => setReplyFiles((prev) => [...prev, ...fs])}
+                      onRemove={(i) => setReplyFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                      inputRef={replyFileInputRef}
+                      compact
+                    />
                     <div className="flex items-end gap-2">
                       <Textarea
                         value={body}
