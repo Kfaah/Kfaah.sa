@@ -87,6 +87,7 @@ export default function SupportInbox() {
   const [composeTo, setComposeTo] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
+  const [syncing, setSyncing] = useState(false);
 
   // Auth
   useEffect(() => {
@@ -445,6 +446,8 @@ export default function SupportInbox() {
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={async () => {
+                if (syncing) return;
+                setSyncing(true);
                 const t = toast.loading("جاري سحب الرسائل من البريد...");
                 try {
                   const { data, error } = await supabase.functions.invoke("fetch-platform-email-replies", { body: {} });
@@ -453,13 +456,16 @@ export default function SupportInbox() {
                   toast.success(s ? `تمت المزامنة — جديد: ${s.inserted ?? 0}` : "تمت المزامنة", { id: t });
                 } catch (e: any) {
                   toast.error(e?.message || "تعذّرت مزامنة البريد", { id: t });
+                } finally {
+                  setSyncing(false);
                 }
                 await loadAll();
               }}
-              className="p-2 rounded-lg hover:bg-white/10"
+              disabled={syncing}
+              className="p-2 rounded-lg hover:bg-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
               title="تحديث وسحب الرسائل من Zoho"
             >
-              <RefreshCcw className="w-4 h-4 text-slate-300" />
+              <RefreshCcw className={`w-4 h-4 text-slate-300 ${syncing ? "animate-spin" : ""}`} />
             </button>
             <button onClick={() => navigate("/")} className="text-xs font-bold text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10">
               للرئيسية <ArrowRight className="inline w-3 h-3 mr-1 rotate-180" />
