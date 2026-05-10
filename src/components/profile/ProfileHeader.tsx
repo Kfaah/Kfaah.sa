@@ -32,7 +32,11 @@ export function ProfileHeader({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-primary via-accent to-primary/90"
+      className="relative overflow-hidden rounded-2xl shadow-xl"
+      style={{
+        background:
+          "linear-gradient(to left, hsl(var(--primary)) 0%, hsl(var(--primary)) 72%, hsl(var(--accent)) 100%)",
+      }}
     >
       {/* Animated Background Decorations */}
       <div className="absolute inset-0 opacity-20">
