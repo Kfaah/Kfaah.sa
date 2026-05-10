@@ -592,7 +592,7 @@ export default function SupportInbox() {
               <Mail className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-base md:text-lg font-extrabold text-white">بريد كفاءة</h1>
+              <h1 className="text-base md:text-lg font-extrabold text-white">بريد منصة كفاءة</h1>
               <p className="text-[11px] text-slate-400">info@kfaah.org</p>
             </div>
           </div>
