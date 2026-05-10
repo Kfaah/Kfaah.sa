@@ -726,7 +726,7 @@ export function Sidebar() {
               {/* التواصل مع المنصة (الدعم الفني) — يخفى عن مدير النظام (super_admin) فقط */}
               {!isSuperAdmin && (
                 <Link
-                  to="/internal-inbox"
+                  to="/messages"
                   state={{ fromNavigation: true }}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none bg-white/15 text-white hover:bg-white/25 transition-colors text-sm backdrop-blur-sm"
                 >
