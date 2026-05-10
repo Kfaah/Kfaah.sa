@@ -316,9 +316,6 @@ export default function Uploads() {
           (async () => {
             try {
               const { data: u } = await supabase.auth.getUser();
-              const orgId =
-                (u.user?.user_metadata as any)?.organization_id ||
-                (u.user?.app_metadata as any)?.organization_id;
               if (!orgId) return;
               const { data: intelData } = await supabase.functions.invoke(
                 "daily-donor-intelligence",
