@@ -118,15 +118,17 @@ function DateSelect({ value, onChange }: { value: DateValue; onChange: (v: DateV
       </Select>
       <Popover open={openCustom} onOpenChange={setOpenCustom}>
         <PopoverTrigger asChild>
-          <Button
+          <span aria-hidden className="sr-only" />
+        </PopoverTrigger>
+        {customLabel && (
+          <Badge
             variant="outline"
-            size="sm"
-            className={cn("h-9 px-3 text-xs font-semibold", value.key === "custom" && "bg-accent text-accent-foreground border-accent")}
+            className="h-9 px-3 text-xs font-semibold bg-accent/10 text-accent border-accent/40 cursor-pointer flex items-center"
             onClick={() => setOpenCustom(true)}
           >
-            {customLabel || "اختر تواريخ…"}
-          </Button>
-        </PopoverTrigger>
+            {customLabel}
+          </Badge>
+        )}
         <PopoverContent className="w-auto p-3 bg-popover" align="end">
           <div className="flex gap-3 flex-wrap">
             <div>
