@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, type ComponentType, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Inbox, Search, Mail, Phone, MessageCircle, Send, ArrowRight,
@@ -75,7 +75,9 @@ type PlatformEmailMessage = {
 
 type FolderId = "inbox" | "starred" | "sent" | "drafts" | "archive" | "spam" | "trash";
 
-const FOLDERS: { id: FolderId; label: string; icon: any; color: string }[] = [
+const getErrorMessage = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
+
+const FOLDERS: { id: FolderId; label: string; icon: ComponentType<{ className?: string }>; color: string }[] = [
   { id: "inbox", label: "صندوق الوارد", icon: Inbox, color: "text-cyan-300" },
   { id: "starred", label: "المميّزة", icon: Star, color: "text-amber-300" },
   { id: "sent", label: "المُرسَلة", icon: Send, color: "text-emerald-300" },
