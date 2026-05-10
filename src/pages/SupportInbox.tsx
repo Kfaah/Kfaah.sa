@@ -414,22 +414,44 @@ export default function SupportInbox() {
     }
     setSending(true);
     try {
-      await supabase.functions.invoke("send-transactional-email", {
+      const toEmail = composeTo.trim().toLowerCase();
+      const subject = composeSubject.trim() || "رسالة من كفاءة";
+      const body = composeBody.trim();
+      const messageId = `${crypto.randomUUID()}@kfaah.org`;
+      const { error: sendErr } = await supabase.functions.invoke("send-transactional-email", {
         body: {
-          templateName: "support-reply",
-          recipientEmail: composeTo.trim(),
+          templateName: "platform-mail",
+          recipientEmail: toEmail,
+          messageId,
           templateData: {
-            senderName: composeTo.trim(),
-            originalSubject: composeSubject || "رسالة من كفاءة",
-            originalMessage: "",
-            replyBody: composeBody.trim(),
+            subject,
+            body,
+            recipientName: toEmail,
           },
         },
+      });
+      if (sendErr) throw sendErr;
+      const { data: thread, error: threadErr } = await supabase
+        .from("platform_email_threads")
+        .insert({ recipient_email: toEmail, subject, last_message_at: new Date().toISOString() })
+        .select("id")
+        .single();
+      if (threadErr) throw threadErr;
+      await supabase.from("platform_email_messages").insert({
+        thread_id: thread.id,
+        direction: "outbound",
+        sender_email: "info@kfaah.org",
+        recipient_email: toEmail,
+        subject,
+        body,
+        provider_message_id: messageId,
       });
       if (selectedDraftId) await supabase.from("support_drafts").delete().eq("id", selectedDraftId);
       toast.success("تم الإرسال");
       setComposing(false);
       setComposeTo(""); setComposeSubject(""); setComposeBody(""); setSelectedDraftId(null);
+      setFolder("sent");
+      await loadAll();
     } catch (e: any) {
       toast.error(e?.message || "تعذّر الإرسال");
     } finally { setSending(false); }
