@@ -240,6 +240,7 @@ Deno.serve(async (req) => {
     const file = form.get("file") as File | null;
     const forDate = form.get("for_date") as string | null;
     const targetOrgId = (form.get("target_organization_id") as string | null) || null;
+    const sourceKind = (form.get("source_kind") as string | null) || null;
     if (!file) {
       return new Response(JSON.stringify({ error: "Missing file" }), {
         status: 400,
@@ -271,7 +272,22 @@ Deno.serve(async (req) => {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null });
     const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
-    const detected = detectType(headers);
+    const autoDetected = detectType(headers);
+    // يسمح للواجهة بفرض نوع الملف (مثلاً عند رفع المستخدم لملف "إهداءات" صريح)
+    // تجاوزات معتمدة فقط — أي قيمة أخرى تُتجاهل ويُعتمد الكشف التلقائي.
+    const allowedOverrides: DetectedType[] = [
+      "donations",
+      "failed_donations",
+      "bank_transfers",
+      "abandoned_carts",
+      "campaigns",
+      "subscriptions",
+      "gifts",
+    ];
+    const detected: DetectedType =
+      sourceKind && allowedOverrides.includes(sourceKind as DetectedType)
+        ? (sourceKind as DetectedType)
+        : autoDetected;
 
     // Create upload log
     const { data: logRow, error: logErr } = await admin
