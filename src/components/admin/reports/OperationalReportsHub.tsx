@@ -201,24 +201,10 @@ function ReportView({
     if (!ai?.actions?.length) return;
     setCreatingTasks(true);
     try {
-      // pick employees of this org (round-robin)
-      const { data: emps } = await supabase
-        .from("employees")
-        .select("user_id")
-        .eq("organization_id", orgId)
-        .eq("status", "active")
-        .not("user_id", "is", null);
-      const userIds = (emps || []).map(e => e.user_id).filter(Boolean) as string[];
-      if (!userIds.length) {
-        toast.error("لا يوجد موظفون نشطون لإسناد المهام إليهم");
-        return;
-      }
-      const today = new Date();
-      const taskRows = ai.actions.map((a, i) => {
-        const due = new Date(today);
-        due.setDate(due.getDate() + Math.max(1, Math.min(14, a.due_in_days || 3)));
+      const suggestions = ai.actions.map((a) => {
         const channel = CHANNEL_LABEL[a.channel]?.label || a.channel;
         return {
+          source: `report:${reportKey}`,
           title: `[${definition.title}] ${a.title}`.slice(0, 200),
           description:
 `الشريحة المستهدفة: ${a.target_segment}
@@ -232,19 +218,27 @@ ${a.suggested_message}
 ${a.rationale}
 
 — مولّدة من ${definition.title} عبر الاقتراحات الذكية`,
-          user_id: userIds[i % userIds.length],
-          organization_id: orgId,
+          channel: a.channel,
           priority: a.priority,
-          status: "pending",
+          suggested_message: a.suggested_message,
+          due_in_days: Math.max(1, Math.min(14, a.due_in_days || 3)),
           category: "متابعة المتبرعين",
-          due_date: due.toISOString().slice(0, 10),
-          ai_generated: true,
-          estimated_time_minutes: 30,
+          dedupe_key: `report:${reportKey}|${a.title}`.slice(0, 200),
+          metadata: { target_segment: a.target_segment, estimated_count: a.estimated_count, rationale: a.rationale },
         };
       });
-      const { error } = await supabase.from("tasks").insert(taskRows);
+      const { data, error } = await supabase.functions.invoke("smart-task-dispatcher", {
+        body: { organization_id: orgId, suggestions },
+      });
       if (error) throw error;
-      toast.success(`تم إنشاء ${taskRows.length} مهمة وإسنادها على الموظفين`);
+      const scheduled = data?.scheduled ?? 0;
+      const overflow = data?.overflow ?? 0;
+      const dupes = data?.skipped_dupes ?? 0;
+      toast.success(
+        `تم توزيع ${scheduled} مهمة على الموظفين` +
+          (overflow ? ` · ${overflow} مهمة مؤجَّلة لتجاوز السعة اليومية` : "") +
+          (dupes ? ` · ${dupes} مكرّرة تم تجاهلها` : "")
+      );
     } catch (e: any) {
       toast.error(e.message || "تعذر إنشاء المهام");
     } finally {
