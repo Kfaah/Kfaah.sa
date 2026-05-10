@@ -319,7 +319,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
       </div>
 
       {/* Sub-icons */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-11 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-12 gap-2">
         {SUB_TABS.map((t, idx) => {
           const Icon = t.Icon;
           const isActive = active === t.key;
@@ -388,6 +388,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
               abandoned={abandoned}
             />
           )}
+          {active === "intelligence" && <IntelligencePanel orgId={orgId} brand={brand} />}
         </div>
       )}
     </div>
