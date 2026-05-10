@@ -1808,22 +1808,23 @@ function ReportsLandingCard({
     <button
       type="button"
       onClick={onClick}
-      className="group relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-50 via-card to-card dark:from-emerald-950/30 p-7 text-right transition hover:shadow-2xl hover:border-emerald-500/60 hover:-translate-y-0.5"
+      className="group relative overflow-hidden rounded-2xl border border-blue-600/40 bg-gradient-to-l from-blue-700 via-blue-600 to-emerald-600 p-7 text-right text-white shadow-xl transition hover:shadow-2xl hover:-translate-y-1"
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="relative z-10 flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
-          <h3 className="text-2xl font-bold text-foreground">{title}</h3>
-          <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+          <h3 className="text-2xl font-bold text-white">{title}</h3>
+          <p className="text-sm leading-relaxed text-white/85">{description}</p>
         </div>
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg transition group-hover:scale-110">
-          <Icon className="h-7 w-7" />
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm ring-1 ring-white/25 text-white transition group-hover:scale-110 group-hover:bg-white/25">
+          <Icon className="h-8 w-8" />
         </div>
       </div>
-      <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+      <div className="relative z-10 mt-6 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm ring-1 ring-white/20 transition group-hover:bg-white/25">
         {cta}
-        <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
+        <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-1.5" />
       </div>
-      <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-emerald-500/15 blur-3xl transition group-hover:bg-emerald-500/30" />
+      <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-emerald-300/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-10 -bottom-16 h-44 w-44 rounded-full bg-blue-300/20 blur-3xl" />
     </button>
   );
 }
