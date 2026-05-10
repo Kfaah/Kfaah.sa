@@ -304,7 +304,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
               <HeartHandshake className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="text-3xl font-extrabold text-slate-900">مركز المتبرعين</h2>
+              <h2 className="text-3xl font-extrabold text-slate-900">مركز التبرعات</h2>
               <p className="text-base text-slate-600">قاعدة بيانات شاملة · فلترة ذكية · رؤية متكاملة لكل دورة العطاء</p>
             </div>
           </div>
@@ -318,7 +318,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
       </div>
 
       {/* Sub-icons */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-11 gap-2">
         {SUB_TABS.map((t, idx) => {
           const Icon = t.Icon;
           const isActive = active === t.key;
@@ -376,6 +376,17 @@ export function DonorsHub({ orgId }: { orgId: string }) {
           {active === "failed" && <FailedPanel rows={failed} projects={projects} />}
           {active === "abandoned" && <AbandonedPanel rows={abandoned} projects={projects} />}
           {active === "subscriptions" && <SubscriptionsPanel rows={subs} donations={donations} projects={projects} />}
+          {active === "elite" && (
+            <ElitePanel
+              orgId={orgId}
+              donors={donors}
+              donations={donations}
+              subs={subs}
+              campaigns={campaigns}
+              gifts={gifts}
+              abandoned={abandoned}
+            />
+          )}
         </div>
       )}
     </div>
