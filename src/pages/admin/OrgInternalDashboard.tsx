@@ -1731,3 +1731,141 @@ function EmployeesShowcase({
     </div>
   );
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// Reports Hub Landing — choose between Smart Operational Reports and Classic Reports
+// Each opens as a standalone page with its own branded header and back button.
+// ───────────────────────────────────────────────────────────────────────────
+function ReportsHubLanding({ orgId }: { orgId: string }) {
+  const [view, setView] = useState<"home" | "operational" | "classic">("home");
+
+  if (view === "operational") {
+    return (
+      <div className="space-y-6">
+        <ReportsBrandHeader
+          icon={BrainCircuit}
+          title="التقارير التشغيلية الذكية"
+          subtitle="رؤى آلية محركة بالذكاء الاصطناعي تتحول إلى مهام فعلية على الموظفين"
+          onBack={() => setView("home")}
+        />
+        <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+          <OperationalReportsHub orgId={orgId} />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (view === "classic") {
+    return (
+      <div className="space-y-6">
+        <ReportsBrandHeader
+          icon={FileBarChart2}
+          title="التقارير"
+          subtitle="تقارير تنفيذية احترافية قابلة للتصدير: PDF · Word · Excel · PowerPoint"
+          onBack={() => setView("home")}
+        />
+        <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+          <AdminReports />
+        </Suspense>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2" dir="rtl">
+      <ReportsLandingCard
+        icon={BrainCircuit}
+        title="التقارير التشغيلية الذكية"
+        description="تقارير تحلّل سلوك المتبرعين وأداء الجمعية وتقترح خطوات قابلة للتنفيذ، تتحوّل تلقائياً إلى مهام موزعة على الموظفين بحسب طاقتهم اليومية."
+        cta="افتح التقارير الذكية"
+        onClick={() => setView("operational")}
+      />
+      <ReportsLandingCard
+        icon={FileBarChart2}
+        title="التقارير"
+        description="مركز التقارير التنفيذية: تقارير دورية وسنوية، ملفات تحليلية جاهزة للعرض، وتصدير بصيغ متعددة (PDF، Word، Excel، PowerPoint)."
+        cta="افتح مركز التقارير"
+        onClick={() => setView("classic")}
+      />
+    </div>
+  );
+}
+
+function ReportsLandingCard({
+  icon: Icon,
+  title,
+  description,
+  cta,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  cta: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-7 text-right transition hover:shadow-2xl hover:border-primary/50 hover:-translate-y-0.5"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <h3 className="text-2xl font-bold text-foreground">{title}</h3>
+          <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+        </div>
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg transition group-hover:scale-110">
+          <Icon className="h-7 w-7" />
+        </div>
+      </div>
+      <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+        {cta}
+        <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
+      </div>
+      <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl transition group-hover:bg-primary/20" />
+    </button>
+  );
+}
+
+function ReportsBrandHeader({
+  icon: Icon,
+  title,
+  subtitle,
+  onBack,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  subtitle: string;
+  onBack: () => void;
+}) {
+  return (
+    <div
+      dir="rtl"
+      className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-l from-primary via-primary to-primary/80 p-6 text-primary-foreground shadow-xl"
+    >
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-foreground/15 backdrop-blur-sm">
+            <Icon className="h-7 w-7" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">{title}</h2>
+            <p className="text-sm text-primary-foreground/85 mt-1">{subtitle}</p>
+          </div>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onBack}
+          className="gap-2 bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25 border-0"
+        >
+          <ArrowRight className="h-4 w-4" />
+          رجوع للتقارير
+        </Button>
+      </div>
+      <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-primary-foreground/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-primary-foreground/5 blur-2xl" />
+    </div>
+  );
+}
