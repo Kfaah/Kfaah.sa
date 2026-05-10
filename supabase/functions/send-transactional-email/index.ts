@@ -316,7 +316,7 @@ Deno.serve(async (req) => {
     payload: {
       message_id: messageId,
       to: effectiveRecipient,
-      from: `كفاءة <info@kfaah.org>`,
+      from: `منصة كفاءة <info@kfaah.org>`,
       reply_to: 'info@kfaah.org',
       sender_domain: SENDER_DOMAIN,
       subject: resolvedSubject,
