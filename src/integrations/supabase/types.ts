@@ -3527,33 +3527,39 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_trashed: boolean
           last_message_at: string
           owner_user_id: string | null
           recipient_email: string
           recipient_name: string | null
           subject: string
+          trashed_at: string | null
           unread_for_owner: boolean
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          is_trashed?: boolean
           last_message_at?: string
           owner_user_id?: string | null
           recipient_email: string
           recipient_name?: string | null
           subject: string
+          trashed_at?: string | null
           unread_for_owner?: boolean
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          is_trashed?: boolean
           last_message_at?: string
           owner_user_id?: string | null
           recipient_email?: string
           recipient_name?: string | null
           subject?: string
+          trashed_at?: string | null
           unread_for_owner?: boolean
           updated_at?: string
         }

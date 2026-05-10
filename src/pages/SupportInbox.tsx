@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, type ComponentType, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Inbox, Search, Mail, Phone, MessageCircle, Send, ArrowRight,
@@ -55,9 +55,29 @@ type Draft = {
   updated_at: string;
 };
 
+type PlatformEmailThread = {
+  id: string;
+  recipient_email: string;
+  recipient_name: string | null;
+  subject: string | null;
+  last_message_at: string | null;
+  unread_for_owner: boolean | null;
+  is_trashed?: boolean | null;
+};
+
+type PlatformEmailMessage = {
+  id: string;
+  thread_id: string;
+  body: string | null;
+  received_at: string | null;
+  created_at: string | null;
+};
+
 type FolderId = "inbox" | "starred" | "sent" | "drafts" | "archive" | "spam" | "trash";
 
-const FOLDERS: { id: FolderId; label: string; icon: any; color: string }[] = [
+const getErrorMessage = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
+
+const FOLDERS: { id: FolderId; label: string; icon: ComponentType<{ className?: string }>; color: string }[] = [
   { id: "inbox", label: "صندوق الوارد", icon: Inbox, color: "text-cyan-300" },
   { id: "starred", label: "المميّزة", icon: Star, color: "text-amber-300" },
   { id: "sent", label: "المُرسَلة", icon: Send, color: "text-emerald-300" },
@@ -76,7 +96,7 @@ export default function SupportInbox() {
   const [messages, setMessages] = useState<SupportMsg[]>([]);
   const [allReplies, setAllReplies] = useState<Reply[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [pemOutbound, setPemOutbound] = useState<any[]>([]);
+  const [pemOutbound, setPemOutbound] = useState<PlatformEmailMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [folder, setFolder] = useState<FolderId>("inbox");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -118,14 +138,16 @@ export default function SupportInbox() {
     ]);
     if (msgs.error) toast.error("تعذّر تحميل الرسائل");
     const baseMsgs = (msgs.data as SupportMsg[]) || [];
-    const threads = (pemT.data as any[]) || [];
-    const inbound = (pemM.data as any[]) || [];
-    const outbound = (pemOut.data as any[]) || [];
+    const threads = (pemT.data as PlatformEmailThread[]) || [];
+    const inbound = (pemM.data as PlatformEmailMessage[]) || [];
+    const outbound = (pemOut.data as PlatformEmailMessage[]) || [];
     const synthetic: SupportMsg[] = threads.map((t) => {
       const latest = inbound.find((m) => m.thread_id === t.id);
       const latestOut = outbound.slice().reverse().find((m) => m.thread_id === t.id);
       const hasInbound = !!latest;
-      const display = latest || latestOut;
+      const display = [latest, latestOut]
+        .filter((item): item is PlatformEmailMessage => !!item)
+        .sort((a, b) => +new Date(b.received_at || b.created_at || 0) - +new Date(a.received_at || a.created_at || 0))[0];
       return {
         id: `pem:${t.id}`,
         sender_name: t.recipient_name || t.recipient_email,
@@ -139,7 +161,7 @@ export default function SupportInbox() {
         is_read: !t.unread_for_owner,
         is_starred: false,
         is_spam: false,
-        is_trashed: false,
+        is_trashed: !!t.is_trashed,
         is_archived: false,
         labels: hasInbound ? ["zoho"] : ["zoho", "sent-only"],
         created_at: t.last_message_at || new Date().toISOString(),
@@ -201,7 +223,10 @@ export default function SupportInbox() {
     starred: messages.filter(m => m.is_starred && !m.is_trashed).length,
     sent: new Set([
       ...allReplies.filter(r => r.from_owner).map(r => r.message_id),
-      ...pemOutbound.map(o => `pem:${o.thread_id}`),
+      ...pemOutbound
+        .map(o => messages.find(m => m.id === `pem:${o.thread_id}`))
+        .filter((m): m is SupportMsg => !!m && !m.is_trashed)
+        .map(m => m.id),
     ]).size,
     drafts: drafts.length,
     archive: messages.filter(m => m.is_archived && !m.is_trashed && !m.is_spam).length,
@@ -248,7 +273,12 @@ export default function SupportInbox() {
   // Actions
   const patchMsg = async (id: string, patch: Partial<SupportMsg>) => {
     if (id.startsWith("pem:")) {
-      // For pem threads we only support trash = delete-thread. Other patches are no-ops.
+      if ("is_trashed" in patch) {
+        await supabase.from("platform_email_threads").update({
+          is_trashed: !!patch.is_trashed,
+          trashed_at: patch.is_trashed ? new Date().toISOString() : null,
+        }).eq("id", id.slice(4));
+      }
       return;
     }
     await supabase.from("support_messages").update(patch).eq("id", id);
@@ -258,12 +288,9 @@ export default function SupportInbox() {
   const toSpam     = (m: SupportMsg) => { patchMsg(m.id, { is_spam: true, is_archived: false }); setSelectedId(null); toast.success("تم نقلها إلى غير الهام"); };
   const toTrash    = async (m: SupportMsg) => {
     if (m.id.startsWith("pem:")) {
-      if (!confirm("حذف هذه المحادثة من بريد المنصة نهائياً؟")) return;
-      const threadId = m.id.slice(4);
-      await supabase.from("platform_email_messages").delete().eq("thread_id", threadId);
-      await supabase.from("platform_email_threads").delete().eq("id", threadId);
+      await patchMsg(m.id, { is_trashed: true });
       setSelectedId(null);
-      toast.success("تم حذف المحادثة");
+      toast.success("تم نقلها إلى المحذوفات");
       await loadAll();
       return;
     }
@@ -367,8 +394,8 @@ export default function SupportInbox() {
           ? "تم إرسال الرد إلى حساب المستخدم وبريده المسجَّل"
           : "تم إرسال الرد إلى بريد المرسل"
       );
-    } catch (err: any) {
-      toast.error(err?.message || "تعذّر الإرسال");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "تعذّر الإرسال"));
     } finally { setSending(false); }
   };
 
@@ -407,24 +434,46 @@ export default function SupportInbox() {
     }
     setSending(true);
     try {
-      await supabase.functions.invoke("send-transactional-email", {
+      const toEmail = composeTo.trim().toLowerCase();
+      const subject = composeSubject.trim() || "رسالة من كفاءة";
+      const body = composeBody.trim();
+      const messageId = `${crypto.randomUUID()}@kfaah.org`;
+      const { error: sendErr } = await supabase.functions.invoke("send-transactional-email", {
         body: {
-          templateName: "support-reply",
-          recipientEmail: composeTo.trim(),
+          templateName: "platform-mail",
+          recipientEmail: toEmail,
+          messageId,
           templateData: {
-            senderName: composeTo.trim(),
-            originalSubject: composeSubject || "رسالة من كفاءة",
-            originalMessage: "",
-            replyBody: composeBody.trim(),
+            subject,
+            body,
+            recipientName: toEmail,
           },
         },
+      });
+      if (sendErr) throw sendErr;
+      const { data: thread, error: threadErr } = await supabase
+        .from("platform_email_threads")
+        .insert({ recipient_email: toEmail, subject, last_message_at: new Date().toISOString() })
+        .select("id")
+        .single();
+      if (threadErr) throw threadErr;
+      await supabase.from("platform_email_messages").insert({
+        thread_id: thread.id,
+        direction: "outbound",
+        sender_email: "info@kfaah.org",
+        recipient_email: toEmail,
+        subject,
+        body,
+        provider_message_id: messageId,
       });
       if (selectedDraftId) await supabase.from("support_drafts").delete().eq("id", selectedDraftId);
       toast.success("تم الإرسال");
       setComposing(false);
       setComposeTo(""); setComposeSubject(""); setComposeBody(""); setSelectedDraftId(null);
-    } catch (e: any) {
-      toast.error(e?.message || "تعذّر الإرسال");
+      setFolder("sent");
+      await loadAll();
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "تعذّر الإرسال"));
     } finally { setSending(false); }
   };
 
@@ -496,10 +545,10 @@ export default function SupportInbox() {
                 try {
                   const { data, error } = await supabase.functions.invoke("fetch-platform-email-replies", { body: {} });
                   if (error) throw error;
-                  const s = (data as any)?.stats;
+                  const s = (data as { stats?: { inserted?: number } } | null)?.stats;
                   toast.success(s ? `تمت المزامنة — جديد: ${s.inserted ?? 0}` : "تمت المزامنة", { id: t });
-                } catch (e: any) {
-                  toast.error(e?.message || "تعذّرت مزامنة البريد", { id: t });
+                } catch (e: unknown) {
+                  toast.error(getErrorMessage(e, "تعذّرت مزامنة البريد"), { id: t });
                 } finally {
                   setSyncing(false);
                 }
@@ -763,7 +812,7 @@ export default function SupportInbox() {
   );
 }
 
-function ToolbarButton({ icon: Icon, label, onClick, danger }: any) {
+function ToolbarButton({ icon: Icon, label, onClick, danger }: { icon: ComponentType<{ className?: string }>; label: string; onClick: () => void; danger?: boolean }) {
   return (
     <button
       onClick={onClick}
@@ -777,7 +826,7 @@ function ToolbarButton({ icon: Icon, label, onClick, danger }: any) {
   );
 }
 function Sep() { return <span className="w-px h-5 bg-white/15 mx-1" />; }
-function EmptyState({ icon: Icon, text }: any) {
+function EmptyState({ icon: Icon, text }: { icon: ComponentType<{ className?: string }>; text: string }) {
   return (
     <div className="p-12 text-center">
       <Icon className="w-12 h-12 text-white/15 mx-auto mb-3" />
@@ -786,7 +835,19 @@ function EmptyState({ icon: Icon, text }: any) {
   );
 }
 
-function ComposeView({ to, setTo, subject, setSubject, body, setBody, onClose, onSend, onSaveDraft, onDeleteDraft, sending }: any) {
+function ComposeView({ to, setTo, subject, setSubject, body, setBody, onClose, onSend, onSaveDraft, onDeleteDraft, sending }: {
+  to: string;
+  setTo: Dispatch<SetStateAction<string>>;
+  subject: string;
+  setSubject: Dispatch<SetStateAction<string>>;
+  body: string;
+  setBody: Dispatch<SetStateAction<string>>;
+  onClose: () => void;
+  onSend: () => void;
+  onSaveDraft: () => void;
+  onDeleteDraft?: () => void;
+  sending: boolean;
+}) {
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-l from-cyan-400/10 to-transparent">
@@ -838,7 +899,7 @@ function ComposeView({ to, setTo, subject, setSubject, body, setBody, onClose, o
   );
 }
 
-function Field({ label, children }: any) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-3">
       <label className="text-xs font-bold text-slate-400 w-16 shrink-0">{label}</label>
