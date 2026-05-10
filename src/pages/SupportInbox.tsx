@@ -136,16 +136,16 @@ export default function SupportInbox() {
     ]);
     if (msgs.error) toast.error("تعذّر تحميل الرسائل");
     const baseMsgs = (msgs.data as SupportMsg[]) || [];
-    const threads = (pemT.data as any[]) || [];
-    const inbound = (pemM.data as any[]) || [];
-    const outbound = (pemOut.data as any[]) || [];
+    const threads = (pemT.data as PlatformEmailThread[]) || [];
+    const inbound = (pemM.data as PlatformEmailMessage[]) || [];
+    const outbound = (pemOut.data as PlatformEmailMessage[]) || [];
     const synthetic: SupportMsg[] = threads.map((t) => {
       const latest = inbound.find((m) => m.thread_id === t.id);
       const latestOut = outbound.slice().reverse().find((m) => m.thread_id === t.id);
       const hasInbound = !!latest;
       const display = [latest, latestOut]
-        .filter(Boolean)
-        .sort((a: any, b: any) => +new Date(b.received_at || b.created_at) - +new Date(a.received_at || a.created_at))[0];
+        .filter((item): item is PlatformEmailMessage => !!item)
+        .sort((a, b) => +new Date(b.received_at || b.created_at || 0) - +new Date(a.received_at || a.created_at || 0))[0];
       return {
         id: `pem:${t.id}`,
         sender_name: t.recipient_name || t.recipient_email,
