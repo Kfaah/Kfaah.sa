@@ -322,7 +322,10 @@ export default function Messages() {
                                 : "bg-primary text-primary-foreground border-primary"
                             }`}
                           >
-                            <div className="whitespace-pre-wrap">{m.body}</div>
+                            {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
+                            {m.attachments && m.attachments.length > 0 && (
+                              <AttachmentList items={m.attachments} mine={mine} />
+                            )}
                             <div className={`text-[10px] mt-1.5 text-left ${mine ? "text-muted-foreground" : "text-primary-foreground/80"}`} dir="ltr">{fmt(m.created_at)}</div>
                           </div>
                         </div>
@@ -332,7 +335,14 @@ export default function Messages() {
                 </div>
 
                 {selected && (
-                  <div className="border-t border-border p-4 bg-muted/30">
+                  <div className="border-t border-border p-4 bg-muted/30 space-y-2">
+                    <FilePickList
+                      files={replyFiles}
+                      onAdd={(fs) => setReplyFiles((prev) => [...prev, ...fs])}
+                      onRemove={(i) => setReplyFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                      inputRef={replyFileInputRef}
+                      compact
+                    />
                     <div className="flex items-end gap-2">
                       <Textarea
                         value={body}
