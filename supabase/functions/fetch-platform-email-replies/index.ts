@@ -2,6 +2,7 @@
 import { ImapFlow } from 'npm:imapflow@1.0.164'
 import { simpleParser } from 'npm:mailparser@3.7.1'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { Buffer } from 'node:buffer'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -98,7 +99,7 @@ Deno.serve(async (req) => {
           let off = 0
           for (const c of chunks) { source.set(c, off); off += c.length }
           console.log('[imap] downloaded', source.length, 'bytes for uid', uid)
-          const parsed: any = await simpleParser(source)
+          const parsed: any = await simpleParser(Buffer.from(source))
           ;(msg as any).source = source
           const providerId = normalizeMessageId(parsed.messageId || msg.envelope?.messageId)
           const inReplyTo = normalizeMessageId(parsed.inReplyTo || msg.envelope?.inReplyTo)
