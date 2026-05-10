@@ -723,8 +723,8 @@ export function Sidebar() {
 
             {/* Logout and Collapse Buttons - داخل التمرير */}
             <div className="pt-6 mt-6 border-t border-white/20 space-y-2">
-              {/* التواصل مع المنصة (الدعم الفني) — يخفى عن مدير النظام */}
-              {!isSuperAdmin && !isActuallyAdmin && (
+              {/* التواصل مع المنصة (الدعم الفني) — يخفى عن مدير النظام (super_admin) فقط */}
+              {!isSuperAdmin && (
                 <Link
                   to="/internal-inbox"
                   state={{ fromNavigation: true }}
