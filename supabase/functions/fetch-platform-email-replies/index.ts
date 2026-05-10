@@ -100,6 +100,12 @@ Deno.serve(async (req) => {
           console.log('[imap] fetching uid', uid)
           const msg: any = await (client as any).fetchOne(uid, { envelope: true, internalDate: true }, { uid: true })
           if (!msg) { console.log('[imap] no envelope for', uid); stats.skipped++; continue }
+          const msgDate = msg.internalDate ? new Date(msg.internalDate) : null
+          const oldMessageCutoff = latestStoredAt ? new Date(latestStoredAt.getTime() - 15 * 60 * 1000) : null
+          if (oldMessageCutoff && msgDate && msgDate < oldMessageCutoff) {
+            stats.skipped++
+            continue
+          }
           const envelopeProviderId = normalizeMessageId(msg.envelope?.messageId)
           if (envelopeProviderId) {
             const { data: existing } = await supabase
