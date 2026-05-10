@@ -222,6 +222,69 @@ export default function InternalInbox() {
   const fmt = (iso: string) =>
     new Date(iso).toLocaleString("ar-SA", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
 
+  const fmtSize = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  };
+
+  const uploadFiles = async (files: File[]) => {
+    if (!files || files.length === 0) return [] as { name: string; url: string; type: string; size: number }[];
+    const out: { name: string; url: string; type: string; size: number }[] = [];
+    for (const f of files) {
+      if (f.size > 20 * 1024 * 1024) {
+        toast.error(`${f.name} يتجاوز 20 ميغابايت`);
+        continue;
+      }
+      const path = `${crypto.randomUUID()}-${f.name}`;
+      const { error } = await supabase.storage.from("internal-message-attachments").upload(path, f, { upsert: false, contentType: f.type });
+      if (error) {
+        toast.error(`تعذّر رفع ${f.name}`);
+        continue;
+      }
+      const { data } = supabase.storage.from("internal-message-attachments").getPublicUrl(path);
+      out.push({ name: f.name, url: data.publicUrl, type: f.type, size: f.size });
+    }
+    return out;
+  };
+
+  const FilePickList = ({ files, setFiles }: { files: File[]; setFiles: (f: File[]) => void }) => (
+    <div className="space-y-2">
+      <label className="inline-flex items-center gap-2 cursor-pointer text-[11px] font-bold text-slate-200 hover:text-white">
+        <Paperclip className="w-4 h-4" />
+        إرفاق ملفات
+        <input
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const arr = Array.from(e.target.files || []);
+            setFiles([...files, ...arr]);
+            e.currentTarget.value = "";
+          }}
+        />
+      </label>
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {files.map((f, i) => (
+            <div key={i} className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
+              <FileText className="w-3.5 h-3.5" />
+              <span className="max-w-[160px] truncate">{f.name}</span>
+              <span className="text-slate-300">({fmtSize(f.size)})</span>
+              <button
+                type="button"
+                onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
+                className="text-slate-300 hover:text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   // Inbox: threads where last activity is from member (or any thread that was not yet replied by admin)
   // Sent: threads where admin has replied at least once
   const [hasAdminReply, setHasAdminReply] = useState<Record<string, boolean>>({});
@@ -393,6 +456,7 @@ export default function InternalInbox() {
                       className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 resize-none"
                     />
                   </div>
+                  <FilePickList files={composeFiles} setFiles={setComposeFiles} />
                   <div className="flex justify-end">
                     <button
                       onClick={sendCompose}
@@ -456,6 +520,7 @@ export default function InternalInbox() {
 
                   {selected && (
                     <div className="border-t border-white/10 p-4 bg-white/[0.02]">
+                      <div className="mb-2"><FilePickList files={replyFiles} setFiles={setReplyFiles} /></div>
                       <div className="flex items-end gap-2">
                         <Textarea
                           value={body}
