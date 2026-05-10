@@ -44,17 +44,14 @@ function calcPricing(opts: {
 const fmt = (n: number) => n.toLocaleString("ar-SA");
 
 const openExternalLink = (href: string) => {
-  try {
-    if (window.top && window.top !== window.self) {
-      window.top.location.assign(href);
-      return;
-    }
-  } catch {
-    // Fall back to opening a new tab when the preview frame blocks top navigation.
+  const opened = window.open("about:blank", "_blank");
+  if (opened) {
+    opened.opener = null;
+    opened.location.href = href;
+    return;
   }
 
-  const opened = window.open(href, "_blank", "noopener,noreferrer");
-  if (!opened) window.location.assign(href);
+  window.location.assign(href);
 };
 
 export default function PlatformSubscribe() {
@@ -84,8 +81,8 @@ export default function PlatformSubscribe() {
 
 أرغب في تأكيد العرض والاشتراك.`;
 
-  const whatsappLink = `https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent(summary)}`;
-  const ownershipWhatsappLink = `https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent("السلام عليكم، نرغب في التفاوض على تملّك منصة كفاءة بالكامل لجمعيتنا.")}`;
+  const whatsappLink = `https://api.whatsapp.com/send?phone=${OWNER_PHONE_INTL}&text=${encodeURIComponent(summary)}`;
+  const ownershipWhatsappLink = `https://api.whatsapp.com/send?phone=${OWNER_PHONE_INTL}&text=${encodeURIComponent("السلام عليكم، نرغب في التفاوض على تملّك منصة كفاءة بالكامل لجمعيتنا.")}`;
   const mailLink = `mailto:${OWNER_EMAIL}?subject=${encodeURIComponent("طلب اشتراك في منصة كفاءة")}&body=${encodeURIComponent(summary)}`;
 
   const openWhatsApp = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -330,7 +327,7 @@ export default function PlatformSubscribe() {
           <ContactPill
             icon={MessageCircle}
             label="واتساب مباشر"
-            href={`https://wa.me/${OWNER_PHONE_INTL}`}
+            href={`https://api.whatsapp.com/send?phone=${OWNER_PHONE_INTL}`}
             external
           />
         </div>
