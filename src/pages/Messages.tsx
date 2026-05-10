@@ -28,6 +28,94 @@ type Msg = {
 
 type Attachment = { name: string; url: string; type: string; size: number };
 
+function fmtSize(n: number) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function FilePickList({
+  files, onAdd, onRemove, inputRef, compact,
+}: {
+  files: File[];
+  onAdd: (fs: File[]) => void;
+  onRemove: (idx: number) => void;
+  inputRef: React.RefObject<HTMLInputElement>;
+  compact?: boolean;
+}) {
+  return (
+    <div className={compact ? "space-y-1" : "space-y-2"}>
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const fs = Array.from(e.target.files || []);
+          if (fs.length) onAdd(fs);
+          if (inputRef.current) inputRef.current.value = "";
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+      >
+        <Paperclip className="w-3.5 h-3.5" />
+        إرفاق ملفات
+      </button>
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {files.map((f, i) => (
+            <div key={i} className="inline-flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1 text-xs max-w-[260px]">
+              <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{f.name}</span>
+              <span className="text-muted-foreground shrink-0">{fmtSize(f.size)}</span>
+              <button type="button" onClick={() => onRemove(i)} className="text-muted-foreground hover:text-destructive">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AttachmentList({ items, mine }: { items: Attachment[]; mine: boolean }) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {items.map((a, i) => {
+        const isImg = a.type?.startsWith("image/");
+        if (isImg) {
+          return (
+            <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="block">
+              <img src={a.url} alt={a.name} className="max-h-40 rounded-lg border border-border object-cover" />
+            </a>
+          );
+        }
+        return (
+          <a
+            key={i}
+            href={a.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium border ${
+              mine
+                ? "bg-background border-border text-foreground hover:bg-muted"
+                : "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/20"
+            }`}
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="truncate max-w-[180px]">{a.name}</span>
+            <span className="opacity-70">{fmtSize(a.size)}</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
 type Folder = "inbox" | "sent" | "compose";
 
 export default function Messages() {
