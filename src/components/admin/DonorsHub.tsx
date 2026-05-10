@@ -219,6 +219,8 @@ function KpiPill({ icon, label, value, brand }: { icon: React.ReactNode; label: 
 /* ---------- Panels ---------- */
 
 function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }: any) {
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
   const byYear = useMemo(() => {
     const map = new Map<number, number>();
     donations.forEach((d: Donation) => {
@@ -240,47 +242,50 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
 
   return (
     <div className="grid lg:grid-cols-2 gap-5">
-      <Card className="border-emerald-200">
-        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4 text-emerald-600" />التبرعات حسب السنة</CardTitle></CardHeader>
+      <Card style={{ borderColor: `${brand}33` }}>
+        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4" style={{ color: brand }} />التبرعات حسب السنة</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           {byYear.length === 0 && <p className="text-sm text-slate-500">لا توجد بيانات.</p>}
           {byYear.map(([y, v]) => (
             <div key={y} className="space-y-1">
-              <div className="flex justify-between text-xs"><span className="font-semibold">{y}</span><span className="text-emerald-700 font-bold">{SAR(v)}</span></div>
+              <div className="flex justify-between text-xs"><span className="font-semibold">{y}</span><span className="font-bold" style={{ color: brand }}>{SAR(v)}</span></div>
               <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-gradient-to-l from-emerald-400 to-teal-500" style={{ width: `${(v / yearMax) * 100}%` }} />
+                <div className="h-full" style={{ width: `${(v / yearMax) * 100}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
-      <Card className="border-cyan-200">
-        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Megaphone className="w-4 h-4 text-cyan-600" />أعلى 8 مشاريع تبرّعاً</CardTitle></CardHeader>
+      <Card style={{ borderColor: `${brand}33` }}>
+        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Megaphone className="w-4 h-4" style={{ color: brand }} />أعلى 8 مشاريع تبرّعاً</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           {byProject.length === 0 && <p className="text-sm text-slate-500">لا توجد بيانات.</p>}
           {byProject.map(([k, v]) => (
             <div key={k} className="space-y-1">
-              <div className="flex justify-between text-xs"><span className="font-semibold truncate">{k}</span><span className="text-cyan-700 font-bold">{SAR(v)}</span></div>
+              <div className="flex justify-between text-xs"><span className="font-semibold truncate">{k}</span><span className="font-bold" style={{ color: brand }}>{SAR(v)}</span></div>
               <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-gradient-to-l from-cyan-400 to-sky-500" style={{ width: `${(v / max) * 100}%` }} />
+                <div className="h-full" style={{ width: `${(v / max) * 100}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:col-span-2">
-        <MiniStat label="حملات" value={campaigns.length} grad="from-cyan-500 to-sky-600" />
-        <MiniStat label="تبرعات فاشلة" value={failed.length} grad="from-red-500 to-rose-600" />
-        <MiniStat label="سلال متروكة" value={abandoned.length} grad="from-yellow-500 to-amber-600" />
-        <MiniStat label="اشتراكات" value={subs.length} grad="from-violet-500 to-indigo-600" />
+        <MiniStat label="حملات" value={campaigns.length} brand={brand} />
+        <MiniStat label="تبرعات فاشلة" value={failed.length} brand={brand} />
+        <MiniStat label="سلال متروكة" value={abandoned.length} brand={brand} />
+        <MiniStat label="اشتراكات" value={subs.length} brand={brand} />
       </div>
     </div>
   );
 }
 
-function MiniStat({ label, value, grad }: { label: string; value: number; grad: string }) {
+function MiniStat({ label, value, brand }: { label: string; value: number; brand: string }) {
   return (
-    <div className={cn("rounded-xl p-4 text-white shadow-md bg-gradient-to-br", grad)}>
+    <div
+      className="rounded-xl p-4 text-white shadow-md"
+      style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}
+    >
       <div className="text-3xl font-extrabold">{value.toLocaleString("ar-SA")}</div>
       <div className="text-xs mt-1 opacity-90">{label}</div>
     </div>
