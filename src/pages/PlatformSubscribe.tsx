@@ -377,6 +377,12 @@ function ContactPill({
       href={href}
       target={external ? "_blank" : undefined}
       rel="noopener noreferrer"
+      onClick={(e) => {
+        if (!external) return;
+        e.preventDefault();
+        const win = window.open(href, "_blank", "noopener,noreferrer");
+        if (!win) window.location.href = href;
+      }}
       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] border border-white/15 text-sm text-white hover:bg-white/[0.12] transition-colors"
     >
       <Icon className="w-4 h-4" style={{ color: `hsl(${accentHsl})` }} />
