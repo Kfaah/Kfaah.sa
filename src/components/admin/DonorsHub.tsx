@@ -40,7 +40,9 @@ const STATUS_AR: Record<string, string> = {
   open: "مفتوحة", closed: "مغلقة", completed: "مكتملة",
   pending: "قيد الانتظار", cancelled: "ملغاة", canceled: "ملغاة",
   expired: "منتهية", draft: "مسودة", success: "ناجحة", failed: "فاشلة",
-  scheduled: "مجدولة", running: "جارية",
+  scheduled: "مجدولة", running: "جارية", planned: "مخطّطة",
+  upcoming: "قادمة", executed: "منفّذة", archived: "مؤرشفة",
+  ongoing: "جارية", finished: "منتهية", live: "مباشرة",
 };
 const METHOD_AR: Record<string, string> = {
   mada: "مدى", visa: "فيزا", mastercard: "ماستركارد", amex: "أميكس",
