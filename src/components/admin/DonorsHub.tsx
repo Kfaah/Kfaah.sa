@@ -271,24 +271,52 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
         </CardContent>
       </Card>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:col-span-2">
-        <MiniStat label="حملات" value={campaigns.length} brand={brand} />
-        <MiniStat label="تبرعات فاشلة" value={failed.length} brand={brand} accent="rose" />
-        <MiniStat label="سلال متروكة" value={abandoned.length} brand={brand} accent="amber" />
-        <MiniStat label="اشتراكات" value={subs.length} brand={brand} />
+        <MiniStat label="حملات" desc="حملات تبرع نشطة وسابقة" value={campaigns.length} icon={Megaphone} gradient="from-emerald-500 to-teal-500" />
+        <MiniStat label="تبرعات فاشلة" desc="محاولات لم تكتمل" value={failed.length} icon={XCircle} gradient="from-rose-500 to-pink-500" />
+        <MiniStat label="سلال متروكة" desc="فرص استرداد محتملة" value={abandoned.length} icon={ShoppingCart} gradient="from-amber-500 to-orange-500" />
+        <MiniStat label="اشتراكات" desc="استقطاعات شهرية ودورية" value={subs.length} icon={CalendarClock} gradient="from-violet-500 to-fuchsia-500" />
       </div>
     </div>
   );
 }
 
-function MiniStat({ label, value, brand, accent }: { label: string; value: number; brand: string; accent?: "rose" | "amber" }) {
-  const color = accent === "rose" ? "#e11d48" : accent === "amber" ? "#d97706" : brand;
+function MiniStat({
+  label,
+  desc,
+  value,
+  icon: Icon,
+  gradient,
+}: {
+  label: string;
+  desc: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  gradient: string;
+}) {
   return (
     <div
-      className="rounded-xl p-4 bg-white shadow-sm border"
-      style={{ borderColor: `${color}33`, borderRightWidth: 4, borderRightColor: color }}
+      className={cn(
+        "group relative overflow-hidden rounded-2xl border border-border bg-card p-5",
+        "hover:shadow-xl hover:-translate-y-1 transition-all duration-300",
+        "flex flex-col items-start gap-3 min-h-[160px]"
+      )}
     >
-      <div className="text-3xl font-extrabold" style={{ color }}>{value.toLocaleString("ar-SA")}</div>
-      <div className="text-xs mt-1 text-slate-600">{label}</div>
+      <div
+        className={cn(
+          "w-14 h-14 rounded-2xl flex items-center justify-center",
+          "bg-gradient-to-br shadow-lg",
+          gradient
+        )}
+      >
+        <Icon className="w-7 h-7 text-white" />
+      </div>
+      <div className="space-y-1">
+        <div className="text-3xl font-extrabold text-foreground leading-none">
+          {value.toLocaleString("ar-SA")}
+        </div>
+        <h3 className="font-bold text-sm text-foreground leading-tight mt-1">{label}</h3>
+        <p className="text-xs text-muted-foreground line-clamp-2">{desc}</p>
+      </div>
     </div>
   );
 }
