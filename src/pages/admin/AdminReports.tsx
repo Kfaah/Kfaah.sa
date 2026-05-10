@@ -38,7 +38,7 @@ const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
 const fmtSAR = (n: number) => `${fmt(n)} ر.س`;
 const pct = (n: number) => `${n.toFixed(1)}%`;
 
-export default function AdminReports() {
+export default function AdminReports({ embedded: embeddedProp = false }: { embedded?: boolean } = {}) {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
   const { metrics, loading } = useAdminAggregates(range);
   const [mode, setMode] = useState<Mode>("thematic");
@@ -50,7 +50,7 @@ export default function AdminReports() {
   const reportRef = useRef<HTMLDivElement>(null);
 
   const _params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const isEmbedded = _params.get("embedded") === "1";
+  const isEmbedded = embeddedProp || _params.get("embedded") === "1";
   const lockedSlug = _params.get("org") || "";
   const visibleMetrics = useMemo(
     () => (isEmbedded && lockedSlug ? metrics.filter((m) => m.org_slug === lockedSlug) : metrics),
