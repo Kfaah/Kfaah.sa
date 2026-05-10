@@ -66,7 +66,9 @@ Deno.serve(async (req) => {
         ? new Date(settings.last_synced_at)
         : new Date(Date.now() - 24 * 60 * 60 * 1000)
 
+      console.log('[imap] searching since', since.toISOString())
       const uids = await client.search({ since }, { uid: true })
+      console.log('[imap] search returned', (uids || []).length, 'uids')
       stats.fetched = (uids || []).length
 
       for await (const msg of client.fetch(uids || [], { source: true, envelope: true, internalDate: true }, { uid: true })) {
