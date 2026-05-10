@@ -394,8 +394,8 @@ export default function SupportInbox() {
           ? "تم إرسال الرد إلى حساب المستخدم وبريده المسجَّل"
           : "تم إرسال الرد إلى بريد المرسل"
       );
-    } catch (err: any) {
-      toast.error(err?.message || "تعذّر الإرسال");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "تعذّر الإرسال"));
     } finally { setSending(false); }
   };
 
@@ -472,8 +472,8 @@ export default function SupportInbox() {
       setComposeTo(""); setComposeSubject(""); setComposeBody(""); setSelectedDraftId(null);
       setFolder("sent");
       await loadAll();
-    } catch (e: any) {
-      toast.error(e?.message || "تعذّر الإرسال");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "تعذّر الإرسال"));
     } finally { setSending(false); }
   };
 
@@ -545,10 +545,10 @@ export default function SupportInbox() {
                 try {
                   const { data, error } = await supabase.functions.invoke("fetch-platform-email-replies", { body: {} });
                   if (error) throw error;
-                  const s = (data as any)?.stats;
+                  const s = (data as { stats?: { inserted?: number } } | null)?.stats;
                   toast.success(s ? `تمت المزامنة — جديد: ${s.inserted ?? 0}` : "تمت المزامنة", { id: t });
-                } catch (e: any) {
-                  toast.error(e?.message || "تعذّرت مزامنة البريد", { id: t });
+                } catch (e: unknown) {
+                  toast.error(getErrorMessage(e, "تعذّرت مزامنة البريد"), { id: t });
                 } finally {
                   setSyncing(false);
                 }
