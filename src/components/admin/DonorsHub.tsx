@@ -256,7 +256,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
             <KpiPill brand={brand} icon={<Users className="w-4 h-4" />} label="متبرعون" value={donors.length.toLocaleString("ar-SA")} />
             <KpiPill brand={brand} icon={<TrendingUp className="w-4 h-4" />} label="إجمالي" value={SAR(totals.total)} />
             <KpiPill brand={brand} icon={<Repeat className="w-4 h-4" />} label="متكرّرون" value={totals.recurring.toLocaleString("ar-SA")} />
-            <KpiPill brand={brand} icon={<Calendar className="w-4 h-4" />} label="مشاريع" value={totals.projects.toLocaleString("ar-SA")} />
+            <KpiPill brand={brand} icon={<CalendarIcon className="w-4 h-4" />} label="مشاريع" value={totals.projects.toLocaleString("ar-SA")} />
           </div>
         </div>
       </div>
@@ -364,7 +364,7 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
   return (
     <div className="grid lg:grid-cols-2 gap-5">
       <Card style={{ borderColor: `${brand}33` }}>
-        <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><Calendar className="w-5 h-5" style={{ color: brand }} />التبرعات حسب السنة</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><CalendarIcon className="w-5 h-5" style={{ color: brand }} />التبرعات حسب السنة</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {byYear.length === 0 && <p className="text-sm text-slate-500">لا توجد بيانات.</p>}
           {byYear.map(([y, v]) => (
@@ -429,9 +429,9 @@ function DonorsPanel({ donors, donations, projects }: { donors: DonorRow[]; dona
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
   const [q, setQ] = useState("");
-  const [seg, setSeg] = useState<string>("all");
-  const [dateKey, setDateKey] = useState("all");
-  const [project, setProject] = useState("all");
+  const [seg, setSeg] = useState<DateValue>({ key: "all" });
+  const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
+  const [project, setProject] = useState<DateValue>({ key: "all" });
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
   const segments = useMemo(() => Array.from(new Set(donors.map((d) => d.segment))), [donors]);
 
@@ -484,9 +484,9 @@ function DonorsPanel({ donors, donations, projects }: { donors: DonorRow[]; dona
 
 function DonationsPanel({ donations, projects }: { donations: Donation[]; projects: string[] }) {
   const [q, setQ] = useState("");
-  const [dateKey, setDateKey] = useState("all");
-  const [project, setProject] = useState<string>("all");
-  const [method, setMethod] = useState<string>("all");
+  const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
+  const [project, setProject] = useState<DateValue>({ key: "all" });
+  const [method, setMethod] = useState<DateValue>({ key: "all" });
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
 
   const methods = useMemo(() => Array.from(new Set(donations.map((d) => d.payment_method).filter(Boolean) as string[])).sort(), [donations]);
@@ -535,8 +535,8 @@ function DonationsPanel({ donations, projects }: { donations: Donation[]; projec
 
 function TopDonorsPanel({ donors, donations, projects }: { donors: DonorRow[]; donations: Donation[]; projects: string[] }) {
   const [limit, setLimit] = useState<string>("50");
-  const [dateKey, setDateKey] = useState("all");
-  const [project, setProject] = useState("all");
+  const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
+  const [project, setProject] = useState<DateValue>({ key: "all" });
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
 
   const aggregates = useMemo(() => {
@@ -591,8 +591,8 @@ function RecurringPanel({ donors, donations, projects }: { donors: DonorRow[]; d
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
   const [min, setMin] = useState<string>("2");
-  const [dateKey, setDateKey] = useState("all");
-  const [project, setProject] = useState("all");
+  const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
+  const [project, setProject] = useState<DateValue>({ key: "all" });
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
 
   const aggregates = useMemo(() => {
@@ -645,9 +645,9 @@ function RecurringPanel({ donors, donations, projects }: { donors: DonorRow[]; d
 function CampaignsPanel({ campaigns, projects }: { campaigns: any[]; projects: string[] }) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
-  const [dateKey, setDateKey] = useState("all");
-  const [project, setProject] = useState("all");
-  const [status, setStatus] = useState("all");
+  const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
+  const [project, setProject] = useState<DateValue>({ key: "all" });
+  const [status, setStatus] = useState<DateValue>({ key: "all" });
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
 
   const statuses = useMemo(() => Array.from(new Set(campaigns.map((c) => c.status).filter(Boolean))) as string[], [campaigns]);
@@ -704,8 +704,8 @@ function CampaignsPanel({ campaigns, projects }: { campaigns: any[]; projects: s
 }
 
 function FailedPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
-  const [dateKey, setDateKey] = useState("all");
-  const [project, setProject] = useState("all");
+  const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
+  const [project, setProject] = useState<DateValue>({ key: "all" });
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
   const filtered = useMemo(() => rows.filter((r) => {
     if (!inRange(r.attempted_at, range)) return false;
@@ -736,8 +736,8 @@ function FailedPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
 }
 
 function AbandonedPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
-  const [dateKey, setDateKey] = useState("all");
-  const [project, setProject] = useState("all");
+  const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
+  const [project, setProject] = useState<DateValue>({ key: "all" });
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
   const filtered = useMemo(() => rows.filter((r) => {
     if (!inRange(r.abandoned_at, range)) return false;
@@ -773,9 +773,9 @@ function AbandonedPanel({ rows, projects }: { rows: any[]; projects: string[] })
 function SubscriptionsPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
-  const [dateKey, setDateKey] = useState("all");
-  const [project, setProject] = useState("all");
-  const [status, setStatus] = useState("all");
+  const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
+  const [project, setProject] = useState<DateValue>({ key: "all" });
+  const [status, setStatus] = useState<DateValue>({ key: "all" });
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
 
   const statuses = useMemo(() => Array.from(new Set(rows.map((r) => r.status).filter(Boolean))) as string[], [rows]);
