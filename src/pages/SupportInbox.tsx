@@ -5,6 +5,7 @@ import {
   Clock, Trash2, RefreshCcw, User2, Building2, Star, StarOff,
   Archive, AlertOctagon, FileEdit, PenSquare, Reply, Forward,
   ChevronLeft, MoreHorizontal, CheckCircle2, Filter, Trash, RotateCcw,
+  Settings as SettingsIcon, X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -109,6 +110,47 @@ export default function SupportInbox() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settings, setSettings] = useState({
+    sender_name: "منصة كفاءة",
+    signature: "",
+    signature_enabled: false,
+    footer: "",
+    footer_enabled: false,
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const loadSettings = useCallback(async () => {
+    const { data } = await supabase
+      .from("platform_email_settings")
+      .select("sender_name, signature, signature_enabled, footer, footer_enabled")
+      .eq("id", true)
+      .maybeSingle();
+    if (data) setSettings(data);
+  }, []);
+  useEffect(() => { if (isOwner) loadSettings(); }, [isOwner, loadSettings]);
+  const saveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const { error } = await supabase
+        .from("platform_email_settings")
+        .update({
+          sender_name: settings.sender_name,
+          signature: settings.signature,
+          signature_enabled: settings.signature_enabled,
+          footer: settings.footer,
+          footer_enabled: settings.footer_enabled,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", true);
+      if (error) throw error;
+      toast.success("تم حفظ الإعدادات");
+      setSettingsOpen(false);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "تعذّر حفظ الإعدادات"));
+    } finally {
+      setSavingSettings(false);
+    }
+  };
   const [confirmState, setConfirmState] = useState<{
     title: string;
     description: string;
