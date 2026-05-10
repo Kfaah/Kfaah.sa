@@ -139,7 +139,7 @@ export default function SupportInbox() {
         is_read: !t.unread_for_owner,
         is_starred: false,
         is_spam: false,
-        is_trashed: false,
+        is_trashed: !!t.is_trashed,
         is_archived: false,
         labels: hasInbound ? ["zoho"] : ["zoho", "sent-only"],
         created_at: t.last_message_at || new Date().toISOString(),
@@ -248,7 +248,12 @@ export default function SupportInbox() {
   // Actions
   const patchMsg = async (id: string, patch: Partial<SupportMsg>) => {
     if (id.startsWith("pem:")) {
-      // For pem threads we only support trash = delete-thread. Other patches are no-ops.
+      if ("is_trashed" in patch) {
+        await supabase.from("platform_email_threads").update({
+          is_trashed: !!patch.is_trashed,
+          trashed_at: patch.is_trashed ? new Date().toISOString() : null,
+        } as any).eq("id", id.slice(4));
+      }
       return;
     }
     await supabase.from("support_messages").update(patch).eq("id", id);
@@ -258,12 +263,9 @@ export default function SupportInbox() {
   const toSpam     = (m: SupportMsg) => { patchMsg(m.id, { is_spam: true, is_archived: false }); setSelectedId(null); toast.success("تم نقلها إلى غير الهام"); };
   const toTrash    = async (m: SupportMsg) => {
     if (m.id.startsWith("pem:")) {
-      if (!confirm("حذف هذه المحادثة من بريد المنصة نهائياً؟")) return;
-      const threadId = m.id.slice(4);
-      await supabase.from("platform_email_messages").delete().eq("thread_id", threadId);
-      await supabase.from("platform_email_threads").delete().eq("id", threadId);
+      await patchMsg(m.id, { is_trashed: true });
       setSelectedId(null);
-      toast.success("تم حذف المحادثة");
+      toast.success("تم نقلها إلى المحذوفات");
       await loadAll();
       return;
     }
