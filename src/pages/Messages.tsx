@@ -357,38 +357,89 @@ export default function Messages() {
             )}
 
             {folder === "compose" ? (
-              <div className="md:col-span-2 p-6 space-y-3">
-                <div className="text-sm font-bold text-foreground mb-1">إنشاء رسالة جديدة</div>
-                <div className="text-[11px] text-muted-foreground mb-2">المستلم: إدارة المنصة</div>
-                <div>
-                  <label className="text-[11px] text-muted-foreground block mb-1">الموضوع (اختياري)</label>
-                  <Input
-                    value={composeSubject}
-                    onChange={(e) => setComposeSubject(e.target.value)}
-                    maxLength={200}
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-muted-foreground block mb-1">نص الرسالة</label>
-                  <Textarea
-                    value={composeBody}
-                    onChange={(e) => setComposeBody(e.target.value)}
-                    rows={6}
-                    maxLength={5000}
-                    className="resize-none"
-                  />
-                </div>
-                <FilePickList
-                  files={composeFiles}
-                  onAdd={(fs) => setComposeFiles((prev) => [...prev, ...fs])}
-                  onRemove={(i) => setComposeFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                  inputRef={composeFileInputRef}
-                />
-                <div className="flex justify-end">
-                  <Button onClick={sendCompose} disabled={sending} className="gap-2">
-                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    إرسال
-                  </Button>
+              <div className="md:col-span-2 bg-gradient-to-bl from-muted/40 via-background to-background">
+                <div className="max-w-2xl mx-auto px-6 md:px-10 py-8 md:py-10 space-y-6">
+                  {/* Hero */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 ring-1 ring-primary/20">
+                      <PenSquare className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-xl font-bold text-foreground leading-tight">رسالة جديدة لإدارة المنصة</h2>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        اكتب استفسارك أو ملاحظتك بوضوح وسنرد عليك في أقرب وقت ممكن.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Recipient chip */}
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border w-fit">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                      <Shield className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-[10px] text-muted-foreground">إلى</span>
+                      <span className="text-xs font-bold text-foreground">إدارة منصة كفاءة</span>
+                    </div>
+                  </div>
+
+                  {/* Form card */}
+                  <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
+                    <div className="px-5 pt-5">
+                      <label className="text-[11px] font-bold text-muted-foreground tracking-wide uppercase block mb-2">
+                        الموضوع
+                      </label>
+                      <Input
+                        value={composeSubject}
+                        onChange={(e) => setComposeSubject(e.target.value)}
+                        maxLength={200}
+                        placeholder="عنوان مختصر يصف رسالتك (اختياري)"
+                        className="border-0 border-b border-border rounded-none px-0 h-11 text-base font-bold focus-visible:ring-0 focus-visible:border-primary shadow-none"
+                      />
+                    </div>
+                    <div className="px-5 py-5">
+                      <label className="text-[11px] font-bold text-muted-foreground tracking-wide uppercase block mb-2">
+                        نص الرسالة
+                      </label>
+                      <Textarea
+                        value={composeBody}
+                        onChange={(e) => setComposeBody(e.target.value)}
+                        rows={9}
+                        maxLength={5000}
+                        placeholder="اكتب رسالتك هنا..."
+                        className="resize-none border-0 px-0 text-sm leading-relaxed focus-visible:ring-0 shadow-none min-h-[180px]"
+                      />
+                      <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                        <span className="text-[10px] text-muted-foreground tabular-nums" dir="ltr">
+                          {composeBody.length} / 5000
+                        </span>
+                      </div>
+                    </div>
+                    <div className="px-5 py-4 bg-muted/30 border-t border-border">
+                      <FilePickList
+                        files={composeFiles}
+                        onAdd={(fs) => setComposeFiles((prev) => [...prev, ...fs])}
+                        onRemove={(i) => setComposeFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                        inputRef={composeFileInputRef}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      بإرسال الرسالة، توافق على مراجعتها من قِبل فريق الدعم.
+                    </p>
+                    <Button
+                      onClick={sendCompose}
+                      disabled={sending || (!composeBody.trim() && composeFiles.length === 0)}
+                      size="lg"
+                      className="gap-2 px-6 shadow-md"
+                    >
+                      {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      إرسال الرسالة
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
