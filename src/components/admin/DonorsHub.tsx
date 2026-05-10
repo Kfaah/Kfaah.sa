@@ -34,6 +34,38 @@ const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
 const SAR = (n: number) => `${(n || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س`;
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString("ar-SA") : "—";
 
+/* ---------- Arabic label maps ---------- */
+const STATUS_AR: Record<string, string> = {
+  active: "نشِطة", inactive: "متوقفة", paused: "متوقفة مؤقتاً",
+  open: "مفتوحة", closed: "مغلقة", completed: "مكتملة",
+  pending: "قيد الانتظار", cancelled: "ملغاة", canceled: "ملغاة",
+  expired: "منتهية", draft: "مسودة", success: "ناجحة", failed: "فاشلة",
+  scheduled: "مجدولة", running: "جارية",
+};
+const METHOD_AR: Record<string, string> = {
+  mada: "مدى", visa: "فيزا", mastercard: "ماستركارد", amex: "أميكس",
+  applepay: "أبل باي", apple_pay: "أبل باي", "apple-pay": "أبل باي",
+  stcpay: "STC Pay", stc_pay: "STC Pay", "stc-pay": "STC Pay",
+  transfer: "تحويل بنكي", bank_transfer: "تحويل بنكي", "bank-transfer": "تحويل بنكي",
+  cash: "نقدي", sadad: "سداد", paypal: "باي بال", wallet: "محفظة",
+  card: "بطاقة", credit_card: "بطاقة ائتمان",
+};
+const FOLLOWUP_AR: Record<string, string> = {
+  pending: "قيد المتابعة", contacted: "تم التواصل", recovered: "مُسترد",
+  failed: "فشلت المتابعة", ignored: "متجاهَل", scheduled: "مجدولة",
+};
+const RETRY_AR: Record<string, string> = {
+  pending: "بانتظار الإعادة", retrying: "جاري الإعادة", succeeded: "نجحت",
+  failed: "فشلت", abandoned: "تم التخلي", scheduled: "مجدولة",
+};
+const SEGMENT_AR: Record<string, string> = {
+  new: "جديد", regular: "منتظم", vip: "VIP", lapsed: "منقطع",
+  recurring: "متكرر", "one-time": "لمرة واحدة", one_time: "لمرة واحدة",
+  major: "متبرع كبير", small: "متبرع صغير",
+};
+const ar = (map: Record<string, string>, v: string | null | undefined) =>
+  v ? (map[v.toLowerCase()] || v) : "—";
+
 interface Donation {
   id: string; donor_id: string | null; donor_name: string | null; donor_phone: string | null;
   project_name: string | null; amount: number; payment_method: string | null;
@@ -471,7 +503,7 @@ function DonorsPanel({ donors, donations, projects }: { donors: DonorRow[]; dona
           <SelectTrigger className="w-44 h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الشرائح</SelectItem>
-            {segments.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {segments.map((s) => <SelectItem key={s} value={s}>{ar(SEGMENT_AR, s)}</SelectItem>)}
           </SelectContent>
         </Select>
         <CountChip n={filtered.length} total={donors.length} />
@@ -480,7 +512,7 @@ function DonorsPanel({ donors, donations, projects }: { donors: DonorRow[]; dona
         head={["#", "الاسم", "الجوال", "المدينة", "الشريحة", "عدد التبرعات", "إجمالي التبرع", "آخر تبرع"]}
         rows={filtered.slice(0, 500).map((d, i) => [
           String(i + 1), d.full_name, d.phone || "—", d.city || "—",
-          <Badge variant="outline" style={{ borderColor: `${brand}55`, color: brand, background: `${brand}10` }}>{d.segment}</Badge>,
+          <Badge variant="outline" style={{ borderColor: `${brand}55`, color: brand, background: `${brand}10` }}>{ar(SEGMENT_AR, d.segment)}</Badge>,
           d.donations_count, SAR(Number(d.total_donated)), fmtDate(d.last_donation_at),
         ])}
       />
@@ -519,7 +551,7 @@ function DonationsPanel({ donations, projects }: { donations: Donation[]; projec
           <SelectTrigger className="w-44 h-9"><SelectValue placeholder="وسيلة الدفع" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الوسائل</SelectItem>
-            {methods.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            {methods.map((m) => <SelectItem key={m} value={m}>{ar(METHOD_AR, m)}</SelectItem>)}
           </SelectContent>
         </Select>
         <CountChip n={filtered.length} total={donations.length} extra={SAR(sum)} />
@@ -528,11 +560,11 @@ function DonationsPanel({ donations, projects }: { donations: Donation[]; projec
         head={["#", "التاريخ", "المتبرع", "الجوال", "المشروع", "الوسيلة", "المبلغ", "الحالة"]}
         rows={filtered.slice(0, 1000).map((d, i) => [
           String(i + 1), fmtDate(d.donation_date), d.donor_name || "—", d.donor_phone || "—",
-          d.project_name || "—", d.payment_method || "—",
+          d.project_name || "—", ar(METHOD_AR, d.payment_method),
           <span className="font-bold text-emerald-700">{SAR(Number(d.amount))}</span>,
           <Badge variant="outline" className={cn(
             d.status === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-700 border-slate-200"
-          )}>{d.status}</Badge>,
+          )}>{ar(STATUS_AR, d.status)}</Badge>,
         ])}
       />
     </div>
@@ -675,7 +707,7 @@ function CampaignsPanel({ campaigns, projects }: { campaigns: any[]; projects: s
           <SelectTrigger className="w-44 h-9"><SelectValue placeholder="الحالة" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الحالات</SelectItem>
-            {statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {statuses.map((s) => <SelectItem key={s} value={s}>{ar(STATUS_AR, s)}</SelectItem>)}
           </SelectContent>
         </Select>
         <CountChip n={filtered.length} total={campaigns.length} />
@@ -701,7 +733,7 @@ function CampaignsPanel({ campaigns, projects }: { campaigns: any[]; projects: s
               style={c.status === "active"
                 ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
                 : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
-            >{c.status}</Badge>,
+            >{ar(STATUS_AR, c.status)}</Badge>,
           ];
         })}
       />
@@ -731,10 +763,10 @@ function FailedPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
         head={["#", "التاريخ", "المتبرع", "الجوال", "المشروع", "الوسيلة", "المبلغ", "السبب", "حالة الإعادة"]}
         rows={filtered.slice(0, 1000).map((r, i) => [
           String(i + 1), fmtDate(r.attempted_at), r.donor_name || "—", r.donor_phone || "—",
-          r.project_name || "—", r.payment_method || "—",
+          r.project_name || "—", ar(METHOD_AR, r.payment_method),
           <span className="font-bold text-rose-700">{SAR(Number(r.amount))}</span>,
           <span className="text-xs text-slate-600">{r.failure_reason || "—"}</span>,
-          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">{r.retry_status}</Badge>,
+          <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">{ar(RETRY_AR, r.retry_status)}</Badge>,
         ])}
       />
     </div>
@@ -766,7 +798,7 @@ function AbandonedPanel({ rows, projects }: { rows: any[]; projects: string[] })
           String(i + 1), fmtDate(r.abandoned_at), r.donor_name || "—", r.donor_phone || "—",
           r.project_name || "—",
           <span className="font-bold text-amber-700">{SAR(Number(r.amount))}</span>,
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{r.follow_up_status}</Badge>,
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{ar(FOLLOWUP_AR, r.follow_up_status)}</Badge>,
           r.recovered
             ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">نعم</Badge>
             : <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">لا</Badge>,
@@ -805,7 +837,7 @@ function SubscriptionsPanel({ rows, projects }: { rows: any[]; projects: string[
           <SelectTrigger className="w-44 h-9"><SelectValue placeholder="الحالة" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الحالات</SelectItem>
-            {statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {statuses.map((s) => <SelectItem key={s} value={s}>{ar(STATUS_AR, s)}</SelectItem>)}
           </SelectContent>
         </Select>
         <CountChip n={filtered.length} total={rows.length} extra={`نشِط: ${active} · شهري متوقع: ${SAR(monthly)}`} />
@@ -821,7 +853,7 @@ function SubscriptionsPanel({ rows, projects }: { rows: any[]; projects: string[
             style={r.status === "active"
               ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
               : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
-          >{r.status}</Badge>,
+          >{ar(STATUS_AR, r.status)}</Badge>,
         ])}
       />
     </div>
