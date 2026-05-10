@@ -358,7 +358,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
           {active === "campaigns" && <CampaignsPanel campaigns={campaigns} projects={projects} />}
           {active === "failed" && <FailedPanel rows={failed} projects={projects} />}
           {active === "abandoned" && <AbandonedPanel rows={abandoned} projects={projects} />}
-          {active === "subscriptions" && <SubscriptionsPanel rows={subs} projects={projects} />}
+          {active === "subscriptions" && <SubscriptionsPanel rows={subs} donations={donations} projects={projects} />}
         </div>
       )}
     </div>
@@ -810,25 +810,123 @@ function AbandonedPanel({ rows, projects }: { rows: any[]; projects: string[] })
   );
 }
 
-function SubscriptionsPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
+function SubscriptionsPanel({ rows, donations, projects }: { rows: any[]; donations: any[]; projects: string[] }) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
   const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
   const [project, setProject] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
+  const [behavior, setBehavior] = useState<string>("all");
+  const [months, setMonths] = useState<number>(12);
   const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
 
   const statuses = useMemo(() => Array.from(new Set(rows.map((r) => r.status).filter(Boolean))) as string[], [rows]);
 
-  const filtered = useMemo(() => rows.filter((r) => {
+  // Build month buckets (oldest -> newest), each is YYYY-MM
+  const monthKeys = useMemo(() => {
+    const out: { key: string; label: string; year: number; month: number }[] = [];
+    const now = new Date();
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      out.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+        label: d.toLocaleDateString("ar-SA", { month: "short", year: "2-digit" }),
+        year: d.getFullYear(),
+        month: d.getMonth(),
+      });
+    }
+    return out;
+  }, [months]);
+
+  // Index donations by donor key + month
+  const normPhone = (p?: string | null) => (p || "").replace(/\D+/g, "").replace(/^966/, "").replace(/^0/, "");
+  const donationIndex = useMemo(() => {
+    const idx = new Map<string, Map<string, number>>(); // key -> mkey -> sum
+    for (const d of donations) {
+      const dt = d.donation_date ? new Date(d.donation_date) : null;
+      if (!dt) continue;
+      const mkey = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+      const keys = [
+        d.donor_id ? `id:${d.donor_id}` : null,
+        d.donor_phone ? `ph:${normPhone(d.donor_phone)}` : null,
+      ].filter(Boolean) as string[];
+      for (const k of keys) {
+        if (!idx.has(k)) idx.set(k, new Map());
+        const inner = idx.get(k)!;
+        // optional project match: store per project in compound key too
+        const pkey = d.project_name ? `${mkey}::${d.project_name}` : mkey;
+        inner.set(mkey, (inner.get(mkey) || 0) + Number(d.amount || 0));
+        inner.set(pkey, (inner.get(pkey) || 0) + Number(d.amount || 0));
+      }
+    }
+    return idx;
+  }, [donations]);
+
+  // Per-subscription monthly grid + behavior classification
+  const enriched = useMemo(() => {
+    return rows.map((r) => {
+      const startDate = r.start_date ? new Date(r.start_date) : null;
+      const lookupKeys = [
+        r.donor_id ? `id:${r.donor_id}` : null,
+        r.donor_phone ? `ph:${normPhone(r.donor_phone)}` : null,
+      ].filter(Boolean) as string[];
+      const cells = monthKeys.map((m) => {
+        // skip months before subscription start
+        if (startDate) {
+          const mEnd = new Date(m.year, m.month + 1, 0);
+          if (mEnd < startDate) return { ...m, state: "na" as const, amount: 0 };
+        }
+        let amt = 0;
+        for (const k of lookupKeys) {
+          const inner = donationIndex.get(k);
+          if (!inner) continue;
+          const pkey = r.project_name ? `${m.key}::${r.project_name}` : m.key;
+          amt = Math.max(amt, inner.get(pkey) || inner.get(m.key) || 0);
+        }
+        return { ...m, state: amt > 0 ? "paid" as const : "miss" as const, amount: amt };
+      });
+      const evalCells = cells.filter((c) => c.state !== "na");
+      const paid = evalCells.filter((c) => c.state === "paid").length;
+      const total = evalCells.length || 1;
+      const ratio = paid / total;
+      // recent miss streak (last 3)
+      const recent = evalCells.slice(-3);
+      const recentMiss = recent.length > 0 && recent.every((c) => c.state === "miss");
+      let behaviorKey: "regular" | "lapsed" | "irregular" | "new" = "regular";
+      if (evalCells.length <= 1) behaviorKey = "new";
+      else if (paid === 0 || recentMiss) behaviorKey = "lapsed";
+      else if (ratio >= 0.85) behaviorKey = "regular";
+      else behaviorKey = "irregular";
+      return { ...r, _cells: cells, _paid: paid, _total: evalCells.length, _ratio: ratio, _behavior: behaviorKey };
+    });
+  }, [rows, monthKeys, donationIndex]);
+
+  const filtered = useMemo(() => enriched.filter((r) => {
     if (!inRange(r.start_date || r.created_at, range)) return false;
     if (project !== "all" && r.project_name !== project) return false;
     if (status !== "all" && r.status !== status) return false;
+    if (behavior !== "all" && r._behavior !== behavior) return false;
     return true;
-  }), [rows, range, project, status]);
+  }), [enriched, range, project, status, behavior]);
 
-  const active = filtered.filter((r) => r.status === "active").length;
-  const monthly = filtered.filter((r) => r.status === "active").reduce((s, r) => s + Number(r.amount || 0), 0);
+  const counts = useMemo(() => ({
+    regular: enriched.filter((r) => r._behavior === "regular").length,
+    lapsed: enriched.filter((r) => r._behavior === "lapsed").length,
+    irregular: enriched.filter((r) => r._behavior === "irregular").length,
+    new: enriched.filter((r) => r._behavior === "new").length,
+  }), [enriched]);
+
+  const monthlyExpected = filtered.filter((r) => r.status === "active").reduce((s, r) => s + Number(r.amount || 0), 0);
+
+  const BEHAVIOR_AR: Record<string, string> = {
+    regular: "منتظم", lapsed: "منقطع", irregular: "متذبذب", new: "جديد",
+  };
+  const behaviorStyle = (b: string): React.CSSProperties => {
+    if (b === "regular") return { background: `${brand}15`, color: brand, borderColor: `${brand}66` };
+    if (b === "lapsed") return { background: "rgb(254 226 226)", color: "rgb(153 27 27)", borderColor: "rgb(252 165 165)" };
+    if (b === "irregular") return { background: "rgb(254 243 199)", color: "rgb(146 64 14)", borderColor: "rgb(252 211 77)" };
+    return { background: "rgb(219 234 254)", color: "rgb(30 64 175)", borderColor: "rgb(147 197 253)" };
+  };
 
   return (
     <div className="space-y-3">
@@ -836,28 +934,103 @@ function SubscriptionsPanel({ rows, projects }: { rows: any[]; projects: string[
         <DateSelect value={dateKey} onChange={setDateKey} />
         <ProjectSelect value={project} onChange={setProject} projects={projects} />
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-44 h-9"><SelectValue placeholder="الحالة" /></SelectTrigger>
+          <SelectTrigger className="w-40 h-9"><SelectValue placeholder="الحالة" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الحالات</SelectItem>
             {statuses.map((s) => <SelectItem key={s} value={s}>{ar(STATUS_AR, s)}</SelectItem>)}
           </SelectContent>
         </Select>
-        <CountChip n={filtered.length} total={rows.length} extra={`نشِط: ${active} · شهري متوقع: ${SAR(monthly)}`} />
+        <Select value={behavior} onValueChange={setBehavior}>
+          <SelectTrigger className="w-44 h-9"><SelectValue placeholder="السلوك" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل السلوكيات</SelectItem>
+            <SelectItem value="regular">منتظم ({counts.regular})</SelectItem>
+            <SelectItem value="lapsed">منقطع ({counts.lapsed})</SelectItem>
+            <SelectItem value="irregular">متذبذب ({counts.irregular})</SelectItem>
+            <SelectItem value="new">جديد ({counts.new})</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
+          <SelectTrigger className="w-32 h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="6">آخر 6 أشهر</SelectItem>
+            <SelectItem value="12">آخر 12 شهراً</SelectItem>
+            <SelectItem value="24">آخر 24 شهراً</SelectItem>
+          </SelectContent>
+        </Select>
+        <CountChip n={filtered.length} total={rows.length} extra={`نشِط: ${counts.regular} · منقطع: ${counts.lapsed} · شهري متوقّع: ${SAR(monthlyExpected)}`} />
       </Toolbar>
-      <DataTable
-        head={["#", "المتبرع", "الجوال", "المشروع", "المبلغ", "البداية", "الاستقطاع التالي", "الحالة"]}
-        rows={filtered.slice(0, 1000).map((r, i) => [
-          String(i + 1), r.donor_name || "—", r.donor_phone || "—", r.project_name || "—",
-          <span className="font-bold" style={{ color: brand }}>{SAR(Number(r.amount))}</span>,
-          fmtDate(r.start_date), fmtDate(r.next_charge_date),
-          <Badge
-            variant="outline"
-            style={r.status === "active"
-              ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
-              : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
-          >{ar(STATUS_AR, r.status)}</Badge>,
-        ])}
-      />
+
+      {/* legend */}
+      <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 px-1">
+        <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: `${brand}` }} /> دفع</span>
+        <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-rose-500" /> فاته</span>
+        <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-slate-200" /> قبل البدء</span>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 overflow-x-auto bg-white">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-slate-600 text-[12px]">
+              <th className="px-3 py-2 text-right font-semibold w-10">#</th>
+              <th className="px-3 py-2 text-right font-semibold">المتبرع</th>
+              <th className="px-3 py-2 text-right font-semibold">الجوال</th>
+              <th className="px-3 py-2 text-right font-semibold">المشروع</th>
+              <th className="px-3 py-2 text-right font-semibold">المبلغ</th>
+              <th className="px-3 py-2 text-right font-semibold">السلوك</th>
+              <th className="px-3 py-2 text-center font-semibold">الانتظام</th>
+              <th className="px-2 py-2 text-center font-semibold">سجل الأشهر</th>
+              <th className="px-3 py-2 text-right font-semibold">الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.slice(0, 1000).map((r, i) => (
+              <tr key={r.id || i} className="border-t border-slate-100 hover:bg-slate-50/50">
+                <td className="px-3 py-2 text-slate-500">{i + 1}</td>
+                <td className="px-3 py-2 font-medium text-slate-800">{r.donor_name || "—"}</td>
+                <td className="px-3 py-2 text-slate-600 tabular-nums">{r.donor_phone || "—"}</td>
+                <td className="px-3 py-2 text-slate-600">{r.project_name || "—"}</td>
+                <td className="px-3 py-2 font-bold" style={{ color: brand }}>{SAR(Number(r.amount))}</td>
+                <td className="px-3 py-2">
+                  <Badge variant="outline" style={behaviorStyle(r._behavior)}>{BEHAVIOR_AR[r._behavior]}</Badge>
+                </td>
+                <td className="px-3 py-2 text-center text-slate-700 text-xs tabular-nums">
+                  {r._total > 0 ? `${r._paid}/${r._total} · ${Math.round(r._ratio * 100)}%` : "—"}
+                </td>
+                <td className="px-2 py-2">
+                  <div className="flex items-center justify-center gap-[3px]" dir="ltr">
+                    {r._cells.map((c: any) => (
+                      <span
+                        key={c.key}
+                        title={`${c.label} — ${c.state === "paid" ? "دفع " + SAR(c.amount) : c.state === "miss" ? "فاته" : "قبل البدء"}`}
+                        className="w-3.5 h-5 rounded-sm"
+                        style={{
+                          background:
+                            c.state === "paid" ? brand :
+                            c.state === "miss" ? "rgb(244 63 94)" :
+                            "rgb(226 232 240)",
+                          opacity: c.state === "na" ? 0.6 : 1,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </td>
+                <td className="px-3 py-2">
+                  <Badge
+                    variant="outline"
+                    style={r.status === "active"
+                      ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
+                      : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
+                  >{ar(STATUS_AR, r.status)}</Badge>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan={9} className="text-center py-10 text-slate-400 text-sm">لا توجد اشتراكات بهذه المعايير</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
