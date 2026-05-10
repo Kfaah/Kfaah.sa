@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsDemo } from "@/hooks/useIsDemo";
 
 interface PageGuideProps {
   /** عنوان مختصر للشرح */
@@ -22,6 +23,10 @@ export function PageGuide({
   features,
   className,
 }: PageGuideProps) {
+  // النبذة التعريفية تظهر فقط في نسخة العرض التجريبي (Demo)،
+  // أما حسابات مدير النظام والجمعيات فلا تُعرض لهم لتقليل التشتيت.
+  const { isDemo } = useIsDemo();
+  if (!isDemo) return null;
   return (
     <div
       dir="rtl"
