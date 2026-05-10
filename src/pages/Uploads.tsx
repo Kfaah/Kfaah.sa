@@ -305,6 +305,41 @@ export default function Uploads() {
           `تم رفع "${pf.file.name}" — ${result?.inserted ?? 0} سجل. يجري ربط الملف بالتحليل الذكي والتوصيات والمساءلات…`,
           { duration: 6000 },
         );
+        // 🧠 Trigger daily intelligence engine after data uploads
+        if (
+          pf.category !== "staff_duties" &&
+          pf.category !== "profiles" &&
+          pf.category !== "tasks" &&
+          pf.category !== "reports" &&
+          pf.category !== "other"
+        ) {
+          (async () => {
+            try {
+              const { data: u } = await supabase.auth.getUser();
+              if (!orgId) return;
+              const { data: intelData } = await supabase.functions.invoke(
+                "daily-donor-intelligence",
+                {
+                  body: {
+                    organizationId: orgId,
+                    trigger: "upload",
+                    dataset: pf.category,
+                    caller_user_id: u.user?.id,
+                  },
+                },
+              );
+              const stats = (intelData as any)?.stats;
+              if (stats) {
+                toast.success(
+                  `🧠 العقل اليومي: ${stats.insights_saved || 0} رؤية و ${stats.tasks_saved || 0} مهمة جديدة على الموظفين`,
+                  { duration: 7000 },
+                );
+              }
+            } catch (intelErr) {
+              console.warn("daily-donor-intelligence trigger failed", intelErr);
+            }
+          })();
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "فشل الرفع";
         setPending((prev) =>
@@ -315,7 +350,7 @@ export default function Uploads() {
         loadHistory();
       }
     },
-    [forDate, loadHistory, processStaffDuties, archiveFile],
+    [forDate, loadHistory, processStaffDuties, archiveFile, orgId],
   );
 
   const handleFiles = useCallback(

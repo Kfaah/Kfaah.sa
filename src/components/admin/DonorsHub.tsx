@@ -13,13 +13,13 @@ import { cn } from "@/lib/utils";
 import {
   HeartHandshake, Users, Trophy, Repeat, Megaphone, XCircle, ShoppingCart,
   CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar as CalendarIcon, Wallet, Gift,
-  Crown, Sparkles, Copy, Check,
+  Crown, Sparkles, Copy, Check, Brain, Zap, AlertTriangle, Lightbulb, Send, RefreshCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 
 type SubKey =
   | "overview" | "donors" | "donations" | "top" | "recurring"
-  | "subscriptions" | "campaigns" | "gifts" | "failed" | "abandoned" | "elite";
+  | "subscriptions" | "campaigns" | "gifts" | "failed" | "abandoned" | "elite" | "intelligence";
 
 const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "overview", label: "لوحة عامة", Icon: HeartHandshake, desc: "ملخّص شامل لأداء التبرعات" },
@@ -33,6 +33,7 @@ const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, desc: "محاولات لم تكتمل" },
   { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, desc: "تنبيهات استرداد" },
   { key: "elite", label: "النخبة + AI", Icon: Crown, desc: "متبرعون متعدّدو الأنشطة + رؤى ذكاء اصطناعي" },
+  { key: "intelligence", label: "العقل اليومي", Icon: Brain, desc: "تحليل عميق يومي + مهام ذكية تنزل للموظفين" },
 ];
 
 const SAR = (n: number) => `${(n || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س`;
@@ -318,7 +319,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
       </div>
 
       {/* Sub-icons */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-11 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-12 gap-2">
         {SUB_TABS.map((t, idx) => {
           const Icon = t.Icon;
           const isActive = active === t.key;
@@ -387,6 +388,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
               abandoned={abandoned}
             />
           )}
+          {active === "intelligence" && <IntelligencePanel orgId={orgId} brand={brand} />}
         </div>
       )}
     </div>
@@ -1631,6 +1633,273 @@ function InsightSection({
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   IntelligencePanel — العقل اليومي للتبرعات
+   ===================================================================== */
+function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
+  const [insights, setInsights] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [latest, setLatest] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const [ins, tk] = await Promise.all([
+      supabase.from("donor_insights").select("*").eq("organization_id", orgId).eq("is_active", true).order("generated_at", { ascending: false }).limit(60),
+      supabase.from("smart_tasks").select("*").eq("organization_id", orgId).eq("ai_generated", true).order("created_at", { ascending: false }).limit(80),
+    ]);
+    setInsights(ins.data || []);
+    setTasks(tk.data || []);
+    setLatest(ins.data?.[0]?.generated_at || null);
+    setLoading(false);
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
+
+  const runAnalysis = async () => {
+    setRunning(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data, error } = await supabase.functions.invoke("daily-donor-intelligence", {
+        body: { organizationId: orgId, trigger: "manual", caller_user_id: userData.user?.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const stats = (data as any)?.stats || {};
+      toast.success(`✨ تحليل اكتمل: ${stats.insights_saved || 0} رؤية و ${stats.tasks_saved || 0} مهمة جديدة`);
+      await load();
+    } catch (e: any) {
+      toast.error(`تعذّر التحليل: ${e?.message || "خطأ"}`);
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const dismissInsight = async (id: string) => {
+    await supabase.from("donor_insights").update({ is_active: false }).eq("id", id);
+    setInsights((prev) => prev.filter((x) => x.id !== id));
+  };
+  const completeTask = async (id: string) => {
+    await supabase.from("smart_tasks").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", id);
+    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: "completed" } : t));
+  };
+
+  const groupedBySeverity = useMemo(() => {
+    const order: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+    return [...insights].sort((a, b) => (order[a.severity] ?? 9) - (order[b.severity] ?? 9));
+  }, [insights]);
+
+  const SEVERITY_BADGE: Record<string, { bg: string; fg: string; label: string }> = {
+    critical: { bg: "bg-rose-100", fg: "text-rose-700", label: "حرجة" },
+    high: { bg: "bg-orange-100", fg: "text-orange-700", label: "عالية" },
+    medium: { bg: "bg-amber-100", fg: "text-amber-700", label: "متوسطة" },
+    low: { bg: "bg-sky-100", fg: "text-sky-700", label: "منخفضة" },
+    info: { bg: "bg-slate-100", fg: "text-slate-600", label: "معلومة" },
+  };
+  const TYPE_LABEL: Record<string, string> = {
+    donation_anniversary: "ذكرى تبرع",
+    first_gift_window: "متبرع جديد",
+    lapsing_recurring: "مستقطع منقطع",
+    campaign_near_goal: "حملة قاب قوسين",
+    abandoned_cart_recovery: "سلة متروكة",
+    cross_activity_donor: "متبرع عابر للأنشطة",
+    upgrade_opportunity: "فرصة ترقية",
+    loss_risk: "مخاطر فقدان",
+    project_loyalty: "ولاء مشروع",
+    generous_gift_giver: "مهدٍ كريم",
+    other: "رؤية",
+  };
+
+  const pendingTasks = tasks.filter((t) => t.status === "pending");
+  const completedTasksCount = tasks.filter((t) => t.status === "completed").length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-slate-500 gap-2">
+        <Loader2 className="w-5 h-5 animate-spin" /> جاري تحميل العقل اليومي…
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      {/* Hero */}
+      <div
+        className="relative overflow-hidden rounded-2xl border p-6 shadow-sm"
+        style={{
+          borderColor: `${brand}33`,
+          background: `linear-gradient(135deg, ${brand}10, #ffffff 50%, #6366f10d)`,
+        }}
+      >
+        <div className="absolute -top-10 -left-10 w-48 h-48 rounded-full blur-3xl" style={{ background: `${brand}33` }} />
+        <div className="absolute -bottom-10 -right-10 w-56 h-56 rounded-full blur-3xl bg-indigo-200/40" />
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ring-2 ring-white/60"
+              style={{ background: `linear-gradient(135deg, ${brand}, #6366f1)` }}
+            >
+              <Brain className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+                العقل اليومي للتبرعات <Sparkles className="w-5 h-5 text-amber-500" />
+              </h3>
+              <p className="text-sm text-slate-600">
+                {latest
+                  ? `آخر تحليل: ${new Date(latest).toLocaleString("ar-SA")}`
+                  : "لم يُجرَ تحليل بعد — اضغط لتشغيل أول دورة"}
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={runAnalysis}
+            disabled={running}
+            className="gap-2 text-white shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${brand}, #6366f1)` }}
+          >
+            {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+            {running ? "جاري التحليل العميق…" : "تشغيل تحليل ذكي الآن"}
+          </Button>
+        </div>
+
+        {/* Mini KPIs */}
+        <div className="relative mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <MiniIntelKpi color="violet" icon={<Lightbulb className="w-4 h-4" />} label="رؤى نشطة" value={insights.length} />
+          <MiniIntelKpi color="emerald" icon={<Send className="w-4 h-4" />} label="مهام ذكية" value={pendingTasks.length} />
+          <MiniIntelKpi color="rose" icon={<AlertTriangle className="w-4 h-4" />} label="حرجة/عالية" value={insights.filter((i) => i.severity === "critical" || i.severity === "high").length} />
+          <MiniIntelKpi color="sky" icon={<Check className="w-4 h-4" />} label="مهام منفّذة" value={completedTasksCount} />
+        </div>
+      </div>
+
+      {insights.length === 0 && tasks.length === 0 ? (
+        <div className="rounded-2xl border-2 border-dashed border-slate-200 p-12 text-center">
+          <Brain className="w-14 h-14 mx-auto text-slate-300 mb-3" />
+          <p className="text-slate-600 font-semibold mb-1">لا توجد رؤى بعد</p>
+          <p className="text-sm text-slate-500 mb-4">شغّل أول تحليل ليبدأ النظام في استخراج الفرص الذكية وتوليد المهام تلقائيًا.</p>
+          <Button onClick={runAnalysis} disabled={running} className="gap-2">
+            <Zap className="w-4 h-4" /> ابدأ الآن
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Insights column */}
+          <div className="lg:col-span-2 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-amber-500" /> الرؤى السلوكية
+              </h4>
+              <button onClick={load} className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                <RefreshCcw className="w-3 h-3" /> تحديث
+              </button>
+            </div>
+            {groupedBySeverity.length === 0 && <p className="text-sm text-slate-500">لا رؤى نشطة حاليًا.</p>}
+            <div className="space-y-2">
+              {groupedBySeverity.map((it) => {
+                const sev = SEVERITY_BADGE[it.severity] || SEVERITY_BADGE.info;
+                const actions: string[] = it.details?.recommended_actions || [];
+                const donorRef = it.details?.donor_ref;
+                return (
+                  <div key={it.id} className="rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-md", sev.bg, sev.fg)}>{sev.label}</span>
+                        <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                          {TYPE_LABEL[it.insight_type] || it.insight_type}
+                        </span>
+                        {donorRef && <span className="text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">{donorRef}</span>}
+                      </div>
+                      <button onClick={() => dismissInsight(it.id)} className="text-xs text-slate-400 hover:text-rose-600">تجاهل</button>
+                    </div>
+                    <div className="font-bold text-slate-900 mb-1">{it.title}</div>
+                    <p className="text-sm text-slate-600 leading-relaxed">{it.summary}</p>
+                    {actions.length > 0 && (
+                      <ul className="mt-2 space-y-1">
+                        {actions.map((a, i) => (
+                          <li key={i} className="text-xs text-slate-700 flex items-start gap-1.5">
+                            <span className="text-emerald-600 mt-0.5">▸</span>
+                            <span>{a}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="text-[10px] text-slate-400 mt-2">{new Date(it.generated_at).toLocaleString("ar-SA")}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Tasks column */}
+          <div className="space-y-3">
+            <h4 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+              <Send className="w-5 h-5 text-emerald-600" /> مهام للموظفين
+            </h4>
+            {pendingTasks.length === 0 && <p className="text-sm text-slate-500">لا مهام معلّقة.</p>}
+            <div className="space-y-2">
+              {pendingTasks.slice(0, 30).map((t) => (
+                <div key={t.id} className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/40 to-white p-3.5 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className={cn(
+                      "text-[10px] font-bold px-2 py-0.5 rounded-md",
+                      t.priority === "high" ? "bg-rose-100 text-rose-700" :
+                      t.priority === "medium" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"
+                    )}>
+                      {t.priority === "high" ? "عالية" : t.priority === "medium" ? "متوسطة" : "منخفضة"}
+                    </span>
+                    <span className="text-[10px] text-slate-500">{t.due_date ? new Date(t.due_date).toLocaleDateString("ar-SA") : ""}</span>
+                  </div>
+                  <div className="font-bold text-sm text-slate-900 mb-1 leading-snug">{t.title}</div>
+                  {t.description && <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">{t.description}</p>}
+                  {t.context?.donor_ref && (
+                    <div className="text-[11px] text-emerald-700 bg-emerald-100/60 inline-block px-2 py-0.5 rounded mt-1.5">{t.context.donor_ref}</div>
+                  )}
+                  {t.suggested_message && (
+                    <details className="mt-2">
+                      <summary className="text-[11px] text-indigo-600 cursor-pointer hover:underline">رسالة جاهزة</summary>
+                      <div className="mt-1.5 text-xs bg-white border border-indigo-100 p-2 rounded text-slate-700 whitespace-pre-line">{t.suggested_message}</div>
+                    </details>
+                  )}
+                  <div className="flex items-center gap-2 mt-2">
+                    <button onClick={() => completeTask(t.id)} className="text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 px-2 py-1 rounded">
+                      ✓ تم
+                    </button>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(t.suggested_message || `${t.title}\n\n${t.description || ""}`); toast.success("تم النسخ"); }}
+                      className="text-[11px] text-slate-600 hover:bg-slate-100 px-2 py-1 rounded"
+                    >
+                      نسخ
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MiniIntelKpi({ color, icon, label, value }: { color: "violet" | "emerald" | "rose" | "sky"; icon: React.ReactNode; label: string; value: number }) {
+  const palette: Record<string, { bg: string; fg: string; ring: string }> = {
+    violet: { bg: "bg-violet-100", fg: "text-violet-700", ring: "ring-violet-200" },
+    emerald: { bg: "bg-emerald-100", fg: "text-emerald-700", ring: "ring-emerald-200" },
+    rose: { bg: "bg-rose-100", fg: "text-rose-700", ring: "ring-rose-200" },
+    sky: { bg: "bg-sky-100", fg: "text-sky-700", ring: "ring-sky-200" },
+  };
+  const p = palette[color];
+  return (
+    <div className={cn("flex items-center gap-3 rounded-xl bg-white/80 backdrop-blur border border-white/60 px-3 py-2.5 ring-1", p.ring)}>
+      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", p.bg, p.fg)}>{icon}</div>
+      <div className="leading-tight">
+        <div className="text-[11px] text-slate-500">{label}</div>
+        <div className="text-lg font-extrabold text-slate-900">{value.toLocaleString("ar-SA")}</div>
       </div>
     </div>
   );
