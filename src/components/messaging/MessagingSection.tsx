@@ -276,31 +276,72 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
   // جلب الموظفين للمحادثة الجديدة مع أدوارهم
   const fetchEmployees = async () => {
     try {
-      const { data, error } = await supabase
-        .from("employees")
-        .select("user_id, full_name")
-        .neq("user_id", currentUserId)
-        .order("full_name");
+      // جلب معرّف منظمة المستخدم الحالي للفلترة على نفس الجمعية فقط
+      const { data: myOrgId } = await supabase.rpc("get_user_organization_id", {
+        _user_id: currentUserId,
+      });
 
-      if (error) throw error;
+      // 1) موظفو نفس الجمعية فقط
+      let orgEmployees: { user_id: string; full_name: string }[] = [];
+      if (myOrgId) {
+        const { data: orgData, error: orgErr } = await supabase
+          .from("employees")
+          .select("user_id, full_name, organization_id")
+          .eq("organization_id", myOrgId as any)
+          .neq("user_id", currentUserId)
+          .not("user_id", "is", null)
+          .order("full_name");
+        if (orgErr) throw orgErr;
+        orgEmployees = (orgData || []).map((e: any) => ({
+          user_id: e.user_id,
+          full_name: e.full_name,
+        }));
+      }
 
-      // جلب أدوار المستخدمين
-      const userIds = (data || []).map((e) => e.user_id).filter(Boolean);
+      // 2) مدراء المنصة (super_admin) — يظهرون كـ "منصة كفاءة"
+      const { data: superRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "super_admin" as any);
+      const superIds = (superRoles || [])
+        .map((r: any) => r.user_id)
+        .filter((id: string) => id && id !== currentUserId);
+
+      let platformAdmins: { user_id: string; full_name: string }[] = [];
+      if (superIds.length > 0) {
+        const { data: superEmployees } = await supabase
+          .from("employees")
+          .select("user_id, full_name")
+          .in("user_id", superIds);
+        const nameMap = new Map(
+          (superEmployees || []).map((e: any) => [e.user_id, e.full_name])
+        );
+        platformAdmins = superIds.map((id) => ({
+          user_id: id,
+          full_name: `منصة كفاءة — ${nameMap.get(id) || "مدير المنصة"}`,
+        }));
+      }
+
+      // دمج وإزالة التكرار
+      const merged = new Map<string, { user_id: string; full_name: string }>();
+      [...platformAdmins, ...orgEmployees].forEach((e) => {
+        if (!merged.has(e.user_id)) merged.set(e.user_id, e);
+      });
+      const finalList = Array.from(merged.values());
+
+      // جلب الأدوار للعرض
+      const userIds = finalList.map((e) => e.user_id);
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("user_id, role")
         .in("user_id", userIds);
-
       const rolesMap = new Map(
-        (rolesData || []).map((r) => [r.user_id, r.role])
+        (rolesData || []).map((r: any) => [r.user_id, r.role])
       );
 
-      const employeesWithRoles = (data || []).map((emp) => ({
-        ...emp,
-        role: rolesMap.get(emp.user_id) || "user",
-      }));
-
-      setEmployees(employeesWithRoles);
+      setEmployees(
+        finalList.map((e) => ({ ...e, role: rolesMap.get(e.user_id) || "user" }))
+      );
     } catch (error) {
       console.error("Error fetching employees:", error);
     }
