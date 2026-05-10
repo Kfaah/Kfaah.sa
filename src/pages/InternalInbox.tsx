@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Send, Inbox, ChevronRight, Loader2, User2, Reply, PenSquare, Mail } from "lucide-react";
+import { Send, Inbox, ChevronRight, Loader2, User2, Reply, PenSquare, Mail, Download } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +27,7 @@ type Msg = {
   from_admin: boolean;
   body: string;
   created_at: string;
+  attachments?: { name: string; url: string; type: string; size: number }[] | null;
 };
 
 type Folder = "inbox" | "sent" | "compose";
@@ -82,7 +83,7 @@ export default function InternalInbox() {
   const loadMessages = useCallback(async (tid: string) => {
     const { data } = await supabase
       .from("internal_messages")
-      .select("id,thread_id,sender_user_id,from_admin,body,created_at")
+      .select("id,thread_id,sender_user_id,from_admin,body,created_at,attachments")
       .eq("thread_id", tid)
       .order("created_at", { ascending: true });
     setMessages((data as Msg[]) || []);
@@ -412,7 +413,31 @@ export default function InternalInbox() {
                               className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed border shadow-sm ${mine ? "border-amber-300/30 text-white" : "bg-white/[0.08] border-white/15 text-white"}`}
                               style={mine ? { background: `linear-gradient(135deg, hsl(${primaryHsl} / 0.55), hsl(${accentHsl} / 0.25))` } : undefined}
                             >
-                              <div className="whitespace-pre-wrap">{m.body}</div>
+                              {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
+                              {m.attachments && m.attachments.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {m.attachments.map((a, i) => {
+                                    const isImg = a.type?.startsWith("image/");
+                                    return isImg ? (
+                                      <a key={i} href={a.url} target="_blank" rel="noopener noreferrer">
+                                        <img src={a.url} alt={a.name} className="max-h-40 rounded-lg border border-white/20 object-cover" />
+                                      </a>
+                                    ) : (
+                                      <a
+                                        key={i}
+                                        href={a.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white/10 border border-white/20 text-white hover:bg-white/20"
+                                      >
+                                        <Download className="w-3.5 h-3.5" />
+                                        <span className="truncate max-w-[180px]">{a.name}</span>
+                                        <span className="opacity-70">{(a.size / 1024).toFixed(1)} KB</span>
+                                      </a>
+                                    );
+                                  })}
+                                </div>
+                              )}
                               <div className="text-[10px] text-slate-300/80 mt-1.5 text-left" dir="ltr">{fmt(m.created_at)}</div>
                             </div>
                           </div>
