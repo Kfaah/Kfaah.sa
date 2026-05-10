@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Send, Inbox, ChevronRight, Loader2, Reply, PenSquare, MessageCircle, Shield } from "lucide-react";
-import SpaceScene from "@/components/space/SpaceScene";
+import { Send, Inbox, Loader2, Reply, PenSquare, LifeBuoy, Shield } from "lucide-react";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-
-const primaryHsl = "168 76% 28%";
-const accentHsl = "44 92% 55%";
 
 type Thread = {
   id: string;
@@ -186,163 +184,133 @@ export default function Messages() {
   );
 
   return (
-    <div
-      dir="rtl"
-      className="relative min-h-screen flex flex-col overflow-hidden"
-      style={{ background: "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)" }}
-    >
-      <SpaceScene />
-      <main className="relative z-10 flex-1 flex flex-col items-center px-4 py-6">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-6xl">
-          <button
-            onClick={() => navigate("/")}
-            className="mb-3 inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white"
-          >
-            <ChevronRight className="w-4 h-4" />العودة
-          </button>
+    <DashboardLayout>
+      <div dir="rtl" className="space-y-6">
+        <PageHeader
+          icon={<LifeBuoy className="w-6 h-6" />}
+          title="التواصل مع المنصة"
+          subtitle="رسائل من حسابك إلى إدارة منصة كفاءة — للدعم والاستفسارات"
+        />
 
-          <div className="rounded-3xl bg-white/[0.05] backdrop-blur-xl border border-white/15 shadow-[0_20px_60px_-20px_hsl(220_75%_3%/0.9)] overflow-hidden">
-            <div
-              className="px-6 py-4 flex items-center gap-3 border-b border-white/10"
-              style={{ background: `linear-gradient(135deg, hsl(${primaryHsl} / 0.4), hsl(${accentHsl} / 0.18))` }}
-            >
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-black/30">
-                <MessageCircle className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-right flex-1">
-                <div className="text-base font-extrabold text-white">نظام التواصل</div>
-                <div className="text-[11px] text-slate-300 inline-flex items-center gap-1">
-                  <Shield className="w-3 h-3" />
-                  رسائل داخل المنصة من حسابك إلى إدارة المنصة
-                </div>
-              </div>
+        <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-[200px,280px,1fr] min-h-[60vh]">
+            <div className="border-l border-border p-3 space-y-1.5 bg-muted/30">
+              <NavBtn id="inbox" icon={Inbox} label="الوارد" count={unreadCount} />
+              <NavBtn id="sent" icon={Reply} label="الصادر" />
+              <NavBtn id="compose" icon={PenSquare} label="إنشاء رسالة" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-[200px,280px,1fr] min-h-[60vh]">
-              <div className="border-l border-white/10 p-3 space-y-1.5">
-                <NavBtn id="inbox" icon={Inbox} label="الوارد" count={unreadCount} />
-                <NavBtn id="sent" icon={Reply} label="الصادر" />
-                <NavBtn id="compose" icon={PenSquare} label="إنشاء رسالة" />
-              </div>
-
-              {folder !== "compose" && (
-                <div className="border-l border-white/10 max-h-[70vh] overflow-y-auto">
-                  {loading ? (
-                    <div className="p-8 text-center text-slate-300"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
-                  ) : filtered.length === 0 ? (
-                    <div className="p-8 text-center text-slate-400 text-sm">لا توجد رسائل</div>
-                  ) : (
-                    filtered.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => setSelectedId(t.id)}
-                        className={`w-full text-right px-4 py-3 border-b border-white/5 hover:bg-white/[0.04] transition ${selectedId === t.id ? "bg-white/[0.06]" : ""}`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="text-sm font-bold text-white truncate">{t.subject || "بدون موضوع"}</div>
-                            <div className="text-[11px] text-slate-400 truncate">إدارة المنصة</div>
-                          </div>
-                          {folder === "inbox" && t.unread_for_member && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                          )}
-                        </div>
-                        <div className="text-[10px] text-slate-500 mt-1 text-left" dir="ltr">{fmt(t.last_message_at)}</div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {folder === "compose" ? (
-                <div className="md:col-span-2 p-6 space-y-3">
-                  <div className="text-sm font-bold text-white mb-2">إنشاء رسالة جديدة</div>
-                  <div className="text-[11px] text-slate-400 mb-2">المستلم: إدارة المنصة</div>
-                  <div>
-                    <label className="text-[11px] text-slate-300 block mb-1">الموضوع (اختياري)</label>
-                    <Input
-                      value={composeSubject}
-                      onChange={(e) => setComposeSubject(e.target.value)}
-                      maxLength={200}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-slate-300 block mb-1">نص الرسالة</label>
-                    <Textarea
-                      value={composeBody}
-                      onChange={(e) => setComposeBody(e.target.value)}
-                      rows={6}
-                      maxLength={5000}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 resize-none"
-                    />
-                  </div>
-                  <div className="flex justify-end">
+            {folder !== "compose" && (
+              <div className="border-l border-border max-h-[70vh] overflow-y-auto">
+                {loading ? (
+                  <div className="p-8 text-center text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
+                ) : filtered.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground text-sm">لا توجد رسائل</div>
+                ) : (
+                  filtered.map((t) => (
                     <button
-                      onClick={sendCompose}
-                      disabled={sending}
-                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-black/30 disabled:opacity-60"
-                      style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
+                      key={t.id}
+                      onClick={() => setSelectedId(t.id)}
+                      className={`w-full text-right px-4 py-3 border-b border-border/60 hover:bg-muted/50 transition ${selectedId === t.id ? "bg-muted" : ""}`}
                     >
-                      {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      إرسال
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  <div ref={scrollRef} className="flex-1 max-h-[55vh] overflow-y-auto px-5 py-5 space-y-3">
-                    {!selected ? (
-                      <div className="text-center py-12 text-slate-400 text-sm">اختر محادثة من القائمة</div>
-                    ) : messages.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400 text-sm">لا توجد رسائل في هذه المحادثة</div>
-                    ) : (
-                      messages.map((m) => {
-                        const mine = !m.from_admin;
-                        return (
-                          <div key={m.id} className={`flex ${mine ? "justify-start" : "justify-end"}`}>
-                            <div
-                              className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed border shadow-sm ${mine ? "bg-white/[0.08] border-white/15 text-white" : "border-amber-300/30 text-white"}`}
-                              style={!mine ? { background: `linear-gradient(135deg, hsl(${primaryHsl} / 0.55), hsl(${accentHsl} / 0.25))` } : undefined}
-                            >
-                              <div className="whitespace-pre-wrap">{m.body}</div>
-                              <div className="text-[10px] text-slate-300/80 mt-1.5 text-left" dir="ltr">{fmt(m.created_at)}</div>
-                            </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-foreground truncate">{t.subject || "بدون موضوع"}</div>
+                          <div className="text-[11px] text-muted-foreground truncate inline-flex items-center gap-1">
+                            <Shield className="w-3 h-3" /> إدارة المنصة
                           </div>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {selected && (
-                    <div className="border-t border-white/10 p-4 bg-white/[0.02]">
-                      <div className="flex items-end gap-2">
-                        <Textarea
-                          value={body}
-                          onChange={(e) => setBody(e.target.value)}
-                          placeholder="اكتب ردّك..."
-                          rows={2}
-                          maxLength={5000}
-                          className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-slate-400 resize-none"
-                        />
-                        <button
-                          onClick={sendReply}
-                          disabled={sending}
-                          className="shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-black/30 disabled:opacity-60"
-                          style={{ background: `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))` }}
-                        >
-                          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                          إرسال
-                        </button>
+                        </div>
+                        {folder === "inbox" && t.unread_for_member && (
+                          <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                        )}
                       </div>
-                    </div>
+                      <div className="text-[10px] text-muted-foreground mt-1 text-left" dir="ltr">{fmt(t.last_message_at)}</div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+
+            {folder === "compose" ? (
+              <div className="md:col-span-2 p-6 space-y-3">
+                <div className="text-sm font-bold text-foreground mb-1">إنشاء رسالة جديدة</div>
+                <div className="text-[11px] text-muted-foreground mb-2">المستلم: إدارة المنصة</div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground block mb-1">الموضوع (اختياري)</label>
+                  <Input
+                    value={composeSubject}
+                    onChange={(e) => setComposeSubject(e.target.value)}
+                    maxLength={200}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground block mb-1">نص الرسالة</label>
+                  <Textarea
+                    value={composeBody}
+                    onChange={(e) => setComposeBody(e.target.value)}
+                    rows={6}
+                    maxLength={5000}
+                    className="resize-none"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={sendCompose} disabled={sending} className="gap-2">
+                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    إرسال
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                <div ref={scrollRef} className="flex-1 max-h-[55vh] overflow-y-auto px-5 py-5 space-y-3">
+                  {!selected ? (
+                    <div className="text-center py-12 text-muted-foreground text-sm">اختر محادثة من القائمة</div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground text-sm">لا توجد رسائل في هذه المحادثة</div>
+                  ) : (
+                    messages.map((m) => {
+                      const mine = !m.from_admin;
+                      return (
+                        <div key={m.id} className={`flex ${mine ? "justify-start" : "justify-end"}`}>
+                          <div
+                            className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed border shadow-sm ${
+                              mine
+                                ? "bg-muted border-border text-foreground"
+                                : "bg-primary text-primary-foreground border-primary"
+                            }`}
+                          >
+                            <div className="whitespace-pre-wrap">{m.body}</div>
+                            <div className={`text-[10px] mt-1.5 text-left ${mine ? "text-muted-foreground" : "text-primary-foreground/80"}`} dir="ltr">{fmt(m.created_at)}</div>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
-              )}
-            </div>
+
+                {selected && (
+                  <div className="border-t border-border p-4 bg-muted/30">
+                    <div className="flex items-end gap-2">
+                      <Textarea
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        placeholder="اكتب ردّك..."
+                        rows={2}
+                        maxLength={5000}
+                        className="flex-1 resize-none"
+                      />
+                      <Button onClick={sendReply} disabled={sending} className="gap-2 shrink-0">
+                        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        إرسال
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        </motion.div>
-      </main>
-    </div>
+        </div>
+      </div>
+    </DashboardLayout>
   );
 }
