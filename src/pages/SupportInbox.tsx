@@ -631,13 +631,6 @@ export default function SupportInbox() {
             >
               <RefreshCcw className={`w-4 h-4 text-slate-300 ${syncing ? "animate-spin" : ""}`} />
             </button>
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="p-2 rounded-lg hover:bg-white/10"
-              title="إعدادات البريد"
-            >
-              <SettingsIcon className="w-4 h-4 text-slate-300" />
-            </button>
             <button onClick={() => navigate("/")} className="text-xs font-bold text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10">
               للرئيسية <ArrowRight className="inline w-3 h-3 mr-1 rotate-180" />
             </button>
