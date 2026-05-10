@@ -1,44 +1,111 @@
-## Plan
+## خطة "العقل اليومي للتبرعات" — تحليل عميق + اقتراحات ذكية + مهام تلقائية
 
-I'll ship this in 4 parts. Confirm and I'll execute.
+كل ما يُرفع ملف (أول مرة أو رفع يومي)، يعمل النظام دورة تحليل عميقة عبر الذكاء الاصطناعي تربط بين كل البيانات (تبرعات، استقطاعات، حملات، إهداءات، سلال متروكة، تبرعات فاشلة)، وتُخرج: **رؤى يومية + اقتراحات إبداعية + مهام جاهزة تنزل تلقائيًا على الموظفين**.
 
-### 1. Restrict the "نبذة/banner" at top of pages to demo only
-- Find the top-of-page intro/description block currently rendered for every user.
-- Wrap it with `useIsDemo()` so it only renders when `isDemo === true`.
-- For admin/org accounts: nothing shown above the page header.
+---
 
-### 2. Rename "المتبرعون" → "مركز التبرعات"
-- Update the sidebar/nav label and the page header for the donors hub (`DonorsHub.tsx` + `Sidebar.tsx`).
-- Keep route paths as-is to avoid breaking deep links.
+### 1) محرك التحليل اليومي (`daily-donor-intelligence` — Edge Function جديدة)
 
-### 3. Add upload entries for new data types
-On the Uploads page (`src/pages/Uploads.tsx`), add four new upload tiles:
-- استقطاعات (subscriptions)
-- حملات (campaigns)
-- إهداءات (gifts)
-- سلال متروكة (abandoned carts)
-- (Failed donations stay inside the donations file — no separate tile.)
+يُستدعى تلقائيًا بعد كل رفع ناجح في `process-upload`، وأيضًا يدويًا من زر "تحليل اليوم" + جدوليًا كل صباح (cron 7:00 صباحًا بتوقيت الرياض).
 
-Each tile uses the existing upload pipeline (Excel/CSV → `data-uploads` bucket → `process-upload` edge function), with a `dataset` discriminator so rows land in the right table. After upload, the records appear in their respective tabs inside مركز التبرعات.
+ما يفعله بالتفصيل:
+- يجمع لقطة كاملة (مجمّعة، مجهولة الهوية ما أمكن) من كل الجداول.
+- يستخرج إشارات سلوكية ذكية:
+  - **ذكرى تبرع**: متبرعون تبرعوا في "مثل هذا اليوم" خلال السنوات السابقة.
+  - **أعياد ميلاد العطاء**: أول تبرع لهم اليوم/هذا الأسبوع.
+  - **متذبذبون نشطون**: استقطاع شهري انقطع آخر شهر بعد انتظام.
+  - **حملة قاب قوسين**: حملات اقتربت من هدفها (≥80٪).
+  - **سلال متروكة عمرها 24-72 ساعة** (نافذة الاسترداد الذهبية).
+  - **متبرعون عابرون للأنشطة** (تبرع + استقطاع + حملة + إهداء).
+  - **فرص ترقية**: مستقطع ثابت ≥6 أشهر مرشح لرفع المبلغ.
+  - **مخاطر فقدان**: استقطاع فاشل مرتين متتاليتين.
+  - **محبو مشروع معيّن**: 3+ تبرعات لنفس المشروع.
+  - **مهدون كرماء**: ≥3 إهداءات في 90 يوم.
+- يرسل ذلك إلى Lovable AI (`google/gemini-2.5-pro`) عبر tool calling لإخراج JSON منظّم:
+  - `daily_brief` (ملخّص اليوم بأسلوب راقٍ)
+  - `insights[]` (رؤى مع نوع/أولوية/متبرع/سياق)
+  - `suggested_tasks[]` (مهام جاهزة بعنوان/وصف/فئة/أولوية/موعد + `donor_ref` + `insight_id`)
+  - `creative_ideas[]` (أفكار حملات/محتوى)
+  - `kpi_highlights[]` (أرقام لافتة لليوم)
+- يحفظ كل شيء في جدولين جديدين.
 
-### 4. Cross-activity "كبار المتبرعين / بيانات مشتركة" + AI insights
-New tab inside مركز التبرعات: **"النخبة"** (or "بيانات مشتركة") that:
-- Joins each donor across donations, subscriptions, campaigns (as launcher), gifts (as giver), abandoned carts — keyed by `donor_id` / phone / normalized name.
-- Computes an **activity score** = number of distinct activity types the person participates in.
-- Shows only donors with **2+ activity types** (single-activity excluded as requested).
-- Tier badges: ماسي (5 أنشطة), ذهبي (4), فضي (3), برونزي (2).
-- Filters: tier, activity types, project, date range, search.
-- Per-donor expandable row with timeline of all their activities.
+---
 
-Then a **"رؤى الذكاء الاصطناعي"** panel on the same tab:
-- Button "توليد اقتراحات إبداعية" → calls a new edge function `donor-insights` that sends the aggregated dataset (anonymized counts + top segments, not raw PII) to Lovable AI (`google/gemini-3-flash-preview`).
-- Returns structured JSON: segments, retention ideas, creative campaigns, content drafts (thank-you message, exclusive offer, story angle), suggested follow-up actions per tier.
-- Renders as cards with copy-to-clipboard + "حفظ كملاحظة" actions.
+### 2) جداول جديدة (Migration)
 
-### Technical details
-- Files: `Uploads.tsx`, `Sidebar.tsx`, `DonorsHub.tsx`, new `EliteDonorsPanel` component, new `supabase/functions/donor-insights/index.ts`.
-- Demo banner gating: locate the component (likely `PageHeader` or a wrapper) and wrap its intro/description in `{isDemo && (...)}`.
-- AI call routed through Lovable AI Gateway with structured output via tool calling. Handles 429/402 with toasts.
-- No schema changes needed unless you want to persist AI suggestions — say the word and I'll add a `donor_insights` table.
+- `daily_intelligence_runs`: سجل كل دورة تحليل (التاريخ، المُشغِّل، عدد الرؤى، عدد المهام المولّدة، الملخّص، الـ payload الكامل JSONB).
+- `donor_insights`: كل رؤية على حدة (نوع، عنوان، وصف، أولوية، `donor_ref`، روابط بالأنشطة، حالة: جديدة/مقبولة/مرفوضة/منفّذة، `acted_on_task_id`).
+- RLS: قراءة/كتابة لأعضاء المنظمة فقط.
+- يُحفظ `organization_id` ويتم ضبطه تلقائيًا عبر `set_organization_id_on_insert`.
 
-Confirm and I'll build it.
+(لن أنشئ جدول مهام موازٍ — سأستخدم `tasks` الموجود وأربط بـ `metadata.insight_id`.)
+
+---
+
+### 3) توليد المهام تلقائيًا للموظفين
+
+عند انتهاء التحليل، لكل `suggested_task` ذي أولوية متوسطة/عالية:
+- يختار النظام موظفًا مناسبًا (Round-robin بين موظفي قسم التبرعات/التسويق، مع تفضيل من سبق له التعامل مع نفس المتبرع إن أمكن).
+- يُنشئ صفًا في `tasks` مع: عنوان، وصف غني (يتضمن سياق الرؤية والمتبرع)، `priority`، `due_date` (اليوم/غدًا)، `metadata.source = 'ai_daily_intelligence'`، `metadata.insight_id`، `metadata.donor_ref`.
+- يُرسل `notifications` للموظف.
+- في صفحة المهام، تظهر شارة "💡 اقتراح ذكي" على هذه المهام.
+
+---
+
+### 4) واجهة "العقل اليومي" داخل مركز التبرعات
+
+تبويب جديد **"الرؤى اليومية"** في `DonorsHub.tsx` يعرض:
+- **Hero card**: ملخّص اليوم + زر "تشغيل تحليل الآن" + آخر وقت تشغيل.
+- **شريط KPIs**: ذكرى تبرع اليوم • فرص ترقية • مخاطر فقدان • سلال قابلة للاسترداد • مهام مولّدة.
+- **بطاقات الرؤى**: مفلترة بالنوع/الأولوية، كل بطاقة بها:
+  - السياق + اسم المتبرع (مع رابط لملفه عبر `SourceLink`).
+  - أزرار: "حوّل لمهمة" (يفتح حوار إسناد سريع) • "تجاهل" • "نسخ النص".
+- **قائمة الأفكار الإبداعية**: حملات/محتوى مقترح للنسخ.
+- **أرشيف**: تواريخ سابقة قابلة للتصفّح.
+
+كذلك Widget مصغّر **"اقتراحات اليوم"** في `OrgInternalDashboard.tsx` (أعلى التابات) يعرض أهم 3 رؤى + رابط للتبويب الكامل.
+
+---
+
+### 5) ربط بسلسلة الرفع
+
+في `process-upload/index.ts` بعد نجاح المعالجة:
+- استدعاء `daily-donor-intelligence` بـ `trigger='upload'` + `dataset` المرفوع.
+- إظهار توست في `Uploads.tsx`: "✨ تم توليد X رؤية و Y مهمة جديدة — افتح الرؤى اليومية".
+
+---
+
+### 6) جدولة يومية (cron)
+
+- تفعيل `pg_cron` + `pg_net`.
+- كرون 7:00 صباحًا بتوقيت الرياض (4:00 UTC) أيام الأحد–الخميس فقط، ينادي الـ Edge Function لكل منظمة نشطة.
+
+---
+
+### الملفات
+
+**جديدة:**
+- `supabase/functions/daily-donor-intelligence/index.ts`
+- `src/components/admin/DailyInsightsPanel.tsx`
+- `src/components/admin/DailyInsightsWidget.tsx` (للداشبورد)
+- Migration: جدولان + RLS + cron
+
+**معدّلة:**
+- `src/components/admin/DonorsHub.tsx` — تبويب جديد + ترتيبه قبل "النخبة".
+- `src/pages/admin/OrgInternalDashboard.tsx` — Widget أعلى الصفحة.
+- `src/pages/Uploads.tsx` — استدعاء التحليل بعد الرفع + توست.
+- `supabase/functions/process-upload/index.ts` — تشغيل التحليل بعد المعالجة.
+
+---
+
+### تفاصيل تقنية
+
+- النموذج: `google/gemini-2.5-pro` مع tool calling لإخراج JSON صارم.
+- معالجة 429/402 مع توستات عربية واضحة.
+- الـ payload للـ AI لا يحتوي PII حساسة (نرسل أسماء أولى + معرّفات داخلية فقط).
+- Idempotency: لا نولّد رؤى مكررة لنفس `donor_ref + insight_type` خلال 7 أيام.
+- حد أقصى للمهام المولّدة في اليوم: 30 (قابل للضبط) لتفادي إغراق الموظفين.
+
+---
+
+أؤكّد وأنفّذ؟
