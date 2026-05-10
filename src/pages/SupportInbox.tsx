@@ -372,7 +372,22 @@ export default function SupportInbox() {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <button onClick={loadAll} className="p-2 rounded-lg hover:bg-white/10" title="تحديث">
+            <button
+              onClick={async () => {
+                const t = toast.loading("جاري سحب الرسائل من البريد...");
+                try {
+                  const { data, error } = await supabase.functions.invoke("fetch-platform-email-replies", { body: {} });
+                  if (error) throw error;
+                  const s = (data as any)?.stats;
+                  toast.success(s ? `تمت المزامنة — جديد: ${s.inserted ?? 0}` : "تمت المزامنة", { id: t });
+                } catch (e: any) {
+                  toast.error(e?.message || "تعذّرت مزامنة البريد", { id: t });
+                }
+                await loadAll();
+              }}
+              className="p-2 rounded-lg hover:bg-white/10"
+              title="تحديث وسحب الرسائل من Zoho"
+            >
               <RefreshCcw className="w-4 h-4 text-slate-300" />
             </button>
             <button onClick={() => navigate("/")} className="text-xs font-bold text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10">
