@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Send, Inbox, ChevronRight, Loader2, User2, Reply, PenSquare, Mail, Download } from "lucide-react";
+import { Send, Inbox, ChevronRight, Loader2, User2, Reply, PenSquare, Mail, Download, Paperclip, X, FileText } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +40,8 @@ export default function InternalInbox() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [body, setBody] = useState("");
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [composeFiles, setComposeFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -143,17 +145,20 @@ export default function InternalInbox() {
 
   const send = async () => {
     if (!user || !selectedId) return;
-    if (!body.trim()) return toast.error("اكتب ردّك أولاً");
+    if (!body.trim() && replyFiles.length === 0) return toast.error("اكتب ردّك أولاً");
     setSending(true);
     try {
+      const attachments = await uploadFiles(replyFiles);
       const { error } = await supabase.from("internal_messages").insert({
         thread_id: selectedId,
         sender_user_id: user.id,
         from_admin: true,
         body: body.trim().slice(0, 5000),
+        attachments: attachments as any,
       });
       if (error) throw error;
       setBody("");
+      setReplyFiles([]);
       loadMessages(selectedId);
     } catch (e: any) {
       toast.error(e?.message || "تعذّر الإرسال");
@@ -165,7 +170,7 @@ export default function InternalInbox() {
   const sendCompose = async () => {
     if (!user) return;
     if (!composeRecipient) return toast.error("اختر المستلم");
-    if (!composeBody.trim()) return toast.error("اكتب نص الرسالة");
+    if (!composeBody.trim() && composeFiles.length === 0) return toast.error("اكتب نص الرسالة");
     setSending(true);
     try {
       // find existing thread to this member or create one
@@ -189,11 +194,13 @@ export default function InternalInbox() {
         if (error) throw error;
         tid = (created as any).id;
       }
+      const attachments = await uploadFiles(composeFiles);
       const { error: mErr } = await supabase.from("internal_messages").insert({
         thread_id: tid,
         sender_user_id: user.id,
         from_admin: true,
         body: composeBody.trim().slice(0, 5000),
+        attachments: attachments as any,
       });
       if (mErr) throw mErr;
       toast.success("تم إرسال الرسالة");
@@ -201,6 +208,7 @@ export default function InternalInbox() {
       setComposeRecipient("");
       setComposeSubject("");
       setComposeBody("");
+      setComposeFiles([]);
       setSelectedId(tid);
       setFolder("sent");
       loadThreads();
