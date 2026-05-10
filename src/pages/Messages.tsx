@@ -187,7 +187,7 @@ export default function Messages() {
     <DashboardLayout>
       <div dir="rtl" className="space-y-6">
         <PageHeader
-          icon={LifeBuoy}
+          icon={<LifeBuoy className="w-6 h-6" />}
           title="التواصل مع المنصة"
           subtitle="رسائل من حسابك إلى إدارة منصة كفاءة — للدعم والاستفسارات"
         />
