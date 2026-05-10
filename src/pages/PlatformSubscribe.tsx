@@ -43,6 +43,20 @@ function calcPricing(opts: {
 
 const fmt = (n: number) => n.toLocaleString("ar-SA");
 
+const openExternalLink = (href: string) => {
+  try {
+    if (window.top && window.top !== window.self) {
+      window.top.location.assign(href);
+      return;
+    }
+  } catch {
+    // Fall back to opening a new tab when the preview frame blocks top navigation.
+  }
+
+  const opened = window.open(href, "_blank", "noopener,noreferrer");
+  if (!opened) window.location.assign(href);
+};
+
 export default function PlatformSubscribe() {
   const navigate = useNavigate();
 
@@ -71,15 +85,12 @@ export default function PlatformSubscribe() {
 أرغب في تأكيد العرض والاشتراك.`;
 
   const whatsappLink = `https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent(summary)}`;
+  const ownershipWhatsappLink = `https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent("السلام عليكم، نرغب في التفاوض على تملّك منصة كفاءة بالكامل لجمعيتنا.")}`;
   const mailLink = `mailto:${OWNER_EMAIL}?subject=${encodeURIComponent("طلب اشتراك في منصة كفاءة")}&body=${encodeURIComponent(summary)}`;
 
   const openWhatsApp = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    const opened = window.open(whatsappLink, "_blank", "noopener,noreferrer");
-
-    if (!opened) {
-      window.top?.location.assign(whatsappLink);
-    }
+    openExternalLink(whatsappLink);
   };
 
   return (
@@ -297,7 +308,11 @@ export default function PlatformSubscribe() {
               </p>
             </div>
             <a
-              href={`https://wa.me/${OWNER_PHONE_INTL}?text=${encodeURIComponent("السلام عليكم، نرغب في التفاوض على تملّك منصة كفاءة بالكامل لجمعيتنا.")}`}
+              href={ownershipWhatsappLink}
+              onClick={(event) => {
+                event.preventDefault();
+                openExternalLink(ownershipWhatsappLink);
+              }}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl px-5 py-3 bg-white text-slate-900 font-extrabold shadow-lg hover:-translate-y-0.5 transition-transform whitespace-nowrap"
