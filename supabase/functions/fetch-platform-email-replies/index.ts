@@ -71,8 +71,11 @@ Deno.serve(async (req) => {
       console.log('[imap] search returned', (uids || []).length, 'uids')
       stats.fetched = (uids || []).length
 
-      for await (const msg of client.fetch(uids || [], { source: true, envelope: true, internalDate: true }, { uid: true })) {
+      const uidList: number[] = (uids as any[]) || []
+      for (const uid of uidList) {
         try {
+          const msg: any = await (client as any).fetchOne(uid, { source: true, envelope: true, internalDate: true }, { uid: true })
+          if (!msg) { stats.skipped++; continue }
           const parsed: any = await simpleParser(msg.source as Uint8Array)
           const providerId = normalizeMessageId(parsed.messageId || msg.envelope?.messageId)
           const inReplyTo = normalizeMessageId(parsed.inReplyTo || msg.envelope?.inReplyTo)
