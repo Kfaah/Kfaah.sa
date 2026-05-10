@@ -71,11 +71,13 @@ Deno.serve(async (req) => {
         .maybeSingle()
 
       const latestStoredAt = latestStored?.received_at ? new Date(latestStored.received_at) : null
-      const since = settings?.last_synced_at
+      const baseSince = settings?.last_synced_at
         ? new Date(settings.last_synced_at)
-        : latestStoredAt
-          ? new Date(latestStoredAt.getTime() - 10 * 60 * 1000)
-        : new Date(Date.now() - 24 * 60 * 60 * 1000)
+        : latestStoredAt || new Date(Date.now() - 24 * 60 * 60 * 1000)
+      // Always overlap the previous sync window. Some mailboxes expose a new email
+      // a few minutes after its internal date, so using last_synced_at exactly can
+      // permanently skip fresh messages. Dedupe by Message-ID keeps this safe.
+      const since = new Date(baseSince.getTime() - 15 * 60 * 1000)
 
       console.log('[imap] searching since', since.toISOString())
       const uids = await client.search({ since }, { uid: true })
@@ -99,7 +101,8 @@ Deno.serve(async (req) => {
           const msg: any = await (client as any).fetchOne(uid, { envelope: true, internalDate: true }, { uid: true })
           if (!msg) { console.log('[imap] no envelope for', uid); stats.skipped++; continue }
           const msgDate = msg.internalDate ? new Date(msg.internalDate) : null
-          if (latestStoredAt && msgDate && msgDate <= latestStoredAt) {
+          const oldMessageCutoff = latestStoredAt ? new Date(latestStoredAt.getTime() - 15 * 60 * 1000) : null
+          if (oldMessageCutoff && msgDate && msgDate < oldMessageCutoff) {
             stats.skipped++
             continue
           }
