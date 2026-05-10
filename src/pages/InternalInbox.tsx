@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Send, Inbox, ChevronRight, Loader2, User2, Reply, PenSquare, Mail, Download } from "lucide-react";
+import { Send, Inbox, ChevronRight, Loader2, User2, Reply, PenSquare, Mail, Download, Paperclip, X, FileText } from "lucide-react";
 import SpaceScene from "@/components/space/SpaceScene";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +40,8 @@ export default function InternalInbox() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [body, setBody] = useState("");
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [composeFiles, setComposeFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -143,17 +145,20 @@ export default function InternalInbox() {
 
   const send = async () => {
     if (!user || !selectedId) return;
-    if (!body.trim()) return toast.error("اكتب ردّك أولاً");
+    if (!body.trim() && replyFiles.length === 0) return toast.error("اكتب ردّك أولاً");
     setSending(true);
     try {
+      const attachments = await uploadFiles(replyFiles);
       const { error } = await supabase.from("internal_messages").insert({
         thread_id: selectedId,
         sender_user_id: user.id,
         from_admin: true,
         body: body.trim().slice(0, 5000),
+        attachments: attachments as any,
       });
       if (error) throw error;
       setBody("");
+      setReplyFiles([]);
       loadMessages(selectedId);
     } catch (e: any) {
       toast.error(e?.message || "تعذّر الإرسال");
@@ -165,7 +170,7 @@ export default function InternalInbox() {
   const sendCompose = async () => {
     if (!user) return;
     if (!composeRecipient) return toast.error("اختر المستلم");
-    if (!composeBody.trim()) return toast.error("اكتب نص الرسالة");
+    if (!composeBody.trim() && composeFiles.length === 0) return toast.error("اكتب نص الرسالة");
     setSending(true);
     try {
       // find existing thread to this member or create one
@@ -189,11 +194,13 @@ export default function InternalInbox() {
         if (error) throw error;
         tid = (created as any).id;
       }
+      const attachments = await uploadFiles(composeFiles);
       const { error: mErr } = await supabase.from("internal_messages").insert({
         thread_id: tid,
         sender_user_id: user.id,
         from_admin: true,
         body: composeBody.trim().slice(0, 5000),
+        attachments: attachments as any,
       });
       if (mErr) throw mErr;
       toast.success("تم إرسال الرسالة");
@@ -201,6 +208,7 @@ export default function InternalInbox() {
       setComposeRecipient("");
       setComposeSubject("");
       setComposeBody("");
+      setComposeFiles([]);
       setSelectedId(tid);
       setFolder("sent");
       loadThreads();
@@ -213,6 +221,69 @@ export default function InternalInbox() {
 
   const fmt = (iso: string) =>
     new Date(iso).toLocaleString("ar-SA", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
+
+  const fmtSize = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  };
+
+  const uploadFiles = async (files: File[]) => {
+    if (!files || files.length === 0) return [] as { name: string; url: string; type: string; size: number }[];
+    const out: { name: string; url: string; type: string; size: number }[] = [];
+    for (const f of files) {
+      if (f.size > 20 * 1024 * 1024) {
+        toast.error(`${f.name} يتجاوز 20 ميغابايت`);
+        continue;
+      }
+      const path = `${crypto.randomUUID()}-${f.name}`;
+      const { error } = await supabase.storage.from("internal-message-attachments").upload(path, f, { upsert: false, contentType: f.type });
+      if (error) {
+        toast.error(`تعذّر رفع ${f.name}`);
+        continue;
+      }
+      const { data } = supabase.storage.from("internal-message-attachments").getPublicUrl(path);
+      out.push({ name: f.name, url: data.publicUrl, type: f.type, size: f.size });
+    }
+    return out;
+  };
+
+  const FilePickList = ({ files, setFiles }: { files: File[]; setFiles: (f: File[]) => void }) => (
+    <div className="space-y-2">
+      <label className="inline-flex items-center gap-2 cursor-pointer text-[11px] font-bold text-slate-200 hover:text-white">
+        <Paperclip className="w-4 h-4" />
+        إرفاق ملفات
+        <input
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const arr = Array.from(e.target.files || []);
+            setFiles([...files, ...arr]);
+            e.currentTarget.value = "";
+          }}
+        />
+      </label>
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {files.map((f, i) => (
+            <div key={i} className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
+              <FileText className="w-3.5 h-3.5" />
+              <span className="max-w-[160px] truncate">{f.name}</span>
+              <span className="text-slate-300">({fmtSize(f.size)})</span>
+              <button
+                type="button"
+                onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
+                className="text-slate-300 hover:text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   // Inbox: threads where last activity is from member (or any thread that was not yet replied by admin)
   // Sent: threads where admin has replied at least once
@@ -385,6 +456,7 @@ export default function InternalInbox() {
                       className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 resize-none"
                     />
                   </div>
+                  <FilePickList files={composeFiles} setFiles={setComposeFiles} />
                   <div className="flex justify-end">
                     <button
                       onClick={sendCompose}
@@ -448,6 +520,7 @@ export default function InternalInbox() {
 
                   {selected && (
                     <div className="border-t border-white/10 p-4 bg-white/[0.02]">
+                      <div className="mb-2"><FilePickList files={replyFiles} setFiles={setReplyFiles} /></div>
                       <div className="flex items-end gap-2">
                         <Textarea
                           value={body}
