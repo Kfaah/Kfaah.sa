@@ -100,11 +100,10 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         routeSlug = segments[0];
       }
       const slugMatch = routeSlug ? list.find((o) => o.slug === routeSlug) : null;
-      if (routeSlug && !slugMatch && !superAdmin) {
-        localStorage.removeItem(STORAGE_KEY);
-        setCurrentOrg(null);
-        return;
-      }
+      // For non-super-admin users, ignore unknown routeSlug values — many
+      // app routes (e.g. /app, /profile, /tasks, /settings) start with a
+      // non-slug segment. Falling back to their own org keeps branding
+      // applied across these screens.
       const stored = localStorage.getItem(STORAGE_KEY);
       const preferred = stored ? list.find((o) => o.id === stored) : null;
       const nextOrg = slugMatch || preferred || list[0] || null;
@@ -145,11 +144,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     if (!routeSlug) return;
 
     const slugMatch = availableOrgs.find((org) => org.slug === routeSlug);
-    if (!slugMatch && !isSuperAdmin) {
-      localStorage.removeItem(STORAGE_KEY);
-      setCurrentOrg(null);
-      return;
-    }
+    // Same fallback as in load(): unknown route segments must NOT clear the
+    // active org for regular users — they should always remain branded with
+    // their own organization's identity.
     if (!slugMatch || slugMatch.id === currentOrg?.id) return;
 
     localStorage.setItem(STORAGE_KEY, slugMatch.id);
