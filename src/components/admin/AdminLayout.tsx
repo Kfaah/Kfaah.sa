@@ -10,7 +10,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import SpaceScene from "@/components/space/SpaceScene";
 
 
 // Distinctive icon colors per nav item — vibrant gradients
@@ -159,25 +158,33 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       dir="rtl"
       style={{
         background:
-          "radial-gradient(ellipse at 30% 20%, hsl(220 60% 8%) 0%, hsl(225 70% 5%) 45%, hsl(230 80% 3%) 100%)",
+          "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
       }}
     >
-      {/* Space scene background — unified platform identity */}
-      <SpaceScene />
+      {/* Subtle cosmic touches — twinkling stars + nebula glow */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none opacity-40"
         style={{
-          background:
-            "radial-gradient(ellipse at center, transparent 40%, hsl(230 80% 3% / 0.6) 100%)",
+          backgroundImage:
+            "radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.7), transparent), radial-gradient(1px 1px at 28% 62%, rgba(255,255,255,0.5), transparent), radial-gradient(1.5px 1.5px at 47% 24%, rgba(255,236,170,0.7), transparent), radial-gradient(1px 1px at 63% 78%, rgba(255,255,255,0.55), transparent), radial-gradient(1px 1px at 82% 32%, rgba(255,255,255,0.6), transparent), radial-gradient(1.5px 1.5px at 91% 70%, rgba(255,236,170,0.6), transparent), radial-gradient(1px 1px at 35% 88%, rgba(255,255,255,0.5), transparent), radial-gradient(1px 1px at 70% 12%, rgba(255,255,255,0.55), transparent)",
+          backgroundSize: "100% 100%",
         }}
+      />
+      <div
+        className="absolute -top-32 -left-32 w-[480px] h-[480px] rounded-full blur-3xl opacity-25 pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(44 92% 55% / 0.5), transparent 70%)" }}
+      />
+      <div
+        className="absolute bottom-0 right-1/3 w-[520px] h-[520px] rounded-full blur-3xl opacity-20 pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(168 76% 45% / 0.6), transparent 70%)" }}
       />
 
       {/* Sidebar — أبيض كلاسيكي يمين الشاشة (RTL) */}
       <aside
-        className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-amber-300/20 flex flex-col shadow-2xl overflow-hidden backdrop-blur-2xl"
+        className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-amber-300/15 flex flex-col shadow-2xl overflow-hidden"
         style={{
           background:
-            "linear-gradient(180deg, hsl(225 60% 8% / 0.85) 0%, hsl(230 65% 6% / 0.9) 100%)",
+            "linear-gradient(180deg, #2f8e8c 0%, #2f8e8c 50%, #2f8e8c 100%)",
         }}
       >
         {/* Subtle radial vignette + noise overlay */}
@@ -276,7 +283,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Nav — white surface */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3 bg-white/[0.04] space-y-1.5">
+        <nav className="flex-1 overflow-hidden px-2 py-3 bg-white space-y-1.5">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
             const active = item.end
@@ -290,8 +297,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 className={cn(
                   "group relative flex items-center gap-3 rounded-lg pr-3 pl-2 py-2 transition-all duration-300 overflow-hidden",
                   active
-                    ? "bg-white/[0.12] shadow-lg ring-1 ring-amber-300/60 -translate-x-0.5 backdrop-blur-md"
-                    : "bg-white/[0.04] hover:bg-white/[0.10] ring-1 ring-white/10 hover:ring-amber-300/40 hover:-translate-x-0.5 hover:shadow-md"
+                    ? "bg-gradient-to-l from-amber-50 to-white shadow-md ring-1 ring-amber-300/70 -translate-x-0.5"
+                    : "bg-white hover:bg-amber-50/60 ring-1 ring-slate-200/70 hover:ring-amber-300/50 hover:-translate-x-0.5 hover:shadow-sm"
                 )}
               >
                 {/* Shimmer sweep on hover */}
@@ -318,13 +325,13 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 <div className="flex-1 min-w-0">
                   <div className={cn(
                     "text-[12.5px] font-bold leading-tight truncate tracking-tight transition-colors",
-                    active ? "text-amber-200" : "text-white group-hover:text-amber-200"
+                    active ? "text-primary" : "text-slate-800 group-hover:text-primary"
                   )}>
                     {item.label}
                   </div>
                   <div className={cn(
                     "text-[10px] leading-tight mt-0.5 truncate transition-colors",
-                    active ? "text-amber-100/80" : "text-slate-300 group-hover:text-amber-100/70"
+                    active ? "text-amber-700" : "text-slate-500 group-hover:text-amber-700/80"
                   )}>
                     {item.desc}
                   </div>
@@ -375,7 +382,19 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       {/* Main content - تدرّج تركوازي بترولي داكن */}
       <main
         className="mr-72 relative min-h-screen z-10"
+        style={{
+          background:
+            "linear-gradient(135deg, hsl(190 50% 28% / 0.92) 0%, hsl(192 55% 24% / 0.92) 50%, hsl(195 60% 20% / 0.92) 100%)",
+        }}
       >
+        {/* faint stars overlay on main for unified cosmic feel */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-30"
+          style={{
+            backgroundImage:
+              "radial-gradient(1px 1px at 18% 22%, rgba(255,255,255,0.6), transparent), radial-gradient(1px 1px at 42% 68%, rgba(255,236,170,0.55), transparent), radial-gradient(1px 1px at 73% 18%, rgba(255,255,255,0.5), transparent), radial-gradient(1.5px 1.5px at 88% 56%, rgba(255,236,170,0.6), transparent), radial-gradient(1px 1px at 30% 84%, rgba(255,255,255,0.55), transparent)",
+          }}
+        />
         <div className="relative z-10 admin-soft-surface">{children}</div>
       </main>
     </div>
