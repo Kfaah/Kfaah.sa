@@ -290,6 +290,12 @@ export default function Messages() {
                     className="resize-none"
                   />
                 </div>
+                <FilePickList
+                  files={composeFiles}
+                  onAdd={(fs) => setComposeFiles((prev) => [...prev, ...fs])}
+                  onRemove={(i) => setComposeFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                  inputRef={composeFileInputRef}
+                />
                 <div className="flex justify-end">
                   <Button onClick={sendCompose} disabled={sending} className="gap-2">
                     {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
