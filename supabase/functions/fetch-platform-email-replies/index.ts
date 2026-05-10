@@ -70,10 +70,11 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle()
 
+      const latestStoredAt = latestStored?.received_at ? new Date(latestStored.received_at) : null
       const since = settings?.last_synced_at
         ? new Date(settings.last_synced_at)
-        : latestStored?.received_at
-          ? new Date(new Date(latestStored.received_at).getTime() - 10 * 60 * 1000)
+        : latestStoredAt
+          ? new Date(latestStoredAt.getTime() - 10 * 60 * 1000)
         : new Date(Date.now() - 24 * 60 * 60 * 1000)
 
       console.log('[imap] searching since', since.toISOString())
@@ -85,7 +86,7 @@ Deno.serve(async (req) => {
       const allUids: number[] = ((uids as any[]) || []).slice().sort((a, b) => b - a)
       const MAX_PER_RUN = 8
       const startedAt = Date.now()
-      const MAX_RUNTIME_MS = 15_000
+      const MAX_RUNTIME_MS = 8_000
       const uidList = allUids.slice(0, MAX_PER_RUN)
       console.log('[imap] processing', uidList.length, 'messages')
       for (const uid of uidList) {
@@ -97,6 +98,11 @@ Deno.serve(async (req) => {
           console.log('[imap] fetching uid', uid)
           const msg: any = await (client as any).fetchOne(uid, { envelope: true, internalDate: true }, { uid: true })
           if (!msg) { console.log('[imap] no envelope for', uid); stats.skipped++; continue }
+          const msgDate = msg.internalDate ? new Date(msg.internalDate) : null
+          if (latestStoredAt && msgDate && msgDate <= latestStoredAt) {
+            stats.skipped++
+            continue
+          }
           const envelopeProviderId = normalizeMessageId(msg.envelope?.messageId)
           if (envelopeProviderId) {
             const { data: existing } = await supabase
