@@ -13,11 +13,13 @@ import { cn } from "@/lib/utils";
 import {
   HeartHandshake, Users, Trophy, Repeat, Megaphone, XCircle, ShoppingCart,
   CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar as CalendarIcon, Wallet, Gift,
+  Crown, Sparkles, Copy, Check,
 } from "lucide-react";
+import { toast } from "sonner";
 
 type SubKey =
   | "overview" | "donors" | "donations" | "top" | "recurring"
-  | "subscriptions" | "campaigns" | "gifts" | "failed" | "abandoned";
+  | "subscriptions" | "campaigns" | "gifts" | "failed" | "abandoned" | "elite";
 
 const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "overview", label: "لوحة عامة", Icon: HeartHandshake, desc: "ملخّص شامل لأداء التبرعات" },
@@ -30,6 +32,7 @@ const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "gifts", label: "الإهداءات", Icon: Gift, desc: "المهدون وتكرار الإهداء" },
   { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, desc: "محاولات لم تكتمل" },
   { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, desc: "تنبيهات استرداد" },
+  { key: "elite", label: "النخبة + AI", Icon: Crown, desc: "متبرعون متعدّدو الأنشطة + رؤى ذكاء اصطناعي" },
 ];
 
 const SAR = (n: number) => `${(n || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س`;
@@ -301,7 +304,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
               <HeartHandshake className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="text-3xl font-extrabold text-slate-900">مركز المتبرعين</h2>
+              <h2 className="text-3xl font-extrabold text-slate-900">مركز التبرعات</h2>
               <p className="text-base text-slate-600">قاعدة بيانات شاملة · فلترة ذكية · رؤية متكاملة لكل دورة العطاء</p>
             </div>
           </div>
@@ -315,7 +318,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
       </div>
 
       {/* Sub-icons */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-11 gap-2">
         {SUB_TABS.map((t, idx) => {
           const Icon = t.Icon;
           const isActive = active === t.key;
@@ -373,6 +376,17 @@ export function DonorsHub({ orgId }: { orgId: string }) {
           {active === "failed" && <FailedPanel rows={failed} projects={projects} />}
           {active === "abandoned" && <AbandonedPanel rows={abandoned} projects={projects} />}
           {active === "subscriptions" && <SubscriptionsPanel rows={subs} donations={donations} projects={projects} />}
+          {active === "elite" && (
+            <ElitePanel
+              orgId={orgId}
+              donors={donors}
+              donations={donations}
+              subs={subs}
+              campaigns={campaigns}
+              gifts={gifts}
+              abandoned={abandoned}
+            />
+          )}
         </div>
       )}
     </div>
@@ -1196,6 +1210,427 @@ function DataTable({ head, rows }: { head: string[]; rows: (string | number | Re
             ))}
           </TableBody>
         </Table>
+      </div>
+    </div>
+  );
+}
+
+/* =================== Elite (cross-activity) + AI Insights =================== */
+
+function normName(s: any) {
+  return String(s ?? "")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[إأآا]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+function normPhone(s: any) {
+  const d = String(s ?? "").replace(/\D/g, "");
+  return d ? d.slice(-9) : "";
+}
+function donorKey(row: any, nameField = "donor_name", phoneField = "donor_phone", idField = "donor_id") {
+  const id = row?.[idField];
+  if (id) return `id:${id}`;
+  const ph = normPhone(row?.[phoneField]);
+  if (ph) return `ph:${ph}`;
+  const nm = normName(row?.[nameField]);
+  return nm ? `nm:${nm}` : "";
+}
+
+type EliteAgg = {
+  key: string;
+  name: string;
+  phone: string | null;
+  activities: Set<"donations" | "subscriptions" | "campaigns" | "gifts" | "abandoned">;
+  donationsCount: number;
+  donationsTotal: number;
+  subsCount: number;
+  campaignsCount: number;
+  giftsCount: number;
+  abandonedCount: number;
+  projects: Set<string>;
+  lastActivity: string | null;
+};
+
+function ElitePanel({
+  orgId, donors, donations, subs, campaigns, gifts, abandoned,
+}: {
+  orgId: string;
+  donors: DonorRow[];
+  donations: Donation[];
+  subs: any[];
+  campaigns: any[];
+  gifts: any[];
+  abandoned: any[];
+}) {
+  const [search, setSearch] = useState("");
+  const [minTier, setMinTier] = useState<string>("2");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiInsights, setAiInsights] = useState<any | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const aggregated = useMemo<EliteAgg[]>(() => {
+    const map = new Map<string, EliteAgg>();
+    const ensure = (key: string, name: string, phone: string | null) => {
+      let row = map.get(key);
+      if (!row) {
+        row = {
+          key, name: name || "—", phone: phone || null,
+          activities: new Set(), donationsCount: 0, donationsTotal: 0,
+          subsCount: 0, campaignsCount: 0, giftsCount: 0, abandonedCount: 0,
+          projects: new Set(), lastActivity: null,
+        };
+        map.set(key, row);
+      } else if ((!row.name || row.name === "—") && name) {
+        row.name = name;
+      }
+      if (!row.phone && phone) row.phone = phone;
+      return row;
+    };
+    const touch = (row: EliteAgg, dt: any) => {
+      if (!dt) return;
+      const t = new Date(dt).toISOString();
+      if (!row.lastActivity || t > row.lastActivity) row.lastActivity = t;
+    };
+
+    donations.forEach((d) => {
+      const k = donorKey(d);
+      if (!k) return;
+      const r = ensure(k, d.donor_name || "", d.donor_phone || null);
+      r.activities.add("donations");
+      r.donationsCount += 1;
+      r.donationsTotal += Number(d.amount || 0);
+      if (d.project_name) r.projects.add(d.project_name);
+      touch(r, d.donation_date);
+    });
+    subs.forEach((s) => {
+      const k = donorKey(s);
+      if (!k) return;
+      const r = ensure(k, s.donor_name || "", s.donor_phone || null);
+      r.activities.add("subscriptions");
+      r.subsCount += 1;
+      if (s.project_name) r.projects.add(s.project_name);
+      touch(r, s.created_at || s.start_date);
+    });
+    campaigns.forEach((c) => {
+      // الحملات: من أطلق الحملة (creator/owner) — نستخدم created_by_name/owner_phone إن وجدت
+      const k = donorKey(c, "created_by_name", "owner_phone", "created_by");
+      if (!k) return;
+      const r = ensure(k, c.created_by_name || c.owner_name || "", c.owner_phone || null);
+      r.activities.add("campaigns");
+      r.campaignsCount += 1;
+      if (c.project_name) r.projects.add(c.project_name);
+      touch(r, c.created_at || c.start_date);
+    });
+    gifts.forEach((g) => {
+      const k = donorKey(g, "giver_name", "giver_phone", "giver_donor_id");
+      if (!k) return;
+      const r = ensure(k, g.giver_name || "", g.giver_phone || null);
+      r.activities.add("gifts");
+      r.giftsCount += 1;
+      if (g.project_name) r.projects.add(g.project_name);
+      touch(r, g.gift_date);
+    });
+    abandoned.forEach((a) => {
+      const k = donorKey(a);
+      if (!k) return;
+      const r = ensure(k, a.donor_name || "", a.donor_phone || null);
+      r.activities.add("abandoned");
+      r.abandonedCount += 1;
+      if (a.project_name) r.projects.add(a.project_name);
+      touch(r, a.abandoned_at);
+    });
+
+    return Array.from(map.values())
+      .filter((r) => r.activities.size >= 2)
+      .sort((a, b) => b.activities.size - a.activities.size || b.donationsTotal - a.donationsTotal);
+  }, [donations, subs, campaigns, gifts, abandoned]);
+
+  const filtered = useMemo(() => {
+    const min = parseInt(minTier, 10);
+    const q = normName(search);
+    return aggregated.filter((r) => {
+      if (r.activities.size < min) return false;
+      if (q && !normName(r.name).includes(q) && !(r.phone || "").includes(search)) return false;
+      return true;
+    });
+  }, [aggregated, minTier, search]);
+
+  const tierMeta = (n: number) => {
+    if (n >= 5) return { label: "ماسي", color: "from-cyan-500 to-blue-600", text: "text-cyan-700", bg: "bg-cyan-50", border: "border-cyan-200" };
+    if (n === 4) return { label: "ذهبي", color: "from-amber-500 to-orange-500", text: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" };
+    if (n === 3) return { label: "فضي", color: "from-slate-400 to-slate-500", text: "text-slate-700", bg: "bg-slate-50", border: "border-slate-200" };
+    return { label: "برونزي", color: "from-orange-700 to-amber-800", text: "text-orange-800", bg: "bg-orange-50", border: "border-orange-200" };
+  };
+
+  const summary = useMemo(() => {
+    const tiers = { ماسي: 0, ذهبي: 0, فضي: 0, برونزي: 0 } as Record<string, number>;
+    let totalAmount = 0;
+    aggregated.forEach((r) => {
+      tiers[tierMeta(r.activities.size).label] += 1;
+      totalAmount += r.donationsTotal;
+    });
+    return {
+      tiers,
+      totalElite: aggregated.length,
+      totalAmount,
+      topProjects: (() => {
+        const m = new Map<string, number>();
+        aggregated.forEach((r) => r.projects.forEach((p) => m.set(p, (m.get(p) || 0) + 1)));
+        return Array.from(m.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([n, c]) => ({ name: n, count: c }));
+      })(),
+    };
+  }, [aggregated]);
+
+  const generateAI = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    setAiInsights(null);
+    try {
+      // Anonymized aggregate sent to AI — no names or phones, only counts.
+      const payload = {
+        org_id: orgId,
+        elite_count: aggregated.length,
+        total_donations_count: donations.length,
+        total_donations_amount: donations.reduce((s, d) => s + Number(d.amount || 0), 0),
+        tiers: summary.tiers,
+        top_projects: summary.topProjects,
+        elite_breakdown: aggregated.slice(0, 60).map((r) => ({
+          tier: tierMeta(r.activities.size).label,
+          activities: Array.from(r.activities),
+          activity_count: r.activities.size,
+          donations_count: r.donationsCount,
+          donations_total: Math.round(r.donationsTotal),
+          subs: r.subsCount,
+          gifts: r.giftsCount,
+          campaigns: r.campaignsCount,
+          abandoned: r.abandonedCount,
+          projects_count: r.projects.size,
+        })),
+      };
+      const { data, error } = await supabase.functions.invoke("donor-insights", { body: payload });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setAiInsights(data);
+    } catch (e: any) {
+      const msg = e?.message || "تعذّر توليد الرؤى";
+      setAiError(msg);
+      toast.error(msg);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const copyText = (k: string, t: string) => {
+    navigator.clipboard.writeText(t).then(() => {
+      setCopiedKey(k);
+      toast.success("تم النسخ");
+      setTimeout(() => setCopiedKey(null), 1500);
+    });
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Hero */}
+      <div className="rounded-2xl border-2 border-amber-200 bg-gradient-to-bl from-amber-50 via-white to-orange-50 p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ring-2 ring-amber-300/60 bg-gradient-to-br from-amber-500 to-orange-600">
+              <Crown className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-slate-900">النخبة · بيانات مشتركة</h3>
+              <p className="text-sm text-slate-600">متبرعون لديهم نشاطان أو أكثر — تبرعات، استقطاعات، حملات، إهداءات، سلال</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className="bg-cyan-100 text-cyan-800 border-cyan-300">ماسي: {summary.tiers["ماسي"]}</Badge>
+            <Badge className="bg-amber-100 text-amber-800 border-amber-300">ذهبي: {summary.tiers["ذهبي"]}</Badge>
+            <Badge className="bg-slate-100 text-slate-800 border-slate-300">فضي: {summary.tiers["فضي"]}</Badge>
+            <Badge className="bg-orange-100 text-orange-800 border-orange-300">برونزي: {summary.tiers["برونزي"]}</Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative">
+          <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث بالاسم أو الجوال…"
+            className="h-9 pr-8 w-64"
+          />
+        </div>
+        <Select value={minTier} onValueChange={setMinTier}>
+          <SelectTrigger className="w-44 h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="2">≥ 2 أنشطة (الكل)</SelectItem>
+            <SelectItem value="3">≥ 3 أنشطة (فضي+)</SelectItem>
+            <SelectItem value="4">≥ 4 أنشطة (ذهبي+)</SelectItem>
+            <SelectItem value="5">5 أنشطة (ماسي)</SelectItem>
+          </SelectContent>
+        </Select>
+        <Badge variant="outline" className="border-slate-300">إجمالي النخبة: {filtered.length.toLocaleString("ar-SA")}</Badge>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+        <div className="overflow-auto max-h-[520px]">
+          <Table>
+            <TableHeader className="sticky top-0 bg-slate-50 z-10">
+              <TableRow>
+                {["المتبرع", "الجوال", "التصنيف", "الأنشطة", "تبرعات", "إجمالي", "استقطاعات", "إهداءات", "حملات", "سلال", "مشاريع", "آخر نشاط"].map((h, i) => (
+                  <TableHead key={i} className="text-right font-bold text-slate-700 whitespace-nowrap text-sm py-3">{h}</TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow><TableCell colSpan={12} className="text-center text-slate-400 py-10">لا توجد بيانات نخبة بعد — ارفع ملفات الاستقطاعات والحملات والإهداءات لبدء التحليل.</TableCell></TableRow>
+              ) : filtered.slice(0, 500).map((r) => {
+                const tm = tierMeta(r.activities.size);
+                const acts: Record<string, string> = {
+                  donations: "تبرعات", subscriptions: "استقطاع",
+                  campaigns: "حملة", gifts: "إهداء", abandoned: "سلة",
+                };
+                return (
+                  <TableRow key={r.key} className="hover:bg-slate-50/70">
+                    <TableCell className="font-bold text-slate-900 whitespace-nowrap">{r.name}</TableCell>
+                    <TableCell className="text-sm text-slate-600 whitespace-nowrap" dir="ltr">{r.phone || "—"}</TableCell>
+                    <TableCell>
+                      <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border", tm.bg, tm.text, tm.border)}>
+                        <Crown className="w-3 h-3" /> {tm.label}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {Array.from(r.activities).map((a) => (
+                          <Badge key={a} variant="outline" className="text-[10px] py-0 border-slate-300">{acts[a]}</Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{r.donationsCount.toLocaleString("ar-SA")}</TableCell>
+                    <TableCell className="text-sm font-bold text-emerald-700 whitespace-nowrap">{SAR(r.donationsTotal)}</TableCell>
+                    <TableCell className="text-sm">{r.subsCount.toLocaleString("ar-SA")}</TableCell>
+                    <TableCell className="text-sm">{r.giftsCount.toLocaleString("ar-SA")}</TableCell>
+                    <TableCell className="text-sm">{r.campaignsCount.toLocaleString("ar-SA")}</TableCell>
+                    <TableCell className="text-sm">{r.abandonedCount.toLocaleString("ar-SA")}</TableCell>
+                    <TableCell className="text-sm">{r.projects.size.toLocaleString("ar-SA")}</TableCell>
+                    <TableCell className="text-sm text-slate-500 whitespace-nowrap">{fmtDate(r.lastActivity)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* AI Insights */}
+      <div className="rounded-2xl border-2 border-violet-200 bg-gradient-to-bl from-violet-50 via-white to-fuchsia-50 p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ring-2 ring-violet-300/60 bg-gradient-to-br from-violet-600 to-fuchsia-600">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-900">رؤى الذكاء الاصطناعي</h3>
+              <p className="text-sm text-slate-600">اقتراحات إبداعية غير مسبوقة لتفعيل وتنمية علاقة هؤلاء المتبرعين بالجمعية</p>
+            </div>
+          </div>
+          <Button
+            onClick={generateAI}
+            disabled={aiLoading || aggregated.length === 0}
+            className="bg-gradient-to-l from-violet-600 to-fuchsia-600 hover:opacity-90 text-white gap-2"
+          >
+            {aiLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> جاري التوليد…</> : <><Sparkles className="w-4 h-4" /> توليد اقتراحات إبداعية</>}
+          </Button>
+        </div>
+
+        {aiError && <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{aiError}</div>}
+
+        {aiInsights && (
+          <div className="mt-5 space-y-4">
+            {Array.isArray(aiInsights.segments) && aiInsights.segments.length > 0 && (
+              <InsightSection title="القطاعات والشرائح" items={aiInsights.segments} copy={copyText} copiedKey={copiedKey} prefix="seg" color="violet" />
+            )}
+            {Array.isArray(aiInsights.retention_ideas) && (
+              <InsightSection title="أفكار الاحتفاظ والولاء" items={aiInsights.retention_ideas} copy={copyText} copiedKey={copiedKey} prefix="ret" color="emerald" />
+            )}
+            {Array.isArray(aiInsights.creative_campaigns) && (
+              <InsightSection title="حملات إبداعية مقترحة" items={aiInsights.creative_campaigns} copy={copyText} copiedKey={copiedKey} prefix="cmp" color="amber" />
+            )}
+            {Array.isArray(aiInsights.content_drafts) && (
+              <InsightSection title="مسودات محتوى جاهزة" items={aiInsights.content_drafts} copy={copyText} copiedKey={copiedKey} prefix="cnt" color="cyan" />
+            )}
+            {Array.isArray(aiInsights.tier_actions) && (
+              <InsightSection title="إجراءات لكل تصنيف" items={aiInsights.tier_actions} copy={copyText} copiedKey={copiedKey} prefix="tier" color="orange" />
+            )}
+            {aiInsights.executive_summary && (
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="text-sm font-bold text-slate-700 mb-2">ملخّص تنفيذي</div>
+                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{aiInsights.executive_summary}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InsightSection({
+  title, items, copy, copiedKey, prefix, color,
+}: {
+  title: string;
+  items: any[];
+  copy: (k: string, t: string) => void;
+  copiedKey: string | null;
+  prefix: string;
+  color: "violet" | "emerald" | "amber" | "cyan" | "orange";
+}) {
+  const palette: Record<string, string> = {
+    violet: "from-violet-500 to-fuchsia-500",
+    emerald: "from-emerald-500 to-teal-500",
+    amber: "from-amber-500 to-orange-500",
+    cyan: "from-cyan-500 to-blue-500",
+    orange: "from-orange-500 to-red-500",
+  };
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <div className={cn("w-1.5 h-6 rounded-full bg-gradient-to-b", palette[color])} />
+        <h4 className="font-bold text-slate-800">{title}</h4>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {items.map((it: any, i: number) => {
+          const k = `${prefix}-${i}`;
+          const t = typeof it === "string" ? it : (it.title || it.name || "");
+          const body = typeof it === "string" ? "" : (it.description || it.body || it.text || it.action || "");
+          const full = body ? `${t}\n${body}` : t;
+          return (
+            <div key={k} className="group rounded-xl border border-slate-200 bg-white p-3 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  {t && <div className="font-bold text-sm text-slate-900 mb-1">{t}</div>}
+                  {body && <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{body}</p>}
+                </div>
+                <button
+                  onClick={() => copy(k, full)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-slate-100 text-slate-500"
+                  title="نسخ"
+                >
+                  {copiedKey === k ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
