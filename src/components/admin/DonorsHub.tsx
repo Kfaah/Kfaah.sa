@@ -271,20 +271,24 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
         </CardContent>
       </Card>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:col-span-2">
-        <MiniStat label="حملات" value={campaigns.length} grad="from-emerald-500 to-teal-600" />
-        <MiniStat label="تبرعات فاشلة" value={failed.length} grad="from-rose-500 to-rose-600" />
-        <MiniStat label="سلال متروكة" value={abandoned.length} grad="from-amber-500 to-orange-500" />
-        <MiniStat label="اشتراكات" value={subs.length} grad="from-emerald-500 to-emerald-600" />
+        <MiniStat label="حملات" value={campaigns.length} brand={brand} />
+        <MiniStat label="تبرعات فاشلة" value={failed.length} brand={brand} accent="rose" />
+        <MiniStat label="سلال متروكة" value={abandoned.length} brand={brand} accent="amber" />
+        <MiniStat label="اشتراكات" value={subs.length} brand={brand} />
       </div>
     </div>
   );
 }
 
-function MiniStat({ label, value, grad }: { label: string; value: number; grad: string }) {
+function MiniStat({ label, value, brand, accent }: { label: string; value: number; brand: string; accent?: "rose" | "amber" }) {
+  const color = accent === "rose" ? "#e11d48" : accent === "amber" ? "#d97706" : brand;
   return (
-    <div className={cn("rounded-xl p-4 text-white shadow-md bg-gradient-to-br", grad)}>
-      <div className="text-3xl font-extrabold">{value.toLocaleString("ar-SA")}</div>
-      <div className="text-xs mt-1 opacity-90">{label}</div>
+    <div
+      className="rounded-xl p-4 bg-white shadow-sm border"
+      style={{ borderColor: `${color}33`, borderRightWidth: 4, borderRightColor: color }}
+    >
+      <div className="text-3xl font-extrabold" style={{ color }}>{value.toLocaleString("ar-SA")}</div>
+      <div className="text-xs mt-1 text-slate-600">{label}</div>
     </div>
   );
 }
