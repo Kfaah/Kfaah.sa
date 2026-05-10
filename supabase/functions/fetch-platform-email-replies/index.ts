@@ -31,16 +31,22 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey)
   const stats = { fetched: 0, inserted: 0, skipped: 0, errors: 0 }
 
+  console.log('[imap] connecting as', user)
   const client = new ImapFlow({
     host: 'imap.zoho.com',
     port: 993,
     secure: true,
     auth: { user, pass },
-    logger: false as any,
+    logger: {
+      debug: () => {},
+      info: (o: any) => console.log('[imap:info]', JSON.stringify(o)),
+      warn: (o: any) => console.warn('[imap:warn]', JSON.stringify(o)),
+      error: (o: any) => console.error('[imap:error]', JSON.stringify(o)),
+    } as any,
     tls: { rejectUnauthorized: false },
-    socketTimeout: 30_000,
-    greetingTimeout: 15_000,
-    connectionTimeout: 15_000,
+    socketTimeout: 20_000,
+    greetingTimeout: 10_000,
+    connectionTimeout: 10_000,
   })
 
   try {
