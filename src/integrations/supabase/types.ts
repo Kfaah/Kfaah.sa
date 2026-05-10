@@ -4433,9 +4433,12 @@ export type Database = {
       }
       task_quality_evaluations: {
         Row: {
+          actual_minutes: number | null
           ai_model: string | null
           created_at: string
+          efficiency_notes: string | null
           evaluated_at: string
+          expected_minutes: number | null
           id: string
           improvements: Json | null
           organization_id: string | null
@@ -4443,12 +4446,17 @@ export type Database = {
           strengths: Json | null
           summary: string | null
           task_id: string
+          time_efficiency_score: number | null
+          time_ratio: number | null
           user_id: string
         }
         Insert: {
+          actual_minutes?: number | null
           ai_model?: string | null
           created_at?: string
+          efficiency_notes?: string | null
           evaluated_at?: string
+          expected_minutes?: number | null
           id?: string
           improvements?: Json | null
           organization_id?: string | null
@@ -4456,12 +4464,17 @@ export type Database = {
           strengths?: Json | null
           summary?: string | null
           task_id: string
+          time_efficiency_score?: number | null
+          time_ratio?: number | null
           user_id: string
         }
         Update: {
+          actual_minutes?: number | null
           ai_model?: string | null
           created_at?: string
+          efficiency_notes?: string | null
           evaluated_at?: string
+          expected_minutes?: number | null
           id?: string
           improvements?: Json | null
           organization_id?: string | null
@@ -4469,6 +4482,8 @@ export type Database = {
           strengths?: Json | null
           summary?: string | null
           task_id?: string
+          time_efficiency_score?: number | null
+          time_ratio?: number | null
           user_id?: string
         }
         Relationships: []

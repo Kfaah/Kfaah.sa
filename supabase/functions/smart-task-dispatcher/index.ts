@@ -111,6 +111,10 @@ Deno.serve(async (req) => {
     const dryRun: boolean = !!body.dry_run;
     const startDate = body.start_date ? new Date(body.start_date) : new Date();
     const targetUserId: string | undefined = body.target_user_id;
+    const maxTasksOverride: number | undefined =
+      typeof body.max_tasks_today === "number" && body.max_tasks_today > 0
+        ? Math.min(20, Math.floor(body.max_tasks_today))
+        : undefined;
 
     if (!orgId) return json({ error: "organization_id مطلوب" }, 400);
     if (!incoming.length) return json({ ok: true, scheduled: 0, skipped_dupes: 0, message: "no suggestions" });
@@ -204,7 +208,12 @@ Deno.serve(async (req) => {
           const emp = employees[(cursor + i) % employees.length];
           const uMap = load.get(emp.user_id) || new Map();
           const slot = uMap.get(date) || { count: 0, minutes: 0 };
-          if (slot.count < MAX_TASKS_PER_DAY && slot.minutes + mins <= MAX_MINUTES_PER_DAY) {
+          // Allow per-employee override (only when targeting one user) for today's date.
+          const isTodaySlot = date === toDateOnly(startDate);
+          const taskCap = (maxTasksOverride && targetUserId && isTodaySlot)
+            ? maxTasksOverride
+            : MAX_TASKS_PER_DAY;
+          if (slot.count < taskCap && slot.minutes + mins <= MAX_MINUTES_PER_DAY) {
             // place here
             const dedupe_key = buildDedupeKey(s);
             taskRows.push({
