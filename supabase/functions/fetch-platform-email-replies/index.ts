@@ -37,6 +37,10 @@ Deno.serve(async (req) => {
     secure: true,
     auth: { user, pass },
     logger: false as any,
+    tls: { rejectUnauthorized: false },
+    socketTimeout: 30_000,
+    greetingTimeout: 15_000,
+    connectionTimeout: 15_000,
   })
 
   try {
