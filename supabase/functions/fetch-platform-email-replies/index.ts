@@ -56,15 +56,24 @@ Deno.serve(async (req) => {
     const lock = await client.getMailboxLock('INBOX')
     console.log('[imap] mailbox locked')
     try {
-      // Get last sync time (default to 24h ago first run)
+      // Get last sync time. If it was never saved, start from the newest message we already have.
       const { data: settings } = await supabase
         .from('platform_email_sync_settings')
         .select('last_synced_at')
         .eq('id', true)
         .maybeSingle()
+      const { data: latestStored } = await supabase
+        .from('platform_email_messages')
+        .select('received_at')
+        .eq('direction', 'inbound')
+        .order('received_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
       const since = settings?.last_synced_at
         ? new Date(settings.last_synced_at)
+        : latestStored?.received_at
+          ? new Date(new Date(latestStored.received_at).getTime() - 10 * 60 * 1000)
         : new Date(Date.now() - 24 * 60 * 60 * 1000)
 
       console.log('[imap] searching since', since.toISOString())
@@ -74,14 +83,29 @@ Deno.serve(async (req) => {
 
       // Process newest first and cap per-invocation work to avoid 504 timeouts
       const allUids: number[] = ((uids as any[]) || []).slice().sort((a, b) => b - a)
-      const MAX_PER_RUN = 5
+      const MAX_PER_RUN = 8
+      const startedAt = Date.now()
+      const MAX_RUNTIME_MS = 15_000
       const uidList = allUids.slice(0, MAX_PER_RUN)
       console.log('[imap] processing', uidList.length, 'messages')
       for (const uid of uidList) {
+        if (Date.now() - startedAt > MAX_RUNTIME_MS) {
+          console.log('[imap] stopping early to avoid timeout')
+          break
+        }
         try {
           console.log('[imap] fetching uid', uid)
           const msg: any = await (client as any).fetchOne(uid, { envelope: true, internalDate: true }, { uid: true })
           if (!msg) { console.log('[imap] no envelope for', uid); stats.skipped++; continue }
+          const envelopeProviderId = normalizeMessageId(msg.envelope?.messageId)
+          if (envelopeProviderId) {
+            const { data: existing } = await supabase
+              .from('platform_email_messages')
+              .select('id')
+              .eq('provider_message_id', envelopeProviderId)
+              .maybeSingle()
+            if (existing) { stats.skipped++; continue }
+          }
           console.log('[imap] downloading source for uid', uid)
           const dl: any = await (client as any).download(uid, undefined, { uid: true })
           const chunks: Uint8Array[] = []
@@ -187,9 +211,10 @@ Deno.serve(async (req) => {
         }
       }
 
-      await supabase
+      const { error: syncErr } = await supabase
         .from('platform_email_sync_settings')
-        .upsert({ id: true, sync_token: 'imap', last_synced_at: new Date().toISOString() })
+        .upsert({ id: true, sync_token: 'imap', last_synced_at: new Date().toISOString() }, { onConflict: 'id' })
+      if (syncErr) console.error('[imap] sync settings update failed', syncErr)
     } finally {
       lock.release()
     }
