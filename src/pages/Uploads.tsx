@@ -350,7 +350,7 @@ export default function Uploads() {
         loadHistory();
       }
     },
-    [forDate, loadHistory, processStaffDuties, archiveFile],
+    [forDate, loadHistory, processStaffDuties, archiveFile, orgId],
   );
 
   const handleFiles = useCallback(
