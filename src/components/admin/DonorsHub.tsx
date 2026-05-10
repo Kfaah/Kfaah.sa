@@ -358,7 +358,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
           {active === "campaigns" && <CampaignsPanel campaigns={campaigns} projects={projects} />}
           {active === "failed" && <FailedPanel rows={failed} projects={projects} />}
           {active === "abandoned" && <AbandonedPanel rows={abandoned} projects={projects} />}
-          {active === "subscriptions" && <SubscriptionsPanel rows={subs} projects={projects} />}
+          {active === "subscriptions" && <SubscriptionsPanel rows={subs} donations={donations} projects={projects} />}
         </div>
       )}
     </div>
