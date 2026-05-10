@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   HeartHandshake, Users, Trophy, Repeat, Megaphone, XCircle, ShoppingCart,
-  CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar, Wallet,
+  CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar as CalendarIcon, Wallet,
 } from "lucide-react";
 
 type SubKey =
