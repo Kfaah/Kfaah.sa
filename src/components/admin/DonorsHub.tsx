@@ -4,13 +4,12 @@ import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
   HeartHandshake, Users, Trophy, Repeat, Megaphone, XCircle, ShoppingCart,
-  CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar, Wallet, Phone,
+  CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar, Wallet,
 } from "lucide-react";
 
 type SubKey =
@@ -43,12 +42,73 @@ interface DonorRow {
   first_donation_at: string | null; last_donation_at: string | null;
 }
 
+/* ---------- Date + Project filter helpers ---------- */
+type Range = { from: Date | null; to: Date | null };
+const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+const endOfDay = (d: Date) => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; };
+
+const DATE_PRESETS: { key: string; label: string }[] = [
+  { key: "all", label: "كل الفترات" },
+  { key: "today", label: "اليوم" },
+  { key: "yesterday", label: "الأمس" },
+  { key: "this_week", label: "هذا الأسبوع" },
+  { key: "last_week", label: "الأسبوع الماضي" },
+  { key: "this_month", label: "هذا الشهر" },
+  { key: "last_month", label: "الشهر الماضي" },
+  { key: "this_year", label: "هذه السنة" },
+  { key: "last_year", label: "السنة الماضية" },
+];
+
+function buildDateRange(key: string): Range {
+  const now = new Date();
+  const today = startOfDay(now);
+  const dow = now.getDay();
+  switch (key) {
+    case "today": return { from: today, to: endOfDay(now) };
+    case "yesterday": { const y = new Date(today); y.setDate(y.getDate() - 1); return { from: y, to: endOfDay(y) }; }
+    case "this_week": { const f = new Date(today); f.setDate(f.getDate() - dow); return { from: f, to: endOfDay(now) }; }
+    case "last_week": { const f = new Date(today); f.setDate(f.getDate() - dow - 7); const t = new Date(f); t.setDate(t.getDate() + 6); return { from: f, to: endOfDay(t) }; }
+    case "this_month": return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: endOfDay(now) };
+    case "last_month": { const f = new Date(now.getFullYear(), now.getMonth() - 1, 1); const t = endOfDay(new Date(now.getFullYear(), now.getMonth(), 0)); return { from: f, to: t }; }
+    case "this_year": return { from: new Date(now.getFullYear(), 0, 1), to: endOfDay(now) };
+    case "last_year": { const f = new Date(now.getFullYear() - 1, 0, 1); const t = endOfDay(new Date(now.getFullYear() - 1, 11, 31)); return { from: f, to: t }; }
+    default: return { from: null, to: null };
+  }
+}
+function inRange(d: string | null | undefined, r: Range) {
+  if (!r.from && !r.to) return true;
+  if (!d) return false;
+  const t = new Date(d).getTime();
+  if (r.from && t < r.from.getTime()) return false;
+  if (r.to && t > r.to.getTime()) return false;
+  return true;
+}
+function DateSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-40 h-9"><SelectValue placeholder="الفترة" /></SelectTrigger>
+      <SelectContent>
+        {DATE_PRESETS.map((p) => <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+}
+function ProjectSelect({ value, onChange, projects }: { value: string; onChange: (v: string) => void; projects: string[] }) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-52 h-9"><SelectValue placeholder="المشروع" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">كل المشاريع</SelectItem>
+        {projects.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function DonorsHub({ orgId }: { orgId: string }) {
   const [active, setActive] = useState<SubKey>("overview");
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
-  const brandSoft = `${brand}1a`; // ~10% alpha
-  const brandSofter = `${brand}0d`;
   const [loading, setLoading] = useState(true);
   const [donors, setDonors] = useState<DonorRow[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -86,13 +146,22 @@ export function DonorsHub({ orgId }: { orgId: string }) {
     return () => { cancelled = true; };
   }, [orgId]);
 
-  // KPIs
+  // Project list pulled from all sources to be exhaustive
+  const projects = useMemo(() => {
+    const set = new Set<string>();
+    donations.forEach((d) => d.project_name && set.add(d.project_name));
+    campaigns.forEach((c: any) => c.project_name && set.add(c.project_name));
+    failed.forEach((r: any) => r.project_name && set.add(r.project_name));
+    abandoned.forEach((r: any) => r.project_name && set.add(r.project_name));
+    subs.forEach((r: any) => r.project_name && set.add(r.project_name));
+    return Array.from(set).sort();
+  }, [donations, campaigns, failed, abandoned, subs]);
+
   const totals = useMemo(() => {
     const total = donations.reduce((s, r) => s + Number(r.amount || 0), 0);
     const recurring = donors.filter(d => d.donations_count >= 2).length;
-    const projects = new Set(donations.map(d => d.project_name).filter(Boolean)).size;
-    const years = new Set(donations.map(d => new Date(d.donation_date).getFullYear())).size;
-    return { total, recurring, projects, years };
+    const projectsCount = new Set(donations.map(d => d.project_name).filter(Boolean)).size;
+    return { total, recurring, projects: projectsCount };
   }, [donations, donors]);
 
   return (
@@ -133,12 +202,11 @@ export function DonorsHub({ orgId }: { orgId: string }) {
         </div>
       </div>
 
-      {/* Sub-icons / dropdown branches */}
+      {/* Sub-icons */}
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2">
         {SUB_TABS.map((t, idx) => {
           const Icon = t.Icon;
           const isActive = active === t.key;
-          // Alternate gradient palettes: brand (cyan/blue) ↔ emerald (green)
           const palettes = [
             { from: brand, to: `${brand}cc`, ring: `${brand}55`, soft: `${brand}18`, text: brand },
             { from: "#10b981", to: "#059669", ring: "#10b98155", soft: "#10b98118", text: "#047857" },
@@ -154,26 +222,16 @@ export function DonorsHub({ orgId }: { orgId: string }) {
                   ? "shadow-lg ring-2 -translate-y-0.5"
                   : "border-slate-200 hover:shadow-md hover:-translate-y-0.5"
               )}
-              style={isActive ? {
-                borderColor: p.from,
-                ['--tw-ring-color' as any]: p.ring,
-              } : undefined}
+              style={isActive ? { borderColor: p.from, ['--tw-ring-color' as any]: p.ring } : undefined}
             >
               <div
                 className={cn(
                   "w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ring-1 transition-transform group-hover:scale-110",
                   isActive && "scale-110"
                 )}
-                style={{
-                  background: `linear-gradient(135deg, ${p.from}, ${p.to})`,
-                  ['--tw-ring-color' as any]: p.ring,
-                }}
+                style={{ background: `linear-gradient(135deg, ${p.from}, ${p.to})`, ['--tw-ring-color' as any]: p.ring }}
               >
-                <Icon
-                  className="w-5 h-5"
-                  style={{ color: "#fff" }}
-                  strokeWidth={2.4}
-                />
+                <Icon className="w-5 h-5" style={{ color: "#fff" }} strokeWidth={2.4} />
               </div>
               <div className="text-center">
                 <div className="text-sm font-bold leading-tight" style={isActive ? { color: p.text } : undefined}>
@@ -194,14 +252,14 @@ export function DonorsHub({ orgId }: { orgId: string }) {
       ) : (
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
           {active === "overview" && <OverviewPanel donations={donations} donors={donors} campaigns={campaigns} failed={failed} abandoned={abandoned} subs={subs} />}
-          {active === "donors" && <DonorsPanel donors={donors} />}
-          {active === "donations" && <DonationsPanel donations={donations} />}
-          {active === "top" && <TopDonorsPanel donors={donors} />}
-          {active === "recurring" && <RecurringPanel donors={donors} />}
-          {active === "campaigns" && <CampaignsPanel campaigns={campaigns} />}
-          {active === "failed" && <FailedPanel rows={failed} />}
-          {active === "abandoned" && <AbandonedPanel rows={abandoned} />}
-          {active === "subscriptions" && <SubscriptionsPanel rows={subs} />}
+          {active === "donors" && <DonorsPanel donors={donors} donations={donations} projects={projects} />}
+          {active === "donations" && <DonationsPanel donations={donations} projects={projects} />}
+          {active === "top" && <TopDonorsPanel donors={donors} donations={donations} projects={projects} />}
+          {active === "recurring" && <RecurringPanel donors={donors} donations={donations} projects={projects} />}
+          {active === "campaigns" && <CampaignsPanel campaigns={campaigns} projects={projects} />}
+          {active === "failed" && <FailedPanel rows={failed} projects={projects} />}
+          {active === "abandoned" && <AbandonedPanel rows={abandoned} projects={projects} />}
+          {active === "subscriptions" && <SubscriptionsPanel rows={subs} projects={projects} />}
         </div>
       )}
     </div>
@@ -285,39 +343,22 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
 }
 
 function MiniStat({
-  label,
-  desc,
-  value,
-  icon: Icon,
-  gradient,
+  label, desc, value, icon: Icon, gradient,
 }: {
-  label: string;
-  desc: string;
-  value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  gradient: string;
+  label: string; desc: string; value: number;
+  icon: React.ComponentType<{ className?: string }>; gradient: string;
 }) {
   return (
-    <div
-      className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border bg-card p-5",
-        "hover:shadow-xl hover:-translate-y-1 transition-all duration-300",
-        "flex flex-col items-start gap-3 min-h-[160px]"
-      )}
-    >
-      <div
-        className={cn(
-          "w-14 h-14 rounded-2xl flex items-center justify-center",
-          "bg-gradient-to-br shadow-lg",
-          gradient
-        )}
-      >
+    <div className={cn(
+      "group relative overflow-hidden rounded-2xl border border-border bg-card p-5",
+      "hover:shadow-xl hover:-translate-y-1 transition-all duration-300",
+      "flex flex-col items-start gap-3 min-h-[160px]"
+    )}>
+      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-lg", gradient)}>
         <Icon className="w-7 h-7 text-white" />
       </div>
       <div className="space-y-1">
-        <div className="text-3xl font-extrabold text-foreground leading-none">
-          {value.toLocaleString("ar-SA")}
-        </div>
+        <div className="text-3xl font-extrabold text-foreground leading-none">{value.toLocaleString("ar-SA")}</div>
         <h3 className="font-bold text-sm text-foreground leading-tight mt-1">{label}</h3>
         <p className="text-xs text-muted-foreground line-clamp-2">{desc}</p>
       </div>
@@ -325,24 +366,42 @@ function MiniStat({
   );
 }
 
-function DonorsPanel({ donors }: { donors: DonorRow[] }) {
+function DonorsPanel({ donors, donations, projects }: { donors: DonorRow[]; donations: Donation[]; projects: string[] }) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
   const [q, setQ] = useState("");
   const [seg, setSeg] = useState<string>("all");
+  const [dateKey, setDateKey] = useState("all");
+  const [project, setProject] = useState("all");
+  const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
   const segments = useMemo(() => Array.from(new Set(donors.map((d) => d.segment))), [donors]);
+
+  const allowedDonorIds = useMemo(() => {
+    if (dateKey === "all" && project === "all") return null;
+    const set = new Set<string>();
+    donations.forEach((d) => {
+      if (project !== "all" && d.project_name !== project) return;
+      if (!inRange(d.donation_date, range)) return;
+      if (d.donor_id) set.add(d.donor_id);
+    });
+    return set;
+  }, [donations, dateKey, project, range]);
+
   const filtered = useMemo(() => {
     return donors.filter((d) => {
       if (seg !== "all" && d.segment !== seg) return false;
+      if (allowedDonorIds && !allowedDonorIds.has(d.id)) return false;
       if (q && !`${d.full_name} ${d.phone || ""} ${d.email || ""} ${d.city || ""}`.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [donors, q, seg]);
+  }, [donors, q, seg, allowedDonorIds]);
 
   return (
     <div className="space-y-3">
       <Toolbar>
         <SearchBox value={q} onChange={setQ} placeholder="ابحث بالاسم، الجوال، المدينة…" />
+        <DateSelect value={dateKey} onChange={setDateKey} />
+        <ProjectSelect value={project} onChange={setProject} projects={projects} />
         <Select value={seg} onValueChange={setSeg}>
           <SelectTrigger className="w-44 h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -364,25 +423,24 @@ function DonorsPanel({ donors }: { donors: DonorRow[] }) {
   );
 }
 
-function DonationsPanel({ donations }: { donations: Donation[] }) {
+function DonationsPanel({ donations, projects }: { donations: Donation[]; projects: string[] }) {
   const [q, setQ] = useState("");
-  const [year, setYear] = useState<string>("all");
+  const [dateKey, setDateKey] = useState("all");
   const [project, setProject] = useState<string>("all");
   const [method, setMethod] = useState<string>("all");
+  const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
 
-  const years = useMemo(() => Array.from(new Set(donations.map((d) => new Date(d.donation_date).getFullYear()))).sort((a, b) => b - a), [donations]);
-  const projects = useMemo(() => Array.from(new Set(donations.map((d) => d.project_name).filter(Boolean) as string[])).sort(), [donations]);
   const methods = useMemo(() => Array.from(new Set(donations.map((d) => d.payment_method).filter(Boolean) as string[])).sort(), [donations]);
 
   const filtered = useMemo(() => {
     return donations.filter((d) => {
-      if (year !== "all" && new Date(d.donation_date).getFullYear() !== Number(year)) return false;
+      if (!inRange(d.donation_date, range)) return false;
       if (project !== "all" && d.project_name !== project) return false;
       if (method !== "all" && d.payment_method !== method) return false;
       if (q && !`${d.donor_name || ""} ${d.donor_phone || ""} ${d.project_name || ""}`.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [donations, q, year, project, method]);
+  }, [donations, q, range, project, method]);
 
   const sum = filtered.reduce((s, r) => s + Number(r.amount || 0), 0);
 
@@ -390,20 +448,8 @@ function DonationsPanel({ donations }: { donations: Donation[] }) {
     <div className="space-y-3">
       <Toolbar>
         <SearchBox value={q} onChange={setQ} placeholder="ابحث بالمتبرع أو المشروع…" />
-        <Select value={year} onValueChange={setYear}>
-          <SelectTrigger className="w-32 h-9"><SelectValue placeholder="السنة" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">كل السنوات</SelectItem>
-            {years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={project} onValueChange={setProject}>
-          <SelectTrigger className="w-52 h-9"><SelectValue placeholder="المشروع" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">كل المشاريع</SelectItem>
-            {projects.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <DateSelect value={dateKey} onChange={setDateKey} />
+        <ProjectSelect value={project} onChange={setProject} projects={projects} />
         <Select value={method} onValueChange={setMethod}>
           <SelectTrigger className="w-44 h-9"><SelectValue placeholder="وسيلة الدفع" /></SelectTrigger>
           <SelectContent>
@@ -428,26 +474,53 @@ function DonationsPanel({ donations }: { donations: Donation[] }) {
   );
 }
 
-function TopDonorsPanel({ donors }: { donors: DonorRow[] }) {
+function TopDonorsPanel({ donors, donations, projects }: { donors: DonorRow[]; donations: Donation[]; projects: string[] }) {
   const [limit, setLimit] = useState<string>("50");
-  const top = useMemo(() => [...donors].sort((a, b) => Number(b.total_donated) - Number(a.total_donated)).slice(0, Number(limit)), [donors, limit]);
+  const [dateKey, setDateKey] = useState("all");
+  const [project, setProject] = useState("all");
+  const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
+
+  const aggregates = useMemo(() => {
+    if (dateKey === "all" && project === "all") {
+      return donors.map((d) => ({ ...d, _total: Number(d.total_donated || 0), _count: d.donations_count }));
+    }
+    const map = new Map<string, { total: number; count: number }>();
+    donations.forEach((d) => {
+      if (!d.donor_id) return;
+      if (project !== "all" && d.project_name !== project) return;
+      if (!inRange(d.donation_date, range)) return;
+      const cur = map.get(d.donor_id) || { total: 0, count: 0 };
+      cur.total += Number(d.amount || 0); cur.count += 1;
+      map.set(d.donor_id, cur);
+    });
+    return donors.filter((d) => map.has(d.id)).map((d) => {
+      const a = map.get(d.id)!;
+      return { ...d, _total: a.total, _count: a.count };
+    });
+  }, [donors, donations, dateKey, project, range]);
+
+  const top = useMemo(() => [...aggregates].sort((a, b) => b._total - a._total).slice(0, Number(limit)), [aggregates, limit]);
+
   return (
     <div className="space-y-3">
       <Toolbar>
+        <DateSelect value={dateKey} onChange={setDateKey} />
+        <ProjectSelect value={project} onChange={setProject} projects={projects} />
         <Select value={limit} onValueChange={setLimit}>
           <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
             {["10", "25", "50", "100", "500"].map((n) => <SelectItem key={n} value={n}>أعلى {n}</SelectItem>)}
           </SelectContent>
         </Select>
+        <CountChip n={top.length} total={aggregates.length} />
       </Toolbar>
       <DataTable
         head={["#", "الاسم", "الجوال", "المدينة", "عدد التبرعات", "إجمالي التبرع", "أول تبرع", "آخر تبرع"]}
-        rows={top.map((d, i) => [
+        rows={top.map((d: any, i) => [
           <span className={cn("font-bold", i < 3 ? "text-amber-600" : "text-slate-700")}>{i + 1}</span>,
           d.full_name, d.phone || "—", d.city || "—",
-          d.donations_count,
-          <span className="font-bold text-amber-700">{SAR(Number(d.total_donated))}</span>,
+          d._count,
+          <span className="font-bold text-amber-700">{SAR(Number(d._total))}</span>,
           fmtDate(d.first_donation_at), fmtDate(d.last_donation_at),
         ])}
       />
@@ -455,28 +528,54 @@ function TopDonorsPanel({ donors }: { donors: DonorRow[] }) {
   );
 }
 
-function RecurringPanel({ donors }: { donors: DonorRow[] }) {
+function RecurringPanel({ donors, donations, projects }: { donors: DonorRow[]; donations: Donation[]; projects: string[] }) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
   const [min, setMin] = useState<string>("2");
-  const list = useMemo(() => donors.filter((d) => d.donations_count >= Number(min)).sort((a, b) => b.donations_count - a.donations_count), [donors, min]);
+  const [dateKey, setDateKey] = useState("all");
+  const [project, setProject] = useState("all");
+  const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
+
+  const aggregates = useMemo(() => {
+    if (dateKey === "all" && project === "all") {
+      return donors.map((d) => ({ ...d, _total: Number(d.total_donated || 0), _count: d.donations_count }));
+    }
+    const map = new Map<string, { total: number; count: number }>();
+    donations.forEach((d) => {
+      if (!d.donor_id) return;
+      if (project !== "all" && d.project_name !== project) return;
+      if (!inRange(d.donation_date, range)) return;
+      const cur = map.get(d.donor_id) || { total: 0, count: 0 };
+      cur.total += Number(d.amount || 0); cur.count += 1;
+      map.set(d.donor_id, cur);
+    });
+    return donors.filter((d) => map.has(d.id)).map((d) => {
+      const a = map.get(d.id)!;
+      return { ...d, _total: a.total, _count: a.count };
+    });
+  }, [donors, donations, dateKey, project, range]);
+
+  const list = useMemo(() => aggregates.filter((d: any) => d._count >= Number(min)).sort((a: any, b: any) => b._count - a._count), [aggregates, min]);
+
   return (
     <div className="space-y-3">
       <Toolbar>
+        <DateSelect value={dateKey} onChange={setDateKey} />
+        <ProjectSelect value={project} onChange={setProject} projects={projects} />
         <Select value={min} onValueChange={setMin}>
           <SelectTrigger className="w-44 h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
             {[2, 3, 5, 10, 20].map((n) => <SelectItem key={n} value={String(n)}>{n}+ تبرعات</SelectItem>)}
           </SelectContent>
         </Select>
-        <CountChip n={list.length} total={donors.length} />
+        <CountChip n={list.length} total={aggregates.length} />
       </Toolbar>
       <DataTable
         head={["#", "الاسم", "الجوال", "عدد التبرعات", "إجمالي", "آخر تبرع"]}
-        rows={list.slice(0, 1000).map((d, i) => [
+        rows={list.slice(0, 1000).map((d: any, i) => [
           String(i + 1), d.full_name, d.phone || "—",
-          <Badge style={{ background: `${brand}1f`, color: brand, borderColor: `${brand}55` }}>{d.donations_count}</Badge>,
-          <span className="font-bold" style={{ color: brand }}>{SAR(Number(d.total_donated))}</span>,
+          <Badge style={{ background: `${brand}1f`, color: brand, borderColor: `${brand}55` }}>{d._count}</Badge>,
+          <span className="font-bold" style={{ color: brand }}>{SAR(Number(d._total))}</span>,
           fmtDate(d.last_donation_at),
         ])}
       />
@@ -484,48 +583,88 @@ function RecurringPanel({ donors }: { donors: DonorRow[] }) {
   );
 }
 
-function CampaignsPanel({ campaigns }: { campaigns: any[] }) {
+function CampaignsPanel({ campaigns, projects }: { campaigns: any[]; projects: string[] }) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
+  const [dateKey, setDateKey] = useState("all");
+  const [project, setProject] = useState("all");
+  const [status, setStatus] = useState("all");
+  const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
+
+  const statuses = useMemo(() => Array.from(new Set(campaigns.map((c) => c.status).filter(Boolean))) as string[], [campaigns]);
+
+  const filtered = useMemo(() => campaigns.filter((c) => {
+    const ref = c.start_date || c.created_at;
+    if (!inRange(ref, range)) return false;
+    if (project !== "all" && c.project_name !== project) return false;
+    if (status !== "all" && c.status !== status) return false;
+    return true;
+  }), [campaigns, range, project, status]);
+
   return (
-    <DataTable
-      head={["#", "اسم الحملة", "الهدف", "المُحصّل", "نسبة الإنجاز", "عدد التبرعات", "البداية", "النهاية", "الحالة"]}
-      rows={campaigns.map((c, i) => {
-        const goal = Number(c.goal_amount || 0);
-        const got = Number(c.collected_amount || 0);
-        const pct = goal > 0 ? Math.round((got / goal) * 100) : 0;
-        return [
-          String(i + 1), c.name, goal ? SAR(goal) : "—",
-          <span className="font-bold" style={{ color: brand }}>{SAR(got)}</span>,
-          <div className="flex items-center gap-2 min-w-[110px]">
-            <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
-            </div>
-            <span className="text-xs font-semibold text-slate-700 w-9 text-left">{pct}%</span>
-          </div>,
-          c.donations_count || 0, fmtDate(c.start_date), fmtDate(c.end_date),
-          <Badge
-            variant="outline"
-            style={c.status === "active"
-              ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
-              : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
-          >{c.status}</Badge>,
-        ];
-      })}
-    />
+    <div className="space-y-3">
+      <Toolbar>
+        <DateSelect value={dateKey} onChange={setDateKey} />
+        <ProjectSelect value={project} onChange={setProject} projects={projects} />
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-44 h-9"><SelectValue placeholder="الحالة" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل الحالات</SelectItem>
+            {statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <CountChip n={filtered.length} total={campaigns.length} />
+      </Toolbar>
+      <DataTable
+        head={["#", "اسم الحملة", "المشروع", "الهدف", "المُحصّل", "نسبة الإنجاز", "عدد التبرعات", "البداية", "النهاية", "الحالة"]}
+        rows={filtered.map((c, i) => {
+          const goal = Number(c.goal_amount || 0);
+          const got = Number(c.collected_amount || 0);
+          const pct = goal > 0 ? Math.round((got / goal) * 100) : 0;
+          return [
+            String(i + 1), c.name, c.project_name || "—", goal ? SAR(goal) : "—",
+            <span className="font-bold" style={{ color: brand }}>{SAR(got)}</span>,
+            <div className="flex items-center gap-2 min-w-[110px]">
+              <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: `linear-gradient(to left, ${brand}, ${brand}99)` }} />
+              </div>
+              <span className="text-xs font-semibold text-slate-700 w-9 text-left">{pct}%</span>
+            </div>,
+            c.donations_count || 0, fmtDate(c.start_date), fmtDate(c.end_date),
+            <Badge
+              variant="outline"
+              style={c.status === "active"
+                ? { background: `${brand}10`, color: brand, borderColor: `${brand}55` }
+                : { background: "rgb(248 250 252)", color: "rgb(51 65 85)", borderColor: "rgb(226 232 240)" }}
+            >{c.status}</Badge>,
+          ];
+        })}
+      />
+    </div>
   );
 }
 
-function FailedPanel({ rows }: { rows: any[] }) {
-  const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
+function FailedPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
+  const [dateKey, setDateKey] = useState("all");
+  const [project, setProject] = useState("all");
+  const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (!inRange(r.attempted_at, range)) return false;
+    if (project !== "all" && r.project_name !== project) return false;
+    return true;
+  }), [rows, range, project]);
+  const total = filtered.reduce((s, r) => s + Number(r.amount || 0), 0);
+
   return (
-    <>
+    <div className="space-y-3">
       <Toolbar>
-        <CountChip n={rows.length} total={rows.length} extra={`فُقد محتمل: ${SAR(total)}`} />
+        <DateSelect value={dateKey} onChange={setDateKey} />
+        <ProjectSelect value={project} onChange={setProject} projects={projects} />
+        <CountChip n={filtered.length} total={rows.length} extra={`فُقد محتمل: ${SAR(total)}`} />
       </Toolbar>
       <DataTable
         head={["#", "التاريخ", "المتبرع", "الجوال", "المشروع", "الوسيلة", "المبلغ", "السبب", "حالة الإعادة"]}
-        rows={rows.slice(0, 1000).map((r, i) => [
+        rows={filtered.slice(0, 1000).map((r, i) => [
           String(i + 1), fmtDate(r.attempted_at), r.donor_name || "—", r.donor_phone || "—",
           r.project_name || "—", r.payment_method || "—",
           <span className="font-bold text-rose-700">{SAR(Number(r.amount))}</span>,
@@ -533,21 +672,32 @@ function FailedPanel({ rows }: { rows: any[] }) {
           <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">{r.retry_status}</Badge>,
         ])}
       />
-    </>
+    </div>
   );
 }
 
-function AbandonedPanel({ rows }: { rows: any[] }) {
-  const recovered = rows.filter((r) => r.recovered).length;
-  const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
+function AbandonedPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
+  const [dateKey, setDateKey] = useState("all");
+  const [project, setProject] = useState("all");
+  const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (!inRange(r.abandoned_at, range)) return false;
+    if (project !== "all" && r.project_name !== project) return false;
+    return true;
+  }), [rows, range, project]);
+  const recovered = filtered.filter((r) => r.recovered).length;
+  const total = filtered.reduce((s, r) => s + Number(r.amount || 0), 0);
+
   return (
-    <>
+    <div className="space-y-3">
       <Toolbar>
-        <CountChip n={rows.length} total={rows.length} extra={`مُسترد: ${recovered} · قيمة: ${SAR(total)}`} />
+        <DateSelect value={dateKey} onChange={setDateKey} />
+        <ProjectSelect value={project} onChange={setProject} projects={projects} />
+        <CountChip n={filtered.length} total={rows.length} extra={`مُسترد: ${recovered} · قيمة: ${SAR(total)}`} />
       </Toolbar>
       <DataTable
         head={["#", "التاريخ", "المتبرع", "الجوال", "المشروع", "المبلغ", "حالة المتابعة", "مُسترد"]}
-        rows={rows.slice(0, 1000).map((r, i) => [
+        rows={filtered.slice(0, 1000).map((r, i) => [
           String(i + 1), fmtDate(r.abandoned_at), r.donor_name || "—", r.donor_phone || "—",
           r.project_name || "—",
           <span className="font-bold text-amber-700">{SAR(Number(r.amount))}</span>,
@@ -557,23 +707,47 @@ function AbandonedPanel({ rows }: { rows: any[] }) {
             : <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">لا</Badge>,
         ])}
       />
-    </>
+    </div>
   );
 }
 
-function SubscriptionsPanel({ rows }: { rows: any[] }) {
+function SubscriptionsPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
-  const active = rows.filter((r) => r.status === "active").length;
-  const monthly = rows.filter((r) => r.status === "active").reduce((s, r) => s + Number(r.amount || 0), 0);
+  const [dateKey, setDateKey] = useState("all");
+  const [project, setProject] = useState("all");
+  const [status, setStatus] = useState("all");
+  const range = useMemo(() => buildDateRange(dateKey), [dateKey]);
+
+  const statuses = useMemo(() => Array.from(new Set(rows.map((r) => r.status).filter(Boolean))) as string[], [rows]);
+
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (!inRange(r.start_date || r.created_at, range)) return false;
+    if (project !== "all" && r.project_name !== project) return false;
+    if (status !== "all" && r.status !== status) return false;
+    return true;
+  }), [rows, range, project, status]);
+
+  const active = filtered.filter((r) => r.status === "active").length;
+  const monthly = filtered.filter((r) => r.status === "active").reduce((s, r) => s + Number(r.amount || 0), 0);
+
   return (
-    <>
+    <div className="space-y-3">
       <Toolbar>
-        <CountChip n={rows.length} total={rows.length} extra={`نشِط: ${active} · شهري متوقع: ${SAR(monthly)}`} />
+        <DateSelect value={dateKey} onChange={setDateKey} />
+        <ProjectSelect value={project} onChange={setProject} projects={projects} />
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-44 h-9"><SelectValue placeholder="الحالة" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل الحالات</SelectItem>
+            {statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <CountChip n={filtered.length} total={rows.length} extra={`نشِط: ${active} · شهري متوقع: ${SAR(monthly)}`} />
       </Toolbar>
       <DataTable
         head={["#", "المتبرع", "الجوال", "المشروع", "المبلغ", "البداية", "الاستقطاع التالي", "الحالة"]}
-        rows={rows.slice(0, 1000).map((r, i) => [
+        rows={filtered.slice(0, 1000).map((r, i) => [
           String(i + 1), r.donor_name || "—", r.donor_phone || "—", r.project_name || "—",
           <span className="font-bold" style={{ color: brand }}>{SAR(Number(r.amount))}</span>,
           fmtDate(r.start_date), fmtDate(r.next_charge_date),
@@ -585,7 +759,7 @@ function SubscriptionsPanel({ rows }: { rows: any[] }) {
           >{r.status}</Badge>,
         ])}
       />
-    </>
+    </div>
   );
 }
 
@@ -632,7 +806,7 @@ function DataTable({ head, rows }: { head: string[]; rows: (string | number | Re
         <Table>
           <TableHeader className="sticky top-0 bg-slate-50 z-10">
             <TableRow>
-          {head.map((h, i) => <TableHead key={i} className="text-right font-bold text-slate-700 whitespace-nowrap text-sm py-3.5">{h}</TableHead>)}
+              {head.map((h, i) => <TableHead key={i} className="text-right font-bold text-slate-700 whitespace-nowrap text-sm py-3.5">{h}</TableHead>)}
             </TableRow>
           </TableHeader>
           <TableBody>
