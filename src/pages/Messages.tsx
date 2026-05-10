@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Inbox, Loader2, Reply, PenSquare, LifeBuoy, Shield } from "lucide-react";
+import { Send, Inbox, Loader2, Reply, PenSquare, LifeBuoy, Shield, Paperclip, X, FileText, Download } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +23,10 @@ type Msg = {
   from_admin: boolean;
   body: string;
   created_at: string;
+  attachments?: Attachment[] | null;
 };
+
+type Attachment = { name: string; url: string; type: string; size: number };
 
 type Folder = "inbox" | "sent" | "compose";
 
@@ -42,6 +45,12 @@ export default function Messages() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [hasMemberSent, setHasMemberSent] = useState<Record<string, boolean>>({});
+
+  // Attachment state
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [composeFiles, setComposeFiles] = useState<File[]>([]);
+  const replyFileInputRef = useRef<HTMLInputElement>(null);
+  const composeFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (authLoading) return;
