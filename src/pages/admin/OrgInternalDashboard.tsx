@@ -490,7 +490,7 @@ export default function OrgInternalDashboard({
               { value: "performance", label: "تقييم الأداء", Icon: Target },
               { value: "reports", label: "التقارير", Icon: FileBarChart2 },
               { value: "innovation", label: "الابتكار والتحديث", Icon: Lightbulb },
-              { value: "donors", label: "المتبرعون", Icon: HeartHandshake },
+              { value: "donors", label: "مركز التبرعات", Icon: HeartHandshake },
             ];
             return tabs.flatMap((t, i) => {
               const trigger = (
