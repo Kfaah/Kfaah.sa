@@ -72,11 +72,34 @@ Deno.serve(async (req) => {
       stats.fetched = (uids || []).length
 
       const uidList: number[] = (uids as any[]) || []
+      console.log('[imap] processing', uidList.length, 'messages')
       for (const uid of uidList) {
         try {
-          const msg: any = await (client as any).fetchOne(uid, { source: true, envelope: true, internalDate: true }, { uid: true })
-          if (!msg) { stats.skipped++; continue }
-          const parsed: any = await simpleParser(msg.source as Uint8Array)
+          console.log('[imap] fetching uid', uid)
+          const msg: any = await (client as any).fetchOne(uid, { envelope: true, internalDate: true }, { uid: true })
+          if (!msg) { console.log('[imap] no envelope for', uid); stats.skipped++; continue }
+          console.log('[imap] downloading source for uid', uid)
+          const dl: any = await (client as any).download(uid, undefined, { uid: true })
+          const chunks: Uint8Array[] = []
+          if (dl?.content) {
+            const reader = dl.content.getReader ? dl.content.getReader() : null
+            if (reader) {
+              while (true) {
+                const { value, done } = await reader.read()
+                if (done) break
+                if (value) chunks.push(value)
+              }
+            } else {
+              for await (const c of dl.content as any) chunks.push(c)
+            }
+          }
+          const total = chunks.reduce((a, c) => a + c.length, 0)
+          const source = new Uint8Array(total)
+          let off = 0
+          for (const c of chunks) { source.set(c, off); off += c.length }
+          console.log('[imap] downloaded', source.length, 'bytes for uid', uid)
+          const parsed: any = await simpleParser(source)
+          ;(msg as any).source = source
           const providerId = normalizeMessageId(parsed.messageId || msg.envelope?.messageId)
           const inReplyTo = normalizeMessageId(parsed.inReplyTo || msg.envelope?.inReplyTo)
           const references: string[] = Array.isArray(parsed.references)
