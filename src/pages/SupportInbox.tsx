@@ -640,7 +640,7 @@ export default function SupportInbox() {
 
       <div className="relative z-10 max-w-[1500px] mx-auto p-3 grid grid-cols-1 lg:grid-cols-[230px_360px_1fr] gap-3 h-[calc(100vh-72px)]">
         {/* Right sidebar (folders) */}
-        <aside className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl shadow-black/30 p-3 overflow-y-auto">
+        <aside className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl shadow-black/30 p-3 overflow-y-auto flex flex-col">
           <button
             onClick={() => openCompose()}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg shadow-black/40 hover:-translate-y-0.5 transition-all mb-3"
@@ -686,6 +686,16 @@ export default function SupportInbox() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="mt-auto pt-4 border-t border-white/10">
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-slate-300 hover:bg-white/[0.06] hover:text-white transition-all"
+            >
+              <SettingsIcon className="w-4 h-4 text-slate-500" />
+              إعدادات البريد
+            </button>
           </div>
         </aside>
 
