@@ -129,6 +129,24 @@ export const ActiveTaskBanner = ({ userId, onTaskCompleted, onSelectNextTask }: 
       
       // فتح اختيار المهمة التالية
       onSelectNextTask();
+
+      // 🤖 Fire-and-forget: تقييم آلي للجودة + تعبئة الوقت المتبقي للموظف
+      try {
+        // اجلب org_id للمهمة
+        const { data: tk } = await supabase
+          .from("tasks").select("organization_id").eq("id", activeTask.id).maybeSingle();
+        const orgId = (tk as any)?.organization_id;
+        // تقييم آلي
+        supabase.functions.invoke("evaluate-task-quality", { body: { taskId: activeTask.id } })
+          .catch((e) => console.warn("evaluate-task-quality failed", e));
+        // تعبئة الوقت المتبقي للموظف
+        if (orgId) {
+          supabase.functions.invoke("top-up-employee-tasks", { body: { organization_id: orgId, user_id: userId } })
+            .catch((e) => console.warn("top-up failed", e));
+        }
+      } catch (e) {
+        console.warn("post-completion hooks failed", e);
+      }
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
     } finally {

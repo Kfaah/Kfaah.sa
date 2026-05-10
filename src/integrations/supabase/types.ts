@@ -4473,6 +4473,41 @@ export type Database = {
         }
         Relationships: []
       }
+      task_time_baselines: {
+        Row: {
+          avg_minutes: number
+          baseline_key: string
+          id: string
+          last_updated: string
+          organization_id: string
+          samples: number
+        }
+        Insert: {
+          avg_minutes?: number
+          baseline_key: string
+          id?: string
+          last_updated?: string
+          organization_id: string
+          samples?: number
+        }
+        Update: {
+          avg_minutes?: number
+          baseline_key?: string
+          id?: string
+          last_updated?: string
+          organization_id?: string
+          samples?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_time_baselines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           actual_time_minutes: number | null
@@ -4709,6 +4744,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _upsert_baseline: {
+        Args: { _actual: number; _key: string; _org: string }
+        Returns: undefined
+      }
       can_manage_intelligence_profile: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean

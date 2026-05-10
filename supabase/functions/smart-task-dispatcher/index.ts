@@ -57,12 +57,28 @@ type Suggestion = {
   metadata?: Record<string, unknown>;
 };
 
-function estMinutes(s: Suggestion): number {
+function estMinutesDefault(s: Suggestion): number {
   if (s.estimated_minutes && s.estimated_minutes > 0) {
     return Math.min(180, Math.max(3, Math.round(s.estimated_minutes)));
   }
   const ch = (s.channel || "").toLowerCase();
   return CHANNEL_MINUTES[ch] ?? CHANNEL_MINUTES.default;
+}
+
+function estMinutesLearned(s: Suggestion, baselines: Map<string, number>): number {
+  if (s.estimated_minutes && s.estimated_minutes > 0) {
+    return Math.min(180, Math.max(3, Math.round(s.estimated_minutes)));
+  }
+  // Try learned baselines: source > category > channel
+  const keys: string[] = [];
+  if (s.source) keys.push(`source:${s.source}`);
+  if (s.category) keys.push(`category:${s.category}`);
+  if (s.channel) keys.push(`channel:${s.channel.toLowerCase()}`);
+  for (const k of keys) {
+    const v = baselines.get(k);
+    if (v && v > 0) return Math.min(180, Math.max(3, Math.round(v)));
+  }
+  return estMinutesDefault(s);
 }
 
 function buildDedupeKey(s: Suggestion): string {
@@ -94,20 +110,32 @@ Deno.serve(async (req) => {
     const incoming: Suggestion[] = Array.isArray(body.suggestions) ? body.suggestions : [];
     const dryRun: boolean = !!body.dry_run;
     const startDate = body.start_date ? new Date(body.start_date) : new Date();
+    const targetUserId: string | undefined = body.target_user_id;
 
     if (!orgId) return json({ error: "organization_id مطلوب" }, 400);
     if (!incoming.length) return json({ ok: true, scheduled: 0, skipped_dupes: 0, message: "no suggestions" });
 
     // 1) Active employees of org
-    const { data: emps, error: empErr } = await supa
+    let empQuery = supa
       .from("employees")
       .select("user_id, full_name")
       .eq("organization_id", orgId)
       .eq("status", "active")
       .not("user_id", "is", null);
+    if (targetUserId) empQuery = empQuery.eq("user_id", targetUserId);
+    const { data: emps, error: empErr } = await empQuery;
     if (empErr) return json({ error: empErr.message }, 500);
     const employees = (emps || []).filter((e: any) => e.user_id) as { user_id: string; full_name: string }[];
     if (!employees.length) return json({ error: "لا يوجد موظفون نشطون" }, 400);
+
+    // Load learned baselines for this org
+    const { data: bl } = await supa
+      .from("task_time_baselines")
+      .select("baseline_key, avg_minutes")
+      .eq("organization_id", orgId);
+    const baselines = new Map<string, number>(
+      ((bl || []) as any[]).map((r) => [r.baseline_key, Number(r.avg_minutes) || 0]),
+    );
 
     // 2) Build dedupe set: existing OPEN tasks for these dedupe_keys in last 7 days
     const wantedKeys = Array.from(new Set(incoming.map(buildDedupeKey)));
@@ -164,7 +192,7 @@ Deno.serve(async (req) => {
     const overflow: Suggestion[] = [];
 
     for (const { s } of queue) {
-      const mins = estMinutes(s);
+      const mins = estMinutesLearned(s, baselines);
       const earliest = Math.max(0, Number(s.due_in_days ?? 0));
       let placed = false;
 

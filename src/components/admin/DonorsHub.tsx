@@ -1878,6 +1878,25 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
               {dispatching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
               {dispatching ? "جارِ التوزيع…" : "توزيع المهام الآن"}
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="gap-2"
+              onClick={async () => {
+                try {
+                  const { data, error } = await supabase.functions.invoke("top-up-employee-tasks", {
+                    body: { organization_id: orgId },
+                  });
+                  if (error) throw error;
+                  toast.success(`تمت التعبئة: ${data?.filled || 0} مهمة جديدة موزَّعة`);
+                  await loadEmployeeLoad();
+                } catch (e: any) {
+                  toast.error(e?.message || "تعذّرت التعبئة");
+                }
+              }}
+            >
+              <RefreshCcw className="w-3.5 h-3.5" /> تعبئة الوقت المتبقي
+            </Button>
           </div>
           {dispatcherStats && (
             <div className="text-[11px] text-slate-600 mb-2">
