@@ -391,12 +391,53 @@ ${JSON.stringify(snapshot.signals, null, 2)}
       else insertedTasks = count || taskRows.length;
     }
 
+    // Route the same suggested tasks through the central dispatcher so they
+    // become real tasks distributed to employees with daily-capacity caps.
+    let dispatched = 0;
+    let overflow = 0;
+    try {
+      const dispatcherSuggestions = (report.suggested_tasks || []).slice(0, 30).map((t: any) => ({
+        source: "daily_intelligence",
+        title: String(t.title).slice(0, 200),
+        description: t.description,
+        donor_ref: t.donor_ref || null,
+        channel: t.channel || null,
+        priority: ["low", "medium", "high"].includes(t.priority) ? t.priority : "medium",
+        suggested_message: t.suggested_message || null,
+        due_in_days: Math.max(0, Number(t.due_in_days) || 0),
+        category: t.category || "متابعة",
+        dedupe_key: `daily_intelligence|${t.donor_ref || ""}|${String(t.title).slice(0, 60)}`,
+        metadata: { trigger, dataset, source_report_date: snapshot.today },
+      }));
+      if (dispatcherSuggestions.length) {
+        const dispResp = await fetch(`${SUPABASE_URL}/functions/v1/smart-task-dispatcher`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SERVICE_KEY}`,
+          },
+          body: JSON.stringify({ organization_id: orgId, suggestions: dispatcherSuggestions }),
+        });
+        if (dispResp.ok) {
+          const dj = await dispResp.json();
+          dispatched = dj?.scheduled || 0;
+          overflow = dj?.overflow || 0;
+        } else {
+          console.error("dispatcher invoke failed", dispResp.status, await dispResp.text());
+        }
+      }
+    } catch (e) {
+      console.error("dispatcher call error", e);
+    }
+
     return json({
       ok: true,
       report,
       stats: {
         insights_saved: insertedInsights.length,
         tasks_saved: insertedTasks,
+        tasks_dispatched: dispatched,
+        tasks_overflow: overflow,
         snapshot_totals: snapshot.totals,
       },
     });

@@ -1647,6 +1647,9 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
   const [latest, setLatest] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [employeeLoad, setEmployeeLoad] = useState<{ name: string; tasks: number; minutes: number }[]>([]);
+  const [dispatcherStats, setDispatcherStats] = useState<{ scheduled: number; overflow: number; dupes: number } | null>(null);
+  const [dispatching, setDispatching] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -1657,8 +1660,86 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
     setInsights(ins.data || []);
     setTasks(tk.data || []);
     setLatest(ins.data?.[0]?.generated_at || null);
+    await loadEmployeeLoad();
     setLoading(false);
   };
+
+  const loadEmployeeLoad = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const horizonEnd = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const { data: emps } = await supabase
+      .from("employees")
+      .select("user_id, full_name")
+      .eq("organization_id", orgId)
+      .eq("status", "active")
+      .not("user_id", "is", null);
+    const list = (emps || []) as { user_id: string; full_name: string }[];
+    if (!list.length) { setEmployeeLoad([]); return; }
+    const ids = list.map((e) => e.user_id);
+    const { data: tks } = await supabase
+      .from("tasks")
+      .select("user_id, estimated_time_minutes, due_date, status")
+      .eq("organization_id", orgId)
+      .in("user_id", ids)
+      .gte("due_date", today)
+      .lte("due_date", horizonEnd)
+      .in("status", ["pending", "in_progress", "upcoming"]);
+    const map = new Map<string, { tasks: number; minutes: number }>();
+    for (const t of (tks || []) as any[]) {
+      const s = map.get(t.user_id) || { tasks: 0, minutes: 0 };
+      s.tasks += 1;
+      s.minutes += Number(t.estimated_time_minutes) || 15;
+      map.set(t.user_id, s);
+    }
+    setEmployeeLoad(
+      list.map((e) => ({
+        name: e.full_name || "موظف",
+        tasks: map.get(e.user_id)?.tasks || 0,
+        minutes: map.get(e.user_id)?.minutes || 0,
+      })).sort((a, b) => b.tasks - a.tasks)
+    );
+  };
+
+  const rebalanceNow = async () => {
+    setDispatching(true);
+    try {
+      // re-route any UNCOMPLETED smart_tasks suggestions through the dispatcher
+      const pendingSmart = tasks.filter((t) => t.status === "pending");
+      if (!pendingSmart.length) {
+        toast.info("لا توجد اقتراحات معلّقة لإعادة توزيعها.");
+        return;
+      }
+      const suggestions = pendingSmart.map((t: any) => ({
+        source: "intelligence_redispatch",
+        title: t.title,
+        description: t.description,
+        donor_ref: t.context?.donor_ref || null,
+        channel: t.context?.channel || t.suggested_channel || null,
+        priority: t.priority || "medium",
+        suggested_message: t.suggested_message || null,
+        category: t.category || "متابعة",
+        due_in_days: 0,
+        dedupe_key: `redispatch|${t.id}`,
+        metadata: { source_smart_task_id: t.id },
+      }));
+      const { data, error } = await supabase.functions.invoke("smart-task-dispatcher", {
+        body: { organization_id: orgId, suggestions },
+      });
+      if (error) throw error;
+      setDispatcherStats({
+        scheduled: data?.scheduled || 0,
+        overflow: data?.overflow || 0,
+        dupes: data?.skipped_dupes || 0,
+      });
+      toast.success(`تم توزيع ${data?.scheduled || 0} مهمة على الموظفين`);
+      await loadEmployeeLoad();
+    } catch (e: any) {
+      toast.error(e?.message || "تعذّر التوزيع");
+    } finally {
+      setDispatching(false);
+    }
+  };
+
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
 
   const runAnalysis = async () => {
@@ -1774,6 +1855,65 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
           <MiniIntelKpi color="emerald" icon={<Send className="w-4 h-4" />} label="مهام ذكية" value={pendingTasks.length} />
           <MiniIntelKpi color="rose" icon={<AlertTriangle className="w-4 h-4" />} label="حرجة/عالية" value={insights.filter((i) => i.severity === "critical" || i.severity === "high").length} />
           <MiniIntelKpi color="sky" icon={<Check className="w-4 h-4" />} label="مهام منفّذة" value={completedTasksCount} />
+        </div>
+
+        {/* Dispatcher: per-employee load + rebalance button */}
+        <div className="relative mt-5 rounded-xl border border-white/70 bg-white/80 backdrop-blur p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div>
+              <div className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <Send className="w-4 h-4 text-indigo-600" /> موزّع المهام الذكي
+              </div>
+              <div className="text-[11px] text-slate-500">
+                سقف يومي لكل موظف: 7 مهام / 5 ساعات. يوزّع تلقائيًا أي اقتراح من المنصة.
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={rebalanceNow}
+              disabled={dispatching}
+              variant="outline"
+              className="gap-2"
+            >
+              {dispatching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+              {dispatching ? "جارِ التوزيع…" : "توزيع المهام الآن"}
+            </Button>
+          </div>
+          {dispatcherStats && (
+            <div className="text-[11px] text-slate-600 mb-2">
+              آخر دورة توزيع: تم جدولة <b>{dispatcherStats.scheduled}</b> مهمة ·
+              مؤجَّل <b>{dispatcherStats.overflow}</b> · مكرّرة <b>{dispatcherStats.dupes}</b>
+            </div>
+          )}
+          {employeeLoad.length === 0 ? (
+            <div className="text-xs text-slate-500">لا يوجد موظفون نشطون.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {employeeLoad.slice(0, 9).map((e) => {
+                const fillTasks = Math.min(100, Math.round((e.tasks / 7) * 100));
+                const fillMin = Math.min(100, Math.round((e.minutes / 300) * 100));
+                const full = e.tasks >= 7 || e.minutes >= 300;
+                return (
+                  <div key={e.name} className={cn("rounded-lg border p-2.5", full ? "border-rose-200 bg-rose-50/40" : "border-slate-200 bg-white")}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="font-semibold text-slate-800 truncate">{e.name}</span>
+                      <span className={cn("text-[10px] font-bold", full ? "text-rose-700" : "text-emerald-700")}>
+                        {full ? "ممتلئ" : "متاح"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                      <span>{e.tasks}/7 مهام</span>
+                      <span>·</span>
+                      <span>{e.minutes}/300 د</span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                      <div className={cn("h-full", full ? "bg-rose-400" : "bg-emerald-500")} style={{ width: `${Math.max(fillTasks, fillMin)}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
