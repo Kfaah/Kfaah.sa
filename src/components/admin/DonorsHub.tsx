@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,10 @@ interface DonorRow {
 
 export function DonorsHub({ orgId }: { orgId: string }) {
   const [active, setActive] = useState<SubKey>("overview");
+  const branding = useOrgBranding();
+  const brand = branding?.primary || "#2f8e8c";
+  const brandSoft = `${brand}1a`; // ~10% alpha
+  const brandSofter = `${brand}0d`;
   const [loading, setLoading] = useState(true);
   const [donors, setDonors] = useState<DonorRow[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -91,14 +96,27 @@ export function DonorsHub({ orgId }: { orgId: string }) {
   }, [donations, donors]);
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-5" dir="rtl" style={{ ["--brand" as any]: brand }}>
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-2xl border border-rose-200/40 bg-gradient-to-l from-rose-50 via-white to-pink-50/60 p-6 shadow-sm">
-        <div className="absolute -top-10 -left-10 w-48 h-48 rounded-full bg-rose-300/20 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/3 w-56 h-56 rounded-full bg-pink-300/10 blur-3xl pointer-events-none" />
+      <div
+        className="relative overflow-hidden rounded-2xl border p-6 shadow-sm"
+        style={{
+          borderColor: `${brand}33`,
+          background: `linear-gradient(to left, ${brand}14, #ffffff 55%, ${brand}0d)`,
+        }}
+      >
+        <div className="absolute -top-10 -left-10 w-48 h-48 rounded-full blur-3xl pointer-events-none" style={{ background: `${brand}33` }} />
+        <div className="absolute bottom-0 right-1/3 w-56 h-56 rounded-full blur-3xl pointer-events-none" style={{ background: `${brand}1a` }} />
         <div className="relative flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-lg ring-2 ring-rose-300/40">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ring-2"
+              style={{
+                background: `linear-gradient(135deg, ${brand}, ${brand}cc)`,
+                boxShadow: `0 10px 30px -10px ${brand}80`,
+                ['--tw-ring-color' as any]: `${brand}66`,
+              }}
+            >
               <HeartHandshake className="w-7 h-7 text-white" />
             </div>
             <div>
@@ -107,10 +125,10 @@ export function DonorsHub({ orgId }: { orgId: string }) {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <KpiPill icon={<Users className="w-4 h-4" />} label="متبرعون" value={donors.length.toLocaleString("ar-SA")} />
-            <KpiPill icon={<TrendingUp className="w-4 h-4" />} label="إجمالي" value={SAR(totals.total)} />
-            <KpiPill icon={<Repeat className="w-4 h-4" />} label="متكرّرون" value={totals.recurring.toLocaleString("ar-SA")} />
-            <KpiPill icon={<Calendar className="w-4 h-4" />} label="مشاريع" value={totals.projects.toLocaleString("ar-SA")} />
+            <KpiPill brand={brand} icon={<Users className="w-4 h-4" />} label="متبرعون" value={donors.length.toLocaleString("ar-SA")} />
+            <KpiPill brand={brand} icon={<TrendingUp className="w-4 h-4" />} label="إجمالي" value={SAR(totals.total)} />
+            <KpiPill brand={brand} icon={<Repeat className="w-4 h-4" />} label="متكرّرون" value={totals.recurring.toLocaleString("ar-SA")} />
+            <KpiPill brand={brand} icon={<Calendar className="w-4 h-4" />} label="مشاريع" value={totals.projects.toLocaleString("ar-SA")} />
           </div>
         </div>
       </div>
@@ -127,9 +145,13 @@ export function DonorsHub({ orgId }: { orgId: string }) {
               className={cn(
                 "group relative flex flex-col items-center gap-2 rounded-xl border p-3 transition-all duration-300 bg-white",
                 isActive
-                  ? "border-rose-300 shadow-lg ring-2 ring-rose-200/60 -translate-y-0.5"
-                  : "border-slate-200 hover:border-rose-200 hover:shadow-md hover:-translate-y-0.5"
+                  ? "shadow-lg ring-2 -translate-y-0.5"
+                  : "border-slate-200 hover:shadow-md hover:-translate-y-0.5"
               )}
+              style={isActive ? {
+                borderColor: brand,
+                ['--tw-ring-color' as any]: `${brand}55`,
+              } : undefined}
             >
               <div className={cn(
                 "w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-sm ring-1 transition-transform",
@@ -140,12 +162,12 @@ export function DonorsHub({ orgId }: { orgId: string }) {
                 <Icon className="w-5 h-5 text-white" strokeWidth={2.4} />
               </div>
               <div className="text-center">
-                <div className={cn("text-[12px] font-bold leading-tight", isActive ? "text-rose-700" : "text-slate-800")}>
+                <div className="text-[12px] font-bold leading-tight" style={isActive ? { color: brand } : undefined}>
                   {t.label}
                 </div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-0.5 hidden lg:block">{t.desc}</div>
               </div>
-              {isActive && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rotate-45 bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.7)]" />}
+              {isActive && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rotate-45" style={{ background: brand, boxShadow: `0 0 6px ${brand}b3` }} />}
             </button>
           );
         })}
@@ -172,10 +194,10 @@ export function DonorsHub({ orgId }: { orgId: string }) {
   );
 }
 
-function KpiPill({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function KpiPill({ icon, label, value, brand }: { icon: React.ReactNode; label: string; value: string; brand: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-rose-200/60 bg-white/80 backdrop-blur px-3 py-2 shadow-sm">
-      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white">{icon}</div>
+    <div className="flex items-center gap-2 rounded-xl border bg-white/80 backdrop-blur px-3 py-2 shadow-sm" style={{ borderColor: `${brand}55` }}>
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white" style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}>{icon}</div>
       <div className="leading-tight">
         <div className="text-[10px] text-slate-500">{label}</div>
         <div className="text-sm font-bold text-slate-800">{value}</div>
