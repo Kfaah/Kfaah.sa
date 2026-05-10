@@ -103,7 +103,11 @@ function DateSelect({ value, onChange }: { value: DateValue; onChange: (v: DateV
       <Select
         value={value.key}
         onValueChange={(v) => {
-          if (v === "custom") { setOpenCustom(true); return; }
+          if (v === "custom") {
+            // defer so the Select dropdown can close before popover opens
+            setTimeout(() => setOpenCustom(true), 60);
+            return;
+          }
           onChange({ key: v });
         }}
       >
