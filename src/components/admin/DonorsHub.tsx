@@ -12,12 +12,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   HeartHandshake, Users, Trophy, Repeat, Megaphone, XCircle, ShoppingCart,
-  CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar as CalendarIcon, Wallet,
+  CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar as CalendarIcon, Wallet, Gift,
 } from "lucide-react";
 
 type SubKey =
   | "overview" | "donors" | "donations" | "top" | "recurring"
-  | "campaigns" | "failed" | "abandoned" | "subscriptions";
+  | "subscriptions" | "campaigns" | "gifts" | "failed" | "abandoned";
 
 const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "overview", label: "لوحة عامة", Icon: HeartHandshake, desc: "ملخّص شامل لأداء التبرعات" },
@@ -25,10 +25,11 @@ const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "donations", label: "التبرعات", Icon: Wallet, desc: "فلترة بالمشروع والسنة" },
   { key: "top", label: "أعلى المتبرعين", Icon: Trophy, desc: "المتصدّرون بالتبرع" },
   { key: "recurring", label: "متكرّرون", Icon: Repeat, desc: "تبرّعوا مرتين فأكثر" },
+  { key: "subscriptions", label: "المستقطعون", Icon: CalendarClock, desc: "اشتراكات شهرية ودورية" },
   { key: "campaigns", label: "الحملات", Icon: Megaphone, desc: "نتائج وأهداف الحملات" },
+  { key: "gifts", label: "الإهداءات", Icon: Gift, desc: "المهدون وتكرار الإهداء" },
   { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, desc: "محاولات لم تكتمل" },
   { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, desc: "تنبيهات استرداد" },
-  { key: "subscriptions", label: "الاستقطاع المتكرر", Icon: CalendarClock, desc: "اشتراكات شهرية ودورية" },
 ];
 
 const SAR = (n: number) => `${(n || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س`;
