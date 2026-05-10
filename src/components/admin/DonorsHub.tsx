@@ -120,8 +120,8 @@ export function DonorsHub({ orgId }: { orgId: string }) {
               <HeartHandshake className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-extrabold text-slate-900">مركز المتبرعين</h2>
-              <p className="text-sm text-slate-600">قاعدة بيانات شاملة · فلترة ذكية · رؤية متكاملة لكل دورة العطاء</p>
+              <h2 className="text-3xl font-extrabold text-slate-900">مركز المتبرعين</h2>
+              <p className="text-base text-slate-600">قاعدة بيانات شاملة · فلترة ذكية · رؤية متكاملة لكل دورة العطاء</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
