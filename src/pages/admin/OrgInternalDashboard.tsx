@@ -31,6 +31,7 @@ const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 const TasksPage = lazy(() => import("@/pages/Tasks"));
 const PerformanceEvaluation = lazy(() => import("@/pages/PerformanceEvaluation"));
 const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
+const OperationalReportsHub = lazy(() => import("@/components/admin/reports/OperationalReportsHub"));
 const AdminInnovation = lazy(() => import("@/pages/admin/AdminInnovation"));
 const AdminActionPlans = lazy(() => import("@/pages/admin/AdminActionPlans"));
 import { useIsDemo } from "@/hooks/useIsDemo";
