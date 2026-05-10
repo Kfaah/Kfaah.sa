@@ -95,6 +95,10 @@ const DATE_PRESETS: { key: string; label: string }[] = [
   { key: "last_month", label: "الشهر الماضي" },
   { key: "this_year", label: "هذه السنة" },
   { key: "last_year", label: "السنة الماضية" },
+  { key: "last_3_months", label: "آخر 3 أشهر" },
+  { key: "last_6_months", label: "آخر 6 أشهر" },
+  { key: "last_12_months", label: "آخر 12 شهراً" },
+  { key: "last_24_months", label: "آخر 24 شهراً" },
   { key: "custom", label: "فترة مخصصة" },
 ];
 
@@ -113,6 +117,10 @@ function buildDateRange(value: DateValue | string): Range {
     case "last_month": { const f = new Date(now.getFullYear(), now.getMonth() - 1, 1); const t = endOfDay(new Date(now.getFullYear(), now.getMonth(), 0)); return { from: f, to: t }; }
     case "this_year": return { from: new Date(now.getFullYear(), 0, 1), to: endOfDay(now) };
     case "last_year": { const f = new Date(now.getFullYear() - 1, 0, 1); const t = endOfDay(new Date(now.getFullYear() - 1, 11, 31)); return { from: f, to: t }; }
+    case "last_3_months": { const f = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()); return { from: startOfDay(f), to: endOfDay(now) }; }
+    case "last_6_months": { const f = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()); return { from: startOfDay(f), to: endOfDay(now) }; }
+    case "last_12_months": { const f = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()); return { from: startOfDay(f), to: endOfDay(now) }; }
+    case "last_24_months": { const f = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate()); return { from: startOfDay(f), to: endOfDay(now) }; }
     case "custom": return custom ? { from: custom.from ? startOfDay(custom.from) : null, to: custom.to ? endOfDay(custom.to) : null } : { from: null, to: null };
     default: return { from: null, to: null };
   }
