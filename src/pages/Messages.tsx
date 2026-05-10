@@ -173,12 +173,12 @@ export default function Messages() {
     <button
       onClick={() => { setFolder(id); if (id === "compose") setSelectedId(null); }}
       className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition ${
-        folder === id ? "bg-white/[0.10] text-white" : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
+        folder === id ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"
       }`}
     >
       <span className="flex items-center gap-2"><Icon className="w-4 h-4" />{label}</span>
       {typeof count === "number" && count > 0 && (
-        <span className="text-[10px] bg-amber-400/90 text-slate-900 rounded-full px-2 py-0.5">{count}</span>
+        <span className="text-[10px] bg-accent text-accent-foreground rounded-full px-2 py-0.5">{count}</span>
       )}
     </button>
   );
