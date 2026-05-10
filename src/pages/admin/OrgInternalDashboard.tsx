@@ -31,6 +31,7 @@ const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 const TasksPage = lazy(() => import("@/pages/Tasks"));
 const PerformanceEvaluation = lazy(() => import("@/pages/PerformanceEvaluation"));
 const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
+const OperationalReportsHub = lazy(() => import("@/components/admin/reports/OperationalReportsHub"));
 const AdminInnovation = lazy(() => import("@/pages/admin/AdminInnovation"));
 const AdminActionPlans = lazy(() => import("@/pages/admin/AdminActionPlans"));
 import { useIsDemo } from "@/hooks/useIsDemo";
@@ -482,6 +483,7 @@ export default function OrgInternalDashboard({
               { value: "uploads", label: "رفع الملفات", Icon: Upload },
               { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
               { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
+              { value: "donors", label: "مركز التبرعات", Icon: HeartHandshake },
               { value: "employees", label: "الموظفون", Icon: Users },
               { value: "operational-plans-main", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
@@ -490,7 +492,6 @@ export default function OrgInternalDashboard({
               { value: "performance", label: "تقييم الأداء", Icon: Target },
               { value: "reports", label: "التقارير", Icon: FileBarChart2 },
               { value: "innovation", label: "الابتكار والتحديث", Icon: Lightbulb },
-              { value: "donors", label: "مركز التبرعات", Icon: HeartHandshake },
             ];
             return tabs.flatMap((t, i) => {
               const trigger = (
@@ -683,7 +684,16 @@ export default function OrgInternalDashboard({
           dir="rtl"
         >
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
-            {visitedTabs.has("reports") ? <AdminReports /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+            {visitedTabs.has("reports") ? (
+              <div className="space-y-8">
+                <OperationalReportsHub orgId={orgId!} />
+                <div className="border-t pt-6">
+                  <AdminReports />
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>
+            )}
           </Suspense>
         </TabsContent>
         <TabsContent
