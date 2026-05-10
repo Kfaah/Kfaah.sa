@@ -258,7 +258,6 @@ export default function PlatformSubscribe() {
 
             <a
               href={whatsappLink}
-              onClick={openWhatsApp}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full text-center rounded-xl py-3 font-bold text-white shadow-lg shadow-black/30 mb-2 transition-all hover:-translate-y-0.5"
@@ -306,10 +305,6 @@ export default function PlatformSubscribe() {
             </div>
             <a
               href={ownershipWhatsappLink}
-              onClick={(event) => {
-                event.preventDefault();
-                openExternalLink(ownershipWhatsappLink);
-              }}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl px-5 py-3 bg-white text-slate-900 font-extrabold shadow-lg hover:-translate-y-0.5 transition-transform whitespace-nowrap"
@@ -399,11 +394,6 @@ function ContactPill({
       href={href}
       target={external ? "_blank" : undefined}
       rel="noopener noreferrer"
-      onClick={(e) => {
-        if (!external) return;
-        e.preventDefault();
-        openExternalLink(href);
-      }}
       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] border border-white/15 text-sm text-white hover:bg-white/[0.12] transition-colors"
     >
       <Icon className="w-4 h-4" style={{ color: `hsl(${accentHsl})` }} />
