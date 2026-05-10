@@ -166,6 +166,13 @@ export default function AdminReports({ embedded: embeddedProp = false }: { embed
         }
       />
       )}
+      {isEmbedded && (
+        <div className="flex justify-end">
+          <Button onClick={exportPDF} disabled={!selected} className="gap-2">
+            <Download className="w-4 h-4" /> تصدير PDF
+          </Button>
+        </div>
+      )}
 
       {/* Mode tabs */}
       <div className="grid md:grid-cols-2 gap-3">
