@@ -327,7 +327,7 @@ export default function PlatformSubscribe() {
           <ContactPill
             icon={MessageCircle}
             label="واتساب مباشر"
-            href={`https://wa.me/${OWNER_PHONE_INTL}`}
+            href={`https://api.whatsapp.com/send?phone=${OWNER_PHONE_INTL}`}
             external
           />
         </div>
