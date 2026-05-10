@@ -4480,15 +4480,18 @@ export type Database = {
           category: string | null
           completion_percentage: number | null
           created_at: string
+          dedupe_key: string | null
           description: string | null
           due_date: string | null
           estimated_time_minutes: number | null
           executive_plan_id: string | null
           id: string
+          metadata: Json
           organization_id: string | null
           phase: string | null
           priority: string
           quality_percentage: number | null
+          source: string | null
           source_activity_id: string | null
           started_at: string | null
           status: string
@@ -4502,15 +4505,18 @@ export type Database = {
           category?: string | null
           completion_percentage?: number | null
           created_at?: string
+          dedupe_key?: string | null
           description?: string | null
           due_date?: string | null
           estimated_time_minutes?: number | null
           executive_plan_id?: string | null
           id?: string
+          metadata?: Json
           organization_id?: string | null
           phase?: string | null
           priority?: string
           quality_percentage?: number | null
+          source?: string | null
           source_activity_id?: string | null
           started_at?: string | null
           status?: string
@@ -4524,15 +4530,18 @@ export type Database = {
           category?: string | null
           completion_percentage?: number | null
           created_at?: string
+          dedupe_key?: string | null
           description?: string | null
           due_date?: string | null
           estimated_time_minutes?: number | null
           executive_plan_id?: string | null
           id?: string
+          metadata?: Json
           organization_id?: string | null
           phase?: string | null
           priority?: string
           quality_percentage?: number | null
+          source?: string | null
           source_activity_id?: string | null
           started_at?: string | null
           status?: string
