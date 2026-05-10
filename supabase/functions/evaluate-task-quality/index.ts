@@ -45,7 +45,7 @@ serve(async (req) => {
       });
     }
 
-    if (task.status !== "completed") {
+    if (task.status !== "completed" && task.status !== "executed") {
       return new Response(
         JSON.stringify({ error: "task is not completed" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
