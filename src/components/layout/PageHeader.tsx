@@ -41,7 +41,7 @@ export function PageHeader({ icon, title, subtitle, actions, className, style }:
         }}
       />
 
-      <div className="relative flex min-h-[112px] flex-col gap-3 px-4 py-5 sm:min-h-[128px] sm:gap-4 sm:px-7 sm:py-7 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative flex h-[120px] flex-col gap-3 px-4 py-4 sm:h-[140px] sm:gap-4 sm:px-7 sm:py-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           {icon && (
             <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-sm [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
