@@ -733,7 +733,8 @@ const COLUMN_DEFS: Record<ReportKey, Col[]> = {
     { key: "الاسم", label: "الاسم" }, { key: "الجوال", label: "الجوال" },
     { key: "إجمالي التبرعات", label: "إجمالي التبرعات" },
     { key: "عدد التبرعات", label: "عدد التبرعات" },
-    { key: "tier", label: "الفئة", render: (v) => <Badge variant="outline">{v}</Badge> },
+    { key: "tier", label: "الفئة", render: (v) => <Badge variant="outline">فئة {v}</Badge> },
+    { key: "النطاق", label: "النطاق" },
     { key: "آخر تبرع", label: "آخر تبرع" },
     { key: "قناة التواصل المقترحة", label: "قناة التواصل المقترحة" },
   ],
@@ -789,7 +790,13 @@ function computeAggregates(key: ReportKey, rows: any[]): Record<string, number |
   switch (key) {
     case "donor_tiers": {
       const tiers = rows.reduce((m: Record<string, number>, r: any) => { m[r.tier] = (m[r.tier] || 0) + 1; return m; }, {});
-      return { "إجمالي المتبرعين": n, "≥ 5,000": tiers["≥ 5,000"] || 0, "1,000 – 5,000": tiers["1,000 – 5,000"] || 0, "أقل من 500": tiers["< 500"] || 0 };
+      return {
+        "إجمالي المتبرعين": n,
+        "فئة أ": tiers["أ"] || 0,
+        "فئة ب": tiers["ب"] || 0,
+        "فئة ج": tiers["ج"] || 0,
+        "فئة د": tiers["د"] || 0,
+      };
     }
     case "campaigns": {
       const completed = rows.filter(r => r["تقرير ختامي مُرسل"] === "نعم").length;
