@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Users, Megaphone, AlertTriangle, ShoppingCart, RefreshCw, Repeat, Gift, Target,
   ArrowRight, ArrowLeft, Sparkles, Loader2, Download, ListPlus, Phone, MessageSquare,
-  Mail, FileText as FileTextIcon, MapPin,
+  Mail, FileText as FileTextIcon, MapPin, Settings2, Save,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,6 +53,36 @@ const PRIORITY_COLOR: Record<string, string> = {
   medium: "bg-amber-500/10 text-amber-700 border-amber-500/30",
   low: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
 };
+
+/* ================================================================
+ * Donor tier configuration (per-organization, RLS-protected)
+ * ================================================================ */
+interface TierConfig {
+  tier_a_min: number;
+  tier_b_min: number;
+  tier_c_min: number;
+  tier_a_channel: string;
+  tier_b_channel: string;
+  tier_c_channel: string;
+  tier_d_channel: string;
+}
+
+const DEFAULT_TIER_CONFIG: TierConfig = {
+  tier_a_min: 5000,
+  tier_b_min: 2000,
+  tier_c_min: 500,
+  tier_a_channel: "خطاب رسمي + اتصال",
+  tier_b_channel: "اتصال هاتفي",
+  tier_c_channel: "رسالة واتساب شخصية",
+  tier_d_channel: "رسالة SMS",
+};
+
+function classifyTier(amount: number, cfg: TierConfig): { tier: "أ" | "ب" | "ج" | "د"; channel: string; rangeLabel: string } {
+  if (amount >= cfg.tier_a_min) return { tier: "أ", channel: cfg.tier_a_channel, rangeLabel: `≥ ${fmt(cfg.tier_a_min)}` };
+  if (amount >= cfg.tier_b_min) return { tier: "ب", channel: cfg.tier_b_channel, rangeLabel: `${fmt(cfg.tier_b_min)} – ${fmt(cfg.tier_a_min)}` };
+  if (amount >= cfg.tier_c_min) return { tier: "ج", channel: cfg.tier_c_channel, rangeLabel: `${fmt(cfg.tier_c_min)} – ${fmt(cfg.tier_b_min)}` };
+  return { tier: "د", channel: cfg.tier_d_channel, rangeLabel: `< ${fmt(cfg.tier_c_min)}` };
+}
 
 function downloadCsv(filename: string, rows: any[]) {
   if (!rows.length) return;
