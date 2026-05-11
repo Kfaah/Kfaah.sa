@@ -1692,18 +1692,21 @@ function EmployeesShowcase({
 // ───────────────────────────────────────────────────────────────────────────
 function ReportsHubLanding({ orgId }: { orgId: string }) {
   const [view, setView] = useState<"home" | "operational" | "classic">("home");
+  const [opInnerActive, setOpInnerActive] = useState(false);
 
   if (view === "operational") {
     return (
       <div className="space-y-6">
-        <ReportsBrandHeader
-          icon={BrainCircuit}
-          title="التقارير التشغيلية الذكية"
-          subtitle="رؤى آلية محركة بالذكاء الاصطناعي تتحول إلى مهام فعلية على الموظفين"
-          onBack={() => setView("home")}
-        />
+        {!opInnerActive && (
+          <ReportsBrandHeader
+            icon={BrainCircuit}
+            title="التقارير التشغيلية الذكية"
+            subtitle="رؤى آلية محركة بالذكاء الاصطناعي تتحول إلى مهام فعلية على الموظفين"
+            onBack={() => setView("home")}
+          />
+        )}
         <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
-          <OperationalReportsHub orgId={orgId} embedded />
+          <OperationalReportsHub orgId={orgId} embedded onActiveReportChange={setOpInnerActive} />
         </Suspense>
       </div>
     );
