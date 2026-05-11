@@ -3588,6 +3588,53 @@ export type Database = {
           },
         ]
       }
+      org_donor_tiers: {
+        Row: {
+          organization_id: string
+          tier_a_channel: string
+          tier_a_min: number
+          tier_b_channel: string
+          tier_b_min: number
+          tier_c_channel: string
+          tier_c_min: number
+          tier_d_channel: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          organization_id: string
+          tier_a_channel?: string
+          tier_a_min?: number
+          tier_b_channel?: string
+          tier_b_min?: number
+          tier_c_channel?: string
+          tier_c_min?: number
+          tier_d_channel?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          organization_id?: string
+          tier_a_channel?: string
+          tier_a_min?: number
+          tier_b_channel?: string
+          tier_b_min?: number
+          tier_c_channel?: string
+          tier_c_min?: number
+          tier_d_channel?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_donor_tiers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_external_insights: {
         Row: {
           category: string
