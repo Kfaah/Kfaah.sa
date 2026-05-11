@@ -1728,18 +1728,18 @@ function ReportsHubLanding({ orgId }: { orgId: string }) {
   return (
     <div className="grid gap-6 md:grid-cols-2" dir="rtl">
       <ReportsLandingCard
-        icon={BrainCircuit}
-        title="التقارير التشغيلية الذكية"
-        description="تقارير تحلّل سلوك المتبرعين وأداء الجمعية وتقترح خطوات قابلة للتنفيذ، تتحوّل تلقائياً إلى مهام موزعة على الموظفين بحسب طاقتهم اليومية."
-        cta="افتح التقارير الذكية"
-        onClick={() => setView("operational")}
-      />
-      <ReportsLandingCard
         icon={FileBarChart2}
         title="التقارير"
         description="مركز التقارير التنفيذية: تقارير دورية وسنوية، ملفات تحليلية جاهزة للعرض، وتصدير بصيغ متعددة (PDF، Word، Excel، PowerPoint)."
         cta="افتح مركز التقارير"
         onClick={() => setView("classic")}
+      />
+      <ReportsLandingCard
+        icon={BrainCircuit}
+        title="التقارير التشغيلية الذكية"
+        description="تقارير تحلّل سلوك المتبرعين وأداء الجمعية وتقترح خطوات قابلة للتنفيذ، تتحوّل تلقائياً إلى مهام موزعة على الموظفين بحسب طاقتهم اليومية."
+        cta="افتح التقارير الذكية"
+        onClick={() => setView("operational")}
       />
     </div>
   );
