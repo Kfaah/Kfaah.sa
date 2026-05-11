@@ -5,11 +5,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function fetchSiteText(url: string): Promise<string> {
+  try {
+    const resp = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; LovableBot/1.0)" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!resp.ok) return "";
+    const html = await resp.text();
+    // Strip scripts/styles, then tags
+    const cleaned = html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return cleaned.slice(0, 6000);
+  } catch (_e) {
+    return "";
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { organization_id, goal_key, extra_note } = await req.json();
+    const { organization_id, goal_key, extra_note, wizard_answers } = await req.json();
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -24,38 +45,51 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Pull a compact context snapshot
-    const [donorsRes, donationsRes, projectsRes, tiersRes, prevRes, seasonsRes, profileRes] = await Promise.all([
+    const [donorsRes, donationsRes, projectsRes, tiersRes, prevRes, seasonsRes, orgRes, profRes, insightsRes] = await Promise.all([
       supa.from("donors").select("id, donor_tier, total_donated").eq("organization_id", organization_id).limit(500),
       supa.from("donations").select("amount, project_name, donation_date, status").eq("organization_id", organization_id).order("donation_date", { ascending: false }).limit(500),
       supa.from("projects").select("name, description, target_amount, raised_amount, status").eq("organization_id", organization_id).limit(50),
       supa.from("donor_tiers").select("tier_name, donor_count, avg_donation").eq("organization_id", organization_id).limit(20),
       supa.from("marketing_campaigns").select("name, status, expected_kpis, ai_metadata").eq("organization_id", organization_id).order("created_at", { ascending: false }).limit(10),
       supa.from("marketing_seasonal_events").select("key, name_ar, category, hijri_month, gregorian_month, marketing_tips").eq("is_active", true),
-      supa.from("organizations").select("name, mission, vision, focus_areas").eq("id", organization_id).maybeSingle(),
+      supa.from("organizations").select("name, contact_email").eq("id", organization_id).maybeSingle(),
+      supa.from("organization_profiles").select("about, website_url, store_url, twitter_url, instagram_url, tiktok_url, snapchat_url, youtube_url, ai_analysis").eq("organization_id", organization_id).maybeSingle(),
+      supa.from("org_external_insights").select("category, title, description").eq("organization_id", organization_id).limit(30),
     ]);
 
+    const donorsCount = donorsRes.data?.length ?? 0;
+    const donationsCount = donationsRes.data?.length ?? 0;
+    const projectsCount = projectsRes.data?.length ?? 0;
+    const prevCount = prevRes.data?.length ?? 0;
+
+    const isColdStart = donorsCount === 0 && donationsCount === 0 && prevCount === 0;
+
+    // Cold-start enrichment: try fetching website snippet
+    let websiteSnippet = "";
+    let storeSnippet = "";
+    if (isColdStart) {
+      const websiteUrl = profRes.data?.website_url || wizard_answers?.website_url;
+      const storeUrl = profRes.data?.store_url || wizard_answers?.store_url;
+      if (websiteUrl) websiteSnippet = await fetchSiteText(websiteUrl);
+      if (storeUrl) storeSnippet = await fetchSiteText(storeUrl);
+    }
+
     const ctx = {
-      org: profileRes.data,
-      donors_count: donorsRes.data?.length ?? 0,
+      org: orgRes.data,
+      profile: profRes.data,
+      donors_count: donorsCount,
       donor_tiers: tiersRes.data ?? [],
       recent_donations_sample: (donationsRes.data ?? []).slice(0, 50),
       projects: projectsRes.data ?? [],
       previous_campaigns: prevRes.data ?? [],
       seasonal_events: seasonsRes.data ?? [],
+      external_insights: insightsRes.data ?? [],
+      website_text_snippet: websiteSnippet || null,
+      store_text_snippet: storeSnippet || null,
+      employee_answers: wizard_answers ?? null,
+      mode: isColdStart ? "cold_start" : "data_driven",
       now: new Date().toISOString(),
     };
-
-    const systemPrompt = `أنت خبير تسويق احترافي للجمعيات الخيرية في السعودية. مهمتك اقتراح 3-5 حملات تسويقية ذكية مرتبة حسب الأولوية بناء على بيانات الجمعية الفعلية. كل حملة يجب أن:
-- تستهدف شريحة محددة (كبار/متكررون/منقطعون/جدد)
-- تستفيد من الموسم القادم إن وجد
-- تربط بمشروع/أثر فعلي للجمعية
-- تحدد المنصات المناسبة للجمهور (واتساب/SMS/X/إنستغرام/سناب/تيك توك/إيميل)
-- تقترح رسالة رئيسية + 3 زوايا محتوى
-- تقدر ميزانية معقولة بالريال السعودي
-- تحدد KPIs قابلة للقياس
-
-أعد النتيجة فقط عبر استدعاء الدالة suggest_campaigns.`;
 
     const goalMap: Record<string, string> = {
       donations: "زيادة التبرعات لمشروع/هدف محدد",
@@ -65,10 +99,28 @@ Deno.serve(async (req) => {
       seasonal: "استثمار موسم ديني/وطني قادم",
     };
     const focusLine = goal_key
-      ? `\n\nتركيز الموظف على هدف: ${goalMap[goal_key] ?? goal_key}. اقترح 3 حملات فقط مرتبطة مباشرة بهذا الهدف، بدون تشتيت.`
+      ? `\n\nتركيز الموظف على هدف: ${goalMap[goal_key] ?? goal_key}. اقترح 3 حملات فقط مرتبطة مباشرة بهذا الهدف.`
       : "";
-    const noteLine = extra_note?.trim() ? `\n\nملاحظة من الموظف يجب احترامها: ${extra_note.trim()}` : "";
-    const userPrompt = `بيانات الجمعية:\n${JSON.stringify(ctx, null, 2)}${focusLine}${noteLine}\n\nاقترح حملات تسويقية احترافية الآن.`;
+    const noteLine = extra_note?.trim() ? `\n\nملاحظة من الموظف: ${extra_note.trim()}` : "";
+
+    const coldStartGuidance = isColdStart
+      ? `\n\n⚠️ وضع البداية الباردة (Cold Start):\n- لا توجد بيانات سابقة (متبرعين/تبرعات/حملات).\n- اعتمد كليًا على: محتوى الموقع/المتجر، إجابات الموظف، أفضل الممارسات للجمعيات السعودية.\n- اقترح حملات بسيطة منخفضة المخاطر للبداية: حملة تعريفية + حملة جذب أول 100 متبرع + حملة موسمية قريبة.\n- اقترح KPIs واقعية للبداية (مثلاً: 50 تبرع أول، 1000 وصول).\n- اقترح ميزانية محافظة (500-3000 ر.س للحملة الأولى).`
+      : "";
+
+    const systemPrompt = `أنت خبير تسويق احترافي للجمعيات الخيرية في السعودية. مهمتك اقتراح 3 حملات تسويقية ذكية بناءً على السياق المتاح.
+كل حملة يجب أن:
+- تستهدف شريحة محددة
+- تستفيد من الموسم القادم إن وجد
+- تربط بمشروع/أثر فعلي للجمعية (إن وُجد)
+- تحدد المنصات المناسبة للجمهور
+- تقترح رسالة رئيسية + 3 زوايا محتوى
+- تقدر ميزانية معقولة بالريال السعودي
+- تحدد KPIs قابلة للقياس
+- تذكر في rationale ما هو المصدر الذي بنيت عليه الاقتراح (بيانات/موقع/إجابات الموظف)
+
+أعد النتيجة فقط عبر استدعاء الدالة suggest_campaigns.`;
+
+    const userPrompt = `سياق الجمعية:\n${JSON.stringify(ctx, null, 2)}${focusLine}${noteLine}${coldStartGuidance}\n\nاقترح حملات تسويقية احترافية الآن.`;
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -124,7 +176,7 @@ Deno.serve(async (req) => {
                       design_brief: { type: "string" },
                       rationale: { type: "string" },
                     },
-                    required: ["name", "goal", "audience_segment", "primary_message", "platforms"],
+                    required: ["name", "goal", "audience_segment", "primary_message", "platforms", "rationale"],
                   },
                 },
               },
@@ -142,7 +194,7 @@ Deno.serve(async (req) => {
       });
     }
     if (aiResp.status === 402) {
-      return new Response(JSON.stringify({ error: "الرصيد غير كاف. أضف رصيدًا في Settings > Workspace > Usage." }), {
+      return new Response(JSON.stringify({ error: "الرصيد غير كاف." }), {
         status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -158,7 +210,18 @@ Deno.serve(async (req) => {
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     const args = toolCall ? JSON.parse(toolCall.function.arguments) : { campaigns: [] };
 
-    return new Response(JSON.stringify({ campaigns: args.campaigns ?? [] }), {
+    return new Response(JSON.stringify({
+      campaigns: args.campaigns ?? [],
+      mode: ctx.mode,
+      sources_used: {
+        website: !!websiteSnippet,
+        store: !!storeSnippet,
+        donor_data: donorsCount > 0,
+        projects: projectsCount > 0,
+        previous_campaigns: prevCount > 0,
+        employee_answers: !!wizard_answers,
+      },
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

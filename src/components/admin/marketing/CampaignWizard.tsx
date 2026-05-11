@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Sparkles, Loader2, ArrowLeft, ArrowRight, CheckCircle2, X,
-  Target, Users, MessageCircle, Wand2, Rocket, Heart, RefreshCw, UserPlus, Calendar as CalendarIcon, Megaphone,
+  Target, Users, MessageCircle, Wand2, Rocket, Heart, RefreshCw, UserPlus, Calendar as CalendarIcon, Megaphone, Globe, Lightbulb,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,6 +40,39 @@ export default function CampaignWizard({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [selected, setSelected] = useState<Suggestion | null>(null);
   const [saving, setSaving] = useState(false);
+  const [coldStart, setColdStart] = useState<boolean | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [answers, setAnswers] = useState({
+    website_url: "",
+    store_url: "",
+    org_focus: "",
+    main_projects: "",
+    target_audience: "",
+    unique_value: "",
+    available_channels: "",
+  });
+  const [sourcesUsed, setSourcesUsed] = useState<any>(null);
+
+  // On mount: detect cold-start by checking if org has any data
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const sb = supabase as any;
+      const donorsQ = await sb.from("donors").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
+      const projectsQ = await sb.from("projects").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
+      const campaignsQ = await sb.from("marketing_campaigns").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
+      const profQ = await sb.from("organization_profiles").select("website_url, store_url").eq("organization_id", orgId).maybeSingle();
+      if (cancelled) return;
+      const hasData = (donorsQ.count ?? 0) > 0 || (projectsQ.count ?? 0) > 0 || (campaignsQ.count ?? 0) > 0;
+      setColdStart(!hasData);
+      const prof = profQ.data as { website_url?: string | null; store_url?: string | null } | null;
+      if (prof) {
+        setAnswers((a) => ({ ...a, website_url: prof.website_url ?? "", store_url: prof.store_url ?? "" }));
+      }
+      setChecking(false);
+    })();
+    return () => { cancelled = true; };
+  }, [orgId]);
 
   const goNext = () => setStep((s) => Math.min(5, s + 1));
   const goBack = () => setStep((s) => Math.max(1, s - 1));
@@ -49,14 +82,20 @@ export default function CampaignWizard({
     setSuggestions([]);
     try {
       const { data, error } = await supabase.functions.invoke("marketing-suggest-campaigns", {
-        body: { organization_id: orgId, goal_key: goalKey, extra_note: extraNote },
+        body: {
+          organization_id: orgId,
+          goal_key: goalKey,
+          extra_note: extraNote,
+          wizard_answers: coldStart ? answers : undefined,
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const list = data?.campaigns ?? [];
       setSuggestions(list);
+      setSourcesUsed(data?.sources_used ?? null);
       if (list.length === 0) toast.error("لم يتم اقتراح أي حملة، حاول مرة أخرى");
-      else { setStep(3); }
+      else { setStep(coldStart ? 4 : 3); }
     } catch (e: any) {
       toast.error(`فشل التوليد: ${e.message ?? e}`);
     } finally {
@@ -100,7 +139,21 @@ export default function CampaignWizard({
     onCreated(data.id);
   };
 
-  const stepTitles = ["", "ماذا تريد أن تحقق؟", "تحليل ذكي", "اختر حملتك", "راجع التفاصيل", "جاهز للإطلاق"];
+  const stepTitlesNormal = ["", "ماذا تريد أن تحقق؟", "تحليل ذكي", "اختر حملتك", "راجع التفاصيل", "جاهز للإطلاق"];
+  const stepTitlesCold = ["", "ماذا تريد أن تحقق؟", "أخبرنا عن جمعيتك", "تحليل ذكي", "اختر حملتك", "راجع التفاصيل", "جاهز للإطلاق"];
+  const stepTitles = coldStart ? stepTitlesCold : stepTitlesNormal;
+  const totalSteps = coldStart ? 6 : 5;
+
+  if (checking) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center" dir="rtl">
+        <div className="text-center space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">جاري تجهيز المعالج...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-y-auto" dir="rtl">
@@ -111,7 +164,7 @@ export default function CampaignWizard({
             <div className="rounded-xl bg-primary/15 p-2.5 text-primary"><Wand2 className="h-5 w-5" /></div>
             <div>
               <h1 className="text-lg font-bold">المعالج الذكي للحملات</h1>
-              <p className="text-xs text-muted-foreground">{stepTitles[step]} · الخطوة {step} من 5</p>
+              <p className="text-xs text-muted-foreground">{stepTitles[step]} · الخطوة {step} من {totalSteps}</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
@@ -119,7 +172,7 @@ export default function CampaignWizard({
 
         {/* Progress */}
         <div className="flex gap-1.5 mb-8">
-          {[1, 2, 3, 4, 5].map((n) => (
+          {Array.from({ length: totalSteps }, (_, i) => i + 1).map((n) => (
             <div key={n} className={`h-1.5 flex-1 rounded-full transition-colors ${n <= step ? "bg-primary" : "bg-muted"}`} />
           ))}
         </div>
@@ -127,6 +180,15 @@ export default function CampaignWizard({
         {/* STEP 1: Choose goal */}
         {step === 1 && (
           <div className="space-y-5">
+            {coldStart && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-3">
+                <Lightbulb className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-xs leading-relaxed">
+                  <p className="font-semibold text-amber-700 dark:text-amber-300">جمعية جديدة بدون بيانات سابقة؟ لا مشكلة!</p>
+                  <p className="text-muted-foreground mt-0.5">سنبني حملاتك من معرفتنا بجمعيتك (موقعك ومنصاتك) + إجابات بسيطة منك. لنبدأ معًا.</p>
+                </div>
+              </div>
+            )}
             <div className="text-center space-y-1">
               <h2 className="text-2xl font-bold">ما هدفك من هذه الحملة؟</h2>
               <p className="text-sm text-muted-foreground">اختر الهدف الذي يصف ما تريد تحقيقه — والذكاء سيتولى الباقي</p>
@@ -170,15 +232,110 @@ export default function CampaignWizard({
             </div>
 
             <div className="flex justify-end gap-2 pt-3">
-              <Button onClick={() => { goNext(); generate(); }} disabled={!goalKey} className="gap-2">
-                ابدأ التحليل الذكي <ArrowLeft className="h-4 w-4" />
+              {coldStart ? (
+                <Button onClick={goNext} disabled={!goalKey} className="gap-2">
+                  التالي: أخبرنا عن جمعيتك <ArrowLeft className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button onClick={() => { goNext(); generate(); }} disabled={!goalKey} className="gap-2">
+                  ابدأ التحليل الذكي <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* COLD-START STEP 2: Guided questions */}
+        {step === 2 && coldStart && (
+          <div className="space-y-5">
+            <div className="text-center space-y-1">
+              <h2 className="text-2xl font-bold">عرّفنا على جمعيتك</h2>
+              <p className="text-sm text-muted-foreground">إجاباتك تساعد الذكاء على بناء حملة تشبه جمعيتك تمامًا — كلها اختيارية لكن كلما زادت كلما تحسّنت الحملة</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-sm flex items-center gap-1"><Globe className="h-3.5 w-3.5" />موقع الجمعية الإلكتروني</Label>
+                  <Input
+                    type="url"
+                    placeholder="https://example.org"
+                    value={answers.website_url}
+                    onChange={(e) => setAnswers({ ...answers, website_url: e.target.value })}
+                  />
+                  <p className="text-[11px] text-muted-foreground">سنقرأه لفهم رسالتك ومشاريعك تلقائيًا</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">رابط المتجر/التبرع (إن وجد)</Label>
+                  <Input
+                    type="url"
+                    placeholder="https://store.example.org"
+                    value={answers.store_url}
+                    onChange={(e) => setAnswers({ ...answers, store_url: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm">ما المجال الرئيسي الذي تعمل فيه الجمعية؟</Label>
+                <Input
+                  placeholder="مثال: كفالة الأيتام، إفطار صائم، علاج المرضى، التعليم..."
+                  value={answers.org_focus}
+                  onChange={(e) => setAnswers({ ...answers, org_focus: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm">أبرز 2-3 مشاريع تقدّمونها حاليًا</Label>
+                <Textarea
+                  rows={2}
+                  placeholder="مثال: مشروع كفالة يتيم، توزيع وجبات إفطار، حقيبة الطالب..."
+                  value={answers.main_projects}
+                  onChange={(e) => setAnswers({ ...answers, main_projects: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">من هو متبرعكم المثالي؟</Label>
+                  <Input
+                    placeholder="مثال: عائلات سعودية 30-50 سنة، رجال أعمال..."
+                    value={answers.target_audience}
+                    onChange={(e) => setAnswers({ ...answers, target_audience: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">القنوات المتاحة لديكم</Label>
+                  <Input
+                    placeholder="مثال: واتساب، تويتر، إنستغرام، إيميل"
+                    value={answers.available_channels}
+                    onChange={(e) => setAnswers({ ...answers, available_channels: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm">ما الذي يميّز جمعيتكم عن غيرها؟</Label>
+                <Textarea
+                  rows={2}
+                  placeholder="مثال: شفافية كاملة، أثر موثّق، فريق متخصص، تغطية مناطق نائية..."
+                  value={answers.unique_value}
+                  onChange={(e) => setAnswers({ ...answers, unique_value: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between gap-2 pt-3">
+              <Button variant="ghost" onClick={goBack} className="gap-2"><ArrowRight className="h-4 w-4" /> رجوع</Button>
+              <Button onClick={() => { goNext(); generate(); }} className="gap-2">
+                <Sparkles className="h-4 w-4" /> ابدأ التحليل الذكي
               </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 2: AI thinking */}
-        {step === 2 && (
+        {/* STEP 2 (normal) / STEP 3 (cold): AI thinking */}
+        {((step === 2 && !coldStart) || (step === 3 && coldStart)) && (
           <div className="py-20 text-center space-y-6">
             <div className="relative inline-flex">
               <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
@@ -189,7 +346,9 @@ export default function CampaignWizard({
             <div className="space-y-2">
               <h2 className="text-xl font-bold">يحلل الذكاء بياناتك الآن...</h2>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                نقرأ المتبرعين، التبرعات، المشاريع، والمواسم القادمة لاقتراح أفضل حملة لك
+                {coldStart
+                  ? "نقرأ موقعكم ومنصاتكم وإجاباتكم لبناء حملة تشبه جمعيتكم تمامًا"
+                  : "نقرأ المتبرعين، التبرعات، المشاريع، والمواسم القادمة لاقتراح أفضل حملة لك"}
               </p>
             </div>
             {!generating && suggestions.length === 0 && (
@@ -198,12 +357,21 @@ export default function CampaignWizard({
           </div>
         )}
 
-        {/* STEP 3: Choose suggestion */}
-        {step === 3 && (
+        {/* STEP 3 (normal) / STEP 4 (cold): Choose suggestion */}
+        {((step === 3 && !coldStart) || (step === 4 && coldStart)) && (
           <div className="space-y-4">
             <div className="text-center space-y-1">
               <h2 className="text-2xl font-bold">اختر الحملة الأنسب لك</h2>
               <p className="text-sm text-muted-foreground">{suggestions.length} حملة مقترحة بناءً على بياناتك الفعلية</p>
+              {sourcesUsed && (
+                <div className="flex flex-wrap justify-center gap-1 pt-1">
+                  {sourcesUsed.website && <Badge variant="outline" className="text-[10px]">📄 من الموقع</Badge>}
+                  {sourcesUsed.store && <Badge variant="outline" className="text-[10px]">🛒 من المتجر</Badge>}
+                  {sourcesUsed.donor_data && <Badge variant="outline" className="text-[10px]">👥 من بيانات المتبرعين</Badge>}
+                  {sourcesUsed.projects && <Badge variant="outline" className="text-[10px]">📂 من المشاريع</Badge>}
+                  {sourcesUsed.employee_answers && <Badge variant="outline" className="text-[10px]">💬 من إجاباتك</Badge>}
+                </div>
+              )}
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {suggestions.map((s, i) => {
@@ -239,7 +407,7 @@ export default function CampaignWizard({
               })}
             </div>
             <div className="flex justify-between gap-2 pt-3">
-              <Button variant="ghost" onClick={() => { setStep(1); setSuggestions([]); setSelected(null); }} className="gap-2">
+              <Button variant="ghost" onClick={() => { setStep(coldStart ? 2 : 1); setSuggestions([]); setSelected(null); }} className="gap-2">
                 <ArrowRight className="h-4 w-4" /> رجوع
               </Button>
               <Button onClick={goNext} disabled={!selected} className="gap-2">
@@ -249,8 +417,8 @@ export default function CampaignWizard({
           </div>
         )}
 
-        {/* STEP 4: Review */}
-        {step === 4 && selected && (
+        {/* STEP 4 (normal) / STEP 5 (cold): Review */}
+        {((step === 4 && !coldStart) || (step === 5 && coldStart)) && selected && (
           <div className="space-y-4">
             <div className="text-center space-y-1">
               <h2 className="text-2xl font-bold">راجع تفاصيل حملتك</h2>
@@ -301,8 +469,8 @@ export default function CampaignWizard({
           </div>
         )}
 
-        {/* STEP 5: Launch */}
-        {step === 5 && selected && (
+        {/* STEP 5 (normal) / STEP 6 (cold): Launch */}
+        {((step === 5 && !coldStart) || (step === 6 && coldStart)) && selected && (
           <div className="space-y-5">
             <div className="text-center space-y-2 py-4">
               <div className="inline-flex rounded-full bg-emerald-500/15 p-4 text-emerald-600 dark:text-emerald-400">
