@@ -67,6 +67,7 @@ const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: string[] }> = [
   { match: /حرف/, lines: ["جمعية حرف التعليمية", ""] },
   { match: /التنمية الأهلية|العارضة.*تنمية|tanmiah/i, lines: ["جمعية التنمية الأهلية", "بمحافظة العارضة"] },
   { match: /ريادة|riyadah/i, lines: ["جمعية ريادة", "للخدمات الإنسانية", "بمركز الحميراء"] },
+  { match: /تدبر|tadabbur|tdabar/i, lines: ["جمعية تدبر لتحفيظ", "القرآن الكريم", "بمركز الحميراء"] },
 ];
 
 function getShortOrgName(fullName: string): string[] | null {
