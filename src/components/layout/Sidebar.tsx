@@ -86,6 +86,7 @@ interface NavItem {
   badge?: number;
   iconBg: string;
   description?: string;
+  children?: NavItem[];
 }
 
 // كل أيقونة بلونها المميز — ثابت دائمًا لتجنب تبدّل الألوان أو اهتزاز القائمة عند التنقل.
@@ -93,16 +94,17 @@ const adminNavItems: NavItem[] = [
   { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "nav-icon-upload", description: "رفع ملفات الجمعية (لوائح، خطط، تقارير، مرفقات Excel) ليتم تحليلها ومعالجتها داخل النظام." },
   { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "nav-icon-analysis", description: "تحليل آلي شامل لبيانات الجمعية بالذكاء الاصطناعي لاستخراج نقاط القوة والفرص والمخاطر." },
   { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "nav-icon-overview", description: "ملخّص لوحات المؤشرات الرئيسية للجمعية: الأداء، المهام، الخطط والمستفيدين في شاشة واحدة." },
-  { title: "مركز التبرعات", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "nav-icon-donors", description: "مركز موحّد لإدارة المتبرعين والتبرعات والاستقطاعات والحملات والإهداءات والسلال المتروكة." },
+  { title: "مركز التبرعات", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "nav-icon-donors", description: "مركز موحّد لإدارة المتبرعين والتبرعات والاستقطاعات والحملات والإهداءات والسلال المتروكة.", children: [
+    { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations", description: "خطط تشغيلية مولّدة آلياً انطلاقاً من توصيات التحليل الذكي ونتائج التقييم." },
+    { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير تفصيلية قابلة للتصدير (PDF / Excel / Word) عن الأداء والخطط والمشاريع." },
+    { title: "الابتكار والتجديد", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "بنك الأفكار والمبادرات الابتكارية وتطوير الخدمات بمساعدة الذكاء الاصطناعي." },
+  ] },
   { title: "الإدارة المالية", href: "/internal-dashboard?tab=finance", icon: Wallet, iconBg: "nav-icon-donors", description: "ربط المصروفات بالتبرعات تلقائياً مع توزيع ذكي على المشاريع والتسويق والتشغيل وشفافية كاملة لكل متبرع." },
   { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "nav-icon-people", description: "إدارة بيانات الموظفين والإدارات وتعيين المدراء المباشرين والصلاحيات." },
   { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "nav-icon-plans", description: "بناء ومتابعة الخطط التشغيلية السنوية المرتبطة بالأهداف الاستراتيجية والمبادرات." },
   { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive", description: "جدولة مراحل التنفيذ الزمنية للأنشطة وتوزيع المسؤوليات على فريق العمل." },
   { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: "nav-icon-tasks", description: "إنشاء المهام وتوزيعها على الموظفين ومتابعة حالتها وأولوياتها وتواريخ تسليمها." },
   { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "nav-icon-performance", description: "تقييم أداء الموظفين والإدارات بناءً على نسب الإنجاز والجودة ومؤشرات قابلة للقياس." },
-  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations", description: "خطط تشغيلية مولّدة آلياً انطلاقاً من توصيات التحليل الذكي ونتائج التقييم." },
-  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير تفصيلية قابلة للتصدير (PDF / Excel / Word) عن الأداء والخطط والمشاريع." },
-  { title: "الابتكار والتجديد", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "بنك الأفكار والمبادرات الابتكارية وتطوير الخدمات بمساعدة الذكاء الاصطناعي." },
 ];
 
 const managerNavItems: NavItem[] = [
