@@ -1767,22 +1767,22 @@ function ReportsLandingCard({
   // re-tint these cards. We want a permanent blue + green identity here.
   const tones = {
     slate: {
-      border: "border-[#bfdbfe] hover:border-[#93c5fd]",
-      bg: "bg-gradient-to-br from-[#eff6ff] via-[#dbeafe] to-[#bfdbfe]",
-      iconWrap: "bg-[#dbeafe] text-[#1d4ed8] ring-1 ring-[#bfdbfe]",
-      title: "text-[#0f172a]",
-      desc: "text-[#475569]",
-      cta: "bg-[#1d4ed8] text-white hover:bg-[#1e40af]",
-      glow: "bg-[#bfdbfe]/70",
+      border: "border-transparent",
+      bg: "bg-gradient-to-l from-[#22c55e] via-[#10b981] to-[#06b6d4]",
+      iconWrap: "bg-white/20 text-white ring-1 ring-white/30 backdrop-blur",
+      title: "text-white",
+      desc: "text-white/85",
+      cta: "bg-white/15 text-white hover:bg-white/25 ring-1 ring-white/30 backdrop-blur",
+      glow: "bg-white/10",
     },
     emerald: {
-      border: "border-[#bbf7d0] hover:border-[#86efac]",
-      bg: "bg-gradient-to-br from-[#ecfdf5] via-[#dcfce7] to-[#bbf7d0]",
-      iconWrap: "bg-[#dcfce7] text-[#047857] ring-1 ring-[#bbf7d0]",
-      title: "text-[#0f172a]",
-      desc: "text-[#475569]",
-      cta: "bg-[#059669] text-white hover:bg-[#047857]",
-      glow: "bg-[#bbf7d0]/70",
+      border: "border-transparent",
+      bg: "bg-gradient-to-l from-[#22c55e] via-[#10b981] to-[#06b6d4]",
+      iconWrap: "bg-white/20 text-white ring-1 ring-white/30 backdrop-blur",
+      title: "text-white",
+      desc: "text-white/85",
+      cta: "bg-white/15 text-white hover:bg-white/25 ring-1 ring-white/30 backdrop-blur",
+      glow: "bg-white/10",
     },
   }[accent];
   return (
