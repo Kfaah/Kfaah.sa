@@ -274,7 +274,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Nav — white surface */}
-        <nav className="flex-1 overflow-hidden px-2 py-3 bg-white space-y-1.5">
+        <nav className="flex-1 overflow-y-auto px-2 py-3 bg-white space-y-1.5">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
             const active = item.end
