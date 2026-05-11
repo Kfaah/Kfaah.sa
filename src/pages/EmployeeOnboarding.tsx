@@ -559,7 +559,7 @@ export default function EmployeeOnboarding() {
                   <Button
                     onClick={addDuty}
                     type="button"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     <Plus className="w-4 h-4 ml-1" />
                     إضافة المهمة
@@ -732,7 +732,7 @@ export default function EmployeeOnboarding() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-gradient-to-l from-emerald-500 to-teal-600 hover:opacity-90 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {saving ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Check className="w-4 h-4 ml-2" />}
               حفظ ملفي الذكي
@@ -800,7 +800,7 @@ function ChipField({
         <Button
           type="button"
           onClick={onAdd}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           إضافة
         </Button>
