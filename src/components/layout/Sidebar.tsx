@@ -37,6 +37,7 @@ import {
   Award,
   Wallet,
 } from "lucide-react";
+import { Megaphone } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import {
   Tooltip,
@@ -98,6 +99,7 @@ const adminNavItems: NavItem[] = [
   { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations", description: "خطط تشغيلية مولّدة آلياً انطلاقاً من توصيات التحليل الذكي ونتائج التقييم." },
   { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير تفصيلية قابلة للتصدير (PDF / Excel / Word) عن الأداء والخطط والمشاريع." },
   { title: "الابتكار والتجديد", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "بنك الأفكار والمبادرات الابتكارية وتطوير الخدمات بمساعدة الذكاء الاصطناعي." },
+  { title: "الحملات التسويقية", href: "/internal-dashboard?tab=marketing", icon: Megaphone, iconBg: "nav-icon-innovation", description: "مركز الحملات التسويقية الذكي: اقتراح، تخطيط، تنفيذ وقياس الحملات بالذكاء الاصطناعي." },
   { title: "الإدارة المالية", href: "/internal-dashboard?tab=finance", icon: Wallet, iconBg: "nav-icon-donors", description: "ربط المصروفات بالتبرعات تلقائياً مع توزيع ذكي على المشاريع والتسويق والتشغيل وشفافية كاملة لكل متبرع." },
   { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "nav-icon-people", description: "إدارة بيانات الموظفين والإدارات وتعيين المدراء المباشرين والصلاحيات." },
   { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "nav-icon-plans", description: "بناء ومتابعة الخطط التشغيلية السنوية المرتبطة بالأهداف الاستراتيجية والمبادرات." },
