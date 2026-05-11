@@ -826,17 +826,20 @@ const COLUMN_DEFS: Record<ReportKey, Col[]> = {
     { key: "الاسم", label: "الاسم" }, { key: "الجوال", label: "الجوال" },
     { key: "عدد التبرعات", label: "عدد التبرعات" }, { key: "إجمالي", label: "إجمالي" },
     { key: "أول تبرع", label: "أول تبرع" }, { key: "آخر تبرع", label: "آخر تبرع" },
+    { key: "_actions", label: "الإجراءات المنفذة", render: (v) => <DonorActionsCell counts={v} /> },
   ],
   gifts: [
     { key: "المُهدي", label: "المُهدي" }, { key: "جوال المُهدي", label: "جوال المُهدي" },
     { key: "المُهدى", label: "المُهدى" }, { key: "المبلغ", label: "المبلغ" },
     { key: "المناسبة", label: "المناسبة" }, { key: "المشروع", label: "المشروع" },
     { key: "حالة التسليم", label: "حالة التسليم" }, { key: "التاريخ", label: "التاريخ" },
+    { key: "_actions", label: "الإجراءات المنفذة", render: (v) => <DonorActionsCell counts={v} /> },
   ],
   project_donors: [
     { key: "المشروع", label: "المشروع" }, { key: "المتبرع", label: "المتبرع" },
     { key: "الجوال", label: "الجوال" }, { key: "المبلغ", label: "المبلغ" },
     { key: "التاريخ", label: "التاريخ" },
+    { key: "_actions", label: "الإجراءات المنفذة", render: (v) => <DonorActionsCell counts={v} /> },
   ],
 };
 
