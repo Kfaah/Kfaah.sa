@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target, RefreshCcw, Radar } from "lucide-react";
+import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target, RefreshCcw, Radar, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,7 @@ export default function OrganizationProfile() {
   const [sources, setSources] = useState<any[]>([]);
   const [syncingKey, setSyncingKey] = useState<string | null>(null);
   const [newsPath, setNewsPath] = useState("");
+  const [discovering, setDiscovering] = useState(false);
 
   const loadSources = async () => {
     if (!orgId) return;
@@ -229,6 +230,43 @@ export default function OrganizationProfile() {
   const syncAll = async () => {
     for (const t of syncTargets) {
       await syncOne(t);
+    }
+  };
+
+  const discoverAccounts = async () => {
+    if (!orgId) return;
+    setDiscovering(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("discover-org-accounts", {
+        body: { organization_id: orgId, overwrite: false },
+      });
+      if (error) throw error;
+      const found: Record<string, { url: string }> = (data as any)?.discovered || {};
+      const keys = Object.keys(found);
+      if (keys.length === 0) {
+        toast.info("لم يتم العثور على حسابات إضافية موثوقة");
+      } else {
+        toast.success(`تم اكتشاف ${keys.length} حساب/حسابات بنجاح`);
+        // Update the form with newly discovered URLs
+        setForm((prev) => {
+          const next = { ...prev } as any;
+          const map: Record<string, string> = {
+            twitter: "twitter_url", instagram: "instagram_url", tiktok: "tiktok_url",
+            snapchat: "snapchat_url", youtube: "youtube_url", facebook: "facebook_url", linkedin: "linkedin_url",
+          };
+          for (const k of keys) {
+            const field = map[k]; if (!field) continue;
+            if (!next[field]) next[field] = found[k].url;
+          }
+          return next;
+        });
+        // Persist + reload sources
+        await loadSources();
+      }
+    } catch (e: any) {
+      toast.error("تعذّر الاكتشاف: " + (e?.message || ""));
+    } finally {
+      setDiscovering(false);
     }
   };
 
@@ -431,6 +469,16 @@ export default function OrganizationProfile() {
             >
               <RefreshCcw className={`w-4 h-4 ${syncingKey ? "animate-spin" : ""}`} />
               مزامنة الكل
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={discoverAccounts}
+              disabled={discovering}
+              className="gap-2"
+            >
+              {discovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanSearch className="w-4 h-4" />}
+              اكتشاف الحسابات تلقائياً
             </Button>
           </div>
 
