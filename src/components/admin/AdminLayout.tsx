@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, GitCompareArrows, Sparkles,
   Building2, LogOut, ArrowLeftCircle, Settings,
-  MessagesSquare, Inbox,
+  MessagesSquare, Inbox, ListChecks, FileBarChart2, Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -28,6 +28,15 @@ const navItems = [
   { to: "/admin/analytics", label: "التحليل الذكي", icon: Sparkles, end: false,
     desc: "تحليل AI لكل جمعية",
     color: ICON_COLOR, bg: "bg-gradient-to-br from-fuchsia-500 to-pink-600", ring: "ring-fuchsia-400/40" },
+  { to: "/admin/action-plans", label: "الخطط من التوصيات", icon: ListChecks, end: false,
+    desc: "تحويل التحليل إلى خطة وتكليف",
+    color: ICON_COLOR, bg: "bg-[image:var(--gradient-primary)]", ring: "ring-primary/40" },
+  { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
+    desc: "تقارير موضوعية وتنفيذية سردية",
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-rose-400 to-pink-600", ring: "ring-rose-400/40" },
+  { to: "/admin/innovation", label: "الابتكار والتجديد", icon: Lightbulb, end: false,
+    desc: "أفكار AI ابتكارية ونقاش تفاعلي",
+    color: ICON_COLOR, bg: "bg-gradient-to-br from-amber-400 to-orange-500", ring: "ring-amber-400/40" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
