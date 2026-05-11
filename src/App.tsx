@@ -450,6 +450,7 @@ function AppRoutes() {
       <Route path="/:slug/employee-onboarding" element={<ProtectedRoute><EmployeeOnboarding /></ProtectedRoute>} />
       <Route path="/:slug/staff-duties-upload" element={<ProtectedRoute><StaffDutiesUpload /></ProtectedRoute>} />
       <Route path="/:slug/my-assistant" element={<ProtectedRoute><MyAssistant /></ProtectedRoute>} />
+      <Route path="/:slug/messages" element={<Messages />} />
 
       {/* Short org slug: charity-crm.org/atff → نفس صفحة /j/atff */}
       <Route path="/:slug" element={<OrgAuth />} />
