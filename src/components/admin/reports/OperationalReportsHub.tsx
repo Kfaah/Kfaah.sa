@@ -465,17 +465,16 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
         .eq("organization_id", orgId)
         .order("total_donated", { ascending: false })
         .limit(5000);
+      // Classification is applied later in the component using the org's tier config.
       return (data || []).map(d => {
         const t = Number(d.total_donated || 0);
-        let tier = "< 500", suggested = "رسالة SMS";
-        if (t >= 5000) { tier = "≥ 5,000"; suggested = "خطاب رسمي + اتصال"; }
-        else if (t >= 1000) { tier = "1,000 – 5,000"; suggested = "اتصال هاتفي"; }
-        else if (t >= 500) { tier = "500 – 1,000"; suggested = "رسالة واتساب شخصية"; }
         return {
-          الاسم: d.full_name, الجوال: d.phone, "إجمالي التبرعات": sar(t),
+          _amount: t,
+          الاسم: d.full_name,
+          الجوال: d.phone,
+          "إجمالي التبرعات": sar(t),
           "عدد التبرعات": d.donations_count || 0,
           "آخر تبرع": d.last_donation_at ? new Date(d.last_donation_at).toLocaleDateString("ar-SA") : "—",
-          tier, "قناة التواصل المقترحة": suggested,
         };
       });
     }
