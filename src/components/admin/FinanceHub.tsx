@@ -260,20 +260,21 @@ export function FinanceHub({ orgId }: { orgId: string }) {
 }
 
 function Kpi({ label, value, icon, tone }: { label: string; value: string; icon: React.ReactNode; tone: string }) {
-  const toneCls: Record<string, string> = {
-    primary: "from-primary/10 to-primary/5 text-primary",
-    accent: "from-accent/10 to-accent/5 text-accent-foreground",
-    emerald: "from-emerald-500/10 to-emerald-500/5 text-emerald-700",
-    sky: "from-sky-500/10 to-sky-500/5 text-sky-700",
+  const toneCls: Record<string, { card: string; icon: string; value: string; label: string }> = {
+    primary: { card: "border-primary/30 bg-primary/5", icon: "bg-primary/15 text-primary", value: "text-primary", label: "text-foreground/70" },
+    accent: { card: "border-accent/40 bg-accent/10", icon: "bg-accent/20 text-accent-foreground", value: "text-foreground", label: "text-foreground/70" },
+    emerald: { card: "border-emerald-300 bg-emerald-50", icon: "bg-emerald-100 text-emerald-700", value: "text-emerald-800", label: "text-emerald-900/70" },
+    sky: { card: "border-sky-300 bg-sky-50", icon: "bg-sky-100 text-sky-700", value: "text-sky-800", label: "text-sky-900/70" },
   };
+  const t = toneCls[tone] || toneCls.primary;
   return (
-    <Card className={cn("bg-gradient-to-br", toneCls[tone])}>
+    <Card className={cn("border-2 shadow-sm", t.card)}>
       <CardContent className="flex items-center justify-between p-4">
         <div className="min-w-0">
-          <div className="text-xs text-muted-foreground">{label}</div>
-          <div className="mt-1 text-xl font-extrabold">{value}</div>
+          <div className={cn("text-xs font-semibold", t.label)}>{label}</div>
+          <div className={cn("mt-1 text-xl font-extrabold", t.value)}>{value}</div>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background/80 [&_svg]:h-5 [&_svg]:w-5">{icon}</div>
+        <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl [&_svg]:h-5 [&_svg]:w-5", t.icon)}>{icon}</div>
       </CardContent>
     </Card>
   );
