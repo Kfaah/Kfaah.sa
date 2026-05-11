@@ -1243,6 +1243,51 @@ export type Database = {
           },
         ]
       }
+      donor_letters_log: {
+        Row: {
+          created_at: string
+          donor_id: string | null
+          format: string
+          generated_by: string | null
+          id: string
+          letter_type: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          donor_id?: string | null
+          format: string
+          generated_by?: string | null
+          id?: string
+          letter_type: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          donor_id?: string | null
+          format?: string
+          generated_by?: string | null
+          id?: string
+          letter_type?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_letters_log_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_letters_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       donor_lifecycle_events: {
         Row: {
           amount: number | null
@@ -1297,8 +1342,11 @@ export type Database = {
       donor_spend_summary: {
         Row: {
           donor_id: string
+          fully_spent: boolean
+          fully_spent_message: string | null
           last_updated: string
           organization_id: string
+          primary_project: string | null
           projects_funded: Json
           total_allocated: number
           total_donated: number
@@ -1306,8 +1354,11 @@ export type Database = {
         }
         Insert: {
           donor_id: string
+          fully_spent?: boolean
+          fully_spent_message?: string | null
           last_updated?: string
           organization_id: string
+          primary_project?: string | null
           projects_funded?: Json
           total_allocated?: number
           total_donated?: number
@@ -1315,8 +1366,11 @@ export type Database = {
         }
         Update: {
           donor_id?: string
+          fully_spent?: boolean
+          fully_spent_message?: string | null
           last_updated?: string
           organization_id?: string
+          primary_project?: string | null
           projects_funded?: Json
           total_allocated?: number
           total_donated?: number
@@ -3534,6 +3588,107 @@ export type Database = {
           },
         ]
       }
+      org_external_insights: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          occurred_at: string | null
+          organization_id: string
+          raw_data: Json | null
+          source_id: string | null
+          title: string
+          url: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          occurred_at?: string | null
+          organization_id: string
+          raw_data?: Json | null
+          source_id?: string | null
+          title: string
+          url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          occurred_at?: string | null
+          organization_id?: string
+          raw_data?: Json | null
+          source_id?: string | null
+          title?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_external_insights_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_external_insights_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "org_external_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_external_sources: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          label: string | null
+          last_status: string | null
+          last_synced_at: string | null
+          organization_id: string
+          summary: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          label?: string | null
+          last_status?: string | null
+          last_synced_at?: string | null
+          organization_id: string
+          summary?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string | null
+          last_status?: string | null
+          last_synced_at?: string | null
+          organization_id?: string
+          summary?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_external_sources_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_branding: {
         Row: {
           accent_color: string | null
@@ -4008,6 +4163,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "role_permissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smart_report_suggestions: {
+        Row: {
+          audience: string | null
+          benefit: string | null
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          is_archived: boolean
+          organization_id: string
+          priority: number | null
+          title: string
+        }
+        Insert: {
+          audience?: string | null
+          benefit?: string | null
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          is_archived?: boolean
+          organization_id: string
+          priority?: number | null
+          title: string
+        }
+        Update: {
+          audience?: string | null
+          benefit?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_archived?: boolean
+          organization_id?: string
+          priority?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_report_suggestions_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
