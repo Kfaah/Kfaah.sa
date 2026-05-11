@@ -105,7 +105,19 @@ Deno.serve(async (req) => {
 
     const payload = await req.json();
 
-    const userMessage = `هذه بيانات مجمّعة (مجهولة الهوية) عن نخبة المتبرعين:
+    let userMessage: string;
+    if (payload?.panel) {
+      userMessage = `سياق: قسم "${payload.panel_label || payload.panel}" داخل مركز التبرعات في جمعية خيرية.
+
+هذه بيانات مجمّعة (مجهولة الهوية) خاصة بهذا القسم تحديداً:
+${JSON.stringify(payload.context ?? {}, null, 2)}
+
+مهمتك: أنتج رؤى وأفكاراً عملية مبتكرة موجّهة تحديداً لهذا القسم
+(${payload.panel_label || payload.panel})، عبر استدعاء الأداة donor_engagement_plan.
+اربط التحليل بطبيعة هذا القسم بالذات، لا بمتبرعي النخبة بشكل عام.
+اجعل الأفكار رقمية، قابلة للقياس، ومبتكرة بصدق.`;
+    } else {
+      userMessage = `هذه بيانات مجمّعة (مجهولة الهوية) عن نخبة المتبرعين:
 
 - إجمالي عدد النخبة (لديهم نشاطان أو أكثر): ${payload.elite_count}
 - إجمالي عدد التبرعات في النظام: ${payload.total_donations_count}
@@ -118,6 +130,7 @@ ${JSON.stringify(payload.elite_breakdown, null, 2)}
 
 أنتج خطة تفعيل وتنمية كاملة عبر استدعاء الأداة donor_engagement_plan.
 اجعل الأفكار عملية، رقمية، قابلة للقياس، ومبتكرة بصدق.`;
+    }
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
