@@ -392,27 +392,54 @@ function KpiPill({ icon, label, value, brand }: { icon: React.ReactNode; label: 
 function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }: any) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
+  const [dateValue, setDateValue] = useState<DateValue>({ key: "all" });
+  const range = useMemo(() => buildDateRange(dateValue), [dateValue]);
+  const fDonations = useMemo(
+    () => (donations as Donation[]).filter((d) => inRange(d.donation_date, range)),
+    [donations, range]
+  );
+  const fFailed = useMemo(
+    () => (failed as any[]).filter((r) => inRange(r.attempted_at || r.created_at, range)),
+    [failed, range]
+  );
+  const fAbandoned = useMemo(
+    () => (abandoned as any[]).filter((r) => inRange(r.abandoned_at || r.created_at, range)),
+    [abandoned, range]
+  );
+  const fSubs = useMemo(
+    () => (subs as any[]).filter((r) => inRange(r.created_at || r.start_date, range)),
+    [subs, range]
+  );
+  const fCampaigns = useMemo(
+    () => (campaigns as any[]).filter((r) => inRange(r.created_at || r.start_date, range)),
+    [campaigns, range]
+  );
   const byYear = useMemo(() => {
     const map = new Map<number, number>();
-    donations.forEach((d: Donation) => {
+    fDonations.forEach((d: Donation) => {
       const y = new Date(d.donation_date).getFullYear();
       map.set(y, (map.get(y) || 0) + Number(d.amount || 0));
     });
     return Array.from(map.entries()).sort((a, b) => b[0] - a[0]);
-  }, [donations]);
+  }, [fDonations]);
   const byProject = useMemo(() => {
     const map = new Map<string, number>();
-    donations.forEach((d: Donation) => {
+    fDonations.forEach((d: Donation) => {
       const k = d.project_name || "غير محدد";
       map.set(k, (map.get(k) || 0) + Number(d.amount || 0));
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [donations]);
+  }, [fDonations]);
   const max = Math.max(1, ...byProject.map((p) => p[1]));
   const yearMax = Math.max(1, ...byYear.map((y) => y[1]));
 
   return (
-    <div className="grid lg:grid-cols-2 gap-5">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="text-sm text-slate-500">عرض البيانات حسب الفترة الزمنية</div>
+        <DateSelect value={dateValue} onChange={setDateValue} />
+      </div>
+      <div className="grid lg:grid-cols-2 gap-5">
       <Card style={{ borderColor: `${brand}33` }}>
         <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><CalendarIcon className="w-5 h-5" style={{ color: brand }} />التبرعات حسب السنة</CardTitle></CardHeader>
         <CardContent className="space-y-3">
@@ -442,10 +469,11 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
         </CardContent>
       </Card>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:col-span-2">
-        <MiniStat label="حملات" desc="حملات تبرع نشطة وسابقة" value={campaigns.length} icon={Megaphone} gradient="from-emerald-500 to-teal-500" />
-        <MiniStat label="تبرعات فاشلة" desc="محاولات لم تكتمل" value={failed.length} icon={XCircle} gradient="from-rose-500 to-pink-500" />
-        <MiniStat label="سلال متروكة" desc="فرص استرداد محتملة" value={abandoned.length} icon={ShoppingCart} gradient="from-amber-500 to-orange-500" />
-        <MiniStat label="اشتراكات" desc="استقطاعات شهرية ودورية" value={subs.length} icon={CalendarClock} gradient="from-violet-500 to-fuchsia-500" />
+        <MiniStat label="حملات" desc="حملات تبرع نشطة وسابقة" value={fCampaigns.length} icon={Megaphone} gradient="from-emerald-500 to-teal-500" />
+        <MiniStat label="تبرعات فاشلة" desc="محاولات لم تكتمل" value={fFailed.length} icon={XCircle} gradient="from-rose-500 to-pink-500" />
+        <MiniStat label="سلال متروكة" desc="فرص استرداد محتملة" value={fAbandoned.length} icon={ShoppingCart} gradient="from-amber-500 to-orange-500" />
+        <MiniStat label="اشتراكات" desc="استقطاعات شهرية ودورية" value={fSubs.length} icon={CalendarClock} gradient="from-violet-500 to-fuchsia-500" />
+      </div>
       </div>
     </div>
   );
