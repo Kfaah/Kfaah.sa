@@ -206,6 +206,9 @@ export function Sidebar() {
   const isRiyadahOrg = /riyadah|ريادة/i.test(
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
+  const isTadabburOrg = /tadabbur|tdabar|تدبر/i.test(
+    `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
+  );
   const isDemoRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/demo");
 
   // استثناء: إعادة إظهار "التحليل الذكي" لحساب سعد الغامدي تحديداً
