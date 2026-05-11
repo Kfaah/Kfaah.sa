@@ -1697,14 +1697,12 @@ function ReportsHubLanding({ orgId }: { orgId: string }) {
   if (view === "operational") {
     return (
       <div className="space-y-6">
-        {!opInnerActive && (
-          <ReportsBrandHeader
-            icon={BrainCircuit}
-            title="التقارير التشغيلية الذكية"
-            subtitle="رؤى آلية محركة بالذكاء الاصطناعي تتحول إلى مهام فعلية على الموظفين"
-            onBack={() => setView("home")}
-          />
-        )}
+        <ReportsBrandHeader
+          icon={BrainCircuit}
+          title="التقارير التشغيلية الذكية"
+          subtitle="رؤى آلية محركة بالذكاء الاصطناعي تتحول إلى مهام فعلية على الموظفين"
+          onBack={() => setView("home")}
+        />
         <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
           <OperationalReportsHub orgId={orgId} embedded onActiveReportChange={setOpInnerActive} />
         </Suspense>
@@ -1765,22 +1763,24 @@ function ReportsLandingCard({
   accent?: "slate" | "emerald";
   onClick: () => void;
 }) {
+  // Use arbitrary color values (hex) so the org-brand override layer does NOT
+  // re-tint these cards. We want a permanent blue + green identity here.
   const tones = {
     slate: {
-      border: "border-slate-200 hover:border-slate-300",
-      iconWrap: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
-      title: "text-slate-900",
-      desc: "text-slate-600",
-      cta: "bg-slate-900 text-white hover:bg-slate-800",
-      glow: "bg-slate-200/60",
+      border: "border-[#bfdbfe] hover:border-[#93c5fd]",
+      iconWrap: "bg-[#dbeafe] text-[#1d4ed8] ring-1 ring-[#bfdbfe]",
+      title: "text-[#0f172a]",
+      desc: "text-[#475569]",
+      cta: "bg-[#1d4ed8] text-white hover:bg-[#1e40af]",
+      glow: "bg-[#bfdbfe]/70",
     },
     emerald: {
-      border: "border-emerald-100 hover:border-emerald-200",
-      iconWrap: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
-      title: "text-slate-900",
-      desc: "text-slate-600",
-      cta: "bg-emerald-600 text-white hover:bg-emerald-700",
-      glow: "bg-emerald-100/70",
+      border: "border-[#bbf7d0] hover:border-[#86efac]",
+      iconWrap: "bg-[#dcfce7] text-[#047857] ring-1 ring-[#bbf7d0]",
+      title: "text-[#0f172a]",
+      desc: "text-[#475569]",
+      cta: "bg-[#059669] text-white hover:bg-[#047857]",
+      glow: "bg-[#bbf7d0]/70",
     },
   }[accent];
   return (
