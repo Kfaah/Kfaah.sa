@@ -1,0 +1,2 @@
+UPDATE organizations SET logo_url='https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/avatars/org-logos/riyadah-logo-v2.png' WHERE slug='riyadah' OR name ILIKE '%ريادة%';
+UPDATE organization_profiles SET logo_url='https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/avatars/org-logos/riyadah-logo-v2.png', updated_at=now() WHERE organization_id IN (SELECT id FROM organizations WHERE slug='riyadah' OR name ILIKE '%ريادة%');
