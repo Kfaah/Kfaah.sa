@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,23 +54,24 @@ export default function CampaignWizard({
   const [sourcesUsed, setSourcesUsed] = useState<any>(null);
 
   // On mount: detect cold-start by checking if org has any data
-  useState(() => {
+  useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const [d, p, c, prof] = await Promise.all([
-        supabase.from("donors").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
-        supabase.from("projects").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
-        supabase.from("marketing_campaigns").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
-        supabase.from("organization_profiles").select("website_url, store_url").eq("organization_id", orgId).maybeSingle(),
-      ]);
-      const hasData = (d.count ?? 0) > 0 || (p.count ?? 0) > 0 || (c.count ?? 0) > 0;
+      const donorsQ = await supabase.from("donors").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
+      const projectsQ = await supabase.from("projects").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
+      const campaignsQ = await supabase.from("marketing_campaigns").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
+      const profQ = await supabase.from("organization_profiles").select("website_url, store_url").eq("organization_id", orgId).maybeSingle();
+      if (cancelled) return;
+      const hasData = (donorsQ.count ?? 0) > 0 || (projectsQ.count ?? 0) > 0 || (campaignsQ.count ?? 0) > 0;
       setColdStart(!hasData);
-      if (prof.data) {
-        setAnswers((a) => ({ ...a, website_url: prof.data?.website_url ?? "", store_url: prof.data?.store_url ?? "" }));
+      const prof = profQ.data as { website_url?: string | null; store_url?: string | null } | null;
+      if (prof) {
+        setAnswers((a) => ({ ...a, website_url: prof.website_url ?? "", store_url: prof.store_url ?? "" }));
       }
       setChecking(false);
     })();
-    return () => {};
-  });
+    return () => { cancelled = true; };
+  }, [orgId]);
 
   const goNext = () => setStep((s) => Math.min(5, s + 1));
   const goBack = () => setStep((s) => Math.max(1, s - 1));
