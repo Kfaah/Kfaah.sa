@@ -121,19 +121,26 @@ const EditEmployee = () => {
       }
 
       try {
-        const [employeeRes, deptsRes, rolesRes, allEmployeesRes] = await Promise.all([
-          supabase.from("employees").select("*").eq("id", employeeId).single(),
+        const employeeRes = await supabase
+          .from("employees")
+          .select("*")
+          .eq("id", employeeId)
+          .single();
+        if (employeeRes.error) throw employeeRes.error;
+        const emp = employeeRes.data as Employee & { organization_id: string };
+
+        const [deptsRes, rolesRes, allEmployeesRes] = await Promise.all([
           supabase.from("departments").select("*").order("name"),
           supabase.from("job_roles").select("*").order("name"),
-          supabase.from("employees").select("id, full_name, user_id, job_role").order("full_name"),
+          supabase
+            .from("employees")
+            .select("id, full_name, user_id, job_role")
+            .eq("organization_id", emp.organization_id)
+            .or("is_viewer_account.is.null,is_viewer_account.eq.false")
+            .order("full_name"),
         ]);
-
-        if (employeeRes.error) throw employeeRes.error;
         if (deptsRes.error) throw deptsRes.error;
         if (rolesRes.error) throw rolesRes.error;
-
-        const emp = employeeRes.data as Employee;
-        
         // تحديد القسم من الدور الوظيفي
         const roleData = rolesRes.data?.find(r => r.name === emp.job_role);
         const deptData = deptsRes.data?.find(d => d.id === roleData?.department_id);
