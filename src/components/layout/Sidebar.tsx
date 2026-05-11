@@ -35,6 +35,7 @@ import {
   FileBarChart2,
   HeartHandshake,
   Award,
+  Wallet,
 } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import {
