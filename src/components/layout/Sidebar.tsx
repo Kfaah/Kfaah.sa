@@ -67,6 +67,7 @@ const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: string[] }> = [
   { match: /حرف/, lines: ["جمعية حرف التعليمية", ""] },
   { match: /التنمية الأهلية|العارضة.*تنمية|tanmiah/i, lines: ["جمعية التنمية الأهلية", "بمحافظة العارضة"] },
   { match: /ريادة|riyadah/i, lines: ["جمعية ريادة", "للخدمات الإنسانية", "بمركز الحميراء"] },
+  { match: /تدبر|tadabbur|tdabar/i, lines: ["جمعية تدبر لتحفيظ", "القرآن الكريم", "بمركز الحميراء"] },
 ];
 
 function getShortOrgName(fullName: string): string[] | null {
@@ -203,6 +204,9 @@ export function Sidebar() {
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
   const isRiyadahOrg = /riyadah|ريادة/i.test(
+    `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
+  );
+  const isTadabburOrg = /tadabbur|tdabar|تدبر/i.test(
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
   const isDemoRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/demo");
@@ -549,7 +553,9 @@ export function Sidebar() {
                             ? "h-[150px] w-[150px] scale-100"
                             : isRiyadahOrg
                               ? "h-[150px] w-[150px] scale-100"
-                              : "h-[210px] w-[210px] scale-125"
+                              : isTadabburOrg
+                                ? "h-[140px] w-[140px] scale-100"
+                                : "h-[210px] w-[210px] scale-125"
                   )}
                 />
               ) : (
