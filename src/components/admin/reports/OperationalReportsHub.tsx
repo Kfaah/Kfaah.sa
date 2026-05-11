@@ -695,7 +695,7 @@ function computeAggregates(key: ReportKey, rows: any[]): Record<string, number |
       };
     }
     case "campaigns": {
-      const completed = rows.filter(r => r["تقرير ختامي مُرسل"] === "نعم").length;
+      const completed = rows.filter(r => r["تقرير مُرسل"] === "نعم").length;
       return { "إجمالي الحملات": n, "مُرسل تقرير ختامي": completed, "بدون تقرير": n - completed };
     }
     case "failed_donations": {
