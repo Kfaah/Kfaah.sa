@@ -327,8 +327,8 @@ const Index = () => {
             {/* Center - Positive Message */}
             {currentMessage && (
               <div className="flex-1 flex justify-center">
-                <div className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-2xl py-3 px-6 border border-cyan-200 animate-fade-in">
-                  <span className="text-base font-medium text-cyan-700">{currentMessage}</span>
+                <div className="bg-background/90 backdrop-blur-sm rounded-2xl py-3 px-6 border border-primary/30 shadow-sm animate-fade-in">
+                  <span className="text-base font-medium text-primary">{currentMessage}</span>
                 </div>
               </div>
             )}
