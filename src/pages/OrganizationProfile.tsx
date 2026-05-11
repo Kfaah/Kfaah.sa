@@ -155,6 +155,83 @@ export default function OrganizationProfile() {
     toast.success("اكتمل التحليل بنجاح");
   };
 
+  const KIND_LABEL: Record<string, string> = {
+    website: "الموقع الإلكتروني", store: "المتجر / صفحة التبرع",
+    twitter: "تويتر / X", instagram: "إنستغرام", tiktok: "تيك توك",
+    snapchat: "سناب شات", youtube: "يوتيوب", facebook: "فيسبوك", linkedin: "لينكدإن",
+  };
+
+  // Build the list of syncable channels from the profile fields
+  const syncTargets = useMemo(() => {
+    const map: { key: keyof ProfileForm; kind: string }[] = [
+      { key: "website_url", kind: "website" },
+      { key: "store_url", kind: "store" },
+      { key: "twitter_url", kind: "twitter" },
+      { key: "instagram_url", kind: "instagram" },
+      { key: "tiktok_url", kind: "tiktok" },
+      { key: "snapchat_url", kind: "snapchat" },
+      { key: "youtube_url", kind: "youtube" },
+      { key: "facebook_url", kind: "facebook" },
+      { key: "linkedin_url", kind: "linkedin" },
+    ];
+    return map
+      .filter((t) => (form[t.key] || "").trim().length > 0)
+      .map((t) => {
+        const url = form[t.key].trim();
+        const existing = sources.find((s) => s.kind === t.kind && s.url === url);
+        return { ...t, url, existing };
+      });
+  }, [form, sources]);
+
+  const websiteSource = sources.find((s) => s.kind === "website");
+  useEffect(() => {
+    setNewsPath(websiteSource?.news_path ?? "");
+  }, [websiteSource?.id]);
+
+  const syncOne = async (target: { kind: string; url: string; existing: any }) => {
+    if (!orgId) return;
+    const key = `${target.kind}:${target.url}`;
+    setSyncingKey(key);
+    try {
+      let sourceId = target.existing?.id as string | undefined;
+      if (!sourceId) {
+        const insertPayload: any = {
+          organization_id: orgId,
+          kind: target.kind,
+          url: target.url,
+          label: KIND_LABEL[target.kind] || target.kind,
+        };
+        if (target.kind === "website" && newsPath.trim()) insertPayload.news_path = newsPath.trim();
+        const { data, error } = await supabase
+          .from("org_external_sources" as any)
+          .insert(insertPayload)
+          .select("id")
+          .single();
+        if (error) throw error;
+        sourceId = (data as any).id;
+      } else if (target.kind === "website" && (target.existing.news_path ?? "") !== newsPath.trim()) {
+        await supabase
+          .from("org_external_sources" as any)
+          .update({ news_path: newsPath.trim() || null })
+          .eq("id", sourceId);
+      }
+      const { error: fnErr } = await supabase.functions.invoke("sync-external-source", { body: { source_id: sourceId } });
+      if (fnErr) throw fnErr;
+      toast.success("تمت المزامنة بنجاح");
+      await loadSources();
+    } catch (e: any) {
+      toast.error("تعذّرت المزامنة: " + (e?.message || ""));
+    } finally {
+      setSyncingKey(null);
+    }
+  };
+
+  const syncAll = async () => {
+    for (const t of syncTargets) {
+      await syncOne(t);
+    }
+  };
+
   const brand = useMemo(() => ({
     primary: form.primary_color || "#0F766E",
     secondary: form.secondary_color || "#0E7490",
