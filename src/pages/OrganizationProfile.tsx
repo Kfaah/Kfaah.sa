@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target } from "lucide-react";
+import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target, RefreshCcw, Radar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,18 @@ export default function OrganizationProfile() {
   const [extracting, setExtracting] = useState(false);
   const [analysis, setAnalysis] = useState<Record<string, unknown> | null>(null);
   const [lastAnalyzed, setLastAnalyzed] = useState<string | null>(null);
+  const [sources, setSources] = useState<any[]>([]);
+  const [syncingKey, setSyncingKey] = useState<string | null>(null);
+  const [newsPath, setNewsPath] = useState("");
+
+  const loadSources = async () => {
+    if (!orgId) return;
+    const { data } = await supabase
+      .from("org_external_sources" as any)
+      .select("*")
+      .eq("organization_id", orgId);
+    setSources(((data as any) || []));
+  };
 
   useEffect(() => {
     if (!orgId) return;
@@ -78,6 +90,7 @@ export default function OrganizationProfile() {
         setAnalysis((p.ai_analysis as Record<string, unknown>) || null);
         setLastAnalyzed(p.last_analyzed_at);
       }
+    await loadSources();
       setLoading(false);
     })();
   }, [orgId]);
@@ -140,6 +153,83 @@ export default function OrganizationProfile() {
     setAnalysis(data.analysis);
     setLastAnalyzed(new Date().toISOString());
     toast.success("اكتمل التحليل بنجاح");
+  };
+
+  const KIND_LABEL: Record<string, string> = {
+    website: "الموقع الإلكتروني", store: "المتجر / صفحة التبرع",
+    twitter: "تويتر / X", instagram: "إنستغرام", tiktok: "تيك توك",
+    snapchat: "سناب شات", youtube: "يوتيوب", facebook: "فيسبوك", linkedin: "لينكدإن",
+  };
+
+  // Build the list of syncable channels from the profile fields
+  const syncTargets = useMemo(() => {
+    const map: { key: keyof ProfileForm; kind: string }[] = [
+      { key: "website_url", kind: "website" },
+      { key: "store_url", kind: "store" },
+      { key: "twitter_url", kind: "twitter" },
+      { key: "instagram_url", kind: "instagram" },
+      { key: "tiktok_url", kind: "tiktok" },
+      { key: "snapchat_url", kind: "snapchat" },
+      { key: "youtube_url", kind: "youtube" },
+      { key: "facebook_url", kind: "facebook" },
+      { key: "linkedin_url", kind: "linkedin" },
+    ];
+    return map
+      .filter((t) => (form[t.key] || "").trim().length > 0)
+      .map((t) => {
+        const url = form[t.key].trim();
+        const existing = sources.find((s) => s.kind === t.kind && s.url === url);
+        return { ...t, url, existing };
+      });
+  }, [form, sources]);
+
+  const websiteSource = sources.find((s) => s.kind === "website");
+  useEffect(() => {
+    setNewsPath(websiteSource?.news_path ?? "");
+  }, [websiteSource?.id]);
+
+  const syncOne = async (target: { kind: string; url: string; existing: any }) => {
+    if (!orgId) return;
+    const key = `${target.kind}:${target.url}`;
+    setSyncingKey(key);
+    try {
+      let sourceId = target.existing?.id as string | undefined;
+      if (!sourceId) {
+        const insertPayload: any = {
+          organization_id: orgId,
+          kind: target.kind,
+          url: target.url,
+          label: KIND_LABEL[target.kind] || target.kind,
+        };
+        if (target.kind === "website" && newsPath.trim()) insertPayload.news_path = newsPath.trim();
+        const { data, error } = await supabase
+          .from("org_external_sources" as any)
+          .insert(insertPayload)
+          .select("id")
+          .single();
+        if (error) throw error;
+        sourceId = (data as any).id;
+      } else if (target.kind === "website" && (target.existing.news_path ?? "") !== newsPath.trim()) {
+        await supabase
+          .from("org_external_sources" as any)
+          .update({ news_path: newsPath.trim() || null })
+          .eq("id", sourceId);
+      }
+      const { error: fnErr } = await supabase.functions.invoke("sync-external-source", { body: { source_id: sourceId } });
+      if (fnErr) throw fnErr;
+      toast.success("تمت المزامنة بنجاح");
+      await loadSources();
+    } catch (e: any) {
+      toast.error("تعذّرت المزامنة: " + (e?.message || ""));
+    } finally {
+      setSyncingKey(null);
+    }
+  };
+
+  const syncAll = async () => {
+    for (const t of syncTargets) {
+      await syncOne(t);
+    }
   };
 
   const brand = useMemo(() => ({
@@ -320,6 +410,90 @@ export default function OrganizationProfile() {
             {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {analyzing ? "جاري التحليل..." : "تحليل ذكي شامل"}
           </Button>
+        </Card>
+
+        {/* 6) Periodic external sources sync */}
+        <Card className="p-6">
+          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h2 className="font-bold text-lg flex items-center gap-2">
+                <Radar className="w-5 h-5 text-primary" /> المزامنة الدورية للمصادر الخارجية
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                النظام يقرأ روابط الجمعية أعلاه (الموقع، المتجر، حسابات التواصل) ويستخرج المحتوى تلقائياً لإثراء التقارير والتحليلات.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={syncAll}
+              disabled={syncTargets.length === 0 || syncingKey !== null}
+              className="gap-2"
+            >
+              <RefreshCcw className={`w-4 h-4 ${syncingKey ? "animate-spin" : ""}`} />
+              مزامنة الكل
+            </Button>
+          </div>
+
+          {form.website_url && (
+            <div className="mb-4 p-3 rounded-lg border bg-muted/30 space-y-2">
+              <Label className="text-xs">مسار قسم الأخبار في الموقع (اختياري)</Label>
+              <Input
+                dir="ltr"
+                placeholder="/news أو /articles"
+                value={newsPath}
+                onChange={(e) => setNewsPath(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                اتركه فارغاً ليُكتشف القسم تلقائياً (news / articles / media / blog / أخبار…).
+              </p>
+            </div>
+          )}
+
+          {syncTargets.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              أضف الموقع أو حسابات التواصل أعلاه لتفعيل المزامنة.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {syncTargets.map((t) => {
+                const key = `${t.kind}:${t.url}`;
+                const isSyncing = syncingKey === key;
+                const last = t.existing?.last_synced_at;
+                const status = t.existing?.last_status;
+                return (
+                  <div key={key} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="text-[10px]">{KIND_LABEL[t.kind] || t.kind}</Badge>
+                        <a href={t.url} target="_blank" rel="noreferrer" dir="ltr" className="text-xs text-primary hover:underline truncate">
+                          {t.url}
+                        </a>
+                      </div>
+                      {last && (
+                        <div className="text-[11px] text-muted-foreground mt-1">
+                          آخر مزامنة: {new Date(last).toLocaleString("ar-SA-u-nu-latn")}
+                          {status && <span> · {status}</span>}
+                        </div>
+                      )}
+                      {t.existing?.summary && (
+                        <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{t.existing.summary}</div>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => syncOne(t)}
+                      disabled={isSyncing}
+                      className="gap-1.5 flex-shrink-0"
+                    >
+                      {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCcw className="w-3.5 h-3.5" />}
+                      مزامنة
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </Card>
 
         {analysis && (
