@@ -14,6 +14,7 @@ import CampaignWorkspace from "./CampaignWorkspace";
 import SeasonalCalendar from "./SeasonalCalendar";
 import MarketingRadar from "./MarketingRadar";
 import MarketingAcademy from "./MarketingAcademy";
+import CampaignWizard from "./CampaignWizard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Radar as RadarIcon, GraduationCap } from "lucide-react";
 
@@ -57,10 +58,9 @@ const PLATFORM_LABEL: Record<string, string> = {
 export default function MarketingHub({ orgId }: { orgId: string }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -74,52 +74,6 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
   };
 
   useEffect(() => { if (orgId) load(); }, [orgId]);
-
-  const generateSuggestions = async () => {
-    setGenerating(true);
-    setSuggestions([]);
-    try {
-      const { data, error } = await supabase.functions.invoke("marketing-suggest-campaigns", {
-        body: { organization_id: orgId },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      const list = data?.campaigns ?? [];
-      setSuggestions(list);
-      toast.success(`تم اقتراح ${list.length} حملة`);
-    } catch (e: any) {
-      toast.error(`فشل التوليد: ${e.message ?? e}`);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const acceptSuggestion = async (s: any) => {
-    const startDate = new Date();
-    const endDate = new Date(); endDate.setDate(endDate.getDate() + (s.duration_days ?? 30));
-    const { error } = await supabase.from("marketing_campaigns").insert({
-      organization_id: orgId,
-      name: s.name,
-      goal: s.goal,
-      audience_segment: s.audience_segment,
-      season_key: s.season_key ?? null,
-      related_project: s.related_project ?? null,
-      primary_message: s.primary_message,
-      content_angles: s.content_angles ?? [],
-      platforms: s.platforms ?? [],
-      budget_planned: s.budget_planned ?? 0,
-      start_date: startDate.toISOString().slice(0, 10),
-      end_date: endDate.toISOString().slice(0, 10),
-      expected_kpis: s.expected_kpis ?? {},
-      status: "planned",
-      ai_generated: true,
-      ai_metadata: { drafts: s.drafts ?? {}, design_brief: s.design_brief ?? "", rationale: s.rationale ?? "" },
-    });
-    if (error) { toast.error("فشل الحفظ"); return; }
-    toast.success(`تم إنشاء حملة: ${s.name}`);
-    setSuggestions((prev) => prev.filter((x) => x !== s));
-    load();
-  };
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -136,9 +90,8 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
           <Button variant="outline" onClick={() => setCreateOpen(true)} className="gap-2">
             <Plus className="h-4 w-4" /> حملة يدوية
           </Button>
-          <Button onClick={generateSuggestions} disabled={generating} className="gap-2 shadow-md">
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {generating ? "جاري التحليل..." : "اقترح حملات بالذكاء"}
+          <Button onClick={() => setWizardOpen(true)} className="gap-2 shadow-md" size="lg">
+            <Wand2 className="h-4 w-4" /> ابدأ حملة جديدة
           </Button>
         </div>
       </div>
@@ -152,56 +105,6 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
         </TabsList>
 
         <TabsContent value="campaigns" className="space-y-6 mt-6">
-      {/* AI Suggestions */}
-      {suggestions.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Wand2 className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">حملات مقترحة بالذكاء الاصطناعي</h3>
-            <Badge variant="secondary">{suggestions.length}</Badge>
-          </div>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {suggestions.map((s, idx) => (
-              <Card key={idx} className="border-primary/30 bg-primary/5">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <CardTitle className="text-base">{s.name}</CardTitle>
-                      <CardDescription className="mt-1">{s.goal}</CardDescription>
-                    </div>
-                    <Button size="sm" onClick={() => acceptSuggestion(s)} className="gap-1">
-                      <CheckCircle2 className="h-4 w-4" /> اعتمد
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline">{s.audience_segment}</Badge>
-                    {s.season_key && <Badge variant="outline">موسم: {s.season_key}</Badge>}
-                    {s.budget_planned ? <Badge variant="outline">{s.budget_planned} ر.س</Badge> : null}
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {(s.platforms ?? []).map((p: string) => (
-                      <Badge key={p} className="bg-secondary text-secondary-foreground">{PLATFORM_LABEL[p] ?? p}</Badge>
-                    ))}
-                  </div>
-                  <p className="rounded-md bg-background/60 p-2 leading-relaxed"><strong>الرسالة:</strong> {s.primary_message}</p>
-                  {s.content_angles?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground">زوايا المحتوى:</p>
-                      <ul className="list-disc pr-5 text-xs">
-                        {s.content_angles.map((a: string, i: number) => <li key={i}>{a}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                  {s.rationale && <p className="text-xs text-muted-foreground"><strong>لماذا هذه الحملة:</strong> {s.rationale}</p>}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Campaign list */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
@@ -211,10 +114,22 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
         {loading ? (
           <p className="text-center py-8 text-muted-foreground text-sm">جاري التحميل...</p>
         ) : campaigns.length === 0 ? (
-          <Card><CardContent className="p-12 text-center text-muted-foreground">
-            <Megaphone className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>لا توجد حملات بعد. اضغط <strong>اقترح حملات بالذكاء</strong> لتوليد حملات احترافية من بياناتك.</p>
-          </CardContent></Card>
+          <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
+            <CardContent className="p-12 text-center space-y-4">
+              <div className="inline-flex rounded-full bg-primary/15 p-4 text-primary">
+                <Wand2 className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-lg">لنطلق حملتك الأولى</h4>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  المعالج الذكي يقودك خطوة بخطوة — فقط 5 خطوات بسيطة وحملتك جاهزة بمحتوى وتصميم ومهام
+                </p>
+              </div>
+              <Button onClick={() => setWizardOpen(true)} size="lg" className="gap-2 shadow-md">
+                <Wand2 className="h-4 w-4" /> ابدأ المعالج الآن
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
             {campaigns.map((c) => (
@@ -275,6 +190,13 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
         onOpenChange={(v) => { if (!v) setWorkspaceId(null); }}
         onChanged={load}
       />
+      {wizardOpen && (
+        <CampaignWizard
+          orgId={orgId}
+          onClose={() => setWizardOpen(false)}
+          onCreated={(id) => { setWizardOpen(false); load(); setWorkspaceId(id); }}
+        />
+      )}
     </div>
   );
 }
