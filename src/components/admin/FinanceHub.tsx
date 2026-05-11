@@ -1085,7 +1085,7 @@ function ExternalSourcesView({ orgId, onBack }: { orgId: string; onBack: () => v
             </div>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            مزامنة مواقع الويب فعّالة الآن. حسابات السوشيال (تويتر/إنستجرام) ستُفعّل قريباً.
+            يدعم النظام الآن مزامنة الموقع الإلكتروني وحسابات السوشيال العامة (تويتر/X، إنستجرام، فيسبوك، لينكدإن، يوتيوب، تيك توك). تأكد أن الصفحة عامة بدون تسجيل دخول.
           </p>
         </CardContent>
       </Card>

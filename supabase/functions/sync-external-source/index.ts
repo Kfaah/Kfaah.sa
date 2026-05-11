@@ -19,21 +19,24 @@ Deno.serve(async (req) => {
     const { data: src } = await supa.from("org_external_sources").select("*").eq("id", source_id).maybeSingle();
     if (!src) return new Response(JSON.stringify({ error: "source_not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    if (src.kind !== "website") {
-      await supa.from("org_external_sources").update({ last_status: "social_not_supported_yet", last_synced_at: new Date().toISOString() }).eq("id", source_id);
-      return new Response(JSON.stringify({ ok: true, note: "social_not_supported_yet" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
     if (!FIRECRAWL_API_KEY) {
       await supa.from("org_external_sources").update({ last_status: "firecrawl_not_configured", last_synced_at: new Date().toISOString() }).eq("id", source_id);
       return new Response(JSON.stringify({ error: "firecrawl_not_configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Scrape main page in markdown
+    // Scrape any public URL (website OR public social profile/page) via Firecrawl.
+    // Social platforms (twitter/instagram/facebook/linkedin/youtube/tiktok) render dynamically,
+    // so we wait briefly for hydration before extraction.
+    const isSocial = src.kind !== "website";
     const fcResp = await fetch("https://api.firecrawl.dev/v2/scrape", {
       method: "POST",
       headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ url: src.url, formats: ["markdown", "summary"], onlyMainContent: true }),
+      body: JSON.stringify({
+        url: src.url,
+        formats: ["markdown", "summary"],
+        onlyMainContent: !isSocial,
+        waitFor: isSocial ? 3500 : 0,
+      }),
     });
     const fcData = await fcResp.json();
     if (!fcResp.ok) {
@@ -43,15 +46,27 @@ Deno.serve(async (req) => {
     const markdown: string = fcData?.markdown || fcData?.data?.markdown || "";
     const summary: string = fcData?.summary || fcData?.data?.summary || "";
 
-    // Use AI to extract structured insights
+    // AI extraction — adapt prompt to source kind so social posts get parsed as posts/engagement
+    const sysByKind: Record<string, string> = {
+      website: "أنت محلل محتوى لجمعيات خيرية. تستخرج الأخبار والفعاليات والإحصائيات والبرامج من محتوى الموقع.",
+      twitter: "أنت محلل محتوى سوشيال ميديا. تستخرج التغريدات الأخيرة والإعلانات والحملات والإحصائيات (متابعون/تفاعل) من صفحة حساب على X/Twitter.",
+      instagram: "أنت محلل محتوى سوشيال ميديا. تستخرج المنشورات الأخيرة والحملات والإحصائيات (متابعون/تفاعل) من صفحة حساب على إنستجرام.",
+      facebook: "أنت محلل محتوى سوشيال ميديا. تستخرج المنشورات والفعاليات والإعلانات من صفحة فيسبوك للجمعية.",
+      linkedin: "أنت محلل محتوى سوشيال ميديا. تستخرج المنشورات المهنية والشراكات والإنجازات من صفحة لينكدإن.",
+      youtube: "أنت محلل محتوى سوشيال ميديا. تستخرج آخر الفيديوهات وعناوينها وعدد المشاهدات من قناة يوتيوب.",
+      tiktok: "أنت محلل محتوى سوشيال ميديا. تستخرج آخر الفيديوهات والحملات من حساب تيك توك.",
+    };
+    const allowedCats = isSocial
+      ? ["post","campaign","statistic","event","general"]
+      : ["news","event","statistic","program","general"];
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "أنت محلل محتوى لجمعيات خيرية. تستخرج الأخبار والفعاليات والإحصائيات والبرامج من محتوى الموقع." },
-          { role: "user", content: `استخرج كل العناصر المهمة من محتوى موقع الجمعية:\n\n${markdown.slice(0, 12000)}` },
+          { role: "system", content: sysByKind[src.kind] || sysByKind.website },
+          { role: "user", content: `المصدر: ${src.kind} — ${src.url}\nاستخرج كل العناصر المهمة من المحتوى التالي:\n\n${markdown.slice(0, 12000)}` },
         ],
         tools: [{
           type: "function",
@@ -65,7 +80,7 @@ Deno.serve(async (req) => {
                   items: {
                     type: "object",
                     properties: {
-                      category: { type: "string", enum: ["news","event","statistic","program","general"] },
+                      category: { type: "string", enum: allowedCats },
                       title: { type: "string" },
                       description: { type: "string" },
                       occurred_at: { type: ["string","null"], description: "YYYY-MM-DD or null" },
