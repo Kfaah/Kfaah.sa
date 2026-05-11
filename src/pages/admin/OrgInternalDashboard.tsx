@@ -1768,6 +1768,7 @@ function ReportsLandingCard({
   const tones = {
     slate: {
       border: "border-[#bfdbfe] hover:border-[#93c5fd]",
+      bg: "bg-gradient-to-br from-[#eff6ff] via-[#dbeafe] to-[#bfdbfe]",
       iconWrap: "bg-[#dbeafe] text-[#1d4ed8] ring-1 ring-[#bfdbfe]",
       title: "text-[#0f172a]",
       desc: "text-[#475569]",
@@ -1776,6 +1777,7 @@ function ReportsLandingCard({
     },
     emerald: {
       border: "border-[#bbf7d0] hover:border-[#86efac]",
+      bg: "bg-gradient-to-br from-[#ecfdf5] via-[#dcfce7] to-[#bbf7d0]",
       iconWrap: "bg-[#dcfce7] text-[#047857] ring-1 ring-[#bbf7d0]",
       title: "text-[#0f172a]",
       desc: "text-[#475569]",
@@ -1788,8 +1790,9 @@ function ReportsLandingCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border bg-white p-7 text-right shadow-sm transition hover:shadow-lg hover:-translate-y-0.5",
-        tones.border
+        "group relative overflow-hidden rounded-2xl border p-7 text-right shadow-sm transition hover:shadow-lg hover:-translate-y-0.5",
+        tones.border,
+        tones.bg
       )}
     >
       <div className="relative z-10 flex items-start justify-between gap-4">
