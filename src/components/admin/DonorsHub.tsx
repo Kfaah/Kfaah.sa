@@ -369,6 +369,15 @@ export function DonorsHub({ orgId }: { orgId: string }) {
             />
           )}
           {active === "intelligence" && <IntelligencePanel orgId={orgId} brand={brand} />}
+          {active !== "elite" && active !== "intelligence" && (
+            <div className="mt-6">
+              <PanelAIInsights
+                panelKey={active}
+                panelLabel={SUB_TABS.find((t) => t.key === active)?.label || active}
+                payload={buildPanelContext(active, { donations, donors, campaigns, failed, abandoned, subs, gifts })}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
