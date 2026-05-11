@@ -102,7 +102,7 @@ const adminNavItems: NavItem[] = [
   { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "nav-icon-performance", description: "تقييم أداء الموظفين والإدارات بناءً على نسب الإنجاز والجودة ومؤشرات قابلة للقياس." },
   { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations", description: "خطط تشغيلية مولّدة آلياً انطلاقاً من توصيات التحليل الذكي ونتائج التقييم." },
   { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير تفصيلية قابلة للتصدير (PDF / Excel / Word) عن الأداء والخطط والمشاريع." },
-  { title: "الابتكار والتحديث", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "بنك الأفكار والمبادرات الابتكارية وتطوير الخدمات بمساعدة الذكاء الاصطناعي." },
+  { title: "الابتكار والتجديد", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "بنك الأفكار والمبادرات الابتكارية وتطوير الخدمات بمساعدة الذكاء الاصطناعي." },
 ];
 
 const managerNavItems: NavItem[] = [
@@ -124,7 +124,7 @@ const employeeNavItems: NavItem[] = [
   { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: "nav-icon-performance", description: "نتائج تقييم أدائك الشخصي ونسب الإنجاز والجودة." },
   { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: "nav-icon-analysis", description: "متابعة المساءلات الموجَّهة إليك وتحليل أسبابها للتحسين." },
   { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير شخصية قابلة للتصدير عن إنجازاتك ومهامك." },
-  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "اقترح أفكاراً ومبادرات لتطوير عمل الجمعية." },
+  { title: "الابتكار والتجديد", href: "/innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "اقترح أفكاراً ومبادرات لتطوير عمل الجمعية." },
 ];
 
 const settingsNavItem: NavItem = {

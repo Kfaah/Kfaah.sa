@@ -49,7 +49,7 @@ export function exportInnovationPpt(items: InnovationItem[], orgName: string) {
   cover.addShape("rect", { x: 0, y: 6.6, w: 13.33, h: 0.15, fill: { color: GOLD } });
   cover.addShape("rect", { x: 0, y: 0, w: 13.33, h: 0.15, fill: { color: GOLD } });
 
-  cover.addText("خطة الابتكار والتحديث", {
+  cover.addText("خطة الابتكار والتجديد", {
     x: 0.6, y: 2.0, w: 12.1, h: 1.0,
     fontSize: 54, bold: true, color: WHITE, align: "right", fontFace: "Cairo",
   });

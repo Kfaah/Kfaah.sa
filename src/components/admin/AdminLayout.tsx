@@ -34,7 +34,7 @@ const navItems = [
   { to: "/admin/reports", label: "التقارير", icon: FileBarChart2, end: false,
     desc: "تقارير موضوعية وتنفيذية سردية",
     color: ICON_COLOR, bg: "bg-gradient-to-br from-rose-400 to-pink-600", ring: "ring-rose-400/40" },
-  { to: "/admin/innovation", label: "الابتكار والتحديث", icon: Lightbulb, end: false,
+  { to: "/admin/innovation", label: "الابتكار والتجديد", icon: Lightbulb, end: false,
     desc: "أفكار AI ابتكارية ونقاش تفاعلي",
     color: ICON_COLOR, bg: "bg-gradient-to-br from-amber-400 to-orange-500", ring: "ring-amber-400/40" },
 ];
