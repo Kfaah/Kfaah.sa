@@ -19,9 +19,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        // Ignore TOKEN_REFRESHED / USER_UPDATED that happen when the tab regains
+        // focus — they cause a full app re-render that feels like a reload.
+        // Only react when the actual user identity changes.
+        setSession((prev) => {
+          const sameUser = prev?.user?.id === newSession?.user?.id;
+          if (sameUser && event !== "SIGNED_OUT" && event !== "SIGNED_IN") {
+            return prev;
+          }
+          return newSession;
+        });
+        setUser((prev) => {
+          const nextUser = newSession?.user ?? null;
+          if (prev?.id === nextUser?.id && event !== "SIGNED_OUT" && event !== "SIGNED_IN") {
+            return prev;
+          }
+          return nextUser;
+        });
         setLoading(false);
       }
     );
