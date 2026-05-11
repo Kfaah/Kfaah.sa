@@ -167,6 +167,8 @@ function ReportView({
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>("all");
   const [amountFrom, setAmountFrom] = useState<string>("");
   const [amountTo, setAmountTo] = useState<string>("");
+  const [giftStatus, setGiftStatus] = useState<string>("all");
+  const [projectFilter, setProjectFilter] = useState<string>("all");
   const [period, setPeriod] = useState<DatePeriod>("this_month");
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
@@ -206,8 +208,21 @@ function ReportView({
         return v >= lo && v <= hi;
       });
     }
+    if (reportKey === "gifts" && giftStatus !== "all") {
+      out = out.filter(r => r._statusKey === giftStatus);
+    }
+    if (reportKey === "project_donors" && projectFilter !== "all") {
+      out = out.filter(r => r["المشروع"] === projectFilter);
+    }
     return out;
-  }, [rows, tier, campaignStatus, subscriptionStatus, amountFrom, amountTo, reportKey]);
+  }, [rows, tier, campaignStatus, subscriptionStatus, amountFrom, amountTo, giftStatus, projectFilter, reportKey]);
+
+  const projectOptions = useMemo(() => {
+    if (reportKey !== "project_donors") return [] as string[];
+    const set = new Set<string>();
+    rows.forEach(r => { if (r["المشروع"]) set.add(r["المشروع"]); });
+    return Array.from(set).sort();
+  }, [rows, reportKey]);
 
   const aggregates = useMemo(() => computeAggregates(reportKey, filtered), [reportKey, filtered]);
 
@@ -362,6 +377,34 @@ ${a.rationale}
               <SelectItem value="active">مستمر / نشط</SelectItem>
               <SelectItem value="paused">متذبذب / متوقف مؤقتًا</SelectItem>
               <SelectItem value="cancelled">منقطع / ملغى</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {reportKey === "gifts" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">حالة التسليم:</span>
+          <Select value={giftStatus} onValueChange={setGiftStatus}>
+            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">الكل</SelectItem>
+              <SelectItem value="delivered">تم التسليم</SelectItem>
+              <SelectItem value="pending">قيد التسليم</SelectItem>
+              <SelectItem value="failed">فشل التسليم</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {reportKey === "project_donors" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">المشروع:</span>
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
+            <SelectContent className="max-h-[320px]">
+              <SelectItem value="all">جميع المشاريع</SelectItem>
+              {projectOptions.map(p => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
