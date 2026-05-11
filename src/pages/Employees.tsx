@@ -72,6 +72,7 @@ const getPerformanceBarColor = (performance: number) => {
 const Employees = () => {
   const navigate = useNavigate();
   const { setPreviewingEmployee } = useUser();
+  const { currentOrg } = useOrganization();
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
