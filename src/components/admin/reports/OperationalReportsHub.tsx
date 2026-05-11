@@ -36,7 +36,7 @@ const REPORTS: ReportDef[] = [
   { key: "project_donors", title: "متبرعو المشاريع", subtitle: "متبرعو الزكاة/الأوقاف/المشاريع وتقارير الإرسال", icon: Target, color: "from-orange-500 to-red-600" },
 ];
 
-const fmt = (n: number) => new Intl.NumberFormat("ar-SA").format(Math.round(n || 0));
+const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n || 0));
 const sar = (n: number) => `${fmt(n)} ر.س`;
 
 const CHANNEL_LABEL: Record<string, { label: string; icon: any }> = {
@@ -443,7 +443,7 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
           الجوال: d.phone,
           "إجمالي التبرعات": sar(t),
           "عدد التبرعات": d.donations_count || 0,
-          "آخر تبرع": d.last_donation_at ? new Date(d.last_donation_at).toLocaleDateString("ar-SA") : "—",
+          "آخر تبرع": d.last_donation_at ? new Date(d.last_donation_at).toLocaleDateString("en-GB") : "—",
         };
       });
     }
