@@ -136,6 +136,11 @@ export default function AdminOverview() {
           <h3 className="text-foreground font-bold mb-1">توزيع المتبرعين</h3>
           <p className="text-muted-foreground text-xs mb-4">حصة كل جمعية</p>
 
+          {donorsDist.length === 0 ? (
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
+              لا توجد بيانات متبرعين بعد
+            </div>
+          ) : (
           <div className="flex items-center gap-5" style={{ direction: "ltr" }}>
             {/* قائمة الجمعيات على اليسار */}
             <div className="flex-1 min-w-0 space-y-2 order-1">
@@ -177,6 +182,7 @@ export default function AdminOverview() {
               <NumberedDonut data={donorsDist} colors={PIE_COLORS} />
             </div>
           </div>
+          )}
         </Card>
       </div>
 
