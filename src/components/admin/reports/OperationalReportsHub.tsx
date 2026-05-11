@@ -87,10 +87,18 @@ interface AIResult {
   actions: AISuggestion[];
 }
 
-interface Props { orgId: string; embedded?: boolean }
+interface Props {
+  orgId: string;
+  embedded?: boolean;
+  onActiveReportChange?: (active: boolean) => void;
+}
 
-export default function OperationalReportsHub({ orgId, embedded = false }: Props) {
+export default function OperationalReportsHub({ orgId, embedded = false, onActiveReportChange }: Props) {
   const [activeReport, setActiveReport] = useState<ReportKey | null>(null);
+
+  useEffect(() => {
+    onActiveReportChange?.(activeReport !== null);
+  }, [activeReport, onActiveReportChange]);
 
   return (
     <div className="space-y-6" dir="rtl">
