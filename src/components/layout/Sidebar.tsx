@@ -539,7 +539,7 @@ export function Sidebar() {
                 <div className="w-44 h-44 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
-                  src={isSawabOrg ? SAWAB_SIDEBAR_LOGO : isAtefOrg ? atefLogoIcon : branding.logoUrl}
+                  src={isSawabOrg ? SAWAB_SIDEBAR_LOGO : isAtefOrg ? atefLogoIcon : isRiyadahOrg ? "/riyadah-logo.png" : branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
                   className={cn(
                     "object-contain drop-shadow-xl",
@@ -552,7 +552,7 @@ export function Sidebar() {
                           : isAwonOrg
                             ? "h-[150px] w-[150px] scale-100"
                             : isRiyadahOrg
-                              ? "h-[150px] w-[150px] scale-100"
+                              ? "h-[170px] w-[170px] scale-100"
                               : isTadabburOrg
                                 ? "h-[140px] w-[140px] scale-100"
                                 : "h-[210px] w-[210px] scale-125"
