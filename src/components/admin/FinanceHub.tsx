@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { Wallet, Plus, Receipt, Settings as Cog, Building2, Save, Trash2, Eye, Sparkles, ArrowRight, FileSpreadsheet, FileText, Globe, RefreshCcw, Lightbulb, CheckCircle2, Clock, Mail, Loader2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { exportDonorThankYouDocx, exportDonorTransparencyPdf } from "@/utils/exportDonorReport";
+import { exportSmartReportPdf } from "@/utils/exportSmartReport";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -871,6 +872,7 @@ function SmartReportsView({ orgId, onBack }: { orgId: string; onBack: () => void
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [buildingId, setBuildingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -898,6 +900,23 @@ function SmartReportsView({ orgId, onBack }: { orgId: string; onBack: () => void
       toast.error("تعذّر التوليد: " + (e.message || ""));
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const buildReport = async (suggestion: any) => {
+    setBuildingId(suggestion.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-smart-report", {
+        body: { suggestion_id: suggestion.id, organization_id: orgId },
+      });
+      if (error) throw error;
+      if (!data?.report) throw new Error("empty");
+      await exportSmartReportPdf(data as any);
+      toast.success("تم إنشاء التقرير");
+    } catch (e: any) {
+      toast.error("تعذّر إنشاء التقرير: " + (e.message || ""));
+    } finally {
+      setBuildingId(null);
     }
   };
 
@@ -963,8 +982,9 @@ function SmartReportsView({ orgId, onBack }: { orgId: string; onBack: () => void
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Sparkles className="h-3 w-3" /> أولوية {s.priority}/10
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => toast.info("سيتم توفير توليد هذا التقرير قريباً")}>
-                    إنشاء التقرير
+                  <Button size="sm" variant="outline" disabled={buildingId === s.id} onClick={() => buildReport(s)}>
+                    {buildingId === s.id ? <Loader2 className="ml-2 h-3 w-3 animate-spin" /> : <FileText className="ml-2 h-3 w-3" />}
+                    إنشاء التقرير PDF
                   </Button>
                 </div>
               </CardContent>
