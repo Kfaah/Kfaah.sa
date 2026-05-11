@@ -1768,7 +1768,7 @@ function ReportsLandingCard({
   const tones = {
     slate: {
       border: "border-transparent",
-      bg: "bg-gradient-to-l from-[#22c55e] via-[#06b6d4] to-[#0284c7]",
+      bg: "bg-gradient-to-l from-[#8cc63f] via-[#00b8cc] to-[#0098b3]",
       iconWrap: "bg-white/20 text-white ring-1 ring-white/30 backdrop-blur",
       title: "text-white",
       desc: "text-white/85",
@@ -1777,7 +1777,7 @@ function ReportsLandingCard({
     },
     emerald: {
       border: "border-transparent",
-      bg: "bg-gradient-to-l from-[#22c55e] via-[#06b6d4] to-[#0284c7]",
+      bg: "bg-gradient-to-l from-[#8cc63f] via-[#00b8cc] to-[#0098b3]",
       iconWrap: "bg-white/20 text-white ring-1 ring-white/30 backdrop-blur",
       title: "text-white",
       desc: "text-white/85",
