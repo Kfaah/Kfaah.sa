@@ -412,6 +412,90 @@ export default function OrganizationProfile() {
           </Button>
         </Card>
 
+        {/* 6) Periodic external sources sync */}
+        <Card className="p-6">
+          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h2 className="font-bold text-lg flex items-center gap-2">
+                <Radar className="w-5 h-5 text-primary" /> المزامنة الدورية للمصادر الخارجية
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                النظام يقرأ روابط الجمعية أعلاه (الموقع، المتجر، حسابات التواصل) ويستخرج المحتوى تلقائياً لإثراء التقارير والتحليلات.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={syncAll}
+              disabled={syncTargets.length === 0 || syncingKey !== null}
+              className="gap-2"
+            >
+              <RefreshCcw className={`w-4 h-4 ${syncingKey ? "animate-spin" : ""}`} />
+              مزامنة الكل
+            </Button>
+          </div>
+
+          {form.website_url && (
+            <div className="mb-4 p-3 rounded-lg border bg-muted/30 space-y-2">
+              <Label className="text-xs">مسار قسم الأخبار في الموقع (اختياري)</Label>
+              <Input
+                dir="ltr"
+                placeholder="/news أو /articles"
+                value={newsPath}
+                onChange={(e) => setNewsPath(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                اتركه فارغاً ليُكتشف القسم تلقائياً (news / articles / media / blog / أخبار…).
+              </p>
+            </div>
+          )}
+
+          {syncTargets.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              أضف الموقع أو حسابات التواصل أعلاه لتفعيل المزامنة.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {syncTargets.map((t) => {
+                const key = `${t.kind}:${t.url}`;
+                const isSyncing = syncingKey === key;
+                const last = t.existing?.last_synced_at;
+                const status = t.existing?.last_status;
+                return (
+                  <div key={key} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="text-[10px]">{KIND_LABEL[t.kind] || t.kind}</Badge>
+                        <a href={t.url} target="_blank" rel="noreferrer" dir="ltr" className="text-xs text-primary hover:underline truncate">
+                          {t.url}
+                        </a>
+                      </div>
+                      {last && (
+                        <div className="text-[11px] text-muted-foreground mt-1">
+                          آخر مزامنة: {new Date(last).toLocaleString("ar-SA-u-nu-latn")}
+                          {status && <span> · {status}</span>}
+                        </div>
+                      )}
+                      {t.existing?.summary && (
+                        <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{t.existing.summary}</div>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => syncOne(t)}
+                      disabled={isSyncing}
+                      className="gap-1.5 flex-shrink-0"
+                    >
+                      {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCcw className="w-3.5 h-3.5" />}
+                      مزامنة
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
         {analysis && (
           <Card className="p-6 border-primary/30 bg-gradient-to-bl from-primary/5 to-accent/5">
             <div className="flex items-center justify-between mb-4">
