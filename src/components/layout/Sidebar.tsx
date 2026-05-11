@@ -66,8 +66,8 @@ const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: string[] }> = [
   { match: /القصبة/, lines: ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بمركز القصبة"] },
   { match: /حرف/, lines: ["جمعية حرف التعليمية", ""] },
   { match: /التنمية الأهلية|العارضة.*تنمية|tanmiah/i, lines: ["جمعية التنمية الأهلية", "بمحافظة العارضة"] },
-  { match: /ريادة|riyadah/i, lines: ["جمعية ريادة", "للخدمات الإنسانية", "بمركز الحميراء"] },
-  { match: /تدبر|tadabbur|tdabar/i, lines: ["جمعية تدبر لتحفيظ", "القرآن الكريم", "بمركز الحميراء"] },
+  { match: /ريادة|riyadah/i, lines: ["جمعية ريادة للخدمات الإنسانية", "بمركز الحميراء"] },
+  { match: /تدبر|tadabbur|tdabar/i, lines: ["جمعية تدبر لتحفيظ القرآن الكريم", "بمركز الحميراء"] },
 ];
 
 function getShortOrgName(fullName: string): string[] | null {
@@ -581,7 +581,7 @@ export function Sidebar() {
                   if (short) {
                     return (
                        <div className={cn("drop-shadow-sm leading-tight", "text-white")}>
-                        <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
+                        <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : (isTadabburOrg || isRiyadahOrg) ? "text-sm" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
                         {short[1] && (
                           <p className={cn("font-semibold opacity-95 whitespace-nowrap", "text-sm")}>{short[1]}</p>
                         )}
