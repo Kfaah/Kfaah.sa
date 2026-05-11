@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getArabicErrorMessage } from "@/lib/errors";
 import { useUser } from "@/contexts/UserContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Employee {
   id: string;
