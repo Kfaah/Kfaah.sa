@@ -206,6 +206,219 @@ function DateSelect({ value, onChange }: { value: DateValue; onChange: (v: DateV
     </div>
   );
 }
+
+/* =====================================================================
+   PanelAIInsights — رؤى الذكاء الاصطناعي القابلة للاستخدام في كل قسم
+   ===================================================================== */
+function buildPanelContext(
+  panel: SubKey,
+  data: { donations: any[]; donors: any[]; campaigns: any[]; failed: any[]; abandoned: any[]; subs: any[]; gifts: any[] },
+) {
+  const { donations, donors, campaigns, failed, abandoned, subs, gifts } = data;
+  const totalDonationsAmount = donations.reduce((s, d) => s + Number(d.amount || 0), 0);
+  const projectsCount = new Set(donations.map((d) => d.project_name).filter(Boolean)).size;
+  const topProjects = (() => {
+    const m = new Map<string, number>();
+    donations.forEach((d) => {
+      const k = d.project_name || "غير محدد";
+      m.set(k, (m.get(k) || 0) + Number(d.amount || 0));
+    });
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => ({ project: k, total: Math.round(v) }));
+  })();
+
+  const base = {
+    org_totals: {
+      donors_count: donors.length,
+      donations_count: donations.length,
+      donations_total: Math.round(totalDonationsAmount),
+      projects_count: projectsCount,
+    },
+    top_projects: topProjects,
+  };
+
+  switch (panel) {
+    case "overview":
+      return { ...base, summary: "نظرة عامة شاملة على أداء التبرعات" };
+    case "donors":
+      return {
+        ...base,
+        donors_segments: donors.reduce((acc: Record<string, number>, d: any) => {
+          const k = d.segment || "غير مصنف";
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {}),
+        avg_donations_per_donor: donors.length ? +(donations.length / donors.length).toFixed(2) : 0,
+      };
+    case "donations":
+      return {
+        ...base,
+        by_method: donations.reduce((acc: Record<string, number>, d: any) => {
+          const k = d.payment_method || "غير محدد";
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {}),
+        by_status: donations.reduce((acc: Record<string, number>, d: any) => {
+          const k = d.status || "غير محدد";
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {}),
+      };
+    case "top":
+      return {
+        ...base,
+        top_donors_anon: donors.slice(0, 30).map((d: any) => ({
+          total: Math.round(Number(d.total_donated || 0)),
+          count: d.donations_count,
+          segment: d.segment,
+          city: d.city,
+        })),
+      };
+    case "recurring":
+      return {
+        ...base,
+        recurring_count: donors.filter((d: any) => (d.donations_count || 0) >= 2).length,
+        avg_recurring_total: (() => {
+          const r = donors.filter((d: any) => (d.donations_count || 0) >= 2);
+          if (!r.length) return 0;
+          return Math.round(r.reduce((s: number, d: any) => s + Number(d.total_donated || 0), 0) / r.length);
+        })(),
+      };
+    case "subscriptions":
+      return {
+        ...base,
+        subs_count: subs.length,
+        subs_by_status: subs.reduce((acc: Record<string, number>, s: any) => {
+          const k = s.status || "غير محدد";
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {}),
+      };
+    case "campaigns":
+      return {
+        ...base,
+        campaigns_count: campaigns.length,
+        campaigns_by_status: campaigns.reduce((acc: Record<string, number>, c: any) => {
+          const k = c.status || "غير محدد";
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {}),
+      };
+    case "gifts":
+      return { ...base, gifts_count: gifts.length };
+    case "failed":
+      return {
+        ...base,
+        failed_count: failed.length,
+        failed_by_status: failed.reduce((acc: Record<string, number>, f: any) => {
+          const k = f.retry_status || f.status || "غير محدد";
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {}),
+      };
+    case "abandoned":
+      return {
+        ...base,
+        abandoned_count: abandoned.length,
+        abandoned_value: Math.round(abandoned.reduce((s: number, a: any) => s + Number(a.amount || 0), 0)),
+      };
+    default:
+      return base;
+  }
+}
+
+function PanelAIInsights({
+  panelKey,
+  panelLabel,
+  payload,
+}: {
+  panelKey: SubKey;
+  panelLabel: string;
+  payload: any;
+}) {
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiInsights, setAiInsights] = useState<any | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const generateAI = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    setAiInsights(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("donor-insights", {
+        body: { panel: panelKey, panel_label: panelLabel, context: payload },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setAiInsights(data);
+    } catch (e: any) {
+      const msg = e?.message || "تعذّر توليد الرؤى";
+      setAiError(msg);
+      toast.error(msg);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const copyText = (k: string, t: string) => {
+    navigator.clipboard.writeText(t).then(() => {
+      setCopiedKey(k);
+      toast.success("تم النسخ");
+      setTimeout(() => setCopiedKey(null), 1500);
+    });
+  };
+
+  return (
+    <div className="rounded-2xl border-2 border-violet-200 bg-gradient-to-bl from-violet-50 via-white to-fuchsia-50 p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ring-2 ring-violet-300/60 bg-gradient-to-br from-violet-600 to-fuchsia-600">
+            <Sparkles className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className="text-xl font-extrabold text-slate-900">رؤى الذكاء الاصطناعي · {panelLabel}</h3>
+            <p className="text-sm text-slate-600">اقتراحات إبداعية وتنفيذية مخصّصة لهذا القسم</p>
+          </div>
+        </div>
+        <Button
+          onClick={generateAI}
+          disabled={aiLoading}
+          className="bg-gradient-to-l from-violet-600 to-fuchsia-600 hover:opacity-90 text-white gap-2"
+        >
+          {aiLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> جاري التوليد…</> : <><Sparkles className="w-4 h-4" /> توليد اقتراحات إبداعية</>}
+        </Button>
+      </div>
+
+      {aiError && <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{aiError}</div>}
+
+      {aiInsights && (
+        <div className="mt-5 space-y-4">
+          {Array.isArray(aiInsights.segments) && aiInsights.segments.length > 0 && (
+            <InsightSection title="القطاعات والشرائح" items={aiInsights.segments} copy={copyText} copiedKey={copiedKey} prefix={`${panelKey}-seg`} color="violet" />
+          )}
+          {Array.isArray(aiInsights.retention_ideas) && (
+            <InsightSection title="أفكار الاحتفاظ والولاء" items={aiInsights.retention_ideas} copy={copyText} copiedKey={copiedKey} prefix={`${panelKey}-ret`} color="emerald" />
+          )}
+          {Array.isArray(aiInsights.creative_campaigns) && (
+            <InsightSection title="حملات إبداعية مقترحة" items={aiInsights.creative_campaigns} copy={copyText} copiedKey={copiedKey} prefix={`${panelKey}-cmp`} color="amber" />
+          )}
+          {Array.isArray(aiInsights.content_drafts) && (
+            <InsightSection title="مسودات محتوى جاهزة" items={aiInsights.content_drafts} copy={copyText} copiedKey={copiedKey} prefix={`${panelKey}-cnt`} color="cyan" />
+          )}
+          {Array.isArray(aiInsights.tier_actions) && (
+            <InsightSection title="إجراءات لكل تصنيف" items={aiInsights.tier_actions} copy={copyText} copiedKey={copiedKey} prefix={`${panelKey}-tier`} color="orange" />
+          )}
+          {aiInsights.executive_summary && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="text-sm font-bold text-slate-700 mb-2">ملخّص تنفيذي</div>
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{aiInsights.executive_summary}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 function ProjectSelect({ value, onChange, projects }: { value: string; onChange: (v: string) => void; projects: string[] }) {
   return (
     <Select value={value} onValueChange={onChange}>
