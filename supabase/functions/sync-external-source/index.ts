@@ -28,23 +28,73 @@ Deno.serve(async (req) => {
     // Social platforms (twitter/instagram/facebook/linkedin/youtube/tiktok) render dynamically,
     // so we wait briefly for hydration before extraction.
     const isSocial = src.kind !== "website";
-    const fcResp = await fetch("https://api.firecrawl.dev/v2/scrape", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url: src.url,
-        formats: ["markdown", "summary"],
-        onlyMainContent: !isSocial,
-        waitFor: isSocial ? 3500 : 0,
-      }),
-    });
-    const fcData = await fcResp.json();
-    if (!fcResp.ok) {
-      await supa.from("org_external_sources").update({ last_status: `firecrawl_failed:${fcResp.status}`, last_synced_at: new Date().toISOString() }).eq("id", source_id);
-      return new Response(JSON.stringify({ error: "firecrawl_failed", details: fcData }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let markdown = "";
+    let summary = "";
+    let pagesScanned = 1;
+
+    // Helper: scrape a single URL via Firecrawl
+    const scrapeOne = async (u: string, mainOnly: boolean, wait: number) => {
+      const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ url: u, formats: ["markdown", "summary"], onlyMainContent: mainOnly, waitFor: wait }),
+      });
+      const j = await r.json();
+      return { ok: r.ok, status: r.status, md: j?.markdown || j?.data?.markdown || "", sum: j?.summary || j?.data?.summary || "", raw: j };
+    };
+
+    // Step 1: scrape the homepage (or social page)
+    const home = await scrapeOne(src.url, !isSocial, isSocial ? 3500 : 0);
+    if (!home.ok) {
+      await supa.from("org_external_sources").update({ last_status: `firecrawl_failed:${home.status}`, last_synced_at: new Date().toISOString() }).eq("id", source_id);
+      return new Response(JSON.stringify({ error: "firecrawl_failed", details: home.raw }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const markdown: string = fcData?.markdown || fcData?.data?.markdown || "";
-    const summary: string = fcData?.summary || fcData?.data?.summary || "";
+    markdown = home.md;
+    summary = home.sum;
+
+    // Step 2: for websites, deep-crawl the news section.
+    // Use src.news_path if provided, else auto-detect common Arabic/English news paths.
+    if (!isSocial) {
+      try {
+        const base = new URL(src.url);
+        const candidatePaths = src.news_path
+          ? [src.news_path]
+          : ["/news", "/articles", "/media", "/blog", "/posts", "/أخبار", "/الأخبار", "/المقالات", "/المركز-الإعلامي"];
+
+        // Map the site to discover all URLs (fast)
+        const mapResp = await fetch("https://api.firecrawl.dev/v2/map", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ url: `${base.protocol}//${base.host}`, limit: 500, includeSubdomains: false }),
+        });
+        const mapJson = await mapResp.json();
+        const allLinks: string[] = (mapJson?.links || mapJson?.data?.links || []).map((x: any) => typeof x === "string" ? x : x?.url).filter(Boolean);
+
+        // Filter to news-section links
+        const newsLinks = allLinks.filter((u) => {
+          try {
+            const p = new URL(u).pathname.toLowerCase();
+            return candidatePaths.some((cp) => p.includes(cp.toLowerCase()));
+          } catch { return false; }
+        });
+
+        // Cap to 8 deepest article pages to keep cost/time bounded
+        const articlePages = newsLinks
+          .filter((u) => u !== src.url)
+          .sort((a, b) => b.split("/").length - a.split("/").length)
+          .slice(0, 8);
+
+        for (const u of articlePages) {
+          const r = await scrapeOne(u, true, 0);
+          if (r.ok && r.md) {
+            markdown += `\n\n--- صفحة: ${u} ---\n${r.md}`;
+            pagesScanned++;
+          }
+        }
+      } catch (err) {
+        console.warn("deep_crawl_failed", err);
+      }
+    }
 
     // AI extraction — adapt prompt to source kind so social posts get parsed as posts/engagement
     const sysByKind: Record<string, string> = {
@@ -66,7 +116,7 @@ Deno.serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: sysByKind[src.kind] || sysByKind.website },
-          { role: "user", content: `المصدر: ${src.kind} — ${src.url}\nاستخرج كل العناصر المهمة من المحتوى التالي:\n\n${markdown.slice(0, 12000)}` },
+          { role: "user", content: `المصدر: ${src.kind} — ${src.url}\nاستخرج كل العناصر المهمة من المحتوى التالي (قد يحوي عدة صفحات):\n\n${markdown.slice(0, 30000)}` },
         ],
         tools: [{
           type: "function",
@@ -118,10 +168,10 @@ Deno.serve(async (req) => {
     await supa.from("org_external_sources").update({
       summary: summary || markdown.slice(0, 1000),
       last_synced_at: new Date().toISOString(),
-      last_status: "synced",
+      last_status: `synced:${pagesScanned}p`,
     }).eq("id", source_id);
 
-    return new Response(JSON.stringify({ ok: true, insights_count: parsed.insights?.length || 0 }), {
+    return new Response(JSON.stringify({ ok: true, insights_count: parsed.insights?.length || 0, pages_scanned: pagesScanned }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

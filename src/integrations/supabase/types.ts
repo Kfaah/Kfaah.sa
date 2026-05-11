@@ -3650,6 +3650,7 @@ export type Database = {
           label: string | null
           last_status: string | null
           last_synced_at: string | null
+          news_path: string | null
           organization_id: string
           summary: string | null
           updated_at: string
@@ -3662,6 +3663,7 @@ export type Database = {
           label?: string | null
           last_status?: string | null
           last_synced_at?: string | null
+          news_path?: string | null
           organization_id: string
           summary?: string | null
           updated_at?: string
@@ -3674,6 +3676,7 @@ export type Database = {
           label?: string | null
           last_status?: string | null
           last_synced_at?: string | null
+          news_path?: string | null
           organization_id?: string
           summary?: string | null
           updated_at?: string
