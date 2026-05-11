@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Users, Megaphone, AlertTriangle, ShoppingCart, RefreshCw, Repeat, Gift, Target,
   ArrowRight, ArrowLeft, Sparkles, Loader2, Download, ListPlus, Phone, MessageSquare,
-  Mail, FileText as FileTextIcon, MapPin, Settings2, Save,
+  Mail, FileText as FileTextIcon, MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,36 +53,6 @@ const PRIORITY_COLOR: Record<string, string> = {
   medium: "bg-amber-500/10 text-amber-700 border-amber-500/30",
   low: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
 };
-
-/* ================================================================
- * Donor tier configuration (per-organization, RLS-protected)
- * ================================================================ */
-interface TierConfig {
-  tier_a_min: number;
-  tier_b_min: number;
-  tier_c_min: number;
-  tier_a_channel: string;
-  tier_b_channel: string;
-  tier_c_channel: string;
-  tier_d_channel: string;
-}
-
-const DEFAULT_TIER_CONFIG: TierConfig = {
-  tier_a_min: 5000,
-  tier_b_min: 2000,
-  tier_c_min: 500,
-  tier_a_channel: "خطاب رسمي + اتصال",
-  tier_b_channel: "اتصال هاتفي",
-  tier_c_channel: "رسالة واتساب شخصية",
-  tier_d_channel: "رسالة SMS",
-};
-
-function classifyTier(amount: number, cfg: TierConfig): { tier: "أ" | "ب" | "ج" | "د"; channel: string; rangeLabel: string } {
-  if (amount >= cfg.tier_a_min) return { tier: "أ", channel: cfg.tier_a_channel, rangeLabel: `≥ ${fmt(cfg.tier_a_min)}` };
-  if (amount >= cfg.tier_b_min) return { tier: "ب", channel: cfg.tier_b_channel, rangeLabel: `${fmt(cfg.tier_b_min)} – ${fmt(cfg.tier_a_min)}` };
-  if (amount >= cfg.tier_c_min) return { tier: "ج", channel: cfg.tier_c_channel, rangeLabel: `${fmt(cfg.tier_c_min)} – ${fmt(cfg.tier_b_min)}` };
-  return { tier: "د", channel: cfg.tier_d_channel, rangeLabel: `< ${fmt(cfg.tier_c_min)}` };
-}
 
 function downloadCsv(filename: string, rows: any[]) {
   if (!rows.length) return;
@@ -194,63 +164,6 @@ function ReportView({
   const [aiLoading, setAiLoading] = useState(false);
   const [ai, setAi] = useState<AIResult | null>(null);
   const [creatingTasks, setCreatingTasks] = useState(false);
-  const [tierConfig, setTierConfig] = useState<TierConfig>(DEFAULT_TIER_CONFIG);
-  const [tierConfigLoaded, setTierConfigLoaded] = useState(false);
-  const [showTierSettings, setShowTierSettings] = useState(false);
-  const [tierDraft, setTierDraft] = useState<TierConfig>(DEFAULT_TIER_CONFIG);
-  const [savingTiers, setSavingTiers] = useState(false);
-
-  // Load org tier config once when viewing donor_tiers
-  useEffect(() => {
-    if (reportKey !== "donor_tiers") return;
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("org_donor_tiers")
-        .select("*")
-        .eq("organization_id", orgId)
-        .maybeSingle();
-      if (cancelled) return;
-      const cfg: TierConfig = data
-        ? {
-            tier_a_min: Number(data.tier_a_min) || DEFAULT_TIER_CONFIG.tier_a_min,
-            tier_b_min: Number(data.tier_b_min) || DEFAULT_TIER_CONFIG.tier_b_min,
-            tier_c_min: Number(data.tier_c_min) || DEFAULT_TIER_CONFIG.tier_c_min,
-            tier_a_channel: data.tier_a_channel || DEFAULT_TIER_CONFIG.tier_a_channel,
-            tier_b_channel: data.tier_b_channel || DEFAULT_TIER_CONFIG.tier_b_channel,
-            tier_c_channel: data.tier_c_channel || DEFAULT_TIER_CONFIG.tier_c_channel,
-            tier_d_channel: data.tier_d_channel || DEFAULT_TIER_CONFIG.tier_d_channel,
-          }
-        : DEFAULT_TIER_CONFIG;
-      setTierConfig(cfg);
-      setTierDraft(cfg);
-      setTierConfigLoaded(true);
-    })();
-    return () => { cancelled = true; };
-  }, [reportKey, orgId]);
-
-  const saveTierConfig = async () => {
-    // Basic validation: a > b > c > 0
-    const { tier_a_min: a, tier_b_min: b, tier_c_min: c } = tierDraft;
-    if (!(a > b && b > c && c > 0)) {
-      toast.error("الحدود يجب أن تكون: أ > ب > ج > 0");
-      return;
-    }
-    setSavingTiers(true);
-    try {
-      const { error } = await supabase
-        .from("org_donor_tiers")
-        .upsert({ organization_id: orgId, ...tierDraft, updated_at: new Date().toISOString() }, { onConflict: "organization_id" });
-      if (error) throw error;
-      setTierConfig(tierDraft);
-      setShowTierSettings(false);
-      toast.success("تم حفظ إعدادات الفئات");
-    } catch (e: any) {
-      toast.error(e.message || "تعذر الحفظ — قد لا تملك الصلاحية");
-    } finally {
-      setSavingTiers(false);
-    }
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -268,19 +181,10 @@ function ReportView({
     return () => { cancelled = true; };
   }, [reportKey, orgId]);
 
-  // Apply tier classification using org config (donor_tiers only)
-  const enriched = useMemo(() => {
-    if (reportKey !== "donor_tiers") return rows;
-    return rows.map(r => {
-      const c = classifyTier(Number(r._amount || 0), tierConfig);
-      return { ...r, tier: c.tier, "النطاق": c.rangeLabel, "قناة التواصل المقترحة": c.channel };
-    });
-  }, [rows, reportKey, tierConfig]);
-
   const filtered = useMemo(() => {
-    if (reportKey !== "donor_tiers" || tier === "all") return enriched;
-    return enriched.filter(r => r.tier === tier);
-  }, [enriched, tier, reportKey]);
+    if (reportKey !== "donor_tiers" || tier === "all") return rows;
+    return rows.filter(r => r.tier === tier);
+  }, [rows, tier, reportKey]);
 
   const aggregates = useMemo(() => computeAggregates(reportKey, filtered), [reportKey, filtered]);
 
@@ -386,89 +290,12 @@ ${a.rationale}
             <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">جميع الفئات</SelectItem>
-              <SelectItem value="أ">فئة أ — ≥ {fmt(tierConfig.tier_a_min)} ر.س</SelectItem>
-              <SelectItem value="ب">فئة ب — {fmt(tierConfig.tier_b_min)} – {fmt(tierConfig.tier_a_min)} ر.س</SelectItem>
-              <SelectItem value="ج">فئة ج — {fmt(tierConfig.tier_c_min)} – {fmt(tierConfig.tier_b_min)} ر.س</SelectItem>
-              <SelectItem value="د">فئة د — أقل من {fmt(tierConfig.tier_c_min)} ر.س</SelectItem>
+              <SelectItem value="كبار">كبار المتبرعين (≥ 5,000 ر.س)</SelectItem>
+              <SelectItem value="وسط">الفئة الوسطى (1,000 – 5,000 ر.س)</SelectItem>
+              <SelectItem value="صغار">صغار المتبرعين (&lt; 1,000 ر.س)</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTierSettings(s => !s)}
-            disabled={!tierConfigLoaded}
-          >
-            <Settings2 className="h-4 w-4 ml-1" />
-            {showTierSettings ? "إخفاء إعدادات الفئات" : "تعديل حدود الفئات"}
-          </Button>
         </div>
-      )}
-
-      {/* Tier settings panel */}
-      {reportKey === "donor_tiers" && showTierSettings && (
-        <Card className="border-primary/30 bg-card">
-          <CardHeader>
-            <CardTitle className="text-base text-right">إعدادات فئات المتبرعين</CardTitle>
-            <CardDescription className="text-right">
-              عدّل حدود كل فئة وقناة التواصل المقترحة. الترتيب: فئة أ ≥ ب ≥ ج، وما دون ذلك يندرج تحت فئة د.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">حد فئة أ (الحد الأدنى)</div>
-                <Input
-                  type="number" inputMode="numeric" min={1}
-                  value={tierDraft.tier_a_min}
-                  onChange={(e) => setTierDraft(d => ({ ...d, tier_a_min: Number(e.target.value) || 0 }))}
-                />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">حد فئة ب (الحد الأدنى)</div>
-                <Input
-                  type="number" inputMode="numeric" min={1}
-                  value={tierDraft.tier_b_min}
-                  onChange={(e) => setTierDraft(d => ({ ...d, tier_b_min: Number(e.target.value) || 0 }))}
-                />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">حد فئة ج (الحد الأدنى)</div>
-                <Input
-                  type="number" inputMode="numeric" min={1}
-                  value={tierDraft.tier_c_min}
-                  onChange={(e) => setTierDraft(d => ({ ...d, tier_c_min: Number(e.target.value) || 0 }))}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">قناة فئة أ</div>
-                <Input value={tierDraft.tier_a_channel} onChange={(e) => setTierDraft(d => ({ ...d, tier_a_channel: e.target.value }))} />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">قناة فئة ب</div>
-                <Input value={tierDraft.tier_b_channel} onChange={(e) => setTierDraft(d => ({ ...d, tier_b_channel: e.target.value }))} />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">قناة فئة ج</div>
-                <Input value={tierDraft.tier_c_channel} onChange={(e) => setTierDraft(d => ({ ...d, tier_c_channel: e.target.value }))} />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">قناة فئة د</div>
-                <Input value={tierDraft.tier_d_channel} onChange={(e) => setTierDraft(d => ({ ...d, tier_d_channel: e.target.value }))} />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" onClick={() => { setTierDraft(tierConfig); setShowTierSettings(false); }} disabled={savingTiers}>
-                إلغاء
-              </Button>
-              <Button onClick={saveTierConfig} disabled={savingTiers}>
-                {savingTiers ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Save className="h-4 w-4 ml-1" />}
-                حفظ
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       )}
 
       {/* KPIs */}
@@ -607,11 +434,11 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
         .eq("organization_id", orgId)
         .order("total_donated", { ascending: false })
         .limit(5000);
-      // Classification is applied later in the component using the org's tier config.
       return (data || []).map(d => {
         const t = Number(d.total_donated || 0);
+        const tier = t >= 5000 ? "كبار" : t >= 1000 ? "وسط" : "صغار";
         return {
-          _amount: t,
+          tier,
           الاسم: d.full_name,
           الجوال: d.phone,
           "إجمالي التبرعات": sar(t),
@@ -733,10 +560,8 @@ const COLUMN_DEFS: Record<ReportKey, Col[]> = {
     { key: "الاسم", label: "الاسم" }, { key: "الجوال", label: "الجوال" },
     { key: "إجمالي التبرعات", label: "إجمالي التبرعات" },
     { key: "عدد التبرعات", label: "عدد التبرعات" },
-    { key: "tier", label: "الفئة", render: (v) => <Badge variant="outline">فئة {v}</Badge> },
-    { key: "النطاق", label: "النطاق" },
+    { key: "tier", label: "الفئة", render: (v) => <Badge variant="outline">{v}</Badge> },
     { key: "آخر تبرع", label: "آخر تبرع" },
-    { key: "قناة التواصل المقترحة", label: "قناة التواصل المقترحة" },
   ],
   campaigns: [
     { key: "اسم الحملة", label: "اسم الحملة" }, { key: "الحالة", label: "الحالة" },
@@ -792,10 +617,9 @@ function computeAggregates(key: ReportKey, rows: any[]): Record<string, number |
       const tiers = rows.reduce((m: Record<string, number>, r: any) => { m[r.tier] = (m[r.tier] || 0) + 1; return m; }, {});
       return {
         "إجمالي المتبرعين": n,
-        "فئة أ": tiers["أ"] || 0,
-        "فئة ب": tiers["ب"] || 0,
-        "فئة ج": tiers["ج"] || 0,
-        "فئة د": tiers["د"] || 0,
+        "كبار (≥ 5,000)": tiers["كبار"] || 0,
+        "وسط (1,000 – 5,000)": tiers["وسط"] || 0,
+        "صغار (< 1,000)": tiers["صغار"] || 0,
       };
     }
     case "campaigns": {
