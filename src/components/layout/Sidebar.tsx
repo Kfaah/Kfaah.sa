@@ -553,7 +553,9 @@ export function Sidebar() {
                             ? "h-[150px] w-[150px] scale-100"
                             : isRiyadahOrg
                               ? "h-[150px] w-[150px] scale-100"
-                              : "h-[210px] w-[210px] scale-125"
+                              : isTadabburOrg
+                                ? "h-[140px] w-[140px] scale-100"
+                                : "h-[210px] w-[210px] scale-125"
                   )}
                 />
               ) : (
