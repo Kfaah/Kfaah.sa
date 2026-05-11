@@ -1732,6 +1732,7 @@ function ReportsHubLanding({ orgId }: { orgId: string }) {
         title="التقارير"
         description="مركز التقارير التنفيذية: تقارير دورية وسنوية، ملفات تحليلية جاهزة للعرض، وتصدير بصيغ متعددة (PDF، Word، Excel، PowerPoint)."
         cta="افتح مركز التقارير"
+        accent="slate"
         onClick={() => setView("classic")}
       />
       <ReportsLandingCard
@@ -1739,6 +1740,7 @@ function ReportsHubLanding({ orgId }: { orgId: string }) {
         title="التقارير التشغيلية الذكية"
         description="تقارير تحلّل سلوك المتبرعين وأداء الجمعية وتقترح خطوات قابلة للتنفيذ، تتحوّل تلقائياً إلى مهام موزعة على الموظفين بحسب طاقتهم اليومية."
         cta="افتح التقارير الذكية"
+        accent="emerald"
         onClick={() => setView("operational")}
       />
     </div>
@@ -1750,35 +1752,57 @@ function ReportsLandingCard({
   title,
   description,
   cta,
+  accent = "slate",
   onClick,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
   cta: string;
+  accent?: "slate" | "emerald";
   onClick: () => void;
 }) {
+  const tones = {
+    slate: {
+      border: "border-slate-200 hover:border-slate-300",
+      iconWrap: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+      title: "text-slate-900",
+      desc: "text-slate-600",
+      cta: "bg-slate-900 text-white hover:bg-slate-800",
+      glow: "bg-slate-200/60",
+    },
+    emerald: {
+      border: "border-emerald-100 hover:border-emerald-200",
+      iconWrap: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
+      title: "text-slate-900",
+      desc: "text-slate-600",
+      cta: "bg-emerald-600 text-white hover:bg-emerald-700",
+      glow: "bg-emerald-100/70",
+    },
+  }[accent];
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group relative overflow-hidden rounded-2xl border border-blue-600/40 bg-gradient-to-l from-blue-700 via-blue-600 to-emerald-600 p-7 text-right text-white shadow-xl transition hover:shadow-2xl hover:-translate-y-1"
+      className={cn(
+        "group relative overflow-hidden rounded-2xl border bg-white p-7 text-right shadow-sm transition hover:shadow-lg hover:-translate-y-0.5",
+        tones.border
+      )}
     >
       <div className="relative z-10 flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
-          <h3 className="text-2xl font-bold text-white">{title}</h3>
-          <p className="text-sm leading-relaxed text-white/85">{description}</p>
+          <h3 className={cn("text-2xl font-bold", tones.title)}>{title}</h3>
+          <p className={cn("text-sm leading-relaxed", tones.desc)}>{description}</p>
         </div>
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm ring-1 ring-white/25 text-white transition group-hover:scale-110 group-hover:bg-white/25">
+        <div className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl transition group-hover:scale-105", tones.iconWrap)}>
           <Icon className="h-8 w-8" />
         </div>
       </div>
-      <div className="relative z-10 mt-6 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm ring-1 ring-white/20 transition group-hover:bg-white/25">
+      <div className={cn("relative z-10 mt-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition", tones.cta)}>
         {cta}
         <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-1.5" />
       </div>
-      <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-emerald-300/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-10 -bottom-16 h-44 w-44 rounded-full bg-blue-300/20 blur-3xl" />
+      <div className={cn("pointer-events-none absolute -left-20 -top-20 h-48 w-48 rounded-full blur-3xl", tones.glow)} />
     </button>
   );
 }
