@@ -378,28 +378,14 @@ export default function OrgInternalDashboard({
     <div className={standaloneTab ? "space-y-6" : "space-y-6 p-8"} dir="rtl">
       {!standaloneTab && (
         <div
-          className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
-          style={{ borderTop: `4px solid ${ORG_PRIMARY}` }}
+          className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm border-t-4 border-t-accent"
         >
-          {/* Subtle brand gradient backdrop */}
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.06]"
-            style={{ background: ORG_GRADIENT }}
-          />
-          <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full opacity-10 blur-3xl"
-            style={{ background: ORG_PRIMARY }}
-          />
-          <div className="pointer-events-none absolute -right-24 -bottom-24 h-64 w-64 rounded-full opacity-10 blur-3xl"
-            style={{ background: ORG_ACCENT }}
-          />
-
           <div className="relative flex flex-wrap items-center justify-between gap-6 p-6">
             {/* Right: Identity */}
             <div className="flex min-w-0 flex-col items-center gap-3 sm:items-start">
               {/* Logo on top, full and untrimmed */}
               <div
-                className="flex h-36 min-w-[8rem] max-w-[22rem] items-center justify-center overflow-hidden rounded-2xl bg-white px-5 py-3 shadow-md ring-1"
-                style={{ ['--tw-ring-color' as string]: ORG_PRIMARY_RING, boxShadow: `0 4px 14px ${ORG_PRIMARY_SOFT}` }}
+                className="flex h-36 min-w-[8rem] max-w-[22rem] items-center justify-center overflow-hidden rounded-2xl bg-white px-5 py-3 shadow-md ring-1 ring-border"
               >
                 {org?.logo_url ? (
                   <img
@@ -408,16 +394,13 @@ export default function OrgInternalDashboard({
                     className="h-full w-auto max-w-full object-contain"
                   />
                 ) : (
-                  <Building2 className="h-10 w-10" style={{ color: ORG_PRIMARY }} />
+                  <Building2 className="h-10 w-10 text-accent" />
                 )}
               </div>
               {/* Subtitle pill below the logo (the org name is already part of the logo image) */}
               <div className="min-w-0 text-center sm:text-start">
                 <div className="flex items-center justify-center gap-2 sm:justify-start">
-                  <span
-                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide"
-                    style={{ backgroundColor: ORG_ACCENT_SOFT, color: ORG_PRIMARY, border: `1px solid ${ORG_ACCENT_RING}` }}
-                  >
+                  <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-accent">
                     <Sparkles className="h-3 w-3" />
                     اللوحة الداخلية
                   </span>
@@ -425,12 +408,11 @@ export default function OrgInternalDashboard({
                 <h1 className="sr-only">{org?.name ?? "الجمعية"}</h1>
                 {org?.slug && ORG_SHORT_NAME[org.slug] && (
                   <div
-                    className="mt-2 text-center sm:text-start font-extrabold leading-tight tracking-tight"
-                    style={{ color: ORG_PRIMARY }}
+                    className="mt-2 text-center sm:text-start font-extrabold leading-tight tracking-tight text-foreground"
                   >
                     <div className="text-lg sm:text-xl">{ORG_SHORT_NAME[org.slug][0]}</div>
                     {ORG_SHORT_NAME[org.slug][1] && (
-                      <div className="text-base sm:text-lg text-foreground/80">
+                      <div className="text-base sm:text-lg text-muted-foreground">
                         {ORG_SHORT_NAME[org.slug][1]}
                       </div>
                     )}
@@ -447,8 +429,7 @@ export default function OrgInternalDashboard({
               <Button
                 onClick={runDeepAnalysis}
                 disabled={analyzing}
-                className="text-white shadow-md hover:opacity-95"
-                style={{ background: ORG_GRADIENT }}
+                className="bg-accent text-accent-foreground shadow-md hover:bg-accent/90"
               >
                 {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
                 تشغيل التحليل الذكي
@@ -456,7 +437,7 @@ export default function OrgInternalDashboard({
               <Button
                 asChild
                 variant="outline"
-                style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
+                className="border-accent/40 text-accent hover:bg-accent/10"
               >
                 <Link to={`/admin/organizations/${orgId}/profile`}>
                   <Building2 className="ml-2 h-4 w-4" /> ملف الجمعية
@@ -747,27 +728,13 @@ export default function OrgInternalDashboard({
 
 function KpiCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
-    <Card
-      className="relative overflow-hidden border-border"
-      style={{
-        background: `linear-gradient(135deg, ${ORG_PRIMARY_TINT} 0%, hsl(var(--card)) 60%, ${ORG_ACCENT_SOFT} 100%)`,
-        borderRightWidth: 3,
-        borderRightColor: ORG_PRIMARY,
-      }}
-    >
-      <div
-        className="pointer-events-none absolute -left-8 -top-8 h-20 w-20 rounded-full opacity-30 blur-2xl"
-        style={{ background: ORG_ACCENT }}
-      />
+    <Card className="relative overflow-hidden border-border bg-card hover:shadow-md transition-shadow">
       <CardContent className="flex items-center justify-between gap-3 p-4 text-right" dir="rtl">
         <div className="min-w-0 flex-1">
           <div className="text-2xl font-bold leading-none text-foreground">{value}</div>
           <div className="mt-1 text-xs text-muted-foreground">{label}</div>
         </div>
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-md"
-          style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
-        >
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground shadow-sm">
           {icon}
         </div>
       </CardContent>
@@ -778,24 +745,10 @@ function KpiCard({ label, value, icon }: { label: string; value: number; icon: R
 
 function ListCard({ title, items, icon, emptyText }: { title: string; items: string[]; icon: React.ReactNode; emptyText: string }) {
   return (
-    <Card
-      dir="rtl"
-      className="relative overflow-hidden border-border bg-card shadow-sm"
-      style={{ borderRightWidth: 3, borderRightColor: ORG_PRIMARY }}
-    >
-      <div
-        className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl"
-        style={{ background: ORG_ACCENT }}
-      />
-      <CardHeader
-        className="text-right"
-        style={{
-          background: `linear-gradient(to left, ${ORG_PRIMARY_TINT}, transparent)`,
-          borderBottom: `1px solid ${ORG_PRIMARY_RING}`,
-        }}
-      >
+    <Card dir="rtl" className="relative overflow-hidden border-border bg-card shadow-sm">
+      <CardHeader className="text-right border-b border-border bg-muted/30">
         <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-foreground">
-          <span style={{ color: ORG_PRIMARY }}>{icon}</span>
+          <span className="text-accent">{icon}</span>
           <span>{title}</span>
         </CardTitle>
       </CardHeader>
@@ -807,14 +760,9 @@ function ListCard({ title, items, icon, emptyText }: { title: string; items: str
             {items.map((s, i) => (
               <li
                 key={i}
-                className="flex items-start justify-start gap-2 rounded-lg border border-border p-3 text-right text-sm leading-relaxed text-foreground transition-colors hover:shadow-sm"
-                style={{
-                  background: `linear-gradient(to left, ${ORG_PRIMARY_TINT}, transparent)`,
-                  borderRightWidth: 2,
-                  borderRightColor: ORG_PRIMARY,
-                }}
+                className="flex items-start justify-start gap-2 rounded-lg border border-border bg-card p-3 text-right text-sm leading-relaxed text-foreground transition-colors hover:bg-muted/40 hover:shadow-sm"
               >
-                <span className="mt-1 flex-shrink-0" style={{ color: ORG_PRIMARY }}>•</span>
+                <span className="mt-1 flex-shrink-0 text-accent">•</span>
                 <span className="flex-1">{s}</span>
               </li>
             ))}
