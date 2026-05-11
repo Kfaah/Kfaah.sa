@@ -1,8 +1,8 @@
 import { ReactNode, useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, GitCompareArrows, Sparkles, FileBarChart2,
-  Building2, LogOut, ArrowLeftCircle, ListChecks, Lightbulb, Settings,
+  LayoutDashboard, GitCompareArrows, Sparkles,
+  Building2, LogOut, ArrowLeftCircle, Settings,
   MessagesSquare, Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
