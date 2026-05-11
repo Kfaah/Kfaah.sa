@@ -378,28 +378,14 @@ export default function OrgInternalDashboard({
     <div className={standaloneTab ? "space-y-6" : "space-y-6 p-8"} dir="rtl">
       {!standaloneTab && (
         <div
-          className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
-          style={{ borderTop: `4px solid ${ORG_PRIMARY}` }}
+          className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm border-t-4 border-t-accent"
         >
-          {/* Subtle brand gradient backdrop */}
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.06]"
-            style={{ background: ORG_GRADIENT }}
-          />
-          <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full opacity-10 blur-3xl"
-            style={{ background: ORG_PRIMARY }}
-          />
-          <div className="pointer-events-none absolute -right-24 -bottom-24 h-64 w-64 rounded-full opacity-10 blur-3xl"
-            style={{ background: ORG_ACCENT }}
-          />
-
           <div className="relative flex flex-wrap items-center justify-between gap-6 p-6">
             {/* Right: Identity */}
             <div className="flex min-w-0 flex-col items-center gap-3 sm:items-start">
               {/* Logo on top, full and untrimmed */}
               <div
-                className="flex h-36 min-w-[8rem] max-w-[22rem] items-center justify-center overflow-hidden rounded-2xl bg-white px-5 py-3 shadow-md ring-1"
-                style={{ ['--tw-ring-color' as string]: ORG_PRIMARY_RING, boxShadow: `0 4px 14px ${ORG_PRIMARY_SOFT}` }}
+                className="flex h-36 min-w-[8rem] max-w-[22rem] items-center justify-center overflow-hidden rounded-2xl bg-white px-5 py-3 shadow-md ring-1 ring-border"
               >
                 {org?.logo_url ? (
                   <img
@@ -408,16 +394,13 @@ export default function OrgInternalDashboard({
                     className="h-full w-auto max-w-full object-contain"
                   />
                 ) : (
-                  <Building2 className="h-10 w-10" style={{ color: ORG_PRIMARY }} />
+                  <Building2 className="h-10 w-10 text-accent" />
                 )}
               </div>
               {/* Subtitle pill below the logo (the org name is already part of the logo image) */}
               <div className="min-w-0 text-center sm:text-start">
                 <div className="flex items-center justify-center gap-2 sm:justify-start">
-                  <span
-                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide"
-                    style={{ backgroundColor: ORG_ACCENT_SOFT, color: ORG_PRIMARY, border: `1px solid ${ORG_ACCENT_RING}` }}
-                  >
+                  <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-accent">
                     <Sparkles className="h-3 w-3" />
                     اللوحة الداخلية
                   </span>
@@ -425,12 +408,11 @@ export default function OrgInternalDashboard({
                 <h1 className="sr-only">{org?.name ?? "الجمعية"}</h1>
                 {org?.slug && ORG_SHORT_NAME[org.slug] && (
                   <div
-                    className="mt-2 text-center sm:text-start font-extrabold leading-tight tracking-tight"
-                    style={{ color: ORG_PRIMARY }}
+                    className="mt-2 text-center sm:text-start font-extrabold leading-tight tracking-tight text-foreground"
                   >
                     <div className="text-lg sm:text-xl">{ORG_SHORT_NAME[org.slug][0]}</div>
                     {ORG_SHORT_NAME[org.slug][1] && (
-                      <div className="text-base sm:text-lg text-foreground/80">
+                      <div className="text-base sm:text-lg text-muted-foreground">
                         {ORG_SHORT_NAME[org.slug][1]}
                       </div>
                     )}
@@ -447,8 +429,7 @@ export default function OrgInternalDashboard({
               <Button
                 onClick={runDeepAnalysis}
                 disabled={analyzing}
-                className="text-white shadow-md hover:opacity-95"
-                style={{ background: ORG_GRADIENT }}
+                className="bg-accent text-accent-foreground shadow-md hover:bg-accent/90"
               >
                 {analyzing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
                 تشغيل التحليل الذكي
@@ -456,7 +437,7 @@ export default function OrgInternalDashboard({
               <Button
                 asChild
                 variant="outline"
-                style={{ borderColor: ORG_PRIMARY_RING, color: ORG_PRIMARY }}
+                className="border-accent/40 text-accent hover:bg-accent/10"
               >
                 <Link to={`/admin/organizations/${orgId}/profile`}>
                   <Building2 className="ml-2 h-4 w-4" /> ملف الجمعية
