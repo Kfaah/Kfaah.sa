@@ -20,24 +20,33 @@ const OWNER_EMAIL = "info@kfaah.org";
 // السعر يحسب بناءً على المعايير الخمسة. كل معيار له وزن.
 // النتيجة سعر تأسيس تقديري + سعر تجديد سنوي تقديري.
 
-const BASE_SETUP = 8000;     // سعر تأسيس قاعدي
-const BASE_RENEWAL = 4500;   // سعر تجديد سنوي قاعدي
+// أسعار قاعدية بعد تخفيض 20%
+const BASE_SETUP = 6400;     // سعر تأسيس قاعدي (كان 8000)
+const BASE_RENEWAL = 3600;   // سعر تجديد سنوي قاعدي (كان 4500)
 
 function calcPricing(opts: {
   campaign: "none" | "light" | "active" | "intensive";
-  donors: "lt500" | "500_2000" | "2000_5000" | "gt5000";
+  donors: "lt500" | "lt5000" | "lt15000" | "lt40000" | "lt100000" | "gt100000";
   age: "lt2" | "2_5" | "5_10" | "gt10";
   staff: "lt5" | "5_15" | "15_30" | "gt30";
   ai: boolean;
 }) {
   const campaignMult = { none: 0.85, light: 1.0, active: 1.2, intensive: 1.45 }[opts.campaign];
-  const donorsAdd = { lt500: 0, "500_2000": 1500, "2000_5000": 3500, gt5000: 6500 }[opts.donors];
+  // تخفيض 20% مطبّق على كل الإضافات
+  const donorsAdd = {
+    lt500: 0,
+    lt5000: 1200,
+    lt15000: 2800,
+    lt40000: 4800,
+    lt100000: 6400,
+    gt100000: 8000,
+  }[opts.donors];
   const ageMult = { lt2: 0.9, "2_5": 1.0, "5_10": 1.15, gt10: 1.3 }[opts.age];
-  const staffAdd = { lt5: 0, "5_15": 1200, "15_30": 3000, gt30: 5500 }[opts.staff];
-  const aiAdd = opts.ai ? 3500 : 0;
+  const staffAdd = { lt5: 0, "5_15": 960, "15_30": 2400, gt30: 4400 }[opts.staff];
+  const aiAdd = opts.ai ? 2800 : 0;
 
   const setup = Math.round((BASE_SETUP * campaignMult * ageMult + donorsAdd + staffAdd + aiAdd) / 100) * 100;
-  const renewal = Math.round((BASE_RENEWAL * campaignMult + donorsAdd * 0.4 + staffAdd * 0.5 + (opts.ai ? 1800 : 0)) / 100) * 100;
+  const renewal = Math.round((BASE_RENEWAL * campaignMult + donorsAdd * 0.4 + staffAdd * 0.5 + (opts.ai ? 1440 : 0)) / 100) * 100;
   return { setup, renewal };
 }
 
@@ -58,7 +67,7 @@ export default function PlatformSubscribe() {
   const navigate = useNavigate();
 
   const [campaign, setCampaign] = useState<"none" | "light" | "active" | "intensive">("light");
-  const [donors, setDonors] = useState<"lt500" | "500_2000" | "2000_5000" | "gt5000">("500_2000");
+  const [donors, setDonors] = useState<"lt500" | "lt5000" | "lt15000" | "lt40000" | "lt100000" | "gt100000">("lt5000");
   const [age, setAge] = useState<"lt2" | "2_5" | "5_10" | "gt10">("2_5");
   const [staff, setStaff] = useState<"lt5" | "5_15" | "15_30" | "gt30">("5_15");
   const [ai, setAi] = useState(true);
@@ -166,10 +175,12 @@ export default function PlatformSubscribe() {
               value={donors}
               onChange={(v) => setDonors(v as typeof donors)}
               options={[
-                { v: "lt500", label: "أقل من 500" },
-                { v: "500_2000", label: "500 — 2,000" },
-                { v: "2000_5000", label: "2,000 — 5,000" },
-                { v: "gt5000", label: "أكثر من 5,000" },
+                { v: "lt500", label: "حتى 500" },
+                { v: "lt5000", label: "حتى 5,000" },
+                { v: "lt15000", label: "حتى 15,000" },
+                { v: "lt40000", label: "حتى 40,000" },
+                { v: "lt100000", label: "حتى 100,000" },
+                { v: "gt100000", label: "أكثر من 100,000" },
               ]}
             />
 
@@ -406,7 +417,14 @@ function labelCampaign(v: string) {
   return ({ none: "لا توجد", light: "خفيفة", active: "نشطة", intensive: "مكثفة" } as any)[v];
 }
 function labelDonors(v: string) {
-  return ({ lt500: "أقل من 500", "500_2000": "500–2000", "2000_5000": "2000–5000", gt5000: "أكثر من 5000" } as any)[v];
+  return ({
+    lt500: "حتى 500",
+    lt5000: "حتى 5,000",
+    lt15000: "حتى 15,000",
+    lt40000: "حتى 40,000",
+    lt100000: "حتى 100,000",
+    gt100000: "أكثر من 100,000",
+  } as any)[v];
 }
 function labelAge(v: string) {
   return ({ lt2: "أقل من سنتين", "2_5": "2–5 سنوات", "5_10": "5–10 سنوات", gt10: "أكثر من 10 سنوات" } as any)[v];
