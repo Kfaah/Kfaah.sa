@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
 import {
   HeartHandshake, Users, Trophy, Repeat, Megaphone, XCircle, ShoppingCart,
   CalendarClock, Search, Filter, Loader2, TrendingUp, Calendar as CalendarIcon, Wallet, Gift,
@@ -282,41 +283,20 @@ export function DonorsHub({ orgId }: { orgId: string }) {
 
   return (
     <div className="space-y-5" dir="rtl" style={{ ["--brand" as any]: brand }}>
-      {/* Hero header */}
-      <div
-        className="relative overflow-hidden rounded-2xl border p-6 shadow-sm"
-        style={{
-          borderColor: `${brand}33`,
-          background: `linear-gradient(to left, ${brand}14, #ffffff 55%, ${brand}0d)`,
-        }}
-      >
-        <div className="absolute -top-10 -left-10 w-48 h-48 rounded-full blur-3xl pointer-events-none" style={{ background: `${brand}33` }} />
-        <div className="absolute bottom-0 right-1/3 w-56 h-56 rounded-full blur-3xl pointer-events-none" style={{ background: `${brand}1a` }} />
-        <div className="relative flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ring-2"
-              style={{
-                background: `linear-gradient(135deg, ${brand}, ${brand}cc)`,
-                boxShadow: `0 10px 30px -10px ${brand}80`,
-                ['--tw-ring-color' as any]: `${brand}66`,
-              }}
-            >
-              <HeartHandshake className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-extrabold text-slate-900">مركز التبرعات</h2>
-              <p className="text-base text-slate-600">قاعدة بيانات شاملة · فلترة ذكية · رؤية متكاملة لكل دورة العطاء</p>
-            </div>
-          </div>
+      {/* Unified org-branded header */}
+      <PageHeader
+        icon={<HeartHandshake />}
+        title="مركز التبرعات"
+        subtitle="قاعدة بيانات شاملة · فلترة ذكية · رؤية متكاملة لكل دورة العطاء"
+        actions={
           <div className="flex items-center gap-2 flex-wrap">
             <KpiPill brand={brand} icon={<Users className="w-4 h-4" />} label="متبرعون" value={donors.length.toLocaleString("ar-SA")} />
             <KpiPill brand={brand} icon={<TrendingUp className="w-4 h-4" />} label="إجمالي" value={SAR(totals.total)} />
             <KpiPill brand={brand} icon={<Repeat className="w-4 h-4" />} label="متكرّرون" value={totals.recurring.toLocaleString("ar-SA")} />
             <KpiPill brand={brand} icon={<CalendarIcon className="w-4 h-4" />} label="مشاريع" value={totals.projects.toLocaleString("ar-SA")} />
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Sub-icons */}
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-12 gap-2">

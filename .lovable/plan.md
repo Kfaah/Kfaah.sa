@@ -1,54 +1,56 @@
-## الهدف
-ترقية موزّع المهام ليصبح **ذكاء تكيُّفي** يتعلم من الزمن الفعلي للموظف، ويتولّد منه:
-1. **تعبئة تلقائية للوقت المتبقي** عند إنجاز مبكّر.
-2. **تقدير ذكي يتعلّم** للمدة المتوقّعة لكل نوع مهمة بناءً على سجل الإنجاز السابق.
-3. **تقييم تلقائي للجودة** عند كل إكمال (يستخدم `evaluate-task-quality` الموجود).
+## الخطة
 
-## التغييرات
+### ١. تنظيف شعارات الجمعيات (إبقاء الرمز فقط داخل الدائرة)
 
-### 1) جدول تعلّم الزمن `task_time_baselines`
-- (organization_id, key=source/category/channel) → avg_minutes, samples, last_updated.
-- يُحدَّث عند إكمال أي مهمة (DB trigger يحدّث المتوسط المتحرك EWMA: `new = old*0.7 + actual*0.3`، مع سقف samples).
-- موزّع المهام يستعلم منه أولًا قبل اللجوء إلى الافتراضي حسب القناة.
+الجمعيات التي تحتاج معالجة (شعار + نص ملتصق):
+- عطاء (`ataa-white-v1.png`)
+- عطف (`atff-white-v1.png`)
+- نجباء (`nujabaa-white-v1.png`)
+- حرف (`harf-icon-bigger-v3.png`) — للتأكد
+- نجاة (`najah-logo.png`)
+- مآثر (`maather` من numo)
+- سكينة (`sakinah` من sakinah.org.sa)
+- القصبة (`d-alqasaba`)
+- التنمية الأهلية (`tanmiah-alaridh-icon.png`)
+- صواب (`sawab-logo-centered-v8.png`) — للتأكد
+- عون الطبية (`awon-medical-icon.png`) — للتأكد
+- النموذج/Demo
 
-### 2) Edge function جديدة `top-up-employee-tasks`
-تستدعى:
-- يدويًا من زر في "موزّع المهام الذكي".
-- مجدولة كل ساعة من `pg_cron` بين 8 ص و2 م.
-- تلقائيًا داخل `notify-task-message` أو endpoint إكمال المهمة (سنضيف استدعاء بسيط بعد UPDATE status='completed').
+**الطريقة لكل شعار**:
+1. تنزيل الأصل من Supabase Storage إلى `/tmp`.
+2. تحليل الصورة بـ PIL: استخراج المكوّنات المتصلة (connected components) لتحديد الكتلة الأكبر/الأكثر تماسكاً = الرمز، والكتل النصية = نص.
+3. اقتصاص الرمز فقط بـ bbox، إضافة هامش متساوٍ، توسيطه في كانفس مربع شفاف.
+4. رفع نسخة جديدة `…-icon-only-v1.png` إلى bucket `avatars/org-logos/`.
+5. ميجريشن واحد يحدّث `organizations.logo_url` و `organization_profiles.logo_url` لكل الجمعيات دفعة واحدة.
 
-المنطق لكل موظف نشط:
-1. اجمع المهام لليوم: مفتوحة (estimated) + مكتملة (actual).
-2. احسب الوقت المتبقي = `300 - usedMinutes` والعدد المتبقي = `7 - openTasksCount`.
-3. اذا الوقت المتبقي ≥ 30 دقيقة والعدد < 7:
-   - اسحب من بنك الاقتراحات `smart_tasks` المعلّقة (التي لم تتحوّل إلى tasks).
-   - مرّرها عبر `smart-task-dispatcher` مع `start_date=today` فقط لهذا الموظف.
-4. إن لم يتوفر بنك كافٍ، استدعِ `daily-donor-intelligence` بـ `trigger=top_up`.
+ملاحظة: في حال صورة لا تنفصل تلقائياً بشكل نظيف، سأعيد المعالجة يدوياً بـ crop محدّد لتلك الجمعية فقط.
 
-سيتم تمديد `smart-task-dispatcher` بقبول `target_user_id` اختياري لتركيز التوزيع على موظف واحد.
+### ٢. توحيد الهيدر في صفحات الجمعيات
 
-### 3) ربط الإكمال بالتعلّم والتقييم (DB trigger)
-- Trigger AFTER UPDATE على `tasks` عند تحوّل status إلى completed/executed:
-  - يحدّث `task_time_baselines` (EWMA من actual_time_minutes إن وُجد).
-  - عبر `pg_net` يستدعي `evaluate-task-quality` (موجودة) و`top-up-employee-tasks` للموظف نفسه.
+الوضع الحالي: `PageHeader` موحّد بصرياً، لكن الارتفاع ومكان الإدراج مختلفان من صفحة لأخرى (`min-h-[112px]` احياناً، وأحياناً صفحات تستخدم رؤوس مخصصة بدون `PageHeader` أصلاً).
 
-### 4) موزّع المهام يستخدم baselines
-- في `smart-task-dispatcher`: قبل استخدام `CHANNEL_MINUTES`، استعلم `task_time_baselines` بمفتاح `source` ثم `category` ثم `channel`، استخدم أول قيمة موجودة.
+**الإجراءات**:
+- تثبيت ارتفاع موحّد في `PageHeader` (مثلاً `h-[120px] sm:h-[140px]` بدل `min-h`).
+- توحيد الـ padding الخارجي (`px-4 sm:px-6 py-4`) وموقعه (مباشرة في أعلى محتوى الصفحة، بدون margin top إضافي).
+- مسح كل صفحة جمعية واستبدال الهيدر المخصص بـ `<PageHeader />` (Tasks, Plans, Donors, Members, Settings, Performance, Messages, Intelligence, OperationalPlans…).
+- التأكد أن `OrgInternalDashboard` يلتزم بنفس النمط.
 
-### 5) عرض في لوحة الإدارة
-- في بطاقة "موزّع المهام الذكي":
-  - زر إضافي "تعبئة الوقت المتبقي للموظفين" (يستدعي `top-up-employee-tasks`).
-  - عمود إضافي صغير يعرض: متوسط الإنجاز الفعلي vs المقدّر للموظف (من baselines).
+### ٣. تطبيق هوية الجمعية على مركز التبرعات
 
-## ملفات
-**جديد:**
-- `supabase/functions/top-up-employee-tasks/index.ts`
+`DonorsHub` معروض داخل تبويب من `OrgInternalDashboard` بدون `PageHeader`، لذلك يبدو خارج الهوية البصرية.
 
-**تعديل:**
-- `supabase/functions/smart-task-dispatcher/index.ts` (دعم `target_user_id` + قراءة baselines)
-- `src/components/admin/DonorsHub.tsx` (زر التعبئة)
-- هجرة SQL: جدول `task_time_baselines` + trigger التحديث + trigger pg_net للتقييم والتعبئة.
+**الإجراءات**:
+- إضافة `<PageHeader>` في أعلى `DonorsHub` بعنوان "مركز التبرعات" + أيقونة `HandHeart` + subtitle حسب الجمعية النشطة.
+- التأكد أن الـ tabs الفرعية داخل DonorsHub (overview/donors/donations/top/recurring…) تستخدم `hsl(var(--primary))` و `hsl(var(--accent))` بدلاً من اللون الثابت `#2f8e8c`.
+- إزالة المتغير `brand` المثبّت يدوياً والاعتماد على CSS variables التي يحقنها `OrgBrandingContext`.
 
-## ما لن يتغيّر
-- لا تعديل على واجهة الموظف ولا منطق العرض الحالي للمهام.
-- لا تعديل على إنشاء مهام بقية المسارات.
+### تفاصيل تقنية
+
+- معالجة الصور: Python + PIL (`getbbox`, `ImageChops`, optional connected components عبر `scipy.ndimage.label`).
+- الميجريشن: `UPDATE` على جدولين فقط بدون تغيير schema.
+- الكود: تعديلات على `PageHeader.tsx`، `DonorsHub.tsx`، وصفحات الجمعيات الفردية.
+
+### نطاق غير مشمول
+
+- لن أغير منطق صفحات admin (مثل AdminCompare) لأنها خارج نطاق "صفحات الجمعيات".
+- لن أعيد تصميم محتوى DonorsHub، فقط الهيدر والألوان.
