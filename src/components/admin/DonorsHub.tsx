@@ -2071,8 +2071,8 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
           <Button
             onClick={runAnalysis}
             disabled={running}
-            className="gap-2 text-white shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${brand}, #6366f1)` }}
+            className="gap-2 text-white shadow-lg hover:opacity-90"
+            style={{ background: brand }}
           >
             {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
             {running ? "جاري التحليل العميق…" : "تشغيل تحليل ذكي الآن"}
@@ -2110,8 +2110,8 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
             </Button>
             <Button
               size="sm"
-              variant="secondary"
-              className="gap-2"
+              className="gap-2 text-white hover:opacity-90"
+              style={{ background: brand }}
               onClick={async () => {
                 try {
                   const { data, error } = await supabase.functions.invoke("top-up-employee-tasks", {
