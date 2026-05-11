@@ -35,10 +35,12 @@ const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
 const OperationalReportsHub = lazy(() => import("@/components/admin/reports/OperationalReportsHub"));
 const AdminInnovation = lazy(() => import("@/pages/admin/AdminInnovation"));
 const AdminActionPlans = lazy(() => import("@/pages/admin/AdminActionPlans"));
+const MarketingHub = lazy(() => import("@/components/admin/marketing/MarketingHub"));
 import { useIsDemo } from "@/hooks/useIsDemo";
 import { DonorsHub } from "@/components/admin/DonorsHub";
 import { FinanceHub } from "@/components/admin/FinanceHub";
 import { Wallet } from "lucide-react";
+import { Megaphone } from "lucide-react";
 
 // شرح تفصيلي لكل تبويب يظهر للمستخدم أعلى الصفحة عند فتح الأيقونة من الشريط الجانبي.
 const TAB_GUIDES: Record<string, { description: string; features: string[] }> = {
@@ -86,6 +88,16 @@ const TAB_GUIDES: Record<string, { description: string; features: string[] }> = 
       "توليد أفكار ابتكارية بالذكاء الاصطناعي",
       "محادثة ذكية لتطوير الفكرة وتفصيلها",
       "تصدير المبادرات كعروض تقديمية",
+    ],
+  },
+  marketing: {
+    description: "مركز الحملات التسويقية الذكي. يحول بيانات الجمعية والمتبرعين إلى حملات تسويقية احترافية مدعومة بالذكاء الاصطناعي، مع تدريب الموظف ومتابعة وقياس النتائج.",
+    features: [
+      "اقتراح حملات تسويقية ذكية من بياناتك",
+      "مسودات نصوص جاهزة لكل منصة (واتساب/X/إنستغرام...)",
+      "ربط الحملات بالمشاريع والمواسم",
+      "متابعة الميزانية والـ KPIs",
+      "ذاكرة الحملات السابقة لتحسين الأداء",
     ],
   },
   donors: {
@@ -477,6 +489,7 @@ export default function OrgInternalDashboard({
               { value: "performance", label: "تقييم الأداء", Icon: Target },
               { value: "reports", label: "التقارير", Icon: FileBarChart2 },
               { value: "innovation", label: "الابتكار والتجديد", Icon: Lightbulb },
+              { value: "marketing", label: "الحملات التسويقية", Icon: Megaphone },
             ];
             return tabs.flatMap((t, i) => {
               const trigger = (
@@ -684,6 +697,16 @@ export default function OrgInternalDashboard({
         >
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
             {visitedTabs.has("innovation") ? <AdminInnovation /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+          </Suspense>
+        </TabsContent>
+        <TabsContent
+          value="marketing"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            {visitedTabs.has("marketing") ? <MarketingHub orgId={orgId!} /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
           </Suspense>
         </TabsContent>
         <TabsContent value="uploads" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
