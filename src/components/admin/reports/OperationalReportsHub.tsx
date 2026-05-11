@@ -434,11 +434,11 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
         .eq("organization_id", orgId)
         .order("total_donated", { ascending: false })
         .limit(5000);
-      // Classification is applied later in the component using the org's tier config.
       return (data || []).map(d => {
         const t = Number(d.total_donated || 0);
+        const tier = t >= 5000 ? "كبار" : t >= 1000 ? "وسط" : "صغار";
         return {
-          _amount: t,
+          tier,
           الاسم: d.full_name,
           الجوال: d.phone,
           "إجمالي التبرعات": sar(t),
