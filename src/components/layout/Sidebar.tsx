@@ -697,6 +697,15 @@ export function Sidebar() {
             {finalNavItems.map((item) => (
               <div key={item.href}>
                 <NavLink item={item} />
+                {item.children && item.children.length > 0 && (
+                  <div className={cn("mt-2 space-y-1.5", collapsed ? "" : "mr-8 border-r-2 border-white/25 pr-2")}>
+                    {item.children.map((child) => (
+                      <div key={child.href}>
+                        <NavLink item={child} nested />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
 
