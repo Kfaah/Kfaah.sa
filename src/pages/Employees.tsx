@@ -134,6 +134,7 @@ const Employees = () => {
             .from("employees")
             .select("*")
             .eq("organization_id", currentOrg.id)
+            .or("is_viewer_account.is.null,is_viewer_account.eq.false")
             .order("created_at", { ascending: false }),
           supabase.from("departments").select("*").order("name"),
           supabase.from("job_roles").select("*").order("name"),
