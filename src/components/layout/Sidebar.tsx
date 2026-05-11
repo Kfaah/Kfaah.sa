@@ -35,6 +35,7 @@ import {
   FileBarChart2,
   HeartHandshake,
   Award,
+  Wallet,
 } from "lucide-react";
 import { cn, formatNumberPlain } from "@/lib/utils";
 import {
@@ -93,6 +94,7 @@ const adminNavItems: NavItem[] = [
   { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "nav-icon-analysis", description: "تحليل آلي شامل لبيانات الجمعية بالذكاء الاصطناعي لاستخراج نقاط القوة والفرص والمخاطر." },
   { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "nav-icon-overview", description: "ملخّص لوحات المؤشرات الرئيسية للجمعية: الأداء، المهام، الخطط والمستفيدين في شاشة واحدة." },
   { title: "مركز التبرعات", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "nav-icon-donors", description: "مركز موحّد لإدارة المتبرعين والتبرعات والاستقطاعات والحملات والإهداءات والسلال المتروكة." },
+  { title: "الإدارة المالية", href: "/internal-dashboard?tab=finance", icon: Wallet, iconBg: "nav-icon-donors", description: "ربط المصروفات بالتبرعات تلقائياً مع توزيع ذكي على المشاريع والتسويق والتشغيل وشفافية كاملة لكل متبرع." },
   { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "nav-icon-people", description: "إدارة بيانات الموظفين والإدارات وتعيين المدراء المباشرين والصلاحيات." },
   { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "nav-icon-plans", description: "بناء ومتابعة الخطط التشغيلية السنوية المرتبطة بالأهداف الاستراتيجية والمبادرات." },
   { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive", description: "جدولة مراحل التنفيذ الزمنية للأنشطة وتوزيع المسؤوليات على فريق العمل." },

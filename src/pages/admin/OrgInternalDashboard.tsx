@@ -37,6 +37,8 @@ const AdminInnovation = lazy(() => import("@/pages/admin/AdminInnovation"));
 const AdminActionPlans = lazy(() => import("@/pages/admin/AdminActionPlans"));
 import { useIsDemo } from "@/hooks/useIsDemo";
 import { DonorsHub } from "@/components/admin/DonorsHub";
+import { FinanceHub } from "@/components/admin/FinanceHub";
+import { Wallet } from "lucide-react";
 
 // شرح تفصيلي لكل تبويب يظهر للمستخدم أعلى الصفحة عند فتح الأيقونة من الشريط الجانبي.
 const TAB_GUIDES: Record<string, { description: string; features: string[] }> = {
@@ -466,6 +468,7 @@ export default function OrgInternalDashboard({
               { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
               { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "donors", label: "مركز التبرعات", Icon: HeartHandshake },
+              { value: "finance", label: "الإدارة المالية", Icon: Wallet },
               { value: "employees", label: "الموظفون", Icon: Users },
               { value: "operational-plans-main", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
@@ -718,6 +721,9 @@ export default function OrgInternalDashboard({
         </TabsContent>
         <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           {orgId ? <DonorsHub orgId={orgId} /> : null}
+        </TabsContent>
+        <TabsContent value="finance" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
+          {orgId ? <FinanceHub orgId={orgId} /> : null}
         </TabsContent>
       </Tabs>
     </div>
