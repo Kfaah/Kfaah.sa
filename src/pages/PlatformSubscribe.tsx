@@ -417,7 +417,14 @@ function labelCampaign(v: string) {
   return ({ none: "لا توجد", light: "خفيفة", active: "نشطة", intensive: "مكثفة" } as any)[v];
 }
 function labelDonors(v: string) {
-  return ({ lt500: "أقل من 500", "500_2000": "500–2000", "2000_5000": "2000–5000", gt5000: "أكثر من 5000" } as any)[v];
+  return ({
+    lt500: "حتى 500",
+    lt5000: "حتى 5,000",
+    lt15000: "حتى 15,000",
+    lt40000: "حتى 40,000",
+    lt100000: "حتى 100,000",
+    gt100000: "أكثر من 100,000",
+  } as any)[v];
 }
 function labelAge(v: string) {
   return ({ lt2: "أقل من سنتين", "2_5": "2–5 سنوات", "5_10": "5–10 سنوات", gt10: "أكثر من 10 سنوات" } as any)[v];
