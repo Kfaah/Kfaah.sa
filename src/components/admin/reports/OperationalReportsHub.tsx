@@ -560,10 +560,8 @@ const COLUMN_DEFS: Record<ReportKey, Col[]> = {
     { key: "الاسم", label: "الاسم" }, { key: "الجوال", label: "الجوال" },
     { key: "إجمالي التبرعات", label: "إجمالي التبرعات" },
     { key: "عدد التبرعات", label: "عدد التبرعات" },
-    { key: "tier", label: "الفئة", render: (v) => <Badge variant="outline">فئة {v}</Badge> },
-    { key: "النطاق", label: "النطاق" },
+    { key: "tier", label: "الفئة", render: (v) => <Badge variant="outline">{v}</Badge> },
     { key: "آخر تبرع", label: "آخر تبرع" },
-    { key: "قناة التواصل المقترحة", label: "قناة التواصل المقترحة" },
   ],
   campaigns: [
     { key: "اسم الحملة", label: "اسم الحملة" }, { key: "الحالة", label: "الحالة" },
@@ -619,10 +617,9 @@ function computeAggregates(key: ReportKey, rows: any[]): Record<string, number |
       const tiers = rows.reduce((m: Record<string, number>, r: any) => { m[r.tier] = (m[r.tier] || 0) + 1; return m; }, {});
       return {
         "إجمالي المتبرعين": n,
-        "فئة أ": tiers["أ"] || 0,
-        "فئة ب": tiers["ب"] || 0,
-        "فئة ج": tiers["ج"] || 0,
-        "فئة د": tiers["د"] || 0,
+        "كبار (≥ 5,000)": tiers["كبار"] || 0,
+        "وسط (1,000 – 5,000)": tiers["وسط"] || 0,
+        "صغار (< 1,000)": tiers["صغار"] || 0,
       };
     }
     case "campaigns": {
