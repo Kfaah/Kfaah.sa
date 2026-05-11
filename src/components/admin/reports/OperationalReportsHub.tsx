@@ -194,6 +194,63 @@ function ReportView({
   const [aiLoading, setAiLoading] = useState(false);
   const [ai, setAi] = useState<AIResult | null>(null);
   const [creatingTasks, setCreatingTasks] = useState(false);
+  const [tierConfig, setTierConfig] = useState<TierConfig>(DEFAULT_TIER_CONFIG);
+  const [tierConfigLoaded, setTierConfigLoaded] = useState(false);
+  const [showTierSettings, setShowTierSettings] = useState(false);
+  const [tierDraft, setTierDraft] = useState<TierConfig>(DEFAULT_TIER_CONFIG);
+  const [savingTiers, setSavingTiers] = useState(false);
+
+  // Load org tier config once when viewing donor_tiers
+  useEffect(() => {
+    if (reportKey !== "donor_tiers") return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("org_donor_tiers")
+        .select("*")
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      if (cancelled) return;
+      const cfg: TierConfig = data
+        ? {
+            tier_a_min: Number(data.tier_a_min) || DEFAULT_TIER_CONFIG.tier_a_min,
+            tier_b_min: Number(data.tier_b_min) || DEFAULT_TIER_CONFIG.tier_b_min,
+            tier_c_min: Number(data.tier_c_min) || DEFAULT_TIER_CONFIG.tier_c_min,
+            tier_a_channel: data.tier_a_channel || DEFAULT_TIER_CONFIG.tier_a_channel,
+            tier_b_channel: data.tier_b_channel || DEFAULT_TIER_CONFIG.tier_b_channel,
+            tier_c_channel: data.tier_c_channel || DEFAULT_TIER_CONFIG.tier_c_channel,
+            tier_d_channel: data.tier_d_channel || DEFAULT_TIER_CONFIG.tier_d_channel,
+          }
+        : DEFAULT_TIER_CONFIG;
+      setTierConfig(cfg);
+      setTierDraft(cfg);
+      setTierConfigLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [reportKey, orgId]);
+
+  const saveTierConfig = async () => {
+    // Basic validation: a > b > c > 0
+    const { tier_a_min: a, tier_b_min: b, tier_c_min: c } = tierDraft;
+    if (!(a > b && b > c && c > 0)) {
+      toast.error("الحدود يجب أن تكون: أ > ب > ج > 0");
+      return;
+    }
+    setSavingTiers(true);
+    try {
+      const { error } = await supabase
+        .from("org_donor_tiers")
+        .upsert({ organization_id: orgId, ...tierDraft, updated_at: new Date().toISOString() }, { onConflict: "organization_id" });
+      if (error) throw error;
+      setTierConfig(tierDraft);
+      setShowTierSettings(false);
+      toast.success("تم حفظ إعدادات الفئات");
+    } catch (e: any) {
+      toast.error(e.message || "تعذر الحفظ — قد لا تملك الصلاحية");
+    } finally {
+      setSavingTiers(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -211,10 +268,19 @@ function ReportView({
     return () => { cancelled = true; };
   }, [reportKey, orgId]);
 
+  // Apply tier classification using org config (donor_tiers only)
+  const enriched = useMemo(() => {
+    if (reportKey !== "donor_tiers") return rows;
+    return rows.map(r => {
+      const c = classifyTier(Number(r._amount || 0), tierConfig);
+      return { ...r, tier: c.tier, "النطاق": c.rangeLabel, "قناة التواصل المقترحة": c.channel };
+    });
+  }, [rows, reportKey, tierConfig]);
+
   const filtered = useMemo(() => {
-    if (reportKey !== "donor_tiers" || tier === "all") return rows;
-    return rows.filter(r => r.tier === tier);
-  }, [rows, tier, reportKey]);
+    if (reportKey !== "donor_tiers" || tier === "all") return enriched;
+    return enriched.filter(r => r.tier === tier);
+  }, [enriched, tier, reportKey]);
 
   const aggregates = useMemo(() => computeAggregates(reportKey, filtered), [reportKey, filtered]);
 
