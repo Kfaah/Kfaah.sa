@@ -1294,6 +1294,51 @@ export type Database = {
           },
         ]
       }
+      donor_spend_summary: {
+        Row: {
+          donor_id: string
+          last_updated: string
+          organization_id: string
+          projects_funded: Json
+          total_allocated: number
+          total_donated: number
+          total_spent_visible: number
+        }
+        Insert: {
+          donor_id: string
+          last_updated?: string
+          organization_id: string
+          projects_funded?: Json
+          total_allocated?: number
+          total_donated?: number
+          total_spent_visible?: number
+        }
+        Update: {
+          donor_id?: string
+          last_updated?: string
+          organization_id?: string
+          projects_funded?: Json
+          total_allocated?: number
+          total_donated?: number
+          total_spent_visible?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_spend_summary_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: true
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_spend_summary_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       donors: {
         Row: {
           city: string | null
@@ -2116,6 +2161,195 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_allocations: {
+        Row: {
+          allocation_type: string
+          amount_allocated: number
+          created_at: string
+          donation_id: string
+          donor_id: string | null
+          expense_id: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          allocation_type: string
+          amount_allocated: number
+          created_at?: string
+          donation_id: string
+          donor_id?: string | null
+          expense_id: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          allocation_type?: string
+          amount_allocated?: number
+          created_at?: string
+          donation_id?: string
+          donor_id?: string | null
+          expense_id?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_allocations_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_allocations_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_allocations_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_allocations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          created_at: string
+          default_allocation_pct: number
+          id: string
+          kind: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_allocation_pct?: number
+          id?: string
+          kind: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_allocation_pct?: number
+          id?: string
+          kind?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          attachment_url: string | null
+          auto_classified: boolean
+          campaign_id: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          expense_date: string
+          id: string
+          kind: string
+          organization_id: string
+          project_id: string | null
+          project_name: string | null
+          status: string
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount: number
+          attachment_url?: string | null
+          auto_classified?: boolean
+          campaign_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          expense_date?: string
+          id?: string
+          kind: string
+          organization_id: string
+          project_id?: string | null
+          project_name?: string | null
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          attachment_url?: string | null
+          auto_classified?: boolean
+          campaign_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          kind?: string
+          organization_id?: string
+          project_id?: string | null
+          project_name?: string | null
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects_catalog"
             referencedColumns: ["id"]
           },
         ]
@@ -3261,6 +3495,41 @@ export type Database = {
             columns: ["sub_initiative_id"]
             isOneToOne: false
             referencedRelation: "sub_initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_allocation_rules: {
+        Row: {
+          created_at: string
+          marketing_pct: number
+          operational_pct: number
+          organization_id: string
+          project_pct: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          marketing_pct?: number
+          operational_pct?: number
+          organization_id: string
+          project_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          marketing_pct?: number
+          operational_pct?: number
+          organization_id?: string
+          project_pct?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_allocation_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -4763,6 +5032,7 @@ export type Database = {
         Args: { _actual: number; _key: string; _org: string }
         Returns: undefined
       }
+      allocate_expense: { Args: { _expense_id: string }; Returns: undefined }
       can_manage_intelligence_profile: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -4778,6 +5048,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      ensure_org_finance_defaults: {
+        Args: { _org_id: string }
+        Returns: undefined
       }
       get_conversations_for_user: {
         Args: { _user_id: string }
