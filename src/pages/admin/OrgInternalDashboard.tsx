@@ -699,6 +699,16 @@ export default function OrgInternalDashboard({
             {visitedTabs.has("innovation") ? <AdminInnovation /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
           </Suspense>
         </TabsContent>
+        <TabsContent
+          value="marketing"
+          forceMount
+          className={cn(standaloneTab ? "mt-0" : "mt-6", "data-[state=inactive]:hidden")}
+          dir="rtl"
+        >
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
+            {visitedTabs.has("marketing") ? <MarketingHub orgId={orgId!} /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+          </Suspense>
+        </TabsContent>
         <TabsContent value="uploads" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
         </TabsContent>
