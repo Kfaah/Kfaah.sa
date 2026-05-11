@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { organization_id } = await req.json();
+    const { organization_id, goal_key, extra_note } = await req.json();
     if (!organization_id) {
       return new Response(JSON.stringify({ error: "organization_id required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -57,7 +57,18 @@ Deno.serve(async (req) => {
 
 أعد النتيجة فقط عبر استدعاء الدالة suggest_campaigns.`;
 
-    const userPrompt = `بيانات الجمعية:\n${JSON.stringify(ctx, null, 2)}\n\nاقترح حملات تسويقية احترافية الآن.`;
+    const goalMap: Record<string, string> = {
+      donations: "زيادة التبرعات لمشروع/هدف محدد",
+      awareness: "نشر الوعي ورفع تفاعل الجمهور",
+      reactivate: "استرجاع المتبرعين المنقطعين (90+ يوم)",
+      acquire: "جذب متبرعين جدد",
+      seasonal: "استثمار موسم ديني/وطني قادم",
+    };
+    const focusLine = goal_key
+      ? `\n\nتركيز الموظف على هدف: ${goalMap[goal_key] ?? goal_key}. اقترح 3 حملات فقط مرتبطة مباشرة بهذا الهدف، بدون تشتيت.`
+      : "";
+    const noteLine = extra_note?.trim() ? `\n\nملاحظة من الموظف يجب احترامها: ${extra_note.trim()}` : "";
+    const userPrompt = `بيانات الجمعية:\n${JSON.stringify(ctx, null, 2)}${focusLine}${noteLine}\n\nاقترح حملات تسويقية احترافية الآن.`;
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
