@@ -290,89 +290,12 @@ ${a.rationale}
             <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">جميع الفئات</SelectItem>
-              <SelectItem value="أ">فئة أ — ≥ {fmt(tierConfig.tier_a_min)} ر.س</SelectItem>
-              <SelectItem value="ب">فئة ب — {fmt(tierConfig.tier_b_min)} – {fmt(tierConfig.tier_a_min)} ر.س</SelectItem>
-              <SelectItem value="ج">فئة ج — {fmt(tierConfig.tier_c_min)} – {fmt(tierConfig.tier_b_min)} ر.س</SelectItem>
-              <SelectItem value="د">فئة د — أقل من {fmt(tierConfig.tier_c_min)} ر.س</SelectItem>
+              <SelectItem value="كبار">كبار المتبرعين (≥ 5,000 ر.س)</SelectItem>
+              <SelectItem value="وسط">الفئة الوسطى (1,000 – 5,000 ر.س)</SelectItem>
+              <SelectItem value="صغار">صغار المتبرعين (&lt; 1,000 ر.س)</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTierSettings(s => !s)}
-            disabled={!tierConfigLoaded}
-          >
-            <Settings2 className="h-4 w-4 ml-1" />
-            {showTierSettings ? "إخفاء إعدادات الفئات" : "تعديل حدود الفئات"}
-          </Button>
         </div>
-      )}
-
-      {/* Tier settings panel */}
-      {reportKey === "donor_tiers" && showTierSettings && (
-        <Card className="border-primary/30 bg-card">
-          <CardHeader>
-            <CardTitle className="text-base text-right">إعدادات فئات المتبرعين</CardTitle>
-            <CardDescription className="text-right">
-              عدّل حدود كل فئة وقناة التواصل المقترحة. الترتيب: فئة أ ≥ ب ≥ ج، وما دون ذلك يندرج تحت فئة د.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">حد فئة أ (الحد الأدنى)</div>
-                <Input
-                  type="number" inputMode="numeric" min={1}
-                  value={tierDraft.tier_a_min}
-                  onChange={(e) => setTierDraft(d => ({ ...d, tier_a_min: Number(e.target.value) || 0 }))}
-                />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">حد فئة ب (الحد الأدنى)</div>
-                <Input
-                  type="number" inputMode="numeric" min={1}
-                  value={tierDraft.tier_b_min}
-                  onChange={(e) => setTierDraft(d => ({ ...d, tier_b_min: Number(e.target.value) || 0 }))}
-                />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">حد فئة ج (الحد الأدنى)</div>
-                <Input
-                  type="number" inputMode="numeric" min={1}
-                  value={tierDraft.tier_c_min}
-                  onChange={(e) => setTierDraft(d => ({ ...d, tier_c_min: Number(e.target.value) || 0 }))}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">قناة فئة أ</div>
-                <Input value={tierDraft.tier_a_channel} onChange={(e) => setTierDraft(d => ({ ...d, tier_a_channel: e.target.value }))} />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">قناة فئة ب</div>
-                <Input value={tierDraft.tier_b_channel} onChange={(e) => setTierDraft(d => ({ ...d, tier_b_channel: e.target.value }))} />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">قناة فئة ج</div>
-                <Input value={tierDraft.tier_c_channel} onChange={(e) => setTierDraft(d => ({ ...d, tier_c_channel: e.target.value }))} />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">قناة فئة د</div>
-                <Input value={tierDraft.tier_d_channel} onChange={(e) => setTierDraft(d => ({ ...d, tier_d_channel: e.target.value }))} />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" onClick={() => { setTierDraft(tierConfig); setShowTierSettings(false); }} disabled={savingTiers}>
-                إلغاء
-              </Button>
-              <Button onClick={saveTierConfig} disabled={savingTiers}>
-                {savingTiers ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Save className="h-4 w-4 ml-1" />}
-                حفظ
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       )}
 
       {/* KPIs */}
