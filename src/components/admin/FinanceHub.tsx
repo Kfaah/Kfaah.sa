@@ -10,7 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Wallet, Plus, Receipt, Megaphone, Settings as Cog, Building2, Save, Trash2, Eye, Sparkles, ArrowRight } from "lucide-react";
+import { Wallet, Plus, Receipt, Settings as Cog, Building2, Save, Trash2, Eye, Sparkles, ArrowRight, FileSpreadsheet, FileText, Globe, RefreshCcw, Lightbulb, CheckCircle2, Clock, Mail, Loader2 } from "lucide-react";
+import * as XLSX from "xlsx";
+import { exportDonorThankYouDocx, exportDonorTransparencyPdf } from "@/utils/exportDonorReport";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +54,7 @@ function fmtSAR(n: number) {
 }
 
 export function FinanceHub({ orgId }: { orgId: string }) {
-  const [view, setView] = useState<"dashboard" | "add" | "rules" | "donor">("dashboard");
+  const [view, setView] = useState<"dashboard" | "add" | "rules" | "donor" | "import" | "reports" | "sources">("dashboard");
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [rule, setRule] = useState<Rule | null>(null);
   const [totalDonated, setTotalDonated] = useState(0);
@@ -114,6 +116,15 @@ export function FinanceHub({ orgId }: { orgId: string }) {
   if (view === "donor") {
     return <DonorTransparencyView orgId={orgId} onBack={() => setView("dashboard")} />;
   }
+  if (view === "import") {
+    return <ExcelImportView orgId={orgId} projects={projects} onDone={() => { setView("dashboard"); refresh(); }} />;
+  }
+  if (view === "reports") {
+    return <SmartReportsView orgId={orgId} onBack={() => setView("dashboard")} />;
+  }
+  if (view === "sources") {
+    return <ExternalSourcesView orgId={orgId} onBack={() => setView("dashboard")} />;
+  }
 
   const pct = (n: number) => totals.total > 0 ? (n / totals.total) * 100 : 0;
   const target = rule || { project_pct: 50, marketing_pct: 40, operational_pct: 10 };
@@ -126,11 +137,20 @@ export function FinanceHub({ orgId }: { orgId: string }) {
         subtitle="ربط المصروفات بالتبرعات تلقائياً مع شفافية كاملة لكل ريال"
         actions={
           <div className="flex items-center gap-2">
+            <Button onClick={() => setView("sources")} variant="secondary" size="sm" className="bg-white/15 text-white hover:bg-white/25 border-0">
+              <Globe className="ml-2 h-4 w-4" /> المصادر الخارجية
+            </Button>
+            <Button onClick={() => setView("reports")} variant="secondary" size="sm" className="bg-white/15 text-white hover:bg-white/25 border-0">
+              <Lightbulb className="ml-2 h-4 w-4" /> تقارير ذكية
+            </Button>
             <Button onClick={() => setView("donor")} variant="secondary" size="sm" className="bg-white/15 text-white hover:bg-white/25 border-0">
               <Eye className="ml-2 h-4 w-4" /> شفافية المتبرع
             </Button>
             <Button onClick={() => setView("rules")} variant="secondary" size="sm" className="bg-white/15 text-white hover:bg-white/25 border-0">
               <Cog className="ml-2 h-4 w-4" /> قواعد التوزيع
+            </Button>
+            <Button onClick={() => setView("import")} variant="secondary" size="sm" className="bg-white/15 text-white hover:bg-white/25 border-0">
+              <FileSpreadsheet className="ml-2 h-4 w-4" /> استيراد Excel
             </Button>
             <Button onClick={() => setView("add")} size="sm" className="bg-white text-primary hover:bg-white/90">
               <Plus className="ml-2 h-4 w-4" /> إضافة مصروف
