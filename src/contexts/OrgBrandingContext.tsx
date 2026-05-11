@@ -211,9 +211,13 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     const path = location.pathname;
     if (path.startsWith("/demo")) return false;
     const isAdminRoute = path.startsWith("/admin");
-    const searchOrgSlug = new URLSearchParams(location.search).get("org");
-    const isAdminOrgScopedRoute = isAdminRoute && /\/admin\/(orgs?|organizations?)\//.test(path);
-    return !isAdminRoute || isAdminOrgScopedRoute || Boolean(searchOrgSlug);
+    // Admin routes ALWAYS use the neutral super-admin identity (turquoise/green),
+    // regardless of which organization is being viewed. Org colors only return
+    // when admin pages are embedded inside an org's internal dashboard iframe
+    // (?embedded=1), where they intentionally inherit the host org's brand.
+    const isEmbedded = new URLSearchParams(location.search).get("embedded") === "1";
+    if (isAdminRoute) return isEmbedded;
+    return true;
   }, [location.pathname, location.search]);
   const [branding, setBranding] = useState<Branding>(() => {
     // Synchronously hydrate from slug-keyed cache on first render so the
