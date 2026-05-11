@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Megaphone, Sparkles, Plus, Loader2, Calendar, Target, MessageCircle, TrendingUp, Wand2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import CampaignWorkspace from "./CampaignWorkspace";
 
 type Campaign = {
   id: string;
@@ -54,6 +55,7 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
   const [generating, setGenerating] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -202,7 +204,7 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
             {campaigns.map((c) => (
-              <Card key={c.id} className="hover:shadow-md transition-shadow">
+              <Card key={c.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setWorkspaceId(c.id)}>
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
@@ -214,6 +216,9 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
                       <CardTitle className="text-base">{c.name}</CardTitle>
                       {c.goal && <CardDescription className="mt-1 text-xs">{c.goal}</CardDescription>}
                     </div>
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setWorkspaceId(c.id); }}>
+                      افتح
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
@@ -238,6 +243,12 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
       </div>
 
       <CreateCampaignDialog open={createOpen} onOpenChange={setCreateOpen} orgId={orgId} onCreated={load} />
+      <CampaignWorkspace
+        campaignId={workspaceId}
+        open={!!workspaceId}
+        onOpenChange={(v) => { if (!v) setWorkspaceId(null); }}
+        onChanged={load}
+      />
     </div>
   );
 }
