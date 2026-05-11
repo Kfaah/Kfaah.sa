@@ -216,9 +216,13 @@ export default function OrganizationProfile() {
           .update({ news_path: newsPath.trim() || null })
           .eq("id", sourceId);
       }
-      const { error: fnErr } = await supabase.functions.invoke("sync-external-source", { body: { source_id: sourceId } });
+      const { data: fnData, error: fnErr } = await supabase.functions.invoke("sync-external-source", { body: { source_id: sourceId } });
       if (fnErr) throw fnErr;
-      toast.success("تمت المزامنة بنجاح");
+      if (fnData?.skipped) {
+        toast.warning(fnData.message || "تم تخطّي هذا المصدر");
+      } else {
+        toast.success("تمت المزامنة بنجاح");
+      }
       await loadSources();
     } catch (e: any) {
       toast.error("تعذّرت المزامنة: " + (e?.message || ""));
