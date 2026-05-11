@@ -1,0 +1,1 @@
+ALTER TABLE public.org_external_sources ADD COLUMN IF NOT EXISTS news_path text;
