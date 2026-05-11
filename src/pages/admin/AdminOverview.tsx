@@ -43,12 +43,22 @@ export default function AdminOverview() {
           abandoned: 0, recovered: 0, tasks: 0, done: 0, ideas: 0, insights: 0 });
   }, [metrics]);
 
+  const shortenOrgName = (name: string) => {
+    const stripped = name.replace(/^جمعية\s+/, "").replace(/\s+الخيرية$/, "");
+    return stripped.length > 10 ? stripped.slice(0, 10) + "…" : stripped;
+  };
+
   const revenueByOrg = useMemo(() =>
-    [...metrics].sort((a, b) => b.total_donated - a.total_donated).slice(0, 8).map(m => ({
-      name: m.org_name.length > 12 ? m.org_name.slice(0, 12) + "…" : m.org_name,
-      revenue: Math.round(m.total_donated),
-      donors: m.donors,
-    })), [metrics]);
+    [...metrics]
+      .filter(m => m.total_donated > 0)
+      .sort((a, b) => b.total_donated - a.total_donated)
+      .slice(0, 8)
+      .map(m => ({
+        name: shortenOrgName(m.org_name),
+        fullName: m.org_name,
+        revenue: Math.round(m.total_donated),
+        donors: m.donors,
+      })), [metrics]);
 
   const donorsDist = useMemo(() =>
     metrics.filter(m => m.donors > 0).slice(0, 8).map(m => ({
@@ -177,7 +187,7 @@ export default function AdminOverview() {
   );
 }
 
-function RevenueBarChart({ data }: { data: { name: string; revenue: number; donors: number }[] }) {
+function RevenueBarChart({ data }: { data: { name: string; fullName?: string; revenue: number; donors: number }[] }) {
   const W = 760;
   const H = 300;
   const padX = 44;
@@ -218,8 +228,8 @@ function RevenueBarChart({ data }: { data: { name: string; revenue: number; dono
         const x = padX + slot * index + (slot - barW) / 2;
         const y = padTop + chartH - valueH;
         return (
-          <g key={item.name}>
-            <title>{`${item.name}: ${fmtSAR(item.revenue)} · ${fmt(item.donors)} متبرع`}</title>
+          <g key={item.fullName || item.name}>
+            <title>{`${item.fullName || item.name}: ${fmtSAR(item.revenue)} · ${fmt(item.donors)} متبرع`}</title>
             <rect x={x} y={y} width={barW} height={valueH} rx="8" fill="url(#adminRevenueGrad)" />
             <text x={x + barW / 2} y={Math.max(14, y - 8)} textAnchor="middle" fontSize="11" fontWeight="700" fill="hsl(var(--foreground))">
               {fmt(item.revenue)}
