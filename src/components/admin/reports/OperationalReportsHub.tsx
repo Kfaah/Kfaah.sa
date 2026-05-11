@@ -476,7 +476,7 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
         المبلغ: sar(Number(f.amount || 0)), المشروع: f.project_name || "—",
         "سبب الفشل": f.failure_reason || "غير محدد",
         "حالة المعاودة": f.retry_status,
-        "تاريخ المحاولة": f.attempted_at ? new Date(f.attempted_at).toLocaleDateString("ar-SA") : "—",
+        "تاريخ المحاولة": f.attempted_at ? new Date(f.attempted_at).toLocaleDateString("en-GB") : "—",
       }));
     }
     case "abandoned_carts": {
@@ -488,7 +488,7 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
         المبلغ: sar(Number(c.amount || 0)), المشروع: c.project_name || "—",
         "حالة المتابعة": c.follow_up_status,
         "تم الاسترداد": c.recovered ? "نعم" : "لا",
-        "تاريخ الترك": c.abandoned_at ? new Date(c.abandoned_at).toLocaleDateString("ar-SA") : "—",
+        "تاريخ الترك": c.abandoned_at ? new Date(c.abandoned_at).toLocaleDateString("en-GB") : "—",
       }));
     }
     case "subscriptions": {
@@ -515,8 +515,8 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
         الاسم: d.full_name, الجوال: d.phone,
         "عدد التبرعات": d.donations_count,
         "إجمالي": sar(Number(d.total_donated || 0)),
-        "أول تبرع": d.first_donation_at ? new Date(d.first_donation_at).toLocaleDateString("ar-SA") : "—",
-        "آخر تبرع": d.last_donation_at ? new Date(d.last_donation_at).toLocaleDateString("ar-SA") : "—",
+        "أول تبرع": d.first_donation_at ? new Date(d.first_donation_at).toLocaleDateString("en-GB") : "—",
+        "آخر تبرع": d.last_donation_at ? new Date(d.last_donation_at).toLocaleDateString("en-GB") : "—",
       }));
     }
     case "gifts": {
@@ -531,7 +531,7 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
         المناسبة: g.occasion || "—",
         المشروع: g.project_name || "—",
         "حالة التسليم": g.delivery_status,
-        التاريخ: g.gift_date ? new Date(g.gift_date).toLocaleDateString("ar-SA") : "—",
+        التاريخ: g.gift_date ? new Date(g.gift_date).toLocaleDateString("en-GB") : "—",
       }));
     }
     case "project_donors": {
@@ -545,7 +545,7 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
         المتبرع: d.donor_name || "—",
         الجوال: d.donor_phone || "—",
         المبلغ: sar(Number(d.amount || 0)),
-        التاريخ: d.donation_date ? new Date(d.donation_date).toLocaleDateString("ar-SA") : "—",
+        التاريخ: d.donation_date ? new Date(d.donation_date).toLocaleDateString("en-GB") : "—",
       }));
     }
   }
