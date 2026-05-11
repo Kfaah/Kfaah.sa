@@ -164,6 +164,9 @@ function ReportView({
   const [rows, setRows] = useState<any[]>([]);
   const [tier, setTier] = useState<string>("all");
   const [campaignStatus, setCampaignStatus] = useState<string>("all");
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>("all");
+  const [amountFrom, setAmountFrom] = useState<string>("");
+  const [amountTo, setAmountTo] = useState<string>("");
   const [period, setPeriod] = useState<DatePeriod>("this_month");
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
@@ -192,8 +195,19 @@ function ReportView({
     let out = rows;
     if (reportKey === "donor_tiers" && tier !== "all") out = out.filter(r => r.tier === tier);
     if (reportKey === "campaigns" && campaignStatus !== "all") out = out.filter(r => r._statusKey === campaignStatus);
+    if (reportKey === "subscriptions" && subscriptionStatus !== "all") {
+      out = out.filter(r => r._statusKey === subscriptionStatus);
+    }
+    if ((reportKey === "failed_donations" || reportKey === "abandoned_carts") && (amountFrom || amountTo)) {
+      const lo = amountFrom ? Number(amountFrom) : -Infinity;
+      const hi = amountTo ? Number(amountTo) : Infinity;
+      out = out.filter(r => {
+        const v = Number(r._amount || 0);
+        return v >= lo && v <= hi;
+      });
+    }
     return out;
-  }, [rows, tier, campaignStatus, reportKey]);
+  }, [rows, tier, campaignStatus, subscriptionStatus, amountFrom, amountTo, reportKey]);
 
   const aggregates = useMemo(() => computeAggregates(reportKey, filtered), [reportKey, filtered]);
 
@@ -326,6 +340,28 @@ ${a.rationale}
               <SelectItem value="completed">مكتملة</SelectItem>
               <SelectItem value="needs_activation">تحتاج تنشيط</SelectItem>
               <SelectItem value="closed">مغلقة</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {(reportKey === "failed_donations" || reportKey === "abandoned_carts") && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">نطاق المبلغ:</span>
+          <Input type="number" placeholder="من" className="w-[110px]" value={amountFrom} onChange={(e) => setAmountFrom(e.target.value)} />
+          <span className="text-xs text-muted-foreground">إلى</span>
+          <Input type="number" placeholder="إلى" className="w-[110px]" value={amountTo} onChange={(e) => setAmountTo(e.target.value)} />
+        </div>
+      )}
+      {reportKey === "subscriptions" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">حالة الاستقطاع:</span>
+          <Select value={subscriptionStatus} onValueChange={setSubscriptionStatus}>
+            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">الكل</SelectItem>
+              <SelectItem value="active">مستمر / نشط</SelectItem>
+              <SelectItem value="paused">متذبذب / متوقف مؤقتًا</SelectItem>
+              <SelectItem value="cancelled">منقطع / ملغى</SelectItem>
             </SelectContent>
           </Select>
         </div>
