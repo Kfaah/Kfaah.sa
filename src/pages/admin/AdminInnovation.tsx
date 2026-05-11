@@ -221,7 +221,7 @@ export default function AdminInnovation() {
       {/* Filters */}
       <Card className="p-3 bg-card border-border" dir="rtl">
         <div className="flex flex-wrap items-center gap-3">
-          {!isEmbedded && (
+          {!isEmbedded && visibleMetrics.length > 1 && (
             <div className="flex items-center gap-2 flex-1 min-w-[260px]" dir="rtl">
               <Building2 className="w-4 h-4 text-muted-foreground" />
               <Select value={orgId} onValueChange={setOrgId} dir="rtl">
