@@ -86,6 +86,7 @@ interface NavItem {
   badge?: number;
   iconBg: string;
   description?: string;
+  children?: NavItem[];
 }
 
 // كل أيقونة بلونها المميز — ثابت دائمًا لتجنب تبدّل الألوان أو اهتزاز القائمة عند التنقل.
@@ -93,16 +94,17 @@ const adminNavItems: NavItem[] = [
   { title: "رفع الملفات", href: "/uploads", icon: Upload, iconBg: "nav-icon-upload", description: "رفع ملفات الجمعية (لوائح، خطط، تقارير، مرفقات Excel) ليتم تحليلها ومعالجتها داخل النظام." },
   { title: "التحليل الذكي", href: "/internal-dashboard?tab=analysis", icon: Sparkles, iconBg: "nav-icon-analysis", description: "تحليل آلي شامل لبيانات الجمعية بالذكاء الاصطناعي لاستخراج نقاط القوة والفرص والمخاطر." },
   { title: "نظرة عامة", href: "/internal-dashboard?tab=overview", icon: LayoutDashboard, iconBg: "nav-icon-overview", description: "ملخّص لوحات المؤشرات الرئيسية للجمعية: الأداء، المهام، الخطط والمستفيدين في شاشة واحدة." },
-  { title: "مركز التبرعات", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "nav-icon-donors", description: "مركز موحّد لإدارة المتبرعين والتبرعات والاستقطاعات والحملات والإهداءات والسلال المتروكة." },
+  { title: "مركز التبرعات", href: "/internal-dashboard?tab=donors", icon: HeartHandshake, iconBg: "nav-icon-donors", description: "مركز موحّد لإدارة المتبرعين والتبرعات والاستقطاعات والحملات والإهداءات والسلال المتروكة.", children: [
+    { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations", description: "خطط تشغيلية مولّدة آلياً انطلاقاً من توصيات التحليل الذكي ونتائج التقييم." },
+    { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير تفصيلية قابلة للتصدير (PDF / Excel / Word) عن الأداء والخطط والمشاريع." },
+    { title: "الابتكار والتجديد", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "بنك الأفكار والمبادرات الابتكارية وتطوير الخدمات بمساعدة الذكاء الاصطناعي." },
+  ] },
   { title: "الإدارة المالية", href: "/internal-dashboard?tab=finance", icon: Wallet, iconBg: "nav-icon-donors", description: "ربط المصروفات بالتبرعات تلقائياً مع توزيع ذكي على المشاريع والتسويق والتشغيل وشفافية كاملة لكل متبرع." },
   { title: "الموظفون", href: "/internal-dashboard?tab=employees", icon: Users, iconBg: "nav-icon-people", description: "إدارة بيانات الموظفين والإدارات وتعيين المدراء المباشرين والصلاحيات." },
   { title: "الخطط التشغيلية", href: "/internal-dashboard?tab=operational-plans-main", icon: Target, iconBg: "nav-icon-plans", description: "بناء ومتابعة الخطط التشغيلية السنوية المرتبطة بالأهداف الاستراتيجية والمبادرات." },
   { title: "الخطط التنفيذية", href: "/internal-dashboard?tab=executive-plans", icon: CalendarCheck, iconBg: "nav-icon-executive", description: "جدولة مراحل التنفيذ الزمنية للأنشطة وتوزيع المسؤوليات على فريق العمل." },
   { title: "المهام", href: "/internal-dashboard?tab=tasks", icon: ClipboardList, iconBg: "nav-icon-tasks", description: "إنشاء المهام وتوزيعها على الموظفين ومتابعة حالتها وأولوياتها وتواريخ تسليمها." },
   { title: "تقييم الأداء", href: "/internal-dashboard?tab=performance", icon: FileText, iconBg: "nav-icon-performance", description: "تقييم أداء الموظفين والإدارات بناءً على نسب الإنجاز والجودة ومؤشرات قابلة للقياس." },
-  { title: "الخطط من التوصيات", href: "/internal-dashboard?tab=operational-plans", icon: ListChecks, iconBg: "nav-icon-recommendations", description: "خطط تشغيلية مولّدة آلياً انطلاقاً من توصيات التحليل الذكي ونتائج التقييم." },
-  { title: "التقارير", href: "/internal-dashboard?tab=reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير تفصيلية قابلة للتصدير (PDF / Excel / Word) عن الأداء والخطط والمشاريع." },
-  { title: "الابتكار والتجديد", href: "/internal-dashboard?tab=innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "بنك الأفكار والمبادرات الابتكارية وتطوير الخدمات بمساعدة الذكاء الاصطناعي." },
 ];
 
 const managerNavItems: NavItem[] = [
@@ -435,7 +437,7 @@ export function Sidebar() {
     navigate(redirectTo, { replace: true });
   };
 
-  const NavLink = ({ item }: { item: NavItem }) => {
+  const NavLink = ({ item, nested = false }: { item: NavItem; nested?: boolean }) => {
     const scopedHref = (() => {
       if (!currentOrg?.slug || !item.href.startsWith("/")) return item.href;
 
@@ -465,20 +467,27 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center rounded-2xl bg-sidebar-item py-2 ml-3 mr-2 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
-          collapsed ? "justify-center px-0" : "gap-3 pr-4 pl-4",
+          "group/nav flex items-center rounded-2xl bg-sidebar-item shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
+          nested ? "h-11 py-1.5 ml-3 mr-2 bg-sidebar-item/70" : "h-14 py-2 ml-3 mr-2",
+          collapsed ? "justify-center px-0" : (nested ? "gap-2 pr-3 pl-3" : "gap-3 pr-4 pl-4"),
           isActive ? "shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]" : "hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
         )}
         aria-label={item.title}
       >
         <div
-          className="sidebar-reference-icon flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sidebar-primary-foreground"
+          className={cn(
+            "sidebar-reference-icon flex flex-shrink-0 items-center justify-center rounded-xl text-sidebar-primary-foreground",
+            nested ? "h-8 w-8" : "h-10 w-10"
+          )}
         >
-          <item.icon className="w-5 h-5" />
+          <item.icon className={nested ? "w-4 h-4" : "w-5 h-5"} />
         </div>
         {!collapsed && (
           <span
-            className="flex-1 text-right text-base font-bold text-sidebar-item-foreground transition-colors duration-150"
+            className={cn(
+              "flex-1 text-right font-bold text-sidebar-item-foreground transition-colors duration-150",
+              nested ? "text-sm" : "text-base"
+            )}
           >
             {item.title}
           </span>
@@ -695,6 +704,15 @@ export function Sidebar() {
             {finalNavItems.map((item) => (
               <div key={item.href}>
                 <NavLink item={item} />
+                {item.children && item.children.length > 0 && (
+                  <div className={cn("mt-2 space-y-1.5", collapsed ? "" : "mr-8 border-r-2 border-white/25 pr-2")}>
+                    {item.children.map((child) => (
+                      <div key={child.href}>
+                        <NavLink item={child} nested />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
 

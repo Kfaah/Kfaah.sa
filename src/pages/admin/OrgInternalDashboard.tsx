@@ -473,7 +473,10 @@ export default function OrgInternalDashboard({
               { value: "operational-plans-main", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
               { value: "tasks", label: "المهام", Icon: ClipboardList },
+              { value: "operational-plans", label: "الخطط من التوصيات", Icon: ListChecks },
               { value: "performance", label: "تقييم الأداء", Icon: Target },
+              { value: "reports", label: "التقارير", Icon: FileBarChart2 },
+              { value: "innovation", label: "الابتكار والتجديد", Icon: Lightbulb },
             ];
             return tabs.flatMap((t, i) => {
               const trigger = (
@@ -717,34 +720,7 @@ export default function OrgInternalDashboard({
           </Suspense>
         </TabsContent>
         <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          {orgId ? (
-            <Tabs defaultValue="hub" dir="rtl" className="w-full">
-              <TabsList dir="rtl" className="h-auto w-full flex-wrap justify-center gap-1 border border-accent/30 bg-accent/10 p-1.5">
-                <TabsTrigger value="hub" className="gap-2"><HeartHandshake className="h-4 w-4" /> مركز التبرعات</TabsTrigger>
-                <TabsTrigger value="d-plans" className="gap-2"><ListChecks className="h-4 w-4" /> الخطط من التوصيات</TabsTrigger>
-                <TabsTrigger value="d-reports" className="gap-2"><FileBarChart2 className="h-4 w-4" /> التقارير</TabsTrigger>
-                <TabsTrigger value="d-innovation" className="gap-2"><Lightbulb className="h-4 w-4" /> الابتكار والتجديد</TabsTrigger>
-              </TabsList>
-              <TabsContent value="hub" className="mt-4">
-                <DonorsHub orgId={orgId} />
-              </TabsContent>
-              <TabsContent value="d-plans" className="mt-4">
-                <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
-                  <AdminActionPlans />
-                </Suspense>
-              </TabsContent>
-              <TabsContent value="d-reports" className="mt-4">
-                <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
-                  <ReportsHubLanding orgId={orgId} />
-                </Suspense>
-              </TabsContent>
-              <TabsContent value="d-innovation" className="mt-4">
-                <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
-                  <AdminInnovation />
-                </Suspense>
-              </TabsContent>
-            </Tabs>
-          ) : null}
+          {orgId ? <DonorsHub orgId={orgId} /> : null}
         </TabsContent>
         <TabsContent value="finance" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
           {orgId ? <FinanceHub orgId={orgId} /> : null}
