@@ -124,7 +124,7 @@ const employeeNavItems: NavItem[] = [
   { title: "تقييم أدائي", href: "/my-performance", icon: Award, iconBg: "nav-icon-performance", description: "نتائج تقييم أدائك الشخصي ونسب الإنجاز والجودة." },
   { title: "المساءلات وتحليلها", href: "/my-accountability", icon: ShieldAlert, iconBg: "nav-icon-analysis", description: "متابعة المساءلات الموجَّهة إليك وتحليل أسبابها للتحسين." },
   { title: "التقارير", href: "/reports", icon: FileBarChart2, iconBg: "nav-icon-reports", description: "تقارير شخصية قابلة للتصدير عن إنجازاتك ومهامك." },
-  { title: "الابتكار والتحديث", href: "/innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "اقترح أفكاراً ومبادرات لتطوير عمل الجمعية." },
+  { title: "الابتكار والتجديد", href: "/innovation", icon: Lightbulb, iconBg: "nav-icon-innovation", description: "اقترح أفكاراً ومبادرات لتطوير عمل الجمعية." },
 ];
 
 const settingsNavItem: NavItem = {

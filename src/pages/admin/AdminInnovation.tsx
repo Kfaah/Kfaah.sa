@@ -188,7 +188,7 @@ export default function AdminInnovation() {
     <div className={`${isEmbedded ? "" : "mx-auto max-w-[1280px] p-6"} w-full space-y-6`}>
       <PageHeader
         icon={<Lightbulb className="w-6 h-6" />}
-        title="الابتكار والتحديث"
+        title="الابتكار والتجديد"
         subtitle="يحلّل الذكاء الاصطناعي بياناتك ويقترح ابتكارات لم تخطر على بالك — تُناقشها معه ثم تقبلها أو ترفضها."
         actions={
           <Button onClick={generate} disabled={!selected || generating} className="gap-2 bg-white text-primary hover:bg-white/90 disabled:bg-white/60">

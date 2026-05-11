@@ -21,7 +21,7 @@ const DEFAULT_ITEMS = [
   { key: "performance", label: "تقييم الأداء" },
   { key: "intelligence", label: "التحليل الذكي" },
   { key: "reports", label: "التقارير" },
-  { key: "innovation", label: "الابتكار والتحديث" },
+  { key: "innovation", label: "الابتكار والتجديد" },
 ];
 
 type NavRow = {
