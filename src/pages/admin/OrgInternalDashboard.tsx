@@ -1719,7 +1719,7 @@ function ReportsHubLanding({ orgId }: { orgId: string }) {
           onBack={() => setView("home")}
         />
         <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
-          <AdminReports embedded />
+          <AdminReports embedded lockedOrgId={orgId} />
         </Suspense>
       </div>
     );

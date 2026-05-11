@@ -38,7 +38,7 @@ const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
 const fmtSAR = (n: number) => `${fmt(n)} ر.س`;
 const pct = (n: number) => `${n.toFixed(1)}%`;
 
-export default function AdminReports({ embedded: embeddedProp = false }: { embedded?: boolean } = {}) {
+export default function AdminReports({ embedded: embeddedProp = false, lockedOrgId }: { embedded?: boolean; lockedOrgId?: string } = {}) {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
   const { metrics, loading } = useAdminAggregates(range);
   const [mode, setMode] = useState<Mode>("thematic");
@@ -53,8 +53,12 @@ export default function AdminReports({ embedded: embeddedProp = false }: { embed
   const isEmbedded = embeddedProp || _params.get("embedded") === "1";
   const lockedSlug = _params.get("org") || "";
   const visibleMetrics = useMemo(
-    () => (isEmbedded && lockedSlug ? metrics.filter((m) => m.org_slug === lockedSlug) : metrics),
-    [metrics, isEmbedded, lockedSlug]
+    () => {
+      if (lockedOrgId) return metrics.filter((m) => m.org_id === lockedOrgId);
+      if (isEmbedded && lockedSlug) return metrics.filter((m) => m.org_slug === lockedSlug);
+      return metrics;
+    },
+    [metrics, isEmbedded, lockedSlug, lockedOrgId]
   );
 
   useEffect(() => {
