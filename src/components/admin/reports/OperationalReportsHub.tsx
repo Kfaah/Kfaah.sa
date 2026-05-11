@@ -290,9 +290,10 @@ ${a.rationale}
             <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">جميع الفئات</SelectItem>
-              <SelectItem value="كبار">كبار المتبرعين (≥ 5,000 ر.س)</SelectItem>
-              <SelectItem value="وسط">الفئة الوسطى (1,000 – 5,000 ر.س)</SelectItem>
-              <SelectItem value="صغار">صغار المتبرعين (&lt; 1,000 ر.س)</SelectItem>
+              <SelectItem value="أ">فئة أ (≥ 5,000 ر.س)</SelectItem>
+              <SelectItem value="ب">فئة ب (2,000 – 5,000 ر.س)</SelectItem>
+              <SelectItem value="ج">فئة ج (500 – 2,000 ر.س)</SelectItem>
+              <SelectItem value="د">فئة د (&lt; 500 ر.س)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -436,7 +437,7 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
         .limit(5000);
       return (data || []).map(d => {
         const t = Number(d.total_donated || 0);
-        const tier = t >= 5000 ? "كبار" : t >= 1000 ? "وسط" : "صغار";
+        const tier = t >= 5000 ? "أ" : t >= 2000 ? "ب" : t >= 500 ? "ج" : "د";
         return {
           tier,
           الاسم: d.full_name,
@@ -617,9 +618,10 @@ function computeAggregates(key: ReportKey, rows: any[]): Record<string, number |
       const tiers = rows.reduce((m: Record<string, number>, r: any) => { m[r.tier] = (m[r.tier] || 0) + 1; return m; }, {});
       return {
         "إجمالي المتبرعين": n,
-        "كبار (≥ 5,000)": tiers["كبار"] || 0,
-        "وسط (1,000 – 5,000)": tiers["وسط"] || 0,
-        "صغار (< 1,000)": tiers["صغار"] || 0,
+        "فئة أ (≥ 5,000)": tiers["أ"] || 0,
+        "فئة ب (2,000 – 5,000)": tiers["ب"] || 0,
+        "فئة ج (500 – 2,000)": tiers["ج"] || 0,
+        "فئة د (< 500)": tiers["د"] || 0,
       };
     }
     case "campaigns": {
