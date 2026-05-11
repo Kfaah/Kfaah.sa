@@ -11,6 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Megaphone, Sparkles, Plus, Loader2, Calendar, Target, MessageCircle, TrendingUp, Wand2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import CampaignWorkspace from "./CampaignWorkspace";
+import SeasonalCalendar from "./SeasonalCalendar";
+import MarketingRadar from "./MarketingRadar";
+import MarketingAcademy from "./MarketingAcademy";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Radar as RadarIcon, GraduationCap } from "lucide-react";
 
 type Campaign = {
   id: string;
@@ -138,6 +143,15 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
         </div>
       </div>
 
+      <Tabs defaultValue="campaigns" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="campaigns" className="gap-1"><Target className="h-4 w-4" />حملاتي</TabsTrigger>
+          <TabsTrigger value="radar" className="gap-1"><RadarIcon className="h-4 w-4" />الراصد</TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-1"><Calendar className="h-4 w-4" />التقويم</TabsTrigger>
+          <TabsTrigger value="academy" className="gap-1"><GraduationCap className="h-4 w-4" />الأكاديمية</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="campaigns" className="space-y-6 mt-6">
       {/* AI Suggestions */}
       {suggestions.length > 0 && (
         <div className="space-y-3">
@@ -241,6 +255,18 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
           </div>
         )}
       </div>
+        </TabsContent>
+
+        <TabsContent value="radar" className="mt-6">
+          <MarketingRadar orgId={orgId} />
+        </TabsContent>
+        <TabsContent value="calendar" className="mt-6">
+          <SeasonalCalendar orgId={orgId} />
+        </TabsContent>
+        <TabsContent value="academy" className="mt-6">
+          <MarketingAcademy />
+        </TabsContent>
+      </Tabs>
 
       <CreateCampaignDialog open={createOpen} onOpenChange={setCreateOpen} orgId={orgId} onCreated={load} />
       <CampaignWorkspace
