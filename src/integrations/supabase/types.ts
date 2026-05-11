@@ -3030,6 +3030,231 @@ export type Database = {
           },
         ]
       }
+      marketing_campaign_assets: {
+        Row: {
+          asset_type: string
+          body: string | null
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          file_url: string | null
+          id: string
+          metadata: Json | null
+          organization_id: string
+          title: string | null
+        }
+        Insert: {
+          asset_type: string
+          body?: string | null
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+          title?: string | null
+        }
+        Update: {
+          asset_type?: string
+          body?: string | null
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaign_assets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_campaign_channels: {
+        Row: {
+          assigned_to: string | null
+          campaign_id: string
+          channel: string
+          created_at: string
+          id: string
+          message: string | null
+          notes: string | null
+          organization_id: string
+          published_at: string | null
+          scheduled_at: string | null
+          status: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          campaign_id: string
+          channel: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          notes?: string | null
+          organization_id: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          campaign_id?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          notes?: string | null
+          organization_id?: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaign_channels_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_campaign_metrics: {
+        Row: {
+          campaign_id: string
+          channel: string | null
+          clicks: number | null
+          conversions: number | null
+          cost: number | null
+          donations_amount: number | null
+          donations_count: number | null
+          id: string
+          impressions: number | null
+          measured_at: string
+          notes: string | null
+          organization_id: string
+        }
+        Insert: {
+          campaign_id: string
+          channel?: string | null
+          clicks?: number | null
+          conversions?: number | null
+          cost?: number | null
+          donations_amount?: number | null
+          donations_count?: number | null
+          id?: string
+          impressions?: number | null
+          measured_at?: string
+          notes?: string | null
+          organization_id: string
+        }
+        Update: {
+          campaign_id?: string
+          channel?: string | null
+          clicks?: number | null
+          conversions?: number | null
+          cost?: number | null
+          donations_amount?: number | null
+          donations_count?: number | null
+          id?: string
+          impressions?: number | null
+          measured_at?: string
+          notes?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaign_metrics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_campaigns: {
+        Row: {
+          ai_generated: boolean | null
+          ai_metadata: Json | null
+          audience_filters: Json | null
+          audience_segment: string | null
+          budget_actual: number | null
+          budget_planned: number | null
+          content_angles: Json | null
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          expected_kpis: Json | null
+          goal: string | null
+          id: string
+          name: string
+          organization_id: string
+          platforms: Json | null
+          primary_message: string | null
+          related_project: string | null
+          season_key: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          audience_filters?: Json | null
+          audience_segment?: string | null
+          budget_actual?: number | null
+          budget_planned?: number | null
+          content_angles?: Json | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          expected_kpis?: Json | null
+          goal?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          platforms?: Json | null
+          primary_message?: string | null
+          related_project?: string | null
+          season_key?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          audience_filters?: Json | null
+          audience_segment?: string | null
+          budget_actual?: number | null
+          budget_planned?: number | null
+          content_angles?: Json | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          expected_kpis?: Json | null
+          goal?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          platforms?: Json | null
+          primary_message?: string | null
+          related_project?: string | null
+          season_key?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       marketing_ideas: {
         Row: {
           ai_generated: boolean
@@ -3100,6 +3325,101 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      marketing_playbook_memory: {
+        Row: {
+          audience_segment: string | null
+          campaign_id: string | null
+          channel: string | null
+          confidence: number | null
+          created_at: string
+          evidence: Json | null
+          finding: string
+          id: string
+          insight_type: string
+          organization_id: string
+        }
+        Insert: {
+          audience_segment?: string | null
+          campaign_id?: string | null
+          channel?: string | null
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json | null
+          finding: string
+          id?: string
+          insight_type: string
+          organization_id: string
+        }
+        Update: {
+          audience_segment?: string | null
+          campaign_id?: string | null
+          channel?: string | null
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json | null
+          finding?: string
+          id?: string
+          insight_type?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_playbook_memory_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_seasonal_events: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          duration_days: number | null
+          gregorian_day: number | null
+          gregorian_month: number | null
+          hijri_day: number | null
+          hijri_month: number | null
+          id: string
+          is_active: boolean | null
+          key: string
+          marketing_tips: Json | null
+          name_ar: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          gregorian_day?: number | null
+          gregorian_month?: number | null
+          hijri_day?: number | null
+          hijri_month?: number | null
+          id?: string
+          is_active?: boolean | null
+          key: string
+          marketing_tips?: Json | null
+          name_ar: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          gregorian_day?: number | null
+          gregorian_month?: number | null
+          hijri_day?: number | null
+          hijri_month?: number | null
+          id?: string
+          is_active?: boolean | null
+          key?: string
+          marketing_tips?: Json | null
+          name_ar?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {
