@@ -1,56 +1,124 @@
-## الخطة
+## نظام الصرف المالي الذكي والشفافية للمتبرعين
 
-### ١. تنظيف شعارات الجمعيات (إبقاء الرمز فقط داخل الدائرة)
+نظام مالي متكامل يربط مصروفات الجمعية بالتبرعات والمشاريع والحملات، مع طبقتين من العرض:
+- **للمتبرع**: شفافية كاملة (يظهر تبرعه مصروف 100% على المشروع المستهدف)
+- **للإدارة**: تحليل دقيق (50% مشروع، 40% تسويق، 10% تشغيلي)
 
-الجمعيات التي تحتاج معالجة (شعار + نص ملتصق):
-- عطاء (`ataa-white-v1.png`)
-- عطف (`atff-white-v1.png`)
-- نجباء (`nujabaa-white-v1.png`)
-- حرف (`harf-icon-bigger-v3.png`) — للتأكد
-- نجاة (`najah-logo.png`)
-- مآثر (`maather` من numo)
-- سكينة (`sakinah` من sakinah.org.sa)
-- القصبة (`d-alqasaba`)
-- التنمية الأهلية (`tanmiah-alaridh-icon.png`)
-- صواب (`sawab-logo-centered-v8.png`) — للتأكد
-- عون الطبية (`awon-medical-icon.png`) — للتأكد
-- النموذج/Demo
+---
 
-**الطريقة لكل شعار**:
-1. تنزيل الأصل من Supabase Storage إلى `/tmp`.
-2. تحليل الصورة بـ PIL: استخراج المكوّنات المتصلة (connected components) لتحديد الكتلة الأكبر/الأكثر تماسكاً = الرمز، والكتل النصية = نص.
-3. اقتصاص الرمز فقط بـ bbox، إضافة هامش متساوٍ، توسيطه في كانفس مربع شفاف.
-4. رفع نسخة جديدة `…-icon-only-v1.png` إلى bucket `avatars/org-logos/`.
-5. ميجريشن واحد يحدّث `organizations.logo_url` و `organization_profiles.logo_url` لكل الجمعيات دفعة واحدة.
+### 1. البنية القاعدية (Database)
 
-ملاحظة: في حال صورة لا تنفصل تلقائياً بشكل نظيف، سأعيد المعالجة يدوياً بـ crop محدّد لتلك الجمعية فقط.
+#### جدول `expense_categories` (تصنيفات الصرف)
+- `id`, `organization_id`, `name`, `kind` (project | marketing | operational), `default_allocation_pct`
+- يأتي افتراضياً بثلاثة سجلات لكل جمعية: مشاريع 50%، تسويق 40%، تشغيلي 10% (قابلة للتعديل)
 
-### ٢. توحيد الهيدر في صفحات الجمعيات
+#### جدول `expenses` (المصروفات الفعلية)
+- `id`, `organization_id`, `expense_date`, `amount`, `description`, `vendor`, `attachment_url`
+- `category_id` (FK → expense_categories)
+- `project_name` (لو الصرف مرتبط بمشروع محدد)
+- `campaign_id` (لو مرتبط بحملة)
+- `auto_classified` (boolean — هل صنفه الذكاء أم يدوي)
+- `created_by`, `created_at`
 
-الوضع الحالي: `PageHeader` موحّد بصرياً، لكن الارتفاع ومكان الإدراج مختلفان من صفحة لأخرى (`min-h-[112px]` احياناً، وأحياناً صفحات تستخدم رؤوس مخصصة بدون `PageHeader` أصلاً).
+#### جدول `expense_allocations` (توزيع المصروف على التبرعات — قلب النظام)
+- `id`, `expense_id`, `donation_id`, `amount_allocated`, `allocation_type` (direct | proportional)
+- يسمح بتتبع: "هذا المصروف صُرف من أي تبرع تحديداً"
 
-**الإجراءات**:
-- تثبيت ارتفاع موحّد في `PageHeader` (مثلاً `h-[120px] sm:h-[140px]` بدل `min-h`).
-- توحيد الـ padding الخارجي (`px-4 sm:px-6 py-4`) وموقعه (مباشرة في أعلى محتوى الصفحة، بدون margin top إضافي).
-- مسح كل صفحة جمعية واستبدال الهيدر المخصص بـ `<PageHeader />` (Tasks, Plans, Donors, Members, Settings, Performance, Messages, Intelligence, OperationalPlans…).
-- التأكد أن `OrgInternalDashboard` يلتزم بنفس النمط.
+#### جدول `donor_spend_summary` (cache للمتبرع)
+- `donor_id`, `total_donated`, `total_spent_visible` (للمتبرع، مضخّم لـ 100%)
+- `projects_funded` (jsonb — قائمة المشاريع التي مُوّل بها)
+- محدّث بـ trigger أو cron
 
-### ٣. تطبيق هوية الجمعية على مركز التبرعات
+#### جدول `org_allocation_rules` (قواعد التوزيع لكل جمعية)
+- `organization_id`, `project_pct`, `marketing_pct`, `operational_pct`
+- الافتراضي 50/40/10 — قابل للتعديل
 
-`DonorsHub` معروض داخل تبويب من `OrgInternalDashboard` بدون `PageHeader`، لذلك يبدو خارج الهوية البصرية.
+---
 
-**الإجراءات**:
-- إضافة `<PageHeader>` في أعلى `DonorsHub` بعنوان "مركز التبرعات" + أيقونة `HandHeart` + subtitle حسب الجمعية النشطة.
-- التأكد أن الـ tabs الفرعية داخل DonorsHub (overview/donors/donations/top/recurring…) تستخدم `hsl(var(--primary))` و `hsl(var(--accent))` بدلاً من اللون الثابت `#2f8e8c`.
-- إزالة المتغير `brand` المثبّت يدوياً والاعتماد على CSS variables التي يحقنها `OrgBrandingContext`.
+### 2. منطق التوزيع التلقائي (Edge Function: `allocate-expense`)
+
+عند تسجيل مصروف جديد:
+
+1. **تحديد المصدر**: مشروع محدد؟ حملة؟ عام؟
+2. **جلب التبرعات ذات الصلة** (FIFO أو نسبي حسب القاعدة)
+3. **توزيع المبلغ**:
+   - مصروف مشروع 1000 ريال → يخصم من تبرعات هذا المشروع تناسبياً
+   - مصروف تسويقي → يخصم من جميع التبرعات تناسبياً (40% bucket)
+   - مصروف تشغيلي → نفس المنطق (10% bucket)
+4. **تحديث `donor_spend_summary`** لكل متبرع متأثر
+
+**العرض المضخّم للمتبرع**: 
+> لو المتبرع تبرع 100 ريال لمشروع X والجمعية صرفت 50 ريال منه على المشروع، يُعرض للمتبرع: "تم صرف 100 ريال كاملاً على مشروع X" (لأن نسبة الصرف على المشروع 50% من إجمالي الميزانية الخاصة به، فالمتبرع يرى نصيبه المباشر).
+
+الصياغة الأدق: نعرض للمتبرع نسبة `(spent_on_project / project_budget) * 100%` من تبرعه — وهذا يتطابق مع المنطق المطلوب.
+
+---
+
+### 3. ذكاء التصنيف التلقائي (AI)
+
+**Edge Function**: `classify-expense` يستخدم Lovable AI Gateway (Gemini Flash).
+
+عند إدخال مصروف بوصف مثل "إعلان فيسبوك لحملة كفالة":
+- يقترح: تصنيف = تسويق، حملة = كفالة
+- المستخدم يوافق أو يعدل
+- النظام يتعلم (يحفظ patterns في `expense_classification_history`)
+
+---
+
+### 4. واجهات المستخدم
+
+#### للجمعية (Admin)
+**صفحة جديدة**: `/:orgSlug/finance/expenses`
+- جدول مصروفات أنيق (نمط Operational Plans) مع:
+  - إضافة مصروف (نموذج صفحة كاملة، لا dialog — وفق ethos التطبيق)
+  - رفع فاتورة/مستند
+  - تصنيف ذكي + تأكيد
+  - فلترة حسب مشروع/حملة/تصنيف/تاريخ
+- KPIs: إجمالي مصروف، نسبة المشاريع، نسبة التسويق، نسبة التشغيل
+
+**صفحة**: `/:orgSlug/finance/dashboard`
+- بطاقات: ميزانية المشاريع المتاحة vs المصروفة
+- رسم: توزيع 50/40/10 الفعلي vs المستهدف
+- جدول: لكل مشروع/حملة → تبرعات جُمعت، مصروف، متبقي
+
+#### للمتبرع (Donor portal)
+**صفحة**: `/:orgSlug/donor/transparency/:donorPhone` (أو في DonorsHub)
+- "أين ذهب تبرعك؟" — رسم بياني
+- لكل تبرع: المشروع، تاريخ الصرف، وثيقة (إن أمكن)
+- Timeline للصرف
+
+---
+
+### 5. التطبيق على المراحل
+
+**المرحلة 1** (هذا الإصدار):
+- إنشاء الجداول والـ RLS
+- صفحة إدخال المصروفات (Admin)
+- خوارزمية التوزيع الأساسية (Edge Function)
+- لوحة الجمعية (50/40/10)
+
+**المرحلة 2** (لاحقاً):
+- تصنيف AI + التعلم
+- بوابة المتبرع للشفافية
+- تصدير تقارير PDF/Excel
+
+---
 
 ### تفاصيل تقنية
 
-- معالجة الصور: Python + PIL (`getbbox`, `ImageChops`, optional connected components عبر `scipy.ndimage.label`).
-- الميجريشن: `UPDATE` على جدولين فقط بدون تغيير schema.
-- الكود: تعديلات على `PageHeader.tsx`، `DonorsHub.tsx`، وصفحات الجمعيات الفردية.
+- **RLS**: كل جدول يستخدم `user_belongs_to_org()` للقراءة، و `is_org_admin()` للكتابة
+- **Storage**: bucket جديد `expense-receipts` (private) لرفع الفواتير
+- **Realtime**: تفعيل على `expenses` و `expense_allocations` لتحديث الواجهة لحظياً
+- **Triggers**: 
+  - `tr_expense_after_insert` → يستدعي edge function للتوزيع
+  - `tr_allocation_update_summary` → يحدّث `donor_spend_summary`
+- **التوافق**: يستخدم `OrgBrandingContext` للألوان، `PageHeader` الموحّد، RTL
 
-### نطاق غير مشمول
+---
 
-- لن أغير منطق صفحات admin (مثل AdminCompare) لأنها خارج نطاق "صفحات الجمعيات".
-- لن أعيد تصميم محتوى DonorsHub، فقط الهيدر والألوان.
+### ما لن يُنفّذ في هذه الجولة (لتفادي تضخّم الإصدار)
+- بوابة المتبرع المنفصلة (المرحلة 2)
+- تصنيف AI الكامل (سنبدأ بقواعد بسيطة بدون AI، ثم نضيفه)
+- تكامل البنوك (يُسجل المستخدم المصروف يدوياً مبدئياً)
+
+هل تريد أن أبدأ بالمرحلة 1 كاملة، أم نبدأ بالجداول + صفحة إدخال المصروفات فقط أولاً ونكمل تدريجياً؟
