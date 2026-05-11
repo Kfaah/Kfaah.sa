@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   Loader2, Sparkles, Wand2, Palette, MessageSquare, CalendarClock, Wallet,
-  ListChecks, FileText, Trash2, Save, Plus, Send,
+  ListChecks, FileText, Trash2, Save, Plus, Send, BarChart3, Award, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -71,13 +71,14 @@ export default function CampaignWorkspace({
           <div className="py-16 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
         ) : (
           <Tabs defaultValue="brief" className="mt-4">
-            <TabsList className="grid grid-cols-6 w-full">
+            <TabsList className="grid grid-cols-7 w-full">
               <TabsTrigger value="brief"><FileText className="h-4 w-4 ml-1" />Brief</TabsTrigger>
               <TabsTrigger value="content"><MessageSquare className="h-4 w-4 ml-1" />المحتوى</TabsTrigger>
               <TabsTrigger value="design"><Palette className="h-4 w-4 ml-1" />التصميم</TabsTrigger>
               <TabsTrigger value="channels"><CalendarClock className="h-4 w-4 ml-1" />القنوات</TabsTrigger>
               <TabsTrigger value="budget"><Wallet className="h-4 w-4 ml-1" />الميزانية</TabsTrigger>
               <TabsTrigger value="tasks"><ListChecks className="h-4 w-4 ml-1" />المهام</TabsTrigger>
+              <TabsTrigger value="insights"><BarChart3 className="h-4 w-4 ml-1" />التقييم</TabsTrigger>
             </TabsList>
 
             <TabsContent value="brief" className="mt-4">
@@ -102,6 +103,10 @@ export default function CampaignWorkspace({
 
             <TabsContent value="tasks" className="mt-4">
               <TasksTab c={c} />
+            </TabsContent>
+
+            <TabsContent value="insights" className="mt-4">
+              <InsightsTab c={c} actuals={actuals} onChanged={() => { load(); onChanged(); }} />
             </TabsContent>
           </Tabs>
         )}
@@ -160,6 +165,164 @@ function BriefTab({ c, onSaved }: { c: Campaign; onSaved: () => void }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/* ============ Insights tab ============ */
+function InsightsTab({ c, actuals, onChanged }: { c: Campaign; actuals: { cost: number; donations: number }; onChanged: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [evalData, setEvalData] = useState<any | null>(c.ai_metadata?.last_evaluation ?? null);
+  const [savePlaybook, setSavePlaybook] = useState(true);
+
+  const evaluate = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("marketing-evaluate-campaign", {
+        body: { campaign_id: c.id, save_to_playbook: savePlaybook },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setEvalData(data.evaluation);
+      toast.success(savePlaybook ? "تم التقييم وحفظ الدروس في Playbook" : "تم التقييم");
+      onChanged();
+    } catch (e: any) { toast.error(e.message ?? "فشل"); } finally { setLoading(false); }
+  };
+
+  const exportReport = () => {
+    if (!evalData) return;
+    const lines: string[] = [];
+    lines.push(`# تقرير ختامي — حملة: ${c.name}`);
+    lines.push("");
+    lines.push(`- التقدير العام: **${evalData.overall_grade}**`);
+    lines.push(`- الميزانية المخططة: ${c.budget_planned ?? 0} ر.س`);
+    lines.push(`- المصروف الفعلي: ${actuals.cost.toLocaleString()} ر.س`);
+    lines.push(`- التبرعات الناتجة: ${actuals.donations.toLocaleString()} ر.س`);
+    if (evalData.kpi_analysis) {
+      lines.push(`- ROI: ${evalData.kpi_analysis.roi_pct ?? "—"}%`);
+      lines.push(`- تكلفة كل تبرع: ${evalData.kpi_analysis.cost_per_donation ?? "—"} ر.س`);
+      if (evalData.kpi_analysis.reach_vs_expected) lines.push(`- الوصول: ${evalData.kpi_analysis.reach_vs_expected}`);
+      if (evalData.kpi_analysis.conversion_rate) lines.push(`- معدل التحويل: ${evalData.kpi_analysis.conversion_rate}`);
+    }
+    lines.push("");
+    lines.push("## الملخص التنفيذي");
+    lines.push(evalData.summary ?? "");
+    if (evalData.strengths?.length) { lines.push("\n## نقاط القوة"); evalData.strengths.forEach((s: string) => lines.push(`- ${s}`)); }
+    if (evalData.weaknesses?.length) { lines.push("\n## نقاط الضعف"); evalData.weaknesses.forEach((s: string) => lines.push(`- ${s}`)); }
+    if (evalData.recommendations?.length) {
+      lines.push("\n## التوصيات التنفيذية");
+      evalData.recommendations.forEach((r: any) => lines.push(`- [${r.priority ?? "medium"}] ${r.action}${r.why ? ` — ${r.why}` : ""}`));
+    }
+    if (evalData.best_channel) lines.push(`\n**أفضل قناة:** ${evalData.best_channel}`);
+    if (evalData.worst_channel) lines.push(`**أضعف قناة:** ${evalData.worst_channel}`);
+    if (evalData.playbook_insights?.length) {
+      lines.push("\n## دروس مستفادة (Playbook)");
+      evalData.playbook_insights.forEach((p: any) => lines.push(`- [${p.insight_type}] ${p.finding}`));
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `تقرير_${c.name}.md`; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const gradeColor: Record<string, string> = {
+    "ممتاز": "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    "جيد جدًا": "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    "جيد": "bg-primary/15 text-primary",
+    "متوسط": "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    "ضعيف": "bg-destructive/15 text-destructive",
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Award className="h-4 w-4" />تقييم الحملة بالذكاء الاصطناعي</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">يحلل النظام جميع قراءات الأداء، يقارن بالـKPIs المتوقعة، ويستخرج توصيات ودروسًا مستفادة.</p>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={savePlaybook} onChange={(e) => setSavePlaybook(e.target.checked)} />
+              احفظ الدروس في ذاكرة الجمعية (Playbook)
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={evaluate} disabled={loading} className="gap-2">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {evalData ? "أعد التقييم" : "ابدأ التقييم"}
+            </Button>
+            {evalData && <Button variant="outline" onClick={exportReport} className="gap-2"><Download className="h-4 w-4" />تنزيل التقرير</Button>}
+          </div>
+        </CardContent>
+      </Card>
+
+      {evalData && (
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge className={gradeColor[evalData.overall_grade] ?? "bg-muted"}>{evalData.overall_grade}</Badge>
+              {evalData.best_channel && <Badge variant="outline">أفضل قناة: {evalData.best_channel}</Badge>}
+              {evalData.worst_channel && <Badge variant="outline">أضعف قناة: {evalData.worst_channel}</Badge>}
+            </div>
+            <p className="text-sm leading-relaxed">{evalData.summary}</p>
+
+            {evalData.kpi_analysis && (
+              <div className="grid sm:grid-cols-4 gap-2 text-xs">
+                {evalData.kpi_analysis.roi_pct != null && <div className="rounded border p-2"><div className="text-muted-foreground">ROI</div><div className="text-base font-bold">{evalData.kpi_analysis.roi_pct}%</div></div>}
+                {evalData.kpi_analysis.cost_per_donation != null && <div className="rounded border p-2"><div className="text-muted-foreground">تكلفة/تبرع</div><div className="text-base font-bold">{evalData.kpi_analysis.cost_per_donation} ر.س</div></div>}
+                {evalData.kpi_analysis.reach_vs_expected && <div className="rounded border p-2"><div className="text-muted-foreground">الوصول</div><div className="text-sm">{evalData.kpi_analysis.reach_vs_expected}</div></div>}
+                {evalData.kpi_analysis.conversion_rate && <div className="rounded border p-2"><div className="text-muted-foreground">معدل التحويل</div><div className="text-sm">{evalData.kpi_analysis.conversion_rate}</div></div>}
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-3">
+              {evalData.strengths?.length > 0 && (
+                <div className="rounded border border-emerald-200 dark:border-emerald-900/50 p-3 bg-emerald-50/50 dark:bg-emerald-950/20">
+                  <h4 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-2">نقاط القوة</h4>
+                  <ul className="list-disc pr-5 text-sm space-y-1">{evalData.strengths.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                </div>
+              )}
+              {evalData.weaknesses?.length > 0 && (
+                <div className="rounded border border-amber-200 dark:border-amber-900/50 p-3 bg-amber-50/50 dark:bg-amber-950/20">
+                  <h4 className="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-2">نقاط الضعف</h4>
+                  <ul className="list-disc pr-5 text-sm space-y-1">{evalData.weaknesses.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                </div>
+              )}
+            </div>
+
+            {evalData.recommendations?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2">التوصيات التنفيذية</h4>
+                <div className="space-y-2">
+                  {evalData.recommendations.map((r: any, i: number) => (
+                    <div key={i} className="rounded border p-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant={r.priority === "high" ? "destructive" : r.priority === "low" ? "outline" : "secondary"}>
+                          {r.priority === "high" ? "عالية" : r.priority === "low" ? "منخفضة" : "متوسطة"}
+                        </Badge>
+                        <span className="text-sm font-medium">{r.action}</span>
+                      </div>
+                      {r.why && <p className="text-xs text-muted-foreground">{r.why}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {evalData.playbook_insights?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2">دروس Playbook</h4>
+                <div className="space-y-1">
+                  {evalData.playbook_insights.map((p: any, i: number) => (
+                    <div key={i} className="text-xs rounded bg-muted/50 px-2 py-1">
+                      <Badge variant="outline" className="ml-2 text-[10px]">{p.insight_type}</Badge>
+                      {p.finding}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 
