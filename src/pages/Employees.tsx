@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getArabicErrorMessage } from "@/lib/errors";
 import { useUser } from "@/contexts/UserContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Employee {
   id: string;
@@ -71,6 +72,7 @@ const getPerformanceBarColor = (performance: number) => {
 const Employees = () => {
   const navigate = useNavigate();
   const { setPreviewingEmployee } = useUser();
+  const { currentOrg } = useOrganization();
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -125,9 +127,15 @@ const Employees = () => {
   // Fetch employees, departments, and job roles
   useEffect(() => {
     const fetchData = async () => {
+      if (!currentOrg?.id) return;
       try {
         const [employeesRes, deptsRes, rolesRes] = await Promise.all([
-          supabase.from("employees").select("*").order("created_at", { ascending: false }),
+          supabase
+            .from("employees")
+            .select("*")
+            .eq("organization_id", currentOrg.id)
+            .or("is_viewer_account.is.null,is_viewer_account.eq.false")
+            .order("created_at", { ascending: false }),
           supabase.from("departments").select("*").order("name"),
           supabase.from("job_roles").select("*").order("name"),
         ]);
@@ -148,7 +156,7 @@ const Employees = () => {
     };
 
     fetchData();
-  }, []);
+  }, [currentOrg?.id]);
 
   const filteredEmployees = employees.filter((employee) =>
     employee.full_name.includes(searchQuery) || employee.job_role.includes(searchQuery)
