@@ -56,7 +56,7 @@ const SAWAB_SIDEBAR_LOGO = "/sawab-sidebar-logo-v10.png";
 
 // اسم الجمعية المختصر (سطران × 3-4 كلمات) للعرض في الشريط الجانبي
 // المطابقة تتم بمقاطع من الاسم الرسمي الكامل المخزن في DB
-const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: [string, string] }> = [
+const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: string[] }> = [
   { match: /سكينة/, lines: ["جمعية سكينة لبناء", "وترميم المساجد بجازان"] },
   { match: /عطاء/, lines: ["جمعية عطاء الخيرية", "بجبال العارضة بجازان"] },
   { match: /عطف/, lines: ["جمعية عطف لرعاية", "الأيتام بمحافظة العارضة"] },
@@ -66,10 +66,10 @@ const ORG_SHORT_NAME_BY_KEYWORD: Array<{ match: RegExp; lines: [string, string] 
   { match: /القصبة/, lines: ["جمعية الدعوة والإرشاد", "وتوعية الجاليات بمركز القصبة"] },
   { match: /حرف/, lines: ["جمعية حرف التعليمية", ""] },
   { match: /التنمية الأهلية|العارضة.*تنمية|tanmiah/i, lines: ["جمعية التنمية الأهلية", "بمحافظة العارضة"] },
-  { match: /ريادة|riyadah/i, lines: ["جمعية ريادة للخدمات الإنسانية", "بمركز الحميراء"] },
+  { match: /ريادة|riyadah/i, lines: ["جمعية ريادة", "للخدمات الإنسانية", "بمركز الحميراء"] },
 ];
 
-function getShortOrgName(fullName: string): [string, string] | null {
+function getShortOrgName(fullName: string): string[] | null {
   if (!fullName) return null;
   for (const entry of ORG_SHORT_NAME_BY_KEYWORD) {
     if (entry.match.test(fullName)) return entry.lines;
@@ -577,7 +577,10 @@ export function Sidebar() {
                        <div className={cn("drop-shadow-sm leading-tight", "text-white")}>
                         <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
                         {short[1] && (
-                          <p className={cn("font-semibold opacity-95", isSawabOrg ? "text-sm" : "text-sm")}>{short[1]}</p>
+                          <p className={cn("font-semibold opacity-95 whitespace-nowrap", "text-sm")}>{short[1]}</p>
+                        )}
+                        {short[2] && (
+                          <p className="font-semibold opacity-95 whitespace-nowrap text-sm">{short[2]}</p>
                         )}
                         {isSawabOrg && (
                           <p className="mt-1 text-[10px] font-semibold leading-none text-white/80">
