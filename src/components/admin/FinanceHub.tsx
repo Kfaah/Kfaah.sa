@@ -1004,6 +1004,7 @@ function ExternalSourcesView({ orgId, onBack }: { orgId: string; onBack: () => v
   const [newKind, setNewKind] = useState("website");
   const [newUrl, setNewUrl] = useState("");
   const [newLabel, setNewLabel] = useState("");
+  const [newNewsPath, setNewNewsPath] = useState("");
   const [syncingId, setSyncingId] = useState<string | null>(null);
 
   const load = async () => {
@@ -1026,9 +1027,10 @@ function ExternalSourcesView({ orgId, onBack }: { orgId: string; onBack: () => v
       kind: newKind,
       url: newUrl.trim(),
       label: newLabel.trim() || null,
+      news_path: newKind === "website" && newNewsPath.trim() ? newNewsPath.trim() : null,
     } as any);
     setAdding(false);
-    if (error) toast.error("تعذّر الإضافة"); else { toast.success("تمت الإضافة"); setNewUrl(""); setNewLabel(""); load(); }
+    if (error) toast.error("تعذّر الإضافة"); else { toast.success("تمت الإضافة"); setNewUrl(""); setNewLabel(""); setNewNewsPath(""); load(); }
   };
 
   const sync = async (id: string) => {
@@ -1084,6 +1086,18 @@ function ExternalSourcesView({ orgId, onBack }: { orgId: string; onBack: () => v
               <Button onClick={addSource} disabled={adding}><Plus className="h-4 w-4" /></Button>
             </div>
           </div>
+          {newKind === "website" && (
+            <div className="mt-3">
+              <Input
+                placeholder="مسار قسم الأخبار (اختياري) مثال: /news أو /articles"
+                value={newNewsPath}
+                onChange={(e) => setNewNewsPath(e.target.value)}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                إن تركتَه فارغاً يُحاول النظام اكتشاف القسم تلقائياً (news / articles / media / blog / أخبار…).
+              </p>
+            </div>
+          )}
           <p className="mt-3 text-xs text-muted-foreground">
             يدعم النظام الآن مزامنة الموقع الإلكتروني وحسابات السوشيال العامة (تويتر/X، إنستجرام، فيسبوك، لينكدإن، يوتيوب، تيك توك). تأكد أن الصفحة عامة بدون تسجيل دخول.
           </p>
