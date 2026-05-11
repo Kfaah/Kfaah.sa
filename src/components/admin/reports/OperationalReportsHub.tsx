@@ -571,42 +571,84 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
       });
     }
     case "failed_donations": {
-      const { data } = await supabase.from("failed_donations")
+      let q = supabase.from("failed_donations")
         .select("donor_name, donor_phone, amount, project_name, failure_reason, attempted_at, retry_status")
-        .eq("organization_id", orgId).order("attempted_at", { ascending: false }).limit(2000);
+        .eq("organization_id", orgId);
+      if (fromIso) q = q.gte("attempted_at", fromIso);
+      if (toIso) q = q.lte("attempted_at", toIso);
+      const { data } = await q.order("attempted_at", { ascending: false }).limit(2000);
+      let tq = supabase.from("tasks")
+        .select("title, category, status, metadata")
+        .eq("organization_id", orgId)
+        .in("status", ["completed", "executed"]);
+      if (fromIso) tq = tq.gte("updated_at", fromIso);
+      if (toIso) tq = tq.lte("updated_at", toIso);
+      const { data: tasks } = await tq.limit(5000);
+      const byPhone = buildActionsIndex(tasks || [], "donor_phone");
+      const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(f => ({
         المتبرع: f.donor_name || "—", الجوال: f.donor_phone || "—",
         المبلغ: sar(Number(f.amount || 0)), المشروع: f.project_name || "—",
         "سبب الفشل": f.failure_reason || "غير محدد",
         "حالة المعاودة": f.retry_status,
         "تاريخ المحاولة": f.attempted_at ? new Date(f.attempted_at).toLocaleDateString("en-GB") : "—",
+        _amount: Number(f.amount || 0),
+        _actions: ((f.donor_phone && byPhone.get(f.donor_phone)) || (f.donor_name && byName.get(f.donor_name)) || undefined) as ActionCounts | undefined,
       }));
     }
     case "abandoned_carts": {
-      const { data } = await supabase.from("abandoned_carts")
+      let q = supabase.from("abandoned_carts")
         .select("donor_name, donor_phone, amount, project_name, abandoned_at, follow_up_status, recovered")
-        .eq("organization_id", orgId).order("abandoned_at", { ascending: false }).limit(2000);
+        .eq("organization_id", orgId);
+      if (fromIso) q = q.gte("abandoned_at", fromIso);
+      if (toIso) q = q.lte("abandoned_at", toIso);
+      const { data } = await q.order("abandoned_at", { ascending: false }).limit(2000);
+      let tq = supabase.from("tasks")
+        .select("title, category, status, metadata")
+        .eq("organization_id", orgId)
+        .in("status", ["completed", "executed"]);
+      if (fromIso) tq = tq.gte("updated_at", fromIso);
+      if (toIso) tq = tq.lte("updated_at", toIso);
+      const { data: tasks } = await tq.limit(5000);
+      const byPhone = buildActionsIndex(tasks || [], "donor_phone");
+      const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(c => ({
         المتبرع: c.donor_name || "—", الجوال: c.donor_phone || "—",
         المبلغ: sar(Number(c.amount || 0)), المشروع: c.project_name || "—",
         "حالة المتابعة": c.follow_up_status,
         "تم الاسترداد": c.recovered ? "نعم" : "لا",
         "تاريخ الترك": c.abandoned_at ? new Date(c.abandoned_at).toLocaleDateString("en-GB") : "—",
+        _amount: Number(c.amount || 0),
+        _actions: ((c.donor_phone && byPhone.get(c.donor_phone)) || (c.donor_name && byName.get(c.donor_name)) || undefined) as ActionCounts | undefined,
       }));
     }
     case "subscriptions": {
-      const { data } = await supabase.from("subscriptions")
+      let q = supabase.from("subscriptions")
         .select("donor_name, donor_phone, amount, project_name, status, start_date, end_date, next_charge_date, cancellation_reason")
-        .eq("organization_id", orgId).order("created_at", { ascending: false }).limit(2000);
+        .eq("organization_id", orgId);
+      if (fromDate) q = q.gte("start_date", fromDate);
+      if (toDate) q = q.lte("start_date", toDate);
+      const { data } = await q.order("created_at", { ascending: false }).limit(2000);
+      let tq = supabase.from("tasks")
+        .select("title, category, status, metadata")
+        .eq("organization_id", orgId)
+        .in("status", ["completed", "executed"]);
+      if (fromIso) tq = tq.gte("updated_at", fromIso);
+      if (toIso) tq = tq.lte("updated_at", toIso);
+      const { data: tasks } = await tq.limit(5000);
+      const byPhone = buildActionsIndex(tasks || [], "donor_phone");
+      const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(s => ({
         المتبرع: s.donor_name || "—", الجوال: s.donor_phone || "—",
         "قيمة الاستقطاع": sar(Number(s.amount || 0)),
         المشروع: s.project_name || "—",
         الحالة: s.status,
+        _statusKey: s.status,
         "بداية": s.start_date || "—",
         "نهاية": s.end_date || "—",
         "الاستقطاع القادم": s.next_charge_date || "—",
         "سبب الإلغاء": s.cancellation_reason || "—",
+        _actions: ((s.donor_phone && byPhone.get(s.donor_phone)) || (s.donor_name && byName.get(s.donor_name)) || undefined) as ActionCounts | undefined,
       }));
     }
     case "recurring_donors": {
