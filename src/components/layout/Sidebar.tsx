@@ -467,6 +467,12 @@ export function Sidebar() {
       <Link
         to={scopedHref}
         state={linkState}
+        onClick={() => {
+          // Always reset the Reports hub to its landing when re-clicked
+          if (targetTab === "reports") {
+            window.dispatchEvent(new Event("reports-hub-reset"));
+          }
+        }}
         className={cn(
           "group/nav flex items-center rounded-2xl bg-sidebar-item shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
           nested ? "h-11 py-1.5 ml-3 mr-2 bg-sidebar-item/70" : "h-14 py-2 ml-3 mr-2",

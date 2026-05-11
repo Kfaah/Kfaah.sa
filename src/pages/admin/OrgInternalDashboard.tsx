@@ -1717,6 +1717,13 @@ function ReportsHubLanding({ orgId }: { orgId: string }) {
   const [view, setView] = useState<"home" | "operational" | "classic">("home");
   const [opInnerActive, setOpInnerActive] = useState(false);
 
+  // Reset to landing whenever the user re-clicks the Reports icon in the sidebar
+  useEffect(() => {
+    const handler = () => setView("home");
+    window.addEventListener("reports-hub-reset", handler);
+    return () => window.removeEventListener("reports-hub-reset", handler);
+  }, []);
+
   if (view === "operational") {
     return (
       <div className="space-y-6">
@@ -1738,7 +1745,7 @@ function ReportsHubLanding({ orgId }: { orgId: string }) {
       <div className="space-y-6">
         <ReportsBrandHeader
           icon={FileBarChart2}
-          title="التقارير"
+          title="التقارير الدورية"
           subtitle="تقارير تنفيذية احترافية قابلة للتصدير: PDF · Word · Excel · PowerPoint"
           onBack={() => setView("home")}
         />
@@ -1753,7 +1760,7 @@ function ReportsHubLanding({ orgId }: { orgId: string }) {
     <div className="grid gap-6 md:grid-cols-2" dir="rtl">
       <ReportsLandingCard
         icon={FileBarChart2}
-        title="التقارير"
+        title="التقارير الدورية"
         description="مركز التقارير التنفيذية: تقارير دورية وسنوية، ملفات تحليلية جاهزة للعرض، وتصدير بصيغ متعددة (PDF، Word، Excel، PowerPoint)."
         cta="افتح مركز التقارير"
         accent="slate"
