@@ -12,6 +12,8 @@ import {
   Mail, FileText as FileTextIcon, MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
+import { UnifiedDateFilter, DatePeriod, resolvePeriod } from "./UnifiedDateFilter";
+import { DonorActionsCell, buildActionsIndex, ActionCounts } from "./DonorActionsCell";
 
 type ReportKey =
   | "donor_tiers" | "campaigns" | "failed_donations" | "abandoned_carts"
@@ -161,6 +163,10 @@ function ReportView({
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<any[]>([]);
   const [tier, setTier] = useState<string>("all");
+  const [campaignStatus, setCampaignStatus] = useState<string>("all");
+  const [period, setPeriod] = useState<DatePeriod>("this_month");
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
   const [ai, setAi] = useState<AIResult | null>(null);
   const [creatingTasks, setCreatingTasks] = useState(false);
@@ -170,7 +176,8 @@ function ReportView({
     (async () => {
       setLoading(true);
       try {
-        const data = await fetchReport(reportKey, orgId);
+        const range = resolvePeriod(period, { from: customFrom, to: customTo });
+        const data = await fetchReport(reportKey, orgId, range.from, range.to);
         if (!cancelled) setRows(data);
       } catch (e: any) {
         toast.error(e.message || "تعذر تحميل التقرير");
@@ -179,12 +186,14 @@ function ReportView({
       }
     })();
     return () => { cancelled = true; };
-  }, [reportKey, orgId]);
+  }, [reportKey, orgId, period, customFrom, customTo]);
 
   const filtered = useMemo(() => {
-    if (reportKey !== "donor_tiers" || tier === "all") return rows;
-    return rows.filter(r => r.tier === tier);
-  }, [rows, tier, reportKey]);
+    let out = rows;
+    if (reportKey === "donor_tiers" && tier !== "all") out = out.filter(r => r.tier === tier);
+    if (reportKey === "campaigns" && campaignStatus !== "all") out = out.filter(r => r._statusKey === campaignStatus);
+    return out;
+  }, [rows, tier, campaignStatus, reportKey]);
 
   const aggregates = useMemo(() => computeAggregates(reportKey, filtered), [reportKey, filtered]);
 
@@ -283,11 +292,19 @@ ${a.rationale}
       </div>
 
       {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+        <UnifiedDateFilter
+          period={period}
+          onPeriodChange={setPeriod}
+          customFrom={customFrom}
+          customTo={customTo}
+          onCustomChange={(f, t) => { setCustomFrom(f); setCustomTo(t); }}
+        />
       {reportKey === "donor_tiers" && (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-muted-foreground">الفئة:</span>
           <Select value={tier} onValueChange={setTier}>
-            <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">جميع الفئات</SelectItem>
               <SelectItem value="أ">فئة أ (≥ 5,000 ر.س)</SelectItem>
@@ -298,6 +315,22 @@ ${a.rationale}
           </Select>
         </div>
       )}
+      {reportKey === "campaigns" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">حالة الحملة:</span>
+          <Select value={campaignStatus} onValueChange={setCampaignStatus}>
+            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">جميع الحالات</SelectItem>
+              <SelectItem value="active">نشطة</SelectItem>
+              <SelectItem value="completed">مكتملة</SelectItem>
+              <SelectItem value="needs_activation">تحتاج تنشيط</SelectItem>
+              <SelectItem value="closed">مغلقة</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -427,17 +460,33 @@ ${a.rationale}
 /* ================================================================
  * Data fetchers
  * ================================================================ */
-async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
+async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to?: Date | null): Promise<any[]> {
+  const fromIso = from ? from.toISOString() : null;
+  const toIso = to ? to.toISOString() : null;
+  const fromDate = from ? from.toISOString().slice(0, 10) : null;
+  const toDate = to ? to.toISOString().slice(0, 10) : null;
   switch (key) {
     case "donor_tiers": {
-      const { data } = await supabase.from("donors")
+      let q = supabase.from("donors")
         .select("full_name, phone, total_donated, donations_count, last_donation_at, segment")
+        .eq("organization_id", orgId);
+      if (fromIso) q = q.gte("last_donation_at", fromIso);
+      if (toIso) q = q.lte("last_donation_at", toIso);
+      const { data } = await q.order("total_donated", { ascending: false }).limit(5000);
+      // Fetch completed tasks in same window for actions index
+      let tq = supabase.from("tasks")
+        .select("title, category, status, metadata")
         .eq("organization_id", orgId)
-        .order("total_donated", { ascending: false })
-        .limit(5000);
+        .in("status", ["completed", "executed"]);
+      if (fromIso) tq = tq.gte("updated_at", fromIso);
+      if (toIso) tq = tq.lte("updated_at", toIso);
+      const { data: tasks } = await tq.limit(5000);
+      const byPhone = buildActionsIndex(tasks || [], "donor_phone");
+      const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(d => {
         const t = Number(d.total_donated || 0);
         const tier = t >= 5000 ? "أ" : t >= 2000 ? "ب" : t >= 500 ? "ج" : "د";
+        const actions = (d.phone && byPhone.get(d.phone)) || (d.full_name && byName.get(d.full_name)) || undefined;
         return {
           tier,
           الاسم: d.full_name,
@@ -445,26 +494,43 @@ async function fetchReport(key: ReportKey, orgId: string): Promise<any[]> {
           "إجمالي التبرعات": sar(t),
           "عدد التبرعات": d.donations_count || 0,
           "آخر تبرع": d.last_donation_at ? new Date(d.last_donation_at).toLocaleDateString("en-GB") : "—",
+          _actions: actions as ActionCounts | undefined,
         };
       });
     }
     case "campaigns": {
-      const { data } = await supabase.from("campaigns")
+      let q = supabase.from("campaigns")
         .select("name, goal_amount, collected_amount, donations_count, status, start_date, end_date")
-        .eq("organization_id", orgId).order("created_at", { ascending: false }).limit(500);
+        .eq("organization_id", orgId);
+      if (fromDate) q = q.gte("start_date", fromDate);
+      if (toDate) q = q.lte("end_date", toDate);
+      const { data } = await q.order("created_at", { ascending: false }).limit(500);
+      let tq = supabase.from("tasks")
+        .select("title, category, status, metadata")
+        .eq("organization_id", orgId)
+        .in("status", ["completed", "executed"]);
+      if (fromIso) tq = tq.gte("updated_at", fromIso);
+      if (toIso) tq = tq.lte("updated_at", toIso);
+      const { data: tasks } = await tq.limit(5000);
+      const byCampaign = buildActionsIndex(tasks || [], "campaign_id");
       return (data || []).map(c => {
         const goal = Number(c.goal_amount || 0); const got = Number(c.collected_amount || 0);
         const pct = goal ? Math.round((got / goal) * 100) : 0;
+        const reportSent = c.status === "completed";
         return {
           "اسم الحملة": c.name,
           الحالة: c.status,
+          _statusKey: c.status,
           "الهدف": sar(goal),
           "المُحصَّل": sar(got),
           "نسبة الإنجاز": `${pct}%`,
           "عدد المتبرعين": c.donations_count || 0,
           "بداية": c.start_date || "—",
           "نهاية": c.end_date || "—",
-          "تقرير ختامي مُرسل": c.status === "completed" ? "نعم" : "لا",
+          "تم التنفيذ": reportSent || got >= goal ? "نعم" : "لا",
+          "تقرير مُعَد": reportSent ? "نعم" : "لا",
+          "تقرير مُرسل": reportSent ? "نعم" : "لا",
+          _actions: byCampaign.get(c.name) as ActionCounts | undefined,
         };
       });
     }
@@ -563,13 +629,17 @@ const COLUMN_DEFS: Record<ReportKey, Col[]> = {
     { key: "عدد التبرعات", label: "عدد التبرعات" },
     { key: "tier", label: "الفئة", render: (v) => <Badge variant="outline">{v}</Badge> },
     { key: "آخر تبرع", label: "آخر تبرع" },
+    { key: "_actions", label: "الإجراءات المنفذة", render: (v) => <DonorActionsCell counts={v} /> },
   ],
   campaigns: [
     { key: "اسم الحملة", label: "اسم الحملة" }, { key: "الحالة", label: "الحالة" },
     { key: "الهدف", label: "الهدف" }, { key: "المُحصَّل", label: "المُحصَّل" },
     { key: "نسبة الإنجاز", label: "نسبة الإنجاز" }, { key: "عدد المتبرعين", label: "عدد المتبرعين" },
     { key: "بداية", label: "بداية" }, { key: "نهاية", label: "نهاية" },
-    { key: "تقرير ختامي مُرسل", label: "تقرير ختامي مُرسل" },
+    { key: "تم التنفيذ", label: "تم التنفيذ" },
+    { key: "تقرير مُعَد", label: "تقرير مُعَد" },
+    { key: "تقرير مُرسل", label: "تقرير مُرسل" },
+    { key: "_actions", label: "الإجراءات المنفذة", render: (v) => <DonorActionsCell counts={v} /> },
   ],
   failed_donations: [
     { key: "المتبرع", label: "المتبرع" }, { key: "الجوال", label: "الجوال" },
@@ -625,7 +695,7 @@ function computeAggregates(key: ReportKey, rows: any[]): Record<string, number |
       };
     }
     case "campaigns": {
-      const completed = rows.filter(r => r["تقرير ختامي مُرسل"] === "نعم").length;
+      const completed = rows.filter(r => r["تقرير مُرسل"] === "نعم").length;
       return { "إجمالي الحملات": n, "مُرسل تقرير ختامي": completed, "بدون تقرير": n - completed };
     }
     case "failed_donations": {
