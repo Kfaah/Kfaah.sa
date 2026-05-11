@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: sysByKind[src.kind] || sysByKind.website },
-          { role: "user", content: `المصدر: ${src.kind} — ${src.url}\nاستخرج كل العناصر المهمة من المحتوى التالي:\n\n${markdown.slice(0, 12000)}` },
+          { role: "user", content: `المصدر: ${src.kind} — ${src.url}\nاستخرج كل العناصر المهمة من المحتوى التالي (قد يحوي عدة صفحات):\n\n${markdown.slice(0, 30000)}` },
         ],
         tools: [{
           type: "function",
