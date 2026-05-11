@@ -221,7 +221,7 @@ export default function AdminHub() {
                 <div className="p-6">
                   {/* Logo + name */}
                   <div className="flex items-start gap-4 mb-4">
-                      <div className="w-16 h-16 rounded-2xl bg-white border border-border flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+                      <div className="w-16 h-16 rounded-2xl border border-border flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 ring-1 ring-slate-300/60">
                       {(() => {
                         const logoSrc = getAdminOrganizationLogo(o);
                         return logoSrc ? (
