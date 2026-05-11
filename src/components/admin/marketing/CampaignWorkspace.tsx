@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   Loader2, Sparkles, Wand2, Palette, MessageSquare, CalendarClock, Wallet,
-  ListChecks, FileText, Trash2, Save, Plus, Send,
+  ListChecks, FileText, Trash2, Save, Plus, Send, BarChart3, Award, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -71,13 +71,14 @@ export default function CampaignWorkspace({
           <div className="py-16 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
         ) : (
           <Tabs defaultValue="brief" className="mt-4">
-            <TabsList className="grid grid-cols-6 w-full">
+            <TabsList className="grid grid-cols-7 w-full">
               <TabsTrigger value="brief"><FileText className="h-4 w-4 ml-1" />Brief</TabsTrigger>
               <TabsTrigger value="content"><MessageSquare className="h-4 w-4 ml-1" />المحتوى</TabsTrigger>
               <TabsTrigger value="design"><Palette className="h-4 w-4 ml-1" />التصميم</TabsTrigger>
               <TabsTrigger value="channels"><CalendarClock className="h-4 w-4 ml-1" />القنوات</TabsTrigger>
               <TabsTrigger value="budget"><Wallet className="h-4 w-4 ml-1" />الميزانية</TabsTrigger>
               <TabsTrigger value="tasks"><ListChecks className="h-4 w-4 ml-1" />المهام</TabsTrigger>
+              <TabsTrigger value="insights"><BarChart3 className="h-4 w-4 ml-1" />التقييم</TabsTrigger>
             </TabsList>
 
             <TabsContent value="brief" className="mt-4">
@@ -102,6 +103,10 @@ export default function CampaignWorkspace({
 
             <TabsContent value="tasks" className="mt-4">
               <TasksTab c={c} />
+            </TabsContent>
+
+            <TabsContent value="insights" className="mt-4">
+              <InsightsTab c={c} actuals={actuals} onChanged={() => { load(); onChanged(); }} />
             </TabsContent>
           </Tabs>
         )}
