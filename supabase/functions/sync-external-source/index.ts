@@ -46,8 +46,23 @@ Deno.serve(async (req) => {
     // Step 1: scrape the homepage (or social page)
     const home = await scrapeOne(src.url, !isSocial, isSocial ? 3500 : 0);
     if (!home.ok) {
-      await supa.from("org_external_sources").update({ last_status: `firecrawl_failed:${home.status}`, last_synced_at: new Date().toISOString() }).eq("id", source_id);
-      return new Response(JSON.stringify({ error: "firecrawl_failed", details: home.raw }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const detailMsg = String(home.raw?.error || "");
+      const unsupported = /do not support this site/i.test(detailMsg);
+      const statusLabel = unsupported ? "unsupported_site" : `firecrawl_failed:${home.status}`;
+      await supa.from("org_external_sources").update({
+        last_status: statusLabel,
+        last_synced_at: new Date().toISOString(),
+      }).eq("id", source_id);
+      // Return 200 with a fallback signal so the frontend doesn't crash.
+      return new Response(JSON.stringify({
+        ok: false,
+        skipped: true,
+        reason: unsupported ? "unsupported_site" : "firecrawl_failed",
+        message: unsupported
+          ? "هذا المصدر غير مدعوم للمسح المباشر (مثل بعض منصات التواصل). تم تخطّيه."
+          : "تعذّر جلب المحتوى من هذا المصدر حالياً.",
+        details: home.raw,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     markdown = home.md;
     summary = home.sum;
