@@ -127,9 +127,14 @@ const Employees = () => {
   // Fetch employees, departments, and job roles
   useEffect(() => {
     const fetchData = async () => {
+      if (!currentOrg?.id) return;
       try {
         const [employeesRes, deptsRes, rolesRes] = await Promise.all([
-          supabase.from("employees").select("*").order("created_at", { ascending: false }),
+          supabase
+            .from("employees")
+            .select("*")
+            .eq("organization_id", currentOrg.id)
+            .order("created_at", { ascending: false }),
           supabase.from("departments").select("*").order("name"),
           supabase.from("job_roles").select("*").order("name"),
         ]);
@@ -150,7 +155,7 @@ const Employees = () => {
     };
 
     fetchData();
-  }, []);
+  }, [currentOrg?.id]);
 
   const filteredEmployees = employees.filter((employee) =>
     employee.full_name.includes(searchQuery) || employee.job_role.includes(searchQuery)
