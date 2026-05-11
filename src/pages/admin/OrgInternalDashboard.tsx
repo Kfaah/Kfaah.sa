@@ -747,27 +747,13 @@ export default function OrgInternalDashboard({
 
 function KpiCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
-    <Card
-      className="relative overflow-hidden border-border"
-      style={{
-        background: `linear-gradient(135deg, ${ORG_PRIMARY_TINT} 0%, hsl(var(--card)) 60%, ${ORG_ACCENT_SOFT} 100%)`,
-        borderRightWidth: 3,
-        borderRightColor: ORG_PRIMARY,
-      }}
-    >
-      <div
-        className="pointer-events-none absolute -left-8 -top-8 h-20 w-20 rounded-full opacity-30 blur-2xl"
-        style={{ background: ORG_ACCENT }}
-      />
+    <Card className="relative overflow-hidden border-border bg-card hover:shadow-md transition-shadow">
       <CardContent className="flex items-center justify-between gap-3 p-4 text-right" dir="rtl">
         <div className="min-w-0 flex-1">
           <div className="text-2xl font-bold leading-none text-foreground">{value}</div>
           <div className="mt-1 text-xs text-muted-foreground">{label}</div>
         </div>
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-md"
-          style={{ background: `linear-gradient(135deg, ${ORG_PRIMARY}, ${ORG_ACCENT})` }}
-        >
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground shadow-sm">
           {icon}
         </div>
       </CardContent>
@@ -778,24 +764,10 @@ function KpiCard({ label, value, icon }: { label: string; value: number; icon: R
 
 function ListCard({ title, items, icon, emptyText }: { title: string; items: string[]; icon: React.ReactNode; emptyText: string }) {
   return (
-    <Card
-      dir="rtl"
-      className="relative overflow-hidden border-border bg-card shadow-sm"
-      style={{ borderRightWidth: 3, borderRightColor: ORG_PRIMARY }}
-    >
-      <div
-        className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl"
-        style={{ background: ORG_ACCENT }}
-      />
-      <CardHeader
-        className="text-right"
-        style={{
-          background: `linear-gradient(to left, ${ORG_PRIMARY_TINT}, transparent)`,
-          borderBottom: `1px solid ${ORG_PRIMARY_RING}`,
-        }}
-      >
+    <Card dir="rtl" className="relative overflow-hidden border-border bg-card shadow-sm">
+      <CardHeader className="text-right border-b border-border bg-muted/30">
         <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-foreground">
-          <span style={{ color: ORG_PRIMARY }}>{icon}</span>
+          <span className="text-accent">{icon}</span>
           <span>{title}</span>
         </CardTitle>
       </CardHeader>
@@ -807,14 +779,9 @@ function ListCard({ title, items, icon, emptyText }: { title: string; items: str
             {items.map((s, i) => (
               <li
                 key={i}
-                className="flex items-start justify-start gap-2 rounded-lg border border-border p-3 text-right text-sm leading-relaxed text-foreground transition-colors hover:shadow-sm"
-                style={{
-                  background: `linear-gradient(to left, ${ORG_PRIMARY_TINT}, transparent)`,
-                  borderRightWidth: 2,
-                  borderRightColor: ORG_PRIMARY,
-                }}
+                className="flex items-start justify-start gap-2 rounded-lg border border-border bg-card p-3 text-right text-sm leading-relaxed text-foreground transition-colors hover:bg-muted/40 hover:shadow-sm"
               >
-                <span className="mt-1 flex-shrink-0" style={{ color: ORG_PRIMARY }}>•</span>
+                <span className="mt-1 flex-shrink-0 text-accent">•</span>
                 <span className="flex-1">{s}</span>
               </li>
             ))}
