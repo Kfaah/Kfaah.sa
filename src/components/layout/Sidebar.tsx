@@ -437,7 +437,7 @@ export function Sidebar() {
     navigate(redirectTo, { replace: true });
   };
 
-  const NavLink = ({ item }: { item: NavItem }) => {
+  const NavLink = ({ item, nested = false }: { item: NavItem; nested?: boolean }) => {
     const scopedHref = (() => {
       if (!currentOrg?.slug || !item.href.startsWith("/")) return item.href;
 
@@ -467,20 +467,27 @@ export function Sidebar() {
         to={scopedHref}
         state={linkState}
         className={cn(
-          "group/nav flex h-14 items-center rounded-2xl bg-sidebar-item py-2 ml-3 mr-2 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
-          collapsed ? "justify-center px-0" : "gap-3 pr-4 pl-4",
+          "group/nav flex items-center rounded-2xl bg-sidebar-item shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] transition-all duration-150",
+          nested ? "h-11 py-1.5 ml-3 mr-2 bg-sidebar-item/70" : "h-14 py-2 ml-3 mr-2",
+          collapsed ? "justify-center px-0" : (nested ? "gap-2 pr-3 pl-3" : "gap-3 pr-4 pl-4"),
           isActive ? "shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]" : "hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
         )}
         aria-label={item.title}
       >
         <div
-          className="sidebar-reference-icon flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sidebar-primary-foreground"
+          className={cn(
+            "sidebar-reference-icon flex flex-shrink-0 items-center justify-center rounded-xl text-sidebar-primary-foreground",
+            nested ? "h-8 w-8" : "h-10 w-10"
+          )}
         >
-          <item.icon className="w-5 h-5" />
+          <item.icon className={nested ? "w-4 h-4" : "w-5 h-5"} />
         </div>
         {!collapsed && (
           <span
-            className="flex-1 text-right text-base font-bold text-sidebar-item-foreground transition-colors duration-150"
+            className={cn(
+              "flex-1 text-right font-bold text-sidebar-item-foreground transition-colors duration-150",
+              nested ? "text-sm" : "text-base"
+            )}
           >
             {item.title}
           </span>
