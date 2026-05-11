@@ -808,9 +808,9 @@ function ChipField({
       {values.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-3">
           {values.map((v, i) => (
-            <Badge key={i} variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
+            <Badge key={i} className="gap-1 px-3 py-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 border-transparent">
               {v}
-              <button onClick={() => onRemove(i)} className="hover:text-destructive">
+              <button onClick={() => onRemove(i)} className="hover:opacity-80">
                 <X className="w-3 h-3" />
               </button>
             </Badge>
