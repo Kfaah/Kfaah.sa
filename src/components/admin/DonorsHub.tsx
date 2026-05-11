@@ -657,7 +657,7 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex flex-col items-center justify-center gap-2">
         <div className="text-sm text-slate-500">عرض البيانات حسب الفترة الزمنية</div>
         <DateSelect value={dateValue} onChange={setDateValue} />
       </div>
