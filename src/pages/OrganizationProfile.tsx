@@ -46,6 +46,18 @@ export default function OrganizationProfile() {
   const [extracting, setExtracting] = useState(false);
   const [analysis, setAnalysis] = useState<Record<string, unknown> | null>(null);
   const [lastAnalyzed, setLastAnalyzed] = useState<string | null>(null);
+  const [sources, setSources] = useState<any[]>([]);
+  const [syncingKey, setSyncingKey] = useState<string | null>(null);
+  const [newsPath, setNewsPath] = useState("");
+
+  const loadSources = async () => {
+    if (!orgId) return;
+    const { data } = await supabase
+      .from("org_external_sources" as any)
+      .select("*")
+      .eq("organization_id", orgId);
+    setSources(((data as any) || []));
+  };
 
   useEffect(() => {
     if (!orgId) return;
@@ -78,6 +90,7 @@ export default function OrganizationProfile() {
         setAnalysis((p.ai_analysis as Record<string, unknown>) || null);
         setLastAnalyzed(p.last_analyzed_at);
       }
+    await loadSources();
       setLoading(false);
     })();
   }, [orgId]);
