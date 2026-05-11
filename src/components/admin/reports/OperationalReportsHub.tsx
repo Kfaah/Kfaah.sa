@@ -724,12 +724,14 @@ const COLUMN_DEFS: Record<ReportKey, Col[]> = {
     { key: "المبلغ", label: "المبلغ" }, { key: "المشروع", label: "المشروع" },
     { key: "سبب الفشل", label: "سبب الفشل" },
     { key: "حالة المعاودة", label: "حالة المعاودة" }, { key: "تاريخ المحاولة", label: "تاريخ المحاولة" },
+    { key: "_actions", label: "الإجراءات المنفذة", render: (v) => <DonorActionsCell counts={v} /> },
   ],
   abandoned_carts: [
     { key: "المتبرع", label: "المتبرع" }, { key: "الجوال", label: "الجوال" },
     { key: "المبلغ", label: "المبلغ" }, { key: "المشروع", label: "المشروع" },
     { key: "حالة المتابعة", label: "حالة المتابعة" },
     { key: "تم الاسترداد", label: "تم الاسترداد" }, { key: "تاريخ الترك", label: "تاريخ الترك" },
+    { key: "_actions", label: "الإجراءات المنفذة", render: (v) => <DonorActionsCell counts={v} /> },
   ],
   subscriptions: [
     { key: "المتبرع", label: "المتبرع" }, { key: "الجوال", label: "الجوال" },
@@ -737,6 +739,7 @@ const COLUMN_DEFS: Record<ReportKey, Col[]> = {
     { key: "الحالة", label: "الحالة" }, { key: "بداية", label: "بداية" },
     { key: "نهاية", label: "نهاية" }, { key: "الاستقطاع القادم", label: "الاستقطاع القادم" },
     { key: "سبب الإلغاء", label: "سبب الإلغاء" },
+    { key: "_actions", label: "الإجراءات المنفذة", render: (v) => <DonorActionsCell counts={v} /> },
   ],
   recurring_donors: [
     { key: "الاسم", label: "الاسم" }, { key: "الجوال", label: "الجوال" },
