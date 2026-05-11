@@ -667,7 +667,7 @@ export function Sidebar() {
 
             {/* Profile Icon Button */}
             <Link
-              to="/profile"
+              to={currentOrg?.slug ? `/${currentOrg.slug}/profile` : "/profile"}
               className="group relative flex items-center gap-3 ml-3 mr-2 rounded-2xl bg-sidebar-item p-3 shadow-[0_5px_12px_hsl(var(--sidebar-item-shadow))] hover:shadow-[0_7px_16px_hsl(var(--sidebar-item-shadow))]"
             >
               <div className="sidebar-reference-icon relative flex h-10 w-10 items-center justify-center rounded-full text-sidebar-primary-foreground transition-transform duration-200 group-hover:scale-[1.04]">
@@ -762,7 +762,7 @@ export function Sidebar() {
               {/* التواصل مع المنصة (الدعم الفني) — يخفى عن مدير النظام (super_admin) فقط */}
               {!isSuperAdmin && (
                 <Link
-                  to="/messages"
+                  to={currentOrg?.slug ? `/${currentOrg.slug}/messages` : "/messages"}
                   state={{ fromNavigation: true }}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-l-xl rounded-r-none bg-white/15 text-white hover:bg-white/25 transition-colors text-sm backdrop-blur-sm"
                 >
