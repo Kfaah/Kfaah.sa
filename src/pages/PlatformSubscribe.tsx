@@ -20,9 +20,9 @@ const OWNER_EMAIL = "info@kfaah.org";
 // السعر يحسب بناءً على المعايير الخمسة. كل معيار له وزن.
 // النتيجة سعر تأسيس تقديري + سعر تجديد سنوي تقديري.
 
-// أسعار قاعدية بعد تخفيض 20%
-const BASE_SETUP = 6400;     // سعر تأسيس قاعدي (كان 8000)
-const BASE_RENEWAL = 3600;   // سعر تجديد سنوي قاعدي (كان 4500)
+// أسعار قاعدية مضبوطة بحيث الحد الأعلى للتأسيس = 20,000 ر.س والتجديد = 5,000 ر.س
+const BASE_SETUP = 4700;     // سعر تأسيس قاعدي
+const BASE_RENEWAL = 1500;   // سعر تجديد سنوي قاعدي
 
 function calcPricing(opts: {
   campaign: "none" | "light" | "active" | "intensive";
@@ -32,21 +32,20 @@ function calcPricing(opts: {
   ai: boolean;
 }) {
   const campaignMult = { none: 0.85, light: 1.0, active: 1.2, intensive: 1.45 }[opts.campaign];
-  // تخفيض 20% مطبّق على كل الإضافات
   const donorsAdd = {
     lt500: 0,
-    lt5000: 1200,
-    lt15000: 2800,
-    lt40000: 4800,
-    lt100000: 6400,
-    gt100000: 8000,
+    lt5000: 880,
+    lt15000: 2050,
+    lt40000: 3520,
+    lt100000: 4700,
+    gt100000: 5870,
   }[opts.donors];
   const ageMult = { lt2: 0.9, "2_5": 1.0, "5_10": 1.15, gt10: 1.3 }[opts.age];
-  const staffAdd = { lt5: 0, "5_15": 960, "15_30": 2400, gt30: 4400 }[opts.staff];
-  const aiAdd = opts.ai ? 2800 : 0;
+  const staffAdd = { lt5: 0, "5_15": 700, "15_30": 1760, gt30: 3225 }[opts.staff];
+  const aiAdd = opts.ai ? 2050 : 0;
 
   const setup = Math.round((BASE_SETUP * campaignMult * ageMult + donorsAdd + staffAdd + aiAdd) / 100) * 100;
-  const renewal = Math.round((BASE_RENEWAL * campaignMult + donorsAdd * 0.4 + staffAdd * 0.5 + (opts.ai ? 1440 : 0)) / 100) * 100;
+  const renewal = Math.round((BASE_RENEWAL * campaignMult + donorsAdd * 0.22 + staffAdd * 0.25 + (opts.ai ? 700 : 0)) / 100) * 100;
   return { setup, renewal };
 }
 
