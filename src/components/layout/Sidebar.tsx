@@ -591,8 +591,9 @@ export function Sidebar() {
             <div className="text-center space-y-1 mt-2">
               <div className="relative">
                 <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent rounded-full via-white/70" />
-        </div>
-      </div>
+              </div>
+            </div>
+          )}
 
       {/* Cyan Navigation Section */}
       <div className="flex-1 flex flex-col min-h-0 relative z-10 pt-6">
