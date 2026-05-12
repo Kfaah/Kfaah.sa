@@ -480,16 +480,16 @@ export default function OrgInternalDashboard({
               { value: "analysis", label: "التحليل الذكي", Icon: Sparkles },
               { value: "overview", label: "نظرة عامة", Icon: LayoutDashboard },
               { value: "donors", label: "مركز التبرعات", Icon: HeartHandshake },
+              { value: "operational-plans", label: "الخطط من التوصيات", Icon: ListChecks },
+              { value: "reports", label: "التقارير", Icon: FileBarChart2 },
+              { value: "innovation", label: "الابتكار والتجديد", Icon: Lightbulb },
+              { value: "marketing", label: "الحملات التسويقية", Icon: Megaphone },
               { value: "finance", label: "الإدارة المالية", Icon: Wallet },
               { value: "employees", label: "الموظفون", Icon: Users },
               { value: "operational-plans-main", label: "الخطط التشغيلية", Icon: Target },
               { value: "executive-plans", label: "الخطط التنفيذية", Icon: CalendarCheck },
               { value: "tasks", label: "المهام", Icon: ClipboardList },
-              { value: "operational-plans", label: "الخطط من التوصيات", Icon: ListChecks },
               { value: "performance", label: "تقييم الأداء", Icon: Target },
-              { value: "reports", label: "التقارير", Icon: FileBarChart2 },
-              { value: "innovation", label: "الابتكار والتجديد", Icon: Lightbulb },
-              { value: "marketing", label: "الحملات التسويقية", Icon: Megaphone },
             ];
             return tabs.flatMap((t, i) => {
               const trigger = (
