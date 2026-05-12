@@ -237,7 +237,7 @@ export default function AdminCompare() {
           </div>
         </div>
 
-        <div className="w-full overflow-x-auto">
+        <div className="hidden md:block w-full overflow-x-auto">
           <table className="w-full min-w-[1100px] text-sm">
             <thead className="bg-muted/60">
               <tr>
@@ -249,10 +249,7 @@ export default function AdminCompare() {
                         "px-3 py-4 text-center text-foreground font-bold text-[12px] leading-snug cursor-pointer hover:bg-muted select-none align-middle whitespace-nowrap min-w-[110px]",
                         sortKey === s.key && "text-accent bg-accent/10"
                       )}
-                      onClick={() => {
-                        if (sortKey === s.key) setSortDesc(!sortDesc);
-                        else { setSortKey(s.key); setSortDesc(true); }
-                      }}>
+                      onClick={() => handleSort(s.key)}>
                     <div className="flex flex-col items-center gap-1">
                       <span className="break-words hyphens-auto">{s.label}</span>
                       <ArrowUpDown className="w-3.5 h-3.5 opacity-60 shrink-0" />
@@ -279,8 +276,8 @@ export default function AdminCompare() {
                       {m.org_slug && <div className="text-[11px] text-muted-foreground mt-1 truncate" dir="ltr">/{m.org_slug}</div>}
                     </td>
                     {sortable.map(s => {
-                      const v = m[s.key] as number;
-                      const display = s.format ? s.format(v) : new Intl.NumberFormat("en-US").format(Math.round(v));
+                      const v = Number(m[s.key]) || 0;
+                      const display = formatMetric(s, v);
                       const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
                       return (
                         <td key={s.key as string} className="px-3 py-4 text-center text-foreground whitespace-nowrap">
