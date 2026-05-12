@@ -78,6 +78,18 @@ export default function AdminCompare() {
     return map;
   }, [metrics]);
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDesc(!sortDesc);
+    else { setSortKey(key); setSortDesc(true); }
+  };
+
+  const formatMetric = (item: (typeof sortable)[number], value: number) => {
+    const safeValue = Number.isFinite(value) ? value : 0;
+    return item.format
+      ? item.format(safeValue)
+      : new Intl.NumberFormat("en-US").format(Math.round(safeValue));
+  };
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
