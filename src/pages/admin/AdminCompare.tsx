@@ -78,6 +78,18 @@ export default function AdminCompare() {
     return map;
   }, [metrics]);
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDesc(!sortDesc);
+    else { setSortKey(key); setSortDesc(true); }
+  };
+
+  const formatMetric = (item: (typeof sortable)[number], value: number) => {
+    const safeValue = Number.isFinite(value) ? value : 0;
+    return item.format
+      ? item.format(safeValue)
+      : new Intl.NumberFormat("en-US").format(Math.round(safeValue));
+  };
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -225,7 +237,7 @@ export default function AdminCompare() {
           </div>
         </div>
 
-        <div className="w-full overflow-x-auto">
+        <div className="hidden lg:block w-full overflow-x-auto">
           <table className="w-full min-w-[1100px] text-sm">
             <thead className="bg-muted/60">
               <tr>
@@ -237,10 +249,7 @@ export default function AdminCompare() {
                         "px-3 py-4 text-center text-foreground font-bold text-[12px] leading-snug cursor-pointer hover:bg-muted select-none align-middle whitespace-nowrap min-w-[110px]",
                         sortKey === s.key && "text-accent bg-accent/10"
                       )}
-                      onClick={() => {
-                        if (sortKey === s.key) setSortDesc(!sortDesc);
-                        else { setSortKey(s.key); setSortDesc(true); }
-                      }}>
+                      onClick={() => handleSort(s.key)}>
                     <div className="flex flex-col items-center gap-1">
                       <span className="break-words hyphens-auto">{s.label}</span>
                       <ArrowUpDown className="w-3.5 h-3.5 opacity-60 shrink-0" />
@@ -267,8 +276,8 @@ export default function AdminCompare() {
                       {m.org_slug && <div className="text-[11px] text-muted-foreground mt-1 truncate" dir="ltr">/{m.org_slug}</div>}
                     </td>
                     {sortable.map(s => {
-                      const v = m[s.key] as number;
-                      const display = s.format ? s.format(v) : new Intl.NumberFormat("en-US").format(Math.round(v));
+                      const v = Number(m[s.key]) || 0;
+                      const display = formatMetric(s, v);
                       const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
                       return (
                         <td key={s.key as string} className="px-3 py-4 text-center text-foreground whitespace-nowrap">
@@ -290,6 +299,52 @@ export default function AdminCompare() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="lg:hidden divide-y divide-border">
+          {sorted.map((m, idx) => {
+            const medalIcon = idx === 0 ? Trophy : idx === 1 ? Medal : idx === 2 ? Award : null;
+            const medalColor = idx === 0 ? "text-amber-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-orange-500" : "";
+            const M = medalIcon;
+            return (
+              <article key={m.org_id} className="p-4 space-y-3 bg-card">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted text-foreground font-bold text-sm flex items-center justify-center shrink-0" dir="ltr">
+                    {M ? <M className={cn("w-5 h-5", medalColor)} /> : idx + 1}
+                  </div>
+                  <div className="min-w-0 flex-1 text-right">
+                    <div className="font-bold text-foreground text-sm leading-relaxed">{m.org_name}</div>
+                    {m.org_slug && <div className="text-[11px] text-muted-foreground mt-0.5" dir="ltr">/{m.org_slug}</div>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {sortable.map(s => {
+                    const v = Number(m[s.key]) || 0;
+                    const display = formatMetric(s, v);
+                    const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
+                    return (
+                      <button
+                        key={s.key as string}
+                        type="button"
+                        onClick={() => handleSort(s.key)}
+                        className={cn(
+                          "min-w-0 rounded-lg border border-border bg-muted/35 p-2 text-right transition-colors",
+                          sortKey === s.key && "border-accent/50 bg-accent/10"
+                        )}
+                      >
+                        <span className="block text-[10px] leading-tight text-muted-foreground">{s.label}</span>
+                        <span dir="ltr" className="mt-1 block text-sm font-bold tabular-nums text-foreground truncate">
+                          {isScore ? Math.round(v) : display}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          })}
+          {!loading && sorted.length === 0 && (
+            <div className="text-center text-muted-foreground py-8">لا توجد بيانات بعد</div>
+          )}
         </div>
       </Card>
     </div>
