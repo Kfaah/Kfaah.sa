@@ -300,6 +300,52 @@ export default function AdminCompare() {
             </tbody>
           </table>
         </div>
+        <div className="md:hidden divide-y divide-border">
+          {sorted.map((m, idx) => {
+            const medalIcon = idx === 0 ? Trophy : idx === 1 ? Medal : idx === 2 ? Award : null;
+            const medalColor = idx === 0 ? "text-amber-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-orange-500" : "";
+            const M = medalIcon;
+            return (
+              <article key={m.org_id} className="p-4 space-y-3 bg-card">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted text-foreground font-bold text-sm flex items-center justify-center shrink-0" dir="ltr">
+                    {M ? <M className={cn("w-5 h-5", medalColor)} /> : idx + 1}
+                  </div>
+                  <div className="min-w-0 flex-1 text-right">
+                    <div className="font-bold text-foreground text-sm leading-relaxed">{m.org_name}</div>
+                    {m.org_slug && <div className="text-[11px] text-muted-foreground mt-0.5" dir="ltr">/{m.org_slug}</div>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {sortable.map(s => {
+                    const v = Number(m[s.key]) || 0;
+                    const display = formatMetric(s, v);
+                    const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
+                    return (
+                      <button
+                        key={s.key as string}
+                        type="button"
+                        onClick={() => handleSort(s.key)}
+                        className={cn(
+                          "min-w-0 rounded-lg border border-border bg-muted/35 p-2 text-right transition-colors",
+                          sortKey === s.key && "border-accent/50 bg-accent/10"
+                        )}
+                      >
+                        <span className="block text-[10px] leading-tight text-muted-foreground">{s.label}</span>
+                        <span dir="ltr" className="mt-1 block text-sm font-bold tabular-nums text-foreground truncate">
+                          {isScore ? Math.round(v) : display}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          })}
+          {!loading && sorted.length === 0 && (
+            <div className="text-center text-muted-foreground py-8">لا توجد بيانات بعد</div>
+          )}
+        </div>
       </Card>
     </div>
   );
