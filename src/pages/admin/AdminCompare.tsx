@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info, Gauge, Building2, ListOrdered } from "lucide-react";
+import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info, Gauge, Building2, ListOrdered, ChevronDown } from "lucide-react";
 import { useAdminAggregates, type OrgMetrics, type DateRange } from "@/hooks/useAdminAggregates";
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import { cn } from "@/lib/utils";
@@ -48,6 +48,7 @@ export default function AdminCompare() {
   const [sortKey, setSortKey] = useState<SortKey>("overall_score");
   const [sortDesc, setSortDesc] = useState(true);
   const [viewMode, setViewMode] = useState<"orgs" | "criteria">("orgs");
+  const [expandedCriterion, setExpandedCriterion] = useState<string | null>(null);
 
   const sorted = useMemo(() => {
     const list = [...metrics];
