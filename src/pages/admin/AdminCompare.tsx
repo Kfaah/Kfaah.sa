@@ -237,7 +237,7 @@ export default function AdminCompare() {
           </div>
         </div>
 
-        <div className="hidden md:block w-full overflow-x-auto">
+        <div className="hidden lg:block w-full overflow-x-auto">
           <table className="w-full min-w-[1100px] text-sm">
             <thead className="bg-muted/60">
               <tr>
@@ -300,7 +300,7 @@ export default function AdminCompare() {
             </tbody>
           </table>
         </div>
-        <div className="md:hidden divide-y divide-border">
+        <div className="lg:hidden divide-y divide-border">
           {sorted.map((m, idx) => {
             const medalIcon = idx === 0 ? Trophy : idx === 1 ? Medal : idx === 2 ? Award : null;
             const medalColor = idx === 0 ? "text-amber-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-orange-500" : "";
