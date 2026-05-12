@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { KafaaLogoArtworkCropped } from "@/components/brand/PlatformBrand";
 import SpaceScene from "@/components/space/SpaceScene";
+import { Eye, EyeOff, LogIn, Loader2 } from "lucide-react";
 const normalizeDigits = (value: string, trim = false) => {
   const input = trim ? value.trim() : value;
   const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
@@ -18,12 +19,6 @@ const normalizeDigits = (value: string, trim = false) => {
     .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
     .replace(/[۰-۹]/g, (d) => String(persian.indexOf(d)));
 };
-
-const Icon = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <span className={`inline-flex items-center justify-center ${className}`} aria-hidden="true">
-    {children}
-  </span>
-);
 
 export default function PublicLanding() {
   const navigate = useNavigate();
@@ -110,8 +105,19 @@ export default function PublicLanding() {
         }}
       />
 
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-0 items-center justify-items-center">
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 sm:py-8">
+        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-6 md:gap-0 items-center justify-items-center">
+          {/* Compact logo for mobile only */}
+          <div className="flex md:hidden items-center justify-center w-40 h-40 -mb-2 animate-fade-in order-1">
+            <KafaaLogoArtworkCropped
+              className="h-full w-full object-contain"
+              style={{
+                filter:
+                  "drop-shadow(0 0 20px hsl(0 0% 100% / 0.35)) drop-shadow(0 12px 24px hsl(220 75% 3% / 0.55))",
+              }}
+            />
+          </div>
+
           {/* RIGHT (RTL first): logo matched to the login block height */}
           <div className="relative hidden md:flex items-center justify-center animate-fade-in order-1 w-[22rem] h-[24rem] -translate-y-6 md:-ml-6 lg:-ml-8 overflow-visible">
             <KafaaLogoArtworkCropped
@@ -133,16 +139,16 @@ export default function PublicLanding() {
                   "0 30px 60px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(8,145,178,0.08)",
               }}
             >
-          <CardHeader className="text-center space-y-2 pb-4 pt-7">
-            <CardTitle className="text-2xl md:text-3xl text-cyan-700 font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
-            <CardDescription className="text-slate-600 text-sm">
+          <CardHeader className="text-center space-y-2 pb-4 pt-6 sm:pt-7">
+            <CardTitle className="text-2xl sm:text-3xl text-cyan-700 font-extrabold tracking-tight">دخول مدير النظام</CardTitle>
+            <CardDescription className="text-slate-600 text-sm sm:text-base">
               بوابة آمنة للتحكم الكامل بالمنصة
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-7 pb-7">
+          <CardContent className="px-5 sm:px-7 pb-6 sm:pb-7">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2 text-right" dir="rtl">
-                <Label htmlFor="username" className="block w-full text-right text-cyan-700 text-sm font-semibold">
+                <Label htmlFor="username" className="block w-full text-right text-cyan-700 text-sm sm:text-base font-semibold">
                   اسم المستخدم / رقم الهوية
                 </Label>
                 <Input
@@ -151,12 +157,12 @@ export default function PublicLanding() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   placeholder="أدخل رقم الهوية"
-                  className="h-11 text-right bg-white border-cyan-200 text-slate-900 text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                  className="h-12 text-right bg-white border-cyan-200 text-slate-900 text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
                   dir="rtl"
                 />
               </div>
               <div className="space-y-2 text-right" dir="rtl">
-                <Label htmlFor="password" className="block w-full text-right text-cyan-700 text-sm font-semibold">
+                <Label htmlFor="password" className="block w-full text-right text-cyan-700 text-sm sm:text-base font-semibold">
                   كلمة المرور
                 </Label>
                 <div className="relative">
@@ -168,24 +174,25 @@ export default function PublicLanding() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="h-11 pe-10 text-right bg-white border-cyan-200 text-slate-900 text-sm placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
+                    className="h-12 pe-11 text-right bg-white border-cyan-200 text-slate-900 text-base placeholder:text-slate-400 focus-visible:ring-cyan-400/50"
                     dir="rtl"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-600 hover:text-cyan-800"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-600 hover:text-cyan-800 p-1"
+                    aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
                   >
-                    {showPassword ? "◉" : "◎"}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
               <Button
                 type="submit"
-                className="w-full h-12 gap-2 text-base bg-gradient-to-l from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-bold shadow-lg shadow-cyan-500/40 border-0"
+                className="w-full h-12 sm:h-13 gap-2 text-base sm:text-lg bg-gradient-to-l from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-bold shadow-lg shadow-cyan-500/40 border-0"
                 disabled={loading}
               >
-                {loading ? <span className="animate-spin">⏳</span> : <Icon className="text-lg">↤</Icon>}
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}
                 تسجيل الدخول
               </Button>
             </form>
@@ -193,11 +200,11 @@ export default function PublicLanding() {
         </Card>
 
             {/* Feature pills below the login card */}
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap gap-2 justify-center px-2">
               {["إدارة متعددة الجمعيات", "تقارير لحظية", "ذكاء اصطناعي"].map((t) => (
                 <span
                   key={t}
-                  className="px-4 py-1.5 rounded-full border border-cyan-300/70 bg-white text-xs md:text-sm text-cyan-700 font-semibold shadow-lg"
+                  className="px-4 py-2 rounded-full border border-cyan-300/70 bg-white text-sm text-cyan-700 font-semibold shadow-lg"
                 >
                   {t}
                 </span>
@@ -207,12 +214,12 @@ export default function PublicLanding() {
         </div>
       </main>
 
-      <footer className="relative z-10 text-center text-slate-200/80 text-sm py-4">
+      <footer className="relative z-10 text-center text-white py-5">
         <div className="max-w-3xl mx-auto px-4 space-y-2">
-          <p className="text-sm md:text-base text-slate-200/90 leading-relaxed">
+          <p className="text-sm sm:text-base text-white leading-relaxed">
             <span className="text-cyan-300 font-bold">منصة إدارة التسويق الإلكتروني للجمعيات بالذكاء الاصطناعي</span> — منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.
           </p>
-          <p className="text-xs text-slate-400/70 pt-1">
+          <p className="text-xs sm:text-sm text-slate-300 pt-1">
             جميع الحقوق محفوظة لمنصة كفاءة الإلكترونية © {new Date().getFullYear()}
           </p>
         </div>
