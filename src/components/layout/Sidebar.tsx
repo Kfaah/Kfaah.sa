@@ -591,12 +591,6 @@ export function Sidebar() {
             <div className="text-center space-y-1 mt-2">
               <div className="relative">
                 <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent rounded-full via-white/70" />
-                <p className="text-sm font-semibold text-white">
-                  نظام إدارة التسويق الإلكتروني
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
