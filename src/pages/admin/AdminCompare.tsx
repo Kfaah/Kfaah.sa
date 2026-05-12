@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info, Gauge, Building2, ListOrdered } from "lucide-react";
+import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info, Gauge, Building2, ListOrdered, ChevronDown } from "lucide-react";
 import { useAdminAggregates, type OrgMetrics, type DateRange } from "@/hooks/useAdminAggregates";
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import { cn } from "@/lib/utils";
@@ -48,6 +48,7 @@ export default function AdminCompare() {
   const [sortKey, setSortKey] = useState<SortKey>("overall_score");
   const [sortDesc, setSortDesc] = useState(true);
   const [viewMode, setViewMode] = useState<"orgs" | "criteria">("orgs");
+  const [expandedCriterion, setExpandedCriterion] = useState<string | null>(null);
 
   const sorted = useMemo(() => {
     const list = [...metrics];
@@ -392,63 +393,85 @@ export default function AdminCompare() {
         )}
 
         {viewMode === "criteria" && (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="divide-y divide-border">
             {sortable.map(s => {
+              const isOpen = expandedCriterion === (s.key as string);
               const ranked = [...metrics].sort(
                 (a, b) => (Number(b[s.key]) || 0) - (Number(a[s.key]) || 0)
               );
               const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
               return (
-                <Card key={s.key as string} className="bg-card border-border overflow-hidden shadow-sm">
-                  <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center justify-between">
-                    <h4 className="font-bold text-sm text-foreground">{s.label}</h4>
-                    <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px]">
-                      {ranked.length} جمعية
-                    </Badge>
-                  </div>
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/20">
-                      <tr>
-                        <th className="px-2 py-2 text-center text-muted-foreground font-bold text-xs w-12">#</th>
-                        <th className="px-3 py-2 text-right text-muted-foreground font-bold text-xs">الجمعية</th>
-                        <th className="px-3 py-2 text-center text-muted-foreground font-bold text-xs whitespace-nowrap">{s.label}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ranked.map((m, idx) => {
-                        const v = Number(m[s.key]) || 0;
-                        const display = formatMetric(s, v);
-                        const medalIcon = idx === 0 ? Trophy : idx === 1 ? Medal : idx === 2 ? Award : null;
-                        const medalColor = idx === 0 ? "text-amber-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-orange-500" : "";
-                        const Mi = medalIcon;
-                        return (
-                          <tr key={m.org_id} className="border-t border-border hover:bg-muted/30">
-                            <td className="px-2 py-2 text-center">
-                              <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-muted text-foreground font-bold text-xs" dir="ltr">
-                                {Mi ? <Mi className={cn("w-4 h-4", medalColor)} /> : idx + 1}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-right">
-                              <div className="font-semibold text-foreground text-xs leading-tight truncate" title={m.org_name}>
-                                {m.org_name}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              {isScore ? (
-                                <ScoreBadge value={v} display={display} />
-                              ) : (
-                                <span dir="ltr" className="inline-block text-sm font-bold tabular-nums text-foreground">{display}</span>
-                              )}
-                            </td>
+                <div key={s.key as string} className="bg-card">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedCriterion(isOpen ? null : (s.key as string))}
+                    className={cn(
+                      "w-full flex items-center justify-between gap-3 px-5 py-4 text-right transition-colors hover:bg-muted/40",
+                      isOpen && "bg-accent/10"
+                    )}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <ChevronDown
+                        className={cn(
+                          "w-4 h-4 text-muted-foreground transition-transform shrink-0",
+                          isOpen && "rotate-180 text-accent"
+                        )}
+                      />
+                      <Badge className="bg-muted text-muted-foreground border-border text-[10px] shrink-0">
+                        {ranked.length} جمعية
+                      </Badge>
+                    </div>
+                    <h4 className={cn("font-bold text-sm flex-1 text-right truncate", isOpen ? "text-accent" : "text-foreground")}>
+                      {s.label}
+                    </h4>
+                  </button>
+                  {isOpen && (
+                    <div className="border-t border-border bg-muted/10">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/30">
+                          <tr>
+                            <th className="px-2 py-2 text-center text-muted-foreground font-bold text-xs w-12">#</th>
+                            <th className="px-3 py-2 text-right text-muted-foreground font-bold text-xs">الجمعية</th>
+                            <th className="px-3 py-2 text-left text-muted-foreground font-bold text-xs whitespace-nowrap">{s.label}</th>
                           </tr>
-                        );
-                      })}
-                      {!loading && ranked.length === 0 && (
-                        <tr><td colSpan={3} className="text-center text-muted-foreground py-6 text-xs">لا توجد بيانات</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </Card>
+                        </thead>
+                        <tbody>
+                          {ranked.map((m, idx) => {
+                            const v = Number(m[s.key]) || 0;
+                            const display = formatMetric(s, v);
+                            const medalIcon = idx === 0 ? Trophy : idx === 1 ? Medal : idx === 2 ? Award : null;
+                            const medalColor = idx === 0 ? "text-amber-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-orange-500" : "";
+                            const Mi = medalIcon;
+                            return (
+                              <tr key={m.org_id} className="border-t border-border hover:bg-muted/30">
+                                <td className="px-2 py-2 text-center">
+                                  <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-muted text-foreground font-bold text-xs" dir="ltr">
+                                    {Mi ? <Mi className={cn("w-4 h-4", medalColor)} /> : idx + 1}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 text-right">
+                                  <div className="font-semibold text-foreground text-xs leading-tight truncate" title={m.org_name}>
+                                    {m.org_name}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 text-left">
+                                  {isScore ? (
+                                    <ScoreBadge value={v} display={display} />
+                                  ) : (
+                                    <span dir="ltr" className="inline-block text-sm font-bold tabular-nums text-foreground">{display}</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {!loading && ranked.length === 0 && (
+                            <tr><td colSpan={3} className="text-center text-muted-foreground py-6 text-xs">لا توجد بيانات</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
