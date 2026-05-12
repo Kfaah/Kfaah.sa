@@ -592,11 +592,30 @@ export function Sidebar() {
             </div>
           </Link>
 
-          {/* Text under logo — logo only, no name */}
+          {/* Text under logo — اسم الجمعية واسم النظام */}
           {!collapsed && (
-            <div className="text-center space-y-1 mt-2">
+            <div className="text-center space-y-1 mt-2 px-3">
+              {(() => {
+                const shortLines = getShortOrgName(branding.orgName || currentOrg?.name || "");
+                const lines = shortLines ?? [branding.orgName || currentOrg?.name || ""];
+                return (
+                  <div className="space-y-0.5">
+                    {lines.filter(Boolean).map((line, i) => (
+                      <div
+                        key={i}
+                        className="text-white text-sm font-bold leading-tight drop-shadow"
+                      >
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               <div className="relative">
                 <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent rounded-full via-white/70" />
+              </div>
+              <div className="text-white/85 text-[11px] font-medium leading-tight">
+                نظام إدارة التسويق الإلكتروني
               </div>
             </div>
           )}
