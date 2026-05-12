@@ -225,16 +225,16 @@ export default function AdminCompare() {
           </div>
         </div>
 
-        <div className="w-full overflow-hidden">
-          <table className="w-full text-base table-fixed">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[1100px] text-sm">
             <thead className="bg-muted/60">
               <tr>
-                <th className="px-2 py-4 text-center text-foreground font-bold text-sm w-12">#</th>
-                <th className="px-3 py-4 text-right text-foreground font-bold text-sm w-[180px]">الجمعية</th>
+                <th className="px-2 py-4 text-center text-foreground font-bold text-sm w-12 sticky right-0 bg-muted/60 z-10">#</th>
+                <th className="px-3 py-4 text-right text-foreground font-bold text-sm w-[200px] sticky right-12 bg-muted/60 z-10">الجمعية</th>
                 {sortable.map(s => (
                   <th key={s.key as string}
                       className={cn(
-                        "px-1.5 py-4 text-center text-foreground font-bold text-[13px] leading-snug cursor-pointer hover:bg-muted select-none align-middle",
+                        "px-3 py-4 text-center text-foreground font-bold text-[12px] leading-snug cursor-pointer hover:bg-muted select-none align-middle whitespace-nowrap min-w-[110px]",
                         sortKey === s.key && "text-accent bg-accent/10"
                       )}
                       onClick={() => {
@@ -257,12 +257,12 @@ export default function AdminCompare() {
                 return (
                   <tr key={m.org_id}
                       className="border-t border-border transition-colors hover:bg-muted/40">
-                    <td className="px-2 py-4 text-center">
+                    <td className="px-2 py-4 text-center sticky right-0 bg-card z-10">
                       <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted text-foreground font-bold text-base" dir="ltr">
                         {M ? <M className={cn("w-5 h-5", medalColor)} /> : idx + 1}
                       </div>
                     </td>
-                    <td className="px-3 py-4 text-right">
+                    <td className="px-3 py-4 text-right sticky right-12 bg-card z-10">
                       <div className="font-bold text-foreground text-sm leading-tight truncate" title={m.org_name}>{m.org_name}</div>
                       {m.org_slug && <div className="text-[11px] text-muted-foreground mt-1 truncate" dir="ltr">/{m.org_slug}</div>}
                     </td>
@@ -271,11 +271,11 @@ export default function AdminCompare() {
                       const display = s.format ? s.format(v) : new Intl.NumberFormat("en-US").format(Math.round(v));
                       const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
                       return (
-                        <td key={s.key as string} className="px-1.5 py-4 text-center text-foreground">
+                        <td key={s.key as string} className="px-3 py-4 text-center text-foreground whitespace-nowrap">
                           {isScore ? (
                             <ScoreBadge value={v} display={display} />
                           ) : (
-                            <span dir="ltr" className={cn("inline-block text-base font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
+                            <span dir="ltr" className={cn("inline-block text-sm font-semibold tabular-nums", sortKey === s.key && "text-accent font-bold")}>{display}</span>
                           )}
                         </td>
                       );
