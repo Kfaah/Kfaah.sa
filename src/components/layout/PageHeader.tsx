@@ -41,7 +41,7 @@ export function PageHeader({ icon, title, subtitle, actions, className, style }:
         }}
       />
 
-      <div className="relative flex h-[120px] flex-col gap-3 px-4 py-4 sm:h-[140px] sm:gap-4 sm:px-7 sm:py-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative flex min-h-[120px] flex-col gap-3 px-4 py-4 sm:min-h-[140px] sm:gap-4 sm:px-7 sm:py-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           {icon && (
             <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-sm [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
@@ -53,12 +53,12 @@ export function PageHeader({ icon, title, subtitle, actions, className, style }:
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-1 text-xs sm:text-sm text-white/85 line-clamp-2">{subtitle}</p>
+              <p className="mt-1 text-[13px] sm:text-sm font-medium text-white/95 line-clamp-3 sm:line-clamp-2 leading-relaxed drop-shadow-sm">{subtitle}</p>
             )}
           </div>
         </div>
         {actions && (
-          <div className="flex flex-wrap items-center gap-2 [&_button]:text-xs [&_button]:sm:text-sm">{actions}</div>
+          <div className="-mx-1 px-1 flex items-center gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible scrollbar-thin [&::-webkit-scrollbar]:hidden [&_button]:flex-shrink-0 [&_button]:text-xs [&_button]:sm:text-sm">{actions}</div>
         )}
       </div>
     </div>
