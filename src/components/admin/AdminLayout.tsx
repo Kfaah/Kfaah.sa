@@ -4,6 +4,7 @@ import {
   LayoutDashboard, GitCompareArrows, Sparkles,
   Building2, LogOut, ArrowLeftCircle, Settings,
   MessagesSquare, Inbox, ListChecks, FileBarChart2, Lightbulb,
+  Menu, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -43,6 +44,19 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close drawer on route change
+  useEffect(() => { setMobileOpen(false); }, [location.pathname, location.search]);
+
+  // Lock body scroll when drawer open
+  useEffect(() => {
+    if (mobileOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [mobileOpen]);
   // Embedded mode: when this admin page is rendered inside an iframe of the
   // org internal dashboard, hide the admin sidebar so only the page content
   // shows (no double sidebars).
@@ -161,6 +175,32 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
       }}
     >
+      {/* Mobile top bar — visible only on mobile */}
+      <header
+        className="lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 px-4 py-3 shadow-md"
+        style={{
+          background:
+            "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(195 60% 20%) 100%)",
+        }}
+      >
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-amber-300/40 active:scale-95 transition"
+          aria-label="فتح القائمة"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-amber-200 text-[10px] font-semibold tracking-[0.25em] uppercase">
+            مدير النظام
+          </span>
+          <span className="w-1 h-1 rotate-45 bg-amber-300/80" />
+          <span className="text-white font-bold text-sm truncate">
+            {profile.name}
+          </span>
+        </div>
+      </header>
+
       {/* Subtle cosmic touches — twinkling stars + nebula glow */}
       <div
         className="absolute inset-0 pointer-events-none opacity-40"
@@ -179,9 +219,32 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         style={{ background: "radial-gradient(circle, hsl(168 76% 45% / 0.6), transparent 70%)" }}
       />
 
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile close button */}
+      {mobileOpen && (
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden fixed top-4 left-4 z-[60] flex h-10 w-10 items-center justify-center rounded-xl bg-white/95 text-foreground shadow-lg"
+          aria-label="إغلاق القائمة"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
+
       {/* Sidebar — أبيض كلاسيكي يمين الشاشة (RTL) */}
       <aside
-        className="fixed top-0 right-0 h-screen w-72 z-40 border-l border-amber-300/15 flex flex-col shadow-2xl overflow-hidden"
+        className={cn(
+          "fixed top-0 right-0 h-screen w-72 z-50 border-l border-amber-300/15 flex flex-col shadow-2xl overflow-hidden transition-transform duration-300",
+          mobileOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}
         style={{
           background:
             "linear-gradient(180deg, #2f8e8c 0%, #2f8e8c 50%, #2f8e8c 100%)",
@@ -381,7 +444,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Main content - تدرّج تركوازي بترولي داكن */}
       <main
-        className="mr-72 relative min-h-screen z-10"
+        className="lg:mr-72 relative min-h-screen z-10"
         style={{
           background:
             "linear-gradient(135deg, hsl(190 50% 28% / 0.92) 0%, hsl(192 55% 24% / 0.92) 50%, hsl(195 60% 20% / 0.92) 100%)",
