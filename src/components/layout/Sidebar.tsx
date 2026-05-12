@@ -586,40 +586,10 @@ export function Sidebar() {
             </div>
           </Link>
 
-          {/* Text under logo */}
+          {/* Text under logo — logo only, no name */}
           {!collapsed && (
             <div className="text-center space-y-1 mt-2">
               <div className="relative">
-                {isDemoRoute ? (
-                  <div className="drop-shadow-sm leading-tight text-white">
-                    <p className="font-bold whitespace-nowrap text-base">جمعية النموذج الخيري</p>
-                  </div>
-                ) : branding.orgName && (() => {
-                  const short = getShortOrgName(branding.orgName);
-                  if (short) {
-                    return (
-                       <div className={cn("drop-shadow-sm leading-tight", "text-white")}>
-                        <p className={cn("font-bold whitespace-nowrap", isSawabOrg ? "text-base" : (isTadabburOrg || isRiyadahOrg) ? "text-sm" : short[1] ? "text-base" : "text-lg")}>{short[0]}</p>
-                        {short[1] && (
-                          <p className={cn("font-semibold opacity-95 whitespace-nowrap", "text-sm")}>{short[1]}</p>
-                        )}
-                        {short[2] && (
-                          <p className="font-semibold opacity-95 whitespace-nowrap text-sm">{short[2]}</p>
-                        )}
-                        {isSawabOrg && (
-                          <p className="mt-1 text-[10px] font-semibold leading-none text-white/80">
-                            Sawab Association
-                          </p>
-                        )}
-                      </div>
-                    );
-                  }
-                  return (
-                    <p className="text-base font-bold drop-shadow-sm text-white">
-                      {branding.orgName}
-                    </p>
-                  );
-                })()}
                 <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent rounded-full via-white/70" />
                 <p className="text-sm font-semibold text-white">
                   نظام إدارة التسويق الإلكتروني
