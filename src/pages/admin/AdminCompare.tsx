@@ -426,8 +426,8 @@ export default function AdminCompare() {
                     </h4>
                   </button>
                   {isOpen && (
-                    <div className="border-t border-border bg-muted/10">
-                      <table className="w-full text-sm">
+                    <div className="border-t border-border bg-muted/10 overflow-x-auto">
+                      <table className="w-full min-w-[420px] text-sm">
                         <thead className="bg-muted/30">
                           <tr>
                             <th className="px-2 py-2 text-center text-muted-foreground font-bold text-xs w-12">#</th>
