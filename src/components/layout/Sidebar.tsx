@@ -55,6 +55,7 @@ import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 import namozajLogo from "@/assets/namozaj-logo.png";
 
 const SAWAB_SIDEBAR_LOGO = "/sawab-sidebar-logo-v10.png";
+const ETWAD_SIDEBAR_SYMBOL = "/etwad-sidebar-symbol.png";
 
 // اسم الجمعية المختصر (سطران × 3-4 كلمات) للعرض في الشريط الجانبي
 // المطابقة تتم بمقاطع من الاسم الرسمي الكامل المخزن في DB
@@ -212,6 +213,9 @@ export function Sidebar() {
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
   const isTadabburOrg = /tadabbur|tdabar|تدبر/i.test(
+    `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
+  );
+  const isEtwadOrg = /d-etwad|etwad|عتود/i.test(
     `${currentOrg?.slug ?? ""} ${currentOrg?.name ?? ""} ${branding.orgName ?? ""}`
   );
   const isDemoRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/demo");
@@ -557,7 +561,7 @@ export function Sidebar() {
                 <div className="w-44 h-44 rounded-full bg-slate-100 animate-pulse" />
               ) : branding.logoUrl ? (
                 <img
-                  src={isSawabOrg ? SAWAB_SIDEBAR_LOGO : isAtefOrg ? atefLogoIcon : isRiyadahOrg ? "/riyadah-logo.png" : branding.logoUrl}
+                  src={isSawabOrg ? SAWAB_SIDEBAR_LOGO : isAtefOrg ? atefLogoIcon : isRiyadahOrg ? "/riyadah-logo.png" : isEtwadOrg ? ETWAD_SIDEBAR_SYMBOL : branding.logoUrl}
                   alt={branding.orgName || "الجمعية"}
                   className={cn(
                     "object-contain drop-shadow-xl",
@@ -573,7 +577,9 @@ export function Sidebar() {
                               ? "h-[170px] w-[170px] scale-100"
                               : isTadabburOrg
                                 ? "h-[140px] w-[140px] scale-100"
-                                : "h-[210px] w-[210px] scale-125"
+                                : isEtwadOrg
+                                  ? "h-[178px] w-[178px] scale-100"
+                                  : "h-[210px] w-[210px] scale-125"
                   )}
                 />
               ) : (
