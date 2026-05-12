@@ -42,14 +42,14 @@ export function PageHeader({ icon, title, subtitle, actions, className, style }:
       />
 
       <div className="relative flex min-h-[120px] flex-col gap-3 px-4 py-4 sm:min-h-[140px] sm:gap-4 sm:px-7 sm:py-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+        <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
           {icon && (
             <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg ring-1 ring-white/30 backdrop-blur-sm [&_svg]:h-5 [&_svg]:w-5 sm:[&_svg]:h-6 sm:[&_svg]:w-6">
               {icon}
             </div>
           )}
-          <div className="min-w-0">
-            <h1 className="truncate text-lg sm:text-2xl font-extrabold tracking-tight text-white drop-shadow-sm">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-2xl font-extrabold tracking-tight text-white drop-shadow-sm leading-tight break-words sm:truncate">
               {title}
             </h1>
             {subtitle && (
@@ -58,7 +58,7 @@ export function PageHeader({ icon, title, subtitle, actions, className, style }:
           </div>
         </div>
         {actions && (
-          <div className="-mx-1 px-1 flex items-center gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible scrollbar-thin [&::-webkit-scrollbar]:hidden [&_button]:flex-shrink-0 [&_button]:text-xs [&_button]:sm:text-sm">{actions}</div>
+          <div className="-mx-1 px-1 flex items-center gap-2 overflow-x-auto w-full sm:w-auto sm:flex-wrap sm:overflow-visible scrollbar-thin [&::-webkit-scrollbar]:hidden [&>*]:flex-shrink-0 [&_button]:flex-shrink-0 [&_button]:text-xs [&_button]:sm:text-sm">{actions}</div>
         )}
       </div>
     </div>
