@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info, Gauge } from "lucide-react";
+import { Trophy, Medal, Award, ArrowUpDown, GitCompareArrows, TrendingUp, Heart, HandHeart, Users, Star, Info, Gauge, Building2, ListOrdered } from "lucide-react";
 import { useAdminAggregates, type OrgMetrics, type DateRange } from "@/hooks/useAdminAggregates";
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import { cn } from "@/lib/utils";
@@ -47,6 +47,7 @@ export default function AdminCompare() {
   const { metrics, loading } = useAdminAggregates(range);
   const [sortKey, setSortKey] = useState<SortKey>("overall_score");
   const [sortDesc, setSortDesc] = useState(true);
+  const [viewMode, setViewMode] = useState<"orgs" | "criteria">("orgs");
 
   const sorted = useMemo(() => {
     const list = [...metrics];
@@ -227,16 +228,57 @@ export default function AdminCompare() {
         <div className="p-5 border-b border-border flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 className="text-foreground font-bold">جدول الترتيب الذكي</h3>
-            <p className="text-muted-foreground text-xs">انقر عمودًا للترتيب · انقر صفًا للمقارنة</p>
+            <p className="text-muted-foreground text-xs">
+              {viewMode === "orgs"
+                ? "انقر عمودًا للترتيب · انقر صفًا للمقارنة"
+                : "ترتيب الجمعيات حسب كل معيار على حدة"}
+            </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>الترتيب حسب:</span>
-            <Badge className="bg-accent/15 text-accent border-accent/40">
-              {sortable.find(s => s.key === sortKey)?.label}
-            </Badge>
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* View toggle */}
+            <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode("orgs")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors",
+                  viewMode === "orgs"
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title="بحسب الجمعيات"
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>بحسب الجمعيات</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("criteria")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors",
+                  viewMode === "criteria"
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title="بحسب المعايير"
+              >
+                <ListOrdered className="w-3.5 h-3.5" />
+                <span>بحسب المعايير</span>
+              </button>
+            </div>
+            {viewMode === "orgs" && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>الترتيب حسب:</span>
+                <Badge className="bg-accent/15 text-accent border-accent/40">
+                  {sortable.find(s => s.key === sortKey)?.label}
+                </Badge>
+              </div>
+            )}
           </div>
         </div>
 
+        {viewMode === "orgs" && (
+        <>
         <div className="hidden lg:block w-full overflow-x-auto">
           <table className="w-full min-w-[1100px] text-sm">
             <thead className="bg-muted/60">
@@ -346,6 +388,71 @@ export default function AdminCompare() {
             <div className="text-center text-muted-foreground py-8">لا توجد بيانات بعد</div>
           )}
         </div>
+        </>
+        )}
+
+        {viewMode === "criteria" && (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {sortable.map(s => {
+              const ranked = [...metrics].sort(
+                (a, b) => (Number(b[s.key]) || 0) - (Number(a[s.key]) || 0)
+              );
+              const isScore = (s.key as string).includes("score") || (s.key as string).includes("rate");
+              return (
+                <Card key={s.key as string} className="bg-card border-border overflow-hidden shadow-sm">
+                  <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center justify-between">
+                    <h4 className="font-bold text-sm text-foreground">{s.label}</h4>
+                    <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px]">
+                      {ranked.length} جمعية
+                    </Badge>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/20">
+                      <tr>
+                        <th className="px-2 py-2 text-center text-muted-foreground font-bold text-xs w-12">#</th>
+                        <th className="px-3 py-2 text-right text-muted-foreground font-bold text-xs">الجمعية</th>
+                        <th className="px-3 py-2 text-center text-muted-foreground font-bold text-xs whitespace-nowrap">{s.label}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ranked.map((m, idx) => {
+                        const v = Number(m[s.key]) || 0;
+                        const display = formatMetric(s, v);
+                        const medalIcon = idx === 0 ? Trophy : idx === 1 ? Medal : idx === 2 ? Award : null;
+                        const medalColor = idx === 0 ? "text-amber-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-orange-500" : "";
+                        const Mi = medalIcon;
+                        return (
+                          <tr key={m.org_id} className="border-t border-border hover:bg-muted/30">
+                            <td className="px-2 py-2 text-center">
+                              <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-muted text-foreground font-bold text-xs" dir="ltr">
+                                {Mi ? <Mi className={cn("w-4 h-4", medalColor)} /> : idx + 1}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <div className="font-semibold text-foreground text-xs leading-tight truncate" title={m.org_name}>
+                                {m.org_name}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {isScore ? (
+                                <ScoreBadge value={v} display={display} />
+                              ) : (
+                                <span dir="ltr" className="inline-block text-sm font-bold tabular-nums text-foreground">{display}</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {!loading && ranked.length === 0 && (
+                        <tr><td colSpan={3} className="text-center text-muted-foreground py-6 text-xs">لا توجد بيانات</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </Card>
     </div>
   );
