@@ -725,6 +725,66 @@ export type Database = {
           },
         ]
       }
+      backup_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_seconds: number | null
+          error_details: Json | null
+          error_message: string | null
+          file_size_bytes: number | null
+          github_commit_sha: string | null
+          github_commit_url: string | null
+          github_path: string | null
+          id: string
+          started_at: string
+          status: string
+          tables_count: number | null
+          total_rows: number | null
+          trigger_type: string
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          github_commit_sha?: string | null
+          github_commit_url?: string | null
+          github_path?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          tables_count?: number | null
+          total_rows?: number | null
+          trigger_type?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          github_commit_sha?: string | null
+          github_commit_url?: string | null
+          github_path?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          tables_count?: number | null
+          total_rows?: number | null
+          trigger_type?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bank_transfers: {
         Row: {
           amount: number
