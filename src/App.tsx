@@ -59,6 +59,7 @@ const WelcomeSettings = lazy(() => import("./pages/settings/WelcomeSettings"));
 const MembersSettings = lazy(() => import("./pages/settings/MembersSettings"));
 const ExportsSettings = lazy(() => import("./pages/settings/ExportsSettings"));
 const ComingSoonSettings = lazy(() => import("./pages/settings/ComingSoonSettings"));
+const BackupSettings = lazy(() => import("./pages/settings/BackupSettings"));
 import SettingsAccessGuard from "./components/settings/SettingsAccessGuard";
 const Uploads = lazy(() => import("./pages/Uploads"));
 const Organizations = lazy(() => import("./pages/Organizations"));
@@ -398,6 +399,7 @@ function AppRoutes() {
       <Route path="/settings/intelligence-profile" element={<ProtectedRoute><SettingsAccessGuard><IntelligenceProfileSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/welcome" element={<ProtectedRoute><SettingsAccessGuard><WelcomeSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/exports" element={<ProtectedRoute><SettingsAccessGuard><ExportsSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/backup" element={<ProtectedRoute><SettingsAccessGuard><BackupSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/notifications" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الإشعارات" subtitle="تخصيص قواعد التنبيهات" /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/security" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الأمان والخصوصية" /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/members" element={<ProtectedRoute><SettingsAccessGuard><MembersSettings /></SettingsAccessGuard></ProtectedRoute>} />
@@ -439,6 +441,7 @@ function AppRoutes() {
       <Route path="/:slug/settings/intelligence-profile" element={<ProtectedRoute><SettingsAccessGuard><IntelligenceProfileSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/welcome" element={<ProtectedRoute><SettingsAccessGuard><WelcomeSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/exports" element={<ProtectedRoute><SettingsAccessGuard><ExportsSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/backup" element={<ProtectedRoute><SettingsAccessGuard><BackupSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/notifications" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الإشعارات" /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/security" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الأمان والخصوصية" /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/members" element={<ProtectedRoute><SettingsAccessGuard><MembersSettings /></SettingsAccessGuard></ProtectedRoute>} />
