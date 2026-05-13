@@ -284,7 +284,25 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return (data || []) as unknown as ProfileFile[];
+      const rows = (data || []) as unknown as ProfileFile[];
+      // تحويل المسار المخزّن (أو رابط عام قديم) إلى رابط موقّع مؤقت (ساعة)
+      const resolved = await Promise.all(
+        rows.map(async (row) => {
+          const stored = row.file_url || "";
+          // استخراج المسار: إذا كان رابطاً قديماً عاماً نأخذ الجزء بعد employee-files/
+          let path = stored;
+          const m = stored.match(/employee-files\/(.+?)(?:\?|$)/);
+          if (m) path = m[1];
+          if (!path || /^https?:\/\//i.test(path)) {
+            return row;
+          }
+          const { data: signed } = await supabase.storage
+            .from("employee-files")
+            .createSignedUrl(path, 3600);
+          return signed?.signedUrl ? { ...row, file_url: signed.signedUrl } : row;
+        })
+      );
+      return resolved;
     },
     enabled: !!userId,
   });
@@ -405,16 +423,13 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("employee-files")
-        .getPublicUrl(filePath);
-
       const { error: insertError } = await supabase
         .from("employee_files" as any)
         .insert({
           user_id: userId,
           file_name: fileName || selectedFile.name,
-          file_url: urlData.publicUrl,
+          // نخزّن المسار فقط — يُحوَّل إلى رابط موقّع وقت العرض
+          file_url: filePath,
           file_type: selectedFile.type,
           category,
         });
