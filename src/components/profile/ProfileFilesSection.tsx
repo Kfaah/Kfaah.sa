@@ -423,16 +423,13 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("employee-files")
-        .getPublicUrl(filePath);
-
       const { error: insertError } = await supabase
         .from("employee_files" as any)
         .insert({
           user_id: userId,
           file_name: fileName || selectedFile.name,
-          file_url: urlData.publicUrl,
+          // نخزّن المسار فقط — يُحوَّل إلى رابط موقّع وقت العرض
+          file_url: filePath,
           file_type: selectedFile.type,
           category,
         });
