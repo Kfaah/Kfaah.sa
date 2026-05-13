@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   FileDown,
   Users2,
+  HardDriveUpload,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -109,6 +110,15 @@ const tiles: Tile[] = [
     description: "كلمات المرور، الجلسات وسجل الدخول",
     icon: Database,
     gradient: "from-slate-600 to-zinc-700",
+    requiresAdmin: true,
+  },
+  {
+    key: "backup",
+    to: "backup",
+    label: "النسخ الاحتياطي",
+    description: "نسخ يومية تلقائية لقاعدة البيانات إلى GitHub",
+    icon: HardDriveUpload,
+    gradient: "from-green-600 to-emerald-700",
     requiresAdmin: true,
   },
 ];
