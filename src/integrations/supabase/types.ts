@@ -5634,6 +5634,16 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_org_branding: {
+        Args: { _org_id: string }
+        Returns: {
+          accent_color: string
+          logo_url: string
+          primary_color: string
+          secondary_color: string
+          updated_at: string
+        }[]
+      }
       get_org_membership_requests: {
         Args: { _org_slug?: string }
         Returns: {

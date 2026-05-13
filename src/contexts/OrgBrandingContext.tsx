@@ -300,11 +300,9 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
 
       // 2) Then fetch the latest from the database in the background and
       //    update both state and cache if anything changed.
-      const { data } = await supabase
-        .from("organization_profiles")
-        .select("logo_url, primary_color, secondary_color, accent_color, updated_at")
-        .eq("organization_id", currentOrg.id)
-        .maybeSingle();
+      const { data: brandingRows } = await supabase
+        .rpc("get_org_branding", { _org_id: currentOrg.id });
+      const data = Array.isArray(brandingRows) ? brandingRows[0] ?? null : null;
       if (cancelled) return;
       const fetchedVersion =
         (data as Record<string, string | null> | null)?.updated_at || null;
