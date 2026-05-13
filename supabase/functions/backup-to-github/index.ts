@@ -8,13 +8,8 @@ const GITHUB_TOKEN = Deno.env.get("GITHUB_BACKUP_TOKEN")!;
 const GITHUB_OWNER = Deno.env.get("GITHUB_BACKUP_OWNER")!;
 const GITHUB_REPO = Deno.env.get("GITHUB_BACKUP_REPO")!;
 
-// قائمة الجداول المراد نسخها (الجداول العامة فقط، نتجاوز جداول النظام والـ realtime)
-async function listPublicTables(supabase: any): Promise<string[]> {
-  // نقرأ من information_schema عبر RPC أو باستعلام مباشر
-  const { data, error } = await supabase.rpc("exec_sql_select_tables").catch(() => ({ data: null, error: null }));
-  if (data && Array.isArray(data)) return data.map((r: any) => r.table_name);
-
-  // Fallback: قائمة معروفة من الجداول الأساسية في المشروع
+// قائمة الجداول المراد نسخها (الجداول العامة في المشروع)
+function listPublicTables(): string[] {
   return [
     "organizations", "organization_profiles", "organization_branding",
     "user_organizations", "user_roles", "employees",
@@ -128,7 +123,7 @@ Deno.serve(async (req) => {
   const startedAt = Date.now();
 
   try {
-    const tables = await listPublicTables(supabase);
+    const tables = listPublicTables();
     const dump: Record<string, any[]> = {};
     let totalRows = 0;
     let tablesProcessed = 0;
