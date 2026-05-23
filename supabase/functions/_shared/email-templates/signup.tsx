@@ -43,7 +43,7 @@ export const SignupEmail = ({
         <Text style={text}>
           شكراً لانضمامك إلى{' '}
           <Link href={siteUrl} style={link}><strong>{BRAND_NAME}</strong></Link>
-          {' '}— منصة إدارة العمل الخيري باحتراف.
+          {' '}— منصة إدارة التسويق الإلكتروني للجمعيات بكفاءة.
         </Text>
         <Text style={text}>
           لتأكيد بريدك الإلكتروني (

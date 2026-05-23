@@ -41,7 +41,7 @@ export const InviteEmail = ({
         <Text style={text}>
           تمت دعوتك للانضمام إلى{' '}
           <Link href={siteUrl} style={link}><strong>{BRAND_NAME}</strong></Link>
-          {' '}— منصة إدارة العمل الخيري باحتراف. اضغط على الزر أدناه لقبول الدعوة وإنشاء حسابك.
+          {' '}— منصة إدارة التسويق الإلكتروني للجمعيات بكفاءة. اضغط على الزر أدناه لقبول الدعوة وإنشاء حسابك.
         </Text>
         <Section style={buttonSection}>
           <Button style={button} href={confirmationUrl}>قبول الدعوة</Button>
