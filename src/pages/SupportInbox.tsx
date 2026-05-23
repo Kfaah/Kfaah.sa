@@ -960,7 +960,7 @@ export default function SupportInbox() {
                   <Textarea
                     value={settings.footer}
                     onChange={(e) => setSettings(s => ({ ...s, footer: e.target.value }))}
-                    placeholder="نص التذييل المختصر — kfaah.sa"
+                    placeholder="نص التذييل المختصر — kfaah.org"
                     rows={2}
                     disabled={!settings.footer_enabled}
                     className="bg-white/[0.06] border-white/15 text-white placeholder:text-slate-500 disabled:opacity-50"
