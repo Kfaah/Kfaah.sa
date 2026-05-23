@@ -14,7 +14,7 @@ const accentHsl = "44 92% 55%";
 
 const OWNER_PHONE = "0595784433";
 const OWNER_PHONE_INTL = "966595784433";
-const OWNER_EMAIL = "info@kfaah.org";
+const OWNER_EMAIL = "info@kfaah.sa";
 
 // ===== نموذج تسعير ديناميكي =====
 // السعر يحسب بناءً على المعايير الخمسة. كل معيار له وزن.

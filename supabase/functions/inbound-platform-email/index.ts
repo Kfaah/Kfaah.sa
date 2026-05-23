@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
         thread_id: threadId,
         direction: 'inbound',
         sender_email: senderEmail,
-        recipient_email: extractEmail(to) || 'info@kfaah.org',
+        recipient_email: extractEmail(to) || 'info@kfaah.sa',
         subject: finalSubject,
         body: finalBody,
         provider_message_id: providerId,
