@@ -16,6 +16,7 @@ import {
 
 const LOGO_URL = 'https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/email-assets/kafaa-logo-v2.png'
 const BRAND_NAME = 'منصة كفاءة'
+const TAGLINE = 'منصة إدارة التسويق الإلكتروني للجمعيات بكفاءة'
 
 interface ReauthenticationEmailProps {
   token: string
@@ -29,6 +30,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
       <Container style={container}>
         <Section style={logoSection}>
           <Img src={LOGO_URL} alt={BRAND_NAME} width="120" style={logo} />
+          <Text style={tagline}>{TAGLINE}</Text>
         </Section>
         <Heading style={h1}>تأكيد الهوية</Heading>
         <Text style={text}>استخدم الرمز التالي لتأكيد هويتك في {BRAND_NAME}:</Text>
@@ -55,4 +57,4 @@ const text = { fontSize: '15px', color: '#3a4a5c', lineHeight: '1.8', margin: '0
 const codeWrap = { textAlign: 'center' as const, margin: '24px 0 32px', backgroundColor: '#f0f7f8', borderRadius: '16px', padding: '20px' }
 const codeStyle = { fontFamily: 'Courier, monospace', fontSize: '32px', fontWeight: 'bold' as const, color: '#1d4a73', margin: '0', letterSpacing: '8px' }
 const footer = { fontSize: '13px', color: '#8a9aaa', margin: '30px 0 12px', lineHeight: '1.7', textAlign: 'center' as const }
-const signature = { fontSize: '13px', color: '#1d4a73', fontWeight: 'bold' as const, margin: '0', textAlign: 'center' as const }
+const signature = { fontSize: '13px', color: '#1d4a73', fontWeight: 'bold' as const, margin: '0', textAlign: 'center' as const }const tagline = { fontSize: '12px', color: '#3da6a8', textAlign: 'center' as const, margin: '8px 0 0', fontWeight: 'bold' as const, letterSpacing: '0.3px' }
