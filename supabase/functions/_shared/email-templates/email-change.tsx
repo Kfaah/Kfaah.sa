@@ -16,8 +16,8 @@ import {
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
-const LOGO_URL = 'https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/email-assets/kafaa-logo.png'
-const BRAND_NAME = 'منصة كفاء'
+const LOGO_URL = 'https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/email-assets/kafaa-logo-v2.png'
+const BRAND_NAME = 'منصة كفاءة'
 
 interface EmailChangeEmailProps {
   siteName: string
