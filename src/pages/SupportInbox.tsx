@@ -393,7 +393,7 @@ export default function SupportInbox() {
       if (selectedId.startsWith("pem:")) {
         const threadId = selectedId.slice(4);
         const subject = selected.subject?.startsWith("Re:") ? selected.subject : `Re: ${selected.subject}`;
-        const messageId = `${crypto.randomUUID()}@kfaah.sa`;
+        const messageId = `${crypto.randomUUID()}@kfaah.org`;
         const { error: sendErr } = await supabase.functions.invoke("send-transactional-email", {
           body: {
             templateName: "platform-mail",
@@ -406,7 +406,7 @@ export default function SupportInbox() {
         await supabase.from("platform_email_messages").insert({
           thread_id: threadId,
           direction: "outbound",
-          sender_email: "info@kfaah.sa",
+          sender_email: "info@kfaah.org",
           recipient_email: selected.sender_email.toLowerCase(),
           subject,
           body: replyText.trim(),
@@ -508,7 +508,7 @@ export default function SupportInbox() {
       const toEmail = composeTo.trim().toLowerCase();
       const subject = composeSubject.trim() || "رسالة من كفاءة";
       const body = composeBody.trim();
-      const messageId = `${crypto.randomUUID()}@kfaah.sa`;
+      const messageId = `${crypto.randomUUID()}@kfaah.org`;
       const { error: sendErr } = await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "platform-mail",
@@ -531,7 +531,7 @@ export default function SupportInbox() {
       await supabase.from("platform_email_messages").insert({
         thread_id: thread.id,
         direction: "outbound",
-        sender_email: "info@kfaah.sa",
+        sender_email: "info@kfaah.org",
         recipient_email: toEmail,
         subject,
         body,
@@ -593,7 +593,7 @@ export default function SupportInbox() {
             </div>
             <div>
               <h1 className="text-base md:text-lg font-extrabold text-white">بريد منصة كفاءة</h1>
-              <p className="text-[11px] text-slate-400">info@kfaah.sa</p>
+              <p className="text-[11px] text-slate-400">info@kfaah.org</p>
             </div>
           </div>
 
@@ -872,7 +872,7 @@ export default function SupportInbox() {
                 />
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[10px] text-slate-400">
-                    سيُرسَل الرد تلقائياً إلى بريد المُرسِل من info@kfaah.sa
+                    سيُرسَل الرد تلقائياً إلى بريد المُرسِل من info@kfaah.org
                   </p>
                   <button
                     onClick={sendReply}
@@ -924,7 +924,7 @@ export default function SupportInbox() {
                     placeholder="منصة كفاءة"
                     className="bg-white/[0.06] border-white/15 text-white placeholder:text-slate-500"
                   />
-                  <p className="text-[11px] text-slate-500 mt-1">يظهر في خانة "من" عند المستقبل (info@kfaah.sa يبقى ثابتاً)</p>
+                  <p className="text-[11px] text-slate-500 mt-1">يظهر في خانة "من" عند المستقبل (info@kfaah.org يبقى ثابتاً)</p>
                 </div>
 
                 <div className="rounded-xl border border-white/10 p-3 bg-white/[0.03]">
