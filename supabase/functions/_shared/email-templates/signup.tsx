@@ -18,6 +18,7 @@ import {
 
 const LOGO_URL = 'https://jopvcsrmccoulujeyjvw.supabase.co/storage/v1/object/public/email-assets/kafaa-logo-v2.png'
 const BRAND_NAME = 'منصة كفاءة'
+const TAGLINE = 'منصة إدارة التسويق الإلكتروني للجمعيات بكفاءة'
 
 interface SignupEmailProps {
   siteName: string
@@ -38,12 +39,13 @@ export const SignupEmail = ({
       <Container style={container}>
         <Section style={logoSection}>
           <Img src={LOGO_URL} alt={BRAND_NAME} width="120" style={logo} />
+          <Text style={tagline}>{TAGLINE}</Text>
         </Section>
         <Heading style={h1}>أهلاً بك في {BRAND_NAME}</Heading>
         <Text style={text}>
           شكراً لانضمامك إلى{' '}
           <Link href={siteUrl} style={link}><strong>{BRAND_NAME}</strong></Link>
-          {' '}— منصة إدارة العمل الخيري باحتراف.
+          {' '}— منصة إدارة التسويق الإلكتروني للجمعيات بكفاءة.
         </Text>
         <Text style={text}>
           لتأكيد بريدك الإلكتروني (
@@ -95,3 +97,4 @@ const button = {
 }
 const footer = { fontSize: '13px', color: '#8a9aaa', margin: '30px 0 12px', lineHeight: '1.7' }
 const signature = { fontSize: '13px', color: '#1d4a73', fontWeight: 'bold' as const, margin: '0', textAlign: 'center' as const }
+const tagline = { fontSize: '12px', color: '#3da6a8', textAlign: 'center' as const, margin: '8px 0 0', fontWeight: 'bold' as const, letterSpacing: '0.3px' }
