@@ -20,11 +20,11 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const user = Deno.env.get('ZOHO_MAIL_USER')
-  const pass = Deno.env.get('ZOHO_MAIL_APP_PASSWORD')
+  const user = Deno.env.get('GMAIL_USER') || Deno.env.get('ZOHO_MAIL_USER')
+  const pass = Deno.env.get('GMAIL_APP_PASSWORD') || Deno.env.get('ZOHO_MAIL_APP_PASSWORD')
 
   if (!user || !pass) {
-    return new Response(JSON.stringify({ error: 'Zoho credentials missing' }), {
+    return new Response(JSON.stringify({ error: 'Mailbox credentials missing' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
   console.log('[imap] connecting as', user)
   const client = new ImapFlow({
-    host: 'imap.zoho.com',
+    host: 'imap.gmail.com',
     port: 993,
     secure: true,
     auth: { user, pass },
