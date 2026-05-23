@@ -102,7 +102,7 @@ export default function PlatformMail() {
   };
 
   const sendOutbound = async (toEmail: string, subject: string, body: string, threadId?: string, inReplyTo?: string) => {
-    const messageId = `${crypto.randomUUID()}@kfaah.org`;
+    const messageId = `${crypto.randomUUID()}@kfaah.sa`;
     const { data, error } = await supabase.functions.invoke("send-transactional-email", {
       body: {
         templateName: "platform-mail",
@@ -126,7 +126,7 @@ export default function PlatformMail() {
       await supabase.from("platform_email_messages").insert({
         thread_id: tId,
         direction: "outbound",
-        sender_email: "info@kfaah.org",
+        sender_email: "info@kfaah.sa",
         recipient_email: toEmail.toLowerCase(),
         subject,
         body,
@@ -185,7 +185,7 @@ export default function PlatformMail() {
               </div>
               <div className="text-[11px] text-slate-300 inline-flex items-center gap-1">
                 <Sparkles className="w-3 h-3" style={{ color: `hsl(${accentHsl})` }} />
-                info@kfaah.org — استقبال الردود مباشرةً داخل المنصة
+                info@kfaah.sa — استقبال الردود مباشرةً داخل المنصة
               </div>
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function PlatformMail() {
                   <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 text-white animate-spin" /></div>
                 ) : threads.length === 0 ? (
                   <div className="p-10 text-center text-slate-300 text-sm">
-                    لا توجد محادثات بعد. أرسل رسالة أو انتظر وصول الردود من info@kfaah.org
+                    لا توجد محادثات بعد. أرسل رسالة أو انتظر وصول الردود من info@kfaah.sa
                   </div>
                 ) : threads.map((t) => (
                   <button key={t.id} onClick={() => openThread(t)}
@@ -244,7 +244,7 @@ export default function PlatformMail() {
               <div className="px-5 py-3 flex items-center gap-2 border-b border-white/10"
                 style={{ background: `linear-gradient(135deg, hsl(${primaryHsl} / 0.5), hsl(${accentHsl} / 0.25))` }}>
                 <PenSquare className="w-4 h-4 text-white" />
-                <div className="text-sm font-extrabold text-white">رسالة جديدة من info@kfaah.org</div>
+                <div className="text-sm font-extrabold text-white">رسالة جديدة من info@kfaah.sa</div>
               </div>
               <div className="p-5 space-y-3">
                 <Input placeholder="إلى (البريد الإلكتروني)" value={compose.to} onChange={(e) => setCompose({ ...compose, to: e.target.value })}
