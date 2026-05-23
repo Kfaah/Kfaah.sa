@@ -344,8 +344,8 @@ Deno.serve(async (req) => {
     payload: {
       message_id: messageId,
       to: effectiveRecipient,
-      from: `${resolvedFromName} <info@kfaah.sa>`,
-      reply_to: 'info@kfaah.sa',
+      from: `${resolvedFromName} <info@notify.kfaah.sa>`,
+      reply_to: 'info@kfaah.org',
       sender_domain: SENDER_DOMAIN,
       subject: resolvedSubject,
       html,
