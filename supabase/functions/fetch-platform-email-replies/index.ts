@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
   console.log('[imap] connecting as', user)
   const client = new ImapFlow({
-    host: 'imap.gmail.com',
+    host: Deno.env.get('IMAP_HOST') || 'imap.zoho.com',
     port: 993,
     secure: true,
     auth: { user, pass },
