@@ -20,7 +20,8 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const user = Deno.env.get('ZOHO_MAIL_USER') || Deno.env.get('GMAIL_USER')
+  const configuredZohoUser = Deno.env.get('ZOHO_MAIL_USER')?.trim()
+  const user = configuredZohoUser && configuredZohoUser.includes('@') ? configuredZohoUser : 'info@kfaah.org'
   const pass = Deno.env.get('ZOHO_MAIL_APP_PASSWORD') || Deno.env.get('GMAIL_APP_PASSWORD')
 
   if (!user || !pass) {
