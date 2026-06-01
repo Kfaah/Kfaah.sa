@@ -16,7 +16,7 @@ const SENDER_DOMAIN = "notify.kfaah.sa"
 // FROM_DOMAIN is the domain shown in the From: header (e.g., "example.com").
 // When display_from_root is enabled, this can be the root domain for cleaner branding,
 // even though actual sending uses the subdomain above.
-const FROM_DOMAIN = "notify.kfaah.sa"
+const FROM_DOMAIN = "kfaah.sa"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -344,7 +344,7 @@ Deno.serve(async (req) => {
     payload: {
       message_id: messageId,
       to: effectiveRecipient,
-      from: `${resolvedFromName} <info@notify.kfaah.sa>`,
+      from: `${resolvedFromName} <info@${FROM_DOMAIN}>`,
       reply_to: 'info@kfaah.sa',
       sender_domain: SENDER_DOMAIN,
       subject: resolvedSubject,
