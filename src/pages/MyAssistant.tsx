@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/employee-ass
 
 export default function MyAssistant() {
   const { user } = useAuth();
+  const { currentOrg } = useOrganization();
   const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
@@ -218,6 +220,7 @@ export default function MyAssistant() {
             role: m.role,
             content: m.content,
           })),
+          organizationId: currentOrg?.id ?? null,
         }),
       });
 

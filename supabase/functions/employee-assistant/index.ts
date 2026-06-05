@@ -147,7 +147,7 @@ serve(async (req) => {
       });
     }
 
-    const { messages, conversationId } = await req.json();
+    const { messages, conversationId, organizationId: requestedOrgId } = await req.json();
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(JSON.stringify({ error: "messages required" }), {
         status: 400,
@@ -187,6 +187,18 @@ serve(async (req) => {
         .limit(1)
         .maybeSingle();
       orgId = uo?.organization_id ?? null;
+    }
+    // Fallback via RPC (handles roles linked through profiles/role tables)
+    if (!orgId) {
+      const { data: rpcOrg } = await admin.rpc("get_user_organization_id", { _user_id: user.id });
+      if (rpcOrg) orgId = rpcOrg as string;
+    }
+    // Allow super admins or matching members to override via request body
+    if (requestedOrgId && typeof requestedOrgId === "string") {
+      const { data: isSuper } = await admin.rpc("is_super_admin", { _user_id: user.id });
+      if (isSuper || requestedOrgId === orgId) {
+        orgId = requestedOrgId;
+      }
     }
     console.log("[assistant] user", user.id, "orgId", orgId, "emp?", !!emp);
     let orgContext = "";
