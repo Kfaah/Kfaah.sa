@@ -220,6 +220,7 @@ export default function MyAssistant() {
             role: m.role,
             content: m.content,
           })),
+          organizationId: currentOrg?.id ?? null,
         }),
       });
 
