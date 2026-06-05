@@ -69,6 +69,7 @@ serve(async (req) => {
     // actual data and the platform's specific vocabulary — not generic answers.
     const orgId = emp?.organization_id ?? null;
     let orgContext = "";
+    let orgName = "—";
     if (orgId) {
       const [orgRes, profileRes, deepRes, tiersRes, donorsStatRes, donationsAggRes, projectsRes, plansRes, tasksRes, campaignsRes] = await Promise.all([
         supabase.from("organizations").select("name, slug, subscription_tier").eq("id", orgId).maybeSingle(),
@@ -95,6 +96,7 @@ serve(async (req) => {
 
       const prof = profileRes.data as any;
       const deep = deepRes.data as any;
+      orgName = orgRes.data?.name ?? "—";
       const aia = (prof?.ai_analysis ?? {}) as Record<string, any>;
       const aiaField = (k: string) => {
         const v = aia?.[k];
@@ -178,7 +180,7 @@ ${deep ? `## التحليل العميق الأخير للجمعية (بتاري
 - **الرؤى الذكية (Intelligence):** تحليلات AI على بيانات الجمعية.
 - **التقييم العام في المساعد:** متوسط (إنجاز المهام + جودة AI + كفاءة الوقت + استخدام AI).`;
 
-    const systemPrompt = `أنت "المساعد الذكي" لموظفي جمعية «${emp ? (orgContext.match(/اسم الجمعية: ([^\n(]+)/)?.[1]?.trim() ?? "—") : "—"}» داخل منصة كفاءة. منصة "كفاءة" هي الأداة التي تستخدمها الجمعية لإدارة عملها — **منصة كفاءة ليست هي الجمعية**، ولا تصف أبدًا منصة كفاءة على أنها رسالة الجمعية أو أهدافها.
+    const systemPrompt = `أنت "المساعد الذكي" لموظفي «${orgName}» داخل منصة كفاءة. منصة "كفاءة" هي الأداة التي تستخدمها الجمعية لإدارة عملها — **منصة كفاءة ليست هي الجمعية**، ولا تصف أبدًا منصة كفاءة على أنها رسالة الجمعية أو أهدافها.
 
 تجيب حصراً بناءً على بيانات الجمعية الفعلية أدناه. **يُمنع منعًا باتًا** اختراع رسالة أو رؤية أو رقم تسجيل أو وزارة أو أي حقيقة غير موجودة صراحة في السياق.
 
