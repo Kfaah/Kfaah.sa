@@ -20,6 +20,71 @@ const normalizeArabic = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+// كاش حي داخل ذاكرة الـ Function (TTL = 30 دقيقة) — يمنع الزحف المتكرر لنفس الرابط
+const liveScrapeCache = new Map<string, { at: number; text: string }>();
+const LIVE_SCRAPE_TTL_MS = 30 * 60 * 1000;
+
+async function firecrawlScrape(url: string, timeoutMs = 15000): Promise<string> {
+  const apiKey = Deno.env.get("FIRECRAWL_API_KEY");
+  if (!apiKey || !url) return "";
+  const cached = liveScrapeCache.get(url);
+  if (cached && Date.now() - cached.at < LIVE_SCRAPE_TTL_MS) return cached.text;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        formats: ["markdown", "summary"],
+        onlyMainContent: true,
+      }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      console.warn("firecrawl scrape failed", url, res.status);
+      return "";
+    }
+    const json: any = await res.json();
+    const data = json?.data ?? json;
+    const summary = data?.summary ?? "";
+    const md = data?.markdown ?? "";
+    const text = [summary, md].filter(Boolean).join("\n\n").slice(0, 1800).trim();
+    liveScrapeCache.set(url, { at: Date.now(), text });
+    return text;
+  } catch (e) {
+    console.warn("firecrawl scrape error", url, e instanceof Error ? e.message : String(e));
+    return "";
+  }
+}
+
+async function buildLivePlatformsContext(prof: any): Promise<string> {
+  if (!prof) return "";
+  const targets: Array<{ label: string; url: string }> = [
+    { label: "الموقع الرسمي", url: prof.website_url },
+    { label: "المتجر الإلكتروني", url: prof.store_url },
+    { label: "تويتر/X", url: prof.twitter_url },
+    { label: "إنستغرام", url: prof.instagram_url },
+    { label: "تيك توك", url: prof.tiktok_url },
+    { label: "سناب شات", url: prof.snapchat_url },
+    { label: "يوتيوب", url: prof.youtube_url },
+    { label: "فيسبوك", url: prof.facebook_url },
+    { label: "لينكدإن", url: prof.linkedin_url },
+  ].filter((t) => typeof t.url === "string" && /^https?:\/\//.test(t.url));
+  if (targets.length === 0) return "";
+
+  const results = await Promise.all(
+    targets.map(async (t) => ({ ...t, text: await firecrawlScrape(t.url) })),
+  );
+  const blocks = results
+    .filter((r) => r.text)
+    .map((r) => `### ${r.label} — ${r.url}\n${r.text}`);
+  if (blocks.length === 0) return "";
+  return `\n## 🔥 محتوى حي مباشر من منصات الجمعية (Firecrawl — تم الزحف الآن)\n${blocks.join("\n\n")}\n`;
+}
+
 const isOrgIdentityQuestion = (value: string) => {
   const text = normalizeArabic(value);
   const asksAboutOrg = /(الجمعيه|جمعيتي|منظمتنا|المنظمه|عن الجمعيه|تعرفه عن الجمعيه|تعرف عن الجمعيه)/.test(text);
