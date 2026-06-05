@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -11,12 +12,23 @@ import { Progress } from "@/components/ui/progress";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, Send, Loader2, Bot, User as UserIcon, Trophy, Clock, CheckCircle2, Brain } from "lucide-react";
+import { Sparkles, Send, Loader2, Bot, User as UserIcon, Trophy, Clock, CheckCircle2, Brain, Plus, MessageSquare, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type Conversation = {
+  id: string;
+  title: string;
+  last_message_at: string;
+};
+
+const WELCOME_MSG: Msg = {
+  role: "assistant",
+  content:
+    "مرحباً! 👋 أنا مساعدك الذكي. يمكنني مساعدتك في تنظيم مهامك، اقتراح أفكار لتحسين أدائك، أو شرح كيفية استخدام الذكاء الاصطناعي بذكاء في عملك. كيف يمكنني خدمتك اليوم؟",
+};
 type Period = "day" | "week" | "month" | "year";
 
 function periodStart(p: Period): Date {
@@ -59,16 +71,72 @@ export default function MyAssistant() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      content:
-        "مرحباً! 👋 أنا مساعدك الذكي. يمكنني مساعدتك في تنظيم مهامك، اقتراح أفكار لتحسين أدائك، أو شرح كيفية استخدام الذكاء الاصطناعي بذكاء في عملك. كيف يمكنني خدمتك اليوم؟",
-    },
-  ]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeConvId = searchParams.get("c");
+  const [messages, setMessages] = useState<Msg[]>([WELCOME_MSG]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
+
+  // ---------- Load conversations list ----------
+  const refreshConversations = async () => {
+    if (!user?.id) return;
+    const { data } = await supabase
+      .from("employee_assistant_conversations")
+      .select("id,title,last_message_at")
+      .eq("user_id", user.id)
+      .order("last_message_at", { ascending: false })
+      .limit(50);
+    setConversations((data ?? []) as Conversation[]);
+  };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    void refreshConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // ---------- Load messages for active conversation ----------
+  useEffect(() => {
+    if (!user?.id) return;
+    if (!activeConvId) {
+      setMessages([WELCOME_MSG]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setLoadingMessages(true);
+      const { data } = await supabase
+        .from("employee_assistant_messages")
+        .select("role,content,created_at")
+        .eq("conversation_id", activeConvId)
+        .order("created_at", { ascending: true });
+      if (cancelled) return;
+      const loaded = (data ?? [])
+        .filter((m: any) => m.role === "user" || m.role === "assistant")
+        .map((m: any) => ({ role: m.role, content: m.content } as Msg));
+      setMessages(loaded.length ? loaded : [WELCOME_MSG]);
+      setLoadingMessages(false);
+    })();
+    return () => { cancelled = true; };
+  }, [activeConvId, user?.id]);
+
+  const newChat = () => {
+    setSearchParams({}, { replace: false });
+    setMessages([WELCOME_MSG]);
+    setInput("");
+  };
+
+  const deleteConversation = async (id: string) => {
+    const ok = window.confirm("حذف هذه المحادثة نهائياً؟");
+    if (!ok) return;
+    const { error } = await supabase.from("employee_assistant_conversations").delete().eq("id", id);
+    if (error) { toast.error("تعذّر الحذف"); return; }
+    if (activeConvId === id) setSearchParams({}, { replace: true });
+    await refreshConversations();
+  };
 
   const [period, setPeriod] = useState<Period>("month");
   const [stats, setStats] = useState({
@@ -184,10 +252,43 @@ export default function MyAssistant() {
   const send = async () => {
     const text = input.trim();
     if (!text || streaming) return;
+    if (!user?.id) return;
     const userMsg: Msg = { role: "user", content: text };
+    // Drop the welcome message from the saved history payload but keep it visible
+    const baseMessages = messages.filter((m) => m.content !== WELCOME_MSG.content);
     setMessages((p) => [...p, userMsg]);
     setInput("");
     setStreaming(true);
+
+    // Ensure a conversation row exists; create one on first message
+    let convId = activeConvId;
+    if (!convId) {
+      const initialTitle = text.length > 50 ? text.slice(0, 50) + "…" : text;
+      const { data: created, error: createErr } = await supabase
+        .from("employee_assistant_conversations")
+        .insert({
+          user_id: user.id,
+          organization_id: currentOrg?.id ?? null,
+          title: initialTitle,
+        })
+        .select("id")
+        .single();
+      if (createErr || !created) {
+        toast.error("تعذّر إنشاء المحادثة");
+        setStreaming(false);
+        return;
+      }
+      convId = created.id;
+      setSearchParams({ c: convId }, { replace: true });
+    }
+
+    // Persist the user message immediately (best-effort)
+    await supabase.from("employee_assistant_messages").insert({
+      conversation_id: convId,
+      user_id: user.id,
+      role: "user",
+      content: text,
+    });
 
     let assistantSoFar = "";
     const upsert = (chunk: string) => {
@@ -216,11 +317,12 @@ export default function MyAssistant() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          messages: [...messages, userMsg].map((m) => ({
+          messages: [...baseMessages, userMsg].map((m) => ({
             role: m.role,
             content: m.content,
           })),
           organizationId: currentOrg?.id ?? null,
+          conversationId: convId,
         }),
       });
 
@@ -267,6 +369,21 @@ export default function MyAssistant() {
           i === prev.length - 1 ? { role: m.role, content: m.content } : m,
         ),
       );
+
+      // Persist assistant reply + bump conversation timestamp
+      if (assistantSoFar.trim()) {
+        await supabase.from("employee_assistant_messages").insert({
+          conversation_id: convId,
+          user_id: user.id,
+          role: "assistant",
+          content: assistantSoFar,
+        });
+        await supabase
+          .from("employee_assistant_conversations")
+          .update({ last_message_at: new Date().toISOString() })
+          .eq("id", convId);
+        await refreshConversations();
+      }
     } catch (e) {
       console.error(e);
       toast.error("المساعد الذكي غير متصل حالياً، يرجى المحاولة لاحقاً.");
@@ -365,7 +482,67 @@ export default function MyAssistant() {
             </CardContent>
           </Card>
         ) : (
-        <Card className="border-2 border-primary/15 shadow-xl">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-start">
+          {/* Conversations sidebar */}
+          <Card className="border-2 border-primary/15 shadow-xl lg:sticky lg:top-4">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2 space-y-0">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                محادثاتي
+              </CardTitle>
+              <Button size="sm" variant="outline" onClick={newChat} className="gap-1">
+                <Plus className="h-3.5 w-3.5" />
+                جديدة
+              </Button>
+            </CardHeader>
+            <CardContent className="p-2 max-h-[480px] overflow-y-auto">
+              {conversations.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6 px-2">
+                  لا توجد محادثات محفوظة بعد. ابدأ محادثة جديدة وستظهر هنا.
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  {conversations.map((c) => (
+                    <li key={c.id}>
+                      <div
+                        className={cn(
+                          "group relative rounded-xl border transition-colors",
+                          activeConvId === c.id
+                            ? "bg-primary/10 border-primary/40"
+                            : "border-transparent hover:bg-muted/60",
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSearchParams({ c: c.id }, { replace: false })}
+                          className="w-full text-right px-3 py-2 pl-9"
+                        >
+                          <div className="text-sm font-medium truncate">{c.title}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {new Date(c.last_message_at).toLocaleString("ar-SA", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void deleteConversation(c.id); }}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition"
+                          aria-label="حذف"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Main chat */}
+          <Card className="border-2 border-primary/15 shadow-xl">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Bot className="h-5 w-5 text-primary" />
@@ -378,6 +555,11 @@ export default function MyAssistant() {
               ref={scrollerRef}
               className="h-[420px] overflow-y-auto space-y-4 p-4 rounded-2xl bg-gradient-to-b from-muted/30 to-transparent"
             >
+              {loadingMessages && (
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-6">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> جاري تحميل المحادثة…
+                </div>
+              )}
               {messages.map((m, i) => (
                 <div
                   key={i}
@@ -439,6 +621,7 @@ export default function MyAssistant() {
             </div>
           </CardContent>
         </Card>
+        </div>
         )}
       </div>
     </DashboardLayout>
