@@ -252,10 +252,43 @@ export default function MyAssistant() {
   const send = async () => {
     const text = input.trim();
     if (!text || streaming) return;
+    if (!user?.id) return;
     const userMsg: Msg = { role: "user", content: text };
+    // Drop the welcome message from the saved history payload but keep it visible
+    const baseMessages = messages.filter((m) => m.content !== WELCOME_MSG.content);
     setMessages((p) => [...p, userMsg]);
     setInput("");
     setStreaming(true);
+
+    // Ensure a conversation row exists; create one on first message
+    let convId = activeConvId;
+    if (!convId) {
+      const initialTitle = text.length > 50 ? text.slice(0, 50) + "…" : text;
+      const { data: created, error: createErr } = await supabase
+        .from("employee_assistant_conversations")
+        .insert({
+          user_id: user.id,
+          organization_id: currentOrg?.id ?? null,
+          title: initialTitle,
+        })
+        .select("id")
+        .single();
+      if (createErr || !created) {
+        toast.error("تعذّر إنشاء المحادثة");
+        setStreaming(false);
+        return;
+      }
+      convId = created.id;
+      setSearchParams({ c: convId }, { replace: true });
+    }
+
+    // Persist the user message immediately (best-effort)
+    await supabase.from("employee_assistant_messages").insert({
+      conversation_id: convId,
+      user_id: user.id,
+      role: "user",
+      content: text,
+    });
 
     let assistantSoFar = "";
     const upsert = (chunk: string) => {
@@ -284,11 +317,12 @@ export default function MyAssistant() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          messages: [...messages, userMsg].map((m) => ({
+          messages: [...baseMessages, userMsg].map((m) => ({
             role: m.role,
             content: m.content,
           })),
           organizationId: currentOrg?.id ?? null,
+          conversationId: convId,
         }),
       });
 
@@ -335,6 +369,21 @@ export default function MyAssistant() {
           i === prev.length - 1 ? { role: m.role, content: m.content } : m,
         ),
       );
+
+      // Persist assistant reply + bump conversation timestamp
+      if (assistantSoFar.trim()) {
+        await supabase.from("employee_assistant_messages").insert({
+          conversation_id: convId,
+          user_id: user.id,
+          role: "assistant",
+          content: assistantSoFar,
+        });
+        await supabase
+          .from("employee_assistant_conversations")
+          .update({ last_message_at: new Date().toISOString() })
+          .eq("id", convId);
+        await refreshConversations();
+      }
     } catch (e) {
       console.error(e);
       toast.error("المساعد الذكي غير متصل حالياً، يرجى المحاولة لاحقاً.");
