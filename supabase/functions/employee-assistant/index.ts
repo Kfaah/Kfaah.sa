@@ -127,10 +127,16 @@ serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const authHeader = req.headers.get("Authorization") ?? "";
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
+    // Service-role client for reading org context (bypasses RLS — safe because we
+    // first authenticate the user and only fetch data for THEIR organization).
+    const admin = SERVICE_ROLE_KEY
+      ? createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+      : supabase;
 
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
@@ -163,7 +169,7 @@ serve(async (req) => {
     const routedReason = isShortChat ? "short_chat" : "default_sonnet";
 
     // Pull a small employee context for the system prompt
-    const { data: emp } = await supabase
+    const { data: emp } = await admin
       .from("employees")
       .select("full_name, job_role, organization_id")
       .eq("user_id", user.id)
@@ -172,9 +178,8 @@ serve(async (req) => {
     // Load deep platform context so the assistant answers based on the user's
     // actual data and the platform's specific vocabulary — not generic answers.
     let orgId: string | null = emp?.organization_id ?? null;
-    // Fallback: derive org from user_organizations if employee record is missing/unlinked
     if (!orgId) {
-      const { data: uo } = await supabase
+      const { data: uo } = await admin
         .from("user_organizations")
         .select("organization_id")
         .eq("user_id", user.id)
@@ -183,21 +188,22 @@ serve(async (req) => {
         .maybeSingle();
       orgId = uo?.organization_id ?? null;
     }
+    console.log("[assistant] user", user.id, "orgId", orgId, "emp?", !!emp);
     let orgContext = "";
     let orgName = "—";
     let directOrgAnswer = "";
     if (orgId) {
       const [orgRes, profileRes, deepRes, tiersRes, donorsStatRes, donationsAggRes, projectsRes, plansRes, tasksRes, campaignsRes] = await Promise.all([
-        supabase.from("organizations").select("name, slug, subscription_tier").eq("id", orgId).maybeSingle(),
-        supabase.from("organization_profiles").select("about, goals, website_url, store_url, twitter_url, instagram_url, tiktok_url, snapchat_url, youtube_url, facebook_url, linkedin_url, ai_analysis").eq("organization_id", orgId).maybeSingle(),
-        supabase.from("deep_analyses").select("overall_assessment, strengths, gaps, recommendations, donations_summary, donors_segmentation, campaigns_analysis, website_insights, store_insights, social_insights, completed_at").eq("organization_id", orgId).eq("status", "completed").order("completed_at", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("org_donor_tiers").select("*").eq("organization_id", orgId).maybeSingle(),
-        supabase.from("donors").select("id, segment, total_donated", { count: "exact" }).eq("organization_id", orgId).limit(1000),
-        supabase.from("donations").select("amount, status").eq("organization_id", orgId).limit(2000),
-        supabase.from("projects_catalog").select("name, is_active").eq("organization_id", orgId).limit(50),
-        supabase.from("operational_plans").select("plan_name, year, status").eq("organization_id", orgId).limit(30),
-        supabase.from("tasks").select("title, status, priority, due_date").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(15),
-        supabase.from("marketing_campaigns").select("name, status, start_date").eq("organization_id", orgId).limit(20),
+        admin.from("organizations").select("name, slug, subscription_tier").eq("id", orgId).maybeSingle(),
+        admin.from("organization_profiles").select("about, goals, website_url, store_url, twitter_url, instagram_url, tiktok_url, snapchat_url, youtube_url, facebook_url, linkedin_url, ai_analysis").eq("organization_id", orgId).maybeSingle(),
+        admin.from("deep_analyses").select("overall_assessment, strengths, gaps, recommendations, donations_summary, donors_segmentation, campaigns_analysis, website_insights, store_insights, social_insights, completed_at").eq("organization_id", orgId).eq("status", "completed").order("completed_at", { ascending: false }).limit(1).maybeSingle(),
+        admin.from("org_donor_tiers").select("*").eq("organization_id", orgId).maybeSingle(),
+        admin.from("donors").select("id, segment, total_donated", { count: "exact" }).eq("organization_id", orgId).limit(1000),
+        admin.from("donations").select("amount, status").eq("organization_id", orgId).limit(2000),
+        admin.from("projects_catalog").select("name, is_active").eq("organization_id", orgId).limit(50),
+        admin.from("operational_plans").select("plan_name, year, status").eq("organization_id", orgId).limit(30),
+        admin.from("tasks").select("title, status, priority, due_date").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(15),
+        admin.from("marketing_campaigns").select("name, status, start_date").eq("organization_id", orgId).limit(20),
       ]);
 
       const donors = (donorsStatRes.data ?? []) as any[];
