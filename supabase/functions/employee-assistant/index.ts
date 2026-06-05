@@ -143,6 +143,8 @@ serve(async (req) => {
         if (!v) return "";
         return typeof v === "string" ? v : JSON.stringify(v);
       };
+      const registeredMission = aiaField("mission");
+      const missionIsExplicit = registeredMission && !normalizeArabic(registeredMission).includes("لم تذكر");
       const socials = prof
         ? [
             prof.website_url && `الموقع: ${prof.website_url}`,
@@ -175,14 +177,14 @@ serve(async (req) => {
 
 ${orgFacts.length ? orgFacts.join("\n") : "- لا توجد تفاصيل تعريفية كافية مسجلة بعد في ملف الجمعية."}
 
-${aiaField("mission") ? `**رسالة الجمعية:** ${truncate(aiaField("mission"), 650)}` : "**رسالة الجمعية:** لم تُسجَّل رسالة صريحة بعد في ملف الجمعية."}`;
+${missionIsExplicit ? `**رسالة الجمعية:** ${truncate(registeredMission, 650)}` : "**رسالة الجمعية:** لم تُسجَّل رسالة صريحة بعد في ملف الجمعية، لذلك لن أستنتجها أو أصيغها من عندي."}`;
 
       orgContext = `
 ## بيانات الجمعية الفعلية (هذه هي الجمعية التي يعمل بها الموظف — لا تخلطها أبدًا بمنصة "كفاءة" نفسها)
 - اسم الجمعية: ${orgRes.data?.name ?? "—"} (slug: ${orgRes.data?.slug ?? "—"})
 - نبذة (about): ${prof?.about ? truncate(prof.about, 800) : "—"}
 - أهداف مُدخلة يدويًا (goals): ${prof?.goals ? truncate(prof.goals, 800) : "—"}
-- رسالة الجمعية: ${truncate(aiaField("mission"), 600) || "—"}
+- رسالة الجمعية: ${missionIsExplicit ? truncate(registeredMission, 600) : "— لم تُسجَّل رسالة صريحة؛ لا تستنتجها"}
 - ملخص الجمعية: ${truncate(aiaField("summary"), 800) || "—"}
 - التخصص: ${truncate(aiaField("specialization"), 400) || "—"}
 - الفئة المستهدفة: ${truncate(aiaField("target_audience"), 400) || "—"}
