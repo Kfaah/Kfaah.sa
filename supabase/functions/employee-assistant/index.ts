@@ -171,7 +171,18 @@ serve(async (req) => {
 
     // Load deep platform context so the assistant answers based on the user's
     // actual data and the platform's specific vocabulary — not generic answers.
-    const orgId = emp?.organization_id ?? null;
+    let orgId: string | null = emp?.organization_id ?? null;
+    // Fallback: derive org from user_organizations if employee record is missing/unlinked
+    if (!orgId) {
+      const { data: uo } = await supabase
+        .from("user_organizations")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      orgId = uo?.organization_id ?? null;
+    }
     let orgContext = "";
     let orgName = "—";
     let directOrgAnswer = "";
