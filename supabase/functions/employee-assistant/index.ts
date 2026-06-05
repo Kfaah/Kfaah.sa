@@ -244,6 +244,12 @@ ${orgFacts.length ? orgFacts.join("\n") : "- لا توجد تفاصيل تعري
 
 ${missionIsExplicit ? `**رسالة الجمعية:** ${truncate(registeredMission, 650)}` : "**رسالة الجمعية:** لم تُسجَّل رسالة صريحة بعد في ملف الجمعية، لذلك لن أستنتجها أو أصيغها من عندي."}`;
 
+      // زحف حي لجميع منصات الجمعية عبر Firecrawl لإثراء السياق
+      const livePlatformsContext = await buildLivePlatformsContext(prof);
+      if (livePlatformsContext) {
+        directOrgAnswer += `\n\n${livePlatformsContext}`;
+      }
+
       orgContext = `
 ## بيانات الجمعية الفعلية (هذه هي الجمعية التي يعمل بها الموظف — لا تخلطها أبدًا بمنصة "كفاءة" نفسها)
 - اسم الجمعية: ${orgRes.data?.name ?? "—"} (slug: ${orgRes.data?.slug ?? "—"})
@@ -283,7 +289,8 @@ ${deep ? `## التحليل العميق الأخير للجمعية (بتاري
 - الفئة A (≥ ${tiersRes.data?.tier_a_min ?? 5000} ر.س): قناة التواصل: ${tiersRes.data?.tier_a_channel ?? "خطاب رسمي + اتصال"}
 - الفئة B (≥ ${tiersRes.data?.tier_b_min ?? 2000} ر.س): ${tiersRes.data?.tier_b_channel ?? "اتصال هاتفي"}
 - الفئة C (≥ ${tiersRes.data?.tier_c_min ?? 500} ر.س): ${tiersRes.data?.tier_c_channel ?? "رسالة واتساب شخصية"}
-- الفئة D (أقل): ${tiersRes.data?.tier_d_channel ?? "رسالة SMS"}`;
+- الفئة D (أقل): ${tiersRes.data?.tier_d_channel ?? "رسالة SMS"}
+${livePlatformsContext}`;
     }
 
     const platformGlossary = `
