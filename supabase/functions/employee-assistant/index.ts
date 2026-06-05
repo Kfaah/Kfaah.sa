@@ -95,6 +95,12 @@ serve(async (req) => {
 
       const prof = profileRes.data as any;
       const deep = deepRes.data as any;
+      const aia = (prof?.ai_analysis ?? {}) as Record<string, any>;
+      const aiaField = (k: string) => {
+        const v = aia?.[k];
+        if (!v) return "";
+        return typeof v === "string" ? v : JSON.stringify(v);
+      };
       const socials = prof
         ? [
             prof.website_url && `الموقع: ${prof.website_url}`,
@@ -114,10 +120,21 @@ serve(async (req) => {
       };
 
       orgContext = `
-## بيانات الجمعية (سياق حقيقي للإجابة عليه)
+## بيانات الجمعية الفعلية (هذه هي الجمعية التي يعمل بها الموظف — لا تخلطها أبدًا بمنصة "كفاءة" نفسها)
 - اسم الجمعية: ${orgRes.data?.name ?? "—"} (slug: ${orgRes.data?.slug ?? "—"})
-- نبذة عن الجمعية: ${prof?.about ? truncate(prof.about, 800) : "—"}
-- أهداف الجمعية: ${prof?.goals ? truncate(prof.goals, 800) : "—"}
+- نبذة (about): ${prof?.about ? truncate(prof.about, 800) : "—"}
+- أهداف مُدخلة يدويًا (goals): ${prof?.goals ? truncate(prof.goals, 800) : "—"}
+- رسالة الجمعية: ${truncate(aiaField("mission"), 600) || "—"}
+- ملخص الجمعية: ${truncate(aiaField("summary"), 800) || "—"}
+- التخصص: ${truncate(aiaField("specialization"), 400) || "—"}
+- الفئة المستهدفة: ${truncate(aiaField("target_audience"), 400) || "—"}
+- البرامج الرئيسية: ${truncate(aiaField("main_programs"), 600) || "—"}
+- المنتجات والخدمات: ${truncate(aiaField("products_services"), 600) || "—"}
+- نقاط القوة: ${truncate(aiaField("strengths"), 500) || "—"}
+- الفرص: ${truncate(aiaField("opportunities"), 500) || "—"}
+- نبرة الصوت: ${truncate(aiaField("tone_of_voice"), 300) || "—"}
+- الحضور على السوشيال: ${truncate(aiaField("social_presence"), 400) || "—"}
+- توصيات الابتكار: ${truncate(aiaField("recommendations_for_innovation"), 500) || "—"}
 - روابط الجمعية: ${socials || "—"}
 - عدد المتبرعين: ${donors.length}، الشرائح: ${JSON.stringify(segCounts)}
 - إجمالي التبرعات (آخر 2000 عملية): ${totalDonations.toLocaleString("ar-SA")} ر.س، الناجحة: ${successful}
@@ -125,8 +142,6 @@ serve(async (req) => {
 - الخطط التشغيلية: ${(plansRes.data ?? []).map((p: any) => `${p.plan_name} (${p.year}/${p.status})`).join("، ") || "—"}
 - الحملات التسويقية: ${(campaignsRes.data ?? []).map((c: any) => `${c.name} (${c.status})`).join("، ") || "—"}
 - مهام الموظف الأخيرة: ${(tasksRes.data ?? []).map((t: any) => `«${t.title}» [${t.status}${t.priority ? "/" + t.priority : ""}]`).join("، ") || "لا توجد"}
-
-${prof?.ai_analysis ? `## تحليل الذكاء الاصطناعي لمنصات الجمعية\n${truncate(prof.ai_analysis, 1500)}` : ""}
 
 ${deep ? `## التحليل العميق الأخير للجمعية (بتاريخ ${deep.completed_at ?? "—"})
 - التقييم العام: ${truncate(deep.overall_assessment, 800)}
