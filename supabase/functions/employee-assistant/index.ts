@@ -20,6 +20,71 @@ const normalizeArabic = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+// كاش حي داخل ذاكرة الـ Function (TTL = 30 دقيقة) — يمنع الزحف المتكرر لنفس الرابط
+const liveScrapeCache = new Map<string, { at: number; text: string }>();
+const LIVE_SCRAPE_TTL_MS = 30 * 60 * 1000;
+
+async function firecrawlScrape(url: string, timeoutMs = 15000): Promise<string> {
+  const apiKey = Deno.env.get("FIRECRAWL_API_KEY");
+  if (!apiKey || !url) return "";
+  const cached = liveScrapeCache.get(url);
+  if (cached && Date.now() - cached.at < LIVE_SCRAPE_TTL_MS) return cached.text;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        formats: ["markdown", "summary"],
+        onlyMainContent: true,
+      }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      console.warn("firecrawl scrape failed", url, res.status);
+      return "";
+    }
+    const json: any = await res.json();
+    const data = json?.data ?? json;
+    const summary = data?.summary ?? "";
+    const md = data?.markdown ?? "";
+    const text = [summary, md].filter(Boolean).join("\n\n").slice(0, 1800).trim();
+    liveScrapeCache.set(url, { at: Date.now(), text });
+    return text;
+  } catch (e) {
+    console.warn("firecrawl scrape error", url, e instanceof Error ? e.message : String(e));
+    return "";
+  }
+}
+
+async function buildLivePlatformsContext(prof: any): Promise<string> {
+  if (!prof) return "";
+  const targets: Array<{ label: string; url: string }> = [
+    { label: "الموقع الرسمي", url: prof.website_url },
+    { label: "المتجر الإلكتروني", url: prof.store_url },
+    { label: "تويتر/X", url: prof.twitter_url },
+    { label: "إنستغرام", url: prof.instagram_url },
+    { label: "تيك توك", url: prof.tiktok_url },
+    { label: "سناب شات", url: prof.snapchat_url },
+    { label: "يوتيوب", url: prof.youtube_url },
+    { label: "فيسبوك", url: prof.facebook_url },
+    { label: "لينكدإن", url: prof.linkedin_url },
+  ].filter((t) => typeof t.url === "string" && /^https?:\/\//.test(t.url));
+  if (targets.length === 0) return "";
+
+  const results = await Promise.all(
+    targets.map(async (t) => ({ ...t, text: await firecrawlScrape(t.url) })),
+  );
+  const blocks = results
+    .filter((r) => r.text)
+    .map((r) => `### ${r.label} — ${r.url}\n${r.text}`);
+  if (blocks.length === 0) return "";
+  return `\n## 🔥 محتوى حي مباشر من منصات الجمعية (Firecrawl — تم الزحف الآن)\n${blocks.join("\n\n")}\n`;
+}
+
 const isOrgIdentityQuestion = (value: string) => {
   const text = normalizeArabic(value);
   const asksAboutOrg = /(الجمعيه|جمعيتي|منظمتنا|المنظمه|عن الجمعيه|تعرفه عن الجمعيه|تعرف عن الجمعيه)/.test(text);
@@ -179,6 +244,12 @@ ${orgFacts.length ? orgFacts.join("\n") : "- لا توجد تفاصيل تعري
 
 ${missionIsExplicit ? `**رسالة الجمعية:** ${truncate(registeredMission, 650)}` : "**رسالة الجمعية:** لم تُسجَّل رسالة صريحة بعد في ملف الجمعية، لذلك لن أستنتجها أو أصيغها من عندي."}`;
 
+      // زحف حي لجميع منصات الجمعية عبر Firecrawl لإثراء السياق
+      const livePlatformsContext = await buildLivePlatformsContext(prof);
+      if (livePlatformsContext) {
+        directOrgAnswer += `\n\n${livePlatformsContext}`;
+      }
+
       orgContext = `
 ## بيانات الجمعية الفعلية (هذه هي الجمعية التي يعمل بها الموظف — لا تخلطها أبدًا بمنصة "كفاءة" نفسها)
 - اسم الجمعية: ${orgRes.data?.name ?? "—"} (slug: ${orgRes.data?.slug ?? "—"})
@@ -218,7 +289,8 @@ ${deep ? `## التحليل العميق الأخير للجمعية (بتاري
 - الفئة A (≥ ${tiersRes.data?.tier_a_min ?? 5000} ر.س): قناة التواصل: ${tiersRes.data?.tier_a_channel ?? "خطاب رسمي + اتصال"}
 - الفئة B (≥ ${tiersRes.data?.tier_b_min ?? 2000} ر.س): ${tiersRes.data?.tier_b_channel ?? "اتصال هاتفي"}
 - الفئة C (≥ ${tiersRes.data?.tier_c_min ?? 500} ر.س): ${tiersRes.data?.tier_c_channel ?? "رسالة واتساب شخصية"}
-- الفئة D (أقل): ${tiersRes.data?.tier_d_channel ?? "رسالة SMS"}`;
+- الفئة D (أقل): ${tiersRes.data?.tier_d_channel ?? "رسالة SMS"}
+${livePlatformsContext}`;
     }
 
     const platformGlossary = `
@@ -248,7 +320,7 @@ ${orgContext}
 ${platformGlossary}
 
 ## قواعد الإجابة الصارمة
-1. عند السؤال عن الجمعية (رسالتها، رؤيتها، أهدافها، تخصصها، مستفيديها، برامجها) — انسخ المحتوى من حقول "بيانات الجمعية الفعلية" أعلاه فقط (mission, summary, specialization, target_audience, main_programs, about, goals). إن كان الحقل = "—" قل صراحة: "هذه المعلومة لم تُسجَّل بعد في ملف جمعيتك" — ولا تخترع، ولا تستعِر وصف منصة كفاءة، ولا تختلق أرقام تسجيل أو وزارات.
+1. عند السؤال عن الجمعية (رسالتها، رؤيتها، أهدافها، تخصصها، مستفيديها، برامجها) — استخدم أولاً "بيانات الجمعية الفعلية" المسجلة، ثم أكمل/أثرِ الإجابة من قسم "🔥 محتوى حي مباشر من منصات الجمعية (Firecrawl)" المأخوذ مباشرة من موقع ومتجر وحسابات الجمعية. لا تكتفِ بقول "غير مسجل" إذا كان المحتوى الحي يحتوي المعلومة — استخرجها من هناك واذكر المصدر (الموقع/المتجر/تويتر…). يُمنع اختراع أرقام تسجيل أو وزارات أو رسائل غير موجودة في أيٍّ من المصدرين.
 2. عند السؤال عن مصطلح منصة (مثل: ما المقصود بالنخبة؟ ما هي الفئة A؟) — أجب من القاموس حصرًا.
 3. عند السؤال عن أرقام أو متبرعين أو مهام — استخدم البيانات الفعلية أعلاه واذكر اسم الجمعية.
 4. اسم الجمعية الذي تخدمه الآن هو ما ورد في "اسم الجمعية" فقط. لا تسمها بأي اسم آخر.
