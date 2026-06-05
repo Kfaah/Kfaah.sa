@@ -482,7 +482,67 @@ export default function MyAssistant() {
             </CardContent>
           </Card>
         ) : (
-        <Card className="border-2 border-primary/15 shadow-xl">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 items-start">
+          {/* Conversations sidebar */}
+          <Card className="border-2 border-primary/15 shadow-xl lg:sticky lg:top-4">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2 space-y-0">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                محادثاتي
+              </CardTitle>
+              <Button size="sm" variant="outline" onClick={newChat} className="gap-1">
+                <Plus className="h-3.5 w-3.5" />
+                جديدة
+              </Button>
+            </CardHeader>
+            <CardContent className="p-2 max-h-[480px] overflow-y-auto">
+              {conversations.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6 px-2">
+                  لا توجد محادثات محفوظة بعد. ابدأ محادثة جديدة وستظهر هنا.
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  {conversations.map((c) => (
+                    <li key={c.id}>
+                      <div
+                        className={cn(
+                          "group relative rounded-xl border transition-colors",
+                          activeConvId === c.id
+                            ? "bg-primary/10 border-primary/40"
+                            : "border-transparent hover:bg-muted/60",
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSearchParams({ c: c.id }, { replace: false })}
+                          className="w-full text-right px-3 py-2 pl-9"
+                        >
+                          <div className="text-sm font-medium truncate">{c.title}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {new Date(c.last_message_at).toLocaleString("ar-SA", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void deleteConversation(c.id); }}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition"
+                          aria-label="حذف"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Main chat */}
+          <Card className="border-2 border-primary/15 shadow-xl">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Bot className="h-5 w-5 text-primary" />
@@ -495,6 +555,11 @@ export default function MyAssistant() {
               ref={scrollerRef}
               className="h-[420px] overflow-y-auto space-y-4 p-4 rounded-2xl bg-gradient-to-b from-muted/30 to-transparent"
             >
+              {loadingMessages && (
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-6">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> جاري تحميل المحادثة…
+                </div>
+              )}
               {messages.map((m, i) => (
                 <div
                   key={i}
