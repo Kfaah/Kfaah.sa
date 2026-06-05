@@ -69,6 +69,7 @@ serve(async (req) => {
     // actual data and the platform's specific vocabulary — not generic answers.
     const orgId = emp?.organization_id ?? null;
     let orgContext = "";
+    let orgName = "—";
     if (orgId) {
       const [orgRes, profileRes, deepRes, tiersRes, donorsStatRes, donationsAggRes, projectsRes, plansRes, tasksRes, campaignsRes] = await Promise.all([
         supabase.from("organizations").select("name, slug, subscription_tier").eq("id", orgId).maybeSingle(),
@@ -95,6 +96,13 @@ serve(async (req) => {
 
       const prof = profileRes.data as any;
       const deep = deepRes.data as any;
+      orgName = orgRes.data?.name ?? "—";
+      const aia = (prof?.ai_analysis ?? {}) as Record<string, any>;
+      const aiaField = (k: string) => {
+        const v = aia?.[k];
+        if (!v) return "";
+        return typeof v === "string" ? v : JSON.stringify(v);
+      };
       const socials = prof
         ? [
             prof.website_url && `الموقع: ${prof.website_url}`,
@@ -114,10 +122,21 @@ serve(async (req) => {
       };
 
       orgContext = `
-## بيانات الجمعية (سياق حقيقي للإجابة عليه)
+## بيانات الجمعية الفعلية (هذه هي الجمعية التي يعمل بها الموظف — لا تخلطها أبدًا بمنصة "كفاءة" نفسها)
 - اسم الجمعية: ${orgRes.data?.name ?? "—"} (slug: ${orgRes.data?.slug ?? "—"})
-- نبذة عن الجمعية: ${prof?.about ? truncate(prof.about, 800) : "—"}
-- أهداف الجمعية: ${prof?.goals ? truncate(prof.goals, 800) : "—"}
+- نبذة (about): ${prof?.about ? truncate(prof.about, 800) : "—"}
+- أهداف مُدخلة يدويًا (goals): ${prof?.goals ? truncate(prof.goals, 800) : "—"}
+- رسالة الجمعية: ${truncate(aiaField("mission"), 600) || "—"}
+- ملخص الجمعية: ${truncate(aiaField("summary"), 800) || "—"}
+- التخصص: ${truncate(aiaField("specialization"), 400) || "—"}
+- الفئة المستهدفة: ${truncate(aiaField("target_audience"), 400) || "—"}
+- البرامج الرئيسية: ${truncate(aiaField("main_programs"), 600) || "—"}
+- المنتجات والخدمات: ${truncate(aiaField("products_services"), 600) || "—"}
+- نقاط القوة: ${truncate(aiaField("strengths"), 500) || "—"}
+- الفرص: ${truncate(aiaField("opportunities"), 500) || "—"}
+- نبرة الصوت: ${truncate(aiaField("tone_of_voice"), 300) || "—"}
+- الحضور على السوشيال: ${truncate(aiaField("social_presence"), 400) || "—"}
+- توصيات الابتكار: ${truncate(aiaField("recommendations_for_innovation"), 500) || "—"}
 - روابط الجمعية: ${socials || "—"}
 - عدد المتبرعين: ${donors.length}، الشرائح: ${JSON.stringify(segCounts)}
 - إجمالي التبرعات (آخر 2000 عملية): ${totalDonations.toLocaleString("ar-SA")} ر.س، الناجحة: ${successful}
@@ -125,8 +144,6 @@ serve(async (req) => {
 - الخطط التشغيلية: ${(plansRes.data ?? []).map((p: any) => `${p.plan_name} (${p.year}/${p.status})`).join("، ") || "—"}
 - الحملات التسويقية: ${(campaignsRes.data ?? []).map((c: any) => `${c.name} (${c.status})`).join("، ") || "—"}
 - مهام الموظف الأخيرة: ${(tasksRes.data ?? []).map((t: any) => `«${t.title}» [${t.status}${t.priority ? "/" + t.priority : ""}]`).join("، ") || "لا توجد"}
-
-${prof?.ai_analysis ? `## تحليل الذكاء الاصطناعي لمنصات الجمعية\n${truncate(prof.ai_analysis, 1500)}` : ""}
 
 ${deep ? `## التحليل العميق الأخير للجمعية (بتاريخ ${deep.completed_at ?? "—"})
 - التقييم العام: ${truncate(deep.overall_assessment, 800)}
@@ -163,7 +180,9 @@ ${deep ? `## التحليل العميق الأخير للجمعية (بتاري
 - **الرؤى الذكية (Intelligence):** تحليلات AI على بيانات الجمعية.
 - **التقييم العام في المساعد:** متوسط (إنجاز المهام + جودة AI + كفاءة الوقت + استخدام AI).`;
 
-    const systemPrompt = `أنت "المساعد الذكي" داخل منصة كفاءة لإدارة الجمعيات الخيرية. أنت لست مساعدًا عامًا — أنت خبير في هذه المنصة تحديدًا، وتجيب بناءً على بيانات الجمعية الحقيقية أدناه ومصطلحات المنصة الواردة في القاموس.
+    const systemPrompt = `أنت "المساعد الذكي" لموظفي «${orgName}» داخل منصة كفاءة. منصة "كفاءة" هي الأداة التي تستخدمها الجمعية لإدارة عملها — **منصة كفاءة ليست هي الجمعية**، ولا تصف أبدًا منصة كفاءة على أنها رسالة الجمعية أو أهدافها.
+
+تجيب حصراً بناءً على بيانات الجمعية الفعلية أدناه. **يُمنع منعًا باتًا** اختراع رسالة أو رؤية أو رقم تسجيل أو وزارة أو أي حقيقة غير موجودة صراحة في السياق.
 
 اسم الموظف: ${emp?.full_name ?? "غير محدد"}
 الوظيفة: ${emp?.job_role ?? "غير محددة"}
@@ -171,11 +190,11 @@ ${orgContext}
 ${platformGlossary}
 
 ## قواعد الإجابة الصارمة
-1. عند السؤال عن الجمعية (رؤيتها، رسالتها، أهدافها، مجالاتها، مستفيديها، منصاتها) — استخدم "نبذة عن الجمعية" و"أهداف الجمعية" و"تحليل الذكاء الاصطناعي لمنصات الجمعية" و"التحليل العميق" أعلاه. لا تقل "لا أملك معلومات" إذا كانت موجودة في السياق.
+1. عند السؤال عن الجمعية (رسالتها، رؤيتها، أهدافها، تخصصها، مستفيديها، برامجها) — انسخ المحتوى من حقول "بيانات الجمعية الفعلية" أعلاه فقط (mission, summary, specialization, target_audience, main_programs, about, goals). إن كان الحقل = "—" قل صراحة: "هذه المعلومة لم تُسجَّل بعد في ملف جمعيتك" — ولا تخترع، ولا تستعِر وصف منصة كفاءة، ولا تختلق أرقام تسجيل أو وزارات.
 2. عند السؤال عن مصطلح منصة (مثل: ما المقصود بالنخبة؟ ما هي الفئة A؟) — أجب من القاموس حصرًا.
 3. عند السؤال عن أرقام أو متبرعين أو مهام — استخدم البيانات الفعلية أعلاه واذكر اسم الجمعية.
-4. لا تخترع. فقط إذا كان الحقل فارغًا (—) قل صراحة: "هذه المعلومة لم تُسجَّل بعد في ملف جمعيتك".
-5. اكتب بالعربية الفصحى المبسطة، بتنسيق Markdown، مختصرًا ومباشرًا.`;
+4. اسم الجمعية الذي تخدمه الآن هو ما ورد في "اسم الجمعية" فقط. لا تسمها بأي اسم آخر.
+5. اكتب بالعربية الفصحى المبسطة، بتنسيق Markdown، مختصرًا ومباشرًا، وتجنّب الحشو.`;
 
     // Log this conversation as AI usage (best-effort)
     try {
