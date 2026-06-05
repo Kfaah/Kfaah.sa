@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -11,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, Send, Loader2, Bot, User as UserIcon, Trophy, Clock, CheckCircle2, Brain } from "lucide-react";
+import { Sparkles, Send, Loader2, Bot, User as UserIcon, Trophy, Clock, CheckCircle2, Brain, Plus, MessageSquare, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
