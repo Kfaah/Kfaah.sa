@@ -18,6 +18,17 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type Conversation = {
+  id: string;
+  title: string;
+  last_message_at: string;
+};
+
+const WELCOME_MSG: Msg = {
+  role: "assistant",
+  content:
+    "مرحباً! 👋 أنا مساعدك الذكي. يمكنني مساعدتك في تنظيم مهامك، اقتراح أفكار لتحسين أدائك، أو شرح كيفية استخدام الذكاء الاصطناعي بذكاء في عملك. كيف يمكنني خدمتك اليوم؟",
+};
 type Period = "day" | "week" | "month" | "year";
 
 function periodStart(p: Period): Date {
