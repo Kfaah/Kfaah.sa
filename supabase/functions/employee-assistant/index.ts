@@ -70,8 +70,10 @@ serve(async (req) => {
     const orgId = emp?.organization_id ?? null;
     let orgContext = "";
     if (orgId) {
-      const [orgRes, tiersRes, donorsStatRes, donationsAggRes, projectsRes, plansRes, tasksRes, campaignsRes] = await Promise.all([
+      const [orgRes, profileRes, deepRes, tiersRes, donorsStatRes, donationsAggRes, projectsRes, plansRes, tasksRes, campaignsRes] = await Promise.all([
         supabase.from("organizations").select("name, slug, subscription_tier").eq("id", orgId).maybeSingle(),
+        supabase.from("organization_profiles").select("about, goals, website_url, store_url, twitter_url, instagram_url, tiktok_url, snapchat_url, youtube_url, facebook_url, linkedin_url, ai_analysis").eq("organization_id", orgId).maybeSingle(),
+        supabase.from("deep_analyses").select("overall_assessment, strengths, gaps, recommendations, donations_summary, donors_segmentation, campaigns_analysis, website_insights, store_insights, social_insights, completed_at").eq("organization_id", orgId).eq("status", "completed").order("completed_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("org_donor_tiers").select("*").eq("organization_id", orgId).maybeSingle(),
         supabase.from("donors").select("id, segment, total_donated", { count: "exact" }).eq("organization_id", orgId).limit(1000),
         supabase.from("donations").select("amount, status").eq("organization_id", orgId).limit(2000),
@@ -91,15 +93,51 @@ serve(async (req) => {
       const totalDonations = donations.reduce((a, d) => a + (Number(d.amount) || 0), 0);
       const successful = donations.filter((d) => d.status === "successful" || d.status === "ناجح").length;
 
+      const prof = profileRes.data as any;
+      const deep = deepRes.data as any;
+      const socials = prof
+        ? [
+            prof.website_url && `الموقع: ${prof.website_url}`,
+            prof.store_url && `المتجر: ${prof.store_url}`,
+            prof.twitter_url && `تويتر: ${prof.twitter_url}`,
+            prof.instagram_url && `إنستغرام: ${prof.instagram_url}`,
+            prof.tiktok_url && `تيك توك: ${prof.tiktok_url}`,
+            prof.snapchat_url && `سناب: ${prof.snapchat_url}`,
+            prof.youtube_url && `يوتيوب: ${prof.youtube_url}`,
+            prof.facebook_url && `فيسبوك: ${prof.facebook_url}`,
+            prof.linkedin_url && `لينكدإن: ${prof.linkedin_url}`,
+          ].filter(Boolean).join(" | ")
+        : "";
+      const truncate = (s: any, n = 1200) => {
+        const str = typeof s === "string" ? s : JSON.stringify(s ?? "");
+        return str.length > n ? str.slice(0, n) + "…" : str;
+      };
+
       orgContext = `
 ## بيانات الجمعية (سياق حقيقي للإجابة عليه)
 - اسم الجمعية: ${orgRes.data?.name ?? "—"} (slug: ${orgRes.data?.slug ?? "—"})
+- نبذة عن الجمعية: ${prof?.about ? truncate(prof.about, 800) : "—"}
+- أهداف الجمعية: ${prof?.goals ? truncate(prof.goals, 800) : "—"}
+- روابط الجمعية: ${socials || "—"}
 - عدد المتبرعين: ${donors.length}، الشرائح: ${JSON.stringify(segCounts)}
 - إجمالي التبرعات (آخر 2000 عملية): ${totalDonations.toLocaleString("ar-SA")} ر.س، الناجحة: ${successful}
 - المشاريع النشطة: ${(projectsRes.data ?? []).filter((p: any) => p.is_active).map((p: any) => p.name).join("، ") || "—"}
 - الخطط التشغيلية: ${(plansRes.data ?? []).map((p: any) => `${p.plan_name} (${p.year}/${p.status})`).join("، ") || "—"}
 - الحملات التسويقية: ${(campaignsRes.data ?? []).map((c: any) => `${c.name} (${c.status})`).join("، ") || "—"}
 - مهام الموظف الأخيرة: ${(tasksRes.data ?? []).map((t: any) => `«${t.title}» [${t.status}${t.priority ? "/" + t.priority : ""}]`).join("، ") || "لا توجد"}
+
+${prof?.ai_analysis ? `## تحليل الذكاء الاصطناعي لمنصات الجمعية\n${truncate(prof.ai_analysis, 1500)}` : ""}
+
+${deep ? `## التحليل العميق الأخير للجمعية (بتاريخ ${deep.completed_at ?? "—"})
+- التقييم العام: ${truncate(deep.overall_assessment, 800)}
+- نقاط القوة: ${truncate(deep.strengths, 600)}
+- الفجوات: ${truncate(deep.gaps, 600)}
+- التوصيات: ${truncate(deep.recommendations, 800)}
+- ملخص المتبرعين: ${truncate(deep.donors_segmentation, 500)}
+- ملخص الحملات: ${truncate(deep.campaigns_analysis, 500)}
+- رؤى الموقع: ${truncate(deep.website_insights, 500)}
+- رؤى المتجر: ${truncate(deep.store_insights, 500)}
+- رؤى السوشيال: ${truncate(deep.social_insights, 500)}` : ""}
 
 ## فئات المتبرعين في هذه الجمعية (org_donor_tiers)
 - الفئة A (≥ ${tiersRes.data?.tier_a_min ?? 5000} ر.س): قناة التواصل: ${tiersRes.data?.tier_a_channel ?? "خطاب رسمي + اتصال"}
