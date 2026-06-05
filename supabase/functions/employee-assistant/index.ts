@@ -7,6 +7,45 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const truncateValue = (value: unknown, max = 900) => {
+  const text = typeof value === "string" ? value : JSON.stringify(value ?? "");
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+};
+
+const normalizeArabic = (value: string) =>
+  value
+    .replace(/[إأآا]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const isOrgIdentityQuestion = (value: string) => {
+  const text = normalizeArabic(value);
+  const asksAboutOrg = /(الجمعيه|جمعيتي|منظمتنا|المنظمه|عن الجمعيه|تعرفه عن الجمعيه|تعرف عن الجمعيه)/.test(text);
+  const asksIdentity = /(ماذا تعرف|ما الذي تعرف|اعطني|عرفني|نبذه|ملخص|من هي|رساله|رؤيه|اهداف|تخصص|مستفيد|برامج|خدمات)/.test(text);
+  return asksAboutOrg && asksIdentity;
+};
+
+const streamDirectAnswer = (content: string) => {
+  const encoder = new TextEncoder();
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+
+  return new Response(body, {
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+    },
+  });
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -70,6 +109,7 @@ serve(async (req) => {
     const orgId = emp?.organization_id ?? null;
     let orgContext = "";
     let orgName = "—";
+    let directOrgAnswer = "";
     if (orgId) {
       const [orgRes, profileRes, deepRes, tiersRes, donorsStatRes, donationsAggRes, projectsRes, plansRes, tasksRes, campaignsRes] = await Promise.all([
         supabase.from("organizations").select("name, slug, subscription_tier").eq("id", orgId).maybeSingle(),
@@ -103,6 +143,8 @@ serve(async (req) => {
         if (!v) return "";
         return typeof v === "string" ? v : JSON.stringify(v);
       };
+      const registeredMission = aiaField("mission");
+      const missionIsExplicit = registeredMission && !normalizeArabic(registeredMission).includes("لم تذكر");
       const socials = prof
         ? [
             prof.website_url && `الموقع: ${prof.website_url}`,
@@ -117,16 +159,32 @@ serve(async (req) => {
           ].filter(Boolean).join(" | ")
         : "";
       const truncate = (s: any, n = 1200) => {
-        const str = typeof s === "string" ? s : JSON.stringify(s ?? "");
-        return str.length > n ? str.slice(0, n) + "…" : str;
+        return truncateValue(s, n);
       };
+
+      const orgFacts = [
+        prof?.about && `- **نبذة مسجلة:** ${truncate(prof.about, 650)}`,
+        aiaField("summary") && `- **ملخص التحليل:** ${truncate(aiaField("summary"), 850)}`,
+        aiaField("specialization") && `- **التخصص:** ${truncate(aiaField("specialization"), 350)}`,
+        aiaField("target_audience") && `- **الفئة المستهدفة:** ${truncate(aiaField("target_audience"), 450)}`,
+        aiaField("main_programs") && `- **البرامج الرئيسية:** ${truncate(aiaField("main_programs"), 600)}`,
+        aiaField("products_services") && `- **الخدمات/المنتجات:** ${truncate(aiaField("products_services"), 500)}`,
+        prof?.goals && `- **الأهداف المسجلة:** ${truncate(prof.goals, 650)}`,
+        socials && `- **روابط الجمعية:** ${socials}`,
+      ].filter(Boolean);
+
+      directOrgAnswer = `هذه هي المعلومات المسجلة عندي عن **${orgName}** من ملف الجمعية والتحليل المرتبط بها، وليست وصفًا عامًا لمنصة كفاءة:
+
+${orgFacts.length ? orgFacts.join("\n") : "- لا توجد تفاصيل تعريفية كافية مسجلة بعد في ملف الجمعية."}
+
+${missionIsExplicit ? `**رسالة الجمعية:** ${truncate(registeredMission, 650)}` : "**رسالة الجمعية:** لم تُسجَّل رسالة صريحة بعد في ملف الجمعية، لذلك لن أستنتجها أو أصيغها من عندي."}`;
 
       orgContext = `
 ## بيانات الجمعية الفعلية (هذه هي الجمعية التي يعمل بها الموظف — لا تخلطها أبدًا بمنصة "كفاءة" نفسها)
 - اسم الجمعية: ${orgRes.data?.name ?? "—"} (slug: ${orgRes.data?.slug ?? "—"})
 - نبذة (about): ${prof?.about ? truncate(prof.about, 800) : "—"}
 - أهداف مُدخلة يدويًا (goals): ${prof?.goals ? truncate(prof.goals, 800) : "—"}
-- رسالة الجمعية: ${truncate(aiaField("mission"), 600) || "—"}
+- رسالة الجمعية: ${missionIsExplicit ? truncate(registeredMission, 600) : "— لم تُسجَّل رسالة صريحة؛ لا تستنتجها"}
 - ملخص الجمعية: ${truncate(aiaField("summary"), 800) || "—"}
 - التخصص: ${truncate(aiaField("specialization"), 400) || "—"}
 - الفئة المستهدفة: ${truncate(aiaField("target_audience"), 400) || "—"}
@@ -195,6 +253,10 @@ ${platformGlossary}
 3. عند السؤال عن أرقام أو متبرعين أو مهام — استخدم البيانات الفعلية أعلاه واذكر اسم الجمعية.
 4. اسم الجمعية الذي تخدمه الآن هو ما ورد في "اسم الجمعية" فقط. لا تسمها بأي اسم آخر.
 5. اكتب بالعربية الفصحى المبسطة، بتنسيق Markdown، مختصرًا ومباشرًا، وتجنّب الحشو.`;
+
+    if (directOrgAnswer && isOrgIdentityQuestion(text)) {
+      return streamDirectAnswer(directOrgAnswer);
+    }
 
     // Log this conversation as AI usage (best-effort)
     try {
