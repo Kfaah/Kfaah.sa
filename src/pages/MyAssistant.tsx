@@ -46,6 +46,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/employee-ass
 
 export default function MyAssistant() {
   const { user } = useAuth();
+  const { currentOrg } = useOrganization();
   const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
