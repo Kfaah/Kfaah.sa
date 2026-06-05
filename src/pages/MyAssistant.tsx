@@ -621,6 +621,7 @@ export default function MyAssistant() {
             </div>
           </CardContent>
         </Card>
+        </div>
         )}
       </div>
     </DashboardLayout>
