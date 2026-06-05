@@ -71,16 +71,72 @@ export default function MyAssistant() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      content:
-        "مرحباً! 👋 أنا مساعدك الذكي. يمكنني مساعدتك في تنظيم مهامك، اقتراح أفكار لتحسين أدائك، أو شرح كيفية استخدام الذكاء الاصطناعي بذكاء في عملك. كيف يمكنني خدمتك اليوم؟",
-    },
-  ]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeConvId = searchParams.get("c");
+  const [messages, setMessages] = useState<Msg[]>([WELCOME_MSG]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
+
+  // ---------- Load conversations list ----------
+  const refreshConversations = async () => {
+    if (!user?.id) return;
+    const { data } = await supabase
+      .from("employee_assistant_conversations")
+      .select("id,title,last_message_at")
+      .eq("user_id", user.id)
+      .order("last_message_at", { ascending: false })
+      .limit(50);
+    setConversations((data ?? []) as Conversation[]);
+  };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    void refreshConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // ---------- Load messages for active conversation ----------
+  useEffect(() => {
+    if (!user?.id) return;
+    if (!activeConvId) {
+      setMessages([WELCOME_MSG]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setLoadingMessages(true);
+      const { data } = await supabase
+        .from("employee_assistant_messages")
+        .select("role,content,created_at")
+        .eq("conversation_id", activeConvId)
+        .order("created_at", { ascending: true });
+      if (cancelled) return;
+      const loaded = (data ?? [])
+        .filter((m: any) => m.role === "user" || m.role === "assistant")
+        .map((m: any) => ({ role: m.role, content: m.content } as Msg));
+      setMessages(loaded.length ? loaded : [WELCOME_MSG]);
+      setLoadingMessages(false);
+    })();
+    return () => { cancelled = true; };
+  }, [activeConvId, user?.id]);
+
+  const newChat = () => {
+    setSearchParams({}, { replace: false });
+    setMessages([WELCOME_MSG]);
+    setInput("");
+  };
+
+  const deleteConversation = async (id: string) => {
+    const ok = window.confirm("حذف هذه المحادثة نهائياً؟");
+    if (!ok) return;
+    const { error } = await supabase.from("employee_assistant_conversations").delete().eq("id", id);
+    if (error) { toast.error("تعذّر الحذف"); return; }
+    if (activeConvId === id) setSearchParams({}, { replace: true });
+    await refreshConversations();
+  };
 
   const [period, setPeriod] = useState<Period>("month");
   const [stats, setStats] = useState({
