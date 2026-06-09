@@ -332,9 +332,10 @@ function AppRoutes() {
       <Route path="/messages" element={<Messages />} />
       <Route path="/internal-inbox" element={<InternalInbox />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
+      <Route path="/letter-invitation" element={<LetterPage />} />
 
       {/* Legacy direct auth (kept for compatibility) */}
-      <Route path="/letter-invitation" element={<LetterPage />} />
+      <Route
         path="/auth"
         element={
           <PublicRoute>
