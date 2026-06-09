@@ -334,7 +334,7 @@ function AppRoutes() {
       <Route path="/unsubscribe" element={<Unsubscribe />} />
 
       {/* Legacy direct auth (kept for compatibility) */}
-      <Route
+      <Route path="/letter-invitation" element={<LetterPage />} />
         path="/auth"
         element={
           <PublicRoute>
