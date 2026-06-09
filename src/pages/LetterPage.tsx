@@ -141,10 +141,7 @@ export default function LetterPage() {
         {/* العنوان المرسل إليه */}
         <div className="mb-8">
           <p className="text-[hsl(210,50%,25%)] font-semibold text-lg mb-1">
-            السادة الكرام: منسوبي جمعية عطف الخيرية —
-          </p>
-          <p className="text-[hsl(210,50%,35%)] text-base">
-            إدارة ومنسوبو جمعية عطف الخيرية
+            السادة الكرام: منسوبي جمعية عطف لرعاية الأيتام بمحافظة العارضة —
           </p>
           <p className="text-[hsl(210,50%,40%)] text-sm mt-1">
             السلام عليكم ورحمة الله وبركاته،
