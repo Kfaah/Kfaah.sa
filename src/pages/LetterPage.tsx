@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Printer, ImageDown } from "lucide-react";
 import { toPng } from "html-to-image";
+import signatureAsset from "@/assets/signature-jaber.png.asset.json";
 
 /**
  * LetterPage - صفحة خطاب رسمي على ورق منصة كفاءة
@@ -227,24 +228,25 @@ export default function LetterPage() {
             </div>
           </div>
 
-          <p>
-            نتطلع بحذر لحضوركم وتفاعلكم، مع دعواتنا لكم بدوام التوفيق والسداد.
+          <p className="text-center">
+            نتطلع لحضوركم وتفاعلكم، مع دعواتنا لكم بدوام التوفيق والسداد.
           </p>
         </div>
 
         {/* التوقيع */}
-        <div className="mt-16 text-center">
-          <div className="mb-3">
-            <div
-              className="w-16 h-0.5 mx-auto rounded-full mb-4"
-              style={{ background: "hsl(174,52%,52%)" }}
-            />
-            <p className="text-[hsl(210,60%,28%)] font-bold text-lg">
-              جابر علي الحريصي
-            </p>
-            <p className="text-[hsl(210,50%,40%)] text-sm mt-1">
+        <div className="mt-16 flex justify-start">
+          <div className="text-left">
+            <p className="text-[hsl(210,50%,40%)] text-sm">
               مؤسس منصة كفاءة الإلكترونية
             </p>
+            <p className="text-[hsl(210,60%,28%)] font-bold text-lg mt-1">
+              جابر علي الحريصي
+            </p>
+            <img
+              src={signatureAsset.url}
+              alt="توقيع جابر علي الحريصي"
+              className="h-20 w-auto object-contain mt-2"
+            />
           </div>
         </div>
 
