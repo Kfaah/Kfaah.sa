@@ -111,7 +111,16 @@ export default function LetterPage() {
         {/* التاريخ */}
         <div className="flex justify-between items-center text-sm text-[hsl(210,50%,35%)] mb-10">
           <span>
-            التاريخ: 27 ذو الحجة 1447هـ الموافق 13 يونيو 2026م
+            التاريخ: {(() => {
+              const now = new Date();
+              const hijri = new Intl.DateTimeFormat("ar-SA-u-ca-islamic", {
+                day: "numeric", month: "long", year: "numeric",
+              }).format(now);
+              const gregorian = new Intl.DateTimeFormat("ar", {
+                day: "numeric", month: "long", year: "numeric",
+              }).format(now);
+              return `${hijri} الموافق ${gregorian}`;
+            })()}
           </span>
           <span className="text-[hsl(210,50%,35%)]">رقم المرجع: KF-INV-1447-06</span>
         </div>
@@ -132,7 +141,7 @@ export default function LetterPage() {
         {/* العنوان المرسل إليه */}
         <div className="mb-8">
           <p className="text-[hsl(210,50%,25%)] font-semibold text-lg mb-1">
-            إلى من يهمه الأمر —
+            السادة الكرام: منسوبي جمعية عطف الخيرية —
           </p>
           <p className="text-[hsl(210,50%,35%)] text-base">
             إدارة ومنسوبو جمعية عطف الخيرية
