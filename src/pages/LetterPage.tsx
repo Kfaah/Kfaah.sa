@@ -49,7 +49,7 @@ export default function LetterPage() {
         }}
       >
         {/* هيدر الورق الرسمي */}
-        <header className="relative pb-6 mb-6 border-b-2 border-[hsl(174,52%,52%)]">
+      <header className="relative pb-6 mb-6 border-b-2 border-[hsl(174,52%,52%)]">
           <div className="flex items-center justify-between">
             {/* الشعار */}
             <div className="flex items-center gap-3">
@@ -57,9 +57,6 @@ export default function LetterPage() {
                 src="/src/assets/kafaa-logo-premium.png"
                 alt="شعار منصة كفاءة"
                 className="h-20 w-auto object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
               />
             </div>
 
