@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { Printer } from "lucide-react";
+import { Printer, ImageDown } from "lucide-react";
+import { toPng } from "html-to-image";
 
 /**
  * LetterPage - صفحة خطاب رسمي على ورق منصة كفاءة
@@ -23,19 +24,43 @@ export default function LetterPage() {
     }
   };
 
+  const handleExportImage = async () => {
+    if (!letterRef.current) return;
+    try {
+      const dataUrl = await toPng(letterRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+      });
+      const link = document.createElement("a");
+      link.download = "خطاب-دعوة-جمعية-عطف.png";
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("فشل تصدير الصورة:", err);
+    }
+  };
+
   return (
     <div
       className="min-h-screen bg-[hsl(195,30%,96%)] flex flex-col items-center py-8"
       dir="rtl"
     >
       {/* زر الطباعة */}
-      <div className="w-full max-w-[210mm] flex justify-start mb-4 px-4 print:hidden">
+      <div className="w-full max-w-[210mm] flex justify-start gap-2 mb-4 px-4 print:hidden">
         <button
           onClick={handlePrint}
           className="inline-flex items-center gap-2 bg-[hsl(210,60%,28%)] text-white px-5 py-2.5 rounded-xl font-medium hover:bg-[hsl(210,60%,22%)] transition-colors shadow-md"
         >
           <Printer className="w-5 h-5" />
           طباعة الخطاب
+        </button>
+        <button
+          onClick={handleExportImage}
+          className="inline-flex items-center gap-2 bg-[hsl(174,52%,42%)] text-white px-5 py-2.5 rounded-xl font-medium hover:bg-[hsl(174,52%,34%)] transition-colors shadow-md"
+        >
+          <ImageDown className="w-5 h-5" />
+          تصدير كصورة
         </button>
       </div>
 
