@@ -86,6 +86,7 @@ const PerformanceEvaluation = lazy(() => import("./pages/PerformanceEvaluation")
 const AssistantFab = lazy(() => import("@/components/assistant/AssistantFab").then((m) => ({ default: m.AssistantFab })));
 const Demo = lazy(() => import("./pages/Demo"));
 const DemoModeShell = lazy(() => import("@/components/demo/DemoModeShell").then((m) => ({ default: m.DemoModeShell })));
+const LetterPage = lazy(() => import("./pages/LetterPage"));
 
 const PROTECTED_ROOTS = new Set([
   "admin", "app", "employees", "roles", "tasks", "plans", "executive-plans",
