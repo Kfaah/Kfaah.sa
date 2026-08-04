@@ -74,6 +74,12 @@ async function sha256Hex(text: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Fingerprint of the public key (DER/SPKI) — safe to publish, contains no private material.
+async function publicKeyFingerprint(): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', pemToDer(RSA_PUBLIC_KEY_PEM));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function encryptEnvelope(plaintext: Uint8Array, meta: Record<string, unknown>): Promise<string> {
   const aesKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
   const iv = crypto.getRandomValues(new Uint8Array(12));
