@@ -416,6 +416,7 @@ Deno.serve(async (req) => {
         created_at: row?.started_at ?? new Date().toISOString(),
         finished_at: new Date().toISOString(),
         status,
+        public_key_fingerprint_sha256: await publicKeyFingerprint(),
         counts: {
           tables: progress.tables,
           rows: progress.rows,
