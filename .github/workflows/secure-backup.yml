@@ -1,0 +1,61 @@
+name: Secure Encrypted Backup
+
+# تشغيل يدوي فقط — الجدولة معطّلة افتراضياً.
+# لتفعيل الجدولة، أزل التعليق عن قسم schedule بعد إعداد كل الأسرار.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "ما الذي تريد نسخه"
+        required: true
+        default: database
+        type: choice
+        options: [database, storage, both]
+  # schedule:
+  #   - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client gnupg awscli
+
+      - name: Database backup
+        if: ${{ inputs.target == 'database' || inputs.target == 'both' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          BACKUP_S3_REGION: ${{ secrets.BACKUP_S3_REGION }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: ./scripts/backup/backup-database.sh
+
+      - name: Storage backup
+        if: ${{ inputs.target == 'storage' || inputs.target == 'both' }}
+        env:
+          STORAGE_SOURCE_DIR: ${{ runner.temp }}/storage-export
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          BACKUP_S3_REGION: ${{ secrets.BACKUP_S3_REGION }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          mkdir -p "$STORAGE_SOURCE_DIR"
+          ./scripts/backup/backup-storage.sh
+
+      # ملاحظة أمنية: لا يوجد upload-artifact ولا git commit —
+      # النسخ المشفّرة تبقى في S3/R2 فقط.
+      - name: Cleanup
+        if: always()
+        run: rm -rf "${{ runner.temp }}/storage-export" || true
