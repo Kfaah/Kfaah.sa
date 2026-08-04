@@ -4600,6 +4600,66 @@ export type Database = {
           },
         ]
       }
+      secure_backup_logs: {
+        Row: {
+          backup_type: string
+          commit_urls: Json
+          created_at: string
+          error_summary: string | null
+          errors_count: number
+          files_count: number
+          finished_at: string | null
+          id: string
+          manifest: Json | null
+          parts_count: number
+          remote_path: string | null
+          rows_count: number
+          started_at: string
+          status: string
+          tables_count: number
+          total_bytes: number
+          updated_at: string
+        }
+        Insert: {
+          backup_type?: string
+          commit_urls?: Json
+          created_at?: string
+          error_summary?: string | null
+          errors_count?: number
+          files_count?: number
+          finished_at?: string | null
+          id?: string
+          manifest?: Json | null
+          parts_count?: number
+          remote_path?: string | null
+          rows_count?: number
+          started_at?: string
+          status?: string
+          tables_count?: number
+          total_bytes?: number
+          updated_at?: string
+        }
+        Update: {
+          backup_type?: string
+          commit_urls?: Json
+          created_at?: string
+          error_summary?: string | null
+          errors_count?: number
+          files_count?: number
+          finished_at?: string | null
+          id?: string
+          manifest?: Json | null
+          parts_count?: number
+          remote_path?: string | null
+          rows_count?: number
+          started_at?: string
+          status?: string
+          tables_count?: number
+          total_bytes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       smart_report_suggestions: {
         Row: {
           audience: string | null
@@ -5800,6 +5860,26 @@ export type Database = {
       review_membership_request: {
         Args: { _membership_id: string; _status: string }
         Returns: undefined
+      }
+      sb_dump_auth_table: {
+        Args: { _limit?: number; _offset?: number; _table: string }
+        Returns: Json
+      }
+      sb_dump_public_table: {
+        Args: { _limit?: number; _offset?: number; _table: string }
+        Returns: Json
+      }
+      sb_dump_storage_metadata: { Args: never; Returns: Json }
+      sb_enqueue_backup_stage: {
+        Args: { _backup_id: string; _cursor: number; _stage: string }
+        Returns: number
+      }
+      sb_list_public_tables: {
+        Args: never
+        Returns: {
+          row_estimate: number
+          table_name: string
+        }[]
       }
       user_belongs_to_org: {
         Args: { _org_id: string; _user_id: string }
