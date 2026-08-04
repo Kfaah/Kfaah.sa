@@ -221,8 +221,12 @@ async function authorize(req: Request): Promise<Caller> {
 
   const anon = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!);
   const { data, error } = await anon.auth.getClaims(token);
+  if (error || !data?.claims) return null;
+  // Fallback internal path: a *cryptographically verified* service_role token
+  // (signature checked against the project JWKS by getClaims — never a raw payload decode).
+  if ((data.claims as { role?: string }).role === 'service_role') return 'internal';
   const userId = data?.claims?.sub as string | undefined;
-  if (error || !userId) return null;
+  if (!userId) return null;
   const { data: isSuper } = await adminClient().rpc('is_super_admin', { _user_id: userId });
   return isSuper === true ? 'super_admin' : null;
 }
