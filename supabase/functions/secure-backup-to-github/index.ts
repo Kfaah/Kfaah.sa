@@ -156,13 +156,13 @@ async function saveProgress(
 }
 
 async function chain(stage: string, backupId: string, cursor: number) {
-  const p = fetch(`${SUPABASE_URL}/functions/v1/secure-backup-to-github`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
-    body: JSON.stringify({ stage, backup_id: backupId, cursor }),
-  }).catch(() => {});
-  // give the runtime a moment to dispatch the request before this invocation ends
-  await Promise.race([p, new Promise((r) => setTimeout(r, 400))]);
+  // Dispatched through pg_net so the next stage survives this invocation shutting down.
+  const { error } = await adminClient().rpc('sb_enqueue_backup_stage', {
+    _stage: stage,
+    _backup_id: backupId,
+    _cursor: cursor,
+  });
+  if (error) throw new Error(`stage_dispatch_failed(${stage}): ${error.message}`);
 }
 
 async function uploadPart(
