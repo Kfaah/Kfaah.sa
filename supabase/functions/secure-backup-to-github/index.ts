@@ -74,6 +74,12 @@ async function sha256Hex(text: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Fingerprint of the public key (DER/SPKI) — safe to publish, contains no private material.
+async function publicKeyFingerprint(): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', pemToDer(RSA_PUBLIC_KEY_PEM));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function encryptEnvelope(plaintext: Uint8Array, meta: Record<string, unknown>): Promise<string> {
   const aesKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -141,7 +147,7 @@ async function saveProgress(
   p: Progress,
   extra: Record<string, unknown> = {},
 ) {
-  await admin.from('secure_backup_logs').update({
+  const { error } = await admin.from('secure_backup_logs').update({
     manifest: p,
     tables_count: p.tables,
     rows_count: p.rows,
@@ -153,6 +159,7 @@ async function saveProgress(
     commit_urls: p.commit_urls.slice(-25),
     ...extra,
   }).eq('id', id);
+  if (error) throw new Error(`progress_update_failed: ${error.message}`);
 }
 
 async function chain(stage: string, backupId: string, cursor: number) {
@@ -185,27 +192,66 @@ async function uploadPart(
   p.parts.push({ name, kind, sha256: await sha256Hex(envelope), bytes: envelope.length });
 }
 
-async function authorize(req: Request): Promise<boolean> {
-  const header = req.headers.get('Authorization');
-  if (!header?.startsWith('Bearer ')) return false;
-  const token = header.slice(7);
+// Length-safe, timing-safe string comparison.
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const x = enc.encode(a);
+  const y = enc.encode(b);
+  // Compare hashes so unequal lengths don't short-circuit.
+  if (x.length !== y.length) {
+    let acc = 0;
+    for (let i = 0; i < Math.max(x.length, y.length); i++) acc |= (x[i] ?? 0) ^ (y[i] ?? 1);
+    return acc === 0 && x.length === y.length;
+  }
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
+
+// Server-side validation of a service-role credential: the token is presented to the
+// auth admin API, which only accepts a genuine service_role key. No payload decoding,
+// no self-asserted claims, and the token value is never logged.
+async function isValidServiceCredential(token: string): Promise<boolean> {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
-    if (payload?.role === 'service_role') return true;
-  } catch { /* fall through */ }
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?page=1&per_page=1`, {
+      headers: { apikey: token, Authorization: `Bearer ${token}` },
+    });
+    await res.text();
+    return res.status === 200;
+  } catch {
+    return false;
+  }
+}
+
+type Caller = 'internal' | 'super_admin' | null;
+
+async function authorize(req: Request): Promise<Caller> {
+  const header = req.headers.get('Authorization');
+  if (!header?.startsWith('Bearer ')) return null;
+  const token = header.slice(7).trim();
+
+  // Internal caller: the token must BE the actual service role key (constant-time compare).
+  // Never trust a self-asserted `role` claim inside an unverified JWT payload.
+  if (SERVICE_KEY && timingSafeEqual(token, SERVICE_KEY)) return 'internal';
 
   const anon = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!);
   const { data, error } = await anon.auth.getClaims(token);
-  const userId = data?.claims?.sub as string | undefined;
-  if (error || !userId) return false;
+  const userId = !error ? (data?.claims?.sub as string | undefined) : undefined;
+  if (!userId) {
+    // Not a user session: the only remaining accepted identity is a service-role
+    // credential validated server-side by the auth admin API.
+    return (await isValidServiceCredential(token)) ? 'internal' : null;
+  }
+  if (!userId) return null;
   const { data: isSuper } = await adminClient().rpc('is_super_admin', { _user_id: userId });
-  return isSuper === true;
+  return isSuper === true ? 'super_admin' : null;
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  if (!(await authorize(req))) {
+  const caller = await authorize(req);
+  if (!caller) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -223,8 +269,36 @@ Deno.serve(async (req) => {
     });
 
   try {
+    // Stage/cursor dispatch is internal-only: a super_admin session may start a backup
+    // entry but can never drive stages or cursors manually.
+    if ((body.backup_id || body.stage || body.cursor !== undefined) && caller !== 'internal') {
+      return json({ error: 'forbidden_stage_dispatch' }, 403);
+    }
+
     // ---------------- entry ----------------
     if (!body.backup_id) {
+      // Single-flight guard: never run two backups in parallel.
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      const { data: runningRows, error: runningErr } = await admin.from('secure_backup_logs')
+        .select('id, started_at').eq('status', 'running').order('started_at', { ascending: false });
+      if (runningErr) throw new Error(`running_lookup_failed: ${runningErr.message}`);
+
+      const stale = (runningRows ?? []).filter((r) => r.started_at < twoHoursAgo);
+      for (const r of stale) {
+        // Mark stale runs failed — records are kept, never deleted.
+        const { error: staleErr } = await admin.from('secure_backup_logs').update({
+          status: 'failed',
+          error_summary: 'stale_running_run_marked_failed (no progress for over 2 hours)',
+          finished_at: new Date().toISOString(),
+        }).eq('id', r.id);
+        if (staleErr) throw new Error(`stale_update_failed: ${staleErr.message}`);
+      }
+
+      const active = (runningRows ?? []).find((r) => r.started_at >= twoHoursAgo);
+      if (active) {
+        return json({ error: 'backup_already_running', backup_id: active.id }, 409);
+      }
+
       const now = new Date();
       const y = now.getUTCFullYear();
       const m = String(now.getUTCMonth() + 1).padStart(2, '0');
@@ -362,6 +436,7 @@ Deno.serve(async (req) => {
         created_at: row?.started_at ?? new Date().toISOString(),
         finished_at: new Date().toISOString(),
         status,
+        public_key_fingerprint_sha256: await publicKeyFingerprint(),
         counts: {
           tables: progress.tables,
           rows: progress.rows,
