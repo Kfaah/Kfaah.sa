@@ -5870,6 +5870,10 @@ export type Database = {
         Returns: Json
       }
       sb_dump_storage_metadata: { Args: never; Returns: Json }
+      sb_enqueue_backup_stage: {
+        Args: { _backup_id: string; _cursor: number; _stage: string }
+        Returns: number
+      }
       sb_list_public_tables: {
         Args: never
         Returns: {
