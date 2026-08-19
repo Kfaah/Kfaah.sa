@@ -25,17 +25,12 @@ function KafaaMarkSvg({ className = "", ...props }: SVGProps<SVGSVGElement>) {
       {...props}
       aria-label="شعار كفاءة"
     >
-      {/* Circle background - solid cyan gradient via explicit stops */}
-      <circle cx="24" cy="24" r="22" fill="#22d3ee" />
+      {/* Circle background */}
       <circle cx="24" cy="24" r="22" fill="url(#kafaaCircleGradient)" />
       <defs>
         <linearGradient id="kafaaCircleGradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#22d3ee" />
           <stop offset="100%" stopColor="#0e7490" />
-        </linearGradient>
-        <linearGradient id="kafaaKGradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#ecfeff" />
         </linearGradient>
       </defs>
       {/* Subtle inner ring for depth */}
