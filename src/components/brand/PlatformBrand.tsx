@@ -1,44 +1,76 @@
 import type { SVGProps } from "react";
-import kafaaLogoPremium from "@/assets/kafaa-logo-premium.png";
-import kafaaLogoPremiumCropped from "@/assets/kafaa-logo-premium-cropped.png";
 
 /**
  * Kafa'a (كفاءة) — professional brandmark.
  *
- * Concept: a geometric capital "K" where the upper diagonal stroke
- * resolves into a rising checkmark — symbolising verified performance.
- * Monolinear weights, single deep-navy ink, single turquoise accent,
- * disciplined typography. Designed to read at any size.
+ * Concept: a refined capital "K" enclosed in a circle, symbolising
+ * verified performance and digital precision. The mark is rendered
+ * as a scalable SVG so it stays crisp at every size and works for
+ * both the full brand block and the browser favicon source.
  */
 
 const NAVY = "hsl(215 55% 14%)";
 const TEAL = "hsl(182 80% 38%)";
 
-type KafaaLogoArtworkProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "alt">;
-
-export function KafaaLogoArtwork({ className = "", ...props }: KafaaLogoArtworkProps) {
+function KafaaMarkSvg({ className = "", ...props }: SVGProps<SVGSVGElement>) {
   return (
-    <img
-      src={kafaaLogoPremium}
-      alt="شعار كفاءة"
-      className={`object-contain ${className}`}
+    <svg
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
       {...props}
+      aria-label="شعار كفاءة"
+    >
+      <defs>
+        <linearGradient id="kafaaCircleGradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="hsl(186 84% 46%)" />
+          <stop offset="100%" stopColor="hsl(215 55% 24%)" />
+        </linearGradient>
+        <linearGradient id="kafaaKGradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="white" />
+          <stop offset="100%" stopColor="hsl(186 90% 92%)" />
+        </linearGradient>
+      </defs>
+      {/* Circle background */}
+      <circle cx="24" cy="24" r="22" fill="url(#kafaaCircleGradient)" />
+      {/* Subtle inner ring for depth */}
+      <circle cx="24" cy="24" r="19" stroke="white" strokeOpacity="0.18" strokeWidth="1" />
+      {/* Geometric K */}
+      <g fill="url(#kafaaKGradient)">
+        {/* Vertical spine */}
+        <rect x="14" y="12" width="5.5" height="24" rx="1.5" />
+        {/* Upper diagonal */}
+        <path d="M19.5 16.5L31 11.5C32.2 11 33.5 12 33.5 13.3V13.3C33.5 14 33.1 14.6 32.5 14.9L23.5 19.5L19.5 16.5Z" />
+        {/* Lower diagonal */}
+        <path d="M19.5 31.5L32.5 36.5C33.6 36.9 33.6 38.5 32.5 38.9L32.5 38.9C32.1 39.1 31.6 39 31.2 38.8L19.5 33.5V31.5Z" />
+      </g>
+    </svg>
+  );
+}
+
+type KafaaLogoArtworkProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "alt"> & {
+  svgClassName?: string;
+};
+
+export function KafaaLogoArtwork({ className = "", svgClassName = "", ...props }: KafaaLogoArtworkProps) {
+  return (
+    <KafaaMarkSvg
+      className={`object-contain ${className} ${svgClassName}`}
+      {...(props as unknown as SVGProps<SVGSVGElement>)}
     />
   );
 }
 
-export function KafaaLogoArtworkCropped({ className = "", ...props }: KafaaLogoArtworkProps) {
+export function KafaaLogoArtworkCropped({ className = "", svgClassName = "", ...props }: KafaaLogoArtworkProps) {
   return (
-    <img
-      src={kafaaLogoPremiumCropped}
-      alt="شعار كفاءة"
-      className={`object-contain ${className}`}
-      {...props}
+    <KafaaMarkSvg
+      className={`object-contain ${className} ${svgClassName}`}
+      {...(props as unknown as SVGProps<SVGSVGElement>)}
     />
   );
 }
 
-const kafaaLogo = kafaaLogoPremium;
 
 interface PlatformBrandProps {
   size?: "sm" | "md" | "lg";
