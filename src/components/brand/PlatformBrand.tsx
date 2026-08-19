@@ -9,8 +9,15 @@ import type { SVGProps } from "react";
  * both the full brand block and the browser favicon source.
  */
 
-const NAVY = "hsl(215 55% 14%)";
-const TEAL = "hsl(182 80% 38%)";
+/**
+ * Kafa'a (كفاءة) — professional brandmark.
+ *
+ * Concept: a refined capital "K" enclosed in a circle, symbolising
+ * verified performance and digital precision. The mark is rendered
+ * as a scalable SVG so it stays crisp at every size and works for
+ * both the full brand block and the browser favicon source.
+ */
+
 
 function KafaaMarkSvg({ className = "", ...props }: SVGProps<SVGSVGElement>) {
   return (
