@@ -16,28 +16,32 @@ function KafaaMarkSvg({ className = "", ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg
       viewBox="0 0 48 48"
+      width="100%"
+      height="100%"
+      preserveAspectRatio="xMidYMid meet"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       {...props}
       aria-label="شعار كفاءة"
     >
+      {/* Circle background - solid cyan gradient via explicit stops */}
+      <circle cx="24" cy="24" r="22" fill="#22d3ee" />
+      <circle cx="24" cy="24" r="22" fill="url(#kafaaCircleGradient)" />
       <defs>
         <linearGradient id="kafaaCircleGradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="hsl(186 84% 46%)" />
-          <stop offset="100%" stopColor="hsl(215 55% 24%)" />
+          <stop offset="0%" stopColor="#22d3ee" />
+          <stop offset="100%" stopColor="#0e7490" />
         </linearGradient>
         <linearGradient id="kafaaKGradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="white" />
-          <stop offset="100%" stopColor="hsl(186 90% 92%)" />
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#ecfeff" />
         </linearGradient>
       </defs>
-      {/* Circle background */}
-      <circle cx="24" cy="24" r="22" fill="url(#kafaaCircleGradient)" />
       {/* Subtle inner ring for depth */}
-      <circle cx="24" cy="24" r="19" stroke="white" strokeOpacity="0.18" strokeWidth="1" />
+      <circle cx="24" cy="24" r="19" stroke="white" strokeOpacity="0.22" strokeWidth="1" />
       {/* Geometric K */}
-      <g fill="url(#kafaaKGradient)">
+      <g fill="#ffffff">
         {/* Vertical spine */}
         <rect x="14" y="12" width="5.5" height="24" rx="1.5" />
         {/* Upper diagonal */}
@@ -49,24 +53,22 @@ function KafaaMarkSvg({ className = "", ...props }: SVGProps<SVGSVGElement>) {
   );
 }
 
-type KafaaLogoArtworkProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "alt"> & {
-  svgClassName?: string;
-};
+type KafaaLogoArtworkProps = SVGProps<SVGSVGElement>;
 
-export function KafaaLogoArtwork({ className = "", svgClassName = "", ...props }: KafaaLogoArtworkProps) {
+export function KafaaLogoArtwork({ className = "", ...props }: KafaaLogoArtworkProps) {
   return (
     <KafaaMarkSvg
-      className={`object-contain ${className} ${svgClassName}`}
-      {...(props as unknown as SVGProps<SVGSVGElement>)}
+      className={`object-contain ${className}`}
+      {...props}
     />
   );
 }
 
-export function KafaaLogoArtworkCropped({ className = "", svgClassName = "", ...props }: KafaaLogoArtworkProps) {
+export function KafaaLogoArtworkCropped({ className = "", ...props }: KafaaLogoArtworkProps) {
   return (
     <KafaaMarkSvg
-      className={`object-contain ${className} ${svgClassName}`}
-      {...(props as unknown as SVGProps<SVGSVGElement>)}
+      className={`object-contain ${className}`}
+      {...props}
     />
   );
 }
