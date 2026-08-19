@@ -119,7 +119,7 @@ export function PlatformBrand({
         </div>
         {showTagline && (
           <div className={`${s.tagline} text-slate-500 font-medium mt-0.5`}>
-            منصة إدارة الأداء المؤسسي للجمعيات
+            منصة كفاءة لإدارة التسويق الإلكتروني للجمعيات
           </div>
         )}
       </div>
@@ -127,4 +127,4 @@ export function PlatformBrand({
   );
 }
 
-export { kafaaLogo };
+export { KafaaMarkSvg as kafaaLogo };
