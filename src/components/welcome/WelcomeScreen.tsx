@@ -8,7 +8,6 @@ import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/hooks/useAuth";
 import demoOrgLogo from "@/assets/demo-org-logo.png";
-import { kafaaLogo } from "@/components/brand/PlatformBrand";
 import namozajLogo from "@/assets/namozaj-logo.png";
 
 // العبارات الافتراضية (تستخدم إذا لم توجد عبارات في قاعدة البيانات)
