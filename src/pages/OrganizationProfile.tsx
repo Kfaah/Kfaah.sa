@@ -171,6 +171,23 @@ export default function OrganizationProfile() {
     setDocuments((prev) => prev.filter((d) => d.url !== url));
   };
 
+  const importDocuments = async () => {
+    if (!orgId) return;
+    if (documents.length === 0) { toast.info("لا توجد ملفات لإضافتها"); return; }
+    setImportingDocs(true);
+    await save();
+    const { data, error } = await supabase.functions.invoke("import-org-documents", {
+      body: { organization_id: orgId, documents },
+    });
+    setImportingDocs(false);
+    if (error || !data?.success) { toast.error("تعذّر إضافة الملفات إلى مركز الملفات"); return; }
+    const imported = Number(data.imported || 0);
+    const skipped = Number(data.skipped || 0);
+    if (imported === 0 && skipped > 0) { toast.info("جميع الملفات مضافة مسبقاً"); return; }
+    if (imported === 0) { toast.error("تعذّر تنزيل الملفات من الموقع"); return; }
+    toast.success(`تمت إضافة ${imported} ملف إلى مركز الملفات${skipped ? ` (${skipped} مكرر)` : ""}`);
+  };
+
   const save = async () => {
     if (!orgId) return;
     setSaving(true);
