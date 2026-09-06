@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target, RefreshCcw, Radar, ScanSearch, FileText, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target, RefreshCcw, Radar, ScanSearch, FileText, Plus, Trash2, FolderInput } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,7 @@ export default function OrganizationProfile() {
   const [discovering, setDiscovering] = useState(false);
   const [documents, setDocuments] = useState<OrgDocument[]>([]);
   const [newDocUrl, setNewDocUrl] = useState("");
+  const [importingDocs, setImportingDocs] = useState(false);
 
   const loadSources = async () => {
     if (!orgId) return;
@@ -168,6 +169,23 @@ export default function OrganizationProfile() {
 
   const removeDocument = (url: string) => {
     setDocuments((prev) => prev.filter((d) => d.url !== url));
+  };
+
+  const importDocuments = async () => {
+    if (!orgId) return;
+    if (documents.length === 0) { toast.info("لا توجد ملفات لإضافتها"); return; }
+    setImportingDocs(true);
+    await save();
+    const { data, error } = await supabase.functions.invoke("import-org-documents", {
+      body: { organization_id: orgId, documents },
+    });
+    setImportingDocs(false);
+    if (error || !data?.success) { toast.error("تعذّر إضافة الملفات إلى مركز الملفات"); return; }
+    const imported = Number(data.imported || 0);
+    const skipped = Number(data.skipped || 0);
+    if (imported === 0 && skipped > 0) { toast.info("جميع الملفات مضافة مسبقاً"); return; }
+    if (imported === 0) { toast.error("تعذّر تنزيل الملفات من الموقع"); return; }
+    toast.success(`تمت إضافة ${imported} ملف إلى مركز الملفات${skipped ? ` (${skipped} مكرر)` : ""}`);
   };
 
   const save = async () => {
@@ -495,7 +513,14 @@ export default function OrganizationProfile() {
                 اللوائح والتقارير والسياسات التي تم جلبها من موقع الجمعية، وتُستخدم لتعزيز دقة التحليل الذكي.
               </p>
             </div>
-            <Badge variant="secondary" className="text-[10px]">{documents.length} ملف</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-[10px]">{documents.length} ملف</Badge>
+              <Button type="button" size="sm" variant="outline" onClick={importDocuments}
+                disabled={importingDocs || documents.length === 0} className="gap-1.5">
+                {importingDocs ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderInput className="w-4 h-4" />}
+                إضافة الملفات إلى مركز الملفات
+              </Button>
+            </div>
           </div>
 
           <div className="flex gap-2 mb-4">
