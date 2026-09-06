@@ -514,10 +514,15 @@ export default function OrgAuth() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="h-11 pe-10"
+                    className="h-11 pe-12 text-left"
                     dir="ltr"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-9 h-9 rounded-full bg-muted/80 hover:bg-muted text-foreground/80 hover:text-foreground shadow-sm transition-colors"
+                    aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                  >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
