@@ -316,10 +316,46 @@ Deno.serve(async (req) => {
     const subResults = await Promise.all(
       subUrls.slice(0, 6).map(async (su) => {
         const h = await fetchHtml(su, 6000);
-        return h ? extract(h, su) : null;
+        return h ? { html: h, url: su, data: extract(h, su) } : null;
       })
     );
-    for (const r of subResults) if (r) mergeResults(data, r);
+    for (const r of subResults) if (r) mergeResults(data, r.data);
+
+    // ===== Documents / regulations / reports =====
+    const documents: OrgDocument[] = [];
+    const seenDocs = new Set<string>();
+    const pushDocs = (list: OrgDocument[]) => {
+      for (const d of list) {
+        if (seenDocs.has(d.url)) continue;
+        seenDocs.add(d.url);
+        documents.push(d);
+      }
+    };
+    try {
+      pushDocs(extractDocuments(mainHtml, url));
+      for (const r of subResults) if (r) pushDocs(extractDocuments(r.html, r.url));
+
+      // Follow likely "regulations / reports / governance" pages, then common paths
+      const candidatePages = new Set<string>(findDocumentPages(mainHtml, url));
+      for (const r of subResults) if (r) for (const p of findDocumentPages(r.html, r.url)) candidatePages.add(p);
+      try {
+        const origin = new URL(url).origin;
+        for (const p of ["/regulations", "/policies", "/reports", "/governance", "/documents", "/downloads", "/media-center", "/transparency"]) {
+          candidatePages.add(new URL(p, origin).toString());
+        }
+      } catch { /* ignore */ }
+
+      const pageList = [...candidatePages].filter((p) => !subUrls.includes(p)).slice(0, 12);
+      const docPageResults = await Promise.all(
+        pageList.map(async (p) => {
+          const h = await fetchHtml(p, 6000);
+          return h ? extractDocuments(h, p) : [];
+        })
+      );
+      for (const list of docPageResults) pushDocs(list);
+    } catch (e) {
+      console.error("document discovery failed", e);
+    }
 
     // ===== Use Firecrawl Search to find the correct STORE URL =====
     // Strategy: search Google for the org name, take the FIRST result as authoritative store/website.
