@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     // Get auth user email
     const { data: targetUser, error: targetErr } =
-      await admin.auth.admin.getUserById(emp.user_id);
+      await admin.auth.admin.getUserById(resolvedUserId);
     if (targetErr || !targetUser?.user?.email) {
       return json({ error: "target_user_not_found" }, 404);
     }
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     // Return the OTP hash so the client can call verifyOtp({ type: 'magiclink', token_hash })
     return json({
       email,
-      employee_name: emp.full_name,
+      employee_name: emp?.full_name ?? targetUser.user.email,
       token_hash: linkData.properties.hashed_token,
       action_link: linkData.properties.action_link,
     });
