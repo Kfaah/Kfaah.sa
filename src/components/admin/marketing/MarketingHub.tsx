@@ -96,8 +96,8 @@ export default function MarketingHub({ orgId }: { orgId: string }) {
         </div>
       </div>
 
-      <Tabs defaultValue="campaigns" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="campaigns" className="w-full" dir="rtl">
+        <TabsList className="grid w-full grid-cols-4" dir="rtl">
           <TabsTrigger value="campaigns" className="gap-1"><Target className="h-4 w-4" />حملاتي</TabsTrigger>
           <TabsTrigger value="radar" className="gap-1"><RadarIcon className="h-4 w-4" />الراصد</TabsTrigger>
           <TabsTrigger value="calendar" className="gap-1"><Calendar className="h-4 w-4" />التقويم</TabsTrigger>
