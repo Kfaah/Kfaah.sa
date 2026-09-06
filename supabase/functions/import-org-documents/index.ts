@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
         }
         const path = `${organization_id}/archive/${category}/${Date.now()}_${name}`;
         const { error: upErr } = await supa.storage
-          .from("data-uploads")
+          .from("org-documents")
           .upload(path, buf, { contentType, upsert: false });
         if (upErr) { results.push({ url: d.url, ok: false, reason: upErr.message }); continue; }
 
