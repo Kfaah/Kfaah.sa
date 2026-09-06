@@ -87,6 +87,7 @@ interface HistoryRow {
   file_path: string | null;
   storage_bucket: string | null;
   file_type: string | null;
+  organization_id: string | null;
 }
 
 // هوية حرف: تركوازي (primary/accent) + لمسة كهرمانية دافئة محدودة للجمالية.
@@ -709,6 +710,96 @@ export default function Uploads() {
           </Card>
         )}
 
+        {/* معاينة الملف المختار */}
+        {previewRow && (
+          <Card className="border-primary/40 shadow-lg">
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Eye className="w-5 h-5 text-primary" />
+                  <span className="truncate">{previewRow.file_name}</span>
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(previewRow.detected_schema
+                    ? SCHEMA_LABELS[previewRow.detected_schema] ?? SCHEMA_LABELS.unknown
+                    : SCHEMA_LABELS.unknown).label}
+                  {" · "}
+                  {new Date(previewRow.created_at).toLocaleString("ar-SA")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {previewUrl && (
+                  <>
+                    <Button asChild variant="outline" size="sm" className="gap-1">
+                      <a href={previewUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-4 h-4" />
+                        فتح
+                      </a>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="gap-1">
+                      <a href={previewUrl} download={previewRow.file_name}>
+                        <Download className="w-4 h-4" />
+                        تنزيل
+                      </a>
+                    </Button>
+                  </>
+                )}
+                <Button variant="ghost" size="icon" onClick={closePreview} aria-label="إغلاق المعاينة">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {previewLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : previewError ? (
+                <div className="flex items-start gap-2 text-sm text-destructive py-6">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>{previewError}</span>
+                </div>
+              ) : previewUrl ? (
+                (() => {
+                  const name = previewRow.file_name.toLowerCase();
+                  const type = (previewRow.file_type || "").toLowerCase();
+                  const isImg = type.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)$/.test(name);
+                  const isPdf = type.includes("pdf") || name.endsWith(".pdf");
+                  const isOffice = /\.(docx?|xlsx?|pptx?|csv)$/.test(name);
+                  if (isImg) {
+                    return (
+                      <div className="flex justify-center bg-muted/30 rounded-lg p-4">
+                        <img
+                          src={previewUrl}
+                          alt={previewRow.file_name}
+                          className="max-h-[65vh] rounded-lg object-contain"
+                        />
+                      </div>
+                    );
+                  }
+                  if (isPdf) {
+                    return <SmartPdfViewer fileUrl={previewUrl} fileName={previewRow.file_name} />;
+                  }
+                  if (isOffice) {
+                    return (
+                      <iframe
+                        title={previewRow.file_name}
+                        src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`}
+                        className="w-full h-[65vh] rounded-lg border border-border bg-muted/20"
+                      />
+                    );
+                  }
+                  return (
+                    <div className="text-sm text-muted-foreground py-8 text-center">
+                      لا تتوفر معاينة مباشرة لهذه الصيغة — استخدم زر التنزيل لعرض الملف.
+                    </div>
+                  );
+                })()
+              ) : null}
+            </CardContent>
+          </Card>
+        )}
+
         {/* History */}
         <Card>
           <CardHeader>
@@ -738,6 +829,7 @@ export default function Uploads() {
                     <TableHead className="text-right">الفاشل</TableHead>
                     <TableHead className="text-right">الحالة</TableHead>
                     <TableHead className="text-right">تاريخ الرفع</TableHead>
+                    <TableHead className="text-right">معاينة</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -781,6 +873,17 @@ export default function Uploads() {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(row.created_at).toLocaleString("ar-SA")}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-primary"
+                            onClick={() => openPreview(row)}
+                          >
+                            <Eye className="w-4 h-4" />
+                            معاينة
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
