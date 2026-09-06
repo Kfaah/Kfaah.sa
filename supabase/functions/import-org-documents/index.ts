@@ -67,18 +67,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify the caller can administer this organization before using the
-    // internal client for server-side storage and audit-log writes.
-    const { data: canAccess, error: accessError } = await userClient.rpc(
-      "admin_can_access_org",
-      { _org: organization_id },
-    );
-    if (accessError || canAccess !== true) {
+    // Authorization is evaluated server-side. The public helper intentionally
+    // is not executable by authenticated clients, so do not call it through
+    // the user's RLS-scoped client here.
+    const supa = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const [{ data: roles, error: roleError }, { data: membership, error: membershipError }] =
+      await Promise.all([
+        supa.from("user_roles").select("role").eq("user_id", user.id),
+        supa
+          .from("user_organizations")
+          .select("organization_id, approval_status")
+          .eq("user_id", user.id)
+          .eq("organization_id", organization_id)
+          .eq("approval_status", "approved")
+          .maybeSingle(),
+      ]);
+    const roleNames = new Set((roles || []).map((row: { role: string }) => row.role));
+    const canAccess = roleNames.has("super_admin") || (roleNames.has("admin") && Boolean(membership));
+    if (roleError || membershipError || !canAccess) {
+      console.warn("import-org-documents authorization denied", {
+        user_id: user.id,
+        organization_id,
+        role_error: roleError?.message,
+        membership_error: membershipError?.message,
+      });
       return new Response(JSON.stringify({ error: "forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const supa = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     // Documents come from the request or from the saved profile
     let docs: Doc[] = Array.isArray(body?.documents) ? body.documents : [];
