@@ -103,14 +103,50 @@ Deno.serve(async (req) => {
       if (already.has(name)) { skipped++; results.push({ url: d.url, ok: false, reason: "موجود مسبقاً" }); continue; }
 
       try {
-        const r = await fetch(d.url, { redirect: "follow" });
+        // Many association sites sit behind Cloudflare and reject non-browser agents,
+        // so send browser-like headers (and retry once with the site as referer).
+        const browserHeaders: Record<string, string> = {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          Accept: "application/pdf,application/octet-stream,*/*;q=0.8",
+          "Accept-Language": "ar,en;q=0.8",
+        };
+        let r = await fetch(d.url, { redirect: "follow", headers: browserHeaders });
+        if (!r.ok) {
+          let referer = d.source_page || "";
+          if (!referer) { try { referer = new URL(d.url).origin + "/"; } catch { /* ignore */ } }
+          r = await fetch(d.url, {
+            redirect: "follow",
+            headers: referer ? { ...browserHeaders, Referer: referer } : browserHeaders,
+          });
+        }
         if (!r.ok) { results.push({ url: d.url, ok: false, reason: `HTTP ${r.status}` }); continue; }
         const buf = new Uint8Array(await r.arrayBuffer());
         if (buf.byteLength === 0 || buf.byteLength > MAX_BYTES) {
           results.push({ url: d.url, ok: false, reason: "حجم غير مناسب" });
           continue;
         }
-        const contentType = r.headers.get("content-type")?.split(";")[0] || "application/octet-stream";
+        let contentType = r.headers.get("content-type")?.split(";")[0]?.trim() || "";
+        // Guess from the extension when the server returns html/octet-stream for a real file
+        const ext = (name.split(".").pop() || "").toLowerCase();
+        const byExt: Record<string, string> = {
+          pdf: "application/pdf",
+          doc: "application/msword",
+          docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          xls: "application/vnd.ms-excel",
+          xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          ppt: "application/vnd.ms-powerpoint",
+          pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          csv: "text/csv",
+        };
+        if (!contentType || contentType === "application/octet-stream" || contentType.startsWith("text/html")) {
+          contentType = byExt[ext] || contentType || "application/octet-stream";
+        }
+        // A real HTML error page is not a document
+        if (contentType.startsWith("text/html")) {
+          results.push({ url: d.url, ok: false, reason: "الرابط يعيد صفحة وليس ملفاً" });
+          continue;
+        }
         const path = `${organization_id}/archive/${category}/${Date.now()}_${name}`;
         const { error: upErr } = await supa.storage
           .from("data-uploads")
