@@ -136,7 +136,38 @@ export default function OrganizationProfile() {
       linkedin_url: prev.linkedin_url || d.linkedin_url || "",
       about: prev.about || d.description || "",
     }));
-    toast.success("تم جلب هوية الجمعية تلقائياً");
+    // Merge newly discovered documents / regulations with existing ones
+    const fetched = Array.isArray(data.documents) ? (data.documents as OrgDocument[]) : [];
+    let added = 0;
+    setDocuments((prev) => {
+      const seen = new Set(prev.map((d) => d.url));
+      const merged = [...prev];
+      for (const d of fetched) {
+        if (!d?.url || seen.has(d.url)) continue;
+        seen.add(d.url);
+        merged.push(d);
+        added += 1;
+      }
+      return merged;
+    });
+    toast.success(
+      added > 0
+        ? `تم جلب هوية الجمعية و ${added} ملف/وثيقة`
+        : "تم جلب هوية الجمعية تلقائياً"
+    );
+  };
+
+  const addDocument = () => {
+    const url = newDocUrl.trim();
+    if (!/^https?:\/\//i.test(url)) { toast.error("أدخل رابطاً صحيحاً"); return; }
+    if (documents.some((d) => d.url === url)) { toast.info("الملف مضاف مسبقاً"); return; }
+    const name = decodeURIComponent(url.split("?")[0].split("/").filter(Boolean).pop() || "مستند");
+    setDocuments((prev) => [...prev, { url, title: name, type: "ملف" }]);
+    setNewDocUrl("");
+  };
+
+  const removeDocument = (url: string) => {
+    setDocuments((prev) => prev.filter((d) => d.url !== url));
   };
 
   const save = async () => {
@@ -144,7 +175,7 @@ export default function OrganizationProfile() {
     setSaving(true);
     const { error } = await supabase
       .from("organization_profiles")
-      .upsert({ organization_id: orgId, ...form }, { onConflict: "organization_id" });
+      .upsert({ organization_id: orgId, ...form, documents: documents as unknown as never }, { onConflict: "organization_id" });
     setSaving(false);
     if (error) { toast.error("تعذّر الحفظ"); return; }
     toast.success("تم حفظ ملف التعريف");
