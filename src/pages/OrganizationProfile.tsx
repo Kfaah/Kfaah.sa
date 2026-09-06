@@ -513,7 +513,14 @@ export default function OrganizationProfile() {
                 اللوائح والتقارير والسياسات التي تم جلبها من موقع الجمعية، وتُستخدم لتعزيز دقة التحليل الذكي.
               </p>
             </div>
-            <Badge variant="secondary" className="text-[10px]">{documents.length} ملف</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-[10px]">{documents.length} ملف</Badge>
+              <Button type="button" size="sm" variant="outline" onClick={importDocuments}
+                disabled={importingDocs || documents.length === 0} className="gap-1.5">
+                {importingDocs ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderInput className="w-4 h-4" />}
+                إضافة الملفات إلى مركز الملفات
+              </Button>
+            </div>
           </div>
 
           <div className="flex gap-2 mb-4">
