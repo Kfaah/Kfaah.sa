@@ -560,15 +560,29 @@ const Tasks = ({ embedded = false }: TasksProps) => {
       );
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({} as any));
         if (response.status === 429) {
           throw new Error("تم تجاوز الحد المسموح، حاول لاحقاً");
         }
         if (response.status === 402) {
           throw new Error("يرجى إضافة رصيد للذكاء الاصطناعي");
         }
+        if (response.status === 404) {
+          // لا توجد مستهدفات شهرية — ليست حالة خطأ برمجي، نوجّه المستخدم فقط
+          const months: number[] = Array.isArray(errorData.available_months) ? errorData.available_months : [];
+          toast({
+            title: "لا توجد مستهدفات لهذا الشهر",
+            description: months.length > 0
+              ? `${errorData.error} يمكنك اختيار شهر آخر من القائمة.`
+              : (errorData.error || "أضف مستهدفات شهرية في الخطط التشغيلية أولاً."),
+          });
+          setIsGenerating(false);
+          setGenerationProgress("");
+          return;
+        }
         throw new Error(errorData.error || "فشل في توليد المهام");
       }
+
       
       const result = await response.json();
 
