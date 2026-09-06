@@ -4180,6 +4180,7 @@ export type Database = {
           ai_model: string | null
           auto_extracted_at: string | null
           created_at: string
+          documents: Json
           facebook_url: string | null
           goals: string | null
           id: string
@@ -4206,6 +4207,7 @@ export type Database = {
           ai_model?: string | null
           auto_extracted_at?: string | null
           created_at?: string
+          documents?: Json
           facebook_url?: string | null
           goals?: string | null
           id?: string
@@ -4232,6 +4234,7 @@ export type Database = {
           ai_model?: string | null
           auto_extracted_at?: string | null
           created_at?: string
+          documents?: Json
           facebook_url?: string | null
           goals?: string | null
           id?: string

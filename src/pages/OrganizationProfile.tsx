@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target, RefreshCcw, Radar, ScanSearch } from "lucide-react";
+import { ArrowRight, Globe, ShoppingBag, Sparkles, Save, Loader2, Building2, Link as LinkIcon, Wand2, Palette, Target, RefreshCcw, Radar, ScanSearch, FileText, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,13 @@ interface ProfileForm {
   accent_color: string;
 }
 
+export interface OrgDocument {
+  url: string;
+  title: string;
+  type?: string;
+  source_page?: string;
+}
+
 const empty: ProfileForm = {
   about: "", goals: "", website_url: "", store_url: "",
   twitter_url: "", instagram_url: "", tiktok_url: "",
@@ -50,6 +57,8 @@ export default function OrganizationProfile() {
   const [syncingKey, setSyncingKey] = useState<string | null>(null);
   const [newsPath, setNewsPath] = useState("");
   const [discovering, setDiscovering] = useState(false);
+  const [documents, setDocuments] = useState<OrgDocument[]>([]);
+  const [newDocUrl, setNewDocUrl] = useState("");
 
   const loadSources = async () => {
     if (!orgId) return;
@@ -90,6 +99,8 @@ export default function OrganizationProfile() {
         });
         setAnalysis((p.ai_analysis as Record<string, unknown>) || null);
         setLastAnalyzed(p.last_analyzed_at);
+        const docs = (p as Record<string, unknown>).documents;
+        setDocuments(Array.isArray(docs) ? (docs as OrgDocument[]) : []);
       }
     await loadSources();
       setLoading(false);
@@ -125,7 +136,38 @@ export default function OrganizationProfile() {
       linkedin_url: prev.linkedin_url || d.linkedin_url || "",
       about: prev.about || d.description || "",
     }));
-    toast.success("تم جلب هوية الجمعية تلقائياً");
+    // Merge newly discovered documents / regulations with existing ones
+    const fetched = Array.isArray(data.documents) ? (data.documents as OrgDocument[]) : [];
+    let added = 0;
+    setDocuments((prev) => {
+      const seen = new Set(prev.map((d) => d.url));
+      const merged = [...prev];
+      for (const d of fetched) {
+        if (!d?.url || seen.has(d.url)) continue;
+        seen.add(d.url);
+        merged.push(d);
+        added += 1;
+      }
+      return merged;
+    });
+    toast.success(
+      added > 0
+        ? `تم جلب هوية الجمعية و ${added} ملف/وثيقة`
+        : "تم جلب هوية الجمعية تلقائياً"
+    );
+  };
+
+  const addDocument = () => {
+    const url = newDocUrl.trim();
+    if (!/^https?:\/\//i.test(url)) { toast.error("أدخل رابطاً صحيحاً"); return; }
+    if (documents.some((d) => d.url === url)) { toast.info("الملف مضاف مسبقاً"); return; }
+    const name = decodeURIComponent(url.split("?")[0].split("/").filter(Boolean).pop() || "مستند");
+    setDocuments((prev) => [...prev, { url, title: name, type: "ملف" }]);
+    setNewDocUrl("");
+  };
+
+  const removeDocument = (url: string) => {
+    setDocuments((prev) => prev.filter((d) => d.url !== url));
   };
 
   const save = async () => {
@@ -133,7 +175,7 @@ export default function OrganizationProfile() {
     setSaving(true);
     const { error } = await supabase
       .from("organization_profiles")
-      .upsert({ organization_id: orgId, ...form }, { onConflict: "organization_id" });
+      .upsert({ organization_id: orgId, ...form, documents: documents as unknown as never }, { onConflict: "organization_id" });
     setSaving(false);
     if (error) { toast.error("تعذّر الحفظ"); return; }
     toast.success("تم حفظ ملف التعريف");
@@ -442,6 +484,59 @@ export default function OrganizationProfile() {
           </div>
         </Card>
 
+        {/* 4.5) Documents & regulations fetched from the website */}
+        <Card className="p-6">
+          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h2 className="font-bold text-lg flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" /> المرفقات والوثائق
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                اللوائح والتقارير والسياسات التي تم جلبها من موقع الجمعية، وتُستخدم لتعزيز دقة التحليل الذكي.
+              </p>
+            </div>
+            <Badge variant="secondary" className="text-[10px]">{documents.length} ملف</Badge>
+          </div>
+
+          <div className="flex gap-2 mb-4">
+            <Input
+              dir="ltr"
+              placeholder="https://... رابط لائحة أو تقرير"
+              value={newDocUrl}
+              onChange={(e) => setNewDocUrl(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDocument(); } }}
+            />
+            <Button type="button" variant="outline" onClick={addDocument} className="gap-1.5 flex-shrink-0">
+              <Plus className="w-4 h-4" /> إضافة
+            </Button>
+          </div>
+
+          {documents.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              لا توجد وثائق بعد. اضغط «جلب الهوية» أعلاه لاستخراج اللوائح والتقارير من الموقع.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {documents.map((d) => (
+                <div key={d.url} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">{d.type || "ملف"}</Badge>
+                      <span className="text-sm font-medium truncate">{d.title}</span>
+                    </div>
+                    <a href={d.url} target="_blank" rel="noreferrer" dir="ltr" className="text-[11px] text-primary hover:underline truncate block mt-1">
+                      {d.url}
+                    </a>
+                  </div>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => removeDocument(d.url)} className="flex-shrink-0 text-destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
         {/* 5) Save + analyze actions */}
         <Card className="p-4 flex justify-end gap-2 sticky bottom-4 shadow-lg border-primary/20">
           <Button variant="outline" onClick={save} disabled={saving} className="gap-2">
@@ -592,6 +687,7 @@ function labelFor(key: string): string {
     social_presence: "الحضور على وسائل التواصل",
     strengths: "نقاط القوة",
     opportunities: "الفرص التسويقية",
+    governance_documents: "الوثائق واللوائح",
     recommendations_for_innovation: "توصيات للابتكار",
     summary: "ملخص شامل",
   };
