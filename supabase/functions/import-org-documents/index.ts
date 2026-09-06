@@ -10,6 +10,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const MAX_FILES = 40;
 const MAX_BYTES = 25 * 1024 * 1024; // 25MB per file
@@ -47,10 +48,10 @@ Deno.serve(async (req) => {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const supa = createClient(SUPABASE_URL, ANON_KEY, {
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: userData } = await supa.auth.getUser();
+    const { data: userData } = await userClient.auth.getUser();
     const user = userData?.user;
     if (!user) {
       return new Response(JSON.stringify({ error: "unauthorized" }), {
@@ -65,6 +66,19 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Verify the caller can administer this organization before using the
+    // internal client for server-side storage and audit-log writes.
+    const { data: canAccess, error: accessError } = await userClient.rpc(
+      "admin_can_access_org",
+      { _org: organization_id },
+    );
+    if (accessError || canAccess !== true) {
+      return new Response(JSON.stringify({ error: "forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supa = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     // Documents come from the request or from the saved profile
     let docs: Doc[] = Array.isArray(body?.documents) ? body.documents : [];
@@ -166,7 +180,11 @@ Deno.serve(async (req) => {
           status: "completed",
           completed_at: new Date().toISOString(),
         });
-        if (logErr) { results.push({ url: d.url, ok: false, reason: logErr.message }); continue; }
+        if (logErr) {
+          await supa.storage.from("org-documents").remove([path]);
+          results.push({ url: d.url, ok: false, reason: logErr.message });
+          continue;
+        }
 
         already.add(name);
         imported++;
