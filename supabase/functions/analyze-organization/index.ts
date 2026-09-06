@@ -113,6 +113,7 @@ ${sources.map((s) => `--- ${s.label} (${s.url}) ---\n${s.content}`).join("\n\n")
   "social_presence": "ملخص حضورها على وسائل التواصل",
   "strengths": ["نقطة قوة 1"],
   "opportunities": ["فرصة تسويقية 1"],
+  "governance_documents": ["ما تستنتجه من الوثائق واللوائح المرفقة"],
   "recommendations_for_innovation": ["توصية للابتكار مرتبطة بتخصص الجمعية"],
   "summary": "ملخص شامل بثلاث جمل"
 }`;
