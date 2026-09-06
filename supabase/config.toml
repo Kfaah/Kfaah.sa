@@ -11,6 +11,8 @@ project_id = "jopvcsrmccoulujeyjvw"
     verify_jwt = false
   [functions.inbound-platform-email]
     verify_jwt = false
+  [functions.org-self-signup]
+    verify_jwt = false
   [functions.preview-transactional-email]
     verify_jwt = false
   [functions.process-email-queue]

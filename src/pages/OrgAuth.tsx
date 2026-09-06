@@ -203,35 +203,23 @@ export default function OrgAuth() {
           setLoading(false);
           return;
         }
-        const redirectUrl = `${window.location.origin}/${slug}/app`;
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: loginEmail,
-          password: normalizedPassword,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-              username,
-            },
+        const { data: result, error: fnError } = await supabase.functions.invoke("org-self-signup", {
+          body: {
+            slug: org.slug,
+            username: cleaned,
+            password: normalizedPassword,
+            first_name: firstName,
+            last_name: lastName,
           },
         });
-        if (signUpError) throw signUpError;
+        if (fnError) throw fnError;
+        if (result?.error) {
+          toast.error(result.error);
+          setLoading(false);
+          return;
+        }
 
-        // Sign in immediately to attach org membership
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password: normalizedPassword,
-        });
-        if (signInError) throw signInError;
-
-        const { error: joinError } = await supabase.rpc("join_organization_by_slug", {
-          _slug: org.slug!,
-        });
-        if (joinError) throw joinError;
-
-        // Membership was created as PENDING — sign out and show in-page success state.
-        await supabase.auth.signOut();
+        // Membership was created as PENDING — show in-page success state.
         setSignupSuccess(true);
         setPassword("");
       }
