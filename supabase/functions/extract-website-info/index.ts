@@ -191,6 +191,103 @@ function mergeResults(target: Record<string, string | null>, source: Record<stri
   }
 }
 
+// ===== Documents / regulations discovery =====
+export interface OrgDocument {
+  url: string;
+  title: string;
+  type: string;
+  source_page: string;
+}
+
+const DOC_EXT_RE = /\.(pdf|docx?|xlsx?|pptx?)(?:$|[?#])/i;
+
+const DOC_KEYWORDS = [
+  "لائحة", "لوائح", "نظام", "الأنظمة", "سياسة", "سياسات", "دليل", "الميزانية",
+  "التقرير", "تقرير", "تقارير", "محضر", "الجمعية العمومية", "حاكمية", "الحوكمة",
+  "استراتيج", "خطة", "قائمة مالية", "القوائم المالية", "شهادة", "الترخيص",
+  "policy", "policies", "regulation", "bylaw", "annual report", "report",
+  "financial", "statement", "governance", "strategy", "guide", "manual", "charter",
+];
+
+function docTypeFromUrl(url: string): string {
+  const m = url.match(DOC_EXT_RE);
+  const ext = (m?.[1] || "").toLowerCase();
+  if (ext.startsWith("pdf")) return "PDF";
+  if (ext.startsWith("doc")) return "Word";
+  if (ext.startsWith("xls")) return "Excel";
+  if (ext.startsWith("ppt")) return "PowerPoint";
+  return "ملف";
+}
+
+function cleanText(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function titleFromUrl(url: string): string {
+  try {
+    const name = decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).pop() || "");
+    return name.replace(DOC_EXT_RE, "").replace(/[-_+]+/g, " ").trim() || "مستند";
+  } catch {
+    return "مستند";
+  }
+}
+
+/** Extract document links (PDF/Word/Excel/PowerPoint) plus their anchor text. */
+function extractDocuments(html: string, baseUrl: string): OrgDocument[] {
+  const out: OrgDocument[] = [];
+  const seen = new Set<string>();
+
+  const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for (const m of html.matchAll(anchorRe)) {
+    const href = absolutize(m[1], baseUrl);
+    if (!DOC_EXT_RE.test(href)) continue;
+    const key = href.split("#")[0];
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const label = cleanText(m[2]).slice(0, 160);
+    out.push({
+      url: key,
+      title: label || titleFromUrl(key),
+      type: docTypeFromUrl(key),
+      source_page: baseUrl,
+    });
+  }
+
+  // Bare document URLs anywhere in the markup (scripts, JSON payloads, etc.)
+  for (const m of html.matchAll(/https?:\/\/[^\s"'<>]+/gi)) {
+    const url = m[0];
+    if (!DOC_EXT_RE.test(url)) continue;
+    const key = url.split("#")[0];
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ url: key, title: titleFromUrl(key), type: docTypeFromUrl(key), source_page: baseUrl });
+  }
+
+  return out;
+}
+
+/** Pages likely to host regulations / reports, discovered from the home page links. */
+function findDocumentPages(html: string, baseUrl: string): string[] {
+  const pages = new Set<string>();
+  const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let origin = "";
+  try { origin = new URL(baseUrl).origin; } catch { /* ignore */ }
+  for (const m of html.matchAll(anchorRe)) {
+    const href = absolutize(m[1], baseUrl);
+    if (origin && !href.startsWith(origin)) continue;
+    const haystack = `${decodeURIComponent(href)} ${cleanText(m[2])}`.toLowerCase();
+    if (DOC_KEYWORDS.some((k) => haystack.includes(k.toLowerCase()))) {
+      pages.add(href.split("#")[0]);
+    }
+  }
+  return [...pages].slice(0, 10);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
