@@ -15,16 +15,23 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 ) {
   return lazy(async () => {
     try {
-      return await factory();
+      const mod = await factory();
+      sessionStorage.removeItem(RELOAD_KEY);
+      return mod;
     } catch (error) {
       // Second chance: transient network hiccup.
       try {
-        return await factory();
+        const mod = await factory();
+        sessionStorage.removeItem(RELOAD_KEY);
+        return mod;
       } catch {
         const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
-        if (Date.now() - last > 15000) {
+        if (Date.now() - last > 10000) {
           sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
-          window.location.reload();
+          // Cache-bust so the browser re-fetches a fresh asset manifest.
+          const url = new URL(window.location.href);
+          url.searchParams.set("v", Date.now().toString(36));
+          window.location.replace(url.toString());
           // Never resolves; the page is reloading.
           return await new Promise<{ default: T }>(() => {});
         }
@@ -33,3 +40,4 @@ export function lazyWithRetry<T extends ComponentType<any>>(
     }
   });
 }
+
