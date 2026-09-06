@@ -90,6 +90,8 @@ export default function OrganizationProfile() {
         });
         setAnalysis((p.ai_analysis as Record<string, unknown>) || null);
         setLastAnalyzed(p.last_analyzed_at);
+        const docs = (p as Record<string, unknown>).documents;
+        setDocuments(Array.isArray(docs) ? (docs as OrgDocument[]) : []);
       }
     await loadSources();
       setLoading(false);
