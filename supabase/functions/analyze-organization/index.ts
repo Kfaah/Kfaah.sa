@@ -79,13 +79,28 @@ Deno.serve(async (req) => {
       }
     }
 
+    const docs = Array.isArray((profile as Record<string, unknown>).documents)
+      ? ((profile as Record<string, unknown>).documents as Array<{ url?: string; title?: string; type?: string }>)
+      : [];
+    const docsBlock = docs.length
+      ? docs
+          .slice(0, 60)
+          .map((d, i) => `${i + 1}. [${d.type || "ملف"}] ${d.title || "مستند"} — ${d.url || ""}`)
+          .join("\n")
+      : "(لا يوجد)";
+
     const prompt = `أنت محلل خبير في القطاع غير الربحي. حلّل الجمعية التالية بعمق بناءً على البيانات المتاحة.
 
 اسم الجمعية: ${org?.name || ""}
 النبذة المُدخلة: ${profile.about || "(لا يوجد)"}
+أهداف الجمعية: ${(profile as Record<string, unknown>).goals || "(لا يوجد)"}
+
+الوثائق واللوائح المرفقة من موقع الجمعية (عناوين الملفات تدل على مستوى الحوكمة والشفافية والبرامج):
+${docsBlock}
 
 مصادر تم جلبها:
 ${sources.map((s) => `--- ${s.label} (${s.url}) ---\n${s.content}`).join("\n\n")}
+
 
 أعد JSON فقط بالشكل التالي:
 {
