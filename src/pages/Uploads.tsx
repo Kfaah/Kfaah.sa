@@ -29,11 +29,16 @@ import {
   Megaphone,
   Gift,
   ShoppingCart,
+  Eye,
+  Download,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { SmartPdfViewer } from "@/components/profile/SmartPdfViewer";
 
 type UploadStatus = "queued" | "uploading" | "success" | "error";
 
@@ -79,6 +84,9 @@ interface HistoryRow {
   for_date: string | null;
   created_at: string;
   completed_at: string | null;
+  file_path: string | null;
+  storage_bucket: string | null;
+  file_type: string | null;
 }
 
 // هوية حرف: تركوازي (primary/accent) + لمسة كهرمانية دافئة محدودة للجمالية.
@@ -167,6 +175,62 @@ export default function Uploads() {
     loadHistory();
   }, [loadHistory]);
 
+  // ===== معاينة الملفات المرفقة =====
+  const [previewRow, setPreviewRow] = useState<HistoryRow | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const openPreview = useCallback(
+    async (row: HistoryRow) => {
+      setPreviewRow(row);
+      setPreviewUrl(null);
+      setPreviewError(null);
+      setPreviewLoading(true);
+      try {
+        const candidates: { bucket: string; path: string }[] = [];
+        if (row.file_path) {
+          candidates.push({ bucket: row.storage_bucket || "data-uploads", path: row.file_path });
+        } else if (row.organization_id) {
+          // سجلات قديمة بلا مسار محفوظ — نبحث عنها في مجلد الأرشيف بالاسم
+          const schema = row.detected_schema || "other";
+          for (const bucket of ["data-uploads", "org-documents"]) {
+            const { data: list } = await supabase.storage
+              .from(bucket)
+              .list(`${row.organization_id}/archive/${schema}`, { limit: 200 });
+            const hit = (list || []).find((f) => f.name.endsWith(row.file_name));
+            if (hit) {
+              candidates.push({
+                bucket,
+                path: `${row.organization_id}/archive/${schema}/${hit.name}`,
+              });
+              break;
+            }
+          }
+        }
+        if (candidates.length === 0) {
+          setPreviewError("هذا السجل لا يحتوي على ملف محفوظ للمعاينة (تم إدراج بياناته فقط).");
+          return;
+        }
+        const { bucket, path } = candidates[0];
+        const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+        if (error || !data?.signedUrl) throw new Error(error?.message || "تعذر إنشاء رابط المعاينة");
+        setPreviewUrl(data.signedUrl);
+      } catch (e) {
+        setPreviewError(e instanceof Error ? e.message : "تعذر فتح المعاينة");
+      } finally {
+        setPreviewLoading(false);
+      }
+    },
+    [],
+  );
+
+  const closePreview = () => {
+    setPreviewRow(null);
+    setPreviewUrl(null);
+    setPreviewError(null);
+  };
+
   const processStaffDuties = useCallback(
     async (pf: PendingFile) => {
       if (!user || !orgId) throw new Error("تعذر تحديد الجمعية");
@@ -202,6 +266,8 @@ export default function Uploads() {
         file_name: pf.file.name,
         file_type: pf.file.type || "application/vnd.ms-excel",
         detected_schema: "staff_duties",
+        file_path: path,
+        storage_bucket: "staff-duties-files",
         total_rows: parsed?.total ?? 0,
         inserted_rows: parsed?.imported ?? 0,
         duplicate_rows: 0,
@@ -237,6 +303,8 @@ export default function Uploads() {
         file_name: pf.file.name,
         file_type: pf.file.type || "application/octet-stream",
         detected_schema: schemaTag,
+        file_path: path,
+        storage_bucket: "data-uploads",
         total_rows: 0,
         inserted_rows: 1,
         duplicate_rows: 0,
