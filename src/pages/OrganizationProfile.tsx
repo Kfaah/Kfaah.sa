@@ -687,6 +687,7 @@ function labelFor(key: string): string {
     social_presence: "الحضور على وسائل التواصل",
     strengths: "نقاط القوة",
     opportunities: "الفرص التسويقية",
+    governance_documents: "الوثائق واللوائح",
     recommendations_for_innovation: "توصيات للابتكار",
     summary: "ملخص شامل",
   };
