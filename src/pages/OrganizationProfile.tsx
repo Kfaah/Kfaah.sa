@@ -28,6 +28,13 @@ interface ProfileForm {
   accent_color: string;
 }
 
+export interface OrgDocument {
+  url: string;
+  title: string;
+  type?: string;
+  source_page?: string;
+}
+
 const empty: ProfileForm = {
   about: "", goals: "", website_url: "", store_url: "",
   twitter_url: "", instagram_url: "", tiktok_url: "",
