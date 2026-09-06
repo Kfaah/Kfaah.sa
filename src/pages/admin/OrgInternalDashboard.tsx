@@ -1,4 +1,5 @@
-import { useEffect, useState, forwardRef, lazy, Suspense } from "react";
+import { useEffect, useState, forwardRef, Suspense } from "react";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowRight, LayoutDashboard, Users, ListChecks, FileBarChart2,
