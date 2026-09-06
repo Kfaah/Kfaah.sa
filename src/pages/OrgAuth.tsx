@@ -516,6 +516,7 @@ export default function OrgAuth() {
                     placeholder="••••••••"
                     className="h-11 pe-12 text-left"
                     dir="ltr"
+                    style={{ textAlign: 'left', direction: 'ltr' }}
                   />
                   <button
                     type="button"
