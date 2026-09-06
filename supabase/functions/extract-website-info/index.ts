@@ -401,7 +401,7 @@ Deno.serve(async (req) => {
       console.error("firecrawl store-search step failed", e);
     }
 
-    return new Response(JSON.stringify({ success: true, data }), {
+    return new Response(JSON.stringify({ success: true, data, documents: documents.slice(0, 60) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
