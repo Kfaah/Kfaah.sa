@@ -57,6 +57,8 @@ export default function OrganizationProfile() {
   const [syncingKey, setSyncingKey] = useState<string | null>(null);
   const [newsPath, setNewsPath] = useState("");
   const [discovering, setDiscovering] = useState(false);
+  const [documents, setDocuments] = useState<OrgDocument[]>([]);
+  const [newDocUrl, setNewDocUrl] = useState("");
 
   const loadSources = async () => {
     if (!orgId) return;
