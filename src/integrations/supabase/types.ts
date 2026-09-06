@@ -5724,6 +5724,7 @@ export type Database = {
         Args: { _actual: number; _key: string; _org: string }
         Returns: undefined
       }
+      admin_can_access_org: { Args: { _org: string }; Returns: boolean }
       allocate_expense: { Args: { _expense_id: string }; Returns: undefined }
       can_manage_intelligence_profile: {
         Args: { _org_id: string; _user_id: string }
@@ -5840,6 +5841,7 @@ export type Database = {
       }
       is_viewer: { Args: { _user_id: string }; Returns: boolean }
       join_organization_by_slug: { Args: { _slug: string }; Returns: string }
+      manager_can_access_org: { Args: { _org: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
