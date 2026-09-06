@@ -29,11 +29,16 @@ import {
   Megaphone,
   Gift,
   ShoppingCart,
+  Eye,
+  Download,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { SmartPdfViewer } from "@/components/profile/SmartPdfViewer";
 
 type UploadStatus = "queued" | "uploading" | "success" | "error";
 
@@ -79,6 +84,10 @@ interface HistoryRow {
   for_date: string | null;
   created_at: string;
   completed_at: string | null;
+  file_path: string | null;
+  storage_bucket: string | null;
+  file_type: string | null;
+  organization_id: string | null;
 }
 
 // هوية حرف: تركوازي (primary/accent) + لمسة كهرمانية دافئة محدودة للجمالية.
@@ -167,6 +176,62 @@ export default function Uploads() {
     loadHistory();
   }, [loadHistory]);
 
+  // ===== معاينة الملفات المرفقة =====
+  const [previewRow, setPreviewRow] = useState<HistoryRow | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const openPreview = useCallback(
+    async (row: HistoryRow) => {
+      setPreviewRow(row);
+      setPreviewUrl(null);
+      setPreviewError(null);
+      setPreviewLoading(true);
+      try {
+        const candidates: { bucket: string; path: string }[] = [];
+        if (row.file_path) {
+          candidates.push({ bucket: row.storage_bucket || "data-uploads", path: row.file_path });
+        } else if (row.organization_id) {
+          // سجلات قديمة بلا مسار محفوظ — نبحث عنها في مجلد الأرشيف بالاسم
+          const schema = row.detected_schema || "other";
+          for (const bucket of ["data-uploads", "org-documents"]) {
+            const { data: list } = await supabase.storage
+              .from(bucket)
+              .list(`${row.organization_id}/archive/${schema}`, { limit: 200 });
+            const hit = (list || []).find((f) => f.name.endsWith(row.file_name));
+            if (hit) {
+              candidates.push({
+                bucket,
+                path: `${row.organization_id}/archive/${schema}/${hit.name}`,
+              });
+              break;
+            }
+          }
+        }
+        if (candidates.length === 0) {
+          setPreviewError("هذا السجل لا يحتوي على ملف محفوظ للمعاينة (تم إدراج بياناته فقط).");
+          return;
+        }
+        const { bucket, path } = candidates[0];
+        const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+        if (error || !data?.signedUrl) throw new Error(error?.message || "تعذر إنشاء رابط المعاينة");
+        setPreviewUrl(data.signedUrl);
+      } catch (e) {
+        setPreviewError(e instanceof Error ? e.message : "تعذر فتح المعاينة");
+      } finally {
+        setPreviewLoading(false);
+      }
+    },
+    [],
+  );
+
+  const closePreview = () => {
+    setPreviewRow(null);
+    setPreviewUrl(null);
+    setPreviewError(null);
+  };
+
   const processStaffDuties = useCallback(
     async (pf: PendingFile) => {
       if (!user || !orgId) throw new Error("تعذر تحديد الجمعية");
@@ -202,6 +267,8 @@ export default function Uploads() {
         file_name: pf.file.name,
         file_type: pf.file.type || "application/vnd.ms-excel",
         detected_schema: "staff_duties",
+        file_path: path,
+        storage_bucket: "staff-duties-files",
         total_rows: parsed?.total ?? 0,
         inserted_rows: parsed?.imported ?? 0,
         duplicate_rows: 0,
@@ -237,6 +304,8 @@ export default function Uploads() {
         file_name: pf.file.name,
         file_type: pf.file.type || "application/octet-stream",
         detected_schema: schemaTag,
+        file_path: path,
+        storage_bucket: "data-uploads",
         total_rows: 0,
         inserted_rows: 1,
         duplicate_rows: 0,
@@ -641,6 +710,96 @@ export default function Uploads() {
           </Card>
         )}
 
+        {/* معاينة الملف المختار */}
+        {previewRow && (
+          <Card className="border-primary/40 shadow-lg">
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Eye className="w-5 h-5 text-primary" />
+                  <span className="truncate">{previewRow.file_name}</span>
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(previewRow.detected_schema
+                    ? SCHEMA_LABELS[previewRow.detected_schema] ?? SCHEMA_LABELS.unknown
+                    : SCHEMA_LABELS.unknown).label}
+                  {" · "}
+                  {new Date(previewRow.created_at).toLocaleString("ar-SA")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {previewUrl && (
+                  <>
+                    <Button asChild variant="outline" size="sm" className="gap-1">
+                      <a href={previewUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-4 h-4" />
+                        فتح
+                      </a>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="gap-1">
+                      <a href={previewUrl} download={previewRow.file_name}>
+                        <Download className="w-4 h-4" />
+                        تنزيل
+                      </a>
+                    </Button>
+                  </>
+                )}
+                <Button variant="ghost" size="icon" onClick={closePreview} aria-label="إغلاق المعاينة">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {previewLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : previewError ? (
+                <div className="flex items-start gap-2 text-sm text-destructive py-6">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>{previewError}</span>
+                </div>
+              ) : previewUrl ? (
+                (() => {
+                  const name = previewRow.file_name.toLowerCase();
+                  const type = (previewRow.file_type || "").toLowerCase();
+                  const isImg = type.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)$/.test(name);
+                  const isPdf = type.includes("pdf") || name.endsWith(".pdf");
+                  const isOffice = /\.(docx?|xlsx?|pptx?|csv)$/.test(name);
+                  if (isImg) {
+                    return (
+                      <div className="flex justify-center bg-muted/30 rounded-lg p-4">
+                        <img
+                          src={previewUrl}
+                          alt={previewRow.file_name}
+                          className="max-h-[65vh] rounded-lg object-contain"
+                        />
+                      </div>
+                    );
+                  }
+                  if (isPdf) {
+                    return <SmartPdfViewer fileUrl={previewUrl} fileName={previewRow.file_name} />;
+                  }
+                  if (isOffice) {
+                    return (
+                      <iframe
+                        title={previewRow.file_name}
+                        src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`}
+                        className="w-full h-[65vh] rounded-lg border border-border bg-muted/20"
+                      />
+                    );
+                  }
+                  return (
+                    <div className="text-sm text-muted-foreground py-8 text-center">
+                      لا تتوفر معاينة مباشرة لهذه الصيغة — استخدم زر التنزيل لعرض الملف.
+                    </div>
+                  );
+                })()
+              ) : null}
+            </CardContent>
+          </Card>
+        )}
+
         {/* History */}
         <Card>
           <CardHeader>
@@ -670,6 +829,7 @@ export default function Uploads() {
                     <TableHead className="text-right">الفاشل</TableHead>
                     <TableHead className="text-right">الحالة</TableHead>
                     <TableHead className="text-right">تاريخ الرفع</TableHead>
+                    <TableHead className="text-right">معاينة</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -713,6 +873,17 @@ export default function Uploads() {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(row.created_at).toLocaleString("ar-SA")}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-primary"
+                            onClick={() => openPreview(row)}
+                          >
+                            <Eye className="w-4 h-4" />
+                            معاينة
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );

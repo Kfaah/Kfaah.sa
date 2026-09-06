@@ -189,6 +189,8 @@ Deno.serve(async (req) => {
           file_name: name,
           file_type: contentType,
           detected_schema: category,
+          file_path: path,
+          storage_bucket: "org-documents",
           total_rows: 0,
           inserted_rows: 1,
           duplicate_rows: 0,
