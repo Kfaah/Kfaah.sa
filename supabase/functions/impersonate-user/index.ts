@@ -43,27 +43,31 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const employeeId = body?.employee_id as string | undefined;
-    if (!employeeId) {
+    const employeeId = (body?.employee_id ?? body?.employeeId) as string | undefined;
+    const targetUserId = (body?.user_id ?? body?.userId) as string | undefined;
+    if (!employeeId && !targetUserId) {
       return json({ error: "missing_employee_id" }, 400);
     }
 
-    // Look up employee → user_id → email
-    const { data: emp, error: empErr } = await admin
+    // Look up employee → user_id → email (by employee id or auth user id)
+    const query = admin
       .from("employees")
-      .select("id, user_id, email, full_name")
-      .eq("id", employeeId)
-      .maybeSingle();
-    if (empErr || !emp) {
+      .select("id, user_id, email, full_name");
+    const { data: emp, error: empErr } = await (employeeId
+      ? query.eq("id", employeeId)
+      : query.eq("user_id", targetUserId!)
+    ).maybeSingle();
+    if (empErr || (!emp && !targetUserId)) {
       return json({ error: "employee_not_found" }, 404);
     }
-    if (!emp.user_id) {
+    const resolvedUserId = emp?.user_id ?? targetUserId;
+    if (!resolvedUserId) {
       return json({ error: "employee_has_no_account" }, 400);
     }
 
     // Get auth user email
     const { data: targetUser, error: targetErr } =
-      await admin.auth.admin.getUserById(emp.user_id);
+      await admin.auth.admin.getUserById(resolvedUserId);
     if (targetErr || !targetUser?.user?.email) {
       return json({ error: "target_user_not_found" }, 404);
     }
@@ -85,7 +89,7 @@ Deno.serve(async (req) => {
     // Return the OTP hash so the client can call verifyOtp({ type: 'magiclink', token_hash })
     return json({
       email,
-      employee_name: emp.full_name,
+      employee_name: emp?.full_name ?? targetUser.user.email,
       token_hash: linkData.properties.hashed_token,
       action_link: linkData.properties.action_link,
     });
