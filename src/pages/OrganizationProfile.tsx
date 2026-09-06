@@ -484,6 +484,59 @@ export default function OrganizationProfile() {
           </div>
         </Card>
 
+        {/* 4.5) Documents & regulations fetched from the website */}
+        <Card className="p-6">
+          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h2 className="font-bold text-lg flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" /> المرفقات والوثائق
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                اللوائح والتقارير والسياسات التي تم جلبها من موقع الجمعية، وتُستخدم لتعزيز دقة التحليل الذكي.
+              </p>
+            </div>
+            <Badge variant="secondary" className="text-[10px]">{documents.length} ملف</Badge>
+          </div>
+
+          <div className="flex gap-2 mb-4">
+            <Input
+              dir="ltr"
+              placeholder="https://... رابط لائحة أو تقرير"
+              value={newDocUrl}
+              onChange={(e) => setNewDocUrl(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDocument(); } }}
+            />
+            <Button type="button" variant="outline" onClick={addDocument} className="gap-1.5 flex-shrink-0">
+              <Plus className="w-4 h-4" /> إضافة
+            </Button>
+          </div>
+
+          {documents.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              لا توجد وثائق بعد. اضغط «جلب الهوية» أعلاه لاستخراج اللوائح والتقارير من الموقع.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {documents.map((d) => (
+                <div key={d.url} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">{d.type || "ملف"}</Badge>
+                      <span className="text-sm font-medium truncate">{d.title}</span>
+                    </div>
+                    <a href={d.url} target="_blank" rel="noreferrer" dir="ltr" className="text-[11px] text-primary hover:underline truncate block mt-1">
+                      {d.url}
+                    </a>
+                  </div>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => removeDocument(d.url)} className="flex-shrink-0 text-destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
         {/* 5) Save + analyze actions */}
         <Card className="p-4 flex justify-end gap-2 sticky bottom-4 shadow-lg border-primary/20">
           <Button variant="outline" onClick={save} disabled={saving} className="gap-2">
