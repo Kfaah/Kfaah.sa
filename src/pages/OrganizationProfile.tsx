@@ -183,8 +183,12 @@ export default function OrganizationProfile() {
     if (error || !data?.success) { toast.error("تعذّر إضافة الملفات إلى مركز الملفات"); return; }
     const imported = Number(data.imported || 0);
     const skipped = Number(data.skipped || 0);
+    const firstReason = (data.results || []).find((r: any) => !r.ok && r.reason)?.reason;
     if (imported === 0 && skipped > 0) { toast.info("جميع الملفات مضافة مسبقاً"); return; }
-    if (imported === 0) { toast.error("تعذّر تنزيل الملفات من الموقع"); return; }
+    if (imported === 0) {
+      toast.error("تعذّر تنزيل الملفات من الموقع" + (firstReason ? ` — ${firstReason}` : ""));
+      return;
+    }
     toast.success(`تمت إضافة ${imported} ملف إلى مركز الملفات${skipped ? ` (${skipped} مكرر)` : ""}`);
   };
 

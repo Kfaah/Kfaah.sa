@@ -32,15 +32,24 @@ Deno.serve(async (req) => {
     let summary = "";
     let pagesScanned = 1;
 
-    // Helper: scrape a single URL via Firecrawl
+    // Helper: scrape a single URL via Firecrawl, retrying on rate limits (429) / 5xx
     const scrapeOne = async (u: string, mainOnly: boolean, wait: number) => {
-      const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ url: u, formats: ["markdown", "summary"], onlyMainContent: mainOnly, waitFor: wait }),
-      });
-      const j = await r.json();
-      return { ok: r.ok, status: r.status, md: j?.markdown || j?.data?.markdown || "", sum: j?.summary || j?.data?.summary || "", raw: j };
+      let last = { ok: false, status: 0, md: "", sum: "", raw: {} as any };
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ url: u, formats: ["markdown", "summary"], onlyMainContent: mainOnly, waitFor: wait }),
+        });
+        const j = await r.json().catch(() => ({}));
+        last = { ok: r.ok, status: r.status, md: j?.markdown || j?.data?.markdown || "", sum: j?.summary || j?.data?.summary || "", raw: j };
+        if (r.ok) return last;
+        if (r.status !== 429 && r.status < 500) return last;
+        const retryAfter = Number(r.headers.get("retry-after") || 0);
+        const waitMs = Math.min(15000, (retryAfter > 0 ? retryAfter * 1000 : 2500 * (attempt + 1)));
+        await new Promise((res) => setTimeout(res, waitMs));
+      }
+      return last;
     };
 
     // Step 1: scrape the homepage (or social page)
@@ -48,6 +57,7 @@ Deno.serve(async (req) => {
     if (!home.ok) {
       const detailMsg = String(home.raw?.error || "");
       const unsupported = /do not support this site/i.test(detailMsg);
+      const rateLimited = home.status === 429;
       const statusLabel = unsupported ? "unsupported_site" : `firecrawl_failed:${home.status}`;
       await supa.from("org_external_sources").update({
         last_status: statusLabel,
@@ -57,10 +67,12 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         ok: false,
         skipped: true,
-        reason: unsupported ? "unsupported_site" : "firecrawl_failed",
+        reason: unsupported ? "unsupported_site" : rateLimited ? "rate_limited" : "firecrawl_failed",
         message: unsupported
           ? "هذا المصدر غير مدعوم للمسح المباشر (مثل بعض منصات التواصل). تم تخطّيه."
-          : "تعذّر جلب المحتوى من هذا المصدر حالياً.",
+          : rateLimited
+            ? "تم تجاوز حد المسح المسموح مؤقتاً. انتظر دقيقة ثم أعد المحاولة."
+            : "تعذّر جلب المحتوى من هذا المصدر حالياً.",
         details: home.raw,
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
