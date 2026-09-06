@@ -514,9 +514,8 @@ export default function OrgAuth() {
                     required
                     minLength={6}
                     placeholder="••••••••"
-                    className="h-11 pe-12 text-left"
-                    dir="ltr"
-                    style={{ textAlign: 'left', direction: 'ltr' }}
+                    className="h-11 ps-12 text-right"
+                    dir="rtl"
                   />
                   <button
                     type="button"
