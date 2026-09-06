@@ -975,12 +975,14 @@ export type Database = {
           error_log: Json | null
           failed_rows: number
           file_name: string
+          file_path: string | null
           file_type: string
           for_date: string | null
           id: string
           inserted_rows: number
           organization_id: string | null
           status: string
+          storage_bucket: string | null
           total_rows: number
           uploaded_by: string
         }
@@ -992,12 +994,14 @@ export type Database = {
           error_log?: Json | null
           failed_rows?: number
           file_name: string
+          file_path?: string | null
           file_type: string
           for_date?: string | null
           id?: string
           inserted_rows?: number
           organization_id?: string | null
           status?: string
+          storage_bucket?: string | null
           total_rows?: number
           uploaded_by: string
         }
@@ -1009,12 +1013,14 @@ export type Database = {
           error_log?: Json | null
           failed_rows?: number
           file_name?: string
+          file_path?: string | null
           file_type?: string
           for_date?: string | null
           id?: string
           inserted_rows?: number
           organization_id?: string | null
           status?: string
+          storage_bucket?: string | null
           total_rows?: number
           uploaded_by?: string
         }
