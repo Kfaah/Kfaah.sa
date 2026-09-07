@@ -968,6 +968,9 @@ export type Database = {
       }
       data_uploads_log: {
         Row: {
+          ai_analysis: Json | null
+          ai_analyzed_at: string | null
+          ai_model: string | null
           completed_at: string | null
           created_at: string
           detected_schema: string | null
@@ -987,6 +990,9 @@ export type Database = {
           uploaded_by: string
         }
         Insert: {
+          ai_analysis?: Json | null
+          ai_analyzed_at?: string | null
+          ai_model?: string | null
           completed_at?: string | null
           created_at?: string
           detected_schema?: string | null
@@ -1006,6 +1012,9 @@ export type Database = {
           uploaded_by: string
         }
         Update: {
+          ai_analysis?: Json | null
+          ai_analyzed_at?: string | null
+          ai_model?: string | null
           completed_at?: string | null
           created_at?: string
           detected_schema?: string | null
