@@ -1089,8 +1089,23 @@ export default function Uploads() {
                               </Button>
                             )}
                           </div>
+                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-destructive hover:text-destructive"
+                            disabled={deletingId === row.id}
+                            onClick={() => deleteUpload(row)}
+                          >
+                            {deletingId === row.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                            حذف
+                          </Button>
                         </TableCell>
-
                       </TableRow>
                     );
                   })}
