@@ -1028,6 +1028,35 @@ export default function Uploads() {
                             معاينة
                           </Button>
                         </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1 text-accent"
+                              disabled={analyzingId === row.id || bulkAnalyzing || !row.file_path}
+                              onClick={() => analyzeFile(row)}
+                            >
+                              {analyzingId === row.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-4 h-4" />
+                              )}
+                              {row.ai_analysis ? "إعادة التحليل" : "تحليل"}
+                            </Button>
+                            {row.ai_analysis && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-primary"
+                                onClick={() => setAnalysisRow(row)}
+                              >
+                                عرض
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+
                       </TableRow>
                     );
                   })}
