@@ -88,7 +88,10 @@ interface HistoryRow {
   storage_bucket: string | null;
   file_type: string | null;
   organization_id: string | null;
+  ai_analysis: Record<string, any> | null;
+  ai_analyzed_at: string | null;
 }
+
 
 // هوية حرف: تركوازي (primary/accent) + لمسة كهرمانية دافئة محدودة للجمالية.
 const BRAND_BG = "bg-[hsl(var(--primary))]";
