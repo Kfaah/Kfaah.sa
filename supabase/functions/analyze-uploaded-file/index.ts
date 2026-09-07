@@ -23,13 +23,49 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// استخراج تقريبي للنصوص الظاهرة من بايتات الملف (احتياطي عند فشل المحلل).
+function rawTextScan(bytes: Uint8Array): string {
+  const raw = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+  const words = raw.match(/[\p{L}\p{N}][\p{L}\p{N}\s.,؛:%-]{3,}/gu) || [];
+  return words.join(" ");
+}
+
+// بعض الملفات المنزّلة من المواقع تحتوي بايتات زائدة قبل ترويسة %PDF أو بعد %%EOF.
+function normalizePdfBytes(bytes: Uint8Array): Uint8Array {
+  const header = [0x25, 0x50, 0x44, 0x46]; // %PDF
+  const limit = Math.min(bytes.length, 4096);
+  for (let i = 0; i < limit; i++) {
+    if (
+      bytes[i] === header[0] && bytes[i + 1] === header[1] &&
+      bytes[i + 2] === header[2] && bytes[i + 3] === header[3]
+    ) {
+      return i === 0 ? bytes : bytes.slice(i);
+    }
+  }
+  return bytes;
+}
+
+async function extractPdfText(bytes: Uint8Array): Promise<string> {
+  const attempts = [bytes, normalizePdfBytes(bytes)];
+  for (const candidate of attempts) {
+    try {
+      const pdf = await getDocumentProxy(candidate);
+      const { text } = await extractText(pdf, { mergePages: true });
+      const out = String(text || "").trim();
+      if (out.length >= 80) return out;
+    } catch (e) {
+      console.warn("pdf parse attempt failed", (e as Error)?.message);
+    }
+  }
+  return rawTextScan(bytes);
+}
+
 async function extractPlainText(name: string, bytes: Uint8Array): Promise<string> {
   const lower = name.toLowerCase();
-  if (lower.endsWith(".pdf")) {
-    const pdf = await getDocumentProxy(bytes);
-    const { text } = await extractText(pdf, { mergePages: true });
-    return String(text || "");
-  }
+  const looksPdf =
+    lower.endsWith(".pdf") ||
+    (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46);
+  if (looksPdf) return await extractPdfText(bytes);
   if (/\.(txt|csv|md|json|xml|html?)$/.test(lower)) {
     return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
   }
