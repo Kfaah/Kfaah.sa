@@ -1005,6 +1005,7 @@ export default function Uploads() {
                     <TableHead className="text-right">تاريخ الرفع</TableHead>
                     <TableHead className="text-right">معاينة</TableHead>
                     <TableHead className="text-right">تحليل ذكي</TableHead>
+                    <TableHead className="text-right">حذف</TableHead>
                   </TableRow>
 
                 </TableHeader>
