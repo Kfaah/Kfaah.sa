@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Stars } from "@react-three/drei";
-import { useRef, useMemo, Suspense } from "react";
+import { useRef, useMemo, Suspense, useState, useEffect, Component, type ReactNode } from "react";
 import * as THREE from "three";
 
 function Planet({
@@ -183,18 +183,80 @@ function Scene() {
   );
 }
 
+/** خلفية بديلة بنجوم CSS عند تعذّر تشغيل WebGL (بدون شاشة بيضاء). */
+function StarfieldFallback() {
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      aria-hidden="true"
+      style={{
+        background:
+          "radial-gradient(1.5px 1.5px at 20% 30%, rgba(255,255,255,.7) 50%, transparent 51%)," +
+          "radial-gradient(1.5px 1.5px at 70% 20%, rgba(255,255,255,.55) 50%, transparent 51%)," +
+          "radial-gradient(1.5px 1.5px at 45% 65%, rgba(255,255,255,.5) 50%, transparent 51%)," +
+          "radial-gradient(1.5px 1.5px at 85% 75%, rgba(255,255,255,.45) 50%, transparent 51%)," +
+          "radial-gradient(1.5px 1.5px at 10% 80%, rgba(255,255,255,.4) 50%, transparent 51%)," +
+          "radial-gradient(ellipse at 30% 25%, rgba(6,182,212,.10), transparent 60%)," +
+          "radial-gradient(ellipse at 75% 70%, rgba(16,185,129,.10), transparent 60%)",
+      }}
+    />
+  );
+}
+
+/** يمنع انتشار أخطاء WebGL/three إلى الشجرة (كانت تُسبب شاشة بيضاء). */
+class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch() {
+    /* تجاهل: نعرض الخلفية البديلة */
+  }
+  render() {
+    return this.state.failed ? <StarfieldFallback /> : this.props.children;
+  }
+}
+
+function hasWebGL() {
+  if (typeof window === "undefined") return false;
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(
+      canvas.getContext("webgl2") ||
+      canvas.getContext("webgl") ||
+      canvas.getContext("experimental-webgl")
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default function SpaceScene() {
+  const [supported, setSupported] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setSupported(hasWebGL());
+  }, []);
+
+  if (supported === null) return <div className="absolute inset-0 pointer-events-none" />;
+  if (!supported) return <StarfieldFallback />;
+
   return (
     <div className="absolute inset-0 pointer-events-none">
-      <Canvas
-        camera={{ position: [0, 0, 8], fov: 60 }}
-        dpr={[1, 1.5]}
-        gl={{ antialias: true, alpha: true }}
-      >
-        <Suspense fallback={null}>
-          <Scene />
-        </Suspense>
-      </Canvas>
+      <SceneBoundary>
+        <Canvas
+          camera={{ position: [0, 0, 8], fov: 60 }}
+          dpr={[1, 1.5]}
+          gl={{ antialias: true, alpha: true, powerPreference: "low-power", failIfMajorPerformanceCaveat: false }}
+          onCreated={({ gl }) => {
+            gl.domElement.addEventListener("webglcontextlost", (e) => e.preventDefault());
+          }}
+        >
+          <Suspense fallback={null}>
+            <Scene />
+          </Suspense>
+        </Canvas>
+      </SceneBoundary>
     </div>
   );
 }
