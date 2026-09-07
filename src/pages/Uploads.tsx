@@ -145,6 +145,7 @@ const CATEGORY_OPTIONS: {
 
 export default function Uploads() {
   const { user } = useAuth();
+  const { currentOrg } = useOrganization();
   const inputRef = useRef<HTMLInputElement>(null);
   const [forDate, setForDate] = useState<string>(() => {
     const d = new Date();
@@ -158,13 +159,27 @@ export default function Uploads() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
 
+  // The active organization comes from the route/selector (currentOrg) so a
+  // super admin browsing another organization never sees their own org files.
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      if (!user) return;
+      if (currentOrg?.id) {
+        setOrgId(currentOrg.id);
+        return;
+      }
+      if (!user) {
+        setOrgId(null);
+        return;
+      }
       const { data } = await supabase.rpc("get_user_organization_id", { _user_id: user.id });
-      setOrgId((data as string | null) ?? null);
+      if (!cancelled) setOrgId((data as string | null) ?? null);
     })();
-  }, [user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user, currentOrg?.id]);
+
 
   const loadHistory = useCallback(async () => {
     if (!orgId) {
