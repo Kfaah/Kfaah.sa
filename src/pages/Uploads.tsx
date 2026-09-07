@@ -88,7 +88,10 @@ interface HistoryRow {
   storage_bucket: string | null;
   file_type: string | null;
   organization_id: string | null;
+  ai_analysis: Record<string, any> | null;
+  ai_analyzed_at: string | null;
 }
+
 
 // هوية حرف: تركوازي (primary/accent) + لمسة كهرمانية دافئة محدودة للجمالية.
 const BRAND_BG = "bg-[hsl(var(--primary))]";
@@ -231,6 +234,72 @@ export default function Uploads() {
     setPreviewUrl(null);
     setPreviewError(null);
   };
+
+  // ===== التحليل الذكي للملفات المؤرشفة =====
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analysisRow, setAnalysisRow] = useState<HistoryRow | null>(null);
+  const [bulkAnalyzing, setBulkAnalyzing] = useState(false);
+
+  const analyzeFile = useCallback(
+    async (row: HistoryRow, silent = false) => {
+      setAnalyzingId(row.id);
+      try {
+        const { data, error } = await supabase.functions.invoke("analyze-uploaded-file", {
+          body: { upload_id: row.id },
+        });
+        if (error) {
+          // نقرأ رسالة الوظيفة إن توفرت لتظهر بالعربية للمستخدم
+          const ctx = (error as any)?.context;
+          let msg = error.message;
+          try {
+            const j = await ctx?.json?.();
+            if (j?.message || j?.error) msg = j.message || j.error;
+          } catch {
+            /* ignore */
+          }
+          throw new Error(msg);
+        }
+        const analysis = (data as any)?.analysis ?? null;
+        setHistory((prev) =>
+          prev.map((r) =>
+            r.id === row.id
+              ? { ...r, ai_analysis: analysis, ai_analyzed_at: new Date().toISOString() }
+              : r,
+          ),
+        );
+        if (!silent) {
+          setAnalysisRow({ ...row, ai_analysis: analysis, ai_analyzed_at: new Date().toISOString() });
+          toast.success(`تم تحليل "${row.file_name}" بالذكاء الاصطناعي`);
+        }
+        return true;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "تعذر تحليل الملف";
+        if (!silent) toast.error(msg);
+        return false;
+      } finally {
+        setAnalyzingId(null);
+      }
+    },
+    [],
+  );
+
+  const analyzeAllPending = useCallback(async () => {
+    const targets = history.filter((r) => r.file_path && !r.ai_analysis);
+    if (targets.length === 0) {
+      toast.info("جميع الملفات المحفوظة محلَّلة بالفعل");
+      return;
+    }
+    setBulkAnalyzing(true);
+    let ok = 0;
+    let failed = 0;
+    for (const row of targets.slice(0, 25)) {
+      const done = await analyzeFile(row, true);
+      done ? ok++ : failed++;
+    }
+    setBulkAnalyzing(false);
+    toast.success(`تم تحليل ${ok} ملفاً${failed ? ` — تعذّر تحليل ${failed}` : ""}`);
+  }, [history, analyzeFile]);
+
 
   const processStaffDuties = useCallback(
     async (pf: PendingFile) => {
@@ -800,14 +869,86 @@ export default function Uploads() {
           </Card>
         )}
 
+        {/* نتيجة التحليل الذكي */}
+        {analysisRow && (
+          <Card className="border-accent/50 shadow-lg">
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Sparkles className="w-5 h-5 text-accent" />
+                  <span className="truncate">تحليل ذكي — {analysisRow.file_name}</span>
+                </CardTitle>
+                {analysisRow.ai_analyzed_at && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(analysisRow.ai_analyzed_at).toLocaleString("ar-SA")}
+                  </p>
+                )}
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setAnalysisRow(null)} aria-label="إغلاق التحليل">
+                <X className="w-4 h-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              {analysisRow.ai_analysis?.document_type && (
+                <Badge className="bg-accent text-accent-foreground">
+                  {analysisRow.ai_analysis.document_type}
+                </Badge>
+              )}
+              {analysisRow.ai_analysis?.summary && (
+                <p className="leading-relaxed text-foreground">{analysisRow.ai_analysis.summary}</p>
+              )}
+              <div className="grid gap-4 md:grid-cols-2">
+                {(
+                  [
+                    ["أبرز النقاط", "key_points"],
+                    ["أرقام ومؤشرات", "numbers"],
+                    ["نقاط القوة", "strengths"],
+                    ["فجوات ومخاطر", "gaps"],
+                    ["توصيات عملية", "recommendations"],
+                    ["مهام مقترحة", "suggested_tasks"],
+                  ] as const
+                ).map(([label, key]) => {
+                  const items = analysisRow.ai_analysis?.[key];
+                  if (!Array.isArray(items) || items.length === 0) return null;
+                  return (
+                    <div key={key} className="rounded-lg border border-border p-3 bg-muted/20">
+                      <p className="font-bold mb-2 text-foreground">{label}</p>
+                      <ul className="space-y-1 list-disc pe-4 text-muted-foreground">
+                        {items.map((it: unknown, i: number) => (
+                          <li key={i}>{String(it)}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* History */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2">
               <Database className="w-5 h-5" />
               سجل الرفع
             </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={analyzeAllPending}
+              disabled={bulkAnalyzing}
+            >
+              {bulkAnalyzing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              تحليل الملفات غير المحلَّلة
+            </Button>
           </CardHeader>
+
           <CardContent>
             {loadingHistory ? (
               <div className="flex items-center justify-center py-8">
@@ -830,7 +971,9 @@ export default function Uploads() {
                     <TableHead className="text-right">الحالة</TableHead>
                     <TableHead className="text-right">تاريخ الرفع</TableHead>
                     <TableHead className="text-right">معاينة</TableHead>
+                    <TableHead className="text-right">تحليل ذكي</TableHead>
                   </TableRow>
+
                 </TableHeader>
                 <TableBody>
                   {history.map((row) => {
@@ -885,6 +1028,35 @@ export default function Uploads() {
                             معاينة
                           </Button>
                         </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1 text-accent"
+                              disabled={analyzingId === row.id || bulkAnalyzing || !row.file_path}
+                              onClick={() => analyzeFile(row)}
+                            >
+                              {analyzingId === row.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-4 h-4" />
+                              )}
+                              {row.ai_analysis ? "إعادة التحليل" : "تحليل"}
+                            </Button>
+                            {row.ai_analysis && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-primary"
+                                onClick={() => setAnalysisRow(row)}
+                              >
+                                عرض
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+
                       </TableRow>
                     );
                   })}
