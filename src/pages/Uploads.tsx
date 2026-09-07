@@ -869,14 +869,86 @@ export default function Uploads() {
           </Card>
         )}
 
+        {/* نتيجة التحليل الذكي */}
+        {analysisRow && (
+          <Card className="border-accent/50 shadow-lg">
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Sparkles className="w-5 h-5 text-accent" />
+                  <span className="truncate">تحليل ذكي — {analysisRow.file_name}</span>
+                </CardTitle>
+                {analysisRow.ai_analyzed_at && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(analysisRow.ai_analyzed_at).toLocaleString("ar-SA")}
+                  </p>
+                )}
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setAnalysisRow(null)} aria-label="إغلاق التحليل">
+                <X className="w-4 h-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              {analysisRow.ai_analysis?.document_type && (
+                <Badge className="bg-accent text-accent-foreground">
+                  {analysisRow.ai_analysis.document_type}
+                </Badge>
+              )}
+              {analysisRow.ai_analysis?.summary && (
+                <p className="leading-relaxed text-foreground">{analysisRow.ai_analysis.summary}</p>
+              )}
+              <div className="grid gap-4 md:grid-cols-2">
+                {(
+                  [
+                    ["أبرز النقاط", "key_points"],
+                    ["أرقام ومؤشرات", "numbers"],
+                    ["نقاط القوة", "strengths"],
+                    ["فجوات ومخاطر", "gaps"],
+                    ["توصيات عملية", "recommendations"],
+                    ["مهام مقترحة", "suggested_tasks"],
+                  ] as const
+                ).map(([label, key]) => {
+                  const items = analysisRow.ai_analysis?.[key];
+                  if (!Array.isArray(items) || items.length === 0) return null;
+                  return (
+                    <div key={key} className="rounded-lg border border-border p-3 bg-muted/20">
+                      <p className="font-bold mb-2 text-foreground">{label}</p>
+                      <ul className="space-y-1 list-disc pe-4 text-muted-foreground">
+                        {items.map((it: unknown, i: number) => (
+                          <li key={i}>{String(it)}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* History */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2">
               <Database className="w-5 h-5" />
               سجل الرفع
             </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={analyzeAllPending}
+              disabled={bulkAnalyzing}
+            >
+              {bulkAnalyzing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              تحليل الملفات غير المحلَّلة
+            </Button>
           </CardHeader>
+
           <CardContent>
             {loadingHistory ? (
               <div className="flex items-center justify-center py-8">
