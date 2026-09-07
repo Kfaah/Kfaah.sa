@@ -166,19 +166,26 @@ export default function Uploads() {
   }, [user]);
 
   const loadHistory = useCallback(async () => {
+    if (!orgId) {
+      setHistory([]);
+      setLoadingHistory(false);
+      return;
+    }
     setLoadingHistory(true);
     const { data, error } = await supabase
       .from("data_uploads_log")
       .select("*")
+      .eq("organization_id", orgId)
       .order("created_at", { ascending: false })
       .limit(50);
     if (!error && data) setHistory(data as HistoryRow[]);
     setLoadingHistory(false);
-  }, []);
+  }, [orgId]);
 
   useEffect(() => {
     loadHistory();
   }, [loadHistory]);
+
 
   // ===== معاينة الملفات المرفقة =====
   const [previewRow, setPreviewRow] = useState<HistoryRow | null>(null);
