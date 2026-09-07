@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SmartPdfViewer } from "@/components/profile/SmartPdfViewer";
