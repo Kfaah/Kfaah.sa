@@ -235,6 +235,72 @@ export default function Uploads() {
     setPreviewError(null);
   };
 
+  // ===== التحليل الذكي للملفات المؤرشفة =====
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analysisRow, setAnalysisRow] = useState<HistoryRow | null>(null);
+  const [bulkAnalyzing, setBulkAnalyzing] = useState(false);
+
+  const analyzeFile = useCallback(
+    async (row: HistoryRow, silent = false) => {
+      setAnalyzingId(row.id);
+      try {
+        const { data, error } = await supabase.functions.invoke("analyze-uploaded-file", {
+          body: { upload_id: row.id },
+        });
+        if (error) {
+          // نقرأ رسالة الوظيفة إن توفرت لتظهر بالعربية للمستخدم
+          const ctx = (error as any)?.context;
+          let msg = error.message;
+          try {
+            const j = await ctx?.json?.();
+            if (j?.message || j?.error) msg = j.message || j.error;
+          } catch {
+            /* ignore */
+          }
+          throw new Error(msg);
+        }
+        const analysis = (data as any)?.analysis ?? null;
+        setHistory((prev) =>
+          prev.map((r) =>
+            r.id === row.id
+              ? { ...r, ai_analysis: analysis, ai_analyzed_at: new Date().toISOString() }
+              : r,
+          ),
+        );
+        if (!silent) {
+          setAnalysisRow({ ...row, ai_analysis: analysis, ai_analyzed_at: new Date().toISOString() });
+          toast.success(`تم تحليل "${row.file_name}" بالذكاء الاصطناعي`);
+        }
+        return true;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "تعذر تحليل الملف";
+        if (!silent) toast.error(msg);
+        return false;
+      } finally {
+        setAnalyzingId(null);
+      }
+    },
+    [],
+  );
+
+  const analyzeAllPending = useCallback(async () => {
+    const targets = history.filter((r) => r.file_path && !r.ai_analysis);
+    if (targets.length === 0) {
+      toast.info("جميع الملفات المحفوظة محلَّلة بالفعل");
+      return;
+    }
+    setBulkAnalyzing(true);
+    let ok = 0;
+    let failed = 0;
+    for (const row of targets.slice(0, 25)) {
+      const done = await analyzeFile(row, true);
+      done ? ok++ : failed++;
+    }
+    setBulkAnalyzing(false);
+    toast.success(`تم تحليل ${ok} ملفاً${failed ? ` — تعذّر تحليل ${failed}` : ""}`);
+  }, [history, analyzeFile]);
+
+
   const processStaffDuties = useCallback(
     async (pf: PendingFile) => {
       if (!user || !orgId) throw new Error("تعذر تحديد الجمعية");
