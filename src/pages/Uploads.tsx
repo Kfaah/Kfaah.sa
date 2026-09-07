@@ -33,6 +33,7 @@ import {
   Download,
   X,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -234,6 +235,38 @@ export default function Uploads() {
     setPreviewUrl(null);
     setPreviewError(null);
   };
+
+  // ===== حذف الملفات المرفوعة =====
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const deleteUpload = useCallback(
+    async (row: HistoryRow) => {
+      const ok = window.confirm(
+        `هل تريد حذف "${row.file_name}" نهائياً من مركز الملفات؟ لا يمكن التراجع عن هذه العملية.`,
+      );
+      if (!ok) return;
+      setDeletingId(row.id);
+      try {
+        if (row.file_path) {
+          // حذف الملف من التخزين (تجاهل الفشل كي لا يمنع حذف السجل)
+          await supabase.storage
+            .from(row.storage_bucket || "data-uploads")
+            .remove([row.file_path]);
+        }
+        const { error } = await supabase.from("data_uploads_log").delete().eq("id", row.id);
+        if (error) throw error;
+        setHistory((prev) => prev.filter((r) => r.id !== row.id));
+        setPreviewRow((p) => (p?.id === row.id ? null : p));
+        setAnalysisRow((p) => (p?.id === row.id ? null : p));
+        toast.success(`تم حذف "${row.file_name}"`);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "تعذر حذف الملف");
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [],
+  );
 
   // ===== التحليل الذكي للملفات المؤرشفة =====
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
@@ -972,6 +1005,7 @@ export default function Uploads() {
                     <TableHead className="text-right">تاريخ الرفع</TableHead>
                     <TableHead className="text-right">معاينة</TableHead>
                     <TableHead className="text-right">تحليل ذكي</TableHead>
+                    <TableHead className="text-right">حذف</TableHead>
                   </TableRow>
 
                 </TableHeader>
@@ -1055,8 +1089,23 @@ export default function Uploads() {
                               </Button>
                             )}
                           </div>
+                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-destructive hover:text-destructive"
+                            disabled={deletingId === row.id}
+                            onClick={() => deleteUpload(row)}
+                          >
+                            {deletingId === row.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                            حذف
+                          </Button>
                         </TableCell>
-
                       </TableRow>
                     );
                   })}
