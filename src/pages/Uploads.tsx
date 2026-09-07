@@ -236,6 +236,38 @@ export default function Uploads() {
     setPreviewError(null);
   };
 
+  // ===== حذف الملفات المرفوعة =====
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const deleteUpload = useCallback(
+    async (row: HistoryRow) => {
+      const ok = window.confirm(
+        `هل تريد حذف "${row.file_name}" نهائياً من مركز الملفات؟ لا يمكن التراجع عن هذه العملية.`,
+      );
+      if (!ok) return;
+      setDeletingId(row.id);
+      try {
+        if (row.file_path) {
+          // حذف الملف من التخزين (تجاهل الفشل كي لا يمنع حذف السجل)
+          await supabase.storage
+            .from(row.storage_bucket || "data-uploads")
+            .remove([row.file_path]);
+        }
+        const { error } = await supabase.from("data_uploads_log").delete().eq("id", row.id);
+        if (error) throw error;
+        setHistory((prev) => prev.filter((r) => r.id !== row.id));
+        setPreviewRow((p) => (p?.id === row.id ? null : p));
+        setAnalysisRow((p) => (p?.id === row.id ? null : p));
+        toast.success(`تم حذف "${row.file_name}"`);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "تعذر حذف الملف");
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [],
+  );
+
   // ===== التحليل الذكي للملفات المؤرشفة =====
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [analysisRow, setAnalysisRow] = useState<HistoryRow | null>(null);
