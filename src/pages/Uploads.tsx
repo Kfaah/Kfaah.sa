@@ -70,6 +70,7 @@ interface PendingFile {
     duplicates: number;
     failed: number;
     matched?: number;
+    archivedOnly?: boolean;
   };
   error?: string;
 }
@@ -484,6 +485,7 @@ export default function Uploads() {
           const formData = new FormData();
           formData.append("file", pf.file);
           if (forDate) formData.append("for_date", forDate);
+          formData.append("target_organization_id", orgId);
           if (pf.category === "store_master") formData.append("source_kind", "store_master");
           if (pf.category === "store_daily") formData.append("source_kind", "store_daily");
           if (
@@ -494,16 +496,34 @@ export default function Uploads() {
           ) {
             formData.append("source_kind", pf.category);
           }
-          const { data, error } = await supabase.functions.invoke("process-upload", {
-            body: formData,
-          });
-          if (error) throw error;
-          result = {
-            detected: data.detected,
-            inserted: data.inserted ?? 0,
-            duplicates: data.duplicates ?? 0,
-            failed: data.failed ?? 0,
-          };
+          // ملفات Excel الكبيرة قد تتجاوز ذاكرة محلل الجداول. نحفظ الأصل أولاً
+          // في مركز الملفات بدلاً من خسارة الرفع، ويمكن تحليله لاحقاً على دفعات.
+          if (pf.file.size > 8 * 1024 * 1024) {
+            result = {
+              ...(await archiveFile(pf, pf.category === "auto" ? "profiles" : pf.category)),
+              archivedOnly: true,
+            };
+          } else {
+            const { data, error } = await supabase.functions.invoke("process-upload", {
+              body: formData,
+            });
+            if (error) {
+              // إذا تعطلت المعالجة (مثل نفاد الذاكرة)، لا نفشل رفع المستخدم:
+              // نحتفظ بالملف الأصلي معزولاً داخل جمعية المستخدم.
+              console.warn("Excel processing failed; archiving original file", error);
+              result = {
+                ...(await archiveFile(pf, pf.category === "auto" ? "profiles" : pf.category)),
+                archivedOnly: true,
+              };
+            } else {
+              result = {
+                detected: data.detected,
+                inserted: data.inserted ?? 0,
+                duplicates: data.duplicates ?? 0,
+                failed: data.failed ?? 0,
+              };
+            }
+          }
         }
 
         setPending((prev) =>
@@ -512,7 +532,9 @@ export default function Uploads() {
           ),
         );
         toast.success(
-          `تم رفع "${pf.file.name}" — ${result?.inserted ?? 0} سجل. يجري ربط الملف بالتحليل الذكي والتوصيات والمساءلات…`,
+          result?.archivedOnly
+            ? `تم رفع "${pf.file.name}" وحفظه بأمان في مركز الملفات. حجمه كبير، لذلك لم تُستورد صفوفه تلقائياً.`
+            : `تم رفع "${pf.file.name}" — ${result?.inserted ?? 0} سجل. يجري ربط الملف بالتحليل الذكي والتوصيات والمساءلات…`,
           { duration: 6000 },
         );
         // 🧠 Trigger daily intelligence engine after data uploads
@@ -521,7 +543,8 @@ export default function Uploads() {
           pf.category !== "profiles" &&
           pf.category !== "tasks" &&
           pf.category !== "reports" &&
-          pf.category !== "other"
+          pf.category !== "other" &&
+          !result?.archivedOnly
         ) {
           (async () => {
             try {
