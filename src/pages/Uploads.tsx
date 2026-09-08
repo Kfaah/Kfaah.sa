@@ -418,8 +418,9 @@ export default function Uploads() {
     async (pf: PendingFile, schemaTag: string) => {
       if (!user || !orgId) throw new Error("تعذر تحديد الجمعية");
       const path = `${orgId}/archive/${schemaTag}/${Date.now()}_${pf.file.name}`;
+      // org-documents accepts all file types (data-uploads is restricted to Excel/CSV)
       const { error: upErr } = await supabase.storage
-        .from("data-uploads")
+        .from("org-documents")
         .upload(path, pf.file, { upsert: false });
       if (upErr) throw upErr;
 
@@ -430,7 +431,7 @@ export default function Uploads() {
         file_type: pf.file.type || "application/octet-stream",
         detected_schema: schemaTag,
         file_path: path,
-        storage_bucket: "data-uploads",
+        storage_bucket: "org-documents",
         total_rows: 0,
         inserted_rows: 1,
         duplicate_rows: 0,
