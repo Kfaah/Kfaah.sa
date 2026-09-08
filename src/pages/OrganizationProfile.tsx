@@ -568,6 +568,19 @@ export default function OrganizationProfile() {
                 {importingDocs ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderInput className="w-4 h-4" />}
                 إضافة الملفات إلى مركز الملفات
               </Button>
+              <label className="inline-flex">
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => { void uploadLocalFiles(e.target.files); e.currentTarget.value = ""; }}
+                />
+                <span className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-xs font-medium cursor-pointer hover:bg-accent ${uploadingFiles ? "opacity-60 pointer-events-none" : ""}`}>
+                  {uploadingFiles ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  إرفاق ملفات من جهازي
+                </span>
+              </label>
+
             </div>
           </div>
 
