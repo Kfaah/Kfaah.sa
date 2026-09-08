@@ -35,6 +35,7 @@ import {
   Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { signTaskAttachments } from "@/lib/taskAttachmentUrl";
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatDateTime } from "@/lib/utils";
 
@@ -82,6 +83,28 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
+
+  const attUrl = (stored: string) => attachmentUrls[stored] || "";
+
+  useEffect(() => {
+    const stored = messages.map((m) => m.attachment_url).filter(Boolean) as string[];
+    if (stored.length === 0) {
+      return;
+    }
+    const missing = stored.filter((s) => !attachmentUrls[s]);
+    if (missing.length === 0) return;
+    let active = true;
+    signTaskAttachments(missing).then((map) => {
+      if (active && Object.keys(map).length > 0) {
+        setAttachmentUrls((prev) => ({ ...prev, ...map }));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [messages, attachmentUrls]);
+
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -454,16 +477,14 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("task-attachments")
-        .getPublicUrl(fileName);
+      const storedPath = fileName;
 
       let attachmentType = "document";
       if (file.type.startsWith("image/")) attachmentType = "image";
       else if (file.type.startsWith("video/")) attachmentType = "video";
       else if (file.type === "application/pdf") attachmentType = "pdf";
 
-      await sendMessage({ url: publicUrl, name: file.name, type: attachmentType });
+      await sendMessage({ url: storedPath, name: file.name, type: attachmentType });
     } catch (error: any) {
       toast({ title: "خطأ في رفع الملف", description: error.message, variant: "destructive" });
     } finally {
@@ -659,16 +680,16 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
                                 {msg.attachment_url && (
                                   <div className="mb-2">
                                     {msg.attachment_type === "image" ? (
-                                      <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
+                                      <a href={attUrl(msg.attachment_url)} target="_blank" rel="noopener noreferrer">
                                         <img
-                                          src={msg.attachment_url}
+                                          src={attUrl(msg.attachment_url)}
                                           alt={msg.attachment_name || "مرفق"}
                                           className="max-w-full max-h-48 rounded-lg"
                                         />
                                       </a>
                                     ) : (
                                       <a
-                                        href={msg.attachment_url}
+                                        href={attUrl(msg.attachment_url)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className={cn(
