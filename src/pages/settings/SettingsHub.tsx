@@ -14,6 +14,7 @@ import {
   FileDown,
   Users2,
   HardDriveUpload,
+  UserCog,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +39,15 @@ const tiles: Tile[] = [
     description: "تحكم بدقة فيمن يستطيع رؤية وإنشاء وتعديل وحذف كل وحدة",
     icon: ShieldCheck,
     gradient: "from-emerald-500 to-teal-500",
+    requiresAdmin: true,
+  },
+  {
+    key: "member-roles",
+    to: "member-roles",
+    label: "صلاحيات الأعضاء",
+    description: "عيّن لكل موظف صلاحيته: مدير نظام، مدير جمعية، مدير قسم أو موظف",
+    icon: UserCog,
+    gradient: "from-indigo-500 to-blue-600",
     requiresAdmin: true,
   },
   {

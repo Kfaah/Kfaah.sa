@@ -5784,6 +5784,19 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_org_member_roles: {
+        Args: { _org_id?: string }
+        Returns: {
+          app_roles: Database["public"]["Enums"]["app_role"][]
+          employee_id: string
+          full_name: string
+          job_role: string
+          organization_id: string
+          role_level: Database["public"]["Enums"]["employee_role_level"]
+          user_id: string
+          username: string
+        }[]
+      }
       get_org_membership_requests: {
         Args: { _org_slug?: string }
         Returns: {
@@ -5900,6 +5913,13 @@ export type Database = {
           row_estimate: number
           table_name: string
         }[]
+      }
+      set_org_member_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
       }
       user_belongs_to_org: {
         Args: { _org_id: string; _user_id: string }
