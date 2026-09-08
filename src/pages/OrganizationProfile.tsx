@@ -60,6 +60,8 @@ export default function OrganizationProfile() {
   const [documents, setDocuments] = useState<OrgDocument[]>([]);
   const [newDocUrl, setNewDocUrl] = useState("");
   const [importingDocs, setImportingDocs] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+
 
   const loadSources = async () => {
     if (!orgId) return;
@@ -171,6 +173,44 @@ export default function OrganizationProfile() {
     setDocuments((prev) => prev.filter((d) => d.url !== url));
   };
 
+  const uploadLocalFiles = async (fileList: FileList | null) => {
+    if (!orgId || !fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+    const tooBig = files.find((f) => f.size > 25 * 1024 * 1024);
+    if (tooBig) { toast.error(`حجم الملف «${tooBig.name}» يتجاوز 25 ميجابايت`); return; }
+    setUploadingFiles(true);
+    try {
+      const payload = await Promise.all(
+        files.map(async (f) => {
+          const buf = new Uint8Array(await f.arrayBuffer());
+          let bin = "";
+          for (let i = 0; i < buf.length; i += 8192) {
+            bin += String.fromCharCode(...buf.subarray(i, i + 8192));
+          }
+          return { name: f.name, content_type: f.type || "application/octet-stream", data_base64: btoa(bin) };
+        })
+      );
+      const { data, error } = await supabase.functions.invoke("import-org-documents", {
+        body: { organization_id: orgId, files: payload },
+      });
+      if (error || !data?.success) {
+        toast.error(`تعذّر إرفاق الملفات${error?.message ? ` — ${error.message}` : ""}`);
+        return;
+      }
+      const imported = Number(data.imported || 0);
+      const firstReason = (data.results || []).find((r: any) => !r.ok && r.reason)?.reason;
+      if (imported === 0) {
+        toast.error(`تعذّر إرفاق الملفات${firstReason ? ` — ${firstReason}` : ""}`);
+        return;
+      }
+      toast.success(`تم إرفاق ${imported} ملف في مركز ملفات الجمعية`);
+    } catch (e) {
+      toast.error(`تعذّر إرفاق الملفات — ${e instanceof Error ? e.message : "خطأ غير متوقع"}`);
+    } finally {
+      setUploadingFiles(false);
+    }
+  };
+
   const importDocuments = async () => {
     if (!orgId) return;
     if (documents.length === 0) { toast.info("لا توجد ملفات لإضافتها"); return; }
@@ -180,7 +220,10 @@ export default function OrganizationProfile() {
       body: { organization_id: orgId, documents },
     });
     setImportingDocs(false);
-    if (error || !data?.success) { toast.error("تعذّر إضافة الملفات إلى مركز الملفات"); return; }
+    if (error || !data?.success) {
+      toast.error(`تعذّر إضافة الملفات إلى مركز الملفات${error?.message ? ` — ${error.message}` : ""}`);
+      return;
+    }
     const imported = Number(data.imported || 0);
     const skipped = Number(data.skipped || 0);
     const firstReason = (data.results || []).find((r: any) => !r.ok && r.reason)?.reason;
@@ -191,6 +234,7 @@ export default function OrganizationProfile() {
     }
     toast.success(`تمت إضافة ${imported} ملف إلى مركز الملفات${skipped ? ` (${skipped} مكرر)` : ""}`);
   };
+
 
   const save = async () => {
     if (!orgId) return;
@@ -524,6 +568,19 @@ export default function OrganizationProfile() {
                 {importingDocs ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderInput className="w-4 h-4" />}
                 إضافة الملفات إلى مركز الملفات
               </Button>
+              <label className="inline-flex">
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => { void uploadLocalFiles(e.target.files); e.currentTarget.value = ""; }}
+                />
+                <span className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-xs font-medium cursor-pointer hover:bg-accent ${uploadingFiles ? "opacity-60 pointer-events-none" : ""}`}>
+                  {uploadingFiles ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  إرفاق ملفات من جهازي
+                </span>
+              </label>
+
             </div>
           </div>
 
