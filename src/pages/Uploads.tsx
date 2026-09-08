@@ -457,6 +457,12 @@ export default function Uploads() {
         if (pf.category === "staff_duties") {
           result = await processStaffDuties(pf);
         } else if (
+          pf.category === "auto" &&
+          !/\.(xlsx|xls|csv)$/i.test(pf.file.name)
+        ) {
+          // البيانات العامة تقبل المستندات والصور أيضاً؛ الجداول فقط تمر عبر محلل البيانات.
+          result = await archiveFile(pf, "profiles");
+        } else if (
           pf.category === "reports" ||
           pf.category === "profiles" ||
           pf.category === "tasks" ||
@@ -551,7 +557,6 @@ export default function Uploads() {
   const handleFiles = useCallback(
     (files: FileList | File[]) => {
       const isDataCategory =
-        category === "auto" ||
         category === "store_master" ||
         category === "store_daily" ||
         category === "subscriptions" ||
@@ -611,7 +616,6 @@ export default function Uploads() {
   const activeCat = CATEGORY_OPTIONS.find((c) => c.value === category)!;
   const ActiveIcon = activeCat.icon;
   const isDataCategory =
-    category === "auto" ||
     category === "store_master" ||
     category === "store_daily" ||
     category === "staff_duties";
