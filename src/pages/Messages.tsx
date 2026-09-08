@@ -213,7 +213,13 @@ export default function Messages() {
         continue;
       }
       const ext = f.name.includes(".") ? f.name.split(".").pop() : "";
-      const path = `${threadId}/${crypto.randomUUID()}${ext ? "." + ext : ""}`;
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id;
+      if (!uid) {
+        toast.error("انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى");
+        return out;
+      }
+      const path = `${uid}/${threadId}/${crypto.randomUUID()}${ext ? "." + ext : ""}`;
       const { error } = await supabase.storage
         .from("internal-message-attachments")
         .upload(path, f, { contentType: f.type || undefined, upsert: false });
