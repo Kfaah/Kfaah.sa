@@ -95,13 +95,8 @@ interface HistoryRow {
 }
 
 const safeStorageFileName = (name: string) => {
-  const sanitized = name
-    .normalize("NFKC")
-    .replace(/[\\/]+/g, "_")
-    .replace(/\.\.+/g, "_")
-    .replace(/[^\p{L}\p{N}._ -]+/gu, "_")
-    .trim();
-  return sanitized.slice(0, 180) || "file";
+  const extension = name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 10);
+  return `${crypto.randomUUID()}${extension ? `.${extension}` : ""}`;
 };
 
 
