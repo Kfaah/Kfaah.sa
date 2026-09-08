@@ -94,6 +94,16 @@ interface HistoryRow {
   ai_analyzed_at: string | null;
 }
 
+const safeStorageFileName = (name: string) => {
+  const sanitized = name
+    .normalize("NFKC")
+    .replace(/[\\/]+/g, "_")
+    .replace(/\.\.+/g, "_")
+    .replace(/[^\p{L}\p{N}._ -]+/gu, "_")
+    .trim();
+  return sanitized.slice(0, 180) || "file";
+};
+
 
 // هوية حرف: تركوازي (primary/accent) + لمسة كهرمانية دافئة محدودة للجمالية.
 const BRAND_BG = "bg-[hsl(var(--primary))]";
@@ -360,7 +370,7 @@ export default function Uploads() {
   const processStaffDuties = useCallback(
     async (pf: PendingFile) => {
       if (!user || !orgId) throw new Error("تعذر تحديد الجمعية");
-      const path = `${orgId}/${Date.now()}_${pf.file.name}`;
+      const path = `${orgId}/${Date.now()}_${safeStorageFileName(pf.file.name)}`;
       const { error: upErr } = await supabase.storage
         .from("staff-duties-files")
         .upload(path, pf.file, { upsert: false });
@@ -417,14 +427,14 @@ export default function Uploads() {
   const archiveFile = useCallback(
     async (pf: PendingFile, schemaTag: string) => {
       if (!user || !orgId) throw new Error("تعذر تحديد الجمعية");
-      const path = `${orgId}/archive/${schemaTag}/${Date.now()}_${pf.file.name}`;
+      const path = `${orgId}/archive/${schemaTag}/${Date.now()}_${safeStorageFileName(pf.file.name)}`;
       // org-documents accepts all file types (data-uploads is restricted to Excel/CSV)
       const { error: upErr } = await supabase.storage
         .from("org-documents")
         .upload(path, pf.file, { upsert: false });
       if (upErr) throw upErr;
 
-      await supabase.from("data_uploads_log").insert({
+      const { error: logErr } = await supabase.from("data_uploads_log").insert({
         uploaded_by: user.id,
         organization_id: orgId,
         file_name: pf.file.name,
@@ -440,6 +450,10 @@ export default function Uploads() {
         status: "completed",
         completed_at: new Date().toISOString(),
       });
+      if (logErr) {
+        await supabase.storage.from("org-documents").remove([path]);
+        throw logErr;
+      }
 
       return { detected: schemaTag, inserted: 1, duplicates: 0, failed: 0 };
     },
@@ -730,7 +744,10 @@ export default function Uploads() {
               multiple
               accept={isDataCategory ? ".xlsx,.xls,.csv" : undefined}
               className="hidden"
-              onChange={(e) => e.target.files && handleFiles(e.target.files)}
+              onChange={(e) => {
+                if (e.target.files) handleFiles(e.target.files);
+                e.currentTarget.value = "";
+              }}
             />
             <div className="flex flex-col items-center gap-4">
               <div className={cn("w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg", activeCat.color)}>
