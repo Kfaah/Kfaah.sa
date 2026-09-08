@@ -236,7 +236,13 @@ export default function InternalInbox() {
         toast.error(`${f.name} يتجاوز 20 ميغابايت`);
         continue;
       }
-      const path = `${crypto.randomUUID()}-${f.name}`;
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id;
+      if (!uid) {
+        toast.error("انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى");
+        return out;
+      }
+      const path = `${uid}/${crypto.randomUUID()}-${f.name}`;
       const { error } = await supabase.storage.from("internal-message-attachments").upload(path, f, { upsert: false, contentType: f.type });
       if (error) {
         toast.error(`تعذّر رفع ${f.name}`);
