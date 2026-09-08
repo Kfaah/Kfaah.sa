@@ -33,6 +33,7 @@ import {
   UserCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { signTaskAttachments } from "@/lib/taskAttachmentUrl";
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatDateTime } from "@/lib/utils";
 
@@ -75,6 +76,9 @@ export function TaskCommunicationDialog({
 }: TaskCommunicationDialogProps) {
   const { toast } = useToast();
   const [messages, setMessages] = useState<TaskMessage[]>([]);
+  const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
+
+  const attUrl = (stored: string) => attachmentUrls[stored] || "";
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
@@ -316,9 +320,7 @@ export function TaskCommunicationDialog({
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("task-attachments")
-        .getPublicUrl(fileName);
+      const storedPath = fileName;
 
       // تحديد نوع الملف
       let attachmentType = "document";
@@ -327,7 +329,7 @@ export function TaskCommunicationDialog({
       else if (file.type === "application/pdf") attachmentType = "pdf";
 
       await sendMessage({
-        url: publicUrl,
+        url: storedPath,
         name: file.name,
         type: attachmentType,
       });
@@ -523,22 +525,22 @@ export function TaskCommunicationDialog({
                         {msg.attachment_url && (
                           <div className="mb-3">
                             {msg.attachment_type === "image" ? (
-                              <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block">
+                              <a href={attUrl(msg.attachment_url)} target="_blank" rel="noopener noreferrer" className="block">
                                 <img
-                                  src={msg.attachment_url}
+                                  src={attUrl(msg.attachment_url)}
                                   alt={msg.attachment_name || "مرفق"}
                                   className="max-w-full max-h-52 rounded-xl cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
                                 />
                               </a>
                             ) : msg.attachment_type === "video" ? (
                               <video
-                                src={msg.attachment_url}
+                                src={attUrl(msg.attachment_url)}
                                 controls
                                 className="max-w-full max-h-52 rounded-xl shadow-sm"
                               />
                             ) : (
                               <a
-                                href={msg.attachment_url}
+                                href={attUrl(msg.attachment_url)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={cn(
