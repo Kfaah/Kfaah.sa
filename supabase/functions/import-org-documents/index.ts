@@ -96,7 +96,62 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Documents come from the request or from the saved profile
+    // Mode A: files uploaded directly from the user's device (base64)
+    type UpFile = { name?: string; content_type?: string; data_base64?: string };
+    const upFiles: UpFile[] = Array.isArray(body?.files) ? body.files.slice(0, MAX_FILES) : [];
+    if (upFiles.length > 0) {
+      const results: { url: string; ok: boolean; category?: string; reason?: string }[] = [];
+      let imported = 0;
+      for (const f of upFiles) {
+        const rawName = String(f?.name || "document");
+        const name = safeName("", rawName);
+        try {
+          if (!f?.data_base64) { results.push({ url: rawName, ok: false, reason: "ملف فارغ" }); continue; }
+          const bin = Uint8Array.from(atob(f.data_base64), (c) => c.charCodeAt(0));
+          if (bin.byteLength === 0 || bin.byteLength > MAX_BYTES) {
+            results.push({ url: rawName, ok: false, reason: "حجم غير مناسب (الحد 25 ميجابايت)" });
+            continue;
+          }
+          const category = classify({ url: rawName, title: rawName });
+          const contentType = f.content_type || "application/octet-stream";
+          const path = `${organization_id}/archive/${category}/${Date.now()}_${name}`;
+          const { error: upErr } = await supa.storage
+            .from("org-documents")
+            .upload(path, bin, { contentType, upsert: false });
+          if (upErr) { results.push({ url: rawName, ok: false, reason: upErr.message }); continue; }
+          const { error: logErr } = await supa.from("data_uploads_log").insert({
+            uploaded_by: user.id,
+            organization_id,
+            file_name: name,
+            file_type: contentType,
+            detected_schema: category,
+            file_path: path,
+            storage_bucket: "org-documents",
+            total_rows: 0,
+            inserted_rows: 1,
+            duplicate_rows: 0,
+            failed_rows: 0,
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          });
+          if (logErr) {
+            await supa.storage.from("org-documents").remove([path]);
+            results.push({ url: rawName, ok: false, reason: logErr.message });
+            continue;
+          }
+          imported++;
+          results.push({ url: rawName, ok: true, category });
+        } catch (e) {
+          results.push({ url: rawName, ok: false, reason: e instanceof Error ? e.message : "خطأ" });
+        }
+      }
+      return new Response(JSON.stringify({ success: true, imported, skipped: 0, results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Mode B: documents come from the request or from the saved profile
+
     let docs: Doc[] = Array.isArray(body?.documents) ? body.documents : [];
     if (docs.length === 0) {
       const { data: p } = await supa
