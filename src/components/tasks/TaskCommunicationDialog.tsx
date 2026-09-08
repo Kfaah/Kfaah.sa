@@ -79,6 +79,25 @@ export function TaskCommunicationDialog({
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
 
   const attUrl = (stored: string) => attachmentUrls[stored] || "";
+
+  useEffect(() => {
+    const stored = messages.map((m) => m.attachment_url).filter(Boolean) as string[];
+    if (stored.length === 0) {
+      return;
+    }
+    const missing = stored.filter((s) => !attachmentUrls[s]);
+    if (missing.length === 0) return;
+    let active = true;
+    signTaskAttachments(missing).then((map) => {
+      if (active && Object.keys(map).length > 0) {
+        setAttachmentUrls((prev) => ({ ...prev, ...map }));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [messages, attachmentUrls]);
+
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
