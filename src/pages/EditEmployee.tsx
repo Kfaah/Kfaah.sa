@@ -33,6 +33,7 @@ import {
   Save,
   BadgeCheck,
 } from "lucide-react";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getArabicErrorMessage } from "@/lib/errors";
@@ -212,7 +213,9 @@ const EditEmployee = () => {
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${id}-${Date.now()}.${fileExt}`;
-      const filePath = `employees/${fileName}`;
+      const orgFolder = currentOrg?.id;
+      if (!orgFolder) throw new Error("تعذر تحديد الجمعية");
+      const filePath = `employees/${orgFolder}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")

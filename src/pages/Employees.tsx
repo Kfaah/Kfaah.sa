@@ -191,7 +191,9 @@ const Employees = () => {
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
-      const filePath = `employees/${fileName}`;
+      const orgFolder = currentOrg?.id;
+      if (!orgFolder) throw new Error("تعذر تحديد الجمعية");
+      const filePath = `employees/${orgFolder}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
