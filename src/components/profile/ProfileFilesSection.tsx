@@ -414,8 +414,9 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
 
     setIsUploading(true);
     try {
-      const fileExt = selectedFile.name.split(".").pop();
-      const filePath = `${userId}/${Date.now()}.${fileExt}`;
+      const rawExt = selectedFile.name.split(".").pop() || "";
+      const fileExt = rawExt.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 10);
+      const filePath = `${userId}/${crypto.randomUUID()}${fileExt ? `.${fileExt}` : ""}`;
 
       const { error: uploadError } = await supabase.storage
         .from("employee-files")
@@ -423,10 +424,18 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
 
       if (uploadError) throw uploadError;
 
+      // نربط الملف بجمعية الموظف حتى يظهر لمدير نظام الجمعية
+      const { data: emp } = await supabase
+        .from("employees")
+        .select("organization_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
       const { error: insertError } = await supabase
         .from("employee_files" as any)
         .insert({
           user_id: userId,
+          organization_id: emp?.organization_id ?? null,
           file_name: fileName || selectedFile.name,
           // نخزّن المسار فقط — يُحوَّل إلى رابط موقّع وقت العرض
           file_url: filePath,
@@ -434,7 +443,10 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
           category,
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        await supabase.storage.from("employee-files").remove([filePath]);
+        throw insertError;
+      }
 
       toast.success("تم رفع الملف بنجاح");
       queryClient.invalidateQueries({ queryKey: ["profile-files", userId] });
@@ -444,7 +456,9 @@ export function ProfileFilesSection({ userId }: ProfileFilesSectionProps) {
       setCategory("");
     } catch (error) {
       console.error("Error uploading file:", error);
-      toast.error("حدث خطأ أثناء رفع الملف");
+      toast.error(
+        error instanceof Error ? `تعذر رفع الملف: ${error.message}` : "حدث خطأ أثناء رفع الملف",
+      );
     } finally {
       setIsUploading(false);
     }

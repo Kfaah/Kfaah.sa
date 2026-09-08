@@ -5744,6 +5744,10 @@ export type Database = {
       }
       admin_can_access_org: { Args: { _org: string }; Returns: boolean }
       allocate_expense: { Args: { _expense_id: string }; Returns: undefined }
+      can_manage_employee_file: {
+        Args: { _owner_user_id: string }
+        Returns: boolean
+      }
       can_manage_intelligence_profile: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
