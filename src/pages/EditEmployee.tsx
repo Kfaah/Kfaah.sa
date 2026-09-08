@@ -83,6 +83,7 @@ interface EmployeeBasic {
 const EditEmployee = () => {
   const navigate = useNavigate();
   const { employeeId } = useParams();
+  const { currentOrg } = useOrganization();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);

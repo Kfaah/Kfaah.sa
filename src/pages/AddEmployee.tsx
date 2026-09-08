@@ -60,6 +60,7 @@ interface Employee {
 
 const AddEmployee = () => {
   const navigate = useNavigate();
+  const { currentOrg } = useOrganization();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
