@@ -60,6 +60,8 @@ export default function OrganizationProfile() {
   const [documents, setDocuments] = useState<OrgDocument[]>([]);
   const [newDocUrl, setNewDocUrl] = useState("");
   const [importingDocs, setImportingDocs] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+
 
   const loadSources = async () => {
     if (!orgId) return;
