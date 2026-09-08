@@ -33,6 +33,7 @@ import {
   X,
   Users,
 } from "lucide-react";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getArabicErrorMessage } from "@/lib/errors";
@@ -59,6 +60,7 @@ interface Employee {
 
 const AddEmployee = () => {
   const navigate = useNavigate();
+  const { currentOrg } = useOrganization();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -145,7 +147,9 @@ const AddEmployee = () => {
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${tempId}-${Date.now()}.${fileExt}`;
-      const filePath = `employees/${fileName}`;
+      const orgFolder = currentOrg?.id;
+      if (!orgFolder) throw new Error("تعذر تحديد الجمعية");
+      const filePath = `employees/${orgFolder}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
