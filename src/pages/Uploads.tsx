@@ -41,6 +41,8 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SmartPdfViewer } from "@/components/profile/SmartPdfViewer";
+import { importDataWorkbook, SPREADSHEET_RE } from "@/lib/importDataWorkbook";
+
 
 type UploadStatus = "queued" | "uploading" | "success" | "error";
 
@@ -71,6 +73,8 @@ interface PendingFile {
     failed: number;
     matched?: number;
     archivedOnly?: boolean;
+    uploadId?: string;
+
   };
   error?: string;
 }
@@ -300,6 +304,46 @@ export default function Uploads() {
     [],
   );
 
+  // ===== استيراد صفوف ملف محفوظ (تبرعات/حملات/استقطاعات…) إلى مركز التبرعات =====
+  const [importingId, setImportingId] = useState<string | null>(null);
+
+  const importHistoryRow = useCallback(
+    async (row: HistoryRow) => {
+      if (!row.file_path || !orgId) return;
+      setImportingId(row.id);
+      try {
+        const { data: blob, error: dlErr } = await supabase.storage
+          .from(row.storage_bucket || "org-documents")
+          .download(row.file_path);
+        if (dlErr || !blob) throw dlErr ?? new Error("تعذر تنزيل الملف");
+
+        const res = await importDataWorkbook({
+          blob,
+          orgId,
+          uploadId: row.id,
+        });
+        toast.success(
+          `تم استيراد ${res.inserted} سجل من "${row.file_name}" إلى مركز التبرعات.`,
+          { duration: 6000 },
+        );
+        loadHistory();
+        supabase.functions
+          .invoke("daily-donor-intelligence", {
+            body: { organizationId: orgId, trigger: "import", dataset: res.detected },
+          })
+          .catch(() => undefined);
+      } catch (e) {
+        toast.error(
+          `تعذر استيراد صفوف الملف: ${e instanceof Error ? e.message : "خطأ غير معروف"}`,
+        );
+      } finally {
+        setImportingId(null);
+      }
+    },
+    [orgId, loadHistory],
+  );
+
+
   // ===== التحليل الذكي للملفات المؤرشفة =====
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [analysisRow, setAnalysisRow] = useState<HistoryRow | null>(null);
@@ -452,31 +496,70 @@ export default function Uploads() {
         .upload(path, pf.file, { upsert: false });
       if (upErr) throw upErr;
 
-      const { error: logErr } = await supabase.from("data_uploads_log").insert({
-        uploaded_by: user.id,
-        organization_id: orgId,
-        file_name: pf.file.name,
-        file_type: pf.file.type || "application/octet-stream",
-        detected_schema: schemaTag,
-        file_path: path,
-        storage_bucket: "org-documents",
-        total_rows: 0,
-        inserted_rows: 1,
-        duplicate_rows: 0,
-        failed_rows: 0,
-        for_date: forDate || null,
-        status: "completed",
-        completed_at: new Date().toISOString(),
-      });
+      const { data: logRow, error: logErr } = await supabase
+        .from("data_uploads_log")
+        .insert({
+          uploaded_by: user.id,
+          organization_id: orgId,
+          file_name: pf.file.name,
+          file_type: pf.file.type || "application/octet-stream",
+          detected_schema: schemaTag,
+          file_path: path,
+          storage_bucket: "org-documents",
+          total_rows: 0,
+          inserted_rows: 1,
+          duplicate_rows: 0,
+          failed_rows: 0,
+          for_date: forDate || null,
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
       if (logErr) {
         await supabase.storage.from("org-documents").remove([path]);
         throw logErr;
       }
 
-      return { detected: schemaTag, inserted: 1, duplicates: 0, failed: 0 };
+      return {
+        detected: schemaTag,
+        inserted: 1,
+        duplicates: 0,
+        failed: 0,
+        uploadId: logRow?.id as string | undefined,
+      };
     },
     [user, orgId, forDate],
   );
+  // يحفظ الملف في مركز الملفات ثم يستورد صفوفه (تبرعات/حملات/…) من داخل المتصفح.
+  const archiveThenImport = useCallback(
+    async (pf: PendingFile): Promise<NonNullable<PendingFile["result"]>> => {
+      const archived = await archiveFile(pf, pf.category === "auto" ? "profiles" : pf.category);
+      if (!orgId || !archived.uploadId || !SPREADSHEET_RE.test(pf.file.name)) {
+        return { ...archived, archivedOnly: true };
+      }
+      try {
+        const res = await importDataWorkbook({
+          blob: pf.file,
+          orgId,
+          uploadId: archived.uploadId,
+          sourceKind: pf.category === "auto" ? null : pf.category,
+        });
+        return {
+          detected: res.detected,
+          inserted: res.inserted,
+          duplicates: Math.max(0, res.total - res.inserted - res.failed),
+          failed: res.failed,
+        };
+      } catch (err) {
+        console.warn("browser import failed", err);
+        return { ...archived, archivedOnly: true };
+      }
+    },
+    [archiveFile, orgId],
+  );
+
+
 
   const processFile = useCallback(
     async (pf: PendingFile) => {
@@ -518,25 +601,19 @@ export default function Uploads() {
           ) {
             formData.append("source_kind", pf.category);
           }
-          // ملفات Excel الكبيرة قد تتجاوز ذاكرة محلل الجداول. نحفظ الأصل أولاً
-          // في مركز الملفات بدلاً من خسارة الرفع، ويمكن تحليله لاحقاً على دفعات.
+          // ملفات Excel الكبيرة تتجاوز ذاكرة المحلل السحابي، لذلك نحفظ الأصل
+          // ثم نقرأه ونُدخل صفوفه من داخل المتصفح مباشرة.
           if (pf.file.size > 8 * 1024 * 1024) {
-            result = {
-              ...(await archiveFile(pf, pf.category === "auto" ? "profiles" : pf.category)),
-              archivedOnly: true,
-            };
+            result = await archiveThenImport(pf);
           } else {
             const { data, error } = await supabase.functions.invoke("process-upload", {
               body: formData,
             });
             if (error) {
               // إذا تعطلت المعالجة (مثل نفاد الذاكرة)، لا نفشل رفع المستخدم:
-              // نحتفظ بالملف الأصلي معزولاً داخل جمعية المستخدم.
-              console.warn("Excel processing failed; archiving original file", error);
-              result = {
-                ...(await archiveFile(pf, pf.category === "auto" ? "profiles" : pf.category)),
-                archivedOnly: true,
-              };
+              // نحفظ الملف ونحاول الاستيراد محلياً.
+              console.warn("Excel processing failed; importing in browser", error);
+              result = await archiveThenImport(pf);
             } else {
               result = {
                 detected: data.detected,
@@ -546,6 +623,7 @@ export default function Uploads() {
               };
             }
           }
+
         }
 
         setPending((prev) =>
@@ -1089,7 +1167,9 @@ export default function Uploads() {
                     <TableHead className="text-right">الحالة</TableHead>
                     <TableHead className="text-right">تاريخ الرفع</TableHead>
                     <TableHead className="text-right">معاينة</TableHead>
+                    <TableHead className="text-right">استيراد البيانات</TableHead>
                     <TableHead className="text-right">تحليل ذكي</TableHead>
+
                     <TableHead className="text-right">حذف</TableHead>
                   </TableRow>
 
@@ -1147,6 +1227,27 @@ export default function Uploads() {
                             معاينة
                           </Button>
                         </TableCell>
+                        <TableCell>
+                          {row.file_path && SPREADSHEET_RE.test(row.file_name) ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1 text-primary"
+                              disabled={importingId === row.id}
+                              onClick={() => importHistoryRow(row)}
+                            >
+                              {importingId === row.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Database className="w-4 h-4" />
+                              )}
+                              {row.total_rows > 0 ? "إعادة الاستيراد" : "استيراد الصفوف"}
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button
