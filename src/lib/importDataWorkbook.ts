@@ -228,87 +228,13 @@ export interface ImportOptions {
   onProgress?: (done: number, total: number) => void;
 }
 
-interface DonorAgg {
-  full_name: string;
-  phone: string | null;
-  total: number;
-  count: number;
-  first: string | null;
-  last: string | null;
-}
-
-function segmentOf(a: DonorAgg): string {
-  if (a.total >= 5000) return "متبرع كبير";
-  if (a.count >= 2) return "متكرر";
-  return "جديد";
-}
-
 /**
- * يبني/يحدّث ملفات المتبرعين من جدول التبرعات الفعلي للجمعية،
- * حتى تظهر قائمة المتبرعين والتصنيفات في مركز التبرعات.
+ * يبني/يحدّث ملفات المتبرعين من جدول التبرعات الفعلي للجمعية على الخادم،
+ * حتى تظهر قائمة المتبرعين والتصنيفات في مركز التبرعات (أسرع وأكثر موثوقية).
  */
 async function buildDonorProfiles(orgId: string): Promise<void> {
-  const PAGE = 2000;
-  const byPhone = new Map<string, DonorAgg>();
-
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase
-      .from("donations")
-      .select("donor_name,donor_phone,amount,donation_date")
-      .eq("organization_id", orgId)
-      .range(from, from + PAGE - 1);
-    if (error) {
-      console.warn("donor aggregation failed", error.message);
-      return;
-    }
-    if (!data || data.length === 0) break;
-
-    for (const d of data) {
-      const phone = d.donor_phone ? String(d.donor_phone).trim() : null;
-      const name = (d.donor_name ? String(d.donor_name).trim() : "") || "متبرع غير معروف";
-      const key = phone || `name:${name}`;
-      const amount = Number(d.amount || 0);
-      const date = d.donation_date ? new Date(d.donation_date).toISOString() : null;
-      const cur = byPhone.get(key);
-      if (!cur) {
-        byPhone.set(key, { full_name: name, phone, total: amount, count: 1, first: date, last: date });
-      } else {
-        cur.total += amount;
-        cur.count += 1;
-        if (date && (!cur.first || date < cur.first)) cur.first = date;
-        if (date && (!cur.last || date > cur.last)) cur.last = date;
-      }
-    }
-    if (data.length < PAGE) break;
-  }
-
-  const rows = Array.from(byPhone.entries()).map(([key, a]) => ({
-    organization_id: orgId,
-    external_id: key,
-    full_name: a.full_name,
-    phone: a.phone,
-    segment: segmentOf(a),
-    total_donated: Math.round(a.total * 100) / 100,
-    donations_count: a.count,
-    first_donation_at: a.first,
-    last_donation_at: a.last,
-  }));
-
-  const BATCH = 1000;
-  const chunks: (typeof rows)[] = [];
-  for (let i = 0; i < rows.length; i += BATCH) chunks.push(rows.slice(i, i + BATCH));
-
-  let cursor = 0;
-  const workers = Array.from({ length: Math.min(5, chunks.length) }, async () => {
-    while (cursor < chunks.length) {
-      const chunk = chunks[cursor++];
-      const { error } = await supabase
-        .from("donors")
-        .upsert(chunk, { onConflict: "organization_id,external_id" });
-      if (error) console.warn("donor upsert failed", error.message);
-    }
-  });
-  await Promise.all(workers);
+  const { error } = await supabase.rpc("rebuild_donor_profiles", { p_org: orgId });
+  if (error) console.warn("donor profiles rebuild failed", error.message);
 }
 
 /**
