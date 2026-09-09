@@ -1228,6 +1228,27 @@ export default function Uploads() {
                           </Button>
                         </TableCell>
                         <TableCell>
+                          {row.file_path && SPREADSHEET_RE.test(row.file_name) ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1 text-primary"
+                              disabled={importingId === row.id}
+                              onClick={() => importHistoryRow(row)}
+                            >
+                              {importingId === row.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Database className="w-4 h-4" />
+                              )}
+                              {row.total_rows > 0 ? "إعادة الاستيراد" : "استيراد الصفوف"}
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+
+                        <TableCell>
                           <div className="flex items-center gap-1">
                             <Button
                               variant="ghost"
