@@ -5895,6 +5895,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      rebuild_donor_profiles: { Args: { p_org: string }; Returns: number }
       review_membership_request: {
         Args: { _membership_id: string; _status: string }
         Returns: undefined
