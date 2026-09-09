@@ -173,9 +173,14 @@ Deno.serve(async (req) => {
 ${text}
 """
 
+حدّد أيضاً القسم المناسب لتوجيه الملف إليه (route) من هذه القيم فقط:
+donations | store_master | store_daily | subscriptions | campaigns | gifts | abandoned_carts | bank_transfers | failed_donations | staff_duties | reports | profiles | tasks | other
+
 أعد JSON فقط بهذا الشكل:
 {
   "document_type": "نوع المستند",
+  "route": "أحد القيم أعلاه",
+  "route_reason": "سبب التوجيه بجملة قصيرة",
   "summary": "ملخص شامل في 3-5 أسطر",
   "key_points": ["نقطة مهمة 1", "نقطة 2"],
   "numbers": ["أي أرقام أو مؤشرات مهمة وردت"],
@@ -213,17 +218,42 @@ ${text}
       analysis = { summary: raw };
     }
 
+    // توجيه الملف تلقائياً إلى قسمه المخصص إذا كان التصنيف الحالي عاماً.
+    const ALLOWED_ROUTES = new Set([
+      "donations",
+      "store_master",
+      "store_daily",
+      "subscriptions",
+      "campaigns",
+      "gifts",
+      "abandoned_carts",
+      "bank_transfers",
+      "failed_donations",
+      "staff_duties",
+      "reports",
+      "profiles",
+      "tasks",
+      "other",
+    ]);
+    const GENERIC = new Set(["profiles", "other", "archived", "unknown", "auto", null, ""]);
+    const suggested = String((analysis as Record<string, unknown>)?.route || "").trim();
+    const routedTo =
+      ALLOWED_ROUTES.has(suggested) && GENERIC.has(row.detected_schema as string | null)
+        ? suggested
+        : null;
+
     const { error: updErr } = await supa
       .from("data_uploads_log")
       .update({
         ai_analysis: analysis,
         ai_analyzed_at: new Date().toISOString(),
         ai_model: "google/gemini-2.5-flash",
+        ...(routedTo ? { detected_schema: routedTo } : {}),
       })
       .eq("id", uploadId);
     if (updErr) return json({ error: "save_failed", message: updErr.message }, 500);
 
-    return json({ success: true, analysis, chars: text.length });
+    return json({ success: true, analysis, routed_to: routedTo, chars: text.length });
   } catch (e) {
     console.error(e);
     return json({ error: e instanceof Error ? e.message : "unknown" }, 500);
