@@ -5367,7 +5367,7 @@ export type Database = {
           created_at: string
           id: string
           message: string | null
-          organization_id: string | null
+          organization_id: string
           task_id: string
           user_id: string
         }
@@ -5378,7 +5378,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string | null
-          organization_id?: string | null
+          organization_id: string
           task_id: string
           user_id: string
         }
@@ -5389,7 +5389,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string | null
-          organization_id?: string | null
+          organization_id?: string
           task_id?: string
           user_id?: string
         }
