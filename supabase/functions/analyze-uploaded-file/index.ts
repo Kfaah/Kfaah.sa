@@ -130,7 +130,12 @@ Deno.serve(async (req) => {
 
     const bytes = new Uint8Array(await blob.arrayBuffer());
     if (bytes.byteLength > MAX_BYTES) {
-      return json({ error: "too_large", message: "الملف أكبر من الحد المسموح للتحليل (30MB)." }, 400);
+      return json({
+        success: false,
+        skipped: true,
+        reason: "too_large",
+        message: "تم حفظ الملف، لكن حجمه أكبر من الحد المسموح للتحليل (30MB).",
+      });
     }
 
     let text = "";
