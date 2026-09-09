@@ -304,6 +304,46 @@ export default function Uploads() {
     [],
   );
 
+  // ===== استيراد صفوف ملف محفوظ (تبرعات/حملات/استقطاعات…) إلى مركز التبرعات =====
+  const [importingId, setImportingId] = useState<string | null>(null);
+
+  const importHistoryRow = useCallback(
+    async (row: HistoryRow) => {
+      if (!row.file_path || !orgId) return;
+      setImportingId(row.id);
+      try {
+        const { data: blob, error: dlErr } = await supabase.storage
+          .from(row.storage_bucket || "org-documents")
+          .download(row.file_path);
+        if (dlErr || !blob) throw dlErr ?? new Error("تعذر تنزيل الملف");
+
+        const res = await importDataWorkbook({
+          blob,
+          orgId,
+          uploadId: row.id,
+        });
+        toast.success(
+          `تم استيراد ${res.inserted} سجل من "${row.file_name}" إلى مركز التبرعات.`,
+          { duration: 6000 },
+        );
+        loadHistory();
+        supabase.functions
+          .invoke("daily-donor-intelligence", {
+            body: { organizationId: orgId, trigger: "import", dataset: res.detected },
+          })
+          .catch(() => undefined);
+      } catch (e) {
+        toast.error(
+          `تعذر استيراد صفوف الملف: ${e instanceof Error ? e.message : "خطأ غير معروف"}`,
+        );
+      } finally {
+        setImportingId(null);
+      }
+    },
+    [orgId, loadHistory],
+  );
+
+
   // ===== التحليل الذكي للملفات المؤرشفة =====
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [analysisRow, setAnalysisRow] = useState<HistoryRow | null>(null);
