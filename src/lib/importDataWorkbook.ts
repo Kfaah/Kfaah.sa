@@ -295,6 +295,11 @@ export async function importDataWorkbook({
     onProgress?.(Math.min(i + BATCH, mapped.length), mapped.length);
   }
 
+  if (detected === "donations") {
+    await buildDonorProfiles(orgId, mapped);
+  }
+
+
   await supabase
     .from("data_uploads_log")
     .update({
