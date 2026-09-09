@@ -76,6 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const k = localStorage.key(i);
         if (k && k.includes("auth-token")) localStorage.removeItem(k);
       }
+
+      // Drop the cached organization selection so the next account never
+      // inherits the previous organization's context.
+      localStorage.removeItem("active_organization_id");
     } catch {
       // ignore
     }
