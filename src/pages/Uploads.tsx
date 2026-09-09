@@ -529,25 +529,19 @@ export default function Uploads() {
           ) {
             formData.append("source_kind", pf.category);
           }
-          // ملفات Excel الكبيرة قد تتجاوز ذاكرة محلل الجداول. نحفظ الأصل أولاً
-          // في مركز الملفات بدلاً من خسارة الرفع، ويمكن تحليله لاحقاً على دفعات.
+          // ملفات Excel الكبيرة تتجاوز ذاكرة المحلل السحابي، لذلك نحفظ الأصل
+          // ثم نقرأه ونُدخل صفوفه من داخل المتصفح مباشرة.
           if (pf.file.size > 8 * 1024 * 1024) {
-            result = {
-              ...(await archiveFile(pf, pf.category === "auto" ? "profiles" : pf.category)),
-              archivedOnly: true,
-            };
+            result = await archiveThenImport(pf);
           } else {
             const { data, error } = await supabase.functions.invoke("process-upload", {
               body: formData,
             });
             if (error) {
               // إذا تعطلت المعالجة (مثل نفاد الذاكرة)، لا نفشل رفع المستخدم:
-              // نحتفظ بالملف الأصلي معزولاً داخل جمعية المستخدم.
-              console.warn("Excel processing failed; archiving original file", error);
-              result = {
-                ...(await archiveFile(pf, pf.category === "auto" ? "profiles" : pf.category)),
-                archivedOnly: true,
-              };
+              // نحفظ الملف ونحاول الاستيراد محلياً.
+              console.warn("Excel processing failed; importing in browser", error);
+              result = await archiveThenImport(pf);
             } else {
               result = {
                 detected: data.detected,
@@ -557,6 +551,7 @@ export default function Uploads() {
               };
             }
           }
+
         }
 
         setPending((prev) =>
