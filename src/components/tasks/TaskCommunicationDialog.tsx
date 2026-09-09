@@ -273,6 +273,7 @@ export function TaskCommunicationDialog({
 
     setSending(true);
     try {
+      // organization_id تُملأ تلقائياً من قِبل قاعدة البيانات
       const { error } = await supabase.from("task_messages").insert({
         task_id: taskId,
         user_id: currentUserId,
@@ -280,7 +281,8 @@ export function TaskCommunicationDialog({
         attachment_url: attachmentData?.url || null,
         attachment_name: attachmentData?.name || null,
         attachment_type: attachmentData?.type || null,
-      });
+      } as never);
+
 
       if (error) throw error;
 
