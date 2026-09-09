@@ -91,9 +91,12 @@ interface HistoryRow {
   storage_bucket: string | null;
   file_type: string | null;
   organization_id: string | null;
+  file_size_bytes?: number | null;
   ai_analysis: Record<string, any> | null;
   ai_analyzed_at: string | null;
 }
+
+const MAX_AI_ANALYSIS_BYTES = 30 * 1024 * 1024;
 
 const safeStorageFileName = (name: string) => {
   const extension = name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 10);
@@ -304,6 +307,12 @@ export default function Uploads() {
 
   const analyzeFile = useCallback(
     async (row: HistoryRow, silent = false) => {
+      if ((row.file_size_bytes ?? 0) > MAX_AI_ANALYSIS_BYTES) {
+        if (!silent) {
+          toast.info("تم حفظ الملف بأمان، لكن حجمه يتجاوز حد التحليل الذكي (30MB).");
+        }
+        return false;
+      }
       setAnalyzingId(row.id);
       try {
         const { data, error } = await supabase.functions.invoke("analyze-uploaded-file", {
@@ -320,6 +329,12 @@ export default function Uploads() {
             /* ignore */
           }
           throw new Error(msg);
+        }
+        if ((data as any)?.skipped) {
+          if (!silent) {
+            toast.info((data as any)?.message || "تم حفظ الملف دون تحليله بسبب حجمه.");
+          }
+          return false;
         }
         const analysis = (data as any)?.analysis ?? null;
         setHistory((prev) =>
@@ -346,9 +361,16 @@ export default function Uploads() {
   );
 
   const analyzeAllPending = useCallback(async () => {
-    const targets = history.filter((r) => r.file_path && !r.ai_analysis);
+    const pendingFiles = history.filter((r) => r.file_path && !r.ai_analysis);
+    const targets = pendingFiles.filter(
+      (r) => (r.file_size_bytes ?? 0) <= MAX_AI_ANALYSIS_BYTES,
+    );
     if (targets.length === 0) {
-      toast.info("جميع الملفات المحفوظة محلَّلة بالفعل");
+      toast.info(
+        pendingFiles.length > 0
+          ? "الملفات المتبقية محفوظة، لكن أحجامها تتجاوز حد التحليل الذكي (30MB)."
+          : "جميع الملفات المحفوظة محلَّلة بالفعل",
+      );
       return;
     }
     setBulkAnalyzing(true);
@@ -1131,7 +1153,12 @@ export default function Uploads() {
                               variant="ghost"
                               size="sm"
                               className="gap-1 text-accent"
-                              disabled={analyzingId === row.id || bulkAnalyzing || !row.file_path}
+                              disabled={
+                                analyzingId === row.id ||
+                                bulkAnalyzing ||
+                                !row.file_path ||
+                                (row.file_size_bytes ?? 0) > MAX_AI_ANALYSIS_BYTES
+                              }
                               onClick={() => analyzeFile(row)}
                             >
                               {analyzingId === row.id ? (
@@ -1139,7 +1166,11 @@ export default function Uploads() {
                               ) : (
                                 <Sparkles className="w-4 h-4" />
                               )}
-                              {row.ai_analysis ? "إعادة التحليل" : "تحليل"}
+                              {(row.file_size_bytes ?? 0) > MAX_AI_ANALYSIS_BYTES
+                                ? "أكبر من 30MB"
+                                : row.ai_analysis
+                                  ? "إعادة التحليل"
+                                  : "تحليل"}
                             </Button>
                             {row.ai_analysis && (
                               <Button
