@@ -29,10 +29,12 @@ function normalize(s: string): string {
     .replace(/[إأآا]/g, "ا")
     .replace(/ى/g, "ي")
     .replace(/ة/g, "ه")
+    .replace(/[_\-.]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
 }
+
 
 function detectType(headers: string[]): DetectedType {
   const h = headers.map(normalize);
