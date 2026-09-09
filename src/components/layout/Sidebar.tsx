@@ -432,14 +432,18 @@ export function Sidebar() {
   const handleSignOut = async () => {
     setPreviewAsEmployee(false);
 
-    if (isActuallyAdmin || isAdminArea) {
+    // Always terminate the session first — never navigate into another area
+    // while still signed in (that used to expose the platform-wide
+    // organizations screen to organization admins).
+    const orgSlug = currentOrg?.slug ?? null;
+    await signOut();
+
+    if (isSuperAdmin) {
       navigate("/admin/organizations", { replace: true });
       return;
     }
 
-    const redirectTo = currentOrg?.slug ? `/${currentOrg.slug}` : "/";
-    await signOut();
-    navigate(redirectTo, { replace: true });
+    navigate(orgSlug ? `/${orgSlug}` : "/", { replace: true });
   };
 
   const NavLink = ({ item, nested = false }: { item: NavItem; nested?: boolean }) => {
