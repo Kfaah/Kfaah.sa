@@ -371,7 +371,7 @@ export async function importDataWorkbook({
   }
 
   if (detected === "donations") {
-    await buildDonorProfiles(orgId, mapped);
+    await buildDonorProfiles(orgId);
   }
 
 
