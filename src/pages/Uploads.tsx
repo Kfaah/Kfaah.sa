@@ -91,7 +91,7 @@ interface HistoryRow {
   storage_bucket: string | null;
   file_type: string | null;
   organization_id: string | null;
-  file_size_bytes: number | null;
+  file_size_bytes?: number | null;
   ai_analysis: Record<string, any> | null;
   ai_analyzed_at: string | null;
 }
@@ -329,6 +329,12 @@ export default function Uploads() {
             /* ignore */
           }
           throw new Error(msg);
+        }
+        if ((data as any)?.skipped) {
+          if (!silent) {
+            toast.info((data as any)?.message || "تم حفظ الملف دون تحليله بسبب حجمه.");
+          }
+          return false;
         }
         const analysis = (data as any)?.analysis ?? null;
         setHistory((prev) =>
