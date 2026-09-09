@@ -29,10 +29,12 @@ function normalize(s: string): string {
     .replace(/[إأآا]/g, "ا")
     .replace(/ى/g, "ي")
     .replace(/ة/g, "ه")
+    .replace(/[_\-.]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
 }
+
 
 function detectType(headers: string[]): DetectedType {
   const h = headers.map(normalize);
@@ -64,14 +66,19 @@ function toNumber(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function serialToIso(n: number): string | null {
+  const d = XLSX.SSF.parse_date_code(n);
+  if (!d) return null;
+  return new Date(Date.UTC(d.y, d.m - 1, d.d, d.H || 0, d.M || 0, d.S || 0)).toISOString();
+}
+
 function toDate(v: unknown): string | null {
   if (!v) return null;
-  if (typeof v === "number") {
-    const d = XLSX.SSF.parse_date_code(v);
-    if (d) return new Date(Date.UTC(d.y, d.m - 1, d.d, d.H || 0, d.M || 0, d.S || 0)).toISOString();
-  }
+  if (typeof v === "number") return serialToIso(v);
   const s = String(v).trim();
   if (!s) return null;
+  // أرقام Excel التسلسلية قد تصل كنص
+  if (/^\d{4,6}(\.\d+)?$/.test(s)) return serialToIso(Number(s));
   const parsed = new Date(s);
   if (!isNaN(parsed.getTime())) return parsed.toISOString();
   const m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/);
@@ -82,6 +89,7 @@ function toDate(v: unknown): string | null {
   }
   return null;
 }
+
 
 function mapRow(
   type: DetectedType,
@@ -99,15 +107,17 @@ function mapRow(
           pick(row, "رقم التبرع", "رقم العملية", "donation number", "رقم العمليه") ??
             crypto.randomUUID(),
         ),
-        amount: toNumber(pick(row, "المبلغ", "amount", "قيمه التبرع", "قيمة التبرع")) ?? 0,
+        amount: toNumber(pick(row, "قيمه التبرع", "المبلغ", "amount")) ?? 0,
         currency: String(pick(row, "العمله", "currency") ?? "SAR"),
         donation_date:
-          toDate(pick(row, "تاريخ التبرع", "التاريخ", "date")) ?? new Date().toISOString(),
+          toDate(pick(row, "تاريخ التبرع", "وقت التبرع", "التاريخ", "date")) ??
+          new Date().toISOString(),
         donor_name: pick(row, "اسم المتبرع", "المتبرع", "donor name") as string | null,
         donor_phone: pick(row, "الجوال", "رقم الجوال", "phone") as string | null,
-        project_name: pick(row, "المشروع", "اسم المشروع", "project") as string | null,
-        payment_method: pick(row, "طريقه الدفع", "طريقة الدفع", "payment method") as string | null,
-        source: pick(row, "المصدر", "source", "القناه") as string | null,
+        project_name: pick(row, "اسم المشروع", "المشروع", "project") as string | null,
+        payment_method: pick(row, "طريقه الدفع", "payment method") as string | null,
+        source: pick(row, "مصدر التبرع", "المصدر", "source", "القناه") as string | null,
+
         status: "success",
         raw_data: raw,
       };
@@ -218,6 +228,81 @@ export interface ImportOptions {
   onProgress?: (done: number, total: number) => void;
 }
 
+interface DonorAgg {
+  full_name: string;
+  phone: string | null;
+  total: number;
+  count: number;
+  first: string | null;
+  last: string | null;
+}
+
+function segmentOf(a: DonorAgg): string {
+  if (a.total >= 5000) return "متبرع كبير";
+  if (a.count >= 2) return "متكرر";
+  return "جديد";
+}
+
+/**
+ * يبني/يحدّث ملفات المتبرعين من جدول التبرعات الفعلي للجمعية،
+ * حتى تظهر قائمة المتبرعين والتصنيفات في مركز التبرعات.
+ */
+async function buildDonorProfiles(orgId: string): Promise<void> {
+  const PAGE = 1000;
+  const byPhone = new Map<string, DonorAgg>();
+
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("donations")
+      .select("donor_name,donor_phone,amount,donation_date")
+      .eq("organization_id", orgId)
+      .range(from, from + PAGE - 1);
+    if (error) {
+      console.warn("donor aggregation failed", error.message);
+      return;
+    }
+    if (!data || data.length === 0) break;
+
+    for (const d of data) {
+      const phone = d.donor_phone ? String(d.donor_phone).trim() : null;
+      const name = (d.donor_name ? String(d.donor_name).trim() : "") || "متبرع غير معروف";
+      const key = phone || `name:${name}`;
+      const amount = Number(d.amount || 0);
+      const date = d.donation_date ? new Date(d.donation_date).toISOString() : null;
+      const cur = byPhone.get(key);
+      if (!cur) {
+        byPhone.set(key, { full_name: name, phone, total: amount, count: 1, first: date, last: date });
+      } else {
+        cur.total += amount;
+        cur.count += 1;
+        if (date && (!cur.first || date < cur.first)) cur.first = date;
+        if (date && (!cur.last || date > cur.last)) cur.last = date;
+      }
+    }
+    if (data.length < PAGE) break;
+  }
+
+  const rows = Array.from(byPhone.entries()).map(([key, a]) => ({
+    organization_id: orgId,
+    external_id: key,
+    full_name: a.full_name,
+    phone: a.phone,
+    segment: segmentOf(a),
+    total_donated: Math.round(a.total * 100) / 100,
+    donations_count: a.count,
+    first_donation_at: a.first,
+    last_donation_at: a.last,
+  }));
+
+  const BATCH = 400;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const { error } = await supabase
+      .from("donors")
+      .upsert(rows.slice(i, i + BATCH), { onConflict: "organization_id,external_id" });
+    if (error) console.warn("donor upsert failed", error.message);
+  }
+}
+
 /**
  * يقرأ ملف Excel/CSV في المتصفح ويُدخل صفوفه في الجدول المناسب،
  * ثم يحدّث سجل الرفع بعدد الصفوف المستوردة.
@@ -284,6 +369,11 @@ export async function importDataWorkbook({
     }
     onProgress?.(Math.min(i + BATCH, mapped.length), mapped.length);
   }
+
+  if (detected === "donations") {
+    await buildDonorProfiles(orgId);
+  }
+
 
   await supabase
     .from("data_uploads_log")
