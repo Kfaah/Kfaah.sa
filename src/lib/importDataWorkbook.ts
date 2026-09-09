@@ -248,7 +248,7 @@ function segmentOf(a: DonorAgg): string {
  * حتى تظهر قائمة المتبرعين والتصنيفات في مركز التبرعات.
  */
 async function buildDonorProfiles(orgId: string): Promise<void> {
-  const PAGE = 1000;
+  const PAGE = 2000;
   const byPhone = new Map<string, DonorAgg>();
 
   for (let from = 0; ; from += PAGE) {
