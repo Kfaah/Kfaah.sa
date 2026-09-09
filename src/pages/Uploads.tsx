@@ -638,6 +638,30 @@ export default function Uploads() {
             : `تم رفع "${pf.file.name}" — ${result?.inserted ?? 0} سجل. يجري ربط الملف بالتحليل الذكي والتوصيات والمساءلات…`,
           { duration: 6000 },
         );
+
+        // 🤖 تحليل تلقائي لكل ملف مرفوع + توجيهه إلى قسمه المخصص
+        if (result?.uploadId && pf.file.size <= MAX_AI_ANALYSIS_BYTES) {
+          (async () => {
+            try {
+              const { data: an } = await supabase.functions.invoke("analyze-uploaded-file", {
+                body: { upload_id: result!.uploadId },
+              });
+              const routed = (an as any)?.routed_to as string | null;
+              const docType = (an as any)?.analysis?.document_type as string | undefined;
+              if (routed) {
+                toast.success(
+                  `تم تحليل "${pf.file.name}" وتوجيهه إلى: ${SCHEMA_LABELS[routed]?.label ?? routed}`,
+                  { duration: 7000 },
+                );
+              } else if (docType) {
+                toast.success(`تم تحليل "${pf.file.name}" — ${docType}`, { duration: 6000 });
+              }
+              loadHistory();
+            } catch (err) {
+              console.warn("auto analyze failed", err);
+            }
+          })();
+        }
         // 🧠 Trigger daily intelligence engine after data uploads
         if (
           pf.category !== "staff_duties" &&
