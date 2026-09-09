@@ -107,15 +107,17 @@ function mapRow(
           pick(row, "رقم التبرع", "رقم العملية", "donation number", "رقم العمليه") ??
             crypto.randomUUID(),
         ),
-        amount: toNumber(pick(row, "المبلغ", "amount", "قيمه التبرع", "قيمة التبرع")) ?? 0,
+        amount: toNumber(pick(row, "قيمه التبرع", "المبلغ", "amount")) ?? 0,
         currency: String(pick(row, "العمله", "currency") ?? "SAR"),
         donation_date:
-          toDate(pick(row, "تاريخ التبرع", "التاريخ", "date")) ?? new Date().toISOString(),
+          toDate(pick(row, "تاريخ التبرع", "وقت التبرع", "التاريخ", "date")) ??
+          new Date().toISOString(),
         donor_name: pick(row, "اسم المتبرع", "المتبرع", "donor name") as string | null,
         donor_phone: pick(row, "الجوال", "رقم الجوال", "phone") as string | null,
-        project_name: pick(row, "المشروع", "اسم المشروع", "project") as string | null,
-        payment_method: pick(row, "طريقه الدفع", "طريقة الدفع", "payment method") as string | null,
-        source: pick(row, "المصدر", "source", "القناه") as string | null,
+        project_name: pick(row, "اسم المشروع", "المشروع", "project") as string | null,
+        payment_method: pick(row, "طريقه الدفع", "payment method") as string | null,
+        source: pick(row, "مصدر التبرع", "المصدر", "source", "القناه") as string | null,
+
         status: "success",
         raw_data: raw,
       };
