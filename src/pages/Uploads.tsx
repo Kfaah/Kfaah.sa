@@ -41,6 +41,8 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SmartPdfViewer } from "@/components/profile/SmartPdfViewer";
+import { importDataWorkbook, SPREADSHEET_RE } from "@/lib/importDataWorkbook";
+
 
 type UploadStatus = "queued" | "uploading" | "success" | "error";
 
