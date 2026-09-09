@@ -84,6 +84,14 @@ interface DonorRow {
   city: string | null; segment: string; total_donated: number; donations_count: number;
   first_donation_at: string | null; last_donation_at: string | null;
 }
+/** ملخّص محسوب على الخادم لكل تبرعات الجمعية (بدون حدود صفوف). */
+interface DonationsSummary {
+  total: number;
+  count: number;
+  projects_count: number;
+  by_year: { year: number; total: number }[];
+  by_project: { project: string; total: number }[];
+}
 
 /* ---------- Date + Project filter helpers ---------- */
 type Range = { from: Date | null; to: Date | null };
@@ -443,33 +451,81 @@ export function DonorsHub({ orgId }: { orgId: string }) {
   const [abandoned, setAbandoned] = useState<any[]>([]);
   const [subs, setSubs] = useState<any[]>([]);
   const [gifts, setGifts] = useState<any[]>([]);
+  const [summary, setSummary] = useState<DonationsSummary | null>(null);
+  const [donorsCount, setDonorsCount] = useState(0);
+  const [recurringCount, setRecurringCount] = useState(0);
 
   useEffect(() => {
     if (!orgId) return;
     let cancelled = false;
+
+    // الخادم يعيد 1000 صف كحد أقصى لكل طلب، لذلك نجلب الصفحات المطلوبة بالتوازي.
+    const PAGE = 1000;
+    const fetchPaged = async (
+      table: string,
+      columns: string,
+      orderCol: string,
+      max: number,
+    ): Promise<any[]> => {
+      const pages = Math.max(1, Math.ceil(max / PAGE));
+      const results = await Promise.all(
+        Array.from({ length: pages }, (_, i) =>
+          supabase
+            .from(table as never)
+            .select(columns)
+            .eq("organization_id", orgId)
+            .order(orderCol, { ascending: false })
+            .range(i * PAGE, i * PAGE + PAGE - 1),
+        ),
+      );
+      const out: any[] = [];
+      results.forEach((r) => {
+        if (r.error) console.warn(`${table} fetch failed`, r.error.message);
+        else out.push(...((r.data || []) as any[]));
+      });
+      return out;
+    };
+
     (async () => {
       setLoading(true);
-      const [dn, dr, cm, fl, ab, sb, gf] = await Promise.all([
-        supabase.from("donations")
-          .select("id,donor_id,donor_name,donor_phone,project_name,amount,payment_method,status,donation_date")
-          .eq("organization_id", orgId).order("donation_date", { ascending: false }).limit(20000),
-        supabase.from("donors")
-          .select("id,full_name,phone,email,city,segment,total_donated,donations_count,first_donation_at,last_donation_at")
-          .eq("organization_id", orgId).order("total_donated", { ascending: false }).limit(20000),
-        supabase.from("campaigns").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(2000),
-        supabase.from("failed_donations").select("*").eq("organization_id", orgId).order("attempted_at", { ascending: false }).limit(5000),
-        supabase.from("abandoned_carts").select("*").eq("organization_id", orgId).order("abandoned_at", { ascending: false }).limit(5000),
-        supabase.from("subscriptions").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(5000),
-        supabase.from("gifts").select("*").eq("organization_id", orgId).order("gift_date", { ascending: false }).limit(10000),
+      const [dn, dr, cm, fl, ab, sb, gf, sum, dCount, rCount] = await Promise.all([
+        fetchPaged(
+          "donations",
+          "id,donor_id,donor_name,donor_phone,project_name,amount,payment_method,status,donation_date",
+          "donation_date",
+          5000,
+        ),
+        fetchPaged(
+          "donors",
+          "id,full_name,phone,email,city,segment,total_donated,donations_count,first_donation_at,last_donation_at",
+          "total_donated",
+          5000,
+        ),
+        fetchPaged("campaigns", "*", "created_at", 2000),
+        fetchPaged("failed_donations", "*", "attempted_at", 3000),
+        fetchPaged("abandoned_carts", "*", "abandoned_at", 3000),
+        fetchPaged("subscriptions", "*", "created_at", 3000),
+        fetchPaged("gifts", "*", "gift_date", 3000),
+        supabase.rpc("donations_overview", { p_org: orgId }),
+        supabase.from("donors").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
+        supabase
+          .from("donors")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", orgId)
+          .gte("donations_count", 2),
       ]);
       if (cancelled) return;
-      setDonations((dn.data || []) as any);
-      setDonors((dr.data || []) as any);
-      setCampaigns(cm.data || []);
-      setFailed(fl.data || []);
-      setAbandoned(ab.data || []);
-      setSubs(sb.data || []);
-      setGifts(gf.data || []);
+      setDonations(dn as any);
+      setDonors(dr as any);
+      setCampaigns(cm);
+      setFailed(fl);
+      setAbandoned(ab);
+      setSubs(sb);
+      setGifts(gf);
+      if (sum.error) console.warn("donations_overview failed", sum.error.message);
+      setSummary((sum.data as unknown as DonationsSummary) ?? null);
+      setDonorsCount(dCount.count ?? 0);
+      setRecurringCount(rCount.count ?? 0);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -478,6 +534,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
   // Project list pulled from all sources to be exhaustive
   const projects = useMemo(() => {
     const set = new Set<string>();
+    (summary?.by_project || []).forEach((p) => p.project && set.add(p.project));
     donations.forEach((d) => d.project_name && set.add(d.project_name));
     campaigns.forEach((c: any) => c.project_name && set.add(c.project_name));
     failed.forEach((r: any) => r.project_name && set.add(r.project_name));
@@ -485,14 +542,18 @@ export function DonorsHub({ orgId }: { orgId: string }) {
     subs.forEach((r: any) => r.project_name && set.add(r.project_name));
     gifts.forEach((r: any) => r.project_name && set.add(r.project_name));
     return Array.from(set).sort();
-  }, [donations, campaigns, failed, abandoned, subs, gifts]);
+  }, [summary, donations, campaigns, failed, abandoned, subs, gifts]);
 
   const totals = useMemo(() => {
-    const total = donations.reduce((s, r) => s + Number(r.amount || 0), 0);
-    const recurring = donors.filter(d => d.donations_count >= 2).length;
-    const projectsCount = new Set(donations.map(d => d.project_name).filter(Boolean)).size;
+    const total = summary
+      ? Number(summary.total || 0)
+      : donations.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const projectsCount = summary
+      ? Number(summary.projects_count || 0)
+      : new Set(donations.map(d => d.project_name).filter(Boolean)).size;
+    const recurring = recurringCount || donors.filter(d => d.donations_count >= 2).length;
     return { total, recurring, projects: projectsCount };
-  }, [donations, donors]);
+  }, [summary, donations, donors, recurringCount]);
 
   return (
     <div className="space-y-5" dir="rtl" style={{ ["--brand" as any]: brand }}>
@@ -503,7 +564,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
         subtitle="قاعدة بيانات شاملة · فلترة ذكية · رؤية متكاملة لكل دورة العطاء"
         actions={
           <div className="flex items-center gap-2 flex-wrap">
-            <KpiPill brand={brand} icon={<Users className="w-4 h-4" />} label="متبرعون" value={donors.length.toLocaleString("ar-SA")} />
+            <KpiPill brand={brand} icon={<Users className="w-4 h-4" />} label="متبرعون" value={(donorsCount || donors.length).toLocaleString("ar-SA")} />
             <KpiPill brand={brand} icon={<TrendingUp className="w-4 h-4" />} label="إجمالي" value={SAR(totals.total)} />
             <KpiPill brand={brand} icon={<Repeat className="w-4 h-4" />} label="متكرّرون" value={totals.recurring.toLocaleString("ar-SA")} />
             <KpiPill brand={brand} icon={<CalendarIcon className="w-4 h-4" />} label="مشاريع" value={totals.projects.toLocaleString("ar-SA")} />
@@ -560,7 +621,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
         </div>
       ) : (
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-          {active === "overview" && <OverviewPanel donations={donations} donors={donors} campaigns={campaigns} failed={failed} abandoned={abandoned} subs={subs} />}
+          {active === "overview" && <OverviewPanel summary={summary} donations={donations} donors={donors} campaigns={campaigns} failed={failed} abandoned={abandoned} subs={subs} />}
           {active === "donors" && <DonorsPanel donors={donors} donations={donations} projects={projects} />}
           {active === "donations" && <DonationsPanel donations={donations} projects={projects} />}
           {active === "top" && <TopDonorsPanel donors={donors} donations={donations} projects={projects} />}
@@ -611,7 +672,7 @@ function KpiPill({ icon, label, value, brand }: { icon: React.ReactNode; label: 
 
 /* ---------- Panels ---------- */
 
-function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }: any) {
+function OverviewPanel({ summary, donations, donors, campaigns, failed, abandoned, subs }: any) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
   const [dateValue, setDateValue] = useState<DateValue>({ key: "all" });
@@ -636,22 +697,33 @@ function OverviewPanel({ donations, donors, campaigns, failed, abandoned, subs }
     () => (campaigns as any[]).filter((r) => inRange(r.created_at || r.start_date, range)),
     [campaigns, range]
   );
+  // عند اختيار "كل الفترات" نستخدم الملخّص المحسوب على الخادم ليشمل كل التبرعات،
+  // وليس فقط الصفوف المحمّلة في المتصفح.
+  const useSummary = dateValue.key === "all" && !!summary;
   const byYear = useMemo(() => {
+    if (useSummary) {
+      return (summary.by_year || []).map((r: any) => [Number(r.year), Number(r.total || 0)] as [number, number]);
+    }
     const map = new Map<number, number>();
     fDonations.forEach((d: Donation) => {
       const y = new Date(d.donation_date).getFullYear();
       map.set(y, (map.get(y) || 0) + Number(d.amount || 0));
     });
     return Array.from(map.entries()).sort((a, b) => b[0] - a[0]);
-  }, [fDonations]);
+  }, [fDonations, useSummary, summary]);
   const byProject = useMemo(() => {
+    if (useSummary) {
+      return (summary.by_project || [])
+        .slice(0, 8)
+        .map((r: any) => [String(r.project), Number(r.total || 0)] as [string, number]);
+    }
     const map = new Map<string, number>();
     fDonations.forEach((d: Donation) => {
       const k = d.project_name || "غير محدد";
       map.set(k, (map.get(k) || 0) + Number(d.amount || 0));
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [fDonations]);
+  }, [fDonations, useSummary, summary]);
   const max = Math.max(1, ...byProject.map((p) => p[1]));
   const yearMax = Math.max(1, ...byYear.map((y) => y[1]));
 
