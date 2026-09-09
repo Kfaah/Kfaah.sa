@@ -66,14 +66,19 @@ function toNumber(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function serialToIso(n: number): string | null {
+  const d = XLSX.SSF.parse_date_code(n);
+  if (!d) return null;
+  return new Date(Date.UTC(d.y, d.m - 1, d.d, d.H || 0, d.M || 0, d.S || 0)).toISOString();
+}
+
 function toDate(v: unknown): string | null {
   if (!v) return null;
-  if (typeof v === "number") {
-    const d = XLSX.SSF.parse_date_code(v);
-    if (d) return new Date(Date.UTC(d.y, d.m - 1, d.d, d.H || 0, d.M || 0, d.S || 0)).toISOString();
-  }
+  if (typeof v === "number") return serialToIso(v);
   const s = String(v).trim();
   if (!s) return null;
+  // أرقام Excel التسلسلية قد تصل كنص
+  if (/^\d{4,6}(\.\d+)?$/.test(s)) return serialToIso(Number(s));
   const parsed = new Date(s);
   if (!isNaN(parsed.getTime())) return parsed.toISOString();
   const m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/);
@@ -84,6 +89,7 @@ function toDate(v: unknown): string | null {
   }
   return null;
 }
+
 
 function mapRow(
   type: DetectedType,
