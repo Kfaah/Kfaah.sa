@@ -452,31 +452,42 @@ export default function Uploads() {
         .upload(path, pf.file, { upsert: false });
       if (upErr) throw upErr;
 
-      const { error: logErr } = await supabase.from("data_uploads_log").insert({
-        uploaded_by: user.id,
-        organization_id: orgId,
-        file_name: pf.file.name,
-        file_type: pf.file.type || "application/octet-stream",
-        detected_schema: schemaTag,
-        file_path: path,
-        storage_bucket: "org-documents",
-        total_rows: 0,
-        inserted_rows: 1,
-        duplicate_rows: 0,
-        failed_rows: 0,
-        for_date: forDate || null,
-        status: "completed",
-        completed_at: new Date().toISOString(),
-      });
+      const { data: logRow, error: logErr } = await supabase
+        .from("data_uploads_log")
+        .insert({
+          uploaded_by: user.id,
+          organization_id: orgId,
+          file_name: pf.file.name,
+          file_type: pf.file.type || "application/octet-stream",
+          detected_schema: schemaTag,
+          file_path: path,
+          storage_bucket: "org-documents",
+          total_rows: 0,
+          inserted_rows: 1,
+          duplicate_rows: 0,
+          failed_rows: 0,
+          for_date: forDate || null,
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
       if (logErr) {
         await supabase.storage.from("org-documents").remove([path]);
         throw logErr;
       }
 
-      return { detected: schemaTag, inserted: 1, duplicates: 0, failed: 0 };
+      return {
+        detected: schemaTag,
+        inserted: 1,
+        duplicates: 0,
+        failed: 0,
+        uploadId: logRow?.id as string | undefined,
+      };
     },
     [user, orgId, forDate],
   );
+
 
   const processFile = useCallback(
     async (pf: PendingFile) => {
