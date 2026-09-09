@@ -294,13 +294,21 @@ async function buildDonorProfiles(orgId: string): Promise<void> {
     last_donation_at: a.last,
   }));
 
-  const BATCH = 400;
-  for (let i = 0; i < rows.length; i += BATCH) {
-    const { error } = await supabase
-      .from("donors")
-      .upsert(rows.slice(i, i + BATCH), { onConflict: "organization_id,external_id" });
-    if (error) console.warn("donor upsert failed", error.message);
-  }
+  const BATCH = 1000;
+  const chunks: (typeof rows)[] = [];
+  for (let i = 0; i < rows.length; i += BATCH) chunks.push(rows.slice(i, i + BATCH));
+
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(5, chunks.length) }, async () => {
+    while (cursor < chunks.length) {
+      const chunk = chunks[cursor++];
+      const { error } = await supabase
+        .from("donors")
+        .upsert(chunk, { onConflict: "organization_id,external_id" });
+      if (error) console.warn("donor upsert failed", error.message);
+    }
+  });
+  await Promise.all(workers);
 }
 
 /**
