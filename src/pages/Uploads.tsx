@@ -487,6 +487,34 @@ export default function Uploads() {
     },
     [user, orgId, forDate],
   );
+  // يحفظ الملف في مركز الملفات ثم يستورد صفوفه (تبرعات/حملات/…) من داخل المتصفح.
+  const archiveThenImport = useCallback(
+    async (pf: PendingFile): Promise<NonNullable<PendingFile["result"]>> => {
+      const archived = await archiveFile(pf, pf.category === "auto" ? "profiles" : pf.category);
+      if (!orgId || !archived.uploadId || !SPREADSHEET_RE.test(pf.file.name)) {
+        return { ...archived, archivedOnly: true };
+      }
+      try {
+        const res = await importDataWorkbook({
+          blob: pf.file,
+          orgId,
+          uploadId: archived.uploadId,
+          sourceKind: pf.category === "auto" ? null : pf.category,
+        });
+        return {
+          detected: res.detected,
+          inserted: res.inserted,
+          duplicates: Math.max(0, res.total - res.inserted - res.failed),
+          failed: res.failed,
+        };
+      } catch (err) {
+        console.warn("browser import failed", err);
+        return { ...archived, archivedOnly: true };
+      }
+    },
+    [archiveFile, orgId],
+  );
+
 
 
   const processFile = useCallback(
