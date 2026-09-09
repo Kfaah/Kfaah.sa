@@ -218,17 +218,42 @@ donations | store_master | store_daily | subscriptions | campaigns | gifts | aba
       analysis = { summary: raw };
     }
 
+    // توجيه الملف تلقائياً إلى قسمه المخصص إذا كان التصنيف الحالي عاماً.
+    const ALLOWED_ROUTES = new Set([
+      "donations",
+      "store_master",
+      "store_daily",
+      "subscriptions",
+      "campaigns",
+      "gifts",
+      "abandoned_carts",
+      "bank_transfers",
+      "failed_donations",
+      "staff_duties",
+      "reports",
+      "profiles",
+      "tasks",
+      "other",
+    ]);
+    const GENERIC = new Set(["profiles", "other", "archived", "unknown", "auto", null, ""]);
+    const suggested = String((analysis as Record<string, unknown>)?.route || "").trim();
+    const routedTo =
+      ALLOWED_ROUTES.has(suggested) && GENERIC.has(row.detected_schema as string | null)
+        ? suggested
+        : null;
+
     const { error: updErr } = await supa
       .from("data_uploads_log")
       .update({
         ai_analysis: analysis,
         ai_analyzed_at: new Date().toISOString(),
         ai_model: "google/gemini-2.5-flash",
+        ...(routedTo ? { detected_schema: routedTo } : {}),
       })
       .eq("id", uploadId);
     if (updErr) return json({ error: "save_failed", message: updErr.message }, 500);
 
-    return json({ success: true, analysis, chars: text.length });
+    return json({ success: true, analysis, routed_to: routedTo, chars: text.length });
   } catch (e) {
     console.error(e);
     return json({ error: e instanceof Error ? e.message : "unknown" }, 500);
