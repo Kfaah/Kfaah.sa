@@ -248,7 +248,7 @@ function segmentOf(a: DonorAgg): string {
  * حتى تظهر قائمة المتبرعين والتصنيفات في مركز التبرعات.
  */
 async function buildDonorProfiles(orgId: string): Promise<void> {
-  const PAGE = 1000;
+  const PAGE = 2000;
   const byPhone = new Map<string, DonorAgg>();
 
   for (let from = 0; ; from += PAGE) {
@@ -294,13 +294,21 @@ async function buildDonorProfiles(orgId: string): Promise<void> {
     last_donation_at: a.last,
   }));
 
-  const BATCH = 400;
-  for (let i = 0; i < rows.length; i += BATCH) {
-    const { error } = await supabase
-      .from("donors")
-      .upsert(rows.slice(i, i + BATCH), { onConflict: "organization_id,external_id" });
-    if (error) console.warn("donor upsert failed", error.message);
-  }
+  const BATCH = 1000;
+  const chunks: (typeof rows)[] = [];
+  for (let i = 0; i < rows.length; i += BATCH) chunks.push(rows.slice(i, i + BATCH));
+
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(5, chunks.length) }, async () => {
+    while (cursor < chunks.length) {
+      const chunk = chunks[cursor++];
+      const { error } = await supabase
+        .from("donors")
+        .upsert(chunk, { onConflict: "organization_id,external_id" });
+      if (error) console.warn("donor upsert failed", error.message);
+    }
+  });
+  await Promise.all(workers);
 }
 
 /**
@@ -347,28 +355,41 @@ export async function importDataWorkbook({
 
   let inserted = 0;
   let failed = 0;
+  let done = 0;
   const conflict = CONFLICT_TARGET[detected];
-  const BATCH = 400;
+  const BATCH = 1000;
+  const CONCURRENCY = 5;
 
-  for (let i = 0; i < mapped.length; i += BATCH) {
-    const batch = mapped.slice(i, i + BATCH);
+  const batches: Record<string, unknown>[][] = [];
+  for (let i = 0; i < mapped.length; i += BATCH) batches.push(mapped.slice(i, i + BATCH));
+
+  const runBatch = async (batch: Record<string, unknown>[]) => {
     const table = supabase.from(detected as never);
-    const { error, count } = conflict
+    const { error } = conflict
       ? await table.upsert(batch as never, {
           onConflict: conflict,
           ignoreDuplicates: true,
-          count: "exact",
         })
-      : await table.insert(batch as never, { count: "exact" });
+      : await table.insert(batch as never);
 
     if (error) {
       failed += batch.length;
       console.warn("batch import failed", error.message);
     } else {
-      inserted += count ?? batch.length;
+      inserted += batch.length;
     }
-    onProgress?.(Math.min(i + BATCH, mapped.length), mapped.length);
-  }
+    done += batch.length;
+    onProgress?.(Math.min(done, mapped.length), mapped.length);
+  };
+
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(CONCURRENCY, batches.length) }, async () => {
+    while (cursor < batches.length) {
+      const batch = batches[cursor++];
+      await runBatch(batch);
+    }
+  });
+  await Promise.all(workers);
 
   if (detected === "donations") {
     await buildDonorProfiles(orgId);
