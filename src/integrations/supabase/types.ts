@@ -5752,6 +5752,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_user_role: { Args: { _target_user: string }; Returns: boolean }
       create_direct_conversation: {
         Args: { _other_user_id: string }
         Returns: string
