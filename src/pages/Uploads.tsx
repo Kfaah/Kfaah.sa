@@ -550,6 +550,7 @@ export default function Uploads() {
           inserted: res.inserted,
           duplicates: Math.max(0, res.total - res.inserted - res.failed),
           failed: res.failed,
+          uploadId: archived.uploadId,
         };
       } catch (err) {
         console.warn("browser import failed", err);
