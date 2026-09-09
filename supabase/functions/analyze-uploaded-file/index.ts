@@ -173,9 +173,14 @@ Deno.serve(async (req) => {
 ${text}
 """
 
+حدّد أيضاً القسم المناسب لتوجيه الملف إليه (route) من هذه القيم فقط:
+donations | store_master | store_daily | subscriptions | campaigns | gifts | abandoned_carts | bank_transfers | failed_donations | staff_duties | reports | profiles | tasks | other
+
 أعد JSON فقط بهذا الشكل:
 {
   "document_type": "نوع المستند",
+  "route": "أحد القيم أعلاه",
+  "route_reason": "سبب التوجيه بجملة قصيرة",
   "summary": "ملخص شامل في 3-5 أسطر",
   "key_points": ["نقطة مهمة 1", "نقطة 2"],
   "numbers": ["أي أرقام أو مؤشرات مهمة وردت"],
