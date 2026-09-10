@@ -20,7 +20,10 @@ Deno.serve(async (req) => {
     if (error) throw error;
 
     const results: Array<{ id: string; ok: boolean; status?: number; error?: string }> = [];
+    let index = 0;
     for (const src of sources ?? []) {
+      // Pace requests so the scraping provider does not rate-limit us (429).
+      if (index++ > 0) await new Promise((r) => setTimeout(r, 4000));
       try {
         const r = await fetch(`${SUPABASE_URL}/functions/v1/sync-external-source`, {
           method: "POST",
