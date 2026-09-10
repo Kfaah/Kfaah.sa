@@ -8,6 +8,43 @@ import { useAuth } from "@/hooks/useAuth";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { signInternalAttachments } from "@/lib/internalAttachmentUrl";
+
+function InboxAttachments({ items }: { items: { name: string; url: string; type: string; size: number }[] }) {
+  const [signed, setSigned] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    signInternalAttachments(items.map((a) => a.url)).then((map) => {
+      if (alive) setSigned(map);
+    });
+    return () => { alive = false; };
+  }, [items]);
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {items.map((a, i) => {
+        const href = signed[a.url];
+        const isImg = a.type?.startsWith("image/");
+        return isImg ? (
+          <a key={i} href={href || undefined} target="_blank" rel="noopener noreferrer">
+            {href && <img src={href} alt={a.name} className="max-h-40 rounded-lg border border-white/20 object-cover" />}
+          </a>
+        ) : (
+          <a
+            key={i}
+            href={href || undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white/10 border border-white/20 text-white hover:bg-white/20"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="truncate max-w-[180px]">{a.name}</span>
+            <span className="opacity-70">{(a.size / 1024).toFixed(1)} KB</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
 
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
