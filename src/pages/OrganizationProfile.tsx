@@ -746,6 +746,35 @@ export default function OrganizationProfile() {
             </Button>
           </div>
 
+          <div className="mb-4 p-3 rounded-lg border bg-primary/5 space-y-2">
+            <Label className="text-xs flex items-center gap-2">
+              <LinkIcon className="w-3.5 h-3.5 text-primary" /> إضافة مصدر عن طريق الرابط
+            </Label>
+            <div className="flex gap-2 flex-wrap">
+              <Input
+                dir="ltr"
+                placeholder="https://x.com/... أو https://instagram.com/... أو موقع/متجر"
+                value={newSourceUrl}
+                onChange={(e) => setNewSourceUrl(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSourceByUrl(); } }}
+                className="flex-1 min-w-[220px]"
+              />
+              <Button
+                onClick={addSourceByUrl}
+                disabled={addingSource || !newSourceUrl.trim()}
+                className="gap-2"
+              >
+                {addingSource ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                إضافة وقراءة
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              الصق أي رابط (موقع، متجر، تواصل اجتماعي) وسيتعرّف النظام على نوعه ويحفظه ويقرأ محتواه تلقائياً.
+            </p>
+          </div>
+
+
+
           {form.website_url && (
             <div className="mb-4 p-3 rounded-lg border bg-muted/30 space-y-2">
               <Label className="text-xs">مسار قسم الأخبار في الموقع (اختياري)</Label>
