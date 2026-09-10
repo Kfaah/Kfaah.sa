@@ -61,6 +61,9 @@ export default function OrganizationProfile() {
   const [newDocUrl, setNewDocUrl] = useState("");
   const [importingDocs, setImportingDocs] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [newSourceUrl, setNewSourceUrl] = useState("");
+  const [addingSource, setAddingSource] = useState(false);
+
 
 
   const loadSources = async () => {
