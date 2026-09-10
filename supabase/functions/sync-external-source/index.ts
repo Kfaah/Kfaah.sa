@@ -19,18 +19,52 @@ Deno.serve(async (req) => {
     const { data: src } = await supa.from("org_external_sources").select("*").eq("id", source_id).maybeSingle();
     if (!src) return new Response(JSON.stringify({ error: "source_not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    if (!FIRECRAWL_API_KEY) {
-      await supa.from("org_external_sources").update({ last_status: "firecrawl_not_configured", last_synced_at: new Date().toISOString() }).eq("id", source_id);
-      return new Response(JSON.stringify({ error: "firecrawl_not_configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
 
-    // Scrape any public URL (website OR public social profile/page) via Firecrawl.
+    // Scrape any public URL (website / store OR public social profile/page).
     // Social platforms (twitter/instagram/facebook/linkedin/youtube/tiktok) render dynamically,
     // so we wait briefly for hydration before extraction.
-    const isSocial = src.kind !== "website";
+    const isSocial = src.kind !== "website" && src.kind !== "store";
     let markdown = "";
     let summary = "";
     let pagesScanned = 1;
+
+    // Fallback reader for sites Firecrawl refuses (Instagram/Facebook/TikTok/Snapchat…)
+    // r.jina.ai renders the page server-side and returns plain text/markdown. No key needed.
+    const readerFallback = async (u: string): Promise<string> => {
+      const targets = [
+        `https://r.jina.ai/${u}`,
+        u,
+      ];
+      for (const t of targets) {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 20000);
+          const r = await fetch(t, {
+            signal: ctrl.signal,
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+              "Accept-Language": "ar,en;q=0.8",
+              Accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
+            },
+          });
+          clearTimeout(timer);
+          if (!r.ok) continue;
+          const body = await r.text();
+          const text = body
+            .replace(/<script[\s\S]*?<\/script>/gi, " ")
+            .replace(/<style[\s\S]*?<\/style>/gi, " ")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/&nbsp;/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (text.length > 300) return text.slice(0, 20000);
+        } catch (_e) {
+          // try next strategy
+        }
+      }
+      return "";
+    };
 
     // Helper: scrape a single URL via Firecrawl, retrying on rate limits (429) / 5xx
     const scrapeOne = async (u: string, mainOnly: boolean, wait: number) => {
@@ -53,35 +87,70 @@ Deno.serve(async (req) => {
     };
 
     // Step 1: scrape the homepage (or social page)
-    const home = await scrapeOne(src.url, !isSocial, isSocial ? 3500 : 0);
-    if (!home.ok) {
-      const detailMsg = String(home.raw?.error || "");
-      const unsupported = /do not support this site/i.test(detailMsg);
-      const rateLimited = home.status === 429;
-      const statusLabel = unsupported ? "unsupported_site" : `firecrawl_failed:${home.status}`;
-      await supa.from("org_external_sources").update({
-        last_status: statusLabel,
-        last_synced_at: new Date().toISOString(),
-      }).eq("id", source_id);
-      // Return 200 with a fallback signal so the frontend doesn't crash.
-      return new Response(JSON.stringify({
-        ok: false,
-        skipped: true,
-        reason: unsupported ? "unsupported_site" : rateLimited ? "rate_limited" : "firecrawl_failed",
-        message: unsupported
-          ? "هذا المصدر غير مدعوم للمسح المباشر (مثل بعض منصات التواصل). تم تخطّيه."
-          : rateLimited
-            ? "تم تجاوز حد المسح المسموح مؤقتاً. انتظر دقيقة ثم أعد المحاولة."
-            : "تعذّر جلب المحتوى من هذا المصدر حالياً.",
-        details: home.raw,
-      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let usedFallback = false;
+    const home = FIRECRAWL_API_KEY
+      ? await scrapeOne(src.url, !isSocial, isSocial ? 3500 : 0)
+      : { ok: false, status: 0, md: "", sum: "", raw: {} as any };
+    if (home.ok && home.md) {
+      markdown = home.md;
+      summary = home.sum;
+    } else {
+      // Firecrawl refused (unsupported site), rate-limited, or returned nothing:
+      // read the public page directly through the reader fallback.
+      let text = await readerFallback(src.url);
+
+      // Platforms with hard login walls (Instagram/Facebook/TikTok): gather public
+      // information about the account from web search results instead.
+      if (!text && FIRECRAWL_API_KEY) {
+        try {
+          const handle = decodeURIComponent(new URL(src.url).pathname).replace(/^\/+|\/+$/g, "").replace(/^@/, "");
+          const q = `${handle} ${src.kind} ${src.url}`;
+          const r = await fetch("https://api.firecrawl.dev/v2/search", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ query: q, limit: 8 }),
+          });
+          const j = await r.json().catch(() => ({}));
+          const items: any[] = j?.data?.web || j?.data || j?.results || [];
+          const joined = (Array.isArray(items) ? items : [])
+            .map((it) => [it?.title, it?.url, it?.description || it?.snippet].filter(Boolean).join(" — "))
+            .filter(Boolean)
+            .join("\n");
+          if (joined.length > 150) text = `نتائج بحث عامة عن الحساب ${src.url}:\n${joined}`;
+        } catch (_e) {
+          // ignore, handled below
+        }
+      }
+
+      if (!text) {
+        const detailMsg = String(home.raw?.error || "");
+        const unsupported = /do not support this site/i.test(detailMsg);
+        const rateLimited = home.status === 429;
+        const statusLabel = unsupported ? "blocked_by_platform" : `fetch_failed:${home.status}`;
+        await supa.from("org_external_sources").update({
+          last_status: statusLabel,
+          last_synced_at: new Date().toISOString(),
+        }).eq("id", source_id);
+        return new Response(JSON.stringify({
+          ok: false,
+          skipped: true,
+          reason: unsupported ? "blocked_by_platform" : rateLimited ? "rate_limited" : "fetch_failed",
+          message: unsupported
+            ? "المنصة تمنع القراءة الآلية لهذه الصفحة (حساب خاص أو حماية). جرّب رابط الحساب العام."
+            : rateLimited
+              ? "تم تجاوز حد المسح المسموح مؤقتاً. انتظر دقيقة ثم أعد المحاولة."
+              : "تعذّر جلب المحتوى من هذا المصدر حالياً.",
+          details: home.raw,
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      markdown = text;
+      summary = text.slice(0, 800);
+      usedFallback = true;
     }
-    markdown = home.md;
-    summary = home.sum;
 
     // Step 2: for websites, deep-crawl the news section.
     // Use src.news_path if provided, else auto-detect common Arabic/English news paths.
-    if (!isSocial) {
+    if (!isSocial && FIRECRAWL_API_KEY && !usedFallback) {
       try {
         const base = new URL(src.url);
         const candidatePaths = src.news_path
@@ -195,7 +264,7 @@ Deno.serve(async (req) => {
     await supa.from("org_external_sources").update({
       summary: summary || markdown.slice(0, 1000),
       last_synced_at: new Date().toISOString(),
-      last_status: `synced:${pagesScanned}p`,
+      last_status: usedFallback ? `synced:${pagesScanned}p:fallback` : `synced:${pagesScanned}p`,
     }).eq("id", source_id);
 
     return new Response(JSON.stringify({ ok: true, insights_count: parsed.insights?.length || 0, pages_scanned: pagesScanned }), {
