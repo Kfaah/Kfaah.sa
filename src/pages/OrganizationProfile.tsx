@@ -385,6 +385,82 @@ export default function OrganizationProfile() {
     }
   };
 
+  const FIELD_BY_KIND: Record<string, keyof ProfileForm> = {
+    website: "website_url", store: "store_url", twitter: "twitter_url",
+    instagram: "instagram_url", tiktok: "tiktok_url", snapchat: "snapchat_url",
+    youtube: "youtube_url", facebook: "facebook_url", linkedin: "linkedin_url",
+  };
+
+  const detectKind = (rawUrl: string): { kind: string; url: string } | null => {
+    let value = rawUrl.trim();
+    if (!value) return null;
+    value = value.replace(/^(https?):\/(?!\/)/i, "$1://");
+    if (!/^https?:\/\//i.test(value)) value = `https://${value.replace(/^\/+/, "")}`;
+    let host = "";
+    try { host = new URL(value).hostname.replace(/^www\./i, "").toLowerCase(); } catch { return null; }
+    if (!host) return null;
+    if (/(^|\.)(twitter\.com|x\.com)$/.test(host)) return { kind: "twitter", url: value };
+    if (/(^|\.)instagram\.com$/.test(host)) return { kind: "instagram", url: value };
+    if (/(^|\.)tiktok\.com$/.test(host)) return { kind: "tiktok", url: value };
+    if (/(^|\.)snapchat\.com$/.test(host)) return { kind: "snapchat", url: value };
+    if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return { kind: "youtube", url: value };
+    if (/(^|\.)(facebook\.com|fb\.com|fb\.me)$/.test(host)) return { kind: "facebook", url: value };
+    if (/(^|\.)linkedin\.com$/.test(host)) return { kind: "linkedin", url: value };
+    if (/(^|\.)(store|shop|donate|tabaru|give)\./.test(host) || /\/(donate|store|shop|تبرع)/i.test(value)) {
+      return { kind: "store", url: value };
+    }
+    return { kind: "website", url: value };
+  };
+
+  const addSourceByUrl = async () => {
+    if (!orgId) return;
+    const detected = detectKind(newSourceUrl);
+    if (!detected) { toast.error("الرابط غير صحيح"); return; }
+    const field = FIELD_BY_KIND[detected.kind];
+    setAddingSource(true);
+    try {
+      const nextForm = { ...form, [field]: detected.url } as ProfileForm;
+      const { error: upErr } = await supabase
+        .from("organization_profiles")
+        .upsert(
+          { organization_id: orgId, ...nextForm, documents: documents as unknown as never },
+          { onConflict: "organization_id" },
+        );
+      if (upErr) throw upErr;
+      setForm(nextForm);
+
+      const existing = sources.find((s) => s.kind === detected.kind && s.url === detected.url);
+      let sourceId = existing?.id as string | undefined;
+      if (!sourceId) {
+        const { data, error } = await supabase
+          .from("org_external_sources" as any)
+          .insert({
+            organization_id: orgId,
+            kind: detected.kind,
+            url: detected.url,
+            label: KIND_LABEL[detected.kind] || detected.kind,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        sourceId = (data as any).id;
+      }
+      toast.success(`تمت إضافة ${KIND_LABEL[detected.kind] || detected.kind}، وجاري قراءته…`);
+      setNewSourceUrl("");
+      const { data: fnData } = await supabase.functions.invoke("sync-external-source", {
+        body: { source_id: sourceId },
+      });
+      if (fnData?.skipped) toast.warning(fnData.message || "تمت الإضافة، وتعذّرت القراءة الآن");
+      await loadSources();
+    } catch (e: any) {
+      toast.error("تعذّرت الإضافة: " + (e?.message || ""));
+    } finally {
+      setAddingSource(false);
+    }
+  };
+
+
+
   const brand = useMemo(() => ({
     primary: form.primary_color || "#0F766E",
     secondary: form.secondary_color || "#0E7490",
