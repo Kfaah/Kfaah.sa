@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { signInternalAttachments } from "@/lib/internalAttachmentUrl";
 
 type Thread = {
   id: string;
@@ -236,8 +237,7 @@ export default function Messages() {
         toast.error(`تعذّر رفع ${f.name}`);
         continue;
       }
-      const { data: pub } = supabase.storage.from("internal-message-attachments").getPublicUrl(path);
-      out.push({ name: f.name, url: pub.publicUrl, type: f.type || "application/octet-stream", size: f.size });
+      out.push({ name: f.name, url: path, type: f.type || "application/octet-stream", size: f.size });
     }
     return out;
   };
