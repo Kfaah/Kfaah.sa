@@ -8,6 +8,43 @@ import { useAuth } from "@/hooks/useAuth";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { signInternalAttachments } from "@/lib/internalAttachmentUrl";
+
+function InboxAttachments({ items }: { items: { name: string; url: string; type: string; size: number }[] }) {
+  const [signed, setSigned] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    signInternalAttachments(items.map((a) => a.url)).then((map) => {
+      if (alive) setSigned(map);
+    });
+    return () => { alive = false; };
+  }, [items]);
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {items.map((a, i) => {
+        const href = signed[a.url];
+        const isImg = a.type?.startsWith("image/");
+        return isImg ? (
+          <a key={i} href={href || undefined} target="_blank" rel="noopener noreferrer">
+            {href && <img src={href} alt={a.name} className="max-h-40 rounded-lg border border-white/20 object-cover" />}
+          </a>
+        ) : (
+          <a
+            key={i}
+            href={href || undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white/10 border border-white/20 text-white hover:bg-white/20"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="truncate max-w-[180px]">{a.name}</span>
+            <span className="opacity-70">{(a.size / 1024).toFixed(1)} KB</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
 
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
@@ -148,7 +185,7 @@ export default function InternalInbox() {
     if (!body.trim() && replyFiles.length === 0) return toast.error("اكتب ردّك أولاً");
     setSending(true);
     try {
-      const attachments = await uploadFiles(replyFiles);
+      const attachments = await uploadFiles(replyFiles, selectedId);
       const { error } = await supabase.from("internal_messages").insert({
         thread_id: selectedId,
         sender_user_id: user.id,
@@ -194,7 +231,7 @@ export default function InternalInbox() {
         if (error) throw error;
         tid = (created as any).id;
       }
-      const attachments = await uploadFiles(composeFiles);
+      const attachments = await uploadFiles(composeFiles, tid);
       const { error: mErr } = await supabase.from("internal_messages").insert({
         thread_id: tid,
         sender_user_id: user.id,
@@ -228,7 +265,7 @@ export default function InternalInbox() {
     return `${(n / 1024 / 1024).toFixed(1)} MB`;
   };
 
-  const uploadFiles = async (files: File[]) => {
+  const uploadFiles = async (files: File[], threadId: string) => {
     if (!files || files.length === 0) return [] as { name: string; url: string; type: string; size: number }[];
     const out: { name: string; url: string; type: string; size: number }[] = [];
     for (const f of files) {
@@ -242,14 +279,14 @@ export default function InternalInbox() {
         toast.error("انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى");
         return out;
       }
-      const path = `${uid}/${crypto.randomUUID()}-${f.name}`;
+      const ext = f.name.includes(".") ? f.name.split(".").pop() : "";
+      const path = `${uid}/${threadId}/${crypto.randomUUID()}${ext ? "." + ext : ""}`;
       const { error } = await supabase.storage.from("internal-message-attachments").upload(path, f, { upsert: false, contentType: f.type });
       if (error) {
         toast.error(`تعذّر رفع ${f.name}`);
         continue;
       }
-      const { data } = supabase.storage.from("internal-message-attachments").getPublicUrl(path);
-      out.push({ name: f.name, url: data.publicUrl, type: f.type, size: f.size });
+      out.push({ name: f.name, url: path, type: f.type, size: f.size });
     }
     return out;
   };
@@ -493,28 +530,7 @@ export default function InternalInbox() {
                             >
                               {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
                               {m.attachments && m.attachments.length > 0 && (
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  {m.attachments.map((a, i) => {
-                                    const isImg = a.type?.startsWith("image/");
-                                    return isImg ? (
-                                      <a key={i} href={a.url} target="_blank" rel="noopener noreferrer">
-                                        <img src={a.url} alt={a.name} className="max-h-40 rounded-lg border border-white/20 object-cover" />
-                                      </a>
-                                    ) : (
-                                      <a
-                                        key={i}
-                                        href={a.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white/10 border border-white/20 text-white hover:bg-white/20"
-                                      >
-                                        <Download className="w-3.5 h-3.5" />
-                                        <span className="truncate max-w-[180px]">{a.name}</span>
-                                        <span className="opacity-70">{(a.size / 1024).toFixed(1)} KB</span>
-                                      </a>
-                                    );
-                                  })}
-                                </div>
+                                <InboxAttachments items={m.attachments} />
                               )}
                               <div className="text-[10px] text-slate-300/80 mt-1.5 text-left" dir="ltr">{fmt(m.created_at)}</div>
                             </div>
