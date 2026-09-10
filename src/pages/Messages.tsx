@@ -83,21 +83,30 @@ function FilePickList({
 }
 
 function AttachmentList({ items, mine }: { items: Attachment[]; mine: boolean }) {
+  const [signed, setSigned] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    signInternalAttachments(items.map((a) => a.url)).then((map) => {
+      if (alive) setSigned(map);
+    });
+    return () => { alive = false; };
+  }, [items]);
   return (
     <div className="mt-2 flex flex-wrap gap-2">
       {items.map((a, i) => {
+        const href = signed[a.url];
         const isImg = a.type?.startsWith("image/");
         if (isImg) {
           return (
-            <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="block">
-              <img src={a.url} alt={a.name} className="max-h-40 rounded-lg border border-border object-cover" />
+            <a key={i} href={href || undefined} target="_blank" rel="noopener noreferrer" className="block">
+              {href && <img src={href} alt={a.name} className="max-h-40 rounded-lg border border-border object-cover" />}
             </a>
           );
         }
         return (
           <a
             key={i}
-            href={a.url}
+            href={href || undefined}
             target="_blank"
             rel="noopener noreferrer"
             className={`inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium border ${
