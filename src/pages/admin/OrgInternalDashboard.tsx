@@ -264,6 +264,61 @@ export default function OrgInternalDashboard({
   const hasLoadedOnce = Boolean(org);
   const [analyzing, setAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(initialTab ?? "overview");
+  const [editingSource, setEditingSource] = useState<string | null>(null);
+  const [sourceDraft, setSourceDraft] = useState("");
+  const [savingSource, setSavingSource] = useState(false);
+
+  const SOURCE_FIELDS: { key: keyof Profile; kind: string; label: string; placeholder: string }[] = [
+    { key: "website_url", kind: "website", label: "الموقع الإلكتروني", placeholder: "https://example.sa" },
+    { key: "store_url", kind: "store", label: "المتجر", placeholder: "https://store.example.sa" },
+    { key: "twitter_url", kind: "twitter", label: "X (تويتر)", placeholder: "https://x.com/..." },
+    { key: "instagram_url", kind: "instagram", label: "Instagram", placeholder: "https://instagram.com/..." },
+    { key: "tiktok_url", kind: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@..." },
+    { key: "youtube_url", kind: "youtube", label: "YouTube", placeholder: "https://youtube.com/@..." },
+    { key: "snapchat_url", kind: "snapchat", label: "Snapchat", placeholder: "https://snapchat.com/add/..." },
+    { key: "facebook_url", kind: "facebook", label: "Facebook", placeholder: "https://facebook.com/..." },
+    { key: "linkedin_url", kind: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/company/..." },
+  ];
+
+  const saveSourceUrl = async (field: keyof Profile, kind: string, rawUrl: string) => {
+    if (!orgId) return;
+    let url = rawUrl.trim();
+    if (url) {
+      url = url.replace(/^(https?):\/(?!\/)/i, "$1://");
+      if (!/^https?:\/\//i.test(url)) url = `https://${url.replace(/^\/+/, "")}`;
+      try { new URL(url); } catch { toast.error("الرابط غير صحيح"); return; }
+    }
+    setSavingSource(true);
+    try {
+      const { error } = await supabase
+        .from("organization_profiles")
+        .upsert({ organization_id: orgId, [field]: url || null } as any, { onConflict: "organization_id" });
+      if (error) throw error;
+      // Sync the matching external source row so it gets picked up by the reader
+      const { data: existing } = await supabase
+        .from("org_external_sources" as any)
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("kind", kind);
+      if (url) {
+        const match = (existing as any[] || []).find((r) => r.id);
+        if (match) {
+          await supabase.from("org_external_sources" as any).update({ url }).eq("id", match.id);
+        } else {
+          await supabase.from("org_external_sources" as any).insert({ organization_id: orgId, kind, url, label: kind });
+        }
+      } else if (existing && (existing as any[]).length) {
+        await supabase.from("org_external_sources" as any).delete().in("id", (existing as any[]).map((r) => r.id));
+      }
+      setProfile((prev) => (prev ? { ...prev, [field]: url || null } : ({ [field]: url || null } as unknown as Profile)));
+      setEditingSource(null);
+      toast.success(url ? "تم حفظ الرابط" : "تمت إزالة الرابط");
+    } catch (e: any) {
+      toast.error("تعذّر الحفظ: " + (e?.message || ""));
+    } finally {
+      setSavingSource(false);
+    }
+  };
 
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
