@@ -8,7 +8,7 @@ import {
   GitCompareArrows, CalendarCheck, ClipboardList, FileSpreadsheet, XCircle,
   Database, FileText, IdCard, FolderOpen,
   UserPlus, Briefcase, Search, Mail, Phone, Crown, Pencil, Trash2,
-  BrainCircuit, ArrowLeft,
+  BrainCircuit, ArrowLeft, Plus, Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -162,6 +162,7 @@ interface Profile {
   snapchat_url: string | null;
   youtube_url: string | null;
   facebook_url: string | null;
+  linkedin_url?: string | null;
 }
 
 interface DeepAnalysis {
@@ -263,6 +264,61 @@ export default function OrgInternalDashboard({
   const hasLoadedOnce = Boolean(org);
   const [analyzing, setAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(initialTab ?? "overview");
+  const [editingSource, setEditingSource] = useState<string | null>(null);
+  const [sourceDraft, setSourceDraft] = useState("");
+  const [savingSource, setSavingSource] = useState(false);
+
+  const SOURCE_FIELDS: { key: keyof Profile; kind: string; label: string; placeholder: string }[] = [
+    { key: "website_url", kind: "website", label: "الموقع الإلكتروني", placeholder: "https://example.sa" },
+    { key: "store_url", kind: "store", label: "المتجر", placeholder: "https://store.example.sa" },
+    { key: "twitter_url", kind: "twitter", label: "X (تويتر)", placeholder: "https://x.com/..." },
+    { key: "instagram_url", kind: "instagram", label: "Instagram", placeholder: "https://instagram.com/..." },
+    { key: "tiktok_url", kind: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@..." },
+    { key: "youtube_url", kind: "youtube", label: "YouTube", placeholder: "https://youtube.com/@..." },
+    { key: "snapchat_url", kind: "snapchat", label: "Snapchat", placeholder: "https://snapchat.com/add/..." },
+    { key: "facebook_url", kind: "facebook", label: "Facebook", placeholder: "https://facebook.com/..." },
+    { key: "linkedin_url", kind: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/company/..." },
+  ];
+
+  const saveSourceUrl = async (field: keyof Profile, kind: string, rawUrl: string) => {
+    if (!orgId) return;
+    let url = rawUrl.trim();
+    if (url) {
+      url = url.replace(/^(https?):\/(?!\/)/i, "$1://");
+      if (!/^https?:\/\//i.test(url)) url = `https://${url.replace(/^\/+/, "")}`;
+      try { new URL(url); } catch { toast.error("الرابط غير صحيح"); return; }
+    }
+    setSavingSource(true);
+    try {
+      const { error } = await supabase
+        .from("organization_profiles")
+        .upsert({ organization_id: orgId, [field]: url || null } as any, { onConflict: "organization_id" });
+      if (error) throw error;
+      // Sync the matching external source row so it gets picked up by the reader
+      const { data: existing } = await supabase
+        .from("org_external_sources" as any)
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("kind", kind);
+      if (url) {
+        const match = (existing as any[] || []).find((r) => r.id);
+        if (match) {
+          await supabase.from("org_external_sources" as any).update({ url }).eq("id", match.id);
+        } else {
+          await supabase.from("org_external_sources" as any).insert({ organization_id: orgId, kind, url, label: kind });
+        }
+      } else if (existing && (existing as any[]).length) {
+        await supabase.from("org_external_sources" as any).delete().in("id", (existing as any[]).map((r) => r.id));
+      }
+      setProfile((prev) => (prev ? { ...prev, [field]: url || null } : ({ [field]: url || null } as unknown as Profile)));
+      setEditingSource(null);
+      toast.success(url ? "تم حفظ الرابط" : "تمت إزالة الرابط");
+    } catch (e: any) {
+      toast.error("تعذّر الحفظ: " + (e?.message || ""));
+    } finally {
+      setSavingSource(false);
+    }
+  };
 
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
@@ -304,7 +360,7 @@ export default function OrgInternalDashboard({
     // Wave 1 — fast, unblocks the shell immediately.
     const wave1 = Promise.all([
       supabase.from("organizations").select("id,name,slug,logo_url").eq("id", orgId).maybeSingle(),
-      supabase.from("organization_profiles").select("about,goals,website_url,store_url,twitter_url,instagram_url,tiktok_url,snapchat_url,youtube_url,facebook_url").eq("organization_id", orgId).maybeSingle(),
+      supabase.from("organization_profiles").select("about,goals,website_url,store_url,twitter_url,instagram_url,tiktok_url,snapchat_url,youtube_url,facebook_url,linkedin_url").eq("organization_id", orgId).maybeSingle(),
     ]).then(([orgRes, profRes]) => {
       if (orgRes.data) setOrg(orgRes.data as OrgInfo);
       setProfile((profRes.data as Profile) ?? null);
@@ -568,13 +624,55 @@ export default function OrgInternalDashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-right text-sm" dir="rtl">
-                <SourceLink label="الموقع الإلكتروني" url={profile?.website_url} />
-                <SourceLink label="المتجر" url={profile?.store_url} />
-                <SourceLink label="X (تويتر)" url={profile?.twitter_url} />
-                <SourceLink label="Instagram" url={profile?.instagram_url} />
-                <SourceLink label="TikTok" url={profile?.tiktok_url} />
-                <SourceLink label="YouTube" url={profile?.youtube_url} />
-                <SourceLink label="Snapchat" url={profile?.snapchat_url} />
+                {SOURCE_FIELDS.map((f) => (
+                  <div key={f.key} className="flex items-center gap-1">
+                    <div className="min-w-0 flex-1">
+                      {editingSource === f.key ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            dir="ltr"
+                            className="h-8 text-left text-xs"
+                            placeholder={f.placeholder}
+                            value={sourceDraft}
+                            onChange={(e) => setSourceDraft(e.target.value)}
+                            autoFocus
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 shrink-0 text-primary"
+                            disabled={savingSource}
+                            onClick={() => saveSourceUrl(f.key, f.kind, sourceDraft)}
+                          >
+                            {savingSource ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 shrink-0"
+                            disabled={savingSource}
+                            onClick={() => setEditingSource(null)}
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <SourceLink label={f.label} url={profile?.[f.key] ?? null} />
+                      )}
+                    </div>
+                    {editingSource !== f.key && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 shrink-0 opacity-60 hover:opacity-100"
+                        title={profile?.[f.key] ? "تعديل الرابط" : "إضافة الرابط"}
+                        onClick={() => { setEditingSource(f.key); setSourceDraft(profile?.[f.key] ?? ""); }}
+                      >
+                        {profile?.[f.key] ? <Pencil className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </div>
