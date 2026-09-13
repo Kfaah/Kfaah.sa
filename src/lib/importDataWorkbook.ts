@@ -192,21 +192,40 @@ function mapRow(
         status: String(pick(row, "الحاله", "الحالة", "status") ?? "active"),
         raw_data: raw,
       };
-    case "gifts":
+    case "gifts": {
+      const externalId = pick(row, "رقم الاهداء", "رقم الإهداء", "رقم العمليه", "gift number", "id");
       return {
         organization_id: orgId,
         upload_id: uploadId,
-        amount: toNumber(pick(row, "المبلغ", "amount")) ?? 0,
-        gift_date: toDate(pick(row, "تاريخ الاهداء", "التاريخ", "date")),
+        external_id: externalId != null ? String(externalId) : null,
+        amount: toNumber(pick(row, "مبلغ الاهداء", "قيمه الاهداء", "المبلغ", "amount")) ?? 0,
+        gift_date: toDate(
+          pick(row, "وقت الاهداء", "تاريخ الاهداء", "التاريخ", "date", "time"),
+        ),
         giver_name: pick(row, "اسم المهدي", "المهدي", "giver") as string | null,
-        giver_phone: pick(row, "جوال المهدي", "phone") as string | null,
-        recipient_name: pick(row, "المهدى اليه", "المهدي اليه", "recipient") as string | null,
-        recipient_phone: pick(row, "جوال المهدى اليه", "recipient phone") as string | null,
+        giver_phone: pick(row, "جوال المهدي", "جوال المهدى", "phone") as string | null,
+        recipient_name: pick(
+          row,
+          "اسم المهدي له",
+          "المهدي له",
+          "المهدي اليه",
+          "المهدى اليه",
+          "recipient",
+        ) as string | null,
+        recipient_phone: pick(
+          row,
+          "جوال المهدي له",
+          "جوال المهدي اليه",
+          "recipient phone",
+        ) as string | null,
         occasion: pick(row, "المناسبه", "المناسبة", "occasion") as string | null,
         message: pick(row, "الرساله", "الرسالة", "message") as string | null,
         project_name: pick(row, "المشروع", "project") as string | null,
+        delivery_status: String(pick(row, "حاله الدفع", "الحاله", "status") ?? "pending"),
         raw_data: raw,
       };
+    }
+
     default:
       return null;
   }
