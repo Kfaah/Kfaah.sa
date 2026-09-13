@@ -142,6 +142,8 @@ export default function OperationalReportsHub({ orgId, embedded = false, onActiv
             })}
           </div>
         </>
+      ) : activeReport === "store_overview" ? (
+        <StoreOverviewReport orgId={orgId} onBack={() => setActiveReport(null)} />
       ) : (
         <ReportView
           orgId={orgId}
