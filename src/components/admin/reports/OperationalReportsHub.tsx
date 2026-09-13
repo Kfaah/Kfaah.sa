@@ -14,6 +14,8 @@ import {
 import { toast } from "sonner";
 import { UnifiedDateFilter, DatePeriod, resolvePeriod } from "./UnifiedDateFilter";
 import { DonorActionsCell, buildActionsIndex, ActionCounts } from "./DonorActionsCell";
+import StoreOverviewReport from "./StoreOverviewReport";
+import { Store } from "lucide-react";
 
 type ReportKey =
   | "donor_tiers" | "campaigns" | "failed_donations" | "abandoned_carts"
@@ -96,7 +98,7 @@ interface Props {
 }
 
 export default function OperationalReportsHub({ orgId, embedded = false, onActiveReportChange }: Props) {
-  const [activeReport, setActiveReport] = useState<ReportKey | null>(null);
+  const [activeReport, setActiveReport] = useState<ReportKey | "store_overview" | null>(null);
 
   useEffect(() => {
     onActiveReportChange?.(activeReport !== null);
@@ -120,6 +122,26 @@ export default function OperationalReportsHub({ orgId, embedded = false, onActiv
           </Card>
           )}
 
+          <button
+            onClick={() => setActiveReport("store_overview")}
+            className="group w-full text-right rounded-2xl border-2 border-primary/40 bg-gradient-to-l from-primary/10 via-card to-accent/10 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+          >
+            <div className="flex items-center gap-4">
+              <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white">
+                <Store className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-foreground group-hover:text-primary transition-colors">التحليل الشامل للمتجر</div>
+                <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  تقرير واحد يجمع أداء المتجر: التبرعات والمشاريع والحملات والتبرعات الفاشلة والسلال المتروكة والاستقطاع والإهداءات — قابل للتصدير PDF
+                </div>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-primary">
+                فتح التقرير <ArrowLeft className="h-3 w-3" />
+              </div>
+            </div>
+          </button>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {REPORTS.map(r => {
               const Icon = r.icon;
@@ -142,6 +164,8 @@ export default function OperationalReportsHub({ orgId, embedded = false, onActiv
             })}
           </div>
         </>
+      ) : activeReport === "store_overview" ? (
+        <StoreOverviewReport orgId={orgId} onBack={() => setActiveReport(null)} />
       ) : (
         <ReportView
           orgId={orgId}

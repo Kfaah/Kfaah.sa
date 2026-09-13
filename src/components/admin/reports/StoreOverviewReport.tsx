@@ -1,0 +1,375 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowRight, Download, Loader2, Store, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { UnifiedDateFilter, DatePeriod, resolvePeriod } from "./UnifiedDateFilter";
+
+const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n || 0));
+const sar = (n: number) => `${fmt(n)} ر.س`;
+const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "0%");
+
+const PAGE = 1000;
+
+async function fetchAll<T = any>(
+  table: string,
+  columns: string,
+  orgId: string,
+  dateCol: string | null,
+  from: string | null,
+  to: string | null,
+  maxRows = 60000,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let start = 0; start < maxRows; start += PAGE) {
+    let q = (supabase.from(table as any) as any).select(columns).eq("organization_id", orgId);
+    if (dateCol && from) q = q.gte(dateCol, from);
+    if (dateCol && to) q = q.lte(dateCol, to);
+    const { data, error } = await q.range(start, start + PAGE - 1);
+    if (error) throw error;
+    const batch = (data || []) as T[];
+    out.push(...batch);
+    if (batch.length < PAGE) break;
+  }
+  return out;
+}
+
+interface Analysis {
+  donationsCount: number;
+  donationsTotal: number;
+  avgDonation: number;
+  uniqueDonors: number;
+  topProjects: { name: string; count: number; total: number }[];
+  monthly: { month: string; count: number; total: number }[];
+  topDonors: { name: string; phone: string; count: number; total: number }[];
+  campaignsCount: number;
+  campaignsGoal: number;
+  campaignsCollected: number;
+  topCampaigns: { name: string; goal: number; collected: number; status: string }[];
+  failedCount: number;
+  failedTotal: number;
+  failReasons: { reason: string; count: number; total: number }[];
+  cartsCount: number;
+  cartsTotal: number;
+  cartsRecovered: number;
+  subsCount: number;
+  subsActive: number;
+  subsMonthly: number;
+  giftsCount: number;
+  giftsTotal: number;
+  giftsDelivered: number;
+}
+
+function topBy<T>(map: Map<string, T>, score: (v: T) => number, n: number) {
+  return Array.from(map.values()).sort((a, b) => score(b) - score(a)).slice(0, n);
+}
+
+export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; onBack: () => void }) {
+  const [period, setPeriod] = useState<DatePeriod>("this_year");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [data, setData] = useState<Analysis | null>(null);
+  const [orgName, setOrgName] = useState("");
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const range = useMemo(() => resolvePeriod(period, { from: customFrom, to: customTo }), [period, customFrom, customTo]);
+  const fromDate = range.from ? range.from.toISOString().slice(0, 10) : null;
+  const toDate = range.to ? range.to.toISOString().slice(0, 10) : null;
+  const fromIso = range.from ? range.from.toISOString() : null;
+  const toIso = range.to ? range.to.toISOString() : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const [org, donations, campaigns, failed, carts, subs, gifts] = await Promise.all([
+          supabase.from("organizations").select("name").eq("id", orgId).maybeSingle(),
+          fetchAll("donations", "donor_name, donor_phone, amount, project_name, donation_date", orgId, "donation_date", fromDate, toDate),
+          fetchAll("campaigns", "name, goal_amount, collected_amount, status, start_date", orgId, "start_date", fromDate, toDate, 3000),
+          fetchAll("failed_donations", "amount, failure_reason, attempted_at", orgId, "attempted_at", fromIso, toIso, 20000),
+          fetchAll("abandoned_carts", "amount, recovered, abandoned_at", orgId, "abandoned_at", fromIso, toIso, 20000),
+          fetchAll("subscriptions", "amount, status, start_date", orgId, "start_date", fromDate, toDate, 20000),
+          fetchAll("gifts", "amount, delivery_status, gift_date", orgId, "gift_date", fromDate, toDate, 60000),
+        ]);
+        if (cancelled) return;
+        setOrgName((org.data as any)?.name || "");
+
+        const projects = new Map<string, { name: string; count: number; total: number }>();
+        const months = new Map<string, { month: string; count: number; total: number }>();
+        const donors = new Map<string, { name: string; phone: string; count: number; total: number }>();
+        let donationsTotal = 0;
+        for (const d of donations as any[]) {
+          const amt = Number(d.amount || 0);
+          donationsTotal += amt;
+          const pName = d.project_name || "غير محدد";
+          const p = projects.get(pName) || { name: pName, count: 0, total: 0 };
+          p.count += 1; p.total += amt; projects.set(pName, p);
+          const m = String(d.donation_date || "").slice(0, 7) || "—";
+          const mo = months.get(m) || { month: m, count: 0, total: 0 };
+          mo.count += 1; mo.total += amt; months.set(m, mo);
+          const dk = d.donor_phone || d.donor_name || "—";
+          const dv = donors.get(dk) || { name: d.donor_name || "—", phone: d.donor_phone || "—", count: 0, total: 0 };
+          dv.count += 1; dv.total += amt; donors.set(dk, dv);
+        }
+
+        const reasons = new Map<string, { reason: string; count: number; total: number }>();
+        let failedTotal = 0;
+        for (const f of failed as any[]) {
+          const amt = Number(f.amount || 0);
+          failedTotal += amt;
+          const k = f.failure_reason || "غير محدد";
+          const r = reasons.get(k) || { reason: k, count: 0, total: 0 };
+          r.count += 1; r.total += amt; reasons.set(k, r);
+        }
+
+        let cartsTotal = 0, cartsRecovered = 0;
+        for (const c of carts as any[]) {
+          cartsTotal += Number(c.amount || 0);
+          if (c.recovered) cartsRecovered += 1;
+        }
+
+        let subsActive = 0, subsMonthly = 0;
+        for (const s of subs as any[]) {
+          if (s.status === "active") { subsActive += 1; subsMonthly += Number(s.amount || 0); }
+        }
+
+        let giftsTotal = 0, giftsDelivered = 0;
+        for (const g of gifts as any[]) {
+          giftsTotal += Number(g.amount || 0);
+          if (g.delivery_status === "delivered") giftsDelivered += 1;
+        }
+
+        let campaignsGoal = 0, campaignsCollected = 0;
+        for (const c of campaigns as any[]) {
+          campaignsGoal += Number(c.goal_amount || 0);
+          campaignsCollected += Number(c.collected_amount || 0);
+        }
+
+        setData({
+          donationsCount: donations.length,
+          donationsTotal,
+          avgDonation: donations.length ? donationsTotal / donations.length : 0,
+          uniqueDonors: donors.size,
+          topProjects: topBy(projects, (p) => p.total, 10),
+          monthly: Array.from(months.values()).sort((a, b) => a.month.localeCompare(b.month)),
+          topDonors: topBy(donors, (d) => d.total, 10),
+          campaignsCount: campaigns.length,
+          campaignsGoal,
+          campaignsCollected,
+          topCampaigns: (campaigns as any[])
+            .map((c) => ({ name: c.name, goal: Number(c.goal_amount || 0), collected: Number(c.collected_amount || 0), status: c.status }))
+            .sort((a, b) => b.collected - a.collected).slice(0, 10),
+          failedCount: failed.length,
+          failedTotal,
+          failReasons: topBy(reasons, (r) => r.count, 8),
+          cartsCount: carts.length,
+          cartsTotal,
+          cartsRecovered,
+          subsCount: subs.length,
+          subsActive,
+          subsMonthly,
+          giftsCount: gifts.length,
+          giftsTotal,
+          giftsDelivered,
+        });
+      } catch (e: any) {
+        toast.error(e.message || "تعذر تحميل التحليل الشامل");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [orgId, fromDate, toDate, fromIso, toIso]);
+
+  const insights = useMemo(() => {
+    if (!data) return [] as string[];
+    const out: string[] = [];
+    out.push(`إجمالي مبيعات المتجر خلال الفترة ${sar(data.donationsTotal)} من ${fmt(data.donationsCount)} عملية تبرع، بمتوسط ${sar(data.avgDonation)} للعملية.`);
+    if (data.topProjects[0]) out.push(`أعلى مشروع تحصيلاً: ${data.topProjects[0].name} بمبلغ ${sar(data.topProjects[0].total)} (${pct(data.topProjects[0].total, data.donationsTotal)} من الإجمالي).`);
+    if (data.failedCount) out.push(`التبرعات الفاشلة ${fmt(data.failedCount)} بقيمة ${sar(data.failedTotal)} — فرصة استرداد مباشرة بمعاودة المتبرعين.`);
+    if (data.cartsCount) out.push(`السلال المتروكة ${fmt(data.cartsCount)} بقيمة ${sar(data.cartsTotal)}، نسبة الاسترداد الحالية ${pct(data.cartsRecovered, data.cartsCount)}.`);
+    if (data.subsCount) out.push(`الاستقطاع الشهري النشط ${fmt(data.subsActive)} مشترك بقيمة شهرية ${sar(data.subsMonthly)} (إيراد متكرر متوقع سنوياً ${sar(data.subsMonthly * 12)}).`);
+    if (data.giftsCount) out.push(`الإهداءات ${fmt(data.giftsCount)} بقيمة ${sar(data.giftsTotal)}، نسبة التسليم ${pct(data.giftsDelivered, data.giftsCount)}.`);
+    if (data.campaignsCount) out.push(`الحملات ${fmt(data.campaignsCount)} حملة، نسبة تحقيق الأهداف ${pct(data.campaignsCollected, data.campaignsGoal)}.`);
+    return out;
+  }, [data]);
+
+  const exportPdf = async () => {
+    if (!printRef.current) return;
+    setExporting(true);
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const node = printRef.current;
+      const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgH = (canvas.height * pageW) / canvas.width;
+      const img = canvas.toDataURL("image/jpeg", 0.92);
+      let pos = 0, remaining = imgH;
+      pdf.addImage(img, "JPEG", 0, pos, pageW, imgH);
+      remaining -= pageH;
+      while (remaining > 0) {
+        pos -= pageH;
+        pdf.addPage();
+        pdf.addImage(img, "JPEG", 0, pos, pageW, imgH);
+        remaining -= pageH;
+      }
+      pdf.save(`التحليل-الشامل-للمتجر-${fromDate || "all"}.pdf`);
+      toast.success("تم تصدير التحليل الشامل بصيغة PDF");
+    } catch (e: any) {
+      toast.error(e.message || "تعذر تصدير الملف");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4" dir="rtl">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white">
+            <Store className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">التحليل الشامل للمتجر</h2>
+            <p className="text-sm text-muted-foreground">صورة كاملة لأداء المتجر: التبرعات، المشاريع، الحملات، الفاشلة، السلال، الاستقطاع، الإهداءات</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={exportPdf} disabled={loading || exporting || !data} className="gap-1">
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            تصدير PDF
+          </Button>
+          <Button variant="ghost" onClick={onBack}>
+            رجوع للتقارير <ArrowRight className="h-4 w-4 mr-1" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+        <UnifiedDateFilter
+          period={period}
+          onPeriodChange={setPeriod}
+          customFrom={customFrom}
+          customTo={customTo}
+          onCustomChange={(f, t) => { setCustomFrom(f); setCustomTo(t); }}
+        />
+      </div>
+
+      {loading ? (
+        <div className="py-20 text-center text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" /> جارٍ تحليل بيانات المتجر…
+        </div>
+      ) : !data ? (
+        <div className="py-20 text-center text-muted-foreground">لا توجد بيانات للمتجر في هذه الفترة</div>
+      ) : (
+        <div ref={printRef} className="space-y-4 bg-background p-4 rounded-xl">
+          <div className="border-b-4 border-primary pb-3">
+            <div className="text-xs text-muted-foreground">{orgName}</div>
+            <h3 className="text-2xl font-extrabold text-primary mt-1">التحليل الشامل للمتجر</h3>
+            <div className="text-xs text-muted-foreground">
+              الفترة: {fromDate || "من البداية"} — {toDate || "حتى الآن"}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              ["إجمالي التبرعات", sar(data.donationsTotal)],
+              ["عدد العمليات", fmt(data.donationsCount)],
+              ["متوسط التبرع", sar(data.avgDonation)],
+              ["عدد المتبرعين", fmt(data.uniqueDonors)],
+              ["التبرعات الفاشلة", `${fmt(data.failedCount)} · ${sar(data.failedTotal)}`],
+              ["السلال المتروكة", `${fmt(data.cartsCount)} · ${sar(data.cartsTotal)}`],
+              ["الاستقطاع النشط", `${fmt(data.subsActive)} · ${sar(data.subsMonthly)}/شهر`],
+              ["الإهداءات", `${fmt(data.giftsCount)} · ${sar(data.giftsTotal)}`],
+            ].map(([k, v]) => (
+              <Card key={k as string}>
+                <CardContent className="p-4">
+                  <div className="text-xs text-muted-foreground">{k}</div>
+                  <div className="text-lg font-bold mt-1">{v}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="border-primary/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="h-4 w-4 text-primary" /> قراءة تحليلية
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-sm space-y-1 list-disc pr-5 text-muted-foreground">
+                {insights.map((t, i) => <li key={i}>{t}</li>)}
+              </ul>
+            </CardContent>
+          </Card>
+
+          <SectionTable
+            title="أعلى المشاريع تحصيلاً"
+            head={["المشروع", "عدد العمليات", "الإجمالي", "النسبة"]}
+            rows={data.topProjects.map(p => [p.name, fmt(p.count), sar(p.total), pct(p.total, data.donationsTotal)])}
+          />
+
+          <SectionTable
+            title="أداء الحملات"
+            head={["الحملة", "الحالة", "الهدف", "المُحصَّل", "نسبة الإنجاز"]}
+            rows={data.topCampaigns.map(c => [c.name, c.status || "—", sar(c.goal), sar(c.collected), pct(c.collected, c.goal)])}
+          />
+
+          <SectionTable
+            title="أعلى المتبرعين"
+            head={["المتبرع", "الجوال", "عدد التبرعات", "الإجمالي"]}
+            rows={data.topDonors.map(d => [d.name, d.phone, fmt(d.count), sar(d.total)])}
+          />
+
+          <SectionTable
+            title="أسباب فشل التبرعات"
+            head={["السبب", "العدد", "القيمة المفقودة"]}
+            rows={data.failReasons.map(r => [r.reason, fmt(r.count), sar(r.total)])}
+          />
+
+          <SectionTable
+            title="التوزيع الشهري للتبرعات"
+            head={["الشهر", "عدد العمليات", "الإجمالي"]}
+            rows={data.monthly.map(m => [m.month, fmt(m.count), sar(m.total)])}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SectionTable({ title, head, rows }: { title: string; head: string[]; rows: (string | number)[][] }) {
+  if (!rows.length) return null;
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader className="bg-muted">
+            <TableRow>{head.map(h => <TableHead key={h} className="text-right">{h}</TableHead>)}</TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r, i) => (
+              <TableRow key={i}>
+                {r.map((c, j) => <TableCell key={j} className="text-right text-sm">{c}</TableCell>)}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
