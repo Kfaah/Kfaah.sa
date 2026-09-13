@@ -200,31 +200,102 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
   }, [data]);
 
   const exportPdf = async () => {
-    if (!printRef.current) return;
+    if (!data) return;
     setExporting(true);
     try {
       const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
         import("html2canvas"),
         import("jspdf"),
       ]);
-      const node = printRef.current;
-      const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgH = (canvas.height * pageW) / canvas.width;
-      const img = canvas.toDataURL("image/jpeg", 0.92);
-      let pos = 0, remaining = imgH;
-      pdf.addImage(img, "JPEG", 0, pos, pageW, imgH);
-      remaining -= pageH;
-      while (remaining > 0) {
-        pos -= pageH;
-        pdf.addPage();
+      // تأكد من تحميل الخط العربي قبل الرسم حتى لا تظهر الحروف غريبة
+      try { await (document as any).fonts?.ready; } catch { /* ignore */ }
+      if (!document.querySelector('link[data-store-report-font]')) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.setAttribute("data-store-report-font", "1");
+        link.href = "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap";
+        document.head.appendChild(link);
+        await new Promise((r) => setTimeout(r, 600));
+        try { await (document as any).fonts?.ready; } catch { /* ignore */ }
+      }
+
+      const esc = (s: string) =>
+        String(s ?? "").replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string),
+        );
+      const GREEN = "#0d7a5f";
+      const table = (title: string, head: string[], rows: (string | number)[][]) =>
+        rows.length
+          ? `<div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+              <div style="background:${GREEN};color:#fff;padding:8px 14px;font-weight:700;font-size:13px">${esc(title)}</div>
+              <table style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead><tr>${head.map((h) => `<th style="background:#f1f5f9;padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0">${esc(h)}</th>`).join("")}</tr></thead>
+                <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td style="padding:7px 10px;text-align:right;border-bottom:1px solid #f1f5f9">${esc(String(c))}</td>`).join("")}</tr>`).join("")}</tbody>
+              </table>
+            </div>`
+          : "";
+      const kpi = (label: string, value: string) =>
+        `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+           <div style="font-size:10px;color:#64748b">${esc(label)}</div>
+           <div style="font-size:15px;font-weight:800;margin-top:4px">${esc(value)}</div>
+         </div>`;
+
+      const wrap = document.createElement("div");
+      wrap.dir = "rtl";
+      wrap.setAttribute("lang", "ar");
+      wrap.style.cssText = `position:fixed;top:-10000px;left:0;width:794px;padding:40px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px`;
+      wrap.innerHTML = `
+        <div style="border-bottom:4px solid ${GREEN};padding-bottom:14px;margin-bottom:22px">
+          <div style="font-size:11px;color:#64748b">${esc(orgName)}</div>
+          <h1 style="margin:6px 0 4px;font-size:24px;color:${GREEN};font-weight:800">التحليل الشامل للمتجر</h1>
+          <div style="font-size:11px;color:#475569">الفترة: ${fromDate || "من البداية"} — ${toDate || "حتى الآن"}</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px">
+          ${kpi("إجمالي التبرعات", sar(data.donationsTotal))}
+          ${kpi("عدد العمليات", fmt(data.donationsCount))}
+          ${kpi("متوسط التبرع", sar(data.avgDonation))}
+          ${kpi("عدد المتبرعين", fmt(data.uniqueDonors))}
+          ${kpi("التبرعات الفاشلة", `${fmt(data.failedCount)} · ${sar(data.failedTotal)}`)}
+          ${kpi("السلال المتروكة", `${fmt(data.cartsCount)} · ${sar(data.cartsTotal)}`)}
+          ${kpi("الاستقطاع النشط", `${fmt(data.subsActive)} · ${sar(data.subsMonthly)}/شهر`)}
+          ${kpi("الإهداءات", `${fmt(data.giftsCount)} · ${sar(data.giftsTotal)}`)}
+        </div>
+
+        <div style="margin-bottom:22px;border:1px solid ${GREEN}55;border-radius:10px;padding:14px">
+          <div style="font-weight:700;color:${GREEN};margin-bottom:8px;font-size:14px">قراءة تحليلية</div>
+          <ul style="margin:0 20px 0 0;padding:0;color:#475569">${insights.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul>
+        </div>
+
+        ${table("أعلى المشاريع تحصيلاً", ["المشروع", "عدد العمليات", "الإجمالي", "النسبة"], data.topProjects.map((p) => [p.name, fmt(p.count), sar(p.total), pct(p.total, data.donationsTotal)]))}
+        ${table("أداء الحملات", ["الحملة", "الحالة", "الهدف", "المُحصَّل", "نسبة الإنجاز"], data.topCampaigns.map((c) => [c.name, c.status || "—", sar(c.goal), sar(c.collected), pct(c.collected, c.goal)]))}
+        ${table("أعلى المتبرعين", ["المتبرع", "الجوال", "عدد التبرعات", "الإجمالي"], data.topDonors.map((d) => [d.name, d.phone, fmt(d.count), sar(d.total)]))}
+        ${table("أسباب فشل التبرعات", ["السبب", "العدد", "القيمة المفقودة"], data.failReasons.map((r) => [r.reason, fmt(r.count), sar(r.total)]))}
+        ${table("التوزيع الشهري للتبرعات", ["الشهر", "عدد العمليات", "الإجمالي"], data.monthly.map((m) => [m.month, fmt(m.count), sar(m.total)]))}
+      `;
+
+      document.body.appendChild(wrap);
+      try {
+        const canvas = await html2canvas(wrap, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const imgH = (canvas.height * pageW) / canvas.width;
+        const img = canvas.toDataURL("image/jpeg", 0.92);
+        let pos = 0, remaining = imgH;
         pdf.addImage(img, "JPEG", 0, pos, pageW, imgH);
         remaining -= pageH;
+        while (remaining > 0) {
+          pos -= pageH;
+          pdf.addPage();
+          pdf.addImage(img, "JPEG", 0, pos, pageW, imgH);
+          remaining -= pageH;
+        }
+        pdf.save(`التحليل-الشامل-للمتجر-${fromDate || "all"}.pdf`);
+        toast.success("تم تصدير التحليل الشامل بصيغة PDF");
+      } finally {
+        document.body.removeChild(wrap);
       }
-      pdf.save(`التحليل-الشامل-للمتجر-${fromDate || "all"}.pdf`);
-      toast.success("تم تصدير التحليل الشامل بصيغة PDF");
     } catch (e: any) {
       toast.error(e.message || "تعذر تصدير الملف");
     } finally {
