@@ -37,6 +37,13 @@ const THEMES: { key: ThemeKey; title: string; subtitle: string; icon: any; color
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
 const fmtSAR = (n: number) => `${fmt(n)} ر.س`;
 const pct = (n: number) => `${n.toFixed(1)}%`;
+const escapePdfText = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, character => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+}[character] ?? character));
 
 export default function AdminReports({ embedded: embeddedProp = false, lockedOrgId }: { embedded?: boolean; lockedOrgId?: string } = {}) {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
