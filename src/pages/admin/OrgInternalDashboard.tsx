@@ -624,13 +624,55 @@ export default function OrgInternalDashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-right text-sm" dir="rtl">
-                <SourceLink label="الموقع الإلكتروني" url={profile?.website_url} />
-                <SourceLink label="المتجر" url={profile?.store_url} />
-                <SourceLink label="X (تويتر)" url={profile?.twitter_url} />
-                <SourceLink label="Instagram" url={profile?.instagram_url} />
-                <SourceLink label="TikTok" url={profile?.tiktok_url} />
-                <SourceLink label="YouTube" url={profile?.youtube_url} />
-                <SourceLink label="Snapchat" url={profile?.snapchat_url} />
+                {SOURCE_FIELDS.map((f) => (
+                  <div key={f.key} className="flex items-center gap-1">
+                    <div className="min-w-0 flex-1">
+                      {editingSource === f.key ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            dir="ltr"
+                            className="h-8 text-left text-xs"
+                            placeholder={f.placeholder}
+                            value={sourceDraft}
+                            onChange={(e) => setSourceDraft(e.target.value)}
+                            autoFocus
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 shrink-0 text-primary"
+                            disabled={savingSource}
+                            onClick={() => saveSourceUrl(f.key, f.kind, sourceDraft)}
+                          >
+                            {savingSource ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 shrink-0"
+                            disabled={savingSource}
+                            onClick={() => setEditingSource(null)}
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <SourceLink label={f.label} url={profile?.[f.key] ?? null} />
+                      )}
+                    </div>
+                    {editingSource !== f.key && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 shrink-0 opacity-60 hover:opacity-100"
+                        title={profile?.[f.key] ? "تعديل الرابط" : "إضافة الرابط"}
+                        onClick={() => { setEditingSource(f.key); setSourceDraft(profile?.[f.key] ?? ""); }}
+                      >
+                        {profile?.[f.key] ? <Pencil className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </div>
