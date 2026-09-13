@@ -89,6 +89,8 @@ interface DonationsSummary {
   total: number;
   count: number;
   projects_count: number;
+  gifts_total: number;
+  gifts_count: number;
   by_year: { year: number; total: number }[];
   by_project: { project: string; total: number }[];
 }
@@ -627,7 +629,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
           {active === "top" && <TopDonorsPanel donors={donors} donations={donations} projects={projects} />}
           {active === "recurring" && <RecurringPanel donors={donors} donations={donations} projects={projects} />}
           {active === "campaigns" && <CampaignsPanel campaigns={campaigns} projects={projects} />}
-          {active === "gifts" && <GiftsPanel rows={gifts} projects={projects} />}
+          {active === "gifts" && <GiftsPanel rows={gifts} projects={projects} summary={summary} />}
           {active === "failed" && <FailedPanel rows={failed} projects={projects} />}
           {active === "abandoned" && <AbandonedPanel rows={abandoned} projects={projects} />}
           {active === "subscriptions" && <SubscriptionsPanel rows={subs} donations={donations} projects={projects} />}
@@ -1075,7 +1077,7 @@ function CampaignsPanel({ campaigns, projects }: { campaigns: any[]; projects: s
   );
 }
 
-function GiftsPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
+function GiftsPanel({ rows, projects, summary }: { rows: any[]; projects: string[]; summary: DonationsSummary | null }) {
   const branding = useOrgBranding();
   const brand = branding?.primary || "#2f8e8c";
   const [dateKey, setDateKey] = useState<DateValue>({ key: "all" });
@@ -1112,6 +1114,9 @@ function GiftsPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
   }, [filtered]);
 
   const total = filtered.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const isUnfiltered = dateKey.key === "all" && project === "all" && !search.trim();
+  const displayedCount = isUnfiltered ? Number(summary?.gifts_count ?? rows.length) : filtered.length;
+  const displayedTotal = isUnfiltered ? Number(summary?.gifts_total ?? total) : total;
 
   return (
     <div className="space-y-3">
@@ -1126,7 +1131,11 @@ function GiftsPanel({ rows, projects }: { rows: any[]; projects: string[] }) {
           </SelectContent>
         </Select>
         <SearchBox value={search} onChange={setSearch} placeholder="ابحث عن مُهدي أو مُستلم…" />
-        <CountChip n={filtered.length} total={rows.length} extra={`المُهدون: ${givers.length} · القيمة: ${SAR(total)}`} />
+        <CountChip
+          n={displayedCount}
+          total={Number(summary?.gifts_count ?? rows.length)}
+          extra={`المُهدون الظاهرون: ${givers.length} · إجمالي القيمة: ${SAR(displayedTotal)}`}
+        />
       </Toolbar>
 
       {view === "givers" ? (
