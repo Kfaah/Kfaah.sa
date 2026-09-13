@@ -377,11 +377,17 @@ export async function importDataWorkbook({
       inserted_rows: inserted,
       failed_rows: failed,
       status: failed > 0 ? "completed_with_errors" : "completed",
+      error_log: lastError ? { reason: lastError } : null,
       completed_at: new Date().toISOString(),
     })
     .eq("id", uploadId);
 
+  if (inserted === 0 && failed > 0) {
+    throw new Error(lastError ?? "تعذر إدراج صفوف الملف");
+  }
+
   return { detected, total: rows.length, inserted, failed };
+
 }
 
 export const SPREADSHEET_RE = /\.(xlsx|xls|csv)$/i;
