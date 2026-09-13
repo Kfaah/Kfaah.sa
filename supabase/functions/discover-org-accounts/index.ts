@@ -177,31 +177,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Step 2: For platforms still missing, search + validate
-    for (const p of PLATFORMS) {
-      if (discovered[p.kind]) continue;
-      const results = await firecrawlSearch(p.query(orgName), 6);
-      const seen = new Set<string>();
-      const candidates: string[] = [];
-      for (const r of results) {
-        if (!r?.url) continue;
-        if (isExcludedHandle(r.url)) continue;
-        const cleaned = cleanProfileUrl(r.url, p.kind);
-        if (!cleaned || !p.urlPattern.test(cleaned)) continue;
-        if (seen.has(cleaned)) continue;
-        seen.add(cleaned);
-        candidates.push(cleaned);
-        if (candidates.length >= 4) break;
-      }
-      let best: { url: string; score: number } | null = null;
-      for (const c of candidates) {
-        const s = await scoreCandidate(c, orgName, websiteHost);
-        if (!best || s > best.score) best = { url: c, score: s };
-      }
-      // Require a confident match: name match + extra signal, OR website backlink
-      if (best && best.score >= 5) discovered[p.kind] = best;
-      debug.push({ step: "search", kind: p.kind, candidates, picked: discovered[p.kind] || null });
-    }
+    // Step 2 disabled by policy: accounts come ONLY from the org's own website.
+    // Anything not found on the website must be added manually.
 
     // Step 3: write to organization_profiles (only fill empty unless overwrite)
     const updates: Record<string, string> = {};
