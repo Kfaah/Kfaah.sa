@@ -8,6 +8,13 @@
       "when": 1789275219485,
       "tag": "0000_allow_store_snapchat_sources_and_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789278243627,
+      "tag": "0001_org_scope_accountability_updates",
+      "breakpoints": true
     }
   ]
 }
