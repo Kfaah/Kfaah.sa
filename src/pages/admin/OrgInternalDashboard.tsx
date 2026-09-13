@@ -162,6 +162,7 @@ interface Profile {
   snapchat_url: string | null;
   youtube_url: string | null;
   facebook_url: string | null;
+  linkedin_url?: string | null;
 }
 
 interface DeepAnalysis {
@@ -304,7 +305,7 @@ export default function OrgInternalDashboard({
     // Wave 1 — fast, unblocks the shell immediately.
     const wave1 = Promise.all([
       supabase.from("organizations").select("id,name,slug,logo_url").eq("id", orgId).maybeSingle(),
-      supabase.from("organization_profiles").select("about,goals,website_url,store_url,twitter_url,instagram_url,tiktok_url,snapchat_url,youtube_url,facebook_url").eq("organization_id", orgId).maybeSingle(),
+      supabase.from("organization_profiles").select("about,goals,website_url,store_url,twitter_url,instagram_url,tiktok_url,snapchat_url,youtube_url,facebook_url,linkedin_url").eq("organization_id", orgId).maybeSingle(),
     ]).then(([orgRes, profRes]) => {
       if (orgRes.data) setOrg(orgRes.data as OrgInfo);
       setProfile((profRes.data as Profile) ?? null);
