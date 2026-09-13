@@ -192,21 +192,40 @@ function mapRow(
         status: String(pick(row, "الحاله", "الحالة", "status") ?? "active"),
         raw_data: raw,
       };
-    case "gifts":
+    case "gifts": {
+      const externalId = pick(row, "رقم الاهداء", "رقم الإهداء", "رقم العمليه", "gift number", "id");
       return {
         organization_id: orgId,
         upload_id: uploadId,
-        amount: toNumber(pick(row, "المبلغ", "amount")) ?? 0,
-        gift_date: toDate(pick(row, "تاريخ الاهداء", "التاريخ", "date")),
+        external_id: externalId != null ? String(externalId) : null,
+        amount: toNumber(pick(row, "مبلغ الاهداء", "قيمه الاهداء", "المبلغ", "amount")) ?? 0,
+        gift_date: toDate(
+          pick(row, "وقت الاهداء", "تاريخ الاهداء", "التاريخ", "date", "time"),
+        ),
         giver_name: pick(row, "اسم المهدي", "المهدي", "giver") as string | null,
-        giver_phone: pick(row, "جوال المهدي", "phone") as string | null,
-        recipient_name: pick(row, "المهدى اليه", "المهدي اليه", "recipient") as string | null,
-        recipient_phone: pick(row, "جوال المهدى اليه", "recipient phone") as string | null,
+        giver_phone: pick(row, "جوال المهدي", "جوال المهدى", "phone") as string | null,
+        recipient_name: pick(
+          row,
+          "اسم المهدي له",
+          "المهدي له",
+          "المهدي اليه",
+          "المهدى اليه",
+          "recipient",
+        ) as string | null,
+        recipient_phone: pick(
+          row,
+          "جوال المهدي له",
+          "جوال المهدي اليه",
+          "recipient phone",
+        ) as string | null,
         occasion: pick(row, "المناسبه", "المناسبة", "occasion") as string | null,
         message: pick(row, "الرساله", "الرسالة", "message") as string | null,
         project_name: pick(row, "المشروع", "project") as string | null,
+        delivery_status: String(pick(row, "حاله الدفع", "الحاله", "status") ?? "pending"),
         raw_data: raw,
       };
+    }
+
     default:
       return null;
   }
@@ -275,38 +294,66 @@ export async function importDataWorkbook({
     throw new Error("تعذر التعرف على نوع بيانات الملف");
   }
 
-  const mapped = rows
+  let mapped = rows
     .map((r) => mapRow(detected, r, orgId, uploadId))
     .filter((r): r is Record<string, unknown> => r !== null);
 
   let inserted = 0;
   let failed = 0;
   let done = 0;
+  let lastError: string | null = null;
   const conflict = CONFLICT_TARGET[detected];
-  const BATCH = 1000;
-  const CONCURRENCY = 5;
+  const BATCH = 400;
+  const CONCURRENCY = 4;
+
+  // إزالة التكرار داخل الملف نفسه حسب مفتاح التعارض (يمنع فشل الدفعة بالكامل)
+  if (conflict) {
+    const keys = conflict.split(",").map((k) => k.trim());
+    const seen = new Set<string>();
+    mapped = mapped.filter((row) => {
+      const id = keys.map((k) => String(row[k] ?? "")).join("|");
+      if (keys.some((k) => row[k] == null)) return true;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }
 
   const batches: Record<string, unknown>[][] = [];
   for (let i = 0; i < mapped.length; i += BATCH) batches.push(mapped.slice(i, i + BATCH));
 
-  const runBatch = async (batch: Record<string, unknown>[]) => {
+  const pushRows = async (batch: Record<string, unknown>[]) => {
     const table = supabase.from(detected as never);
     const { error } = conflict
-      ? await table.upsert(batch as never, {
-          onConflict: conflict,
-          ignoreDuplicates: true,
-        })
+      ? await table.upsert(batch as never, { onConflict: conflict, ignoreDuplicates: true })
       : await table.insert(batch as never);
+    return error?.message ?? null;
+  };
 
-    if (error) {
+  const runBatch = async (batch: Record<string, unknown>[]) => {
+    let err = await pushRows(batch);
+    if (err && batch.length > 1) {
+      // إعادة المحاولة بدفعات أصغر حتى لا تسقط كل الصفوف بسبب صف واحد
+      const half = Math.ceil(batch.length / 2);
+      const first = await pushRows(batch.slice(0, half));
+      const second = await pushRows(batch.slice(half));
+      if (!first) inserted += half;
+      else failed += half;
+      if (!second) inserted += batch.length - half;
+      else failed += batch.length - half;
+      err = first ?? second;
+      if (err) lastError = err;
+    } else if (err) {
       failed += batch.length;
-      console.warn("batch import failed", error.message);
+      lastError = err;
+      console.warn("batch import failed", err);
     } else {
       inserted += batch.length;
     }
     done += batch.length;
     onProgress?.(Math.min(done, mapped.length), mapped.length);
   };
+
 
   let cursor = 0;
   const workers = Array.from({ length: Math.min(CONCURRENCY, batches.length) }, async () => {
@@ -330,11 +377,17 @@ export async function importDataWorkbook({
       inserted_rows: inserted,
       failed_rows: failed,
       status: failed > 0 ? "completed_with_errors" : "completed",
+      error_log: lastError ? { reason: lastError } : null,
       completed_at: new Date().toISOString(),
     })
     .eq("id", uploadId);
 
+  if (inserted === 0 && failed > 0) {
+    throw new Error(lastError ?? "تعذر إدراج صفوف الملف");
+  }
+
   return { detected, total: rows.length, inserted, failed };
+
 }
 
 export const SPREADSHEET_RE = /\.(xlsx|xls|csv)$/i;
