@@ -96,7 +96,7 @@ interface Props {
 }
 
 export default function OperationalReportsHub({ orgId, embedded = false, onActiveReportChange }: Props) {
-  const [activeReport, setActiveReport] = useState<ReportKey | null>(null);
+  const [activeReport, setActiveReport] = useState<ReportKey | "store_overview" | null>(null);
 
   useEffect(() => {
     onActiveReportChange?.(activeReport !== null);
