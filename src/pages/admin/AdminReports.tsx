@@ -37,6 +37,13 @@ const THEMES: { key: ThemeKey; title: string; subtitle: string; icon: any; color
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
 const fmtSAR = (n: number) => `${fmt(n)} ر.س`;
 const pct = (n: number) => `${n.toFixed(1)}%`;
+const escapePdfText = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, character => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+}[character] ?? character));
 
 export default function AdminReports({ embedded: embeddedProp = false, lockedOrgId }: { embedded?: boolean; lockedOrgId?: string } = {}) {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
@@ -103,57 +110,62 @@ export default function AdminReports({ embedded: embeddedProp = false, lockedOrg
     }
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (!selected) return;
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    doc.setFont("helvetica");
-    doc.setFontSize(18);
-    doc.text(mode === "thematic" ? THEMES.find(t => t.key === theme)!.title : "Executive Report", 40, 50);
-    doc.setFontSize(11);
-    doc.text(`Organization: ${selected.org_name}`, 40, 75);
-    doc.text(`Period: ${range.label}`, 40, 92);
-    doc.line(40, 105, 555, 105);
+    const themeTitle = THEMES.find(t => t.key === theme)?.title ?? "تقرير موضوعي";
+    const rows = themeRows(theme, selected);
+    const reportHtml = mode === "thematic"
+      ? `<h1>${escapePdfText(themeTitle)}</h1>
+         <div class="meta">${escapePdfText(selected.org_name)} · ${escapePdfText(range.label)}</div>
+         <table><tbody>${rows.map(r => `<tr><th>${escapePdfText(r.label)}</th><td>${escapePdfText(r.value)}</td></tr>`).join("")}</tbody></table>`
+      : `<h1>تقرير الأداء التنفيذي</h1>
+         <div class="meta">${escapePdfText(selected.org_name)} · ${escapePdfText(range.label)}</div>
+         ${execReport ? `
+           <section><h2>الملخص التنفيذي</h2><p>${escapePdfText(execReport.executive_summary)}</p></section>
+           ${(execReport.sections ?? []).map(section => `
+             <section><h2>${escapePdfText(section.title)}</h2>
+               <table><thead><tr><th>المؤشر</th><th>النتيجة</th><th>التحليل والتوجيه</th></tr></thead>
+               <tbody>${(section.rows ?? []).map(r => `<tr><td>${escapePdfText(r.metric)}</td><td>${escapePdfText(r.result)}</td><td>${escapePdfText(r.analysis)}</td></tr>`).join("")}</tbody></table>
+             </section>`).join("")}
+           ${(execReport.strategic_recommendations ?? []).length ? `<section><h2>التوصيات الاستراتيجية</h2><ol>${execReport.strategic_recommendations.map(r => `<li>${escapePdfText(r)}</li>`).join("")}</ol></section>` : ""}
+         ` : `<p>يرجى توليد التقرير التنفيذي أولاً.</p>`}`;
 
-    let y = 130;
-    const line = (label: string, value: string) => {
-      doc.setFontSize(10);
-      doc.text(label, 40, y);
-      doc.text(value, 555, y, { align: "right" });
-      y += 18;
-    };
+    const printable = document.createElement("div");
+    printable.dir = "rtl";
+    printable.lang = "ar";
+    printable.style.cssText = "position:fixed;top:-10000px;left:0;width:794px;padding:52px;background:#fff;color:#17202a;font-family:Cairo,Tajawal,Arial,sans-serif;font-size:14px;line-height:1.8;text-align:right";
+    printable.innerHTML = `<style>
+      h1{margin:0 0 8px;color:#176b52;font-size:27px} h2{margin:24px 0 8px;color:#176b52;font-size:18px;border-right:4px solid #176b52;padding-right:10px}
+      .meta{color:#64748b;margin-bottom:25px;padding-bottom:15px;border-bottom:2px solid #d9e7e1} p{white-space:pre-wrap;margin:0}
+      table{width:100%;border-collapse:collapse;margin-top:14px;page-break-inside:avoid} th,td{padding:10px;border:1px solid #d9e2e8;text-align:right;vertical-align:top}
+      th{background:#edf6f2;color:#174e3d;font-weight:700} td{background:#fff} section{page-break-inside:avoid} li{margin-bottom:7px}
+    </style>${reportHtml}`;
+    document.body.appendChild(printable);
 
-    if (mode === "thematic") {
-      const rows = themeRows(theme, selected);
-      rows.forEach(r => line(r.label, r.value));
-    } else {
-      // executive: render summary + sections (basic; PowerPoint export is the polished output)
-      if (!execReport) {
-        doc.setFontSize(11);
-        doc.text("Generate executive report first.", 40, y);
-      } else {
-        const sumLines = doc.splitTextToSize(execReport.executive_summary || "", 510);
-        doc.setFontSize(11);
-        doc.text(sumLines, 40, y);
-        y += sumLines.length * 14 + 10;
-        for (const s of execReport.sections || []) {
-          doc.setFontSize(13);
-          doc.text(s.title, 555, y, { align: "right" });
-          y += 18;
-          doc.setFontSize(10);
-          for (const r of s.rows) {
-            const txt = `${r.metric}: ${r.result}  —  ${r.analysis}`;
-            const wrapped = doc.splitTextToSize(txt, 510);
-            doc.text(wrapped, 555, y, { align: "right" });
-            y += wrapped.length * 12 + 4;
-            if (y > 780) { doc.addPage(); y = 50; }
-          }
-          y += 8;
-        }
+    try {
+      await document.fonts.ready;
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(printable, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const imageHeight = (canvas.height * pageWidth) / canvas.width;
+      const image = canvas.toDataURL("image/jpeg", 0.94);
+      let position = 0;
+      doc.addImage(image, "JPEG", 0, position, pageWidth, imageHeight);
+      for (let remaining = imageHeight - pageHeight; remaining > 0; remaining -= pageHeight) {
+        position -= pageHeight;
+        doc.addPage();
+        doc.addImage(image, "JPEG", 0, position, pageWidth, imageHeight);
       }
+      doc.save(`${selected.org_name.replace(/\s+/g, "_")}_${mode}_${theme}.pdf`);
+      toast.success("تم تنزيل PDF باللغة العربية");
+    } catch (error) {
+      console.error("PDF export failed", error);
+      toast.error("تعذّر تصدير التقرير");
+    } finally {
+      printable.remove();
     }
-
-    doc.save(`${selected.org_name.replace(/\s+/g, "_")}_${mode}_${theme}.pdf`);
-    toast.success("تم تنزيل PDF");
   };
 
   return (
