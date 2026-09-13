@@ -15,6 +15,13 @@
       "when": 1789278243627,
       "tag": "0001_org_scope_accountability_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789283413314,
+      "tag": "0002_cleanup_gifts_rows_without_external_id",
+      "breakpoints": true
     }
   ]
 }
