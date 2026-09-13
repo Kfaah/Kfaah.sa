@@ -14,6 +14,8 @@ import {
 import { toast } from "sonner";
 import { UnifiedDateFilter, DatePeriod, resolvePeriod } from "./UnifiedDateFilter";
 import { DonorActionsCell, buildActionsIndex, ActionCounts } from "./DonorActionsCell";
+import StoreOverviewReport from "./StoreOverviewReport";
+import { Store } from "lucide-react";
 
 type ReportKey =
   | "donor_tiers" | "campaigns" | "failed_donations" | "abandoned_carts"
