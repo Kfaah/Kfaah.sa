@@ -553,9 +553,15 @@ export default function Uploads() {
           uploadId: archived.uploadId,
         };
       } catch (err) {
+        const reason = err instanceof Error ? err.message : "تعذر استيراد صفوف الملف";
         console.warn("browser import failed", err);
-        return { ...archived, archivedOnly: true };
+        await supabase
+          .from("data_uploads_log")
+          .update({ error_log: { reason } })
+          .eq("id", archived.uploadId);
+        return { ...archived, archivedOnly: true, importError: reason };
       }
+
     },
     [archiveFile, orgId],
   );
