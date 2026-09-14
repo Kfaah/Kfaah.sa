@@ -19,6 +19,48 @@ Deno.serve(async (req) => {
     const { data: src } = await supa.from("org_external_sources").select("*").eq("id", source_id).maybeSingle();
     if (!src) return new Response(JSON.stringify({ error: "source_not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    // Some rows were stored as a bare handle (e.g. "TADABUR_KSA") which is not a
+    // fetchable address. Rebuild a real URL from the platform kind, and persist it
+    // so later syncs (and the UI) use the corrected value.
+    const HANDLE_BASE: Record<string, string> = {
+      twitter: "https://x.com/",
+      instagram: "https://www.instagram.com/",
+      tiktok: "https://www.tiktok.com/@",
+      youtube: "https://www.youtube.com/@",
+      snapchat: "https://www.snapchat.com/add/",
+      facebook: "https://www.facebook.com/",
+      linkedin: "https://www.linkedin.com/company/",
+    };
+    let normalizedUrl = String(src.url || "").trim().replace(/^(https?):\/(?!\/)/i, "$1://");
+    const isAbsolute = /^https?:\/\//i.test(normalizedUrl);
+    if (!isAbsolute) {
+      const handleLike = normalizedUrl && !normalizedUrl.includes("/") && !normalizedUrl.includes(".");
+      if (handleLike && HANDLE_BASE[src.kind]) {
+        normalizedUrl = `${HANDLE_BASE[src.kind]}${normalizedUrl.replace(/^@+/, "")}`;
+      } else if (normalizedUrl) {
+        normalizedUrl = `https://${normalizedUrl.replace(/^\/+/, "")}`;
+      }
+    }
+    let validUrl = false;
+    try {
+      const u = new URL(normalizedUrl);
+      validUrl = u.hostname.includes(".");
+    } catch { validUrl = false; }
+    if (!validUrl) {
+      await supa.from("org_external_sources").update({
+        last_status: "invalid_url",
+        last_synced_at: new Date().toISOString(),
+      }).eq("id", source_id);
+      return new Response(JSON.stringify({
+        ok: false, skipped: true, reason: "invalid_url",
+        message: "الرابط المحفوظ غير صحيح. عدّل المصدر واكتب رابطاً كاملاً أو اسم الحساب فقط.",
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (normalizedUrl !== src.url) {
+      await supa.from("org_external_sources").update({ url: normalizedUrl }).eq("id", source_id);
+      src.url = normalizedUrl;
+    }
+
 
     // Scrape any public URL (website / store OR public social profile/page).
     // Social platforms (twitter/instagram/facebook/linkedin/youtube/tiktok) render dynamically,
