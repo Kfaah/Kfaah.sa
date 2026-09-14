@@ -721,18 +721,26 @@ export default function Uploads() {
         category === "gifts" ||
         category === "abandoned_carts" ||
         category === "staff_duties";
+      const MAX_BYTES = 200 * 1024 * 1024;
+      const rejected: string[] = [];
       const arr = Array.from(files).filter((f) => {
-        if (isDataCategory) return /\.(xlsx|xls|csv)$/i.test(f.name);
-        return f.size <= 50 * 1024 * 1024;
+        if (isDataCategory && !/\.(xlsx|xls|csv)$/i.test(f.name)) {
+          rejected.push(`${f.name} — الصيغة غير مدعومة (Excel أو CSV فقط)`);
+          return false;
+        }
+        if (f.size > MAX_BYTES) {
+          rejected.push(
+            `${f.name} — الحجم ${(f.size / 1024 / 1024).toFixed(1)}MB أكبر من الحد المسموح (200MB)`,
+          );
+          return false;
+        }
+        return true;
       });
-      if (arr.length === 0) {
-        toast.error(
-          isDataCategory
-            ? "الرجاء اختيار ملفات Excel أو CSV فقط"
-            : "تعذر قبول الملفات (الحد الأقصى 50MB)",
-        );
-        return;
+      if (rejected.length) {
+        toast.error(`تعذر قبول: ${rejected.join(" · ")}`, { duration: 8000 });
       }
+      if (arr.length === 0) return;
+
       const newPending: PendingFile[] = arr.map((f) => ({
         id: crypto.randomUUID(),
         file: f,
@@ -902,8 +910,9 @@ export default function Uploads() {
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {isDataCategory
-                    ? "أو انقر للاختيار — يدعم XLSX, XLS, CSV (حتى 50MB)"
-                    : "أو انقر للاختيار — يقبل أي صيغة (PDF, Word, Excel, صور…) حتى 50MB"}
+                    ? "أو انقر للاختيار — يدعم XLSX, XLS, CSV (حتى 200MB)"
+                    : "أو انقر للاختيار — يقبل أي صيغة (PDF, Word, Excel, صور…) حتى 200MB"}
+
                 </p>
               </div>
               <Button variant="outline" type="button">
