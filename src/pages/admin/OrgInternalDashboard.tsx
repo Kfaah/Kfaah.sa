@@ -280,13 +280,36 @@ export default function OrgInternalDashboard({
     { key: "linkedin_url", kind: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/company/..." },
   ];
 
+  // Turns a bare handle (e.g. "TADABUR_KSA" or "@tadabur") into a full
+  // platform URL so the reader never receives an invalid address.
+  const HANDLE_BASE: Record<string, string> = {
+    twitter: "https://x.com/",
+    instagram: "https://www.instagram.com/",
+    tiktok: "https://www.tiktok.com/@",
+    youtube: "https://www.youtube.com/@",
+    snapchat: "https://www.snapchat.com/add/",
+    facebook: "https://www.facebook.com/",
+    linkedin: "https://www.linkedin.com/company/",
+  };
+
   const saveSourceUrl = async (field: keyof Profile, kind: string, rawUrl: string) => {
     if (!orgId) return;
     let url = rawUrl.trim();
     if (url) {
       url = url.replace(/^(https?):\/(?!\/)/i, "$1://");
-      if (!/^https?:\/\//i.test(url)) url = `https://${url.replace(/^\/+/, "")}`;
-      try { new URL(url); } catch { toast.error("الرابط غير صحيح"); return; }
+      const looksLikeHandle = !/^https?:\/\//i.test(url) && !url.includes("/") && !url.includes(".");
+      if (looksLikeHandle && HANDLE_BASE[kind]) {
+        url = `${HANDLE_BASE[kind]}${url.replace(/^@+/, "")}`;
+      } else if (!/^https?:\/\//i.test(url)) {
+        url = `https://${url.replace(/^\/+/, "")}`;
+      }
+      try {
+        const u = new URL(url);
+        if (!u.hostname.includes(".")) throw new Error("bad host");
+      } catch {
+        toast.error("الرابط غير صحيح — اكتب رابطاً كاملاً أو اسم الحساب فقط");
+        return;
+      }
     }
     setSavingSource(true);
     try {
