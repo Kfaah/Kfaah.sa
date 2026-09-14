@@ -642,7 +642,7 @@ export default function Uploads() {
         );
         toast.success(
           result?.archivedOnly
-            ? `تم رفع "${pf.file.name}" وحفظه بأمان في مركز الملفات. حجمه كبير، لذلك لم تُستورد صفوفه تلقائياً.`
+            ? `تم رفع "${pf.file.name}" وحفظه بأمان في مركز الملفات${result?.importError ? ` — لم تُستورد صفوفه: ${result.importError}` : "، لكن لم تُستورد صفوفه تلقائياً"}.`
             : `تم رفع "${pf.file.name}" — ${result?.inserted ?? 0} سجل. يجري ربط الملف بالتحليل الذكي والتوصيات والمساءلات…`,
           { duration: 6000 },
         );
