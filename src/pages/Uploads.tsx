@@ -73,6 +73,8 @@ interface PendingFile {
     failed: number;
     matched?: number;
     archivedOnly?: boolean;
+    importError?: string;
+
     uploadId?: string;
 
   };
