@@ -137,9 +137,12 @@ function demoScore(uid: string, cid: string): number {
 
 interface PerformanceEvaluationProps {
   embedded?: boolean;
+  /** When embedded in an organization dashboard, scope the table to that org
+   *  instead of the signed-in user's own organization. */
+  orgId?: string | null;
 }
 
-export default function PerformanceEvaluation({ embedded = false }: PerformanceEvaluationProps = {}) {
+export default function PerformanceEvaluation({ embedded = false, orgId: orgIdProp = null }: PerformanceEvaluationProps = {}) {
   const { user } = useAuth();
   const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
@@ -179,7 +182,11 @@ export default function PerformanceEvaluation({ embedded = false }: PerformanceE
     // to avoid the table flashing/blanking on every interaction.
     setRefreshing(true);
     // Resolve current user's organization to scope the table
-    const { data: orgId } = await supabase.rpc("get_user_organization_id", { _user_id: user?.id });
+    let orgId: string | null = orgIdProp ?? null;
+    if (!orgId) {
+      const { data } = await supabase.rpc("get_user_organization_id", { _user_id: user?.id });
+      orgId = (data as string) ?? null;
+    }
     const [cRes, eRes, sRes, dRes] = await Promise.all([
       supabase.from("evaluation_criteria").select("*").eq("is_active", true).order("display_order"),
       (orgId
@@ -224,7 +231,7 @@ export default function PerformanceEvaluation({ embedded = false }: PerformanceE
     setRefreshing(false);
   };
 
-  useEffect(() => { loadAll(); }, [period, customFrom, customTo]);
+  useEffect(() => { loadAll(); }, [period, customFrom, customTo, orgIdProp]);
 
   const departments = useMemo(() => {
     const set = new Set(employees.map(e => e.department_name).filter(Boolean) as string[]);
