@@ -861,7 +861,7 @@ export default function OrgInternalDashboard({
           dir="rtl"
         >
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
-            {visitedTabs.has("performance") ? <PerformanceEvaluation embedded /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+            {visitedTabs.has("performance") ? <PerformanceEvaluation embedded orgId={orgId} /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
           </Suspense>
         </TabsContent>
         <TabsContent value="donors" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
