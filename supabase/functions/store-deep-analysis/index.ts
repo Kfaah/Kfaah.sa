@@ -64,7 +64,7 @@ const RESULT_SHAPE = `{
   "risks": ["مخاطرة 1", "..."]
 }`;
 
-async function callAstra(system: string, payload: unknown) {
+async function callAstra(system: string, payload: unknown, onTick?: () => void) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
     headers: {
@@ -142,81 +142,103 @@ async function callAstra(system: string, payload: unknown) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  let body: any = {};
   try {
-    const { organization_id, metrics, from, to } = await req.json();
-    if (!organization_id) {
-      return new Response(JSON.stringify({ error: "organization_id required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    body = await req.json();
+  } catch { /* ignore */ }
+  const { organization_id, metrics, from, to } = body || {};
+  if (!organization_id) {
+    return new Response(JSON.stringify({ error: "organization_id required" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      let closed = false;
+      const push = (line: string) => {
+        if (!closed) controller.enqueue(encoder.encode(line));
+      };
+      // نبضة كل 10 ثوانٍ حتى لا تُقطع الجلسة أثناء التحليل الطويل
+      const beat = setInterval(() => push(".\n"), 10000);
+      push(".\n");
 
-    const [orgRes, profRes] = await Promise.all([
-      admin.from("organizations").select("id,name").eq("id", organization_id).maybeSingle(),
-      admin.from("organization_profiles").select("*").eq("organization_id", organization_id).maybeSingle(),
-    ]);
-    const org = orgRes.data as any;
-    const profile = profRes.data as any;
+      try {
+        const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const [orgRes, profRes] = await Promise.all([
+          admin.from("organizations").select("id,name").eq("id", organization_id).maybeSingle(),
+          admin.from("organization_profiles").select("*").eq("organization_id", organization_id).maybeSingle(),
+        ]);
+        const org = orgRes.data as any;
+        const profile = profRes.data as any;
 
-    const [website, store, twitter, instagram] = await Promise.all([
-      scrape(profile?.website_url),
-      scrape(profile?.store_url),
-      scrape(profile?.twitter_url, 1500),
-      scrape(profile?.instagram_url, 1500),
-    ]);
+        const [website, store, twitter, instagram] = await Promise.all([
+          scrape(profile?.website_url),
+          scrape(profile?.store_url),
+          scrape(profile?.twitter_url, 1500),
+          scrape(profile?.instagram_url, 1500),
+        ]);
+        push(".\n");
 
-    const system = `أنت مستشار تسويق واستدامة مالية للجمعيات الخيرية السعودية، خبير في تحليل متاجر التبرع الإلكترونية وسلوك المتبرعين.
+        const system = `أنت مستشار تسويق واستدامة مالية للجمعيات الخيرية السعودية، خبير في تحليل متاجر التبرع الإلكترونية وسلوك المتبرعين.
 اكتب بالعربية الفصحى الاحترافية، واعتمد على الأرقام المعطاة حرفياً (لا تختلق أرقاماً).
 كن شاملاً وعملياً: اذكر 5-8 شرائح للمتبرعين، و6-10 موجات رسائل جاهزة للإرسال، و8-12 مقترحاً تنفيذياً، وخطة أسبوعية لأربعة أسابيع على الأقل.
 احرص أن تكون كل رسالة قصيرة (أقل من 400 حرف) ومهنية ومناسبة للسياق الخيري السعودي.
 أعد النتيجة كـ JSON صالح بهذا الشكل بالضبط:
 ${RESULT_SHAPE}`;
 
-    const payload = {
-      organization: { name: org?.name },
-      period: { from: from || null, to: to || null },
-      store_metrics: metrics || null,
-      profile: profile
-        ? {
-            about: profile.about,
-            goals: profile.goals,
-            website_url: profile.website_url,
-            store_url: profile.store_url,
-            social: {
-              twitter: profile.twitter_url,
-              instagram: profile.instagram_url,
-              tiktok: profile.tiktok_url,
-              snapchat: profile.snapchat_url,
-              youtube: profile.youtube_url,
-              facebook: profile.facebook_url,
-              linkedin: profile.linkedin_url,
-            },
-          }
-        : null,
-      scraped: { website, store, twitter, instagram },
-    };
+        const payload = {
+          organization: { name: org?.name },
+          period: { from: from || null, to: to || null },
+          store_metrics: metrics || null,
+          profile: profile
+            ? {
+                about: profile.about,
+                goals: profile.goals,
+                website_url: profile.website_url,
+                store_url: profile.store_url,
+                social: {
+                  twitter: profile.twitter_url,
+                  instagram: profile.instagram_url,
+                  tiktok: profile.tiktok_url,
+                  snapchat: profile.snapchat_url,
+                  youtube: profile.youtube_url,
+                  facebook: profile.facebook_url,
+                  linkedin: profile.linkedin_url,
+                },
+              }
+            : null,
+          scraped: { website, store, twitter, instagram },
+        };
 
-    const result = await callAstra(system, payload);
+        const result = await callAstra(system, payload, () => push("."));
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        sources_read: {
-          website: !!website,
-          store: !!store,
-          twitter: !!twitter,
-          instagram: !!instagram,
-        },
-        analysis: result,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: String(e?.message || e) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+        push(
+          "\n__RESULT__" +
+            JSON.stringify({
+              success: true,
+              sources_read: {
+                website: !!website,
+                store: !!store,
+                twitter: !!twitter,
+                instagram: !!instagram,
+              },
+              analysis: result,
+            }),
+        );
+      } catch (e: any) {
+        push("\n__RESULT__" + JSON.stringify({ error: String(e?.message || e) }));
+      } finally {
+        clearInterval(beat);
+        closed = true;
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: { ...corsHeaders, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" },
+  });
 });
