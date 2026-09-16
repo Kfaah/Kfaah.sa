@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowRight, Download, Loader2, Store, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { UnifiedDateFilter, DatePeriod, resolvePeriod } from "./UnifiedDateFilter";
+import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n || 0));
 const sar = (n: number) => `${fmt(n)} ر.س`;
