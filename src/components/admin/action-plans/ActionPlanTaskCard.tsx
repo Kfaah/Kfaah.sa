@@ -473,10 +473,9 @@ function ReportAndRating({
         .from("action-plan-files")
         .upload(path, file, { upsert: false, contentType: file.type || undefined });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("action-plan-files").getPublicUrl(path);
       const newAuto = computeAutoRating({ report: localReport, hasFile: true, status, dueDate });
       await onSave({
-        report_file_url: pub.publicUrl,
+        report_file_url: path,
         report_file_name: file.name,
         rating: newAuto.stars || null,
         rating_notes: newAuto.reason,
