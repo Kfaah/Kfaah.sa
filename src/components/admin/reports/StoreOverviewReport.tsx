@@ -252,13 +252,27 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             abandoned_carts: { count: data.cartsCount, total: data.cartsTotal, recovered: data.cartsRecovered },
             subscriptions: { count: data.subsCount, active: data.subsActive, monthly_value: data.subsMonthly },
             gifts: { count: data.giftsCount, total: data.giftsTotal, delivered: data.giftsDelivered },
-          },
+            },
+          }),
         },
-      });
-      if (error) throw error;
-      if ((res as any)?.error) throw new Error((res as any).error);
-      setSmart(((res as any)?.analysis || null) as SmartAnalysis | null);
-      setSourcesRead(((res as any)?.sources_read || null) as Record<string, boolean> | null);
+      );
+      if (!resp.ok || !resp.body) throw new Error("تعذر الاتصال بخدمة التحليل");
+
+      // الخدمة تبث نبضات أثناء التحليل ثم النتيجة بعد العلامة __RESULT__
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let raw = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        raw += decoder.decode(value, { stream: true });
+      }
+      const marker = raw.indexOf("__RESULT__");
+      if (marker < 0) throw new Error("لم يكتمل التحليل، حاول مرة أخرى");
+      const res = JSON.parse(raw.slice(marker + "__RESULT__".length));
+      if (res?.error) throw new Error(res.error);
+      setSmart((res?.analysis || null) as SmartAnalysis | null);
+      setSourcesRead((res?.sources_read || null) as Record<string, boolean> | null);
       toast.success("تم توليد التحليل الذكي الشامل");
     } catch (e: any) {
       toast.error(e.message || "تعذر توليد التحليل الذكي");
