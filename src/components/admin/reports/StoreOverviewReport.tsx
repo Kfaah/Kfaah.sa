@@ -618,6 +618,19 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             rows={data.monthly.map(m => [m.month, fmt(m.count), sar(m.total)])}
           />
 
+          <SectionTable
+            title="أفضل ساعات التبرع (توقيت الرياض)"
+            head={["النافذة الزمنية", "عدد التبرعات", "الإجمالي", "النسبة"]}
+            rows={data.hourly.slice(0, 8).map(h => [h.label, fmt(h.count), sar(h.total), pct(h.count, data.donationsCount)])}
+          />
+
+          <SectionTable
+            title="أفضل أيام الأسبوع للتبرع"
+            head={["اليوم", "عدد التبرعات", "الإجمالي", "النسبة"]}
+            rows={data.weekday.map(d => [d.day, fmt(d.count), sar(d.total), pct(d.count, data.donationsCount)])}
+          />
+
+
           {smartLoading && (
             <div className="py-10 text-center text-muted-foreground border border-dashed rounded-xl">
               <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
