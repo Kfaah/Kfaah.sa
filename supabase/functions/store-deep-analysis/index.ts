@@ -75,7 +75,7 @@ async function callAstra(system: string, payload: unknown) {
     body: JSON.stringify({
       model: AI_MODEL,
       stream: true,
-      reasoning: { effort: "medium" },
+      reasoning: { effort: "low" },
       input: [
         { role: "system", content: [{ type: "input_text", text: system }] },
         {
