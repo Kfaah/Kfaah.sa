@@ -1767,7 +1767,11 @@ function ElitePanel({
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={12} className="text-center text-slate-400 py-10">لا توجد بيانات نخبة بعد — ارفع ملفات الاستقطاعات والحملات والإهداءات لبدء التحليل.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={12} className="text-center text-slate-400 py-10">
+                  {eliteLoading ? (
+                    <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> جاري حساب قائمة النخبة…</span>
+                  ) : "لا توجد بيانات نخبة بعد — ارفع ملفات الاستقطاعات والحملات والإهداءات لبدء التحليل."}
+                </TableCell></TableRow>
               ) : filtered.slice(0, 500).map((r) => {
                 const tm = tierMeta(r.activities.size);
                 const acts: Record<string, string> = {
