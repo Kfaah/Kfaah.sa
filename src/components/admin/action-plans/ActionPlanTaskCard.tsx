@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CheckCircle2, ChevronDown, Clock, Download, FileText, Package, Paperclip, Sparkles, Star, Upload, User } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getActionPlanFileSignedUrl } from "@/lib/actionPlanFileUrl";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
