@@ -13,6 +13,27 @@ const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "0%
 
 const PAGE = 1000;
 
+const DAY_NAMES = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+
+// مفتاح موحّد للمتبرع: آخر 9 أرقام من الجوال، أو الاسم إذا لم يوجد جوال
+function donorKey(phone?: string | null, name?: string | null): string | null {
+  const digits = String(phone ?? "").replace(/\D/g, "");
+  if (digits.length >= 9) return digits.slice(-9);
+  const nm = String(name ?? "").trim().toLowerCase();
+  return nm ? `nm:${nm}` : null;
+}
+
+// تحويل الطابع الزمني إلى توقيت الرياض (UTC+3)
+function riyadhParts(iso?: string | null): { hour: number; dow: number } | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const r = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+  return { hour: r.getUTCHours(), dow: r.getUTCDay() };
+}
+
+const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00 – ${String((h + 1) % 24).padStart(2, "0")}:00`;
+
 async function fetchAll<T = any>(
   table: string,
   columns: string,
