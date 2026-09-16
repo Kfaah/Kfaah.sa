@@ -100,6 +100,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
   const [smartLoading, setSmartLoading] = useState(false);
   const [sourcesRead, setSourcesRead] = useState<Record<string, boolean> | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
+  const smartRef = useRef<HTMLDivElement>(null);
 
   const range = useMemo(() => resolvePeriod(period, { from: customFrom, to: customTo }), [period, customFrom, customTo]);
   const fromDate = range.from ? range.from.toISOString().slice(0, 10) : null;
@@ -274,6 +275,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       setSmart((res?.analysis || null) as SmartAnalysis | null);
       setSourcesRead((res?.sources_read || null) as Record<string, boolean> | null);
       toast.success("تم توليد التحليل الذكي الشامل");
+      setTimeout(() => smartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
     } catch (e: any) {
       toast.error(e.message || "تعذر توليد التحليل الذكي");
     } finally {
@@ -524,7 +526,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           )}
 
           {smart && (
-            <div className="space-y-4 pt-2">
+            <div ref={smartRef} className="space-y-4 pt-2">
               <div className="border-b-4 border-primary pb-2">
                 <h3 className="text-xl font-extrabold text-primary">التحليل الذكي الشامل</h3>
                 {sourcesRead && (
