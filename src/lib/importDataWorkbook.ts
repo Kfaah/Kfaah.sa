@@ -125,14 +125,29 @@ function mapRow(
       return {
         organization_id: orgId,
         upload_id: uploadId,
-        amount: toNumber(pick(row, "المبلغ", "amount")),
+        amount: toNumber(pick(row, "قيمه التبرع", "قيمه", "المبلغ", "amount")),
         attempted_at:
-          toDate(pick(row, "التاريخ", "تاريخ المحاوله", "date")) ?? new Date().toISOString(),
-        donor_name: pick(row, "اسم المتبرع", "donor name") as string | null,
-        donor_phone: pick(row, "الجوال", "phone") as string | null,
-        project_name: pick(row, "المشروع", "project") as string | null,
+          toDate(
+            pick(
+              row,
+              "وقت التبرع",
+              "تاريخ التبرع",
+              "تاريخ المحاوله",
+              "التاريخ",
+              "date",
+            ),
+          ) ?? new Date().toISOString(),
+        donor_name: pick(row, "اسم المتبرع", "المتبرع", "donor name") as string | null,
+        donor_phone: pick(row, "الجوال", "رقم الجوال", "phone") as string | null,
+        project_name: pick(row, "اسم المشروع", "المشروع", "project") as string | null,
         payment_method: pick(row, "طريقه الدفع", "payment method") as string | null,
-        failure_reason: pick(row, "سبب الفشل", "failure reason", "السبب") as string | null,
+        failure_reason: pick(
+          row,
+          "سبب الفشل",
+          "failure reason",
+          "السبب",
+          "الحاله",
+        ) as string | null,
         raw_data: raw,
       };
     case "bank_transfers":
