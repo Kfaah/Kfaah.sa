@@ -440,6 +440,8 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         ${table("أعلى المتبرعين", ["المتبرع", "الجوال", "عدد التبرعات", "الإجمالي"], data.topDonors.map((d) => [d.name, d.phone, fmt(d.count), sar(d.total)]))}
         ${table("أسباب فشل التبرعات", ["السبب", "العدد", "القيمة المفقودة"], data.failReasons.map((r) => [r.reason, fmt(r.count), sar(r.total)]))}
         ${table("التوزيع الشهري للتبرعات", ["الشهر", "عدد العمليات", "الإجمالي"], data.monthly.map((m) => [m.month, fmt(m.count), sar(m.total)]))}
+        ${table("أفضل ساعات التبرع (توقيت الرياض)", ["النافذة الزمنية", "عدد التبرعات", "الإجمالي", "النسبة"], data.hourly.slice(0, 8).map((h) => [h.label, fmt(h.count), sar(h.total), pct(h.count, data.donationsCount)]))}
+        ${table("أفضل أيام الأسبوع للتبرع", ["اليوم", "عدد التبرعات", "الإجمالي", "النسبة"], data.weekday.map((d) => [d.day, fmt(d.count), sar(d.total), pct(d.count, data.donationsCount)]))}
         ${smart ? `
           <div style="margin:26px 0 14px;border-bottom:3px solid ${GREEN};padding-bottom:6px;font-size:18px;font-weight:800;color:${GREEN}">التحليل الذكي الشامل</div>
           ${smart.executive_summary ? `<div style="margin-bottom:16px;white-space:pre-wrap">${esc(smart.executive_summary)}</div>` : ""}
