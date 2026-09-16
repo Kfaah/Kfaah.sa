@@ -66,6 +66,28 @@ function topBy<T>(map: Map<string, T>, score: (v: T) => number, n: number) {
   return Array.from(map.values()).sort((a, b) => score(b) - score(a)).slice(0, n);
 }
 
+interface SmartAnalysis {
+  executive_summary?: string;
+  headline_findings?: string[];
+  donor_analysis?: {
+    overview?: string;
+    segments?: { name?: string; criteria?: string; size_estimate?: string; value?: string; behavior?: string; risk?: string; action?: string }[];
+    retention?: string;
+    churn_signals?: string[];
+  };
+  web_review?: Record<string, { strengths?: string[]; gaps?: string[]; fix_list?: string[] }>;
+  messaging_plan?: {
+    objective?: string;
+    waves?: { wave?: string; segment?: string; channel?: string; timing?: string; goal?: string; message_ar?: string; kpi?: string; owner?: string }[];
+    calendar?: { week?: string; tasks?: string[] }[];
+  };
+  recommendations?: { title?: string; why?: string; how?: string[]; impact?: string; effort?: string; priority?: string }[];
+  kpi_targets?: { kpi?: string; current?: string; target_90d?: string }[];
+  risks?: string[];
+}
+
+const WEB_LABELS: Record<string, string> = { website: "الموقع الإلكتروني", store: "المتجر الإلكتروني", social: "حسابات التواصل" };
+
 export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; onBack: () => void }) {
   const [period, setPeriod] = useState<DatePeriod>("this_year");
   const [customFrom, setCustomFrom] = useState("");
