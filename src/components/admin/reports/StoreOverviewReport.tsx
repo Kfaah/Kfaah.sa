@@ -703,6 +703,46 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                 </Card>
               ))}
 
+              {(smart.send_timing?.summary || smart.send_timing?.frequency || !!smart.send_timing?.avoid?.length || !!smart.send_timing?.seasonal_windows?.length) && (
+                <Card className="border-primary/30">
+                  <CardHeader className="pb-2"><CardTitle className="text-base">أوقات الإرسال المثالية</CardTitle></CardHeader>
+                  <CardContent className="text-sm space-y-2 text-muted-foreground">
+                    {smart.send_timing?.summary && <p className="whitespace-pre-wrap">{smart.send_timing.summary}</p>}
+                    {smart.send_timing?.frequency && <p><span className="font-semibold text-foreground">سقف التكرار: </span>{smart.send_timing.frequency}</p>}
+                    {!!smart.send_timing?.avoid?.length && (
+                      <div>
+                        <div className="font-semibold text-foreground">أوقات يُفضّل تجنبها</div>
+                        <ul className="list-disc pr-5 space-y-1">{smart.send_timing.avoid.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                    )}
+                    {!!smart.send_timing?.seasonal_windows?.length && (
+                      <div>
+                        <div className="font-semibold text-foreground">النوافذ الموسمية</div>
+                        <ul className="list-disc pr-5 space-y-1">{smart.send_timing.seasonal_windows.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              <SectionTable
+                title="أفضل ساعات الإرسال"
+                head={["النافذة", "المبرر", "القنوات"]}
+                rows={(smart.send_timing?.best_hours || []).map(h => [h.window || "—", h.why || "—", h.channels || "—"])}
+              />
+
+              <SectionTable
+                title="أفضل أيام الإرسال"
+                head={["اليوم", "المبرر", "ملاحظة"]}
+                rows={(smart.send_timing?.best_days || []).map(d => [d.day || "—", d.why || "—", d.note || "—"])}
+              />
+
+              <SectionTable
+                title="تكرار التواصل حسب الشريحة"
+                head={["الشريحة", "القناة", "اليوم", "الساعة", "التكرار"]}
+                rows={(smart.send_timing?.cadence_by_segment || []).map(c => [c.segment || "—", c.channel || "—", c.best_day || "—", c.best_time || "—", c.frequency || "—"])}
+              />
+
               {smart.messaging_plan?.objective && (
                 <Card className="border-primary/30">
                   <CardHeader className="pb-2"><CardTitle className="text-base">هدف خطة الرسائل</CardTitle></CardHeader>
@@ -712,8 +752,8 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
 
               <SectionTable
                 title="الخطة التنفيذية لرسائل المتبرعين"
-                head={["الموجة", "الشريحة", "القناة", "التوقيت", "نص الرسالة", "المؤشر", "المسؤول"]}
-                rows={(smart.messaging_plan?.waves || []).map(w => [w.wave || "—", w.segment || "—", w.channel || "—", w.timing || "—", w.message_ar || "—", w.kpi || "—", w.owner || "—"])}
+                head={["الموجة", "الشريحة", "القناة", "اليوم", "الساعة", "الحجم", "نص الرسالة", "نسخة بديلة", "المتابعة", "الدعوة للإجراء", "المؤشر", "النتيجة المتوقعة", "المسؤول"]}
+                rows={(smart.messaging_plan?.waves || []).map(w => [w.wave || "—", w.segment || "—", w.channel || "—", w.send_day || w.timing || "—", w.send_time || "—", w.audience_size || "—", w.message_ar || "—", w.variant_b || "—", w.follow_up || "—", w.cta || "—", w.kpi || "—", w.expected_result || "—", w.owner || "—"])}
               />
 
               <SectionTable
