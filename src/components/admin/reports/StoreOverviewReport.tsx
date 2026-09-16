@@ -163,6 +163,9 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
   const [sourcesRead, setSourcesRead] = useState<Record<string, boolean> | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const smartRef = useRef<HTMLDivElement>(null);
+  const branding = useOrgBranding();
+  const orgLogo = branding?.logoUrl || null;
+  const todayLabel = new Date().toLocaleDateString("ar-SA-u-nu-latn", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const range = useMemo(() => resolvePeriod(period, { from: customFrom, to: customTo }), [period, customFrom, customTo]);
   const fromDate = range.from ? range.from.toISOString().slice(0, 10) : null;
