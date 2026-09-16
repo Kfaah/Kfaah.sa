@@ -41,6 +41,11 @@ interface Analysis {
   donationsTotal: number;
   avgDonation: number;
   uniqueDonors: number;
+  reachDonors: number;
+  repeatDonors: number;
+  oneTimeDonors: number;
+  hourly: { hour: number; label: string; count: number; total: number }[];
+  weekday: { day: string; count: number; total: number }[];
   topProjects: { name: string; count: number; total: number }[];
   monthly: { month: string; count: number; total: number }[];
   topDonors: { name: string; phone: string; count: number; total: number }[];
