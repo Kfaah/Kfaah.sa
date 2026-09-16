@@ -424,10 +424,19 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             </div>`
           : "";
       const kpi = (label: string, value: string) =>
-        `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+        `<div style="background:linear-gradient(135deg,#f8fafc 0%,#eef7f3 100%);border:1px solid #d8e8e1;border-right:4px solid ${GREEN};border-radius:10px;padding:12px">
            <div style="font-size:10px;color:#64748b">${esc(label)}</div>
-           <div style="font-size:15px;font-weight:800;margin-top:4px">${esc(value)}</div>
+           <div style="font-size:15px;font-weight:800;margin-top:4px;color:${GREEN}">${esc(value)}</div>
          </div>`;
+
+      const [orgLogoData, kafaahLogoData] = await Promise.all([toDataUrl(orgLogo), toDataUrl(KAFAAH_LOGO)]);
+      const logoBox = (src: string | null, alt: string, size: number) =>
+        src
+          ? `<div style="width:${size}px;height:${size}px;background:#fff;border-radius:12px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.12)">
+               <img src="${src}" alt="${esc(alt)}" style="width:100%;height:100%;object-fit:contain" />
+             </div>`
+          : "";
+
 
       const wrap = document.createElement("div");
       wrap.dir = "rtl";
