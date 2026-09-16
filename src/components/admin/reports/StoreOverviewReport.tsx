@@ -526,7 +526,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           )}
 
           {smart && (
-            <div className="space-y-4 pt-2">
+            <div ref={smartRef} className="space-y-4 pt-2">
               <div className="border-b-4 border-primary pb-2">
                 <h3 className="text-xl font-extrabold text-primary">التحليل الذكي الشامل</h3>
                 {sourcesRead && (
