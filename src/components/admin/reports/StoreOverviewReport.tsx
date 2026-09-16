@@ -568,11 +568,33 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         <div className="py-20 text-center text-muted-foreground">لا توجد بيانات للمتجر في هذه الفترة</div>
       ) : (
         <div ref={printRef} className="space-y-4 bg-background p-4 rounded-xl">
-          <div className="border-b-4 border-primary pb-3">
-            <div className="text-xs text-muted-foreground">{orgName}</div>
-            <h3 className="text-2xl font-extrabold text-primary mt-1">التحليل الشامل للمتجر</h3>
-            <div className="text-xs text-muted-foreground">
-              الفترة: {fromDate || "من البداية"} — {toDate || "حتى الآن"}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-primary via-primary/90 to-emerald-600 text-primary-foreground p-6 shadow-lg">
+            <div className="absolute -left-10 -top-12 h-40 w-40 rounded-full bg-primary-foreground/10" />
+            <div className="absolute -left-4 bottom-[-3rem] h-32 w-32 rounded-full bg-primary-foreground/5" />
+            <div className="relative flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                {orgLogo && (
+                  <div className="h-16 w-16 rounded-xl bg-primary-foreground p-1.5 shadow-sm shrink-0">
+                    <img src={orgLogo} alt={orgName} className="h-full w-full object-contain" />
+                  </div>
+                )}
+                <div>
+                  <div className="text-xs opacity-80">{orgName}</div>
+                  <h3 className="text-2xl font-extrabold mt-0.5">التحليل الشامل للمتجر</h3>
+                  <div className="text-xs opacity-80 mt-1">
+                    الفترة: {fromDate || "من البداية"} — {toDate || "حتى الآن"} · تاريخ التقرير: {todayLabel}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <div className="h-12 w-12 rounded-xl bg-primary-foreground p-1.5 shadow-sm shrink-0">
+                  <img src={KAFAAH_LOGO} alt="منصة كفاءة" className="h-full w-full object-contain" />
+                </div>
+                <div className="leading-tight">
+                  <div className="font-bold">منصة كفاءة</div>
+                  <div className="opacity-80">لإدارة التسويق الإلكتروني للجمعيات</div>
+                </div>
+              </div>
             </div>
           </div>
 
