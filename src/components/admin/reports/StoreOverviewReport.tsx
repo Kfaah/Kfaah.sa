@@ -443,10 +443,22 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       wrap.setAttribute("lang", "ar");
       wrap.style.cssText = `position:fixed;top:-10000px;left:0;width:794px;padding:40px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px`;
       wrap.innerHTML = `
-        <div style="border-bottom:4px solid ${GREEN};padding-bottom:14px;margin-bottom:22px">
-          <div style="font-size:11px;color:#64748b">${esc(orgName)}</div>
-          <h1 style="margin:6px 0 4px;font-size:24px;color:${GREEN};font-weight:800">التحليل الشامل للمتجر</h1>
-          <div style="font-size:11px;color:#475569">الفترة: ${fromDate || "من البداية"} — ${toDate || "حتى الآن"}</div>
+        <div style="background:linear-gradient(115deg,${GREEN} 0%,#0f8f6d 55%,#16a97f 100%);color:#fff;border-radius:16px;padding:22px 24px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div style="display:flex;align-items:center;gap:14px">
+            ${logoBox(orgLogoData, orgName, 62)}
+            <div>
+              <div style="font-size:11px;opacity:.85">${esc(orgName)}</div>
+              <div style="font-size:24px;font-weight:800;margin:2px 0 4px">التحليل الشامل للمتجر</div>
+              <div style="font-size:11px;opacity:.85">الفترة: ${fromDate || "من البداية"} — ${toDate || "حتى الآن"} · تاريخ التقرير: ${esc(todayLabel)}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${logoBox(kafaahLogoData, "منصة كفاءة", 48)}
+            <div style="font-size:10px;line-height:1.5">
+              <div style="font-weight:800;font-size:12px">منصة كفاءة</div>
+              <div style="opacity:.85">لإدارة التسويق الإلكتروني للجمعيات</div>
+            </div>
+          </div>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px">
