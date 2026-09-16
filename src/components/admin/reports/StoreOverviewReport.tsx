@@ -513,6 +513,13 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           ${table("مستهدفات المؤشرات (90 يوماً)", ["المؤشر", "الحالي", "المستهدف"], (smart.kpi_targets || []).map((k) => [k.kpi || "—", k.current || "—", k.target_90d || "—"]))}
           ${smart.risks?.length ? `<div style="margin-bottom:14px"><b>المخاطر:</b><ul style="margin:6px 20px 0 0;padding:0;color:#475569">${smart.risks.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul></div>` : ""}
         ` : ""}
+        <div style="margin-top:26px;border-top:2px solid ${GREEN};padding-top:10px;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#64748b">
+          <div>${esc(orgName)} · التحليل الشامل للمتجر · ${esc(todayLabel)}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${kafaahLogoData ? `<img src="${kafaahLogoData}" alt="منصة كفاءة" style="width:20px;height:20px;object-fit:contain" />` : ""}
+            <span>تم التوليد بواسطة منصة كفاءة</span>
+          </div>
+        </div>
       `;
 
       document.body.appendChild(wrap);
