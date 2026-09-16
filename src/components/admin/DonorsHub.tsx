@@ -1606,7 +1606,7 @@ function ElitePanel({
             key: r.pkey,
             name: r.name || "—",
             phone: r.phone || null,
-            activities: new Set((r.activities || []) as EliteAgg["activities"] extends Set<infer T> ? T[] : never),
+            activities: new Set((r.activities || []) as any) as EliteAgg["activities"],
             donationsCount: Number(r.donations_count || 0),
             donationsTotal: Number(r.donations_total || 0),
             subsCount: Number(r.subs_count || 0),
