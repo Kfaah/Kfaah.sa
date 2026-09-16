@@ -123,9 +123,9 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           fetchAll("donations", "donor_name, donor_phone, amount, project_name, donation_date", orgId, "donation_date", fromDate, toDate),
           fetchAll("campaigns", "name, goal_amount, collected_amount, status, start_date", orgId, "start_date", fromDate, toDate, 3000),
           fetchAll("failed_donations", "amount, failure_reason, attempted_at", orgId, "attempted_at", fromIso, toIso, 20000),
-          fetchAll("abandoned_carts", "amount, recovered, abandoned_at", orgId, "abandoned_at", fromIso, toIso, 20000),
-          fetchAll("subscriptions", "amount, status, start_date", orgId, "start_date", fromDate, toDate, 20000),
-          fetchAll("gifts", "amount, delivery_status, gift_date", orgId, "gift_date", fromDate, toDate, 60000),
+          fetchAll("abandoned_carts", "amount, recovered, abandoned_at, donor_name, donor_phone", orgId, "abandoned_at", fromIso, toIso, 20000),
+          fetchAll("subscriptions", "amount, status, start_date, donor_name, donor_phone", orgId, "start_date", fromDate, toDate, 20000),
+          fetchAll("gifts", "amount, delivery_status, gift_date, giver_name, giver_phone", orgId, "gift_date", fromDate, toDate, 60000),
         ]);
         if (cancelled) return;
         setOrgName((org.data as any)?.name || "");
