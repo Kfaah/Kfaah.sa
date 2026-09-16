@@ -114,7 +114,10 @@ async function callAstra(system: string, payload: unknown) {
       if (!raw || raw === "[DONE]") continue;
       try {
         const ev = JSON.parse(raw);
-        if (ev.type === "response.output_text.delta" && typeof ev.delta === "string") text += ev.delta;
+        if (ev.type === "response.output_text.delta" && typeof ev.delta === "string") {
+          text += ev.delta;
+          onTick?.();
+        }
         else if (ev.type === "response.completed" && ev.response?.output_text) {
           const ot = Array.isArray(ev.response.output_text)
             ? ev.response.output_text.join("")
