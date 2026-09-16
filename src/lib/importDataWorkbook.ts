@@ -154,12 +154,13 @@ function mapRow(
         organization_id: orgId,
         upload_id: uploadId,
         abandoned_at:
-          toDate(pick(row, "تاريخ السله", "تاريخ السلة", "التاريخ", "date")) ??
-          new Date().toISOString(),
-        amount: toNumber(pick(row, "المبلغ", "amount")),
-        donor_name: pick(row, "اسم المتبرع", "donor") as string | null,
-        donor_phone: pick(row, "الجوال", "phone") as string | null,
-        project_name: pick(row, "المشروع", "project") as string | null,
+          toDate(
+            pick(row, "تاريخ السله", "تاريخ السلة", "وقت التبرع", "تاريخ التبرع", "التاريخ", "date"),
+          ) ?? new Date().toISOString(),
+        amount: toNumber(pick(row, "قيمه التبرع", "المبلغ", "amount")),
+        donor_name: pick(row, "اسم المتبرع", "المتبرع", "donor") as string | null,
+        donor_phone: pick(row, "الجوال", "رقم الجوال", "phone") as string | null,
+        project_name: pick(row, "اسم المشروع", "المشروع", "project") as string | null,
         raw_data: raw,
       };
     case "campaigns":
