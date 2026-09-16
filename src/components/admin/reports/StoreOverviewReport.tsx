@@ -420,7 +420,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           ${kpi("إجمالي التبرعات", sar(data.donationsTotal))}
           ${kpi("عدد العمليات", fmt(data.donationsCount))}
           ${kpi("متوسط التبرع", sar(data.avgDonation))}
-          ${kpi("عدد المتبرعين", fmt(data.uniqueDonors))}
+          ${kpi("متبرعو التبرعات المباشرة", fmt(data.uniqueDonors))}
+          ${kpi("قاعدة المتبرعين (كل القنوات)", fmt(data.reachDonors))}
+          ${kpi("متبرعون متكررون", `${fmt(data.repeatDonors)} · ${pct(data.repeatDonors, data.uniqueDonors)}`)}
+          ${kpi("تبرعوا مرة واحدة", fmt(data.oneTimeDonors))}
           ${kpi("التبرعات الفاشلة", `${fmt(data.failedCount)} · ${sar(data.failedTotal)}`)}
           ${kpi("السلال المتروكة", `${fmt(data.cartsCount)} · ${sar(data.cartsTotal)}`)}
           ${kpi("الاستقطاع النشط", `${fmt(data.subsActive)} · ${sar(data.subsMonthly)}/شهر`)}
