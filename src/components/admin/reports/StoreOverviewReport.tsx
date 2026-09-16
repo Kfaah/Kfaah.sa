@@ -13,6 +13,27 @@ const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "0%
 
 const PAGE = 1000;
 
+const DAY_NAMES = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+
+// مفتاح موحّد للمتبرع: آخر 9 أرقام من الجوال، أو الاسم إذا لم يوجد جوال
+function donorKey(phone?: string | null, name?: string | null): string | null {
+  const digits = String(phone ?? "").replace(/\D/g, "");
+  if (digits.length >= 9) return digits.slice(-9);
+  const nm = String(name ?? "").trim().toLowerCase();
+  return nm ? `nm:${nm}` : null;
+}
+
+// تحويل الطابع الزمني إلى توقيت الرياض (UTC+3)
+function riyadhParts(iso?: string | null): { hour: number; dow: number } | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const r = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+  return { hour: r.getUTCHours(), dow: r.getUTCDay() };
+}
+
+const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00 – ${String((h + 1) % 24).padStart(2, "0")}:00`;
+
 async function fetchAll<T = any>(
   table: string,
   columns: string,
@@ -41,6 +62,11 @@ interface Analysis {
   donationsTotal: number;
   avgDonation: number;
   uniqueDonors: number;
+  reachDonors: number;
+  repeatDonors: number;
+  oneTimeDonors: number;
+  hourly: { hour: number; label: string; count: number; total: number }[];
+  weekday: { day: string; count: number; total: number }[];
   topProjects: { name: string; count: number; total: number }[];
   monthly: { month: string; count: number; total: number }[];
   topDonors: { name: string; phone: string; count: number; total: number }[];
@@ -76,10 +102,25 @@ interface SmartAnalysis {
     churn_signals?: string[];
   };
   web_review?: Record<string, { strengths?: string[]; gaps?: string[]; fix_list?: string[] }>;
+  send_timing?: {
+    summary?: string;
+    best_hours?: { window?: string; why?: string; channels?: string }[];
+    best_days?: { day?: string; why?: string; note?: string }[];
+    avoid?: string[];
+    frequency?: string;
+    cadence_by_segment?: { segment?: string; channel?: string; best_day?: string; best_time?: string; frequency?: string }[];
+    seasonal_windows?: string[];
+  };
   messaging_plan?: {
     objective?: string;
-    waves?: { wave?: string; segment?: string; channel?: string; timing?: string; goal?: string; message_ar?: string; kpi?: string; owner?: string }[];
+    waves?: { wave?: string; segment?: string; channel?: string; timing?: string; send_day?: string; send_time?: string; audience_size?: string; goal?: string; message_ar?: string; variant_b?: string; follow_up?: string; cta?: string; kpi?: string; expected_result?: string; owner?: string }[];
     calendar?: { week?: string; tasks?: string[] }[];
+  };
+  operational_details?: {
+    data_hygiene?: string[];
+    compliance?: string[];
+    tools?: string[];
+    ab_tests?: { test?: string; hypothesis?: string; metric?: string }[];
   };
   recommendations?: { title?: string; why?: string; how?: string[]; impact?: string; effort?: string; priority?: string }[];
   kpi_targets?: { kpi?: string; current?: string; target_90d?: string }[];
@@ -118,9 +159,9 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           fetchAll("donations", "donor_name, donor_phone, amount, project_name, donation_date", orgId, "donation_date", fromDate, toDate),
           fetchAll("campaigns", "name, goal_amount, collected_amount, status, start_date", orgId, "start_date", fromDate, toDate, 3000),
           fetchAll("failed_donations", "amount, failure_reason, attempted_at", orgId, "attempted_at", fromIso, toIso, 20000),
-          fetchAll("abandoned_carts", "amount, recovered, abandoned_at", orgId, "abandoned_at", fromIso, toIso, 20000),
-          fetchAll("subscriptions", "amount, status, start_date", orgId, "start_date", fromDate, toDate, 20000),
-          fetchAll("gifts", "amount, delivery_status, gift_date", orgId, "gift_date", fromDate, toDate, 60000),
+          fetchAll("abandoned_carts", "amount, recovered, abandoned_at, donor_name, donor_phone", orgId, "abandoned_at", fromIso, toIso, 20000),
+          fetchAll("subscriptions", "amount, status, start_date, donor_name, donor_phone", orgId, "start_date", fromDate, toDate, 20000),
+          fetchAll("gifts", "amount, delivery_status, gift_date, giver_name, giver_phone", orgId, "gift_date", fromDate, toDate, 60000),
         ]);
         if (cancelled) return;
         setOrgName((org.data as any)?.name || "");
@@ -128,6 +169,9 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         const projects = new Map<string, { name: string; count: number; total: number }>();
         const months = new Map<string, { month: string; count: number; total: number }>();
         const donors = new Map<string, { name: string; phone: string; count: number; total: number }>();
+        const hours = new Map<number, { hour: number; label: string; count: number; total: number }>();
+        const days = new Map<number, { day: string; count: number; total: number }>();
+        const reach = new Set<string>();
         let donationsTotal = 0;
         for (const d of donations as any[]) {
           const amt = Number(d.amount || 0);
@@ -138,10 +182,24 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           const m = String(d.donation_date || "").slice(0, 7) || "—";
           const mo = months.get(m) || { month: m, count: 0, total: 0 };
           mo.count += 1; mo.total += amt; months.set(m, mo);
-          const dk = d.donor_phone || d.donor_name || "—";
-          const dv = donors.get(dk) || { name: d.donor_name || "—", phone: d.donor_phone || "—", count: 0, total: 0 };
-          dv.count += 1; dv.total += amt; donors.set(dk, dv);
+          const dk = donorKey(d.donor_phone, d.donor_name);
+          if (dk) reach.add(dk);
+          const mk = dk || "—";
+          const dv = donors.get(mk) || { name: d.donor_name || "—", phone: d.donor_phone || "—", count: 0, total: 0 };
+          dv.count += 1; dv.total += amt; donors.set(mk, dv);
+          const rt = riyadhParts(d.donation_date);
+          if (rt) {
+            const hv = hours.get(rt.hour) || { hour: rt.hour, label: hourLabel(rt.hour), count: 0, total: 0 };
+            hv.count += 1; hv.total += amt; hours.set(rt.hour, hv);
+            const dvv = days.get(rt.dow) || { day: DAY_NAMES[rt.dow], count: 0, total: 0 };
+            dvv.count += 1; dvv.total += amt; days.set(rt.dow, dvv);
+          }
         }
+        for (const g of gifts as any[]) { const k = donorKey(g.giver_phone, g.giver_name); if (k) reach.add(k); }
+        for (const s of subs as any[]) { const k = donorKey(s.donor_phone, s.donor_name); if (k) reach.add(k); }
+        for (const c of carts as any[]) { const k = donorKey(c.donor_phone, c.donor_name); if (k) reach.add(k); }
+        const repeatDonors = Array.from(donors.values()).filter((d) => d.count > 1).length;
+
 
         const reasons = new Map<string, { reason: string; count: number; total: number }>();
         let failedTotal = 0;
@@ -181,6 +239,11 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           donationsTotal,
           avgDonation: donations.length ? donationsTotal / donations.length : 0,
           uniqueDonors: donors.size,
+          reachDonors: reach.size,
+          repeatDonors,
+          oneTimeDonors: Math.max(donors.size - repeatDonors, 0),
+          hourly: Array.from(hours.values()).sort((a, b) => b.count - a.count),
+          weekday: Array.from(days.values()).sort((a, b) => b.count - a.count),
           topProjects: topBy(projects, (p) => p.total, 10),
           monthly: Array.from(months.values()).sort((a, b) => a.month.localeCompare(b.month)),
           topDonors: topBy(donors, (d) => d.total, 10),
@@ -222,6 +285,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
     if (data.subsCount) out.push(`الاستقطاع الشهري النشط ${fmt(data.subsActive)} مشترك بقيمة شهرية ${sar(data.subsMonthly)} (إيراد متكرر متوقع سنوياً ${sar(data.subsMonthly * 12)}).`);
     if (data.giftsCount) out.push(`الإهداءات ${fmt(data.giftsCount)} بقيمة ${sar(data.giftsTotal)}، نسبة التسليم ${pct(data.giftsDelivered, data.giftsCount)}.`);
     if (data.campaignsCount) out.push(`الحملات ${fmt(data.campaignsCount)} حملة، نسبة تحقيق الأهداف ${pct(data.campaignsCollected, data.campaignsGoal)}.`);
+    out.push(`قاعدة التواصل الفعلية ${fmt(data.reachDonors)} متبرعاً مختلفاً عبر جميع القنوات (تبرعات، إهداءات، استقطاع، سلال)، منهم ${fmt(data.uniqueDonors)} متبرعاً في التبرعات المباشرة.`);
+    out.push(`المتبرعون المتكررون ${fmt(data.repeatDonors)} (${pct(data.repeatDonors, data.uniqueDonors)}) ومن تبرع مرة واحدة ${fmt(data.oneTimeDonors)} — أكبر فرصة لرفع التكرار.`);
+    if (data.hourly[0]) out.push(`أفضل وقت للإرسال: ${data.hourly.slice(0, 3).map((h) => h.label).join(" ثم ")} بتوقيت الرياض (${pct(data.hourly.slice(0, 3).reduce((s, h) => s + h.count, 0), data.donationsCount)} من التبرعات).`);
+    if (data.weekday[0]) out.push(`أفضل أيام الإرسال: ${data.weekday.slice(0, 3).map((d) => d.day).join(" • ")}، وأضعفها ${data.weekday[data.weekday.length - 1]?.day || "—"}.`);
     return out;
   }, [data]);
 
@@ -244,7 +311,21 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           from: fromDate,
           to: toDate,
           metrics: {
-            donations: { count: data.donationsCount, total: data.donationsTotal, avg: Math.round(data.avgDonation), unique_donors: data.uniqueDonors },
+            donations: {
+              count: data.donationsCount,
+              total: data.donationsTotal,
+              avg: Math.round(data.avgDonation),
+              unique_donors: data.uniqueDonors,
+              total_reachable_donors_all_channels: data.reachDonors,
+              repeat_donors: data.repeatDonors,
+              one_time_donors: data.oneTimeDonors,
+            },
+            timing: {
+              timezone: "Asia/Riyadh",
+              best_hours: data.hourly.slice(0, 6).map((h) => ({ window: h.label, donations: h.count, total: Math.round(h.total) })),
+              weakest_hours: data.hourly.slice(-4).map((h) => ({ window: h.label, donations: h.count })),
+              best_days: data.weekday.map((d) => ({ day: d.day, donations: d.count, total: Math.round(d.total) })),
+            },
             top_projects: data.topProjects,
             monthly: data.monthly,
             top_donors: data.topDonors.map((d) => ({ name: d.name, count: d.count, total: d.total })),
@@ -339,7 +420,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           ${kpi("إجمالي التبرعات", sar(data.donationsTotal))}
           ${kpi("عدد العمليات", fmt(data.donationsCount))}
           ${kpi("متوسط التبرع", sar(data.avgDonation))}
-          ${kpi("عدد المتبرعين", fmt(data.uniqueDonors))}
+          ${kpi("متبرعو التبرعات المباشرة", fmt(data.uniqueDonors))}
+          ${kpi("قاعدة المتبرعين (كل القنوات)", fmt(data.reachDonors))}
+          ${kpi("متبرعون متكررون", `${fmt(data.repeatDonors)} · ${pct(data.repeatDonors, data.uniqueDonors)}`)}
+          ${kpi("تبرعوا مرة واحدة", fmt(data.oneTimeDonors))}
           ${kpi("التبرعات الفاشلة", `${fmt(data.failedCount)} · ${sar(data.failedTotal)}`)}
           ${kpi("السلال المتروكة", `${fmt(data.cartsCount)} · ${sar(data.cartsTotal)}`)}
           ${kpi("الاستقطاع النشط", `${fmt(data.subsActive)} · ${sar(data.subsMonthly)}/شهر`)}
@@ -356,6 +440,8 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         ${table("أعلى المتبرعين", ["المتبرع", "الجوال", "عدد التبرعات", "الإجمالي"], data.topDonors.map((d) => [d.name, d.phone, fmt(d.count), sar(d.total)]))}
         ${table("أسباب فشل التبرعات", ["السبب", "العدد", "القيمة المفقودة"], data.failReasons.map((r) => [r.reason, fmt(r.count), sar(r.total)]))}
         ${table("التوزيع الشهري للتبرعات", ["الشهر", "عدد العمليات", "الإجمالي"], data.monthly.map((m) => [m.month, fmt(m.count), sar(m.total)]))}
+        ${table("أفضل ساعات التبرع (توقيت الرياض)", ["النافذة الزمنية", "عدد التبرعات", "الإجمالي", "النسبة"], data.hourly.slice(0, 8).map((h) => [h.label, fmt(h.count), sar(h.total), pct(h.count, data.donationsCount)]))}
+        ${table("أفضل أيام الأسبوع للتبرع", ["اليوم", "عدد التبرعات", "الإجمالي", "النسبة"], data.weekday.map((d) => [d.day, fmt(d.count), sar(d.total), pct(d.count, data.donationsCount)]))}
         ${smart ? `
           <div style="margin:26px 0 14px;border-bottom:3px solid ${GREEN};padding-bottom:6px;font-size:18px;font-weight:800;color:${GREEN}">التحليل الذكي الشامل</div>
           ${smart.executive_summary ? `<div style="margin-bottom:16px;white-space:pre-wrap">${esc(smart.executive_summary)}</div>` : ""}
@@ -364,9 +450,20 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           ${table("شرائح المتبرعين", ["الشريحة", "المعيار", "الحجم", "القيمة", "السلوك", "الإجراء"], (smart.donor_analysis?.segments || []).map((s) => [s.name || "—", s.criteria || "—", s.size_estimate || "—", s.value || "—", s.behavior || "—", s.action || "—"]))}
           ${smart.donor_analysis?.retention ? `<div style="margin-bottom:14px;white-space:pre-wrap"><b>الولاء والاستمرارية:</b> ${esc(smart.donor_analysis.retention)}</div>` : ""}
           ${Object.entries(smart.web_review || {}).map(([k, v]) => table(`مراجعة ${WEB_LABELS[k] || k}`, ["نقاط القوة", "الفجوات", "إجراءات التصحيح"], [[(v?.strengths || []).join(" • ") || "—", (v?.gaps || []).join(" • ") || "—", (v?.fix_list || []).join(" • ") || "—"]])).join("")}
+          ${smart.send_timing?.summary ? `<div style="margin-bottom:10px;white-space:pre-wrap"><b>أوقات الإرسال المثالية:</b> ${esc(smart.send_timing.summary)}</div>` : ""}
+          ${table("أفضل ساعات الإرسال", ["النافذة", "المبرر", "القنوات"], (smart.send_timing?.best_hours || []).map((h) => [h.window || "—", h.why || "—", h.channels || "—"]))}
+          ${table("أفضل أيام الإرسال", ["اليوم", "المبرر", "ملاحظة"], (smart.send_timing?.best_days || []).map((d) => [d.day || "—", d.why || "—", d.note || "—"]))}
+          ${table("تكرار التواصل حسب الشريحة", ["الشريحة", "القناة", "اليوم", "الساعة", "التكرار"], (smart.send_timing?.cadence_by_segment || []).map((c) => [c.segment || "—", c.channel || "—", c.best_day || "—", c.best_time || "—", c.frequency || "—"]))}
+          ${smart.send_timing?.frequency ? `<div style="margin-bottom:8px"><b>سقف التكرار:</b> ${esc(smart.send_timing.frequency)}</div>` : ""}
+          ${smart.send_timing?.avoid?.length ? `<div style="margin-bottom:10px"><b>أوقات يُفضّل تجنبها:</b> ${esc(smart.send_timing.avoid.join(" • "))}</div>` : ""}
+          ${smart.send_timing?.seasonal_windows?.length ? `<div style="margin-bottom:14px"><b>النوافذ الموسمية:</b><ul style="margin:6px 20px 0 0;padding:0;color:#475569">${smart.send_timing.seasonal_windows.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul></div>` : ""}
           ${smart.messaging_plan?.objective ? `<div style="margin-bottom:10px"><b>هدف خطة الرسائل:</b> ${esc(smart.messaging_plan.objective)}</div>` : ""}
-          ${table("الخطة التنفيذية لرسائل المتبرعين", ["الموجة", "الشريحة", "القناة", "التوقيت", "نص الرسالة", "المؤشر", "المسؤول"], (smart.messaging_plan?.waves || []).map((w) => [w.wave || "—", w.segment || "—", w.channel || "—", w.timing || "—", w.message_ar || "—", w.kpi || "—", w.owner || "—"]))}
+          ${table("الخطة التنفيذية لرسائل المتبرعين", ["الموجة", "الشريحة", "القناة", "اليوم", "الساعة", "الحجم", "نص الرسالة", "نسخة بديلة", "المتابعة", "الدعوة للإجراء", "المؤشر", "النتيجة المتوقعة", "المسؤول"], (smart.messaging_plan?.waves || []).map((w) => [w.wave || "—", w.segment || "—", w.channel || "—", w.send_day || w.timing || "—", w.send_time || "—", w.audience_size || "—", w.message_ar || "—", w.variant_b || "—", w.follow_up || "—", w.cta || "—", w.kpi || "—", w.expected_result || "—", w.owner || "—"]))}
           ${table("الجدول الأسبوعي للتنفيذ", ["الأسبوع", "المهام"], (smart.messaging_plan?.calendar || []).map((c) => [c.week || "—", (c.tasks || []).join(" • ")]))}
+          ${table("اختبارات A/B المقترحة", ["الاختبار", "الفرضية", "المؤشر"], (smart.operational_details?.ab_tests || []).map((t) => [t.test || "—", t.hypothesis || "—", t.metric || "—"]))}
+          ${smart.operational_details?.data_hygiene?.length ? `<div style="margin-bottom:8px"><b>تنقية البيانات:</b> ${esc(smart.operational_details.data_hygiene.join(" • "))}</div>` : ""}
+          ${smart.operational_details?.compliance?.length ? `<div style="margin-bottom:8px"><b>الالتزام والخصوصية:</b> ${esc(smart.operational_details.compliance.join(" • "))}</div>` : ""}
+          ${smart.operational_details?.tools?.length ? `<div style="margin-bottom:12px"><b>الأدوات المطلوبة:</b> ${esc(smart.operational_details.tools.join(" • "))}</div>` : ""}
           ${table("المقترحات التنفيذية", ["المقترح", "المبرر", "خطوات التنفيذ", "الأثر", "الجهد", "الأولوية"], (smart.recommendations || []).map((r) => [r.title || "—", r.why || "—", (r.how || []).join(" • "), r.impact || "—", r.effort || "—", r.priority || "—"]))}
           ${table("مستهدفات المؤشرات (90 يوماً)", ["المؤشر", "الحالي", "المستهدف"], (smart.kpi_targets || []).map((k) => [k.kpi || "—", k.current || "—", k.target_90d || "—"]))}
           ${smart.risks?.length ? `<div style="margin-bottom:14px"><b>المخاطر:</b><ul style="margin:6px 20px 0 0;padding:0;color:#475569">${smart.risks.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul></div>` : ""}
@@ -460,7 +557,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
               ["إجمالي التبرعات", sar(data.donationsTotal)],
               ["عدد العمليات", fmt(data.donationsCount)],
               ["متوسط التبرع", sar(data.avgDonation)],
-              ["عدد المتبرعين", fmt(data.uniqueDonors)],
+              ["متبرعو التبرعات المباشرة", fmt(data.uniqueDonors)],
+              ["قاعدة المتبرعين (كل القنوات)", fmt(data.reachDonors)],
+              ["متبرعون متكررون", `${fmt(data.repeatDonors)} · ${pct(data.repeatDonors, data.uniqueDonors)}`],
+              ["تبرعوا مرة واحدة", fmt(data.oneTimeDonors)],
               ["التبرعات الفاشلة", `${fmt(data.failedCount)} · ${sar(data.failedTotal)}`],
               ["السلال المتروكة", `${fmt(data.cartsCount)} · ${sar(data.cartsTotal)}`],
               ["الاستقطاع النشط", `${fmt(data.subsActive)} · ${sar(data.subsMonthly)}/شهر`],
@@ -517,6 +617,19 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             head={["الشهر", "عدد العمليات", "الإجمالي"]}
             rows={data.monthly.map(m => [m.month, fmt(m.count), sar(m.total)])}
           />
+
+          <SectionTable
+            title="أفضل ساعات التبرع (توقيت الرياض)"
+            head={["النافذة الزمنية", "عدد التبرعات", "الإجمالي", "النسبة"]}
+            rows={data.hourly.slice(0, 8).map(h => [h.label, fmt(h.count), sar(h.total), pct(h.count, data.donationsCount)])}
+          />
+
+          <SectionTable
+            title="أفضل أيام الأسبوع للتبرع"
+            head={["اليوم", "عدد التبرعات", "الإجمالي", "النسبة"]}
+            rows={data.weekday.map(d => [d.day, fmt(d.count), sar(d.total), pct(d.count, data.donationsCount)])}
+          />
+
 
           {smartLoading && (
             <div className="py-10 text-center text-muted-foreground border border-dashed rounded-xl">
@@ -590,6 +703,46 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                 </Card>
               ))}
 
+              {(smart.send_timing?.summary || smart.send_timing?.frequency || !!smart.send_timing?.avoid?.length || !!smart.send_timing?.seasonal_windows?.length) && (
+                <Card className="border-primary/30">
+                  <CardHeader className="pb-2"><CardTitle className="text-base">أوقات الإرسال المثالية</CardTitle></CardHeader>
+                  <CardContent className="text-sm space-y-2 text-muted-foreground">
+                    {smart.send_timing?.summary && <p className="whitespace-pre-wrap">{smart.send_timing.summary}</p>}
+                    {smart.send_timing?.frequency && <p><span className="font-semibold text-foreground">سقف التكرار: </span>{smart.send_timing.frequency}</p>}
+                    {!!smart.send_timing?.avoid?.length && (
+                      <div>
+                        <div className="font-semibold text-foreground">أوقات يُفضّل تجنبها</div>
+                        <ul className="list-disc pr-5 space-y-1">{smart.send_timing.avoid.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                    )}
+                    {!!smart.send_timing?.seasonal_windows?.length && (
+                      <div>
+                        <div className="font-semibold text-foreground">النوافذ الموسمية</div>
+                        <ul className="list-disc pr-5 space-y-1">{smart.send_timing.seasonal_windows.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              <SectionTable
+                title="أفضل ساعات الإرسال"
+                head={["النافذة", "المبرر", "القنوات"]}
+                rows={(smart.send_timing?.best_hours || []).map(h => [h.window || "—", h.why || "—", h.channels || "—"])}
+              />
+
+              <SectionTable
+                title="أفضل أيام الإرسال"
+                head={["اليوم", "المبرر", "ملاحظة"]}
+                rows={(smart.send_timing?.best_days || []).map(d => [d.day || "—", d.why || "—", d.note || "—"])}
+              />
+
+              <SectionTable
+                title="تكرار التواصل حسب الشريحة"
+                head={["الشريحة", "القناة", "اليوم", "الساعة", "التكرار"]}
+                rows={(smart.send_timing?.cadence_by_segment || []).map(c => [c.segment || "—", c.channel || "—", c.best_day || "—", c.best_time || "—", c.frequency || "—"])}
+              />
+
               {smart.messaging_plan?.objective && (
                 <Card className="border-primary/30">
                   <CardHeader className="pb-2"><CardTitle className="text-base">هدف خطة الرسائل</CardTitle></CardHeader>
@@ -599,8 +752,8 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
 
               <SectionTable
                 title="الخطة التنفيذية لرسائل المتبرعين"
-                head={["الموجة", "الشريحة", "القناة", "التوقيت", "نص الرسالة", "المؤشر", "المسؤول"]}
-                rows={(smart.messaging_plan?.waves || []).map(w => [w.wave || "—", w.segment || "—", w.channel || "—", w.timing || "—", w.message_ar || "—", w.kpi || "—", w.owner || "—"])}
+                head={["الموجة", "الشريحة", "القناة", "اليوم", "الساعة", "الحجم", "نص الرسالة", "نسخة بديلة", "المتابعة", "الدعوة للإجراء", "المؤشر", "النتيجة المتوقعة", "المسؤول"]}
+                rows={(smart.messaging_plan?.waves || []).map(w => [w.wave || "—", w.segment || "—", w.channel || "—", w.send_day || w.timing || "—", w.send_time || "—", w.audience_size || "—", w.message_ar || "—", w.variant_b || "—", w.follow_up || "—", w.cta || "—", w.kpi || "—", w.expected_result || "—", w.owner || "—"])}
               />
 
               <SectionTable
@@ -620,6 +773,27 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                 head={["المؤشر", "الحالي", "المستهدف"]}
                 rows={(smart.kpi_targets || []).map(k => [k.kpi || "—", k.current || "—", k.target_90d || "—"])}
               />
+
+              <SectionTable
+                title="اختبارات A/B المقترحة"
+                head={["الاختبار", "الفرضية", "المؤشر"]}
+                rows={(smart.operational_details?.ab_tests || []).map(t => [t.test || "—", t.hypothesis || "—", t.metric || "—"])}
+              />
+
+              {(!!smart.operational_details?.data_hygiene?.length || !!smart.operational_details?.compliance?.length || !!smart.operational_details?.tools?.length) && (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-base">تفاصيل التنفيذ</CardTitle></CardHeader>
+                  <CardContent className="grid gap-4 md:grid-cols-3 text-sm text-muted-foreground">
+                    {([["تنقية البيانات", smart.operational_details?.data_hygiene], ["الالتزام والخصوصية", smart.operational_details?.compliance], ["الأدوات المطلوبة", smart.operational_details?.tools]] as [string, string[] | undefined][]).map(([label, items]) => (
+                      <div key={label}>
+                        <div className="font-semibold text-foreground mb-1">{label}</div>
+                        <ul className="list-disc pr-5 space-y-1">{(items || []).map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
 
               {!!smart.risks?.length && (
                 <Card>
