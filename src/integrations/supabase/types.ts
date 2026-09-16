@@ -5762,6 +5762,23 @@ export type Database = {
         Returns: boolean
       }
       donations_overview: { Args: { p_org: string }; Returns: Json }
+      elite_donors: {
+        Args: { p_org: string }
+        Returns: {
+          abandoned_count: number
+          activities: string[]
+          campaigns_count: number
+          donations_count: number
+          donations_total: number
+          gifts_count: number
+          last_activity: string
+          name: string
+          phone: string
+          pkey: string
+          projects_count: number
+          subs_count: number
+        }[]
+      }
       email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
