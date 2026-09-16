@@ -274,6 +274,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       setSmart((res?.analysis || null) as SmartAnalysis | null);
       setSourcesRead((res?.sources_read || null) as Record<string, boolean> | null);
       toast.success("تم توليد التحليل الذكي الشامل");
+      setTimeout(() => smartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
     } catch (e: any) {
       toast.error(e.message || "تعذر توليد التحليل الذكي");
     } finally {
