@@ -66,6 +66,28 @@ function topBy<T>(map: Map<string, T>, score: (v: T) => number, n: number) {
   return Array.from(map.values()).sort((a, b) => score(b) - score(a)).slice(0, n);
 }
 
+interface SmartAnalysis {
+  executive_summary?: string;
+  headline_findings?: string[];
+  donor_analysis?: {
+    overview?: string;
+    segments?: { name?: string; criteria?: string; size_estimate?: string; value?: string; behavior?: string; risk?: string; action?: string }[];
+    retention?: string;
+    churn_signals?: string[];
+  };
+  web_review?: Record<string, { strengths?: string[]; gaps?: string[]; fix_list?: string[] }>;
+  messaging_plan?: {
+    objective?: string;
+    waves?: { wave?: string; segment?: string; channel?: string; timing?: string; goal?: string; message_ar?: string; kpi?: string; owner?: string }[];
+    calendar?: { week?: string; tasks?: string[] }[];
+  };
+  recommendations?: { title?: string; why?: string; how?: string[]; impact?: string; effort?: string; priority?: string }[];
+  kpi_targets?: { kpi?: string; current?: string; target_90d?: string }[];
+  risks?: string[];
+}
+
+const WEB_LABELS: Record<string, string> = { website: "الموقع الإلكتروني", store: "المتجر الإلكتروني", social: "حسابات التواصل" };
+
 export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; onBack: () => void }) {
   const [period, setPeriod] = useState<DatePeriod>("this_year");
   const [customFrom, setCustomFrom] = useState("");
@@ -74,6 +96,9 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
   const [exporting, setExporting] = useState(false);
   const [data, setData] = useState<Analysis | null>(null);
   const [orgName, setOrgName] = useState("");
+  const [smart, setSmart] = useState<SmartAnalysis | null>(null);
+  const [smartLoading, setSmartLoading] = useState(false);
+  const [sourcesRead, setSourcesRead] = useState<Record<string, boolean> | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const range = useMemo(() => resolvePeriod(period, { from: customFrom, to: customTo }), [period, customFrom, customTo]);
@@ -199,6 +224,63 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
     return out;
   }, [data]);
 
+  const runSmart = async () => {
+    if (!data) return;
+    setSmartLoading(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/store-deep-analysis`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
+            Authorization: `Bearer ${session?.session?.access_token || (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string)}`,
+          },
+          body: JSON.stringify({
+            organization_id: orgId,
+          from: fromDate,
+          to: toDate,
+          metrics: {
+            donations: { count: data.donationsCount, total: data.donationsTotal, avg: Math.round(data.avgDonation), unique_donors: data.uniqueDonors },
+            top_projects: data.topProjects,
+            monthly: data.monthly,
+            top_donors: data.topDonors.map((d) => ({ name: d.name, count: d.count, total: d.total })),
+            campaigns: { count: data.campaignsCount, goal: data.campaignsGoal, collected: data.campaignsCollected, top: data.topCampaigns },
+            failed: { count: data.failedCount, total: data.failedTotal, reasons: data.failReasons },
+            abandoned_carts: { count: data.cartsCount, total: data.cartsTotal, recovered: data.cartsRecovered },
+            subscriptions: { count: data.subsCount, active: data.subsActive, monthly_value: data.subsMonthly },
+            gifts: { count: data.giftsCount, total: data.giftsTotal, delivered: data.giftsDelivered },
+            },
+          }),
+        },
+      );
+      if (!resp.ok || !resp.body) throw new Error("تعذر الاتصال بخدمة التحليل");
+
+      // الخدمة تبث نبضات أثناء التحليل ثم النتيجة بعد العلامة __RESULT__
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let raw = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        raw += decoder.decode(value, { stream: true });
+      }
+      const marker = raw.indexOf("__RESULT__");
+      if (marker < 0) throw new Error("لم يكتمل التحليل، حاول مرة أخرى");
+      const res = JSON.parse(raw.slice(marker + "__RESULT__".length));
+      if (res?.error) throw new Error(res.error);
+      setSmart((res?.analysis || null) as SmartAnalysis | null);
+      setSourcesRead((res?.sources_read || null) as Record<string, boolean> | null);
+      toast.success("تم توليد التحليل الذكي الشامل");
+    } catch (e: any) {
+      toast.error(e.message || "تعذر توليد التحليل الذكي");
+    } finally {
+      setSmartLoading(false);
+    }
+  };
+
   const exportPdf = async () => {
     if (!data) return;
     setExporting(true);
@@ -272,6 +354,21 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         ${table("أعلى المتبرعين", ["المتبرع", "الجوال", "عدد التبرعات", "الإجمالي"], data.topDonors.map((d) => [d.name, d.phone, fmt(d.count), sar(d.total)]))}
         ${table("أسباب فشل التبرعات", ["السبب", "العدد", "القيمة المفقودة"], data.failReasons.map((r) => [r.reason, fmt(r.count), sar(r.total)]))}
         ${table("التوزيع الشهري للتبرعات", ["الشهر", "عدد العمليات", "الإجمالي"], data.monthly.map((m) => [m.month, fmt(m.count), sar(m.total)]))}
+        ${smart ? `
+          <div style="margin:26px 0 14px;border-bottom:3px solid ${GREEN};padding-bottom:6px;font-size:18px;font-weight:800;color:${GREEN}">التحليل الذكي الشامل</div>
+          ${smart.executive_summary ? `<div style="margin-bottom:16px;white-space:pre-wrap">${esc(smart.executive_summary)}</div>` : ""}
+          ${smart.headline_findings?.length ? `<ul style="margin:0 20px 18px 0;padding:0;color:#475569">${smart.headline_findings.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul>` : ""}
+          ${smart.donor_analysis?.overview ? `<div style="margin-bottom:14px;white-space:pre-wrap"><b>تحليل المتبرعين:</b> ${esc(smart.donor_analysis.overview)}</div>` : ""}
+          ${table("شرائح المتبرعين", ["الشريحة", "المعيار", "الحجم", "القيمة", "السلوك", "الإجراء"], (smart.donor_analysis?.segments || []).map((s) => [s.name || "—", s.criteria || "—", s.size_estimate || "—", s.value || "—", s.behavior || "—", s.action || "—"]))}
+          ${smart.donor_analysis?.retention ? `<div style="margin-bottom:14px;white-space:pre-wrap"><b>الولاء والاستمرارية:</b> ${esc(smart.donor_analysis.retention)}</div>` : ""}
+          ${Object.entries(smart.web_review || {}).map(([k, v]) => table(`مراجعة ${WEB_LABELS[k] || k}`, ["نقاط القوة", "الفجوات", "إجراءات التصحيح"], [[(v?.strengths || []).join(" • ") || "—", (v?.gaps || []).join(" • ") || "—", (v?.fix_list || []).join(" • ") || "—"]])).join("")}
+          ${smart.messaging_plan?.objective ? `<div style="margin-bottom:10px"><b>هدف خطة الرسائل:</b> ${esc(smart.messaging_plan.objective)}</div>` : ""}
+          ${table("الخطة التنفيذية لرسائل المتبرعين", ["الموجة", "الشريحة", "القناة", "التوقيت", "نص الرسالة", "المؤشر", "المسؤول"], (smart.messaging_plan?.waves || []).map((w) => [w.wave || "—", w.segment || "—", w.channel || "—", w.timing || "—", w.message_ar || "—", w.kpi || "—", w.owner || "—"]))}
+          ${table("الجدول الأسبوعي للتنفيذ", ["الأسبوع", "المهام"], (smart.messaging_plan?.calendar || []).map((c) => [c.week || "—", (c.tasks || []).join(" • ")]))}
+          ${table("المقترحات التنفيذية", ["المقترح", "المبرر", "خطوات التنفيذ", "الأثر", "الجهد", "الأولوية"], (smart.recommendations || []).map((r) => [r.title || "—", r.why || "—", (r.how || []).join(" • "), r.impact || "—", r.effort || "—", r.priority || "—"]))}
+          ${table("مستهدفات المؤشرات (90 يوماً)", ["المؤشر", "الحالي", "المستهدف"], (smart.kpi_targets || []).map((k) => [k.kpi || "—", k.current || "—", k.target_90d || "—"]))}
+          ${smart.risks?.length ? `<div style="margin-bottom:14px"><b>المخاطر:</b><ul style="margin:6px 20px 0 0;padding:0;color:#475569">${smart.risks.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul></div>` : ""}
+        ` : ""}
       `;
 
       document.body.appendChild(wrap);
@@ -316,6 +413,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button onClick={runSmart} disabled={loading || smartLoading || !data} variant="secondary" className="gap-1">
+            {smartLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {smart ? "إعادة توليد التحليل الذكي" : "توليد التحليل الذكي"}
+          </Button>
           <Button onClick={exportPdf} disabled={loading || exporting || !data} className="gap-1">
             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             تصدير PDF
@@ -414,6 +515,120 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             head={["الشهر", "عدد العمليات", "الإجمالي"]}
             rows={data.monthly.map(m => [m.month, fmt(m.count), sar(m.total)])}
           />
+
+          {smartLoading && (
+            <div className="py-10 text-center text-muted-foreground border border-dashed rounded-xl">
+              <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+              جارٍ التحليل الذكي: مراجعة المتبرعين والموقع والمتجر وبناء خطة الرسائل…
+            </div>
+          )}
+
+          {smart && (
+            <div className="space-y-4 pt-2">
+              <div className="border-b-4 border-primary pb-2">
+                <h3 className="text-xl font-extrabold text-primary">التحليل الذكي الشامل</h3>
+                {sourcesRead && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    مصادر تمت مراجعتها: {Object.entries(sourcesRead).filter(([, v]) => v).map(([k]) => WEB_LABELS[k] || k).join(" • ") || "لا توجد مصادر متاحة"}
+                  </div>
+                )}
+              </div>
+
+              {smart.executive_summary && (
+                <Card className="border-primary/30">
+                  <CardHeader className="pb-2"><CardTitle className="text-base">الملخص التنفيذي</CardTitle></CardHeader>
+                  <CardContent className="text-sm whitespace-pre-wrap text-muted-foreground">{smart.executive_summary}</CardContent>
+                </Card>
+              )}
+
+              {!!smart.headline_findings?.length && (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-base">أبرز النتائج</CardTitle></CardHeader>
+                  <CardContent>
+                    <ul className="text-sm space-y-1 list-disc pr-5 text-muted-foreground">
+                      {smart.headline_findings.map((t, i) => <li key={i}>{t}</li>)}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {(smart.donor_analysis?.overview || smart.donor_analysis?.retention || !!smart.donor_analysis?.churn_signals?.length) && (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-base">تحليل المتبرعين</CardTitle></CardHeader>
+                  <CardContent className="text-sm space-y-2 text-muted-foreground">
+                    {smart.donor_analysis?.overview && <p className="whitespace-pre-wrap">{smart.donor_analysis.overview}</p>}
+                    {smart.donor_analysis?.retention && <p className="whitespace-pre-wrap"><span className="font-semibold text-foreground">الولاء والاستمرارية: </span>{smart.donor_analysis.retention}</p>}
+                    {!!smart.donor_analysis?.churn_signals?.length && (
+                      <div>
+                        <div className="font-semibold text-foreground">مؤشرات التسرب</div>
+                        <ul className="list-disc pr-5 space-y-1">{smart.donor_analysis.churn_signals.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              <SectionTable
+                title="شرائح المتبرعين"
+                head={["الشريحة", "المعيار", "الحجم", "القيمة", "السلوك", "الإجراء"]}
+                rows={(smart.donor_analysis?.segments || []).map(s => [s.name || "—", s.criteria || "—", s.size_estimate || "—", s.value || "—", s.behavior || "—", s.action || "—"])}
+              />
+
+              {Object.entries(smart.web_review || {}).map(([k, v]) => (
+                <Card key={k}>
+                  <CardHeader className="pb-2"><CardTitle className="text-base">مراجعة {WEB_LABELS[k] || k}</CardTitle></CardHeader>
+                  <CardContent className="grid gap-4 md:grid-cols-3 text-sm text-muted-foreground">
+                    {([["نقاط القوة", v?.strengths], ["الفجوات", v?.gaps], ["إجراءات التصحيح", v?.fix_list]] as [string, string[] | undefined][]).map(([label, items]) => (
+                      <div key={label}>
+                        <div className="font-semibold text-foreground mb-1">{label}</div>
+                        <ul className="list-disc pr-5 space-y-1">{(items || []).map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ))}
+
+              {smart.messaging_plan?.objective && (
+                <Card className="border-primary/30">
+                  <CardHeader className="pb-2"><CardTitle className="text-base">هدف خطة الرسائل</CardTitle></CardHeader>
+                  <CardContent className="text-sm text-muted-foreground whitespace-pre-wrap">{smart.messaging_plan.objective}</CardContent>
+                </Card>
+              )}
+
+              <SectionTable
+                title="الخطة التنفيذية لرسائل المتبرعين"
+                head={["الموجة", "الشريحة", "القناة", "التوقيت", "نص الرسالة", "المؤشر", "المسؤول"]}
+                rows={(smart.messaging_plan?.waves || []).map(w => [w.wave || "—", w.segment || "—", w.channel || "—", w.timing || "—", w.message_ar || "—", w.kpi || "—", w.owner || "—"])}
+              />
+
+              <SectionTable
+                title="الجدول الأسبوعي للتنفيذ"
+                head={["الأسبوع", "المهام"]}
+                rows={(smart.messaging_plan?.calendar || []).map(c => [c.week || "—", (c.tasks || []).join(" • ")])}
+              />
+
+              <SectionTable
+                title="المقترحات التنفيذية"
+                head={["المقترح", "المبرر", "خطوات التنفيذ", "الأثر", "الجهد", "الأولوية"]}
+                rows={(smart.recommendations || []).map(r => [r.title || "—", r.why || "—", (r.how || []).join(" • "), r.impact || "—", r.effort || "—", r.priority || "—"])}
+              />
+
+              <SectionTable
+                title="مستهدفات المؤشرات (90 يوماً)"
+                head={["المؤشر", "الحالي", "المستهدف"]}
+                rows={(smart.kpi_targets || []).map(k => [k.kpi || "—", k.current || "—", k.target_90d || "—"])}
+              />
+
+              {!!smart.risks?.length && (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-base">المخاطر</CardTitle></CardHeader>
+                  <CardContent>
+                    <ul className="text-sm space-y-1 list-disc pr-5 text-muted-foreground">{smart.risks.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
