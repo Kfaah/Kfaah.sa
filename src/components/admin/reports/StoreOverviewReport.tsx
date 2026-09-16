@@ -390,6 +390,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button onClick={runSmart} disabled={loading || smartLoading || !data} variant="secondary" className="gap-1">
+            {smartLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {smart ? "إعادة توليد التحليل الذكي" : "توليد التحليل الذكي"}
+          </Button>
           <Button onClick={exportPdf} disabled={loading || exporting || !data} className="gap-1">
             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             تصدير PDF
