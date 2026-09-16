@@ -331,6 +331,21 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         ${table("أعلى المتبرعين", ["المتبرع", "الجوال", "عدد التبرعات", "الإجمالي"], data.topDonors.map((d) => [d.name, d.phone, fmt(d.count), sar(d.total)]))}
         ${table("أسباب فشل التبرعات", ["السبب", "العدد", "القيمة المفقودة"], data.failReasons.map((r) => [r.reason, fmt(r.count), sar(r.total)]))}
         ${table("التوزيع الشهري للتبرعات", ["الشهر", "عدد العمليات", "الإجمالي"], data.monthly.map((m) => [m.month, fmt(m.count), sar(m.total)]))}
+        ${smart ? `
+          <div style="margin:26px 0 14px;border-bottom:3px solid ${GREEN};padding-bottom:6px;font-size:18px;font-weight:800;color:${GREEN}">التحليل الذكي الشامل</div>
+          ${smart.executive_summary ? `<div style="margin-bottom:16px;white-space:pre-wrap">${esc(smart.executive_summary)}</div>` : ""}
+          ${smart.headline_findings?.length ? `<ul style="margin:0 20px 18px 0;padding:0;color:#475569">${smart.headline_findings.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul>` : ""}
+          ${smart.donor_analysis?.overview ? `<div style="margin-bottom:14px;white-space:pre-wrap"><b>تحليل المتبرعين:</b> ${esc(smart.donor_analysis.overview)}</div>` : ""}
+          ${table("شرائح المتبرعين", ["الشريحة", "المعيار", "الحجم", "القيمة", "السلوك", "الإجراء"], (smart.donor_analysis?.segments || []).map((s) => [s.name || "—", s.criteria || "—", s.size_estimate || "—", s.value || "—", s.behavior || "—", s.action || "—"]))}
+          ${smart.donor_analysis?.retention ? `<div style="margin-bottom:14px;white-space:pre-wrap"><b>الولاء والاستمرارية:</b> ${esc(smart.donor_analysis.retention)}</div>` : ""}
+          ${Object.entries(smart.web_review || {}).map(([k, v]) => table(`مراجعة ${WEB_LABELS[k] || k}`, ["نقاط القوة", "الفجوات", "إجراءات التصحيح"], [[(v?.strengths || []).join(" • ") || "—", (v?.gaps || []).join(" • ") || "—", (v?.fix_list || []).join(" • ") || "—"]])).join("")}
+          ${smart.messaging_plan?.objective ? `<div style="margin-bottom:10px"><b>هدف خطة الرسائل:</b> ${esc(smart.messaging_plan.objective)}</div>` : ""}
+          ${table("الخطة التنفيذية لرسائل المتبرعين", ["الموجة", "الشريحة", "القناة", "التوقيت", "نص الرسالة", "المؤشر", "المسؤول"], (smart.messaging_plan?.waves || []).map((w) => [w.wave || "—", w.segment || "—", w.channel || "—", w.timing || "—", w.message_ar || "—", w.kpi || "—", w.owner || "—"]))}
+          ${table("الجدول الأسبوعي للتنفيذ", ["الأسبوع", "المهام"], (smart.messaging_plan?.calendar || []).map((c) => [c.week || "—", (c.tasks || []).join(" • ")]))}
+          ${table("المقترحات التنفيذية", ["المقترح", "المبرر", "خطوات التنفيذ", "الأثر", "الجهد", "الأولوية"], (smart.recommendations || []).map((r) => [r.title || "—", r.why || "—", (r.how || []).join(" • "), r.impact || "—", r.effort || "—", r.priority || "—"]))}
+          ${table("مستهدفات المؤشرات (90 يوماً)", ["المؤشر", "الحالي", "المستهدف"], (smart.kpi_targets || []).map((k) => [k.kpi || "—", k.current || "—", k.target_90d || "—"]))}
+          ${smart.risks?.length ? `<div style="margin-bottom:14px"><b>المخاطر:</b><ul style="margin:6px 20px 0 0;padding:0;color:#475569">${smart.risks.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul></div>` : ""}
+        ` : ""}
       `;
 
       document.body.appendChild(wrap);
