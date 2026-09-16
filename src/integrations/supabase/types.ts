@@ -5753,6 +5753,8 @@ export type Database = {
         Returns: boolean
       }
       can_manage_user_role: { Args: { _target_user: string }; Returns: boolean }
+      can_read_action_plan_file: { Args: { _folder: string }; Returns: boolean }
+      can_read_task_attachment: { Args: { _owner: string }; Returns: boolean }
       create_direct_conversation: {
         Args: { _other_user_id: string }
         Returns: string

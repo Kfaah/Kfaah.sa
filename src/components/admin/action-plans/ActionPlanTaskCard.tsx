@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CheckCircle2, ChevronDown, Clock, Download, FileText, Package, Paperclip, Sparkles, Star, Upload, User } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getActionPlanFileSignedUrl } from "@/lib/actionPlanFileUrl";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -352,8 +353,10 @@ function DeliverableBlock({
             <button
               type="button"
               onClick={async () => {
+                const signed = await getActionPlanFileSignedUrl(attachmentUrl);
+                if (!signed) { toast.error("تعذّر فتح المرفق"); return; }
                 try {
-                  const res = await fetch(attachmentUrl);
+                  const res = await fetch(signed);
                   const blob = await res.blob();
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
@@ -365,7 +368,7 @@ function DeliverableBlock({
                   a.remove();
                   setTimeout(() => URL.revokeObjectURL(url), 1000);
                 } catch {
-                  window.open(attachmentUrl, "_blank");
+                  window.open(signed, "_blank");
                 }
               }}
               className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent text-accent-foreground px-3 py-1.5 text-xs font-bold transition hover:bg-accent/90"
@@ -470,10 +473,9 @@ function ReportAndRating({
         .from("action-plan-files")
         .upload(path, file, { upsert: false, contentType: file.type || undefined });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("action-plan-files").getPublicUrl(path);
       const newAuto = computeAutoRating({ report: localReport, hasFile: true, status, dueDate });
       await onSave({
-        report_file_url: pub.publicUrl,
+        report_file_url: path,
         report_file_name: file.name,
         rating: newAuto.stars || null,
         rating_notes: newAuto.reason,
@@ -537,15 +539,18 @@ function ReportAndRating({
             {uploading ? "جاري الرفع..." : subtask.report_file_url ? "استبدال الملف" : "إرفاق ملف الإثبات"}
           </button>
           {subtask.report_file_url && (
-            <a
-              href={subtask.report_file_url}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
+              onClick={async () => {
+                const signed = await getActionPlanFileSignedUrl(subtask.report_file_url!);
+                if (!signed) { toast.error("تعذّر فتح الملف"); return; }
+                window.open(signed, "_blank", "noopener");
+              }}
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-foreground hover:bg-muted"
             >
               <Paperclip className="h-3.5 w-3.5" />
               {subtask.report_file_name || "الملف المرفق"}
-            </a>
+            </button>
           )}
         </div>
       </div>
