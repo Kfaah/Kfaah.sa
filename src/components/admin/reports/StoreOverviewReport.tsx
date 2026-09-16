@@ -133,6 +133,9 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         const projects = new Map<string, { name: string; count: number; total: number }>();
         const months = new Map<string, { month: string; count: number; total: number }>();
         const donors = new Map<string, { name: string; phone: string; count: number; total: number }>();
+        const hours = new Map<number, { hour: number; label: string; count: number; total: number }>();
+        const days = new Map<number, { day: string; count: number; total: number }>();
+        const reach = new Set<string>();
         let donationsTotal = 0;
         for (const d of donations as any[]) {
           const amt = Number(d.amount || 0);
@@ -143,10 +146,24 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           const m = String(d.donation_date || "").slice(0, 7) || "—";
           const mo = months.get(m) || { month: m, count: 0, total: 0 };
           mo.count += 1; mo.total += amt; months.set(m, mo);
-          const dk = d.donor_phone || d.donor_name || "—";
-          const dv = donors.get(dk) || { name: d.donor_name || "—", phone: d.donor_phone || "—", count: 0, total: 0 };
-          dv.count += 1; dv.total += amt; donors.set(dk, dv);
+          const dk = donorKey(d.donor_phone, d.donor_name);
+          if (dk) reach.add(dk);
+          const mk = dk || "—";
+          const dv = donors.get(mk) || { name: d.donor_name || "—", phone: d.donor_phone || "—", count: 0, total: 0 };
+          dv.count += 1; dv.total += amt; donors.set(mk, dv);
+          const rt = riyadhParts(d.donation_date);
+          if (rt) {
+            const hv = hours.get(rt.hour) || { hour: rt.hour, label: hourLabel(rt.hour), count: 0, total: 0 };
+            hv.count += 1; hv.total += amt; hours.set(rt.hour, hv);
+            const dvv = days.get(rt.dow) || { day: DAY_NAMES[rt.dow], count: 0, total: 0 };
+            dvv.count += 1; dvv.total += amt; days.set(rt.dow, dvv);
+          }
         }
+        for (const g of gifts as any[]) { const k = donorKey(g.giver_phone, g.giver_name); if (k) reach.add(k); }
+        for (const s of subs as any[]) { const k = donorKey(s.donor_phone, s.donor_name); if (k) reach.add(k); }
+        for (const c of carts as any[]) { const k = donorKey(c.donor_phone, c.donor_name); if (k) reach.add(k); }
+        const repeatDonors = Array.from(donors.values()).filter((d) => d.count > 1).length;
+
 
         const reasons = new Map<string, { reason: string; count: number; total: number }>();
         let failedTotal = 0;
