@@ -774,6 +774,27 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                 rows={(smart.kpi_targets || []).map(k => [k.kpi || "—", k.current || "—", k.target_90d || "—"])}
               />
 
+              <SectionTable
+                title="اختبارات A/B المقترحة"
+                head={["الاختبار", "الفرضية", "المؤشر"]}
+                rows={(smart.operational_details?.ab_tests || []).map(t => [t.test || "—", t.hypothesis || "—", t.metric || "—"])}
+              />
+
+              {(!!smart.operational_details?.data_hygiene?.length || !!smart.operational_details?.compliance?.length || !!smart.operational_details?.tools?.length) && (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-base">تفاصيل التنفيذ</CardTitle></CardHeader>
+                  <CardContent className="grid gap-4 md:grid-cols-3 text-sm text-muted-foreground">
+                    {([["تنقية البيانات", smart.operational_details?.data_hygiene], ["الالتزام والخصوصية", smart.operational_details?.compliance], ["الأدوات المطلوبة", smart.operational_details?.tools]] as [string, string[] | undefined][]).map(([label, items]) => (
+                      <div key={label}>
+                        <div className="font-semibold text-foreground mb-1">{label}</div>
+                        <ul className="list-disc pr-5 space-y-1">{(items || []).map((t, i) => <li key={i}>{t}</li>)}</ul>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+
               {!!smart.risks?.length && (
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-base">المخاطر</CardTitle></CardHeader>
