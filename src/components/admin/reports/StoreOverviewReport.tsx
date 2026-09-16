@@ -224,6 +224,40 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
     return out;
   }, [data]);
 
+  const runSmart = async () => {
+    if (!data) return;
+    setSmartLoading(true);
+    try {
+      const { data: res, error } = await supabase.functions.invoke("store-deep-analysis", {
+        body: {
+          organization_id: orgId,
+          from: fromDate,
+          to: toDate,
+          metrics: {
+            donations: { count: data.donationsCount, total: data.donationsTotal, avg: Math.round(data.avgDonation), unique_donors: data.uniqueDonors },
+            top_projects: data.topProjects,
+            monthly: data.monthly,
+            top_donors: data.topDonors.map((d) => ({ name: d.name, count: d.count, total: d.total })),
+            campaigns: { count: data.campaignsCount, goal: data.campaignsGoal, collected: data.campaignsCollected, top: data.topCampaigns },
+            failed: { count: data.failedCount, total: data.failedTotal, reasons: data.failReasons },
+            abandoned_carts: { count: data.cartsCount, total: data.cartsTotal, recovered: data.cartsRecovered },
+            subscriptions: { count: data.subsCount, active: data.subsActive, monthly_value: data.subsMonthly },
+            gifts: { count: data.giftsCount, total: data.giftsTotal, delivered: data.giftsDelivered },
+          },
+        },
+      });
+      if (error) throw error;
+      if ((res as any)?.error) throw new Error((res as any).error);
+      setSmart(((res as any)?.analysis || null) as SmartAnalysis | null);
+      setSourcesRead(((res as any)?.sources_read || null) as Record<string, boolean> | null);
+      toast.success("تم توليد التحليل الذكي الشامل");
+    } catch (e: any) {
+      toast.error(e.message || "تعذر توليد التحليل الذكي");
+    } finally {
+      setSmartLoading(false);
+    }
+  };
+
   const exportPdf = async () => {
     if (!data) return;
     setExporting(true);
