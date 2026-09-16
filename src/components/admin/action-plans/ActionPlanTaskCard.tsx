@@ -539,15 +539,18 @@ function ReportAndRating({
             {uploading ? "جاري الرفع..." : subtask.report_file_url ? "استبدال الملف" : "إرفاق ملف الإثبات"}
           </button>
           {subtask.report_file_url && (
-            <a
-              href={subtask.report_file_url}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
+              onClick={async () => {
+                const signed = await getActionPlanFileSignedUrl(subtask.report_file_url!);
+                if (!signed) { toast.error("تعذّر فتح الملف"); return; }
+                window.open(signed, "_blank", "noopener");
+              }}
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-foreground hover:bg-muted"
             >
               <Paperclip className="h-3.5 w-3.5" />
               {subtask.report_file_name || "الملف المرفق"}
-            </a>
+            </button>
           )}
         </div>
       </div>
