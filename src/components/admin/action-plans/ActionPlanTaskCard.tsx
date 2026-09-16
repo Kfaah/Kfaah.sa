@@ -353,8 +353,10 @@ function DeliverableBlock({
             <button
               type="button"
               onClick={async () => {
+                const signed = await getActionPlanFileSignedUrl(attachmentUrl);
+                if (!signed) { toast.error("تعذّر فتح المرفق"); return; }
                 try {
-                  const res = await fetch(attachmentUrl);
+                  const res = await fetch(signed);
                   const blob = await res.blob();
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
@@ -366,7 +368,7 @@ function DeliverableBlock({
                   a.remove();
                   setTimeout(() => URL.revokeObjectURL(url), 1000);
                 } catch {
-                  window.open(attachmentUrl, "_blank");
+                  window.open(signed, "_blank");
                 }
               }}
               className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent text-accent-foreground px-3 py-1.5 text-xs font-bold transition hover:bg-accent/90"
