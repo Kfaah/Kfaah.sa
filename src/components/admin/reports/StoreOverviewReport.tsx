@@ -228,9 +228,18 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
     if (!data) return;
     setSmartLoading(true);
     try {
-      const { data: res, error } = await supabase.functions.invoke("store-deep-analysis", {
-        body: {
-          organization_id: orgId,
+      const { data: session } = await supabase.auth.getSession();
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/store-deep-analysis`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
+            Authorization: `Bearer ${session?.session?.access_token || (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string)}`,
+          },
+          body: JSON.stringify({
+            organization_id: orgId,
           from: fromDate,
           to: toDate,
           metrics: {
