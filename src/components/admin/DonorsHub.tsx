@@ -1586,82 +1586,44 @@ function ElitePanel({
   const [aiError, setAiError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const aggregated = useMemo<EliteAgg[]>(() => {
-    const map = new Map<string, EliteAgg>();
-    const ensure = (key: string, name: string, phone: string | null) => {
-      let row = map.get(key);
-      if (!row) {
-        row = {
-          key, name: name || "—", phone: phone || null,
-          activities: new Set(), donationsCount: 0, donationsTotal: 0,
-          subsCount: 0, campaignsCount: 0, giftsCount: 0, abandonedCount: 0,
-          projects: new Set(), lastActivity: null,
-        };
-        map.set(key, row);
-      } else if ((!row.name || row.name === "—") && name) {
-        row.name = name;
+  // يتم الحساب في قاعدة البيانات على كامل السجلات (وليس على الصفحات المحمّلة فقط)
+  const [aggregated, setAggregated] = useState<EliteAgg[]>([]);
+  const [eliteLoading, setEliteLoading] = useState(true);
+
+  useEffect(() => {
+    if (!orgId) return;
+    let cancelled = false;
+    (async () => {
+      setEliteLoading(true);
+      const { data, error } = await supabase.rpc("elite_donors", { p_org: orgId });
+      if (cancelled) return;
+      if (error) {
+        console.warn("elite_donors failed", error.message);
+        setAggregated([]);
+      } else {
+        setAggregated(
+          ((data || []) as any[]).map((r) => ({
+            key: r.pkey,
+            name: r.name || "—",
+            phone: r.phone || null,
+            activities: new Set((r.activities || []) as EliteAgg["activities"] extends Set<infer T> ? T[] : never),
+            donationsCount: Number(r.donations_count || 0),
+            donationsTotal: Number(r.donations_total || 0),
+            subsCount: Number(r.subs_count || 0),
+            campaignsCount: Number(r.campaigns_count || 0),
+            giftsCount: Number(r.gifts_count || 0),
+            abandonedCount: Number(r.abandoned_count || 0),
+            projects: new Set<string>(
+              Array.from({ length: Number(r.projects_count || 0) }, (_, i) => `p${i}`),
+            ),
+            lastActivity: r.last_activity || null,
+          })),
+        );
       }
-      if (!row.phone && phone) row.phone = phone;
-      return row;
-    };
-    const touch = (row: EliteAgg, dt: any) => {
-      if (!dt) return;
-      const t = new Date(dt).toISOString();
-      if (!row.lastActivity || t > row.lastActivity) row.lastActivity = t;
-    };
-
-    donations.forEach((d) => {
-      const k = donorKey(d);
-      if (!k) return;
-      const r = ensure(k, d.donor_name || "", d.donor_phone || null);
-      r.activities.add("donations");
-      r.donationsCount += 1;
-      r.donationsTotal += Number(d.amount || 0);
-      if (d.project_name) r.projects.add(d.project_name);
-      touch(r, d.donation_date);
-    });
-    subs.forEach((s) => {
-      const k = donorKey(s);
-      if (!k) return;
-      const r = ensure(k, s.donor_name || "", s.donor_phone || null);
-      r.activities.add("subscriptions");
-      r.subsCount += 1;
-      if (s.project_name) r.projects.add(s.project_name);
-      touch(r, s.created_at || s.start_date);
-    });
-    campaigns.forEach((c) => {
-      // الحملات: من أطلق الحملة (creator/owner) — نستخدم created_by_name/owner_phone إن وجدت
-      const k = donorKey(c, "created_by_name", "owner_phone", "created_by");
-      if (!k) return;
-      const r = ensure(k, c.created_by_name || c.owner_name || "", c.owner_phone || null);
-      r.activities.add("campaigns");
-      r.campaignsCount += 1;
-      if (c.project_name) r.projects.add(c.project_name);
-      touch(r, c.created_at || c.start_date);
-    });
-    gifts.forEach((g) => {
-      const k = donorKey(g, "giver_name", "giver_phone", "giver_donor_id");
-      if (!k) return;
-      const r = ensure(k, g.giver_name || "", g.giver_phone || null);
-      r.activities.add("gifts");
-      r.giftsCount += 1;
-      if (g.project_name) r.projects.add(g.project_name);
-      touch(r, g.gift_date);
-    });
-    abandoned.forEach((a) => {
-      const k = donorKey(a);
-      if (!k) return;
-      const r = ensure(k, a.donor_name || "", a.donor_phone || null);
-      r.activities.add("abandoned");
-      r.abandonedCount += 1;
-      if (a.project_name) r.projects.add(a.project_name);
-      touch(r, a.abandoned_at);
-    });
-
-    return Array.from(map.values())
-      .filter((r) => r.activities.size >= 2)
-      .sort((a, b) => b.activities.size - a.activities.size || b.donationsTotal - a.donationsTotal);
-  }, [donations, subs, campaigns, gifts, abandoned]);
+      setEliteLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [orgId]);
 
   const filtered = useMemo(() => {
     const min = parseInt(minTier, 10);
