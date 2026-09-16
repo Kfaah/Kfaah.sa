@@ -102,10 +102,25 @@ interface SmartAnalysis {
     churn_signals?: string[];
   };
   web_review?: Record<string, { strengths?: string[]; gaps?: string[]; fix_list?: string[] }>;
+  send_timing?: {
+    summary?: string;
+    best_hours?: { window?: string; why?: string; channels?: string }[];
+    best_days?: { day?: string; why?: string; note?: string }[];
+    avoid?: string[];
+    frequency?: string;
+    cadence_by_segment?: { segment?: string; channel?: string; best_day?: string; best_time?: string; frequency?: string }[];
+    seasonal_windows?: string[];
+  };
   messaging_plan?: {
     objective?: string;
-    waves?: { wave?: string; segment?: string; channel?: string; timing?: string; goal?: string; message_ar?: string; kpi?: string; owner?: string }[];
+    waves?: { wave?: string; segment?: string; channel?: string; timing?: string; send_day?: string; send_time?: string; audience_size?: string; goal?: string; message_ar?: string; variant_b?: string; follow_up?: string; cta?: string; kpi?: string; expected_result?: string; owner?: string }[];
     calendar?: { week?: string; tasks?: string[] }[];
+  };
+  operational_details?: {
+    data_hygiene?: string[];
+    compliance?: string[];
+    tools?: string[];
+    ab_tests?: { test?: string; hypothesis?: string; metric?: string }[];
   };
   recommendations?: { title?: string; why?: string; how?: string[]; impact?: string; effort?: string; priority?: string }[];
   kpi_targets?: { kpi?: string; current?: string; target_90d?: string }[];
