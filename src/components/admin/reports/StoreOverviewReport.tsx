@@ -270,6 +270,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
     if (data.subsCount) out.push(`الاستقطاع الشهري النشط ${fmt(data.subsActive)} مشترك بقيمة شهرية ${sar(data.subsMonthly)} (إيراد متكرر متوقع سنوياً ${sar(data.subsMonthly * 12)}).`);
     if (data.giftsCount) out.push(`الإهداءات ${fmt(data.giftsCount)} بقيمة ${sar(data.giftsTotal)}، نسبة التسليم ${pct(data.giftsDelivered, data.giftsCount)}.`);
     if (data.campaignsCount) out.push(`الحملات ${fmt(data.campaignsCount)} حملة، نسبة تحقيق الأهداف ${pct(data.campaignsCollected, data.campaignsGoal)}.`);
+    out.push(`قاعدة التواصل الفعلية ${fmt(data.reachDonors)} متبرعاً مختلفاً عبر جميع القنوات (تبرعات، إهداءات، استقطاع، سلال)، منهم ${fmt(data.uniqueDonors)} متبرعاً في التبرعات المباشرة.`);
+    out.push(`المتبرعون المتكررون ${fmt(data.repeatDonors)} (${pct(data.repeatDonors, data.uniqueDonors)}) ومن تبرع مرة واحدة ${fmt(data.oneTimeDonors)} — أكبر فرصة لرفع التكرار.`);
+    if (data.hourly[0]) out.push(`أفضل وقت للإرسال: ${data.hourly.slice(0, 3).map((h) => h.label).join(" ثم ")} بتوقيت الرياض (${pct(data.hourly.slice(0, 3).reduce((s, h) => s + h.count, 0), data.donationsCount)} من التبرعات).`);
+    if (data.weekday[0]) out.push(`أفضل أيام الإرسال: ${data.weekday.slice(0, 3).map((d) => d.day).join(" • ")}، وأضعفها ${data.weekday[data.weekday.length - 1]?.day || "—"}.`);
     return out;
   }, [data]);
 
