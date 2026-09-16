@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowRight, Download, Loader2, Store, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { UnifiedDateFilter, DatePeriod, resolvePeriod } from "./UnifiedDateFilter";
+import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n || 0));
 const sar = (n: number) => `${fmt(n)} ر.س`;
@@ -33,6 +34,26 @@ function riyadhParts(iso?: string | null): { hour: number; dow: number } | null 
 }
 
 const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00 – ${String((h + 1) % 24).padStart(2, "0")}:00`;
+
+const KAFAAH_LOGO = "/favicon.png";
+
+// تحويل الشعار إلى data URL حتى يظهر داخل ملف PDF بلا مشاكل CORS
+async function toDataUrl(url?: string | null): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string | null>((resolve) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(typeof fr.result === "string" ? fr.result : null);
+      fr.onerror = () => resolve(null);
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
 
 async function fetchAll<T = any>(
   table: string,
@@ -142,6 +163,9 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
   const [sourcesRead, setSourcesRead] = useState<Record<string, boolean> | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const smartRef = useRef<HTMLDivElement>(null);
+  const branding = useOrgBranding();
+  const orgLogo = branding?.logoUrl || null;
+  const todayLabel = new Date().toLocaleDateString("ar-SA-u-nu-latn", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const range = useMemo(() => resolvePeriod(period, { from: customFrom, to: customTo }), [period, customFrom, customTo]);
   const fromDate = range.from ? range.from.toISOString().slice(0, 10) : null;
@@ -400,20 +424,41 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             </div>`
           : "";
       const kpi = (label: string, value: string) =>
-        `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+        `<div style="background:linear-gradient(135deg,#f8fafc 0%,#eef7f3 100%);border:1px solid #d8e8e1;border-right:4px solid ${GREEN};border-radius:10px;padding:12px">
            <div style="font-size:10px;color:#64748b">${esc(label)}</div>
-           <div style="font-size:15px;font-weight:800;margin-top:4px">${esc(value)}</div>
+           <div style="font-size:15px;font-weight:800;margin-top:4px;color:${GREEN}">${esc(value)}</div>
          </div>`;
+
+      const [orgLogoData, kafaahLogoData] = await Promise.all([toDataUrl(orgLogo), toDataUrl(KAFAAH_LOGO)]);
+      const logoBox = (src: string | null, alt: string, size: number) =>
+        src
+          ? `<div style="width:${size}px;height:${size}px;background:#fff;border-radius:12px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.12)">
+               <img src="${src}" alt="${esc(alt)}" style="width:100%;height:100%;object-fit:contain" />
+             </div>`
+          : "";
+
 
       const wrap = document.createElement("div");
       wrap.dir = "rtl";
       wrap.setAttribute("lang", "ar");
       wrap.style.cssText = `position:fixed;top:-10000px;left:0;width:794px;padding:40px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px`;
       wrap.innerHTML = `
-        <div style="border-bottom:4px solid ${GREEN};padding-bottom:14px;margin-bottom:22px">
-          <div style="font-size:11px;color:#64748b">${esc(orgName)}</div>
-          <h1 style="margin:6px 0 4px;font-size:24px;color:${GREEN};font-weight:800">التحليل الشامل للمتجر</h1>
-          <div style="font-size:11px;color:#475569">الفترة: ${fromDate || "من البداية"} — ${toDate || "حتى الآن"}</div>
+        <div style="background:linear-gradient(115deg,${GREEN} 0%,#0f8f6d 55%,#16a97f 100%);color:#fff;border-radius:16px;padding:22px 24px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div style="display:flex;align-items:center;gap:14px">
+            ${logoBox(orgLogoData, orgName, 62)}
+            <div>
+              <div style="font-size:11px;opacity:.85">${esc(orgName)}</div>
+              <div style="font-size:24px;font-weight:800;margin:2px 0 4px">التحليل الشامل للمتجر</div>
+              <div style="font-size:11px;opacity:.85">الفترة: ${fromDate || "من البداية"} — ${toDate || "حتى الآن"} · تاريخ التقرير: ${esc(todayLabel)}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${logoBox(kafaahLogoData, "منصة كفاءة", 48)}
+            <div style="font-size:10px;line-height:1.5">
+              <div style="font-weight:800;font-size:12px">منصة كفاءة</div>
+              <div style="opacity:.85">لإدارة التسويق الإلكتروني للجمعيات</div>
+            </div>
+          </div>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px">
@@ -468,6 +513,13 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           ${table("مستهدفات المؤشرات (90 يوماً)", ["المؤشر", "الحالي", "المستهدف"], (smart.kpi_targets || []).map((k) => [k.kpi || "—", k.current || "—", k.target_90d || "—"]))}
           ${smart.risks?.length ? `<div style="margin-bottom:14px"><b>المخاطر:</b><ul style="margin:6px 20px 0 0;padding:0;color:#475569">${smart.risks.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul></div>` : ""}
         ` : ""}
+        <div style="margin-top:26px;border-top:2px solid ${GREEN};padding-top:10px;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#64748b">
+          <div>${esc(orgName)} · التحليل الشامل للمتجر · ${esc(todayLabel)}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${kafaahLogoData ? `<img src="${kafaahLogoData}" alt="منصة كفاءة" style="width:20px;height:20px;object-fit:contain" />` : ""}
+            <span>تم التوليد بواسطة منصة كفاءة</span>
+          </div>
+        </div>
       `;
 
       document.body.appendChild(wrap);
@@ -544,11 +596,33 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         <div className="py-20 text-center text-muted-foreground">لا توجد بيانات للمتجر في هذه الفترة</div>
       ) : (
         <div ref={printRef} className="space-y-4 bg-background p-4 rounded-xl">
-          <div className="border-b-4 border-primary pb-3">
-            <div className="text-xs text-muted-foreground">{orgName}</div>
-            <h3 className="text-2xl font-extrabold text-primary mt-1">التحليل الشامل للمتجر</h3>
-            <div className="text-xs text-muted-foreground">
-              الفترة: {fromDate || "من البداية"} — {toDate || "حتى الآن"}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-primary via-primary/90 to-emerald-600 text-primary-foreground p-6 shadow-lg">
+            <div className="absolute -left-10 -top-12 h-40 w-40 rounded-full bg-primary-foreground/10" />
+            <div className="absolute -left-4 bottom-[-3rem] h-32 w-32 rounded-full bg-primary-foreground/5" />
+            <div className="relative flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                {orgLogo && (
+                  <div className="h-16 w-16 rounded-xl bg-primary-foreground p-1.5 shadow-sm shrink-0">
+                    <img src={orgLogo} alt={orgName} className="h-full w-full object-contain" />
+                  </div>
+                )}
+                <div>
+                  <div className="text-xs opacity-80">{orgName}</div>
+                  <h3 className="text-2xl font-extrabold mt-0.5">التحليل الشامل للمتجر</h3>
+                  <div className="text-xs opacity-80 mt-1">
+                    الفترة: {fromDate || "من البداية"} — {toDate || "حتى الآن"} · تاريخ التقرير: {todayLabel}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <div className="h-12 w-12 rounded-xl bg-primary-foreground p-1.5 shadow-sm shrink-0">
+                  <img src={KAFAAH_LOGO} alt="منصة كفاءة" className="h-full w-full object-contain" />
+                </div>
+                <div className="leading-tight">
+                  <div className="font-bold">منصة كفاءة</div>
+                  <div className="opacity-80">لإدارة التسويق الإلكتروني للجمعيات</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -566,10 +640,11 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
               ["الاستقطاع النشط", `${fmt(data.subsActive)} · ${sar(data.subsMonthly)}/شهر`],
               ["الإهداءات", `${fmt(data.giftsCount)} · ${sar(data.giftsTotal)}`],
             ].map(([k, v]) => (
-              <Card key={k as string}>
+              <Card key={k as string} className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-card to-primary/5 shadow-sm">
+                <span className="absolute inset-y-0 right-0 w-1 bg-primary/70" />
                 <CardContent className="p-4">
                   <div className="text-xs text-muted-foreground">{k}</div>
-                  <div className="text-lg font-bold mt-1">{v}</div>
+                  <div className="text-lg font-bold mt-1 text-primary">{v}</div>
                 </CardContent>
               </Card>
             ))}
