@@ -612,10 +612,11 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
               ["الاستقطاع النشط", `${fmt(data.subsActive)} · ${sar(data.subsMonthly)}/شهر`],
               ["الإهداءات", `${fmt(data.giftsCount)} · ${sar(data.giftsTotal)}`],
             ].map(([k, v]) => (
-              <Card key={k as string}>
+              <Card key={k as string} className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-card to-primary/5 shadow-sm">
+                <span className="absolute inset-y-0 right-0 w-1 bg-primary/70" />
                 <CardContent className="p-4">
                   <div className="text-xs text-muted-foreground">{k}</div>
-                  <div className="text-lg font-bold mt-1">{v}</div>
+                  <div className="text-lg font-bold mt-1 text-primary">{v}</div>
                 </CardContent>
               </Card>
             ))}
