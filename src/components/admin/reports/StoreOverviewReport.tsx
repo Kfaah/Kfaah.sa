@@ -296,7 +296,21 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           from: fromDate,
           to: toDate,
           metrics: {
-            donations: { count: data.donationsCount, total: data.donationsTotal, avg: Math.round(data.avgDonation), unique_donors: data.uniqueDonors },
+            donations: {
+              count: data.donationsCount,
+              total: data.donationsTotal,
+              avg: Math.round(data.avgDonation),
+              unique_donors: data.uniqueDonors,
+              total_reachable_donors_all_channels: data.reachDonors,
+              repeat_donors: data.repeatDonors,
+              one_time_donors: data.oneTimeDonors,
+            },
+            timing: {
+              timezone: "Asia/Riyadh",
+              best_hours: data.hourly.slice(0, 6).map((h) => ({ window: h.label, donations: h.count, total: Math.round(h.total) })),
+              weakest_hours: data.hourly.slice(-4).map((h) => ({ window: h.label, donations: h.count })),
+              best_days: data.weekday.map((d) => ({ day: d.day, donations: d.count, total: Math.round(d.total) })),
+            },
             top_projects: data.topProjects,
             monthly: data.monthly,
             top_donors: data.topDonors.map((d) => ({ name: d.name, count: d.count, total: d.total })),
