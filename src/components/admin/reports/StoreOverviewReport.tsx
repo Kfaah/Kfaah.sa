@@ -34,6 +34,26 @@ function riyadhParts(iso?: string | null): { hour: number; dow: number } | null 
 
 const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00 – ${String((h + 1) % 24).padStart(2, "0")}:00`;
 
+const KAFAAH_LOGO = "/favicon.png";
+
+// تحويل الشعار إلى data URL حتى يظهر داخل ملف PDF بلا مشاكل CORS
+async function toDataUrl(url?: string | null): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string | null>((resolve) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(typeof fr.result === "string" ? fr.result : null);
+      fr.onerror = () => resolve(null);
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 async function fetchAll<T = any>(
   table: string,
   columns: string,
