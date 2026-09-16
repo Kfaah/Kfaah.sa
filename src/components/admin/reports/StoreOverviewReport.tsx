@@ -96,6 +96,9 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
   const [exporting, setExporting] = useState(false);
   const [data, setData] = useState<Analysis | null>(null);
   const [orgName, setOrgName] = useState("");
+  const [smart, setSmart] = useState<SmartAnalysis | null>(null);
+  const [smartLoading, setSmartLoading] = useState(false);
+  const [sourcesRead, setSourcesRead] = useState<Record<string, boolean> | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const range = useMemo(() => resolvePeriod(period, { from: customFrom, to: customTo }), [period, customFrom, customTo]);
