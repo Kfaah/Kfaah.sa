@@ -996,10 +996,16 @@ export default function Uploads() {
                         </Badge>
                       )}
                       {p.status === "error" && (
-                        <Badge variant="destructive">
-                          <XCircle className="w-3 h-3 ml-1" />
-                          فشل
-                        </Badge>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge variant="destructive">
+                            <XCircle className="w-3 h-3 ml-1" />
+                            فشل
+                          </Badge>
+                          <Button size="sm" variant="outline" onClick={() => retryFile(p)}>
+                            <RotateCcw className="w-3.5 h-3.5 ml-1" />
+                            إعادة المحاولة
+                          </Button>
+                        </div>
                       )}
                     </div>
                     {(p.status === "uploading" || p.status === "queued") && (
