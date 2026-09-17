@@ -720,6 +720,28 @@ export default function Uploads() {
     [forDate, loadHistory, processStaffDuties, archiveFile, orgId],
   );
 
+  // إعادة محاولة رفع ملف فشل، بنفس تصنيفه الأصلي.
+  const retryFile = useCallback(
+    async (pf: PendingFile) => {
+      setPending((prev) =>
+        prev.map((p) =>
+          p.id === pf.id
+            ? { ...p, status: "queued", progress: 0, error: undefined, result: undefined }
+            : p,
+        ),
+      );
+      await processFile(pf);
+    },
+    [processFile],
+  );
+
+  const retryAllFailed = useCallback(async () => {
+    const failedFiles = pending.filter((p) => p.status === "error");
+    for (const pf of failedFiles) {
+      await retryFile(pf);
+    }
+  }, [pending, retryFile]);
+
   const handleFiles = useCallback(
     (files: FileList | File[]) => {
       const isDataCategory =
