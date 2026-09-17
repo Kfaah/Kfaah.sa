@@ -34,6 +34,7 @@ import {
   X,
   ExternalLink,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
