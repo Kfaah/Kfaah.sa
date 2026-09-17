@@ -34,6 +34,7 @@ import {
   X,
   ExternalLink,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -719,6 +720,28 @@ export default function Uploads() {
     [forDate, loadHistory, processStaffDuties, archiveFile, orgId],
   );
 
+  // إعادة محاولة رفع ملف فشل، بنفس تصنيفه الأصلي.
+  const retryFile = useCallback(
+    async (pf: PendingFile) => {
+      setPending((prev) =>
+        prev.map((p) =>
+          p.id === pf.id
+            ? { ...p, status: "queued", progress: 0, error: undefined, result: undefined }
+            : p,
+        ),
+      );
+      await processFile(pf);
+    },
+    [processFile],
+  );
+
+  const retryAllFailed = useCallback(async () => {
+    const failedFiles = pending.filter((p) => p.status === "error");
+    for (const pf of failedFiles) {
+      await retryFile(pf);
+    }
+  }, [pending, retryFile]);
+
   const handleFiles = useCallback(
     (files: FileList | File[]) => {
       const isDataCategory =
@@ -934,13 +957,21 @@ export default function Uploads() {
         {/* Pending uploads */}
         {pending.length > 0 && (
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
               <CardTitle>الملفات الحالية ({pending.length})</CardTitle>
-              {pending.some((p) => p.status === "success") && (
-                <Button variant="ghost" size="sm" onClick={clearCompleted}>
-                  مسح المكتملة
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {pending.filter((p) => p.status === "error").length > 1 && (
+                  <Button variant="outline" size="sm" onClick={retryAllFailed}>
+                    <RotateCcw className="w-3.5 h-3.5 ml-1" />
+                    إعادة محاولة الفاشلة ({pending.filter((p) => p.status === "error").length})
+                  </Button>
+                )}
+                {pending.some((p) => p.status === "success") && (
+                  <Button variant="ghost" size="sm" onClick={clearCompleted}>
+                    مسح المكتملة
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {pending.map((p) => {
@@ -973,10 +1004,16 @@ export default function Uploads() {
                         </Badge>
                       )}
                       {p.status === "error" && (
-                        <Badge variant="destructive">
-                          <XCircle className="w-3 h-3 ml-1" />
-                          فشل
-                        </Badge>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge variant="destructive">
+                            <XCircle className="w-3 h-3 ml-1" />
+                            فشل
+                          </Badge>
+                          <Button size="sm" variant="outline" onClick={() => retryFile(p)}>
+                            <RotateCcw className="w-3.5 h-3.5 ml-1" />
+                            إعادة المحاولة
+                          </Button>
+                        </div>
                       )}
                     </div>
                     {(p.status === "uploading" || p.status === "queued") && (
