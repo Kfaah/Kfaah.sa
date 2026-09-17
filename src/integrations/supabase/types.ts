@@ -5790,6 +5790,10 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      eval_score_org_matches: {
+        Args: { _criterion_id: string; _employee_user_id: string; _org: string }
+        Returns: boolean
+      }
       get_conversations_for_user: {
         Args: { _user_id: string }
         Returns: {

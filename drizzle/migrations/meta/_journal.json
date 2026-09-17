@@ -64,6 +64,13 @@
       "when": 1789554429174,
       "tag": "0008_tighten_action_plan_files_task_attachments_role_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789660452226,
+      "tag": "0009_tighten_avatar_listing_eval_scores_donor_tiers",
+      "breakpoints": true
     }
   ]
 }
