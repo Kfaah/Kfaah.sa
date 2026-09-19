@@ -552,7 +552,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           page.style.cssText = `position:relative;width:${PAGE_WIDTH_PX}px;height:${PAGE_HEIGHT_PX}px;box-sizing:border-box;padding:${PAGE_PADDING_TOP}px ${PAGE_PADDING_X}px ${PAGE_PADDING_BOTTOM}px;background:#fff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px;overflow:hidden`;
           const content = doc.createElement("div");
           content.style.cssText = `width:100%;height:${pageContentHeight}px;overflow:hidden`;
-          const footer = document.createElement("div");
+          const footer = doc.createElement("div");
           footer.style.cssText = `position:absolute;right:${PAGE_PADDING_X}px;left:${PAGE_PADDING_X}px;bottom:18px;border-top:1px solid #d8e8e1;padding-top:7px;display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#64748b`;
           footer.innerHTML = `<span>${esc(orgName)} · التحليل الشامل للمتجر · ${esc(todayLabel)}</span><span style="display:flex;align-items:center;gap:5px">${kafaahLogoData ? `<img src="${kafaahLogoData}" alt="" style="width:16px;height:16px;object-fit:contain" />` : ""}منصة كفاءة</span>`;
           page.append(content, footer);
