@@ -552,27 +552,27 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
   };
 
   return (
-    <div className="space-y-4" dir="rtl">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white">
+    <div className="min-w-0 space-y-4" dir="rtl">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3 sm:items-center">
+          <div className="shrink-0 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 p-3 text-primary-foreground">
             <Store className="h-5 w-5" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold">التحليل الشامل للمتجر</h2>
-            <p className="text-sm text-muted-foreground">صورة كاملة لأداء المتجر: التبرعات، المشاريع، الحملات، الفاشلة، السلال، الاستقطاع، الإهداءات</p>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold sm:text-xl">التحليل الشامل للمتجر</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">صورة كاملة لأداء المتجر: التبرعات، المشاريع، الحملات، الفاشلة، السلال، الاستقطاع، الإهداءات</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={runSmart} disabled={loading || smartLoading || !data} variant="secondary" className="gap-1">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
+          <Button onClick={runSmart} disabled={loading || smartLoading || !data} variant="secondary" className="h-auto min-h-10 gap-1 whitespace-normal py-2 leading-5 sm:h-10 sm:whitespace-nowrap sm:py-0">
             {smartLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {smart ? "إعادة توليد التحليل الذكي" : "توليد التحليل الذكي"}
           </Button>
-          <Button onClick={exportPdf} disabled={loading || exporting || !data} className="gap-1">
+          <Button onClick={exportPdf} disabled={loading || exporting || !data} className="h-auto min-h-10 gap-1 py-2 sm:h-10 sm:py-0">
             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             تصدير PDF
           </Button>
-          <Button variant="ghost" onClick={onBack}>
+          <Button variant="ghost" onClick={onBack} className="col-span-2 sm:col-auto">
             رجوع للتقارير <ArrowRight className="h-4 w-4 mr-1" />
           </Button>
         </div>
@@ -595,26 +595,26 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       ) : !data ? (
         <div className="py-20 text-center text-muted-foreground">لا توجد بيانات للمتجر في هذه الفترة</div>
       ) : (
-        <div ref={printRef} className="space-y-4 bg-background p-4 rounded-xl">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-l from-primary via-primary/90 to-emerald-600 text-primary-foreground p-6 shadow-lg">
+        <div ref={printRef} className="min-w-0 space-y-4 rounded-xl bg-background px-0 py-3 sm:p-4">
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-l from-primary via-primary/90 to-emerald-600 p-4 text-primary-foreground shadow-lg sm:rounded-2xl sm:p-6">
             <div className="absolute -left-10 -top-12 h-40 w-40 rounded-full bg-primary-foreground/10" />
             <div className="absolute -left-4 bottom-[-3rem] h-32 w-32 rounded-full bg-primary-foreground/5" />
-            <div className="relative flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+            <div className="relative flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                 {orgLogo && (
                   <div className="h-16 w-16 rounded-xl bg-primary-foreground p-1.5 shadow-sm shrink-0">
                     <img src={orgLogo} alt={orgName} className="h-full w-full object-contain" />
                   </div>
                 )}
-                <div>
+                <div className="min-w-0">
                   <div className="text-xs opacity-80">{orgName}</div>
-                  <h3 className="text-2xl font-extrabold mt-0.5">التحليل الشامل للمتجر</h3>
-                  <div className="text-xs opacity-80 mt-1">
+                  <h3 className="mt-0.5 text-xl font-extrabold sm:text-2xl">التحليل الشامل للمتجر</h3>
+                  <div className="mt-1 text-xs leading-5 opacity-80">
                     الفترة: {fromDate || "من البداية"} — {toDate || "حتى الآن"} · تاريخ التقرير: {todayLabel}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 self-end text-xs sm:self-auto">
                 <div className="h-12 w-12 rounded-xl bg-primary-foreground p-1.5 shadow-sm shrink-0">
                   <img src={KAFAAH_LOGO} alt="منصة كفاءة" className="h-full w-full object-contain" />
                 </div>
@@ -626,7 +626,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             {[
               ["إجمالي التبرعات", sar(data.donationsTotal)],
               ["عدد العمليات", fmt(data.donationsCount)],
@@ -644,7 +644,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                 <span className="absolute inset-y-0 right-0 w-1 bg-primary/70" />
                 <CardContent className="p-4">
                   <div className="text-xs text-muted-foreground">{k}</div>
-                  <div className="text-lg font-bold mt-1 text-primary">{v}</div>
+                  <div className="mt-1 break-words text-lg font-bold text-primary">{v}</div>
                 </CardContent>
               </Card>
             ))}
@@ -889,19 +889,31 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
 function SectionTable({ title, head, rows }: { title: string; head: string[]; rows: (string | number)[][] }) {
   if (!rows.length) return null;
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="px-4 pb-2 sm:px-6">
+        <CardTitle className="text-base leading-6">{title}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <Table>
+        <div className="divide-y divide-border md:hidden">
+          {rows.map((row, rowIndex) => (
+            <div key={rowIndex} className="space-y-3 px-4 py-4 odd:bg-muted/20">
+              {row.map((cell, cellIndex) => (
+                <div key={cellIndex} className="grid min-w-0 grid-cols-[minmax(6.5rem,38%)_minmax(0,1fr)] items-start gap-3">
+                  <div className="text-xs font-semibold leading-6 text-muted-foreground">{head[cellIndex] || "البيان"}</div>
+                  <div className="min-w-0 whitespace-pre-wrap break-words text-sm leading-6 text-foreground [overflow-wrap:anywhere]">{cell}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <Table className="hidden md:table">
           <TableHeader className="bg-muted">
-            <TableRow>{head.map(h => <TableHead key={h} className="text-right">{h}</TableHead>)}</TableRow>
+            <TableRow>{head.map(h => <TableHead key={h} className="whitespace-nowrap text-right">{h}</TableHead>)}</TableRow>
           </TableHeader>
           <TableBody>
             {rows.map((r, i) => (
               <TableRow key={i}>
-                {r.map((c, j) => <TableCell key={j} className="text-right text-sm">{c}</TableCell>)}
+                {r.map((c, j) => <TableCell key={j} className="min-w-28 max-w-80 whitespace-pre-wrap break-words text-right text-sm leading-6 [overflow-wrap:anywhere]">{c}</TableCell>)}
               </TableRow>
             ))}
           </TableBody>
