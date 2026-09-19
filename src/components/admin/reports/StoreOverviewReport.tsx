@@ -601,7 +601,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           }
         });
 
-        __t("pagination-done pages=" + pagesHost.children.length);
+        __t("pagination-done pages=" + pagesHost.children.length + " nodes=" + pagesHost.querySelectorAll("*").length);
         const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
         const pageW = pdf.internal.pageSize.getWidth();
         const pageH = pdf.internal.pageSize.getHeight();
