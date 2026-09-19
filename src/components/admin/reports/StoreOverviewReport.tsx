@@ -655,8 +655,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         pdf.save(`التحليل-الشامل-للمتجر-${fromDate || "all"}.pdf`);
         toast.success("تم تصدير التحليل الشامل بصيغة PDF");
       } finally {
-        if (pagesHost?.parentNode) pagesHost.parentNode.removeChild(pagesHost);
-        document.body.removeChild(wrap);
+        if (frame.parentNode) frame.parentNode.removeChild(frame);
       }
     } catch (e: any) {
       toast.error(e.message || "تعذر تصدير الملف");
