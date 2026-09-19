@@ -429,7 +429,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
            <div style="font-size:15px;font-weight:800;margin-top:4px;color:${GREEN}">${esc(value)}</div>
          </div>`;
 
+      const __t = (m: string) => console.log("[pdf]", m, Math.round(performance.now()));
+      __t("start-logos");
       const [orgLogoData, kafaahLogoData] = await Promise.all([toDataUrl(orgLogo), toDataUrl(KAFAAH_LOGO)]);
+      __t("logos-done");
       const logoBox = (src: string | null, alt: string, size: number) =>
         src
           ? `<div style="width:${size}px;height:${size}px;background:#fff;border-radius:12px;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.12)">
