@@ -601,12 +601,36 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
         const pageW = pdf.internal.pageSize.getWidth();
         const pageH = pdf.internal.pageSize.getHeight();
-        const pages = Array.from(pagesHost.children) as HTMLElement[];
-        for (let index = 0; index < pages.length; index += 1) {
-          const canvas = await html2canvas(pages[index], { scale: 1.5, backgroundColor: "#ffffff", useCORS: true });
-          const img = canvas.toDataURL("image/jpeg", 0.92);
+        const pageCount = pagesHost.children.length;
+
+        // رسم واحد لكل الصفحات مجتمعة (أسرع بكثير من رسم كل صفحة على حدة)
+        const SCALE = 1.4;
+        pagesHost.style.width = `${PAGE_WIDTH_PX}px`;
+        const fullCanvas = await html2canvas(pagesHost, {
+          scale: SCALE,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          logging: false,
+          imageTimeout: 0,
+          width: PAGE_WIDTH_PX,
+          height: PAGE_HEIGHT_PX * pageCount,
+          windowWidth: PAGE_WIDTH_PX,
+          windowHeight: PAGE_HEIGHT_PX * pageCount,
+        });
+
+        const sliceW = Math.round(PAGE_WIDTH_PX * SCALE);
+        const sliceH = Math.round(PAGE_HEIGHT_PX * SCALE);
+        const slice = document.createElement("canvas");
+        slice.width = sliceW;
+        slice.height = sliceH;
+        const ctx = slice.getContext("2d")!;
+        for (let index = 0; index < pageCount; index += 1) {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, sliceW, sliceH);
+          ctx.drawImage(fullCanvas, 0, index * sliceH, sliceW, sliceH, 0, 0, sliceW, sliceH);
+          const img = slice.toDataURL("image/jpeg", 0.85);
           if (index > 0) pdf.addPage();
-          pdf.addImage(img, "JPEG", 0, 0, pageW, pageH);
+          pdf.addImage(img, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
         }
         pdf.save(`التحليل-الشامل-للمتجر-${fromDate || "all"}.pdf`);
         toast.success("تم تصدير التحليل الشامل بصيغة PDF");
