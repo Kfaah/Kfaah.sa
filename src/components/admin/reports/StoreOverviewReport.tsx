@@ -532,7 +532,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         ` : ""}
       `;
 
-      document.body.appendChild(wrap);
+      doc.body.appendChild(wrap);
       let pagesHost: HTMLDivElement | null = null;
       try {
         const PAGE_WIDTH_PX = 794;
@@ -540,17 +540,17 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         const PAGE_PADDING_X = 40;
         const PAGE_PADDING_TOP = 38;
         const PAGE_PADDING_BOTTOM = 54;
-        pagesHost = document.createElement("div");
-        pagesHost.style.cssText = "position:fixed;top:0;left:0;background:#ffffff;z-index:-1;pointer-events:none";
-        document.body.appendChild(pagesHost);
+        pagesHost = doc.createElement("div");
+        pagesHost.style.cssText = "position:absolute;top:0;left:0;background:#ffffff";
+        doc.body.appendChild(pagesHost);
 
         const pageContentHeight = PAGE_HEIGHT_PX - PAGE_PADDING_TOP - PAGE_PADDING_BOTTOM;
         const makePage = () => {
-          const page = document.createElement("div");
+          const page = doc.createElement("div");
           page.dir = "rtl";
           page.setAttribute("lang", "ar");
           page.style.cssText = `position:relative;width:${PAGE_WIDTH_PX}px;height:${PAGE_HEIGHT_PX}px;box-sizing:border-box;padding:${PAGE_PADDING_TOP}px ${PAGE_PADDING_X}px ${PAGE_PADDING_BOTTOM}px;background:#fff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px;overflow:hidden`;
-          const content = document.createElement("div");
+          const content = doc.createElement("div");
           content.style.cssText = `width:100%;height:${pageContentHeight}px;overflow:hidden`;
           const footer = document.createElement("div");
           footer.style.cssText = `position:absolute;right:${PAGE_PADDING_X}px;left:${PAGE_PADDING_X}px;bottom:18px;border-top:1px solid #d8e8e1;padding-top:7px;display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#64748b`;
