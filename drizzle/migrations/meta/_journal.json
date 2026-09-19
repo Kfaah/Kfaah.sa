@@ -71,6 +71,27 @@
       "when": 1789660452226,
       "tag": "0009_tighten_avatar_listing_eval_scores_donor_tiers",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789817039936,
+      "tag": "0010_store_overview_rpc",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789817070761,
+      "tag": "0011_store_overview_rpc_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789817089271,
+      "tag": "0012_store_overview_secure_wrapper",
+      "breakpoints": true
     }
   ]
 }
