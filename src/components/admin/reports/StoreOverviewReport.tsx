@@ -516,13 +516,14 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       `;
 
       document.body.appendChild(wrap);
+      let pagesHost: HTMLDivElement | null = null;
       try {
         const PAGE_WIDTH_PX = 794;
         const PAGE_HEIGHT_PX = 1123;
         const PAGE_PADDING_X = 40;
         const PAGE_PADDING_TOP = 38;
         const PAGE_PADDING_BOTTOM = 54;
-        const pagesHost = document.createElement("div");
+        pagesHost = document.createElement("div");
         pagesHost.style.cssText = "position:fixed;top:-20000px;left:0;background:#ffffff";
         document.body.appendChild(pagesHost);
 
@@ -607,10 +608,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           if (index > 0) pdf.addPage();
           pdf.addImage(img, "JPEG", 0, 0, pageW, pageH);
         }
-        document.body.removeChild(pagesHost);
         pdf.save(`التحليل-الشامل-للمتجر-${fromDate || "all"}.pdf`);
         toast.success("تم تصدير التحليل الشامل بصيغة PDF");
       } finally {
+        if (pagesHost?.parentNode) pagesHost.parentNode.removeChild(pagesHost);
         document.body.removeChild(wrap);
       }
     } catch (e: any) {
