@@ -5951,6 +5951,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      store_overview: {
+        Args: { p_from?: string; p_org: string; p_to?: string }
+        Returns: Json
+      }
       user_belongs_to_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
