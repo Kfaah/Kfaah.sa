@@ -437,11 +437,25 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
              </div>`
           : "";
 
+      // نرسم التقرير داخل إطار معزول صغير: html2canvas ينسخ المستند كاملاً،
+      // فرسمه داخل إطار خفيف يجعل التصدير أسرع بعدة أضعاف من رسمه داخل صفحة اللوحة.
+      const frame = document.createElement("iframe");
+      frame.setAttribute("aria-hidden", "true");
+      frame.style.cssText = "position:fixed;top:0;left:0;width:820px;height:1200px;border:0;z-index:-1;pointer-events:none;opacity:0";
+      document.body.appendChild(frame);
+      const doc = frame.contentDocument!;
+      doc.open();
+      doc.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" />
+        <style>*{box-sizing:border-box}body{margin:0;background:#fff;font-family:'Tajawal','Cairo','Segoe UI',sans-serif}</style>
+        </head><body></body></html>`);
+      doc.close();
+      try { await (doc as any).fonts?.ready; } catch { /* ignore */ }
 
-      const wrap = document.createElement("div");
+      const wrap = doc.createElement("div");
       wrap.dir = "rtl";
       wrap.setAttribute("lang", "ar");
-      wrap.style.cssText = `position:fixed;top:0;left:0;width:714px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px;z-index:-1;pointer-events:none`;
+      wrap.style.cssText = `position:absolute;top:0;left:0;width:714px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px`;
       wrap.innerHTML = `
         <div style="background:linear-gradient(115deg,${GREEN} 0%,#0f8f6d 55%,#16a97f 100%);color:#fff;border-radius:16px;padding:22px 24px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:16px">
           <div style="display:flex;align-items:center;gap:14px">
@@ -515,7 +529,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         ` : ""}
       `;
 
-      document.body.appendChild(wrap);
+      doc.body.appendChild(wrap);
       let pagesHost: HTMLDivElement | null = null;
       try {
         const PAGE_WIDTH_PX = 794;
@@ -523,19 +537,19 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         const PAGE_PADDING_X = 40;
         const PAGE_PADDING_TOP = 38;
         const PAGE_PADDING_BOTTOM = 54;
-        pagesHost = document.createElement("div");
-        pagesHost.style.cssText = "position:fixed;top:0;left:0;background:#ffffff;z-index:-1;pointer-events:none";
-        document.body.appendChild(pagesHost);
+        pagesHost = doc.createElement("div");
+        pagesHost.style.cssText = "position:absolute;top:0;left:0;background:#ffffff";
+        doc.body.appendChild(pagesHost);
 
         const pageContentHeight = PAGE_HEIGHT_PX - PAGE_PADDING_TOP - PAGE_PADDING_BOTTOM;
         const makePage = () => {
-          const page = document.createElement("div");
+          const page = doc.createElement("div");
           page.dir = "rtl";
           page.setAttribute("lang", "ar");
           page.style.cssText = `position:relative;width:${PAGE_WIDTH_PX}px;height:${PAGE_HEIGHT_PX}px;box-sizing:border-box;padding:${PAGE_PADDING_TOP}px ${PAGE_PADDING_X}px ${PAGE_PADDING_BOTTOM}px;background:#fff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px;overflow:hidden`;
-          const content = document.createElement("div");
+          const content = doc.createElement("div");
           content.style.cssText = `width:100%;height:${pageContentHeight}px;overflow:hidden`;
-          const footer = document.createElement("div");
+          const footer = doc.createElement("div");
           footer.style.cssText = `position:absolute;right:${PAGE_PADDING_X}px;left:${PAGE_PADDING_X}px;bottom:18px;border-top:1px solid #d8e8e1;padding-top:7px;display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#64748b`;
           footer.innerHTML = `<span>${esc(orgName)} · التحليل الشامل للمتجر · ${esc(todayLabel)}</span><span style="display:flex;align-items:center;gap:5px">${kafaahLogoData ? `<img src="${kafaahLogoData}" alt="" style="width:16px;height:16px;object-fit:contain" />` : ""}منصة كفاءة</span>`;
           page.append(content, footer);
@@ -601,18 +615,41 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
         const pageW = pdf.internal.pageSize.getWidth();
         const pageH = pdf.internal.pageSize.getHeight();
-        const pages = Array.from(pagesHost.children) as HTMLElement[];
-        for (let index = 0; index < pages.length; index += 1) {
-          const canvas = await html2canvas(pages[index], { scale: 1.5, backgroundColor: "#ffffff", useCORS: true });
-          const img = canvas.toDataURL("image/jpeg", 0.92);
+        const pageCount = pagesHost.children.length;
+
+        // رسم واحد لكل الصفحات مجتمعة (أسرع بكثير من رسم كل صفحة على حدة)
+        const SCALE = 1.4;
+        pagesHost.style.width = `${PAGE_WIDTH_PX}px`;
+        const fullCanvas = await html2canvas(pagesHost, {
+          scale: SCALE,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          logging: false,
+          imageTimeout: 0,
+          width: PAGE_WIDTH_PX,
+          height: PAGE_HEIGHT_PX * pageCount,
+          windowWidth: PAGE_WIDTH_PX,
+          windowHeight: PAGE_HEIGHT_PX * pageCount,
+        });
+
+        const sliceW = Math.round(PAGE_WIDTH_PX * SCALE);
+        const sliceH = Math.round(PAGE_HEIGHT_PX * SCALE);
+        const slice = document.createElement("canvas");
+        slice.width = sliceW;
+        slice.height = sliceH;
+        const ctx = slice.getContext("2d")!;
+        for (let index = 0; index < pageCount; index += 1) {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, sliceW, sliceH);
+          ctx.drawImage(fullCanvas, 0, index * sliceH, sliceW, sliceH, 0, 0, sliceW, sliceH);
+          const img = slice.toDataURL("image/jpeg", 0.85);
           if (index > 0) pdf.addPage();
-          pdf.addImage(img, "JPEG", 0, 0, pageW, pageH);
+          pdf.addImage(img, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
         }
         pdf.save(`التحليل-الشامل-للمتجر-${fromDate || "all"}.pdf`);
         toast.success("تم تصدير التحليل الشامل بصيغة PDF");
       } finally {
-        if (pagesHost?.parentNode) pagesHost.parentNode.removeChild(pagesHost);
-        document.body.removeChild(wrap);
+        if (frame.parentNode) frame.parentNode.removeChild(frame);
       }
     } catch (e: any) {
       toast.error(e.message || "تعذر تصدير الملف");
