@@ -601,6 +601,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           }
         });
 
+        __t("pagination-done pages=" + pagesHost.children.length);
         const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
         const pageW = pdf.internal.pageSize.getWidth();
         const pageH = pdf.internal.pageSize.getHeight();
@@ -621,6 +622,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           windowHeight: PAGE_HEIGHT_PX * pageCount,
         });
 
+        __t("canvas-done");
         const sliceW = Math.round(PAGE_WIDTH_PX * SCALE);
         const sliceH = Math.round(PAGE_HEIGHT_PX * SCALE);
         const slice = document.createElement("canvas");
@@ -635,6 +637,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           if (index > 0) pdf.addPage();
           pdf.addImage(img, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
         }
+        __t("slices-done");
         pdf.save(`التحليل-الشامل-للمتجر-${fromDate || "all"}.pdf`);
         toast.success("تم تصدير التحليل الشامل بصيغة PDF");
       } finally {
