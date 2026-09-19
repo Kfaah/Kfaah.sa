@@ -12,26 +12,8 @@ const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n ||
 const sar = (n: number) => `${fmt(n)} ر.س`;
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "0%");
 
-const PAGE = 1000;
-
 const DAY_NAMES = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
-// مفتاح موحّد للمتبرع: آخر 9 أرقام من الجوال، أو الاسم إذا لم يوجد جوال
-function donorKey(phone?: string | null, name?: string | null): string | null {
-  const digits = String(phone ?? "").replace(/\D/g, "");
-  if (digits.length >= 9) return digits.slice(-9);
-  const nm = String(name ?? "").trim().toLowerCase();
-  return nm ? `nm:${nm}` : null;
-}
-
-// تحويل الطابع الزمني إلى توقيت الرياض (UTC+3)
-function riyadhParts(iso?: string | null): { hour: number; dow: number } | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return null;
-  const r = new Date(d.getTime() + 3 * 60 * 60 * 1000);
-  return { hour: r.getUTCHours(), dow: r.getUTCDay() };
-}
 
 const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00 – ${String((h + 1) % 24).padStart(2, "0")}:00`;
 
@@ -55,28 +37,6 @@ async function toDataUrl(url?: string | null): Promise<string | null> {
   }
 }
 
-async function fetchAll<T = any>(
-  table: string,
-  columns: string,
-  orgId: string,
-  dateCol: string | null,
-  from: string | null,
-  to: string | null,
-  maxRows = 60000,
-): Promise<T[]> {
-  const out: T[] = [];
-  for (let start = 0; start < maxRows; start += PAGE) {
-    let q = (supabase.from(table as any) as any).select(columns).eq("organization_id", orgId);
-    if (dateCol && from) q = q.gte(dateCol, from);
-    if (dateCol && to) q = q.lte(dateCol, to);
-    const { data, error } = await q.range(start, start + PAGE - 1);
-    if (error) throw error;
-    const batch = (data || []) as T[];
-    out.push(...batch);
-    if (batch.length < PAGE) break;
-  }
-  return out;
-}
 
 interface Analysis {
   donationsCount: number;
@@ -109,9 +69,6 @@ interface Analysis {
   giftsDelivered: number;
 }
 
-function topBy<T>(map: Map<string, T>, score: (v: T) => number, n: number) {
-  return Array.from(map.values()).sort((a, b) => score(b) - score(a)).slice(0, n);
-}
 
 interface SmartAnalysis {
   executive_summary?: string;
@@ -170,8 +127,6 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
   const range = useMemo(() => resolvePeriod(period, { from: customFrom, to: customTo }), [period, customFrom, customTo]);
   const fromDate = range.from ? range.from.toISOString().slice(0, 10) : null;
   const toDate = range.to ? range.to.toISOString().slice(0, 10) : null;
-  const fromIso = range.from ? range.from.toISOString() : null;
-  const toIso = range.to ? range.to.toISOString() : null;
 
   useEffect(() => {
     let cancelled = false;
