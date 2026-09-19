@@ -178,117 +178,55 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
     (async () => {
       setLoading(true);
       try {
-        const [org, donations, campaigns, failed, carts, subs, gifts] = await Promise.all([
+        const [org, agg] = await Promise.all([
           supabase.from("organizations").select("name").eq("id", orgId).maybeSingle(),
-          fetchAll("donations", "donor_name, donor_phone, amount, project_name, donation_date", orgId, "donation_date", fromDate, toDate),
-          fetchAll("campaigns", "name, goal_amount, collected_amount, status, start_date", orgId, "start_date", fromDate, toDate, 3000),
-          fetchAll("failed_donations", "amount, failure_reason, attempted_at", orgId, "attempted_at", fromIso, toIso, 20000),
-          fetchAll("abandoned_carts", "amount, recovered, abandoned_at, donor_name, donor_phone", orgId, "abandoned_at", fromIso, toIso, 20000),
-          fetchAll("subscriptions", "amount, status, start_date, donor_name, donor_phone", orgId, "start_date", fromDate, toDate, 20000),
-          fetchAll("gifts", "amount, delivery_status, gift_date, giver_name, giver_phone", orgId, "gift_date", fromDate, toDate, 60000),
+          supabase.rpc("store_overview", { p_org: orgId, p_from: fromDate, p_to: toDate }),
         ]);
         if (cancelled) return;
+        if (agg.error) throw agg.error;
         setOrgName((org.data as any)?.name || "");
-
-        const projects = new Map<string, { name: string; count: number; total: number }>();
-        const months = new Map<string, { month: string; count: number; total: number }>();
-        const donors = new Map<string, { name: string; phone: string; count: number; total: number }>();
-        const hours = new Map<number, { hour: number; label: string; count: number; total: number }>();
-        const days = new Map<number, { day: string; count: number; total: number }>();
-        const reach = new Set<string>();
-        let donationsTotal = 0;
-        for (const d of donations as any[]) {
-          const amt = Number(d.amount || 0);
-          donationsTotal += amt;
-          const pName = d.project_name || "غير محدد";
-          const p = projects.get(pName) || { name: pName, count: 0, total: 0 };
-          p.count += 1; p.total += amt; projects.set(pName, p);
-          const m = String(d.donation_date || "").slice(0, 7) || "—";
-          const mo = months.get(m) || { month: m, count: 0, total: 0 };
-          mo.count += 1; mo.total += amt; months.set(m, mo);
-          const dk = donorKey(d.donor_phone, d.donor_name);
-          if (dk) reach.add(dk);
-          const mk = dk || "—";
-          const dv = donors.get(mk) || { name: d.donor_name || "—", phone: d.donor_phone || "—", count: 0, total: 0 };
-          dv.count += 1; dv.total += amt; donors.set(mk, dv);
-          const rt = riyadhParts(d.donation_date);
-          if (rt) {
-            const hv = hours.get(rt.hour) || { hour: rt.hour, label: hourLabel(rt.hour), count: 0, total: 0 };
-            hv.count += 1; hv.total += amt; hours.set(rt.hour, hv);
-            const dvv = days.get(rt.dow) || { day: DAY_NAMES[rt.dow], count: 0, total: 0 };
-            dvv.count += 1; dvv.total += amt; days.set(rt.dow, dvv);
-          }
-        }
-        for (const g of gifts as any[]) { const k = donorKey(g.giver_phone, g.giver_name); if (k) reach.add(k); }
-        for (const s of subs as any[]) { const k = donorKey(s.donor_phone, s.donor_name); if (k) reach.add(k); }
-        for (const c of carts as any[]) { const k = donorKey(c.donor_phone, c.donor_name); if (k) reach.add(k); }
-        const repeatDonors = Array.from(donors.values()).filter((d) => d.count > 1).length;
-
-
-        const reasons = new Map<string, { reason: string; count: number; total: number }>();
-        let failedTotal = 0;
-        for (const f of failed as any[]) {
-          const amt = Number(f.amount || 0);
-          failedTotal += amt;
-          const k = f.failure_reason || "غير محدد";
-          const r = reasons.get(k) || { reason: k, count: 0, total: 0 };
-          r.count += 1; r.total += amt; reasons.set(k, r);
-        }
-
-        let cartsTotal = 0, cartsRecovered = 0;
-        for (const c of carts as any[]) {
-          cartsTotal += Number(c.amount || 0);
-          if (c.recovered) cartsRecovered += 1;
-        }
-
-        let subsActive = 0, subsMonthly = 0;
-        for (const s of subs as any[]) {
-          if (s.status === "active") { subsActive += 1; subsMonthly += Number(s.amount || 0); }
-        }
-
-        let giftsTotal = 0, giftsDelivered = 0;
-        for (const g of gifts as any[]) {
-          giftsTotal += Number(g.amount || 0);
-          if (g.delivery_status === "delivered") giftsDelivered += 1;
-        }
-
-        let campaignsGoal = 0, campaignsCollected = 0;
-        for (const c of campaigns as any[]) {
-          campaignsGoal += Number(c.goal_amount || 0);
-          campaignsCollected += Number(c.collected_amount || 0);
-        }
-
+        const r = (agg.data || {}) as any;
+        const num = (v: any) => Number(v || 0);
+        const donationsCount = num(r.donations_count);
+        const donationsTotal = num(r.donations_total);
         setData({
-          donationsCount: donations.length,
+          donationsCount,
           donationsTotal,
-          avgDonation: donations.length ? donationsTotal / donations.length : 0,
-          uniqueDonors: donors.size,
-          reachDonors: reach.size,
-          repeatDonors,
-          oneTimeDonors: Math.max(donors.size - repeatDonors, 0),
-          hourly: Array.from(hours.values()).sort((a, b) => b.count - a.count),
-          weekday: Array.from(days.values()).sort((a, b) => b.count - a.count),
-          topProjects: topBy(projects, (p) => p.total, 10),
-          monthly: Array.from(months.values()).sort((a, b) => a.month.localeCompare(b.month)),
-          topDonors: topBy(donors, (d) => d.total, 10),
-          campaignsCount: campaigns.length,
-          campaignsGoal,
-          campaignsCollected,
-          topCampaigns: (campaigns as any[])
-            .map((c) => ({ name: c.name, goal: Number(c.goal_amount || 0), collected: Number(c.collected_amount || 0), status: c.status }))
-            .sort((a, b) => b.collected - a.collected).slice(0, 10),
-          failedCount: failed.length,
-          failedTotal,
-          failReasons: topBy(reasons, (r) => r.count, 8),
-          cartsCount: carts.length,
-          cartsTotal,
-          cartsRecovered,
-          subsCount: subs.length,
-          subsActive,
-          subsMonthly,
-          giftsCount: gifts.length,
-          giftsTotal,
-          giftsDelivered,
+          avgDonation: donationsCount ? donationsTotal / donationsCount : 0,
+          uniqueDonors: num(r.unique_donors),
+          reachDonors: num(r.reach_donors),
+          repeatDonors: num(r.repeat_donors),
+          oneTimeDonors: num(r.one_time_donors),
+          hourly: (r.hourly || []).map((h: any) => ({
+            hour: num(h.hour),
+            label: hourLabel(num(h.hour)),
+            count: num(h.count),
+            total: num(h.total),
+          })),
+          weekday: (r.weekday || []).map((d: any) => ({
+            day: DAY_NAMES[num(d.dow)] || "—",
+            count: num(d.count),
+            total: num(d.total),
+          })),
+          topProjects: (r.top_projects || []).map((p: any) => ({ name: p.name || "غير محدد", count: num(p.count), total: num(p.total) })),
+          monthly: (r.monthly || []).map((m: any) => ({ month: m.month || "—", count: num(m.count), total: num(m.total) })),
+          topDonors: (r.top_donors || []).map((d: any) => ({ name: d.name || "—", phone: d.phone || "—", count: num(d.count), total: num(d.total) })),
+          campaignsCount: num(r.campaigns_count),
+          campaignsGoal: num(r.campaigns_goal),
+          campaignsCollected: num(r.campaigns_collected),
+          topCampaigns: (r.top_campaigns || []).map((c: any) => ({ name: c.name || "—", goal: num(c.goal), collected: num(c.collected), status: c.status || "—" })),
+          failedCount: num(r.failed_count),
+          failedTotal: num(r.failed_total),
+          failReasons: (r.fail_reasons || []).map((f: any) => ({ reason: f.reason || "غير محدد", count: num(f.count), total: num(f.total) })),
+          cartsCount: num(r.carts_count),
+          cartsTotal: num(r.carts_total),
+          cartsRecovered: num(r.carts_recovered),
+          subsCount: num(r.subs_count),
+          subsActive: num(r.subs_active),
+          subsMonthly: num(r.subs_monthly),
+          giftsCount: num(r.gifts_count),
+          giftsTotal: num(r.gifts_total),
+          giftsDelivered: num(r.gifts_delivered),
         });
       } catch (e: any) {
         toast.error(e.message || "تعذر تحميل التحليل الشامل");
@@ -297,7 +235,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       }
     })();
     return () => { cancelled = true; };
-  }, [orgId, fromDate, toDate, fromIso, toIso]);
+  }, [orgId, fromDate, toDate]);
 
   const insights = useMemo(() => {
     if (!data) return [] as string[];
