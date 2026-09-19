@@ -92,6 +92,13 @@
       "when": 1789817089271,
       "tag": "0012_store_overview_secure_wrapper",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789817902188,
+      "tag": "0013_standardize_welcome_bg_and_eval_score_guard",
+      "breakpoints": true
     }
   ]
 }
