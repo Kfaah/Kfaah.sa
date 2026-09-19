@@ -415,11 +415,11 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       const GREEN = "#0d7a5f";
       const table = (title: string, head: string[], rows: (string | number)[][]) =>
         rows.length
-          ? `<div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+          ? `<div data-pdf-table="true" style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;break-inside:avoid">
               <div style="background:${GREEN};color:#fff;padding:8px 14px;font-weight:700;font-size:13px">${esc(title)}</div>
-              <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px">
                 <thead><tr>${head.map((h) => `<th style="background:#f1f5f9;padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0">${esc(h)}</th>`).join("")}</tr></thead>
-                <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td style="padding:7px 10px;text-align:right;border-bottom:1px solid #f1f5f9">${esc(String(c))}</td>`).join("")}</tr>`).join("")}</tbody>
+                 <tbody>${rows.map((r) => `<tr style="break-inside:avoid">${r.map((c) => `<td style="padding:7px 10px;text-align:right;vertical-align:top;border-bottom:1px solid #f1f5f9;overflow-wrap:anywhere">${esc(String(c))}</td>`).join("")}</tr>`).join("")}</tbody>
               </table>
             </div>`
           : "";
@@ -441,7 +441,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       const wrap = document.createElement("div");
       wrap.dir = "rtl";
       wrap.setAttribute("lang", "ar");
-      wrap.style.cssText = `position:fixed;top:-10000px;left:0;width:794px;padding:40px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px`;
+      wrap.style.cssText = `position:fixed;top:-10000px;left:0;width:714px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px`;
       wrap.innerHTML = `
         <div style="background:linear-gradient(115deg,${GREEN} 0%,#0f8f6d 55%,#16a97f 100%);color:#fff;border-radius:16px;padding:22px 24px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:16px">
           <div style="display:flex;align-items:center;gap:14px">
@@ -513,32 +513,101 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           ${table("مستهدفات المؤشرات (90 يوماً)", ["المؤشر", "الحالي", "المستهدف"], (smart.kpi_targets || []).map((k) => [k.kpi || "—", k.current || "—", k.target_90d || "—"]))}
           ${smart.risks?.length ? `<div style="margin-bottom:14px"><b>المخاطر:</b><ul style="margin:6px 20px 0 0;padding:0;color:#475569">${smart.risks.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul></div>` : ""}
         ` : ""}
-        <div style="margin-top:26px;border-top:2px solid ${GREEN};padding-top:10px;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#64748b">
-          <div>${esc(orgName)} · التحليل الشامل للمتجر · ${esc(todayLabel)}</div>
-          <div style="display:flex;align-items:center;gap:6px">
-            ${kafaahLogoData ? `<img src="${kafaahLogoData}" alt="منصة كفاءة" style="width:20px;height:20px;object-fit:contain" />` : ""}
-            <span>تم التوليد بواسطة منصة كفاءة</span>
-          </div>
-        </div>
       `;
 
       document.body.appendChild(wrap);
       try {
-        const canvas = await html2canvas(wrap, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        const PAGE_WIDTH_PX = 794;
+        const PAGE_HEIGHT_PX = 1123;
+        const PAGE_PADDING_X = 40;
+        const PAGE_PADDING_TOP = 38;
+        const PAGE_PADDING_BOTTOM = 54;
+        const pagesHost = document.createElement("div");
+        pagesHost.style.cssText = "position:fixed;top:-20000px;left:0;background:#ffffff";
+        document.body.appendChild(pagesHost);
+
+        const pageContentHeight = PAGE_HEIGHT_PX - PAGE_PADDING_TOP - PAGE_PADDING_BOTTOM;
+        const makePage = () => {
+          const page = document.createElement("div");
+          page.dir = "rtl";
+          page.setAttribute("lang", "ar");
+          page.style.cssText = `position:relative;width:${PAGE_WIDTH_PX}px;height:${PAGE_HEIGHT_PX}px;box-sizing:border-box;padding:${PAGE_PADDING_TOP}px ${PAGE_PADDING_X}px ${PAGE_PADDING_BOTTOM}px;background:#fff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px;overflow:hidden`;
+          const content = document.createElement("div");
+          content.style.cssText = `width:100%;height:${pageContentHeight}px;overflow:hidden`;
+          const footer = document.createElement("div");
+          footer.style.cssText = `position:absolute;right:${PAGE_PADDING_X}px;left:${PAGE_PADDING_X}px;bottom:18px;border-top:1px solid #d8e8e1;padding-top:7px;display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#64748b`;
+          footer.innerHTML = `<span>${esc(orgName)} · التحليل الشامل للمتجر · ${esc(todayLabel)}</span><span style="display:flex;align-items:center;gap:5px">${kafaahLogoData ? `<img src="${kafaahLogoData}" alt="" style="width:16px;height:16px;object-fit:contain" />` : ""}منصة كفاءة</span>`;
+          page.append(content, footer);
+          pagesHost.appendChild(page);
+          return { page, content };
+        };
+
+        const fits = (content: HTMLElement) => content.scrollHeight <= pageContentHeight + 1;
+        let current = makePage();
+
+        const addTableAcrossPages = (sourceTableBlock: HTMLElement) => {
+          const sourceTable = sourceTableBlock.querySelector("table");
+          const sourceBody = sourceTable?.querySelector("tbody");
+          if (!sourceTable || !sourceBody) return;
+          const rows = Array.from(sourceBody.rows);
+          let chunk: HTMLElement | null = null;
+          let chunkBody: HTMLTableSectionElement | null = null;
+
+          const startChunk = () => {
+            chunk = sourceTableBlock.cloneNode(true) as HTMLElement;
+            chunkBody = chunk.querySelector("tbody");
+            if (chunkBody) chunkBody.innerHTML = "";
+            current.content.appendChild(chunk);
+          };
+
+          startChunk();
+          rows.forEach((row) => {
+            if (!chunk || !chunkBody) return;
+            const rowClone = row.cloneNode(true) as HTMLTableRowElement;
+            chunkBody.appendChild(rowClone);
+            if (!fits(current.content)) {
+              chunkBody.removeChild(rowClone);
+              if (chunkBody.rows.length === 0) {
+                chunkBody.appendChild(rowClone);
+                return;
+              }
+              current = makePage();
+              startChunk();
+              chunkBody?.appendChild(rowClone);
+            }
+          });
+        };
+
+        Array.from(wrap.children).forEach((sourceChild) => {
+          const child = sourceChild.cloneNode(true) as HTMLElement;
+          if (child.dataset.pdfTable === "true") {
+            const probe = child.cloneNode(true) as HTMLElement;
+            current.content.appendChild(probe);
+            if (fits(current.content)) return;
+            current.content.removeChild(probe);
+            addTableAcrossPages(child);
+            return;
+          }
+
+          current.content.appendChild(child);
+          if (!fits(current.content)) {
+            current.content.removeChild(child);
+            current = makePage();
+            current.content.appendChild(child);
+          }
+        });
+
         const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
         const pageW = pdf.internal.pageSize.getWidth();
         const pageH = pdf.internal.pageSize.getHeight();
-        const imgH = (canvas.height * pageW) / canvas.width;
-        const img = canvas.toDataURL("image/jpeg", 0.92);
-        let pos = 0, remaining = imgH;
-        pdf.addImage(img, "JPEG", 0, pos, pageW, imgH);
-        remaining -= pageH;
-        while (remaining > 0) {
-          pos -= pageH;
-          pdf.addPage();
-          pdf.addImage(img, "JPEG", 0, pos, pageW, imgH);
-          remaining -= pageH;
+        const pages = Array.from(pagesHost.children) as HTMLElement[];
+        for (let index = 0; index < pages.length; index += 1) {
+          const canvas = await html2canvas(pages[index], { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+          const img = canvas.toDataURL("image/jpeg", 0.94);
+          if (index > 0) pdf.addPage();
+          pdf.addImage(img, "JPEG", 0, 0, pageW, pageH);
         }
+        document.body.removeChild(pagesHost);
         pdf.save(`التحليل-الشامل-للمتجر-${fromDate || "all"}.pdf`);
         toast.success("تم تصدير التحليل الشامل بصيغة PDF");
       } finally {
