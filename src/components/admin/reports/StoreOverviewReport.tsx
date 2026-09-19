@@ -603,8 +603,8 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         const pageH = pdf.internal.pageSize.getHeight();
         const pages = Array.from(pagesHost.children) as HTMLElement[];
         for (let index = 0; index < pages.length; index += 1) {
-          const canvas = await html2canvas(pages[index], { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-          const img = canvas.toDataURL("image/jpeg", 0.94);
+          const canvas = await html2canvas(pages[index], { scale: 1.5, backgroundColor: "#ffffff", useCORS: true });
+          const img = canvas.toDataURL("image/jpeg", 0.92);
           if (index > 0) pdf.addPage();
           pdf.addImage(img, "JPEG", 0, 0, pageW, pageH);
         }
