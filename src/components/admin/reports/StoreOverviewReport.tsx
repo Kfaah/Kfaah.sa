@@ -440,11 +440,25 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
              </div>`
           : "";
 
+      // نرسم التقرير داخل إطار معزول صغير: html2canvas ينسخ المستند كاملاً،
+      // فرسمه داخل إطار خفيف يجعل التصدير أسرع بعدة أضعاف من رسمه داخل صفحة اللوحة.
+      const frame = document.createElement("iframe");
+      frame.setAttribute("aria-hidden", "true");
+      frame.style.cssText = "position:fixed;top:0;left:0;width:820px;height:1200px;border:0;z-index:-1;pointer-events:none;opacity:0";
+      document.body.appendChild(frame);
+      const doc = frame.contentDocument!;
+      doc.open();
+      doc.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" />
+        <style>*{box-sizing:border-box}body{margin:0;background:#fff;font-family:'Tajawal','Cairo','Segoe UI',sans-serif}</style>
+        </head><body></body></html>`);
+      doc.close();
+      try { await (doc as any).fonts?.ready; } catch { /* ignore */ }
 
-      const wrap = document.createElement("div");
+      const wrap = doc.createElement("div");
       wrap.dir = "rtl";
       wrap.setAttribute("lang", "ar");
-      wrap.style.cssText = `position:fixed;top:0;left:0;width:714px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px;z-index:-1;pointer-events:none`;
+      wrap.style.cssText = `position:absolute;top:0;left:0;width:714px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px`;
       wrap.innerHTML = `
         <div style="background:linear-gradient(115deg,${GREEN} 0%,#0f8f6d 55%,#16a97f 100%);color:#fff;border-radius:16px;padding:22px 24px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:16px">
           <div style="display:flex;align-items:center;gap:14px">
