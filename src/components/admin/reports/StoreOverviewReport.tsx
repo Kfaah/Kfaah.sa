@@ -441,7 +441,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       const wrap = document.createElement("div");
       wrap.dir = "rtl";
       wrap.setAttribute("lang", "ar");
-      wrap.style.cssText = `position:fixed;top:-10000px;left:0;width:714px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px`;
+      wrap.style.cssText = `position:fixed;top:0;left:0;width:714px;background:#ffffff;color:#0f172a;font-family:'Tajawal','Cairo','Segoe UI',sans-serif;line-height:1.7;font-size:13px;z-index:-1;pointer-events:none`;
       wrap.innerHTML = `
         <div style="background:linear-gradient(115deg,${GREEN} 0%,#0f8f6d 55%,#16a97f 100%);color:#fff;border-radius:16px;padding:22px 24px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:16px">
           <div style="display:flex;align-items:center;gap:14px">
@@ -524,7 +524,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
         const PAGE_PADDING_TOP = 38;
         const PAGE_PADDING_BOTTOM = 54;
         pagesHost = document.createElement("div");
-        pagesHost.style.cssText = "position:fixed;top:-20000px;left:0;background:#ffffff";
+        pagesHost.style.cssText = "position:fixed;top:0;left:0;background:#ffffff;z-index:-1;pointer-events:none";
         document.body.appendChild(pagesHost);
 
         const pageContentHeight = PAGE_HEIGHT_PX - PAGE_PADDING_TOP - PAGE_PADDING_BOTTOM;
