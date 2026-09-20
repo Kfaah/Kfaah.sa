@@ -108,7 +108,7 @@ interface SmartAnalysis {
 const WEB_LABELS: Record<string, string> = { website: "الموقع الإلكتروني", store: "المتجر الإلكتروني", social: "حسابات التواصل" };
 
 export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; onBack: () => void }) {
-  const [period, setPeriod] = useState<DatePeriod>("this_year");
+  const [period, setPeriod] = useState<DatePeriod>("all");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [loading, setLoading] = useState(true);

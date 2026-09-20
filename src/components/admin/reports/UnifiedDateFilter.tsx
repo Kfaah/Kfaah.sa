@@ -4,7 +4,7 @@ import { CalendarRange } from "lucide-react";
 
 export type DatePeriod =
   | "today" | "yesterday" | "this_week" | "last_week"
-  | "this_month" | "last_month" | "this_year" | "all" | "custom";
+  | "this_month" | "last_month" | "this_year" | "last_year" | "all" | "custom";
 
 export interface DateRange { from: Date | null; to: Date | null }
 
@@ -34,6 +34,10 @@ export function resolvePeriod(p: DatePeriod, custom?: { from?: string; to?: stri
       return { from: start, to: end };
     }
     case "this_year": return { from: startOfThisYear, to: endOfDay(now) };
+    case "last_year": return {
+      from: new Date(today.getFullYear() - 1, 0, 1),
+      to: new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59),
+    };
     case "custom": return {
       from: custom?.from ? startOfDay(new Date(custom.from)) : null,
       to: custom?.to ? endOfDay(new Date(custom.to)) : null,
@@ -50,6 +54,7 @@ const LABELS: Record<DatePeriod, string> = {
   this_month: "الشهر الحالي",
   last_month: "الشهر الماضي",
   this_year: "السنة الحالية",
+  last_year: "السنة الماضية",
   all: "الكل",
   custom: "نطاق مخصص",
 };
