@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.store_overview_data(uuid, date, date) TO PUBLIC;

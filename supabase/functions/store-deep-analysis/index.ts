@@ -202,6 +202,9 @@ Deno.serve(async (req) => {
 كن شاملاً وعملياً: اذكر 6-8 شرائح للمتبرعين، و8-12 موجة رسائل جاهزة للإرسال، و10-12 مقترحاً تنفيذياً، وخطة أسبوعية لأربعة أسابيع على الأقل.
 مهم جداً: استخرج أوقات وأيام الإرسال المثالية من الحقل timing في البيانات (أوقات ذروة التبرع الفعلية بتوقيت الرياض) واذكر الساعة واليوم لكل موجة رسائل، مع سقف تكرار الرسائل، والنوافذ الموسمية، والأوقات التي يجب تجنبها.
 استخدم أرقام المتبرعين كما هي: unique_donors للتبرعات المباشرة، وtotal_reachable_donors_all_channels لقاعدة التواصل الكاملة (لا تخفض هذه الأرقام).
+إلزامي: حلّل كل أقسام store_metrics بلا استثناء ولا تتجاهل أي مجموعة بيانات، وهي: donations وtiming وtop_projects وmonthly وtop_donors وdonation_channels (payment_methods, sources, statuses, amount_bands) وdonor_segmentation (value_bands, recency, frequency, crm_segments, cities, gender) وcampaigns (وby_status) وfailed وabandoned_carts (by_status, projects, monthly) وsubscriptions (by_status, projects, cancellation_reasons) وgifts (occasions, projects, monthly, delivery_statuses, best_hours, top_givers) وdata_coverage.
+لكل مجموعة بيانات اذكر صراحةً أرقامها الرئيسية وما تعنيه وإجراءً واحداً على الأقل مبنياً عليها. إذا كانت مجموعة فارغة (صفر) فاذكر ذلك كثغرة بيانات وما يجب فعله لتوفيرها.
+اربط الإهداءات والاستقطاع الشهري والسلال المتروكة بشرائح ورسائل مخصصة لكل منها، واستخدم data_coverage لبيان نقص بيانات التواصل (بريد/مدينة) في قسم data_hygiene.
 احرص أن تكون كل رسالة قصيرة (أقل من 400 حرف) ومهنية ومناسبة للسياق الخيري السعودي.
 أعد النتيجة كـ JSON صالح بهذا الشكل بالضبط:
 ${RESULT_SHAPE}`;

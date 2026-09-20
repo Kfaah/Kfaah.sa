@@ -67,6 +67,8 @@ interface Analysis {
   giftsCount: number;
   giftsTotal: number;
   giftsDelivered: number;
+  /** كل التفاصيل المحسوبة على الخادم (تُرسل كاملة للتحليل الذكي) */
+  breakdowns: Record<string, any>;
 }
 
 
@@ -182,6 +184,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           giftsCount: num(r.gifts_count),
           giftsTotal: num(r.gifts_total),
           giftsDelivered: num(r.gifts_delivered),
+          breakdowns: r,
         });
       } catch (e: any) {
         toast.error(e.message || "تعذر تحميل التحليل الشامل");
@@ -246,11 +249,57 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             top_projects: data.topProjects,
             monthly: data.monthly,
             top_donors: data.topDonors.map((d) => ({ name: d.name, count: d.count, total: d.total })),
-            campaigns: { count: data.campaignsCount, goal: data.campaignsGoal, collected: data.campaignsCollected, top: data.topCampaigns },
+            campaigns: { count: data.campaignsCount, goal: data.campaignsGoal, collected: data.campaignsCollected, top: data.topCampaigns, by_status: data.breakdowns.campaigns_by_status },
             failed: { count: data.failedCount, total: data.failedTotal, reasons: data.failReasons },
-            abandoned_carts: { count: data.cartsCount, total: data.cartsTotal, recovered: data.cartsRecovered },
-            subscriptions: { count: data.subsCount, active: data.subsActive, monthly_value: data.subsMonthly },
-            gifts: { count: data.giftsCount, total: data.giftsTotal, delivered: data.giftsDelivered },
+            abandoned_carts: {
+              count: data.cartsCount,
+              total: data.cartsTotal,
+              recovered: data.cartsRecovered,
+              avg: data.breakdowns.carts_avg,
+              by_status: data.breakdowns.carts_by_status,
+              projects: data.breakdowns.carts_projects,
+              monthly: data.breakdowns.carts_monthly,
+            },
+            subscriptions: {
+              count: data.subsCount,
+              active: data.subsActive,
+              monthly_value: data.subsMonthly,
+              avg: data.breakdowns.subs_avg,
+              by_status: data.breakdowns.subs_by_status,
+              projects: data.breakdowns.subs_projects,
+              cancellation_reasons: data.breakdowns.subs_cancel_reasons,
+            },
+            gifts: {
+              count: data.giftsCount,
+              total: data.giftsTotal,
+              delivered: data.giftsDelivered,
+              avg: data.breakdowns.gifts_avg,
+              unique_givers: data.breakdowns.gifts_givers,
+              occasions: data.breakdowns.gifts_occasions,
+              projects: data.breakdowns.gifts_projects,
+              monthly: data.breakdowns.gifts_monthly,
+              delivery_statuses: data.breakdowns.gifts_statuses,
+              best_hours: data.breakdowns.gifts_hourly,
+              top_givers: data.breakdowns.top_givers,
+            },
+            donation_channels: {
+              payment_methods: data.breakdowns.payment_methods,
+              sources: data.breakdowns.donation_sources,
+              statuses: data.breakdowns.donation_statuses,
+              amount_bands: data.breakdowns.amount_bands,
+            },
+            donor_segmentation: {
+              value_bands: data.breakdowns.donor_value_bands,
+              recency: data.breakdowns.donor_recency,
+              frequency: data.breakdowns.donor_frequency,
+              crm_donors: data.breakdowns.crm_donors_count,
+              crm_repeat_donors: data.breakdowns.crm_repeat_donors,
+              crm_total_donated: data.breakdowns.crm_total_donated,
+              crm_segments: data.breakdowns.crm_segments,
+              cities: data.breakdowns.crm_cities,
+              gender: data.breakdowns.crm_gender,
+            },
+            data_coverage: data.breakdowns.data_coverage,
             },
           }),
         },
