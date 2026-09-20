@@ -99,6 +99,34 @@
       "when": 1789817902188,
       "tag": "0013_standardize_welcome_bg_and_eval_score_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789899716424,
+      "tag": "0014_store_overview_full_breakdowns_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1789899750172,
+      "tag": "0015_store_overview_data_grants_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789899767302,
+      "tag": "0016_tmp_grant_store_overview_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789899802653,
+      "tag": "0017_revoke_tmp_store_overview_data_public",
+      "breakpoints": true
     }
   ]
 }
