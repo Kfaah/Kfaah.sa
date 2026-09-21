@@ -109,6 +109,34 @@ interface SmartAnalysis {
 
 const WEB_LABELS: Record<string, string> = { website: "الموقع الإلكتروني", store: "المتجر الإلكتروني", social: "حسابات التواصل" };
 
+const ARABIC_DISPLAY_TERMS: Record<string, string> = {
+  critical: "حرجة",
+  high: "عالية",
+  medium: "متوسطة",
+  low: "منخفضة",
+  whatsapp: "واتساب",
+  sms: "رسالة نصية",
+  email: "بريد إلكتروني",
+  call: "اتصال هاتفي",
+  website: "الموقع الإلكتروني",
+  store: "المتجر الإلكتروني",
+  social: "حسابات التواصل الاجتماعي",
+};
+
+function arabicDisplay(value: string | number | undefined | null): string | number {
+  if (typeof value !== "string") return value ?? "—";
+  const exact = ARABIC_DISPLAY_TERMS[value.trim().toLowerCase()];
+  if (exact) return exact;
+  return value
+    .replace(/\bKPI(?:s)?\b/gi, "مؤشر الأداء")
+    .replace(/\bCTA\b/gi, "الدعوة إلى الإجراء")
+    .replace(/\bA\s*\/\s*B\b/gi, "المقارنة بين نسختين")
+    .replace(/\bCRM\b/gi, "إدارة علاقات المتبرعين")
+    .replace(/\bSMS\b/gi, "الرسائل النصية")
+    .replace(/\bWhatsApp\b/gi, "واتساب")
+    .replace(/\bEmail\b/gi, "البريد الإلكتروني");
+}
+
 export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; onBack: () => void }) {
   const [period, setPeriod] = useState<DatePeriod>("all");
   const [customFrom, setCustomFrom] = useState("");
@@ -461,11 +489,11 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           ${smart.messaging_plan?.objective ? `<div style="margin-bottom:10px"><b>هدف خطة الرسائل:</b> ${esc(smart.messaging_plan.objective)}</div>` : ""}
           ${table("الخطة التنفيذية لرسائل المتبرعين", ["الموجة", "الشريحة", "القناة", "اليوم", "الساعة", "الحجم", "نص الرسالة", "نسخة بديلة", "المتابعة", "الدعوة للإجراء", "المؤشر", "النتيجة المتوقعة", "المسؤول"], (smart.messaging_plan?.waves || []).map((w) => [w.wave || "—", w.segment || "—", w.channel || "—", w.send_day || w.timing || "—", w.send_time || "—", w.audience_size || "—", w.message_ar || "—", w.variant_b || "—", w.follow_up || "—", w.cta || "—", w.kpi || "—", w.expected_result || "—", w.owner || "—"]))}
           ${table("الجدول الأسبوعي للتنفيذ", ["الأسبوع", "المهام"], (smart.messaging_plan?.calendar || []).map((c) => [c.week || "—", (c.tasks || []).join(" • ")]))}
-          ${table("اختبارات A/B المقترحة", ["الاختبار", "الفرضية", "المؤشر"], (smart.operational_details?.ab_tests || []).map((t) => [t.test || "—", t.hypothesis || "—", t.metric || "—"]))}
+           ${table("اختبارات المقارنة بين نسختين", ["الاختبار", "الفرضية", "المؤشر"], (smart.operational_details?.ab_tests || []).map((t) => [arabicDisplay(t.test), arabicDisplay(t.hypothesis), arabicDisplay(t.metric)]))}
           ${smart.operational_details?.data_hygiene?.length ? `<div style="margin-bottom:8px"><b>تنقية البيانات:</b> ${esc(smart.operational_details.data_hygiene.join(" • "))}</div>` : ""}
           ${smart.operational_details?.compliance?.length ? `<div style="margin-bottom:8px"><b>الالتزام والخصوصية:</b> ${esc(smart.operational_details.compliance.join(" • "))}</div>` : ""}
           ${smart.operational_details?.tools?.length ? `<div style="margin-bottom:12px"><b>الأدوات المطلوبة:</b> ${esc(smart.operational_details.tools.join(" • "))}</div>` : ""}
-          ${table("المقترحات التنفيذية", ["المقترح", "المبرر", "خطوات التنفيذ", "الأثر", "الجهد", "الأولوية"], (smart.recommendations || []).map((r) => [r.title || "—", r.why || "—", (r.how || []).join(" • "), r.impact || "—", r.effort || "—", r.priority || "—"]))}
+           ${table("المقترحات التنفيذية", ["المقترح", "المبرر", "خطوات التنفيذ", "الأثر", "الجهد", "الأولوية"], (smart.recommendations || []).map((r) => [arabicDisplay(r.title), arabicDisplay(r.why), arabicDisplay((r.how || []).join(" • ")), arabicDisplay(r.impact), arabicDisplay(r.effort), arabicDisplay(r.priority)]))}
           ${table("مستهدفات المؤشرات (90 يوماً)", ["المؤشر", "الحالي", "المستهدف"], (smart.kpi_targets || []).map((k) => [k.kpi || "—", k.current || "—", k.target_90d || "—"]))}
           ${smart.risks?.length ? `<div style="margin-bottom:14px"><b>المخاطر:</b><ul style="margin:6px 20px 0 0;padding:0;color:#475569">${smart.risks.map((t) => `<li style="margin-bottom:4px">${esc(t)}</li>`).join("")}</ul></div>` : ""}
         ` : ""}
@@ -889,7 +917,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
               <SectionTable
                 title="المقترحات التنفيذية"
                 head={["المقترح", "المبرر", "خطوات التنفيذ", "الأثر", "الجهد", "الأولوية"]}
-                rows={(smart.recommendations || []).map(r => [r.title || "—", r.why || "—", (r.how || []).join(" • "), r.impact || "—", r.effort || "—", r.priority || "—"])}
+                 rows={(smart.recommendations || []).map(r => [arabicDisplay(r.title), arabicDisplay(r.why), arabicDisplay((r.how || []).join(" • ")), arabicDisplay(r.impact), arabicDisplay(r.effort), arabicDisplay(r.priority)])}
               />
 
               <SectionTable
@@ -899,9 +927,9 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
               />
 
               <SectionTable
-                title="اختبارات A/B المقترحة"
+                 title="اختبارات المقارنة بين نسختين"
                 head={["الاختبار", "الفرضية", "المؤشر"]}
-                rows={(smart.operational_details?.ab_tests || []).map(t => [t.test || "—", t.hypothesis || "—", t.metric || "—"])}
+                 rows={(smart.operational_details?.ab_tests || []).map(t => [arabicDisplay(t.test), arabicDisplay(t.hypothesis), arabicDisplay(t.metric)])}
               />
 
               {(!!smart.operational_details?.data_hygiene?.length || !!smart.operational_details?.compliance?.length || !!smart.operational_details?.tools?.length) && (
