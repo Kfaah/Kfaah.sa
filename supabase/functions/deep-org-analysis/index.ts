@@ -232,6 +232,9 @@ Deno.serve(async (req) => {
     );
   }
 
+  // The full analysis takes several minutes, well past the 150s request idle
+  // timeout, so it runs in the background and the client polls deep_analyses.
+  const runAnalysis = async () => {
   try {
     // 3) Load org + profile + employees + donations summary
     const [orgRes, profRes, empRes, donAggRes, campRes, externalRes, uploadsRes] = await Promise.all([
