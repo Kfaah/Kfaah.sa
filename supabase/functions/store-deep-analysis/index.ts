@@ -3,39 +3,68 @@
 // ويخرج: ملخص تنفيذي + مراجعة المنصات + خطة تنفيذية لرسائل المتبرعين + مقترحات
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { z } from "npm:zod@3.25.76";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 
 const AI_MODEL = "openai/gpt-6-astra";
 
-async function scrape(url?: string | null, limit = 4000): Promise<string | null> {
-  if (!FIRECRAWL_API_KEY || !url) return null;
+const RequestSchema = z.object({
+  organization_id: z.string().uuid(),
+  metrics: z.record(z.unknown()).nullable().optional(),
+  from: z.string().max(32).nullable().optional(),
+  to: z.string().max(32).nullable().optional(),
+});
+
+type DigitalSource = { kind: string; label: string; url: string; cachedContent?: string | null };
+
+const SOURCE_LABELS: Record<string, string> = {
+  website: "الموقع الإلكتروني",
+  store: "المتجر الإلكتروني",
+  twitter: "حساب إكس",
+  instagram: "حساب إنستغرام",
+  tiktok: "حساب تيك توك",
+  snapchat: "حساب سناب شات",
+  youtube: "قناة يوتيوب",
+  facebook: "صفحة فيسبوك",
+  linkedin: "صفحة لينكدإن",
+};
+
+function validHttpUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
   try {
-    const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ url, formats: ["markdown"], onlyMainContent: true }),
-    });
-    if (!r.ok) return null;
-    const j = await r.json();
-    const md = j?.markdown || j?.data?.markdown || j?.data?.content || "";
-    return typeof md === "string" && md.trim() ? md.slice(0, limit) : null;
+    const parsed = new URL(value.trim());
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : null;
   } catch {
     return null;
   }
 }
 
+async function scrape(source: DigitalSource, limit = 2200) {
+  const fallback = source.cachedContent?.trim() || null;
+  if (!FIRECRAWL_API_KEY) return { kind: source.kind, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback };
+  try {
+    const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ url: source.url, formats: ["markdown"], onlyMainContent: true }),
+    });
+    if (!r.ok) return { kind: source.kind, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback };
+    const j = await r.json();
+    const md = j?.markdown || j?.data?.markdown || j?.data?.content || "";
+    const content = typeof md === "string" && md.trim() ? md.slice(0, limit) : fallback;
+    return { kind: source.kind, status: content ? "تم التحليل" : "محتوى غير كافٍ", content };
+  } catch {
+    return { kind: source.kind, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback };
+  }
+}
+
 const RESULT_SHAPE = `{
-  "executive_summary": "ملخص تنفيذي مركّز (5-7 أسطر) يربط الأرقام بالقرارات",
+  "executive_summary": "ملخص تنفيذي موحّد ومركّز (3-4 أسطر) يربط بيانات المتجر بالحضور الرقمي والقرارات",
   "headline_findings": ["نتيجة رقمية لافتة 1", "..."],
   "donor_analysis": {
     "overview": "تحليل سلوك المتبرعين عموماً",
@@ -45,10 +74,11 @@ const RESULT_SHAPE = `{
     "retention": "قراءة الولاء والتكرار والاستقطاع الشهري",
     "churn_signals": ["مؤشر تسرب 1", "..."]
   },
-  "web_review": {
-    "website": { "strengths": [], "gaps": [], "fix_list": [] },
-    "store": { "strengths": [], "gaps": [], "fix_list": [] },
-    "social": { "strengths": [], "gaps": [], "fix_list": [] }
+  "digital_presence": {
+    "overview": "خلاصة موحدة قصيرة لما تعنيه المواقع والمتجر والحسابات لأداء التبرع",
+    "strengths": ["أهم نقطتي قوة فقط"],
+    "gaps": ["أهم فجوتين فقط"],
+    "actions": ["أهم ثلاثة إجراءات مرتبة بالأولوية"]
   },
   "send_timing": {
     "summary": "قراءة أوقات الذروة من بيانات التبرع الفعلية بتوقيت الرياض",
@@ -80,6 +110,7 @@ const RESULT_SHAPE = `{
 }`;
 
 async function callAstra(system: string, payload: unknown, onTick?: () => void) {
+  if (!LOVABLE_API_KEY) throw new Error("missing_ai_configuration");
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
     headers: {
@@ -157,17 +188,27 @@ async function callAstra(system: string, payload: unknown, onTick?: () => void) 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  let body: any = {};
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response(JSON.stringify({ error: "service_configuration_missing" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  let rawBody: unknown;
   try {
-    body = await req.json();
-  } catch { /* ignore */ }
-  const { organization_id, metrics, from, to } = body || {};
-  if (!organization_id) {
-    return new Response(JSON.stringify({ error: "organization_id required" }), {
+    rawBody = await req.json();
+  } catch {
+    rawBody = null;
+  }
+  const parsed = RequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  const { organization_id, metrics, from, to } = parsed.data;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -182,25 +223,51 @@ Deno.serve(async (req) => {
 
       try {
         const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        const [orgRes, profRes] = await Promise.all([
+        const [orgRes, profRes, externalRes] = await Promise.all([
           admin.from("organizations").select("id,name").eq("id", organization_id).maybeSingle(),
           admin.from("organization_profiles").select("*").eq("organization_id", organization_id).maybeSingle(),
+          admin.from("org_external_sources").select("kind,url,label,summary,last_status").eq("organization_id", organization_id),
         ]);
         const org = orgRes.data as any;
         const profile = profRes.data as any;
-
-        const [website, store, twitter, instagram] = await Promise.all([
-          scrape(profile?.website_url),
-          scrape(profile?.store_url),
-          scrape(profile?.twitter_url, 1500),
-          scrape(profile?.instagram_url, 1500),
-        ]);
+        const profileUrls: Record<string, unknown> = {
+          website: profile?.website_url,
+          store: profile?.store_url,
+          twitter: profile?.twitter_url,
+          instagram: profile?.instagram_url,
+          tiktok: profile?.tiktok_url,
+          snapchat: profile?.snapchat_url,
+          youtube: profile?.youtube_url,
+          facebook: profile?.facebook_url,
+          linkedin: profile?.linkedin_url,
+        };
+        const sourcesByUrl = new Map<string, DigitalSource>();
+        for (const [kind, rawUrl] of Object.entries(profileUrls)) {
+          const url = validHttpUrl(rawUrl);
+          if (url) sourcesByUrl.set(url, { kind, label: SOURCE_LABELS[kind] || "مصدر رقمي", url });
+        }
+        for (const item of externalRes.data || []) {
+          const url = validHttpUrl(item.url);
+          if (!url) continue;
+          const current = sourcesByUrl.get(url);
+          const cachedContent = [item.summary, item.last_status ? `حالة آخر مزامنة: ${item.last_status}` : null].filter(Boolean).join("\n");
+          const kind = String(item.kind || current?.kind || "other");
+          sourcesByUrl.set(url, {
+            kind,
+            label: String(item.label || current?.label || SOURCE_LABELS[kind] || "مصدر رقمي"),
+            url,
+            cachedContent: cachedContent || current?.cachedContent,
+          });
+        }
+        const sourceSnapshots = await Promise.all(Array.from(sourcesByUrl.values()).slice(0, 24).map((source) => scrape(source)));
         push(".\n");
 
         const system = `أنت مستشار تسويق واستدامة مالية للجمعيات الخيرية السعودية، خبير في تحليل متاجر التبرع الإلكترونية وسلوك المتبرعين.
 اكتب جميع القيم النصية الظاهرة للقارئ بالعربية الفصحى الاحترافية حصراً، واعتمد على الأرقام المعطاة حرفياً (لا تختلق أرقاماً).
 ممنوع استخدام أي كلمة أو اختصار أو حرف لاتيني في المخرجات، بما في ذلك أسماء المؤشرات والقنوات والأولويات والاختبارات والمصطلحات التسويقية. عرّب المصطلحات والأسماء الأجنبية تعريباً واضحاً؛ اكتب «مؤشر الأداء» بدلاً من الاختصار الأجنبي، و«الدعوة إلى الإجراء» بدلاً من الاختصار الأجنبي، و«اختبار المقارنة بين نسختين» بدلاً من رمزه الأجنبي. لا تُرجع روابط إلكترونية داخل النصوص، ويمكن إبقاء مفاتيح بنية JSON الداخلية كما هي لأنها غير ظاهرة للقارئ.
-كن شاملاً وعملياً: اذكر 6-8 شرائح للمتبرعين، و8-12 موجة رسائل جاهزة للإرسال، و10-12 مقترحاً تنفيذياً، وخطة أسبوعية لأربعة أسابيع على الأقل.
+كن مختصراً وعملياً: اذكر 4-6 شرائح للمتبرعين، و4-6 موجات رسائل، و5 مقترحات تنفيذية كحد أقصى، وخطة أسبوعية مختصرة لأربعة أسابيع.
+حلّل جميع المصادر الرقمية المرفقة كمدخلات خلفية موحّدة مع بيانات المتجر. لا تذكر أسماء المصادر أو روابطها، ولا تنشئ مراجعة مستقلة لكل موقع أو حساب. أعد في digital_presence خلاصة واحدة فقط: سطران للملخص، ونقطتا قوة، وفجوتان، وثلاثة إجراءات ذات أولوية كحد أقصى.
+اجعل headline_findings من 3 إلى 5 نتائج فقط، ولا تكرر المعلومة في أكثر من قسم.
 مهم جداً: استخرج أوقات وأيام الإرسال المثالية من الحقل timing في البيانات (أوقات ذروة التبرع الفعلية بتوقيت الرياض) واذكر الساعة واليوم لكل موجة رسائل، مع سقف تكرار الرسائل، والنوافذ الموسمية، والأوقات التي يجب تجنبها.
 استخدم أرقام المتبرعين كما هي: الحقل unique_donors للتبرعات المباشرة، والحقل total_reachable_donors_all_channels لقاعدة التواصل الكاملة (لا تخفض هذه الأرقام، ولا تكتب أسماء الحقول الإنجليزية في النص الظاهر).
 إلزامي: حلّل كل أقسام store_metrics بلا استثناء ولا تتجاهل أي مجموعة بيانات، وهي أقسام التبرعات والتوقيت وأعلى المشاريع والتوزيع الشهري وأعلى المتبرعين وقنوات التبرع وشرائح المتبرعين والحملات والتبرعات الفاشلة والسلال المتروكة والاستقطاعات والإهداءات واكتمال البيانات. استخدم مفاتيح البيانات الداخلية لفهم المدخلات فقط، ولا تنقل أسماءها الإنجليزية إلى النتيجة.
@@ -218,34 +285,46 @@ ${RESULT_SHAPE}`;
             ? {
                 about: profile.about,
                 goals: profile.goals,
-                website_url: profile.website_url,
-                store_url: profile.store_url,
-                social: {
-                  twitter: profile.twitter_url,
-                  instagram: profile.instagram_url,
-                  tiktok: profile.tiktok_url,
-                  snapchat: profile.snapchat_url,
-                  youtube: profile.youtube_url,
-                  facebook: profile.facebook_url,
-                  linkedin: profile.linkedin_url,
-                },
               }
             : null,
-          scraped: { website, store, twitter, instagram },
+          digital_presence_inputs: sourceSnapshots,
         };
 
-        const result = await callAstra(system, payload, () => push("."));
+        const generated = await callAstra(system, payload, () => push("."));
+        const result = {
+          ...generated,
+          headline_findings: Array.isArray(generated.headline_findings) ? generated.headline_findings.slice(0, 5) : [],
+          donor_analysis: generated.donor_analysis
+            ? {
+                ...generated.donor_analysis,
+                segments: Array.isArray(generated.donor_analysis.segments) ? generated.donor_analysis.segments.slice(0, 6) : [],
+                churn_signals: Array.isArray(generated.donor_analysis.churn_signals) ? generated.donor_analysis.churn_signals.slice(0, 3) : [],
+              }
+            : undefined,
+          digital_presence: generated.digital_presence
+            ? {
+                overview: generated.digital_presence.overview,
+                strengths: Array.isArray(generated.digital_presence.strengths) ? generated.digital_presence.strengths.slice(0, 2) : [],
+                gaps: Array.isArray(generated.digital_presence.gaps) ? generated.digital_presence.gaps.slice(0, 2) : [],
+                actions: Array.isArray(generated.digital_presence.actions) ? generated.digital_presence.actions.slice(0, 3) : [],
+              }
+            : undefined,
+          messaging_plan: generated.messaging_plan
+            ? {
+                ...generated.messaging_plan,
+                waves: Array.isArray(generated.messaging_plan.waves) ? generated.messaging_plan.waves.slice(0, 6) : [],
+                calendar: Array.isArray(generated.messaging_plan.calendar) ? generated.messaging_plan.calendar.slice(0, 4) : [],
+              }
+            : undefined,
+          recommendations: Array.isArray(generated.recommendations) ? generated.recommendations.slice(0, 5) : [],
+          kpi_targets: Array.isArray(generated.kpi_targets) ? generated.kpi_targets.slice(0, 5) : [],
+          risks: Array.isArray(generated.risks) ? generated.risks.slice(0, 3) : [],
+        };
 
         push(
           "\n__RESULT__" +
             JSON.stringify({
               success: true,
-              sources_read: {
-                website: !!website,
-                store: !!store,
-                twitter: !!twitter,
-                instagram: !!instagram,
-              },
               analysis: result,
             }),
         );
