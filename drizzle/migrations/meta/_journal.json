@@ -155,6 +155,13 @@
       "when": 1789989245181,
       "tag": "0021_scope_elevated_roles_to_organization",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1789989275569,
+      "tag": "0022_prevent_self_signup_default_org_takeover",
+      "breakpoints": true
     }
   ]
 }
