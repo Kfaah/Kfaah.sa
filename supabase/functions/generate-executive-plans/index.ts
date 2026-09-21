@@ -13,14 +13,24 @@ const MONTHS_AR = [
 
 const TADABBUR_ORG_ID = "00a528ce-e836-4ebd-9a50-35aeaa766501";
 const TADABBUR_MARKETING_MANAGER = "ناصر علي سلمان الحريصي";
+const TADABBUR_EXECUTIVE_DIRECTOR = "محمد هادي حسن الحريصي";
 const MARKETING_TERMS = [
   "تسويق", "التسويقي", "اعلام", "إعلام", "حملة", "حملات", "محتوى",
   "هوية", "منصة", "منصات", "تواصل اجتماعي", "رقمي", "رقمية", "إعلان", "اعلان",
+];
+const DEV_ADMIN_TERMS = [
+  "تطوير", "التطوير", "اداري", "إداري", "ادارية", "إدارية", "الادارة", "الإدارة",
+  "تنظيم", "حوكمة", "سياسات", "لوائح", "اجراءات", "إجراءات", "تشغيل",
 ];
 
 const isMarketingWork = (...values: unknown[]) => {
   const text = values.map((value) => String(value ?? "")).join(" ");
   return MARKETING_TERMS.some((term) => text.includes(term));
+};
+
+const isDevAdminWork = (...values: unknown[]) => {
+  const text = values.map((value) => String(value ?? "")).join(" ");
+  return DEV_ADMIN_TERMS.some((term) => text.includes(term));
 };
 
 serve(async (req) => {
