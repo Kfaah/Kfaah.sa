@@ -221,6 +221,7 @@ serve(async (req) => {
 
           // محاولة المطابقة على الموظف أو القسم
           let matchedUserId: string | null = null;
+          let matchedEmployeeId: string | null = null;
           let matchedName = respText || "موظف";
           let matchedRole = "";
 
@@ -230,6 +231,7 @@ serve(async (req) => {
             const byName = (allEmployees || []).find((e: any) => norm(e.full_name) === respNorm);
             if (byName?.user_id) {
               matchedUserId = byName.user_id;
+              matchedEmployeeId = byName.id;
               matchedName = byName.full_name;
               matchedRole = byName.job_role || "";
             } else {
@@ -237,6 +239,7 @@ serve(async (req) => {
               const byRole = findByJobRole(respText);
               if (byRole) {
                 matchedUserId = byRole.user_id;
+                matchedEmployeeId = byRole.id;
                 matchedName = byRole.full_name;
                 matchedRole = byRole.job_role || respText;
               }
@@ -254,6 +257,7 @@ serve(async (req) => {
                 const picked = pickFromDept(deptKey);
                 if (picked) {
                   matchedUserId = picked.user_id;
+                  matchedEmployeeId = picked.id;
                   matchedName = picked.full_name;
                   matchedRole = picked.job_role || respText;
                 }
@@ -279,6 +283,7 @@ serve(async (req) => {
             strategicGoal: goalCol ? String(row[goalCol] ?? "").trim() || null : null,
             annualTarget: target,
             userId: matchedUserId,
+            employeeId: matchedEmployeeId,
             employeeName: matchedName,
             jobRole: matchedRole,
             isVirtual: true,
@@ -534,6 +539,7 @@ serve(async (req) => {
           monthlyTarget: planMonth.monthly_target,
           annualTarget: plan.annual_target,
           userId: employee?.user_id || plan.user_id,
+          employeeId: employee?.id || plan.responsible_employee_id || null,
           organizationId: plan.organization_id,
           employeeName: employee?.full_name || "موظف",
           jobRole: employee?.job_role || "",
@@ -551,6 +557,7 @@ serve(async (req) => {
           monthlyTarget: m.meta.monthlyTarget,
           annualTarget: m.meta.annualTarget,
           userId: m.meta.userId,
+          employeeId: m.meta.employeeId || null,
           organizationId: (excelPlans || []).find((p: any) => p.id === m.meta.excelPlanId)?.organization_id || null,
           employeeName: m.meta.employeeName,
           jobRole: m.meta.jobRole,
@@ -809,6 +816,7 @@ ${i + 1}. النشاط: ${p.activityName}
         day: number; 
         activityName: string; 
         userId: string; 
+        employeeId?: string | null; 
         organizationId?: string | null;
         dailyTarget: number;
         tasks?: { before: string[]; during: string[]; after: string[] };
@@ -835,6 +843,7 @@ ${i + 1}. النشاط: ${p.activityName}
             day: dayData.day,
             activityName: planData.activityName,
             userId: planData.userId,
+            employeeId: (planData as any).employeeId || null,
             organizationId: planData.organizationId || null,
             dailyTarget: dayData.target,
             tasks: dayData.tasks || { before: [], during: [], after: [] },
@@ -911,6 +920,7 @@ ${i + 1}. النشاط: ${p.activityName}
               title: taskTitle,
               description: `${label} - ${metadata.activityName}`,
               user_id: metadata.userId,
+              assigned_employee_id: metadata.employeeId || null,
               executive_plan_id: executivePlan.id,
               organization_id: metadata.organizationId || null,
               status: "pending",
@@ -931,6 +941,7 @@ ${i + 1}. النشاط: ${p.activityName}
             title: metadata.activityName,
             description: `مهمة مولدة بالذكاء الاصطناعي - المستهدف: ${metadata.dailyTarget}`,
             user_id: metadata.userId,
+            assigned_employee_id: metadata.employeeId || null,
             executive_plan_id: executivePlan.id,
             organization_id: metadata.organizationId || null,
             status: "pending",

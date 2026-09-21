@@ -62,6 +62,7 @@ interface Task {
   title: string;
   description: string | null;
   user_id: string;
+  assigned_employee_id: string | null;
   executive_plan_id: string | null;
   priority: "low" | "medium" | "high";
   status: "upcoming" | "in_progress" | "executed" | "returned" | "delayed" | "completed" | "stalled";
@@ -122,7 +123,7 @@ const MONTHS_AR = [
 ];
 
 const TASKS_CACHE_PREFIX = "tasks_page_cache_v1:";
-const TASK_COLUMNS = "id,title,description,user_id,executive_plan_id,priority,status,category,due_date,ai_generated,created_at,completion_percentage,quality_percentage,estimated_time_minutes,actual_time_minutes,started_at";
+const TASK_COLUMNS = "id,title,description,user_id,assigned_employee_id,executive_plan_id,priority,status,category,due_date,ai_generated,created_at,completion_percentage,quality_percentage,estimated_time_minutes,actual_time_minutes,started_at";
 
 const Tasks = ({ embedded = false }: TasksProps) => {
   const { toast } = useToast();
@@ -316,6 +317,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const isTaskOwner = (task: Task) => {
     return authUser?.id === task.user_id;
   };
+
 
   // التحقق إذا حان وقت المهمة
   const isTaskDue = (task: Task) => {
@@ -969,9 +971,27 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   }, [activities]);
 
   // الحصول على اسم المنفذ
-  const getExecutorName = (userId: string) => {
+  const getExecutorName = (userId: string, assignedEmployeeId?: string | null) => {
+    if (assignedEmployeeId) {
+      const assigned = employeeByUser.get(assignedEmployeeId);
+      if (assigned) return assigned.full_name;
+    }
     const employee = employeeByUser.get(userId);
     return employee?.full_name || "غير محدد";
+  };
+
+  // الموظف الفعلي للمهمة (المسؤول المسنَد أولاً، وإلا صاحب الحساب)
+  const taskEmployeeOf = (task: Task) =>
+    (task.assigned_employee_id ? employeeByUser.get(task.assigned_employee_id) : undefined)
+    || employeeByUser.get(task.user_id);
+
+  // هل المهمة تخص المستخدم الحالي فعلاً؟
+  const isMyTask = (task: Task) => {
+    if (task.assigned_employee_id) {
+      const assigned = employeeByUser.get(task.assigned_employee_id);
+      if (assigned) return !!assigned.user_id && assigned.user_id === authUser?.id;
+    }
+    return task.user_id === authUser?.id;
   };
 
   // الحصول على اسم النشاط من executive_plan_id
@@ -1062,7 +1082,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     // فلتر القسم
     let matchesDepartment = true;
     if (isAdmin && filterDepartment !== "all") {
-      const taskEmployee = employees.find(e => e.user_id === task.user_id);
+      const taskEmployee = taskEmployeeOf(task);
       matchesDepartment = taskEmployee?.department_id === filterDepartment;
     }
 
@@ -1071,16 +1091,18 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     if (isAdmin && filterEmployee !== "all") {
       // نبحث عن الموظف المختار ونقارن user_id
       const selectedEmp = employees.find(e => e.user_id === filterEmployee || e.id === filterEmployee);
+      const taskEmp = taskEmployeeOf(task);
       if (selectedEmp) {
-        matchesEmployee = task.user_id === selectedEmp.user_id || task.user_id === filterEmployee;
+        matchesEmployee = taskEmp?.id === selectedEmp.id
+          || (!!selectedEmp.user_id && !task.assigned_employee_id && task.user_id === selectedEmp.user_id);
       } else {
-        matchesEmployee = task.user_id === filterEmployee;
+        matchesEmployee = task.assigned_employee_id === filterEmployee || (!task.assigned_employee_id && task.user_id === filterEmployee);
       }
     }
     
     // للموظف العادي: يرى مهامه فقط
     if (!isAdmin) {
-      matchesEmployee = task.user_id === authUser?.id;
+      matchesEmployee = isMyTask(task);
     }
 
     // فلتر النشاط
@@ -1094,12 +1116,12 @@ const Tasks = ({ embedded = false }: TasksProps) => {
 
   // حساب الإحصائيات - مع التخزين المؤقت
   const taskStats = useMemo(() => ({
-    all: tasks.filter(t => !isAdmin ? t.user_id === authUser?.id : true).length,
-    upcoming: tasks.filter((t) => t.status === "upcoming" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
-    in_progress: tasks.filter((t) => t.status === "in_progress" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
-    completed: tasks.filter((t) => t.status === "completed" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
-    delayed: tasks.filter((t) => t.status === "delayed" && (!isAdmin ? t.user_id === authUser?.id : true)).length,
-  }), [tasks, isAdmin, authUser?.id]);
+    all: tasks.filter(t => !isAdmin ? isMyTask(t) : true).length,
+    upcoming: tasks.filter((t) => t.status === "upcoming" && (!isAdmin ? isMyTask(t) : true)).length,
+    in_progress: tasks.filter((t) => t.status === "in_progress" && (!isAdmin ? isMyTask(t) : true)).length,
+    completed: tasks.filter((t) => t.status === "completed" && (!isAdmin ? isMyTask(t) : true)).length,
+    delayed: tasks.filter((t) => t.status === "delayed" && (!isAdmin ? isMyTask(t) : true)).length,
+  }), [tasks, isAdmin, authUser?.id, employeeByUser]);
 
   const hasActiveFilters = filterYear !== String(new Date().getFullYear()) || filterMonth !== "all" || filterDay !== "all" || filterDepartment !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
 
@@ -1555,7 +1577,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                                 <div className="w-6 h-6 rounded-full bg-[hsl(var(--primary)/0.1)] flex items-center justify-center">
                                   <User className="w-3 h-3 text-[hsl(var(--primary))]" />
                                 </div>
-                                <span className="text-base font-bold">{getExecutorName(task.user_id)}</span>
+                                <span className="text-base font-bold">{getExecutorName(task.user_id, task.assigned_employee_id)}</span>
                               </div>
                             </TableCell>
                           )}
