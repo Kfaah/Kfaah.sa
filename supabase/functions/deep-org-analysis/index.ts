@@ -417,27 +417,6 @@ Deno.serve(async (req) => {
     const generatedDocumentInsights = aiResult.document_insights && typeof aiResult.document_insights === "object"
       ? aiResult.document_insights as Record<string, unknown>
       : {};
-    const generatedFileReviews = Array.isArray(generatedDocumentInsights.file_reviews)
-      ? generatedDocumentInsights.file_reviews
-      : [];
-    const generatedReviewByName = new Map(
-      generatedFileReviews
-        .filter((review: unknown) => review && typeof review === "object")
-        .map((review: any) => [String(review.file_name || ""), review]),
-    );
-    const completeFileReviews = documentSnapshots.map((document) => {
-      const generated = generatedReviewByName.get(document.file_name) || {};
-      return {
-        file_name: document.file_name,
-        document_type: generated.document_type || document.analysis?.document_type || document.document_type,
-        analysis_status: document.analysis_status,
-        summary: generated.summary || document.analysis?.summary || "لم يتوفر محتوى نصي قابل للتحليل.",
-        key_findings: Array.isArray(generated.key_findings) ? generated.key_findings : document.analysis?.key_points || [],
-        strengths: Array.isArray(generated.strengths) ? generated.strengths : document.analysis?.strengths || [],
-        gaps: Array.isArray(generated.gaps) ? generated.gaps : document.analysis?.gaps || [],
-        recommendations: Array.isArray(generated.recommendations) ? generated.recommendations : document.analysis?.recommendations || [],
-      };
-    });
 
     // 7) Persist accountability_questions linked to employees by role when possible
     const questions: any[] = Array.isArray(aiResult.accountability_questions)
