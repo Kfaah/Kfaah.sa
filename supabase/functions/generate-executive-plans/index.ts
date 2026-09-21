@@ -612,16 +612,24 @@ serve(async (req) => {
         });
       }
 
-      if (tadabburMarketingManager?.user_id) {
+      if (tadabburMarketingManager?.user_id || tadabburExecutiveDirector?.user_id) {
         for (const planData of plansData) {
-          if (
-            planData.organizationId === TADABBUR_ORG_ID &&
-            isMarketingWork(planData.activityName, planData.initiative, planData.strategicGoal)
-          ) {
+          if (planData.organizationId !== TADABBUR_ORG_ID) continue;
+          const values = [planData.activityName, planData.initiative, planData.strategicGoal];
+          // التسويق له الأولوية (مدير التسويق ناصر)
+          if (tadabburMarketingManager?.user_id && isMarketingWork(...values)) {
             planData.userId = tadabburMarketingManager.user_id;
             planData.employeeId = tadabburMarketingManager.id;
             planData.employeeName = tadabburMarketingManager.full_name;
             planData.jobRole = tadabburMarketingManager.job_role || "مدير التسويق";
+            continue;
+          }
+          // التطوير والعمل الإداري للمدير التنفيذي محمد هادي
+          if (tadabburExecutiveDirector?.user_id && isDevAdminWork(...values)) {
+            planData.userId = tadabburExecutiveDirector.user_id;
+            planData.employeeId = tadabburExecutiveDirector.id;
+            planData.employeeName = tadabburExecutiveDirector.full_name;
+            planData.jobRole = tadabburExecutiveDirector.job_role || "المدير التنفيذي";
           }
         }
       }
