@@ -934,7 +934,7 @@ const INSIGHT_FIELD_LABELS: Record<string, string> = {
 };
 
 function insightFieldLabel(key: string) {
-  return INSIGHT_FIELD_LABELS[key] ?? key.replaceAll("_", " ");
+  return INSIGHT_FIELD_LABELS[key] ?? key.replace(/_/g, " ");
 }
 
 function InsightCard({ title, data }: { title: string; data: Record<string, unknown> | null | undefined }) {
