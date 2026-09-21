@@ -69,6 +69,19 @@ serve(async (req) => {
           .maybeSingle()
       : { data: null };
 
+    // قاعدة جمعية تدبر: كل نشاط تطويري/إداري يُسند حصراً إلى المدير التنفيذي محمد هادي.
+    const shouldLoadTadabburExecutiveDirector = shouldLoadTadabburMarketingManager;
+    const { data: tadabburExecutiveDirector } = shouldLoadTadabburExecutiveDirector
+      ? await supabase
+          .from("employees")
+          .select("id, user_id, full_name, job_role")
+          .eq("organization_id", TADABBUR_ORG_ID)
+          .eq("full_name", TADABBUR_EXECUTIVE_DIRECTOR)
+          .eq("status", "active")
+          .not("user_id", "is", null)
+          .maybeSingle()
+      : { data: null };
+
     // دعم الأشهر المتعددة أو شهر واحد
     let targetMonths: number[] = [];
     if (months && Array.isArray(months) && months.length > 0) {
