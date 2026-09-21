@@ -931,10 +931,96 @@ const INSIGHT_FIELD_LABELS: Record<string, string> = {
   distinct_projects: "عدد المشاريع المختلفة",
   sample_projects: "نماذج من المشاريع",
   campaigns_count: "عدد الحملات",
+  top_donors: "أبرز المتبرعين",
+  active: "النشطون",
+  lapsed: "المتوقفون عن التبرع",
+  summary: "الملخص",
+  completed: "الحملات المكتملة",
+  gaps: "الفجوات",
+  what_offers: "ما يقدمه الموقع",
+  published_reports: "التقارير المنشورة",
+  active_campaigns: "الحملات النشطة",
+  products_quality: "جودة المنتجات والمبادرات",
+  activity_level: "مستوى النشاط",
+  content_quality: "جودة المحتوى",
+  strengths: "نقاط القوة",
+  recommendations: "التوصيات",
+  overview: "نظرة عامة",
+  retention: "الاحتفاظ بالمتبرعين",
+  churn_signals: "مؤشرات انقطاع المتبرعين",
+  name: "الاسم",
+  amount: "القيمة",
+  count: "العدد",
+  status: "الحالة",
+  project_name: "اسم المشروع",
+  goal_amount: "المبلغ المستهدف",
+  collected_amount: "المبلغ المحصّل",
+  start_date: "تاريخ البداية",
+  end_date: "تاريخ النهاية",
+};
+
+const INSIGHT_VALUE_LABELS: Record<string, string> = {
+  active: "نشط",
+  completed: "مكتمل",
+  success: "ناجح",
+  successful: "ناجح",
+  failed: "فاشل",
+  pending: "قيد الانتظار",
+  low: "منخفض",
+  medium: "متوسط",
+  high: "مرتفع",
+  critical: "حرج",
+  website: "الموقع الإلكتروني",
+  store: "المتجر الإلكتروني",
+  social: "التواصل الاجتماعي",
+  campaigns: "الحملات",
+  donors: "المتبرعون",
+  reports: "التقارير",
+  communications: "التواصل",
+  general: "عام",
 };
 
 function insightFieldLabel(key: string) {
-  return INSIGHT_FIELD_LABELS[key] ?? key.replace(/_/g, " ");
+  return INSIGHT_FIELD_LABELS[key] ?? "تفاصيل إضافية";
+}
+
+function insightText(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return INSIGHT_VALUE_LABELS[normalized] ?? value
+    .replace(/\bKPI\b/gi, "مؤشر الأداء")
+    .replace(/\bCTA\b/gi, "الدعوة إلى الإجراء")
+    .replace(/\bCRM\b/gi, "إدارة علاقات المتبرعين")
+    .replace(/\bA\s*\/\s*B\b/gi, "المقارنة بين نسختين");
+}
+
+function InsightValue({ value }: { value: unknown }) {
+  if (value === null || value === undefined || value === "") {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <span className="text-muted-foreground">—</span>;
+    return (
+      <ul className="list-disc space-y-2 pr-4">
+        {value.map((item, index) => <li key={index}><InsightValue value={item} /></li>)}
+      </ul>
+    );
+  }
+
+  if (typeof value === "object") {
+    return (
+      <div className="space-y-2 rounded-md bg-muted/40 p-3">
+        {Object.entries(value as Record<string, unknown>).map(([key, item]) => (
+          <div key={key} className="text-right">
+            <div className="mb-1 text-xs font-semibold text-muted-foreground">{insightFieldLabel(key)}</div>
+            <InsightValue value={item} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return <>{typeof value === "string" ? insightText(value) : String(value)}</>;
 }
 
 function InsightCard({ title, data }: { title: string; data: Record<string, unknown> | null | undefined }) {
@@ -952,15 +1038,7 @@ function InsightCard({ title, data }: { title: string; data: Record<string, unkn
               <div key={k} className="text-right">
                 <div className="font-semibold text-xs text-muted-foreground mb-1">{insightFieldLabel(k)}</div>
                 <div className="text-foreground/90">
-                  {Array.isArray(v) ? (
-                    v.length === 0 ? <span className="text-muted-foreground">—</span> : (
-                      <ul className="list-disc space-y-1 pr-4">{v.map((x, i) => <li key={i}>{typeof x === "string" ? x : JSON.stringify(x)}</li>)}</ul>
-                    )
-                  ) : typeof v === "object" && v !== null ? (
-                    <pre className="overflow-auto rounded bg-muted/50 p-2 text-xs">{JSON.stringify(v, null, 2)}</pre>
-                  ) : (
-                    String(v ?? "—")
-                  )}
+                  <InsightValue value={v} />
                 </div>
               </div>
             ))}
