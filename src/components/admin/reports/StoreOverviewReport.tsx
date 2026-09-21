@@ -81,6 +81,7 @@ interface SmartAnalysis {
     retention?: string;
     churn_signals?: string[];
   };
+  digital_presence?: { overview?: string; strengths?: string[]; gaps?: string[]; actions?: string[] };
   web_review?: Record<string, { strengths?: string[]; gaps?: string[]; fix_list?: string[] }>;
   send_timing?: {
     summary?: string;
@@ -106,8 +107,6 @@ interface SmartAnalysis {
   kpi_targets?: { kpi?: string; current?: string; target_90d?: string }[];
   risks?: string[];
 }
-
-const WEB_LABELS: Record<string, string> = { website: "الموقع الإلكتروني", store: "المتجر الإلكتروني", social: "حسابات التواصل" };
 
 const ARABIC_DISPLAY_TERMS: Record<string, string> = {
   critical: "حرجة",
@@ -137,6 +136,16 @@ function arabicDisplay(value: string | number | undefined | null): string | numb
     .replace(/\bEmail\b/gi, "البريد الإلكتروني");
 }
 
+function unifiedDigitalPresence(smart: SmartAnalysis) {
+  if (smart.digital_presence) return smart.digital_presence;
+  const legacy = Object.values(smart.web_review || {});
+  return {
+    strengths: legacy.flatMap((item) => item.strengths || []).slice(0, 2),
+    gaps: legacy.flatMap((item) => item.gaps || []).slice(0, 2),
+    actions: legacy.flatMap((item) => item.fix_list || []).slice(0, 3),
+  };
+}
+
 export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; onBack: () => void }) {
   const [period, setPeriod] = useState<DatePeriod>("all");
   const [customFrom, setCustomFrom] = useState("");
@@ -147,7 +156,6 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
   const [orgName, setOrgName] = useState("");
   const [smart, setSmart] = useState<SmartAnalysis | null>(null);
   const [smartLoading, setSmartLoading] = useState(false);
-  const [sourcesRead, setSourcesRead] = useState<Record<string, boolean> | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const smartRef = useRef<HTMLDivElement>(null);
   const branding = useOrgBranding();
@@ -348,7 +356,6 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
       const res = JSON.parse(raw.slice(marker + "__RESULT__".length));
       if (res?.error) throw new Error(res.error);
       setSmart((res?.analysis || null) as SmartAnalysis | null);
-      setSourcesRead((res?.sources_read || null) as Record<string, boolean> | null);
       toast.success("تم توليد التحليل الذكي الشامل");
       setTimeout(() => smartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
     } catch (e: any) {
@@ -478,7 +485,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           ${smart.donor_analysis?.overview ? `<div style="margin-bottom:14px;white-space:pre-wrap"><b>تحليل المتبرعين:</b> ${esc(smart.donor_analysis.overview)}</div>` : ""}
           ${table("شرائح المتبرعين", ["الشريحة", "المعيار", "الحجم", "القيمة", "السلوك", "الإجراء"], (smart.donor_analysis?.segments || []).map((s) => [s.name || "—", s.criteria || "—", s.size_estimate || "—", s.value || "—", s.behavior || "—", s.action || "—"]))}
           ${smart.donor_analysis?.retention ? `<div style="margin-bottom:14px;white-space:pre-wrap"><b>الولاء والاستمرارية:</b> ${esc(smart.donor_analysis.retention)}</div>` : ""}
-          ${Object.entries(smart.web_review || {}).map(([k, v]) => table(`مراجعة ${WEB_LABELS[k] || k}`, ["نقاط القوة", "الفجوات", "إجراءات التصحيح"], [[(v?.strengths || []).join(" • ") || "—", (v?.gaps || []).join(" • ") || "—", (v?.fix_list || []).join(" • ") || "—"]])).join("")}
+          ${(() => { const digital = unifiedDigitalPresence(smart); return `${digital.overview ? `<div style="margin-bottom:10px;white-space:pre-wrap"><b>خلاصة الحضور الرقمي:</b> ${esc(digital.overview)}</div>` : ""}${table("خلاصة الحضور الرقمي", ["نقاط القوة", "الفجوات", "إجراءات التحسين"], [[(digital.strengths || []).join(" • ") || "—", (digital.gaps || []).join(" • ") || "—", (digital.actions || []).join(" • ") || "—"]])}`; })()}
           ${smart.send_timing?.summary ? `<div style="margin-bottom:10px;white-space:pre-wrap"><b>أوقات الإرسال المثالية:</b> ${esc(smart.send_timing.summary)}</div>` : ""}
           ${table("أفضل ساعات الإرسال", ["النافذة", "المبرر", "القنوات"], (smart.send_timing?.best_hours || []).map((h) => [h.window || "—", h.why || "—", h.channels || "—"]))}
           ${table("أفضل أيام الإرسال", ["اليوم", "المبرر", "ملاحظة"], (smart.send_timing?.best_days || []).map((d) => [d.day || "—", d.why || "—", d.note || "—"]))}
@@ -794,11 +801,6 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             <div ref={smartRef} className="space-y-4 pt-2">
               <div className="border-b-4 border-primary pb-2">
                 <h3 className="text-xl font-extrabold text-primary">التحليل الذكي الشامل</h3>
-                {sourcesRead && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    مصادر تمت مراجعتها: {Object.entries(sourcesRead).filter(([, v]) => v).map(([k]) => WEB_LABELS[k] || k).join(" • ") || "لا توجد مصادر متاحة"}
-                  </div>
-                )}
               </div>
 
               {smart.executive_summary && (
@@ -841,11 +843,15 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                 rows={(smart.donor_analysis?.segments || []).map(s => [s.name || "—", s.criteria || "—", s.size_estimate || "—", s.value || "—", s.behavior || "—", s.action || "—"])}
               />
 
-              {Object.entries(smart.web_review || {}).map(([k, v]) => (
-                <Card key={k}>
-                  <CardHeader className="pb-2"><CardTitle className="text-base">مراجعة {WEB_LABELS[k] || k}</CardTitle></CardHeader>
+              {(() => {
+                const digital = unifiedDigitalPresence(smart);
+                const hasDigital = digital.overview || digital.strengths?.length || digital.gaps?.length || digital.actions?.length;
+                return hasDigital ? (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-base">خلاصة الحضور الرقمي</CardTitle></CardHeader>
+                  {digital.overview && <CardContent className="pb-0 text-sm whitespace-pre-wrap text-muted-foreground">{digital.overview}</CardContent>}
                   <CardContent className="grid gap-4 md:grid-cols-3 text-sm text-muted-foreground">
-                    {([["نقاط القوة", v?.strengths], ["الفجوات", v?.gaps], ["إجراءات التصحيح", v?.fix_list]] as [string, string[] | undefined][]).map(([label, items]) => (
+                    {([["نقاط القوة", digital.strengths], ["الفجوات", digital.gaps], ["إجراءات التحسين", digital.actions]] as [string, string[] | undefined][]).map(([label, items]) => (
                       <div key={label}>
                         <div className="font-semibold text-foreground mb-1">{label}</div>
                         <ul className="list-disc pr-5 space-y-1">{(items || []).map((t, i) => <li key={i}>{t}</li>)}</ul>
@@ -853,7 +859,8 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                     ))}
                   </CardContent>
                 </Card>
-              ))}
+                ) : null;
+              })()}
 
               {(smart.send_timing?.summary || smart.send_timing?.frequency || !!smart.send_timing?.avoid?.length || !!smart.send_timing?.seasonal_windows?.length) && (
                 <Card className="border-primary/30">
