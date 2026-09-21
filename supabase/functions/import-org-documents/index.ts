@@ -19,10 +19,12 @@ type Doc = { url: string; title?: string; type?: string; source_page?: string };
 
 function classify(d: Doc): string {
   const hay = `${d.title || ""} ${d.type || ""} ${d.url}`.toLowerCase();
+  if (/(محضر|محاضر|اجتماع|اجتماعات|جلسة|minutes|meeting)/.test(hay)) return "meeting_minutes";
+  if (/(لائحة|لوائح|نظام|سياسة|سياسات|حوكمة|دليل|ميثاق|policy|governance|bylaw|regulation)/.test(hay)) return "policies";
+  if (/(خطة|خطط|plan|strategy|استراتيج|تشغيلية|تنفيذية)/.test(hay)) return "plans";
   if (/(تقرير|تقارير|حصاد|إنجاز|انجاز|سنوي|ربع|report|annual)/.test(hay)) return "reports";
-  if (/(لائحة|لوائح|نظام|سياسة|سياسات|حوكمة|دليل|ميثاق|policy|governance|bylaw|regulation)/.test(hay)) return "profiles";
   if (/(تعريف|بروفايل|profile|brochure|كتيب)/.test(hay)) return "profiles";
-  if (/(خطة|خطط|مهام|plan|strategy|استراتيج)/.test(hay)) return "tasks";
+  if (/(مهمة|مهام|task|tasks)/.test(hay)) return "tasks";
   return "other";
 }
 
