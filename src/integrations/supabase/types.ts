@@ -1050,6 +1050,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           created_by: string | null
+          document_insights: Json | null
           donations_summary: Json | null
           donors_segmentation: Json | null
           error_message: string | null
@@ -1077,6 +1078,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          document_insights?: Json | null
           donations_summary?: Json | null
           donors_segmentation?: Json | null
           error_message?: string | null
@@ -1104,6 +1106,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          document_insights?: Json | null
           donations_summary?: Json | null
           donors_segmentation?: Json | null
           error_message?: string | null

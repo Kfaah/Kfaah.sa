@@ -120,12 +120,12 @@ const TAB_GUIDES: Record<string, { description: string; features: string[] }> = 
     ],
   },
   analysis: {
-    description: "العقل الذكي للجمعية. يقوم بفحص كافة بيانات الجمعية (الموقع الإلكتروني، المتجر، التواصل الاجتماعي، الحملات، المتبرعين، التبرعات، الموظفين، المهام والتقارير) عبر نماذج الذكاء الاصطناعي، ثم يستخرج تقييماً عاماً، نقاط قوة، فجوات حرجة، وتوصيات تنفيذية قابلة للتطبيق.",
+    description: "العقل الذكي للجمعية. يقوم بفحص كافة بيانات الجمعية وملفاتها المرفوعة، بما فيها اللوائح والمحاضر والخطط والتقارير، إلى جانب الموقع والمتجر والحسابات الرقمية والحملات والمتبرعين، ثم يستخرج تقييماً عاماً وتوصيات تنفيذية.",
     features: [
-      "تحليل آلي شامل لكل قنوات الجمعية ومصادر بياناتها",
+      "تحليل آلي شامل لكل الملفات والقنوات ومصادر البيانات",
       "تقييم عام للأداء مع نقاط القوة والفجوات",
       "توصيات تنفيذية قابلة للتحويل إلى خطط عمل",
-      "رؤى تفصيلية عن الموقع، المتجر، السوشيال والحملات",
+      "رؤى تفصيلية عن الملفات والموقع والمتجر والحسابات والحملات",
       "تحليل شرائح المتبرعين وملخص التبرعات",
       "إعادة تشغيل التحليل في أي وقت لتحديث النتائج",
     ],
@@ -190,6 +190,7 @@ interface DeepAnalysis {
   website_insights: Record<string, unknown> | null;
   store_insights: Record<string, unknown> | null;
   social_insights: Record<string, unknown> | null;
+  document_insights: Record<string, unknown> | null;
   sources?: Array<{ kind?: string; label?: string; url?: string; status?: string }> | null;
   questions_generated: number;
   completed_at: string | null;
@@ -788,7 +789,41 @@ export default function OrgInternalDashboard({
                   )}
                 </CardContent>
               </Card>
+              <Card dir="rtl">
+                <CardHeader className="text-right">
+                  <CardTitle className="flex items-center justify-start gap-2 text-base">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    تغطية الملفات المرفوعة
+                  </CardTitle>
+                  <CardDescription className="text-right">الملفات التي دخلت فعلياً في التحليل الشامل وحالة قراءة كل ملف</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const reviews = analysis.document_insights?.file_reviews;
+                    if (!Array.isArray(reviews) || reviews.length === 0) {
+                      return <p className="text-sm text-muted-foreground">لا توجد ملفات مرفوعة ضمن هذا التحليل، أو أن التحليل أُنشئ قبل إضافة دعم الملفات.</p>;
+                    }
+                    return (
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {reviews.map((review, index) => {
+                          const item = review && typeof review === "object" ? review as Record<string, unknown> : {};
+                          return (
+                            <div key={`${String(item.file_name || "ملف")}-${index}`} className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-border p-3 text-sm">
+                              <div className="min-w-0 text-right">
+                                <div className="truncate font-semibold">{String(item.file_name || "ملف مرفوع")}</div>
+                                <div className="truncate text-xs text-muted-foreground">{String(item.document_type || "ملف مرفوع")}</div>
+                              </div>
+                              <span className="shrink-0 text-xs font-medium text-muted-foreground">{String(item.analysis_status || "غير محدد")}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
               <div className="grid gap-4 md:grid-cols-2">
+                <InsightCard title="تحليل الملفات المرفوعة" data={analysis.document_insights} />
                 <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} />
                 <InsightCard title="رؤى المتجر" data={analysis.store_insights} />
                 <InsightCard title="تحليل جميع المواقع والحسابات الرقمية" data={analysis.social_insights} />
@@ -989,6 +1024,12 @@ const INSIGHT_FIELD_LABELS: Record<string, string> = {
   channel_comparison: "مقارنة القنوات",
   coverage_gaps: "المصادر غير المكتملة",
   source_reviews: "تحليل كل موقع وحساب",
+  file_reviews: "تحليل كل ملف مرفوع",
+  file_name: "اسم الملف",
+  document_type: "نوع الملف",
+  key_findings: "أبرز النتائج",
+  common_findings: "النتائج المشتركة بين الملفات",
+  conflicts_and_gaps: "التعارضات والنواقص",
   source_name: "اسم الموقع أو الحساب",
   source_type: "نوع المصدر",
   analysis_status: "حالة التحليل",
