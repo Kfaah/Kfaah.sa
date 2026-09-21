@@ -1121,7 +1121,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     in_progress: tasks.filter((t) => t.status === "in_progress" && (!isAdmin ? isMyTask(t) : true)).length,
     completed: tasks.filter((t) => t.status === "completed" && (!isAdmin ? isMyTask(t) : true)).length,
     delayed: tasks.filter((t) => t.status === "delayed" && (!isAdmin ? isMyTask(t) : true)).length,
-  }), [tasks, isAdmin, authUser?.id]);
+  }), [tasks, isAdmin, authUser?.id, employeeByUser]);
 
   const hasActiveFilters = filterYear !== String(new Date().getFullYear()) || filterMonth !== "all" || filterDay !== "all" || filterDepartment !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
 
