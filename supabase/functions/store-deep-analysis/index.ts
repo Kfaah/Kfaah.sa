@@ -285,23 +285,41 @@ ${RESULT_SHAPE}`;
             ? {
                 about: profile.about,
                 goals: profile.goals,
-                website_url: profile.website_url,
-                store_url: profile.store_url,
-                social: {
-                  twitter: profile.twitter_url,
-                  instagram: profile.instagram_url,
-                  tiktok: profile.tiktok_url,
-                  snapchat: profile.snapchat_url,
-                  youtube: profile.youtube_url,
-                  facebook: profile.facebook_url,
-                  linkedin: profile.linkedin_url,
-                },
               }
             : null,
           digital_presence_inputs: sourceSnapshots,
         };
 
-        const result = await callAstra(system, payload, () => push("."));
+        const generated = await callAstra(system, payload, () => push("."));
+        const result = {
+          ...generated,
+          headline_findings: Array.isArray(generated.headline_findings) ? generated.headline_findings.slice(0, 5) : [],
+          donor_analysis: generated.donor_analysis
+            ? {
+                ...generated.donor_analysis,
+                segments: Array.isArray(generated.donor_analysis.segments) ? generated.donor_analysis.segments.slice(0, 6) : [],
+                churn_signals: Array.isArray(generated.donor_analysis.churn_signals) ? generated.donor_analysis.churn_signals.slice(0, 3) : [],
+              }
+            : undefined,
+          digital_presence: generated.digital_presence
+            ? {
+                overview: generated.digital_presence.overview,
+                strengths: Array.isArray(generated.digital_presence.strengths) ? generated.digital_presence.strengths.slice(0, 2) : [],
+                gaps: Array.isArray(generated.digital_presence.gaps) ? generated.digital_presence.gaps.slice(0, 2) : [],
+                actions: Array.isArray(generated.digital_presence.actions) ? generated.digital_presence.actions.slice(0, 3) : [],
+              }
+            : undefined,
+          messaging_plan: generated.messaging_plan
+            ? {
+                ...generated.messaging_plan,
+                waves: Array.isArray(generated.messaging_plan.waves) ? generated.messaging_plan.waves.slice(0, 6) : [],
+                calendar: Array.isArray(generated.messaging_plan.calendar) ? generated.messaging_plan.calendar.slice(0, 4) : [],
+              }
+            : undefined,
+          recommendations: Array.isArray(generated.recommendations) ? generated.recommendations.slice(0, 5) : [],
+          kpi_targets: Array.isArray(generated.kpi_targets) ? generated.kpi_targets.slice(0, 5) : [],
+          risks: Array.isArray(generated.risks) ? generated.risks.slice(0, 3) : [],
+        };
 
         push(
           "\n__RESULT__" +
