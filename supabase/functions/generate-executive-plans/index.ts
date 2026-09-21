@@ -11,6 +11,18 @@ const MONTHS_AR = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
 
+const TADABBUR_ORG_ID = "00a528ce-e836-4ebd-9a50-35aeaa766501";
+const TADABBUR_MARKETING_MANAGER = "ناصر علي سلمان الحريصي";
+const MARKETING_TERMS = [
+  "تسويق", "التسويقي", "اعلام", "إعلام", "حملة", "حملات", "محتوى",
+  "هوية", "منصة", "منصات", "تواصل اجتماعي", "رقمي", "رقمية", "إعلان", "اعلان",
+];
+
+const isMarketingWork = (...values: unknown[]) => {
+  const text = values.map((value) => String(value ?? "")).join(" ");
+  return MARKETING_TERMS.some((term) => text.includes(term));
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -33,6 +45,19 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // قاعدة جمعية تدبر: كل نشاط تسويقي يُسند حصراً إلى مدير التسويق ناصر.
+    const shouldLoadTadabburMarketingManager = !activeOrganizationId || activeOrganizationId === TADABBUR_ORG_ID;
+    const { data: tadabburMarketingManager } = shouldLoadTadabburMarketingManager
+      ? await supabase
+          .from("employees")
+          .select("id, user_id, full_name, job_role")
+          .eq("organization_id", TADABBUR_ORG_ID)
+          .eq("full_name", TADABBUR_MARKETING_MANAGER)
+          .eq("status", "active")
+          .not("user_id", "is", null)
+          .maybeSingle()
+      : { data: null };
 
     // دعم الأشهر المتعددة أو شهر واحد
     let targetMonths: number[] = [];
@@ -564,6 +589,20 @@ serve(async (req) => {
         });
       }
 
+      if (tadabburMarketingManager?.user_id) {
+        for (const planData of plansData) {
+          if (
+            planData.organizationId === TADABBUR_ORG_ID &&
+            isMarketingWork(planData.activityName, planData.initiative, planData.strategicGoal)
+          ) {
+            planData.userId = tadabburMarketingManager.user_id;
+            planData.employeeId = tadabburMarketingManager.id;
+            planData.employeeName = tadabburMarketingManager.full_name;
+            planData.jobRole = tadabburMarketingManager.job_role || "مدير التسويق";
+          }
+        }
+      }
+
       if (plansData.length === 0) {
         console.log(`No plans data for month ${targetMonth}`);
         continue;
@@ -915,12 +954,17 @@ ${i + 1}. النشاط: ${p.activityName}
           
           for (const taskTitle of phaseTasks) {
             if (!taskTitle || taskTitle.trim() === "") continue;
+
+            const assignToMarketingManager =
+              metadata.organizationId === TADABBUR_ORG_ID &&
+              tadabburMarketingManager?.user_id &&
+              isMarketingWork(metadata.activityName, taskTitle);
             
             tasksToInsert.push({
               title: taskTitle,
               description: `${label} - ${metadata.activityName}`,
-              user_id: metadata.userId,
-              assigned_employee_id: metadata.employeeId || null,
+              user_id: assignToMarketingManager ? tadabburMarketingManager.user_id : metadata.userId,
+              assigned_employee_id: assignToMarketingManager ? tadabburMarketingManager.id : metadata.employeeId || null,
               executive_plan_id: executivePlan.id,
               organization_id: metadata.organizationId || null,
               status: "pending",
@@ -937,11 +981,15 @@ ${i + 1}. النشاط: ${p.activityName}
             ((!metadata.tasks.before || metadata.tasks.before.length === 0) && 
              (!metadata.tasks.during || metadata.tasks.during.length === 0) && 
              (!metadata.tasks.after || metadata.tasks.after.length === 0))) {
+          const assignToMarketingManager =
+            metadata.organizationId === TADABBUR_ORG_ID &&
+            tadabburMarketingManager?.user_id &&
+            isMarketingWork(metadata.activityName);
           tasksToInsert.push({
             title: metadata.activityName,
             description: `مهمة مولدة بالذكاء الاصطناعي - المستهدف: ${metadata.dailyTarget}`,
-            user_id: metadata.userId,
-            assigned_employee_id: metadata.employeeId || null,
+            user_id: assignToMarketingManager ? tadabburMarketingManager.user_id : metadata.userId,
+            assigned_employee_id: assignToMarketingManager ? tadabburMarketingManager.id : metadata.employeeId || null,
             executive_plan_id: executivePlan.id,
             organization_id: metadata.organizationId || null,
             status: "pending",
