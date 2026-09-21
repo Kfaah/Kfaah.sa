@@ -800,64 +800,6 @@ export default function OrgInternalDashboard({
             </Card>
           ) : (
             <div className="space-y-4">
-              <Card dir="rtl">
-                <CardHeader className="text-right">
-                  <CardTitle className="text-base">تغطية المصادر الرقمية</CardTitle>
-                  <CardDescription className="text-right">المواقع والحسابات التي دخلت فعلياً في هذا التحليل</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!analysis.sources?.length ? (
-                    <p className="text-sm text-muted-foreground">لا تتوفر تفاصيل تغطية لهذا التحليل القديم. أعد تشغيل التحليل لتحديثها.</p>
-                  ) : (
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                      {analysis.sources.map((source, index) => (
-                        <div key={`${source.url ?? source.label}-${index}`} className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-border p-3 text-sm">
-                          <div className="min-w-0 text-right">
-                            <div className="truncate font-semibold">{source.label || SOURCE_KIND_LABELS[source.kind ?? ""] || "مصدر رقمي"}</div>
-                            <div className="truncate text-xs text-muted-foreground">{SOURCE_KIND_LABELS[source.kind ?? ""] || "مصدر إضافي"}</div>
-                          </div>
-                          <span className="shrink-0 text-xs font-medium text-muted-foreground">{source.status || "غير محدد"}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              <Card dir="rtl">
-                <CardHeader className="text-right">
-                  <CardTitle className="flex items-center justify-start gap-2 text-base">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    تغطية الملفات المرفوعة
-                  </CardTitle>
-                  <CardDescription className="text-right">الملفات التي دخلت فعلياً في التحليل الشامل وحالة قراءة كل ملف</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const docs = analysis.document_insights as Record<string, unknown> | null;
-                    const rawReviews = docs?.file_reviews ?? docs?.uploaded_documents;
-                    const reviews = Array.isArray(rawReviews) ? rawReviews : [];
-                    if (reviews.length === 0) {
-                      return <p className="text-sm text-muted-foreground">لا توجد ملفات مرفوعة ضمن هذا التحليل، أو أن التحليل أُنشئ قبل إضافة دعم الملفات.</p>;
-                    }
-                    return (
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {reviews.map((review, index) => {
-                          const item = review && typeof review === "object" ? review as Record<string, unknown> : {};
-                          return (
-                            <div key={`${String(item.file_name || "ملف")}-${index}`} className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-border p-3 text-sm">
-                              <div className="min-w-0 text-right">
-                                <div className="truncate font-semibold">{String(item.file_name || "ملف مرفوع")}</div>
-                                <div className="truncate text-xs text-muted-foreground">{String(item.document_type || "ملف مرفوع")}</div>
-                              </div>
-                              <span className="shrink-0 text-xs font-medium text-muted-foreground">{String(item.analysis_status || "غير محدد")}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
               <div className="grid gap-4 md:grid-cols-2">
                 <InsightCard title="تحليل الملفات المرفوعة" data={analysis.document_insights} />
                 <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} />
