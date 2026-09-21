@@ -429,12 +429,16 @@ export default function OrgInternalDashboard({
     setEmployeesLoading(true);
     const wave3 = (async () => {
       const [analysisRes, qRes, tRes, empRes] = await Promise.all([
-        supabase.from("deep_analyses").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("deep_analyses").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("accountability_questions").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
         supabase.from("accountability_tasks").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(100),
         supabase.from("employees").select("id,full_name,job_role,email,phone,avatar_url,title,user_id").eq("organization_id", orgId).limit(500),
       ]);
-      setAnalysis((analysisRes.data as unknown as DeepAnalysis) ?? null);
+      const analysisRows = (analysisRes.data as unknown as DeepAnalysis[]) ?? [];
+      // Prefer the newest analysis that actually finished: a run still in
+      // progress has empty insights and would look like "no data".
+      const bestAnalysis = analysisRows.find((row) => row.status === "completed") ?? analysisRows[0] ?? null;
+      setAnalysis(bestAnalysis);
       setQuestions((qRes.data as unknown as AccountabilityQuestion[]) ?? []);
       setATasks((tRes.data as unknown as AccountabilityTask[]) ?? []);
       setEmployees(empRes.data ?? []);
