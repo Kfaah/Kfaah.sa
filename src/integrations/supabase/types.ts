@@ -5506,6 +5506,7 @@ export type Database = {
         Row: {
           actual_time_minutes: number | null
           ai_generated: boolean | null
+          assigned_employee_id: string | null
           category: string | null
           completion_percentage: number | null
           created_at: string
@@ -5531,6 +5532,7 @@ export type Database = {
         Insert: {
           actual_time_minutes?: number | null
           ai_generated?: boolean | null
+          assigned_employee_id?: string | null
           category?: string | null
           completion_percentage?: number | null
           created_at?: string
@@ -5556,6 +5558,7 @@ export type Database = {
         Update: {
           actual_time_minutes?: number | null
           ai_generated?: boolean | null
+          assigned_employee_id?: string | null
           category?: string | null
           completion_percentage?: number | null
           created_at?: string
@@ -5579,6 +5582,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_executive_plan_id_fkey"
             columns: ["executive_plan_id"]
