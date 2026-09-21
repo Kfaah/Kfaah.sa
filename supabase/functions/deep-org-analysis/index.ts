@@ -482,7 +482,6 @@ Deno.serve(async (req) => {
           common_findings: Array.isArray(generatedDocumentInsights.common_findings) ? generatedDocumentInsights.common_findings : [],
           conflicts_and_gaps: Array.isArray(generatedDocumentInsights.conflicts_and_gaps) ? generatedDocumentInsights.conflicts_and_gaps : [],
           recommendations: Array.isArray(generatedDocumentInsights.recommendations) ? generatedDocumentInsights.recommendations : [],
-          file_reviews: completeFileReviews,
         },
         overall_assessment: aiResult.overall_assessment || null,
         strengths: aiResult.strengths || null,
