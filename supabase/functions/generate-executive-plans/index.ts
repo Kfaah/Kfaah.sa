@@ -233,8 +233,17 @@ serve(async (req) => {
               matchedName = byName.full_name;
               matchedRole = byName.job_role || "";
             } else {
+              // مطابقة بالمسمى الوظيفي أولاً (مدير التسويق ← موظف مسماه مدير التسويق)
+              const byRole = findByJobRole(respText);
+              if (byRole) {
+                matchedUserId = byRole.user_id;
+                matchedName = byRole.full_name;
+                matchedRole = byRole.job_role || respText;
+              }
               // مطابقة بالقسم: أولاً بالضبط، ثم بأقرب تطابق رمزي
               let deptKey: string | null = null;
+              if (!matchedUserId) {
+              for (const [id, name] of deptNamesById.entries()) {
               for (const [id, name] of deptNamesById.entries()) {
                 if (norm(name) === respNorm) {
                   deptKey = id;
