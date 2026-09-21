@@ -803,8 +803,10 @@ export default function OrgInternalDashboard({
                 </CardHeader>
                 <CardContent>
                   {(() => {
-                    const reviews = analysis.document_insights?.file_reviews;
-                    if (!Array.isArray(reviews) || reviews.length === 0) {
+                    const docs = analysis.document_insights as Record<string, unknown> | null;
+                    const rawReviews = docs?.file_reviews ?? docs?.uploaded_documents;
+                    const reviews = Array.isArray(rawReviews) ? rawReviews : [];
+                    if (reviews.length === 0) {
                       return <p className="text-sm text-muted-foreground">لا توجد ملفات مرفوعة ضمن هذا التحليل، أو أن التحليل أُنشئ قبل إضافة دعم الملفات.</p>;
                     }
                     return (
