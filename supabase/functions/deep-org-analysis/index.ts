@@ -16,7 +16,42 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 
-const AI_MODEL = "google/gemini-2.5-pro";
+const AI_MODEL = "openai/gpt-6-astra";
+
+type DigitalSource = {
+  id?: string;
+  kind: string;
+  label: string;
+  url: string;
+  cachedContent?: string | null;
+};
+
+type SourceSnapshot = DigitalSource & {
+  status: "تم التحليل" | "تعذر الوصول" | "محتوى غير كافٍ";
+  content: string | null;
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  website: "الموقع الإلكتروني",
+  store: "المتجر الإلكتروني",
+  twitter: "حساب إكس",
+  instagram: "حساب إنستغرام",
+  tiktok: "حساب تيك توك",
+  snapchat: "حساب سناب شات",
+  youtube: "قناة يوتيوب",
+  facebook: "صفحة فيسبوك",
+  linkedin: "صفحة لينكدإن",
+};
+
+function validHttpUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const parsed = new URL(value.trim());
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 interface AnalyzeRequest {
   organization_id: string;
@@ -24,8 +59,11 @@ interface AnalyzeRequest {
   trigger_source?: "manual" | "upload" | "scheduled";
 }
 
-async function firecrawlScrape(url: string): Promise<string> {
-  if (!FIRECRAWL_API_KEY || !url) return "";
+async function firecrawlScrape(source: DigitalSource): Promise<SourceSnapshot> {
+  const cachedContent = source.cachedContent?.trim() || null;
+  if (!FIRECRAWL_API_KEY) {
+    return { ...source, status: cachedContent ? "تم التحليل" : "تعذر الوصول", content: cachedContent };
+  }
   try {
     const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
       method: "POST",
@@ -34,38 +72,44 @@ async function firecrawlScrape(url: string): Promise<string> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        url,
+        url: source.url,
         formats: ["markdown"],
         onlyMainContent: true,
       }),
     });
-    if (!r.ok) return "";
+    if (!r.ok) return { ...source, status: cachedContent ? "تم التحليل" : "تعذر الوصول", content: cachedContent };
     const j = await r.json();
     const md =
       j?.markdown ||
       j?.data?.markdown ||
       j?.data?.content ||
       "";
-    return typeof md === "string" ? md.slice(0, 8000) : "";
+    const content = typeof md === "string" ? md.trim().slice(0, 8000) : "";
+    return {
+      ...source,
+      status: content.length >= 120 ? "تم التحليل" : "محتوى غير كافٍ",
+      content: content || cachedContent,
+    };
   } catch {
-    return "";
+    return { ...source, status: cachedContent ? "تم التحليل" : "تعذر الوصول", content: cachedContent };
   }
 }
 
 async function callAI(systemPrompt: string, userPayload: unknown) {
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const r = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
       "Content-Type": "application/json",
+      "Lovable-API-Key": LOVABLE_API_KEY,
+      "X-Lovable-AIG-SDK": "fetch",
     },
     body: JSON.stringify({
       model: AI_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: JSON.stringify(userPayload) },
+      reasoning: { effort: "low" },
+      input: [
+        { role: "system", content: [{ type: "input_text", text: systemPrompt }] },
+        { role: "user", content: [{ type: "input_text", text: JSON.stringify(userPayload) }] },
       ],
-      response_format: { type: "json_object" },
     }),
   });
   if (!r.ok) {
@@ -73,9 +117,12 @@ async function callAI(systemPrompt: string, userPayload: unknown) {
     throw new Error(`AI gateway error ${r.status}: ${txt.slice(0, 300)}`);
   }
   const j = await r.json();
-  const content = j?.choices?.[0]?.message?.content || "{}";
+  const content = j?.output_text || j?.output?.flatMap((item: any) => item?.content || []).find((item: any) => item?.type === "output_text")?.text || "{}";
   try {
-    return JSON.parse(content);
+    const cleaned = String(content).replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    return JSON.parse(start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned);
   } catch {
     return { raw: content };
   }
@@ -139,7 +186,7 @@ Deno.serve(async (req) => {
 
   try {
     // 3) Load org + profile + employees + donations summary
-    const [orgRes, profRes, empRes, donAggRes, campRes] = await Promise.all([
+    const [orgRes, profRes, empRes, donAggRes, campRes, externalRes] = await Promise.all([
       admin.from("organizations").select("id,name,slug").eq("id", organization_id).maybeSingle(),
       admin.from("organization_profiles").select("*").eq("organization_id", organization_id).maybeSingle(),
       admin.from("employees").select("id,full_name,job_role,role_level").eq("organization_id", organization_id),
@@ -148,6 +195,7 @@ Deno.serve(async (req) => {
         .eq("organization_id", organization_id)
         .limit(2000),
       admin.from("campaigns").select("id,name,status,goal_amount,collected_amount,start_date,end_date").eq("organization_id", organization_id).limit(200),
+      admin.from("org_external_sources").select("id,kind,url,label,summary,last_status,last_synced_at").eq("organization_id", organization_id),
     ]);
 
     const org = orgRes.data;
@@ -155,6 +203,7 @@ Deno.serve(async (req) => {
     const employees = empRes.data || [];
     const donations = donAggRes.data || [];
     const campaigns = campRes.data || [];
+    const externalSources = externalRes.data || [];
 
     // 4) Compute donations summary (lightweight, deterministic)
     const totalAmount = donations.reduce(
@@ -175,36 +224,53 @@ Deno.serve(async (req) => {
     };
 
     // 5) Scrape sources in parallel
-    const sourceUrls: Record<string, string | undefined> = {
+    const profileUrls: Record<string, string | undefined> = {
       website: profile?.website_url || undefined,
       store: profile?.store_url || undefined,
       twitter: profile?.twitter_url || undefined,
       instagram: profile?.instagram_url || undefined,
       youtube: profile?.youtube_url || undefined,
+      tiktok: profile?.tiktok_url || undefined,
+      snapchat: profile?.snapchat_url || undefined,
+      facebook: profile?.facebook_url || undefined,
+      linkedin: profile?.linkedin_url || undefined,
     };
-
-    const scrapedEntries: Record<string, string> = {};
-    await Promise.all(
-      Object.entries(sourceUrls).map(async ([k, u]) => {
-        if (u) scrapedEntries[k] = await firecrawlScrape(u);
-      })
-    );
+    const sourcesByUrl = new Map<string, DigitalSource>();
+    for (const [kind, rawUrl] of Object.entries(profileUrls)) {
+      const url = validHttpUrl(rawUrl);
+      if (url) sourcesByUrl.set(url, { kind, label: SOURCE_LABELS[kind] || "مصدر رقمي", url });
+    }
+    for (const source of externalSources) {
+      const url = validHttpUrl(source.url);
+      if (!url) continue;
+      const current = sourcesByUrl.get(url);
+      const cachedParts = [source.summary, source.last_status ? `حالة آخر مزامنة: ${source.last_status}` : null].filter(Boolean);
+      sourcesByUrl.set(url, {
+        id: source.id,
+        kind: String(source.kind || current?.kind || "other"),
+        label: String(source.label || current?.label || SOURCE_LABELS[source.kind] || "مصدر رقمي"),
+        url,
+        cachedContent: cachedParts.length ? cachedParts.join("\n") : current?.cachedContent,
+      });
+    }
+    const digitalSources = Array.from(sourcesByUrl.values()).slice(0, 24);
+    const sourceSnapshots = await Promise.all(digitalSources.map(firecrawlScrape));
 
     // 6) Call the AI for the deep analysis (single call returning a structured JSON)
     const systemPrompt = `أنت محلل استراتيجي خبير في الجمعيات الخيرية السعودية. ستحلل جمعية بشكل عميق ومتكامل بناءً على:
 1) ملخص ملف التبرعات
 2) محتوى الموقع الإلكتروني
-3) محتوى المتجر الإلكتروني
-4) حسابات التواصل الاجتماعي
+3) محتوى المتجر الإلكتروني وتجربة التبرع ووضوح المشاريع والثقة ووسائل الدفع
+4) جميع حسابات التواصل الاجتماعي والمصادر الرقمية المسجلة للجمعية، مصدراً مصدراً
 
 مهمتك إخراج JSON بالشكل التالي بالضبط، مع كتابة جميع القيم النصية الظاهرة للقارئ بالعربية الفصحى الاحترافية حصراً:
 {
   "overall_assessment": "تقييم عام شامل ومهني (3-5 أسطر)",
   "donors_segmentation": { "top_donors": [], "active": [], "lapsed": [], "summary": "..." },
   "campaigns_analysis": { "completed": [], "active": [], "gaps": "...", "summary": "..." },
-  "website_insights": { "what_offers": "...", "published_reports": [], "gaps": "..." },
-  "store_insights": { "active_campaigns": [], "products_quality": "...", "gaps": "..." },
-  "social_insights": { "activity_level": "...", "content_quality": "...", "gaps": "..." },
+  "website_insights": { "summary": "...", "what_offers": "...", "user_experience": "...", "donation_journey": "...", "transparency": "...", "published_reports": [], "strengths": [], "gaps": [], "recommendations": [] },
+  "store_insights": { "summary": "...", "active_campaigns": [], "products_quality": "...", "donation_experience": "...", "trust_signals": "...", "strengths": [], "gaps": [], "recommendations": [] },
+  "social_insights": { "summary": "...", "channel_comparison": "...", "coverage_gaps": [], "source_reviews": [{ "source_name": "اسم المصدر", "source_type": "نوعه بالعربية", "analysis_status": "تم التحليل أو تعذر الوصول أو محتوى غير كافٍ", "content_assessment": "...", "audience_and_engagement": "...", "strengths": [], "gaps": [], "recommendations": [] }] },
   "strengths": ["نقطة قوة 1", "نقطة قوة 2", "..."],
   "gaps": ["فجوة 1 محددة", "فجوة 2 محددة", "..."],
   "recommendations": ["توصية تنفيذية 1", "توصية تنفيذية 2", "..."],
@@ -228,6 +294,10 @@ Deno.serve(async (req) => {
 - أنشئ بين 8 و 20 مساءلة موزعة على الأدوار الوظيفية الفعلية في قائمة الموظفين.
 - إن لم يوجد موظف بدور معين فاجعل target_job_role = "قيادة" أو "مدير".
 - كل مساءلة يجب أن تكون مرتبطة بفجوة أو نقطة من التحليل (ليست عامة).
+- حلّل كل عنصر في digital_sources منفرداً ولا تدمج الحسابات في حكم عام فقط. أنشئ عن كل مصدر سجلاً في source_reviews، واذكر حالة الفحص كما وردت دون ادعاء الاطلاع على محتوى لم يُجلب.
+- قيّم الموقع من حيث وضوح الرسالة والخدمات، سهولة الوصول والتصفح، رحلة المتبرع، الثقة والشفافية والتقارير، جودة المحتوى، توافق الدعوات للإجراء، والفجوات التقنية والتحريرية الظاهرة من المحتوى المتاح.
+- قيّم المتجر من حيث وضوح المشاريع، عرض الأثر، سهولة قرار التبرع، الثقة، اكتمال المعلومات، وتناسق الرسائل مع الموقع والحسابات.
+- قارن القنوات وحدد تضارب الرسائل أو غياب الربط بينها، ثم اربط كل توصية باسم المصدر الذي تحتاجه.
 - حدد أنواع الإثبات بدقة (مثلاً: "روابط منشورات شكر للمتبرعين الكبار خلال آخر 90 يوم").`;
 
     const aiPayload = {
@@ -254,13 +324,13 @@ Deno.serve(async (req) => {
       })),
       donations_summary: donationsSummary,
       campaigns: campaigns.slice(0, 50),
-      scraped: {
-        website: scrapedEntries.website?.slice(0, 4000) || null,
-        store: scrapedEntries.store?.slice(0, 4000) || null,
-        twitter: scrapedEntries.twitter?.slice(0, 1500) || null,
-        instagram: scrapedEntries.instagram?.slice(0, 1500) || null,
-        youtube: scrapedEntries.youtube?.slice(0, 1500) || null,
-      },
+      digital_sources: sourceSnapshots.map((source) => ({
+        source_name: source.label,
+        source_type: SOURCE_LABELS[source.kind] || source.kind,
+        url: source.url,
+        analysis_status: source.status,
+        content: source.content,
+      })),
     };
 
     const aiResult: any = await callAI(systemPrompt, aiPayload);
@@ -314,7 +384,7 @@ Deno.serve(async (req) => {
       .from("deep_analyses")
       .update({
         status: "completed",
-        sources: sourceUrls,
+        sources: sourceSnapshots.map(({ kind, label, url, status }) => ({ kind, label, url, status })),
         donations_summary: donationsSummary,
         donors_segmentation: aiResult.donors_segmentation || null,
         campaigns_analysis: aiResult.campaigns_analysis || null,

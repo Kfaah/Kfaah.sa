@@ -165,6 +165,18 @@ interface Profile {
   linkedin_url?: string | null;
 }
 
+const SOURCE_KIND_LABELS: Record<string, string> = {
+  website: "الموقع الإلكتروني",
+  store: "المتجر الإلكتروني",
+  twitter: "حساب إكس",
+  instagram: "حساب إنستغرام",
+  tiktok: "حساب تيك توك",
+  snapchat: "حساب سناب شات",
+  youtube: "قناة يوتيوب",
+  facebook: "صفحة فيسبوك",
+  linkedin: "صفحة لينكدإن",
+};
+
 interface DeepAnalysis {
   id: string;
   status: string;
@@ -178,6 +190,7 @@ interface DeepAnalysis {
   website_insights: Record<string, unknown> | null;
   store_insights: Record<string, unknown> | null;
   social_insights: Record<string, unknown> | null;
+  sources?: Array<{ kind?: string; label?: string; url?: string; status?: string }> | null;
   questions_generated: number;
   completed_at: string | null;
   created_at: string;
@@ -714,7 +727,7 @@ export default function OrgInternalDashboard({
             <PageHeader
               icon={<Sparkles />}
               title="التحليل الذكي"
-              subtitle="يعتمد التحليل على آخر الملفات المرفوعة ومصادرها الرقمية"
+              subtitle="تحليل شامل للملفات والموقع والمتجر وجميع حسابات الجمعية ومصادرها الرقمية"
               actions={
                 <Button
                   onClick={runDeepAnalysis}
@@ -751,13 +764,38 @@ export default function OrgInternalDashboard({
               </CardContent>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} />
-              <InsightCard title="رؤى المتجر" data={analysis.store_insights} />
-              <InsightCard title="رؤى التواصل الاجتماعي" data={analysis.social_insights} />
-              <InsightCard title="تحليل الحملات" data={analysis.campaigns_analysis} />
-              <InsightCard title="شرائح المتبرعين" data={analysis.donors_segmentation} />
-              <InsightCard title="ملخص التبرعات" data={analysis.donations_summary} />
+            <div className="space-y-4">
+              <Card dir="rtl">
+                <CardHeader className="text-right">
+                  <CardTitle className="text-base">تغطية المصادر الرقمية</CardTitle>
+                  <CardDescription className="text-right">المواقع والحسابات التي دخلت فعلياً في هذا التحليل</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!analysis.sources?.length ? (
+                    <p className="text-sm text-muted-foreground">لا تتوفر تفاصيل تغطية لهذا التحليل القديم. أعد تشغيل التحليل لتحديثها.</p>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {analysis.sources.map((source, index) => (
+                        <div key={`${source.url ?? source.label}-${index}`} className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-border p-3 text-sm">
+                          <div className="min-w-0 text-right">
+                            <div className="truncate font-semibold">{source.label || SOURCE_KIND_LABELS[source.kind ?? ""] || "مصدر رقمي"}</div>
+                            <div className="truncate text-xs text-muted-foreground">{SOURCE_KIND_LABELS[source.kind ?? ""] || "مصدر إضافي"}</div>
+                          </div>
+                          <span className="shrink-0 text-xs font-medium text-muted-foreground">{source.status || "غير محدد"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              <div className="grid gap-4 md:grid-cols-2">
+                <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} />
+                <InsightCard title="رؤى المتجر" data={analysis.store_insights} />
+                <InsightCard title="تحليل جميع المواقع والحسابات الرقمية" data={analysis.social_insights} />
+                <InsightCard title="تحليل الحملات" data={analysis.campaigns_analysis} />
+                <InsightCard title="شرائح المتبرعين" data={analysis.donors_segmentation} />
+                <InsightCard title="ملخص التبرعات" data={analysis.donations_summary} />
+              </div>
             </div>
           )}
         </TabsContent>
@@ -939,10 +977,23 @@ const INSIGHT_FIELD_LABELS: Record<string, string> = {
   gaps: "الفجوات",
   what_offers: "ما يقدمه الموقع",
   published_reports: "التقارير المنشورة",
+  user_experience: "تجربة المستخدم",
+  donation_journey: "رحلة المتبرع",
+  donation_experience: "تجربة التبرع",
+  transparency: "الشفافية والإفصاح",
+  trust_signals: "مؤشرات الثقة",
   active_campaigns: "الحملات النشطة",
   products_quality: "جودة المنتجات والمبادرات",
   activity_level: "مستوى النشاط",
   content_quality: "جودة المحتوى",
+  channel_comparison: "مقارنة القنوات",
+  coverage_gaps: "المصادر غير المكتملة",
+  source_reviews: "تحليل كل موقع وحساب",
+  source_name: "اسم الموقع أو الحساب",
+  source_type: "نوع المصدر",
+  analysis_status: "حالة التحليل",
+  content_assessment: "تقييم المحتوى",
+  audience_and_engagement: "الجمهور والتفاعل",
   strengths: "نقاط القوة",
   recommendations: "التوصيات",
   overview: "نظرة عامة",
@@ -970,6 +1021,9 @@ const INSIGHT_VALUE_LABELS: Record<string, string> = {
   medium: "متوسط",
   high: "مرتفع",
   critical: "حرج",
+  analyzed: "تم التحليل",
+  unreachable: "تعذر الوصول",
+  insufficient_content: "محتوى غير كافٍ",
   website: "الموقع الإلكتروني",
   store: "المتجر الإلكتروني",
   social: "التواصل الاجتماعي",
