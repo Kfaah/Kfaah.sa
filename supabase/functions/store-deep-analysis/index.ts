@@ -47,7 +47,6 @@ function validHttpUrl(value: unknown): string | null {
 async function scrape(source: DigitalSource, limit = 2200) {
   const fallback = source.cachedContent?.trim() || null;
   if (!FIRECRAWL_API_KEY) return { kind: source.kind, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback };
-  if (!FIRECRAWL_API_KEY || !url) return null;
   try {
     const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
       method: "POST",
