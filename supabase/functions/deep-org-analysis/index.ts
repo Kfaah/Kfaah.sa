@@ -516,14 +516,7 @@ Deno.serve(async (req) => {
       })
       .eq("id", analysisRow.id);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        analysis_id: analysisRow.id,
-        questions_generated: questionsInserted,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.log("analysis completed", analysisRow.id, "questions:", questionsInserted);
   } catch (e: any) {
     await admin
       .from("deep_analyses")
@@ -533,12 +526,17 @@ Deno.serve(async (req) => {
         completed_at: new Date().toISOString(),
       })
       .eq("id", analysisRow.id);
-    return new Response(
-      JSON.stringify({ error: "analysis_failed", details: String(e?.message || e) }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    console.error("analysis failed", analysisRow.id, String(e?.message || e));
   }
+  };
+
+  const work = runAnalysis();
+  const runtime = (globalThis as any).EdgeRuntime;
+  if (runtime?.waitUntil) runtime.waitUntil(work);
+  else work.catch(() => {});
+
+  return new Response(
+    JSON.stringify({ started: true, analysis_id: analysisRow.id, status: "running" }),
+    { status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
 });
