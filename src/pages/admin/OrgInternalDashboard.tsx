@@ -714,7 +714,7 @@ export default function OrgInternalDashboard({
             <PageHeader
               icon={<Sparkles />}
               title="التحليل الذكي"
-              subtitle="يعتمد التحليل على آخر الملفات المرفوعة ومصادرها الرقمية"
+              subtitle="تحليل شامل للملفات والموقع والمتجر وجميع حسابات الجمعية ومصادرها الرقمية"
               actions={
                 <Button
                   onClick={runDeepAnalysis}
@@ -754,7 +754,7 @@ export default function OrgInternalDashboard({
             <div className="grid md:grid-cols-2 gap-4">
               <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} />
               <InsightCard title="رؤى المتجر" data={analysis.store_insights} />
-              <InsightCard title="رؤى التواصل الاجتماعي" data={analysis.social_insights} />
+              <InsightCard title="تحليل جميع المواقع والحسابات الرقمية" data={analysis.social_insights} />
               <InsightCard title="تحليل الحملات" data={analysis.campaigns_analysis} />
               <InsightCard title="شرائح المتبرعين" data={analysis.donors_segmentation} />
               <InsightCard title="ملخص التبرعات" data={analysis.donations_summary} />
@@ -939,10 +939,23 @@ const INSIGHT_FIELD_LABELS: Record<string, string> = {
   gaps: "الفجوات",
   what_offers: "ما يقدمه الموقع",
   published_reports: "التقارير المنشورة",
+  user_experience: "تجربة المستخدم",
+  donation_journey: "رحلة المتبرع",
+  donation_experience: "تجربة التبرع",
+  transparency: "الشفافية والإفصاح",
+  trust_signals: "مؤشرات الثقة",
   active_campaigns: "الحملات النشطة",
   products_quality: "جودة المنتجات والمبادرات",
   activity_level: "مستوى النشاط",
   content_quality: "جودة المحتوى",
+  channel_comparison: "مقارنة القنوات",
+  coverage_gaps: "المصادر غير المكتملة",
+  source_reviews: "تحليل كل موقع وحساب",
+  source_name: "اسم الموقع أو الحساب",
+  source_type: "نوع المصدر",
+  analysis_status: "حالة التحليل",
+  content_assessment: "تقييم المحتوى",
+  audience_and_engagement: "الجمهور والتفاعل",
   strengths: "نقاط القوة",
   recommendations: "التوصيات",
   overview: "نظرة عامة",
@@ -970,6 +983,9 @@ const INSIGHT_VALUE_LABELS: Record<string, string> = {
   medium: "متوسط",
   high: "مرتفع",
   critical: "حرج",
+  analyzed: "تم التحليل",
+  unreachable: "تعذر الوصول",
+  insufficient_content: "محتوى غير كافٍ",
   website: "الموقع الإلكتروني",
   store: "المتجر الإلكتروني",
   social: "التواصل الاجتماعي",
