@@ -35,6 +35,10 @@ import {
   ExternalLink,
   Trash2,
   RotateCcw,
+  ShieldCheck,
+  ClipboardList,
+  Map,
+  ChartNoAxesCombined,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -56,6 +60,9 @@ type UploadCategory =
   | "gifts"
   | "abandoned_carts"
   | "staff_duties"
+  | "policies"
+  | "meeting_minutes"
+  | "plans"
   | "reports"
   | "profiles"
   | "tasks"
@@ -130,6 +137,9 @@ const SCHEMA_LABELS: Record<string, { label: string; color: string }> = {
   subscriptions: { label: "استقطاعات/اشتراكات", color: BRAND_BG },
   gifts: { label: "إهداءات", color: BRAND_BG_WARM },
   staff_duties: { label: "مهام الموظفين", color: BRAND_BG },
+  policies: { label: "اللوائح والسياسات", color: BRAND_BG_SOFT },
+  meeting_minutes: { label: "محاضر الاجتماعات", color: BRAND_BG_WARM },
+  plans: { label: "الخطط", color: BRAND_BG },
   reports: { label: "تقارير", color: BRAND_BG_SOFT },
   profiles: { label: "ملفات تعريفية", color: BRAND_BG },
   tasks: { label: "مهام", color: BRAND_BG_SOFT },
@@ -153,9 +163,12 @@ const CATEGORY_OPTIONS: {
   { value: "gifts", label: "الإهداءات", desc: "ملف التبرعات الإهدائية والمهدى إليهم", icon: Gift, color: BRAND_GRADIENT_SOFT },
   { value: "abandoned_carts", label: "السلال المتروكة", desc: "ملف السلال غير المكتملة لإعادة الاستهداف", icon: ShoppingCart, color: BRAND_GRADIENT_WARM },
   { value: "staff_duties", label: "مهام موظفي المتجر", desc: "ربط المهام بكل موظف تلقائياً", icon: Users, color: BRAND_GRADIENT },
-  { value: "reports", label: "تقارير", desc: "تقارير دورية، ملفات تحليلية", icon: FileText, color: BRAND_GRADIENT_SOFT },
+  { value: "policies", label: "اللوائح والسياسات", desc: "لوائح الجمعية وسياساتها وأدلة الحوكمة", icon: ShieldCheck, color: BRAND_GRADIENT_SOFT },
+  { value: "meeting_minutes", label: "محاضر الاجتماعات", desc: "محاضر الاجتماعات والقرارات والتوصيات", icon: ClipboardList, color: BRAND_GRADIENT_WARM },
+  { value: "plans", label: "الخطط", desc: "الخطط الاستراتيجية والتشغيلية والتنفيذية", icon: Map, color: BRAND_GRADIENT },
+  { value: "reports", label: "التقارير", desc: "التقارير الدورية وملفات التحليل والإنجاز", icon: ChartNoAxesCombined, color: BRAND_GRADIENT_SOFT },
   { value: "profiles", label: "ملفات تعريفية", desc: "بروفايلات، تعاريف موظفين/جمعية", icon: IdCard, color: BRAND_GRADIENT },
-  { value: "tasks", label: "مهام/خطط", desc: "ملفات مهام أو خطط للأرشفة", icon: ListChecks, color: BRAND_GRADIENT_WARM },
+  { value: "tasks", label: "مهام", desc: "ملفات المهام وإجراءات العمل للأرشفة", icon: ListChecks, color: BRAND_GRADIENT_WARM },
   { value: "other", label: "ملفات أخرى", desc: "أي ملف آخر للأرشفة والتحليل", icon: FolderOpen, color: BRAND_GRADIENT },
 ];
 
@@ -588,6 +601,9 @@ export default function Uploads() {
           // البيانات العامة تقبل المستندات والصور أيضاً؛ الجداول فقط تمر عبر محلل البيانات.
           result = await archiveFile(pf, "profiles");
         } else if (
+          pf.category === "policies" ||
+          pf.category === "meeting_minutes" ||
+          pf.category === "plans" ||
           pf.category === "reports" ||
           pf.category === "profiles" ||
           pf.category === "tasks" ||
@@ -674,6 +690,9 @@ export default function Uploads() {
         // 🧠 Trigger daily intelligence engine after data uploads
         if (
           pf.category !== "staff_duties" &&
+          pf.category !== "policies" &&
+          pf.category !== "meeting_minutes" &&
+          pf.category !== "plans" &&
           pf.category !== "profiles" &&
           pf.category !== "tasks" &&
           pf.category !== "reports" &&
