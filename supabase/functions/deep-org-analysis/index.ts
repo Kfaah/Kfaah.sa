@@ -166,12 +166,12 @@ Deno.serve(async (req) => {
       new Set(donations.map((d: any) => d.project_name).filter(Boolean))
     ).slice(0, 30);
     const donationsSummary = {
-      total_donations_count: donations.length,
-      total_amount: totalAmount,
-      successful_count: successfulCount,
-      distinct_projects: projects.length,
-      sample_projects: projects.slice(0, 15),
-      campaigns_count: campaigns.length,
+      "إجمالي عدد التبرعات": donations.length,
+      "إجمالي قيمة التبرعات": totalAmount,
+      "عدد التبرعات الناجحة": successfulCount,
+      "عدد المشاريع المختلفة": projects.length,
+      "نماذج من المشاريع": projects.slice(0, 15),
+      "عدد الحملات": campaigns.length,
     };
 
     // 5) Scrape sources in parallel
