@@ -1,5 +1,5 @@
 // Deep Organization Analysis
-// يدمج: ملف التبرعات + الموقع الإلكتروني + المتجر + حسابات التواصل
+// يدمج: الملفات المرفوعة + ملف التبرعات + الموقع الإلكتروني + المتجر + حسابات التواصل
 // يصدر: تقييم شامل + نقاط قوة + فجوات + توصيات + مساءلات للموظفين بحسب الدور
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -30,6 +30,54 @@ type SourceSnapshot = DigitalSource & {
   status: "تم التحليل" | "تعذر الوصول" | "محتوى غير كافٍ";
   content: string | null;
 };
+
+type UploadedDocument = {
+  id: string;
+  file_name: string;
+  detected_schema: string | null;
+  status: string | null;
+  file_path: string | null;
+  ai_analysis: Record<string, unknown> | null;
+  ai_analyzed_at: string | null;
+  created_at: string;
+};
+
+const DOCUMENT_LABELS: Record<string, string> = {
+  donations: "ملف تبرعات",
+  store_master: "ملف المتجر الشامل",
+  store_daily: "تبرعات المتجر اليومية",
+  failed_donations: "التبرعات الفاشلة",
+  bank_transfers: "التحويلات البنكية",
+  abandoned_carts: "السلال المتروكة",
+  campaigns: "الحملات",
+  subscriptions: "الاستقطاعات والاشتراكات",
+  gifts: "الإهداءات",
+  staff_duties: "مهام الموظفين",
+  policies: "اللوائح والسياسات",
+  meeting_minutes: "محاضر الاجتماعات",
+  plans: "الخطط",
+  reports: "التقارير",
+  profiles: "الملفات التعريفية",
+  tasks: "المهام",
+  other: "ملف آخر",
+};
+
+function compactDocumentAnalysis(value: Record<string, unknown> | null) {
+  if (!value) return null;
+  const compactList = (key: string) => Array.isArray(value[key])
+    ? (value[key] as unknown[]).slice(0, 8).map((item) => String(item).slice(0, 500))
+    : [];
+  return {
+    document_type: typeof value.document_type === "string" ? value.document_type.slice(0, 200) : null,
+    summary: typeof value.summary === "string" ? value.summary.slice(0, 1800) : null,
+    key_points: compactList("key_points"),
+    numbers: compactList("numbers"),
+    strengths: compactList("strengths"),
+    gaps: compactList("gaps"),
+    recommendations: compactList("recommendations"),
+    suggested_tasks: compactList("suggested_tasks"),
+  };
+}
 
 const SOURCE_LABELS: Record<string, string> = {
   website: "الموقع الإلكتروني",
@@ -186,7 +234,7 @@ Deno.serve(async (req) => {
 
   try {
     // 3) Load org + profile + employees + donations summary
-    const [orgRes, profRes, empRes, donAggRes, campRes, externalRes] = await Promise.all([
+    const [orgRes, profRes, empRes, donAggRes, campRes, externalRes, uploadsRes] = await Promise.all([
       admin.from("organizations").select("id,name,slug").eq("id", organization_id).maybeSingle(),
       admin.from("organization_profiles").select("*").eq("organization_id", organization_id).maybeSingle(),
       admin.from("employees").select("id,full_name,job_role,role_level").eq("organization_id", organization_id),
@@ -196,6 +244,10 @@ Deno.serve(async (req) => {
         .limit(2000),
       admin.from("campaigns").select("id,name,status,goal_amount,collected_amount,start_date,end_date").eq("organization_id", organization_id).limit(200),
       admin.from("org_external_sources").select("id,kind,url,label,summary,last_status,last_synced_at").eq("organization_id", organization_id),
+      admin.from("data_uploads_log")
+        .select("id,file_name,detected_schema,status,file_path,ai_analysis,ai_analyzed_at,created_at")
+        .eq("organization_id", organization_id)
+        .order("created_at", { ascending: false }),
     ]);
 
     const org = orgRes.data;
@@ -204,6 +256,7 @@ Deno.serve(async (req) => {
     const donations = donAggRes.data || [];
     const campaigns = campRes.data || [];
     const externalSources = externalRes.data || [];
+    const uploadedDocuments = (uploadsRes.data || []) as UploadedDocument[];
 
     // 4) Compute donations summary (lightweight, deterministic)
     const totalAmount = donations.reduce(
@@ -256,12 +309,27 @@ Deno.serve(async (req) => {
     const digitalSources = Array.from(sourcesByUrl.values()).slice(0, 24);
     const sourceSnapshots = await Promise.all(digitalSources.map(firecrawlScrape));
 
+    const documentSnapshots = uploadedDocuments.map((document) => ({
+      upload_id: document.id,
+      file_name: document.file_name,
+      document_type: DOCUMENT_LABELS[document.detected_schema || ""] || "ملف مرفوع",
+      upload_status: document.status || "غير محدد",
+      analysis_status: document.ai_analysis
+        ? "تم التحليل"
+        : document.file_path
+          ? "تعذر تحليل المحتوى"
+          : "لا توجد نسخة محفوظة للتحليل",
+      uploaded_at: document.created_at,
+      analysis: compactDocumentAnalysis(document.ai_analysis),
+    }));
+
     // 6) Call the AI for the deep analysis (single call returning a structured JSON)
     const systemPrompt = `أنت محلل استراتيجي خبير في الجمعيات الخيرية السعودية. ستحلل جمعية بشكل عميق ومتكامل بناءً على:
 1) ملخص ملف التبرعات
 2) محتوى الموقع الإلكتروني
 3) محتوى المتجر الإلكتروني وتجربة التبرع ووضوح المشاريع والثقة ووسائل الدفع
 4) جميع حسابات التواصل الاجتماعي والمصادر الرقمية المسجلة للجمعية، مصدراً مصدراً
+5) جميع الملفات المرفوعة للجمعية، بما فيها اللوائح والسياسات ومحاضر الاجتماعات والخطط والتقارير وملفات البيانات، ملفاً ملفاً
 
 مهمتك إخراج JSON بالشكل التالي بالضبط، مع كتابة جميع القيم النصية الظاهرة للقارئ بالعربية الفصحى الاحترافية حصراً:
 {
@@ -271,6 +339,7 @@ Deno.serve(async (req) => {
   "website_insights": { "summary": "...", "what_offers": "...", "user_experience": "...", "donation_journey": "...", "transparency": "...", "published_reports": [], "strengths": [], "gaps": [], "recommendations": [] },
   "store_insights": { "summary": "...", "active_campaigns": [], "products_quality": "...", "donation_experience": "...", "trust_signals": "...", "strengths": [], "gaps": [], "recommendations": [] },
   "social_insights": { "summary": "...", "channel_comparison": "...", "coverage_gaps": [], "source_reviews": [{ "source_name": "اسم المصدر", "source_type": "نوعه بالعربية", "analysis_status": "تم التحليل أو تعذر الوصول أو محتوى غير كافٍ", "content_assessment": "...", "audience_and_engagement": "...", "strengths": [], "gaps": [], "recommendations": [] }] },
+  "document_insights": { "summary": "ملخص شامل لما تكشفه الملفات", "common_findings": [], "conflicts_and_gaps": [], "recommendations": [], "file_reviews": [{ "file_name": "اسم الملف", "document_type": "نوع الملف", "analysis_status": "حالة التحليل كما وردت", "summary": "ملخص محتوى الملف أو توضيح تعذر تحليله", "key_findings": [], "strengths": [], "gaps": [], "recommendations": [] }] },
   "strengths": ["نقطة قوة 1", "نقطة قوة 2", "..."],
   "gaps": ["فجوة 1 محددة", "فجوة 2 محددة", "..."],
   "recommendations": ["توصية تنفيذية 1", "توصية تنفيذية 2", "..."],
@@ -295,6 +364,8 @@ Deno.serve(async (req) => {
 - إن لم يوجد موظف بدور معين فاجعل target_job_role = "قيادة" أو "مدير".
 - كل مساءلة يجب أن تكون مرتبطة بفجوة أو نقطة من التحليل (ليست عامة).
 - حلّل كل عنصر في digital_sources منفرداً ولا تدمج الحسابات في حكم عام فقط. أنشئ عن كل مصدر سجلاً في source_reviews، واذكر حالة الفحص كما وردت دون ادعاء الاطلاع على محتوى لم يُجلب.
+- حلّل كل عنصر في uploaded_documents منفرداً وأنشئ عنه سجلاً في file_reviews. اعتمد فقط على analysis المرفق لكل ملف، وإذا لم يتوفر فاكتب حالة التعذر بوضوح ولا تستنتج محتوى من اسم الملف وحده.
+- استخرج من الملفات أوجه الاتساق والتعارض بين اللوائح والمحاضر والخطط والتقارير، واربط توصياتك باسم الملف المعني متى أمكن.
 - قيّم الموقع من حيث وضوح الرسالة والخدمات، سهولة الوصول والتصفح، رحلة المتبرع، الثقة والشفافية والتقارير، جودة المحتوى، توافق الدعوات للإجراء، والفجوات التقنية والتحريرية الظاهرة من المحتوى المتاح.
 - قيّم المتجر من حيث وضوح المشاريع، عرض الأثر، سهولة قرار التبرع، الثقة، اكتمال المعلومات، وتناسق الرسائل مع الموقع والحسابات.
 - قارن القنوات وحدد تضارب الرسائل أو غياب الربط بينها، ثم اربط كل توصية باسم المصدر الذي تحتاجه.
@@ -331,9 +402,34 @@ Deno.serve(async (req) => {
         analysis_status: source.status,
         content: source.content,
       })),
+      uploaded_documents: documentSnapshots,
     };
 
     const aiResult: any = await callAI(systemPrompt, aiPayload);
+    const generatedDocumentInsights = aiResult.document_insights && typeof aiResult.document_insights === "object"
+      ? aiResult.document_insights as Record<string, unknown>
+      : {};
+    const generatedFileReviews = Array.isArray(generatedDocumentInsights.file_reviews)
+      ? generatedDocumentInsights.file_reviews
+      : [];
+    const generatedReviewByName = new Map(
+      generatedFileReviews
+        .filter((review: unknown) => review && typeof review === "object")
+        .map((review: any) => [String(review.file_name || ""), review]),
+    );
+    const completeFileReviews = documentSnapshots.map((document) => {
+      const generated = generatedReviewByName.get(document.file_name) || {};
+      return {
+        file_name: document.file_name,
+        document_type: generated.document_type || document.analysis?.document_type || document.document_type,
+        analysis_status: document.analysis_status,
+        summary: generated.summary || document.analysis?.summary || "لم يتوفر محتوى نصي قابل للتحليل.",
+        key_findings: Array.isArray(generated.key_findings) ? generated.key_findings : document.analysis?.key_points || [],
+        strengths: Array.isArray(generated.strengths) ? generated.strengths : document.analysis?.strengths || [],
+        gaps: Array.isArray(generated.gaps) ? generated.gaps : document.analysis?.gaps || [],
+        recommendations: Array.isArray(generated.recommendations) ? generated.recommendations : document.analysis?.recommendations || [],
+      };
+    });
 
     // 7) Persist accountability_questions linked to employees by role when possible
     const questions: any[] = Array.isArray(aiResult.accountability_questions)
@@ -391,6 +487,16 @@ Deno.serve(async (req) => {
         website_insights: aiResult.website_insights || null,
         store_insights: aiResult.store_insights || null,
         social_insights: aiResult.social_insights || null,
+        document_insights: {
+          ...generatedDocumentInsights,
+          summary: generatedDocumentInsights.summary || (uploadedDocuments.length
+            ? "تم حصر الملفات المرفوعة، ولم تتوفر نتائج نصية كافية لإعداد تحليل تفصيلي لبعضها."
+            : "لا توجد ملفات مرفوعة ضمن هذه الجمعية حتى الآن."),
+          common_findings: Array.isArray(generatedDocumentInsights.common_findings) ? generatedDocumentInsights.common_findings : [],
+          conflicts_and_gaps: Array.isArray(generatedDocumentInsights.conflicts_and_gaps) ? generatedDocumentInsights.conflicts_and_gaps : [],
+          recommendations: Array.isArray(generatedDocumentInsights.recommendations) ? generatedDocumentInsights.recommendations : [],
+          file_reviews: completeFileReviews,
+        },
         overall_assessment: aiResult.overall_assessment || null,
         strengths: aiResult.strengths || null,
         gaps: aiResult.gaps || null,
