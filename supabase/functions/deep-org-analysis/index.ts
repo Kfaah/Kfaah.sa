@@ -339,7 +339,7 @@ Deno.serve(async (req) => {
   "website_insights": { "summary": "...", "what_offers": "...", "user_experience": "...", "donation_journey": "...", "transparency": "...", "published_reports": [], "strengths": [], "gaps": [], "recommendations": [] },
   "store_insights": { "summary": "...", "active_campaigns": [], "products_quality": "...", "donation_experience": "...", "trust_signals": "...", "strengths": [], "gaps": [], "recommendations": [] },
   "social_insights": { "summary": "...", "channel_comparison": "...", "coverage_gaps": [], "source_reviews": [{ "source_name": "اسم المصدر", "source_type": "نوعه بالعربية", "analysis_status": "تم التحليل أو تعذر الوصول أو محتوى غير كافٍ", "content_assessment": "...", "audience_and_engagement": "...", "strengths": [], "gaps": [], "recommendations": [] }] },
-  "document_insights": { "summary": "ملخص شامل لما تكشفه الملفات", "common_findings": [], "conflicts_and_gaps": [], "recommendations": [], "file_reviews": [{ "file_name": "اسم الملف", "document_type": "نوع الملف", "analysis_status": "حالة التحليل كما وردت", "summary": "ملخص محتوى الملف أو توضيح تعذر تحليله", "key_findings": [], "strengths": [], "gaps": [], "recommendations": [] }] },
+  "document_insights": { "summary": "ملخص شامل لما تكشفه الملفات", "common_findings": [], "conflicts_and_gaps": [], "recommendations": [] },
   "strengths": ["نقطة قوة 1", "نقطة قوة 2", "..."],
   "gaps": ["فجوة 1 محددة", "فجوة 2 محددة", "..."],
   "recommendations": ["توصية تنفيذية 1", "توصية تنفيذية 2", "..."],
@@ -364,7 +364,7 @@ Deno.serve(async (req) => {
 - إن لم يوجد موظف بدور معين فاجعل target_job_role = "قيادة" أو "مدير".
 - كل مساءلة يجب أن تكون مرتبطة بفجوة أو نقطة من التحليل (ليست عامة).
 - حلّل كل عنصر في digital_sources منفرداً ولا تدمج الحسابات في حكم عام فقط. أنشئ عن كل مصدر سجلاً في source_reviews، واذكر حالة الفحص كما وردت دون ادعاء الاطلاع على محتوى لم يُجلب.
-- حلّل كل عنصر في uploaded_documents منفرداً وأنشئ عنه سجلاً في file_reviews. اعتمد فقط على analysis المرفق لكل ملف، وإذا لم يتوفر فاكتب حالة التعذر بوضوح ولا تستنتج محتوى من اسم الملف وحده.
+- استخلص النتائج المشتركة والتعارضات والتوصيات من uploaded_documents التي يتوفر لها analysis فقط. لا تنشئ file_reviews؛ يبني النظام مراجعة كل ملف مباشرة لضمان شمول القائمة كاملة.
 - استخرج من الملفات أوجه الاتساق والتعارض بين اللوائح والمحاضر والخطط والتقارير، واربط توصياتك باسم الملف المعني متى أمكن.
 - قيّم الموقع من حيث وضوح الرسالة والخدمات، سهولة الوصول والتصفح، رحلة المتبرع، الثقة والشفافية والتقارير، جودة المحتوى، توافق الدعوات للإجراء، والفجوات التقنية والتحريرية الظاهرة من المحتوى المتاح.
 - قيّم المتجر من حيث وضوح المشاريع، عرض الأثر، سهولة قرار التبرع، الثقة، اكتمال المعلومات، وتناسق الرسائل مع الموقع والحسابات.
@@ -402,7 +402,14 @@ Deno.serve(async (req) => {
         analysis_status: source.status,
         content: source.content,
       })),
-      uploaded_documents: documentSnapshots,
+      uploaded_documents: documentSnapshots
+        .filter((document) => document.analysis)
+        .slice(0, 24),
+      uploaded_documents_coverage: {
+        total: documentSnapshots.length,
+        analyzed: documentSnapshots.filter((document) => document.analysis).length,
+        unavailable: documentSnapshots.filter((document) => !document.analysis).length,
+      },
     };
 
     const aiResult: any = await callAI(systemPrompt, aiPayload);
