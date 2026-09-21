@@ -924,6 +924,19 @@ function ListCard({ title, items, icon, emptyText }: { title: string; items: str
   );
 }
 
+const INSIGHT_FIELD_LABELS: Record<string, string> = {
+  total_donations_count: "إجمالي عدد التبرعات",
+  total_amount: "إجمالي قيمة التبرعات",
+  successful_count: "عدد التبرعات الناجحة",
+  distinct_projects: "عدد المشاريع المختلفة",
+  sample_projects: "نماذج من المشاريع",
+  campaigns_count: "عدد الحملات",
+};
+
+function insightFieldLabel(key: string) {
+  return INSIGHT_FIELD_LABELS[key] ?? key.replaceAll("_", " ");
+}
+
 function InsightCard({ title, data }: { title: string; data: Record<string, unknown> | null | undefined }) {
   return (
     <Card dir="rtl">
@@ -937,7 +950,7 @@ function InsightCard({ title, data }: { title: string; data: Record<string, unkn
           <div className="space-y-2 text-sm">
             {Object.entries(data).map(([k, v]) => (
               <div key={k} className="text-right">
-                <div className="font-semibold text-xs text-muted-foreground uppercase mb-1">{k}</div>
+                <div className="font-semibold text-xs text-muted-foreground mb-1">{insightFieldLabel(k)}</div>
                 <div className="text-foreground/90">
                   {Array.isArray(v) ? (
                     v.length === 0 ? <span className="text-muted-foreground">—</span> : (
