@@ -145,23 +145,56 @@ serve(async (req) => {
         return aliases;
       };
 
+      // كلمات عامة لا تصلح وحدها للمطابقة (مثل "مدير التسويق" لا يجب أن يطابق "المدير التنفيذي" لمجرد كلمة "مدير")
+      const GENERIC_TOKENS = new Set(["مدير", "مسؤول", "ريس", "رئيس", "موظف", "مشرف", "منسق", "عضو"]);
+
       // إيجاد قسم بأفضل تطابق رمزي/دلالي (token overlap + مرادفات الأقسام)
       const findDeptByTokens = (text: string): string | null => {
         const tks = tokenize(text);
         if (tks.length === 0) return null;
+        // الكلمات المميّزة فقط (بدون الكلمات العامة) هي أساس المطابقة
+        const specific = tks.filter((t) => !GENERIC_TOKENS.has(t));
+        if (specific.length === 0) return null;
         let best: { key: string; score: number } | null = null;
         for (const key of employeesByDept.keys()) {
           const aliases = departmentAliases(deptNamesById.get(key) || "");
           for (const alias of aliases) {
-            const dtks = tokenize(alias);
+            const dtks = tokenize(alias).filter((t) => !GENERIC_TOKENS.has(t));
             if (dtks.length === 0) continue;
-            const overlap = dtks.filter((t) => tks.includes(t)).length;
+            const overlap = dtks.filter((t) => specific.includes(t)).length;
             if (overlap === 0) continue;
             const score = overlap / Math.max(dtks.length, 1);
             if (!best || score > best.score) best = { key, score };
           }
         }
         return best && best.score >= 0.5 ? best.key : null;
+      };
+
+      // مطابقة بالمسمى الوظيفي: "مدير التسويق" يطابق موظفاً مسماه الوظيفي كذلك
+      const roleCursor = new Map<string, number>();
+      const findByJobRole = (text: string): any | null => {
+        const respNorm = norm(text);
+        const specific = tokenize(text).filter((t) => !GENERIC_TOKENS.has(t));
+        // 1) تطابق كامل مع المسمى الوظيفي
+        let pool = (allEmployees || []).filter((e: any) => e.user_id && norm(e.job_role || "") === respNorm);
+        // 2) تطابق رمزي: كل كلمات المسمى المميّزة موجودة في النص أو العكس
+        if (pool.length === 0 && specific.length > 0) {
+          pool = (allEmployees || []).filter((e: any) => {
+            if (!e.user_id || !e.job_role) return false;
+            const rt = tokenize(e.job_role).filter((t) => !GENERIC_TOKENS.has(t));
+            if (rt.length === 0) return false;
+            return rt.every((t) => specific.includes(t)) || specific.every((t) => rt.includes(t));
+          });
+        }
+        if (pool.length === 0) return null;
+        // فلترة بالموظفين المحددين إن وُجدوا
+        if (filterUserIds.length > 0) {
+          const f = pool.filter((e: any) => filterUserIds.includes(e.user_id));
+          if (f.length > 0) pool = f;
+        }
+        const i = (roleCursor.get(respNorm) ?? 0) % pool.length;
+        roleCursor.set(respNorm, i + 1);
+        return pool[i];
       };
 
       for (const ep of excelPlans || []) {
@@ -200,8 +233,16 @@ serve(async (req) => {
               matchedName = byName.full_name;
               matchedRole = byName.job_role || "";
             } else {
+              // مطابقة بالمسمى الوظيفي أولاً (مدير التسويق ← موظف مسماه مدير التسويق)
+              const byRole = findByJobRole(respText);
+              if (byRole) {
+                matchedUserId = byRole.user_id;
+                matchedName = byRole.full_name;
+                matchedRole = byRole.job_role || respText;
+              }
               // مطابقة بالقسم: أولاً بالضبط، ثم بأقرب تطابق رمزي
               let deptKey: string | null = null;
+              if (!matchedUserId) {
               for (const [id, name] of deptNamesById.entries()) {
                 if (norm(name) === respNorm) {
                   deptKey = id;
@@ -216,6 +257,7 @@ serve(async (req) => {
                   matchedName = picked.full_name;
                   matchedRole = picked.job_role || respText;
                 }
+              }
               }
             }
           }
