@@ -20,7 +20,6 @@ import {
   AlertCircle,
   HeartHandshake,
   Users,
-  FileText,
   IdCard,
   ListChecks,
   FolderOpen,
