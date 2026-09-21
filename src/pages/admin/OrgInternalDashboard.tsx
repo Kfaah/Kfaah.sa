@@ -165,17 +165,6 @@ interface Profile {
   linkedin_url?: string | null;
 }
 
-const SOURCE_KIND_LABELS: Record<string, string> = {
-  website: "الموقع الإلكتروني",
-  store: "المتجر الإلكتروني",
-  twitter: "حساب إكس",
-  instagram: "حساب إنستغرام",
-  tiktok: "حساب تيك توك",
-  snapchat: "حساب سناب شات",
-  youtube: "قناة يوتيوب",
-  facebook: "صفحة فيسبوك",
-  linkedin: "صفحة لينكدإن",
-};
 
 interface DeepAnalysis {
   id: string;
