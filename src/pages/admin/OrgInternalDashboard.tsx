@@ -465,11 +465,41 @@ export default function OrgInternalDashboard({
     setAnalyzing(true);
     toast.loading("جاري التحليل الذكي الشامل...", { id: "deep" });
     try {
+      // The analysis runs in the background (several minutes), so we only start
+      // it here and then poll its row until it finishes.
       const { data, error } = await supabase.functions.invoke("deep-org-analysis", {
         body: { organization_id: orgId, trigger_source: "manual" },
       });
       if (error) throw error;
-      toast.success(`تم التحليل بنجاح — ${data?.questions_generated ?? 0} مساءلة`, { id: "deep" });
+      const analysisId = (data as { analysis_id?: string } | null)?.analysis_id;
+      if (!analysisId) throw new Error("تعذر بدء التحليل");
+
+      const deadline = Date.now() + 10 * 60 * 1000;
+      let finalStatus = "running";
+      let questionsGenerated = 0;
+      let errorMessage: string | null = null;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 6000));
+        const { data: row } = await supabase
+          .from("deep_analyses")
+          .select("status,questions_generated,error_message")
+          .eq("id", analysisId)
+          .maybeSingle();
+        if (row?.status && row.status !== "running") {
+          finalStatus = row.status;
+          questionsGenerated = row.questions_generated ?? 0;
+          errorMessage = row.error_message ?? null;
+          break;
+        }
+      }
+
+      if (finalStatus === "completed") {
+        toast.success(`تم التحليل بنجاح — ${questionsGenerated} مساءلة`, { id: "deep" });
+      } else if (finalStatus === "running") {
+        toast.info("التحليل لا يزال قيد التنفيذ، سيظهر تلقائياً عند اكتماله.", { id: "deep" });
+      } else {
+        toast.error(errorMessage || "فشل التحليل", { id: "deep" });
+      }
       await loadAll();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "فشل التحليل";
