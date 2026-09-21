@@ -13,14 +13,24 @@ const MONTHS_AR = [
 
 const TADABBUR_ORG_ID = "00a528ce-e836-4ebd-9a50-35aeaa766501";
 const TADABBUR_MARKETING_MANAGER = "ناصر علي سلمان الحريصي";
+const TADABBUR_EXECUTIVE_DIRECTOR = "محمد هادي حسن الحريصي";
 const MARKETING_TERMS = [
   "تسويق", "التسويقي", "اعلام", "إعلام", "حملة", "حملات", "محتوى",
   "هوية", "منصة", "منصات", "تواصل اجتماعي", "رقمي", "رقمية", "إعلان", "اعلان",
+];
+const DEV_ADMIN_TERMS = [
+  "تطوير", "التطوير", "اداري", "إداري", "ادارية", "إدارية", "الادارة", "الإدارة",
+  "تنظيم", "حوكمة", "سياسات", "لوائح", "اجراءات", "إجراءات", "تشغيل",
 ];
 
 const isMarketingWork = (...values: unknown[]) => {
   const text = values.map((value) => String(value ?? "")).join(" ");
   return MARKETING_TERMS.some((term) => text.includes(term));
+};
+
+const isDevAdminWork = (...values: unknown[]) => {
+  const text = values.map((value) => String(value ?? "")).join(" ");
+  return DEV_ADMIN_TERMS.some((term) => text.includes(term));
 };
 
 serve(async (req) => {
@@ -54,6 +64,19 @@ serve(async (req) => {
           .select("id, user_id, full_name, job_role")
           .eq("organization_id", TADABBUR_ORG_ID)
           .eq("full_name", TADABBUR_MARKETING_MANAGER)
+          .eq("status", "active")
+          .not("user_id", "is", null)
+          .maybeSingle()
+      : { data: null };
+
+    // قاعدة جمعية تدبر: كل نشاط تطويري/إداري يُسند حصراً إلى المدير التنفيذي محمد هادي.
+    const shouldLoadTadabburExecutiveDirector = shouldLoadTadabburMarketingManager;
+    const { data: tadabburExecutiveDirector } = shouldLoadTadabburExecutiveDirector
+      ? await supabase
+          .from("employees")
+          .select("id, user_id, full_name, job_role")
+          .eq("organization_id", TADABBUR_ORG_ID)
+          .eq("full_name", TADABBUR_EXECUTIVE_DIRECTOR)
           .eq("status", "active")
           .not("user_id", "is", null)
           .maybeSingle()
@@ -589,16 +612,24 @@ serve(async (req) => {
         });
       }
 
-      if (tadabburMarketingManager?.user_id) {
+      if (tadabburMarketingManager?.user_id || tadabburExecutiveDirector?.user_id) {
         for (const planData of plansData) {
-          if (
-            planData.organizationId === TADABBUR_ORG_ID &&
-            isMarketingWork(planData.activityName, planData.initiative, planData.strategicGoal)
-          ) {
+          if (planData.organizationId !== TADABBUR_ORG_ID) continue;
+          const values = [planData.activityName, planData.initiative, planData.strategicGoal];
+          // التسويق له الأولوية (مدير التسويق ناصر)
+          if (tadabburMarketingManager?.user_id && isMarketingWork(...values)) {
             planData.userId = tadabburMarketingManager.user_id;
             planData.employeeId = tadabburMarketingManager.id;
             planData.employeeName = tadabburMarketingManager.full_name;
             planData.jobRole = tadabburMarketingManager.job_role || "مدير التسويق";
+            continue;
+          }
+          // التطوير والعمل الإداري للمدير التنفيذي محمد هادي
+          if (tadabburExecutiveDirector?.user_id && isDevAdminWork(...values)) {
+            planData.userId = tadabburExecutiveDirector.user_id;
+            planData.employeeId = tadabburExecutiveDirector.id;
+            planData.employeeName = tadabburExecutiveDirector.full_name;
+            planData.jobRole = tadabburExecutiveDirector.job_role || "المدير التنفيذي";
           }
         }
       }
