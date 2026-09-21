@@ -19,9 +19,11 @@ const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 const AI_MODEL = "openai/gpt-6-astra";
 
 type DigitalSource = {
+  id?: string;
   kind: string;
   label: string;
   url: string;
+  cachedContent?: string | null;
 };
 
 type SourceSnapshot = DigitalSource & {
@@ -58,7 +60,10 @@ interface AnalyzeRequest {
 }
 
 async function firecrawlScrape(source: DigitalSource): Promise<SourceSnapshot> {
-  if (!FIRECRAWL_API_KEY) return { ...source, status: "تعذر الوصول", content: null };
+  const cachedContent = source.cachedContent?.trim() || null;
+  if (!FIRECRAWL_API_KEY) {
+    return { ...source, status: cachedContent ? "تم التحليل" : "تعذر الوصول", content: cachedContent };
+  }
   try {
     const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
       method: "POST",
@@ -72,7 +77,7 @@ async function firecrawlScrape(source: DigitalSource): Promise<SourceSnapshot> {
         onlyMainContent: true,
       }),
     });
-    if (!r.ok) return { ...source, status: "تعذر الوصول", content: null };
+    if (!r.ok) return { ...source, status: cachedContent ? "تم التحليل" : "تعذر الوصول", content: cachedContent };
     const j = await r.json();
     const md =
       j?.markdown ||
@@ -83,10 +88,10 @@ async function firecrawlScrape(source: DigitalSource): Promise<SourceSnapshot> {
     return {
       ...source,
       status: content.length >= 120 ? "تم التحليل" : "محتوى غير كافٍ",
-      content: content || null,
+      content: content || cachedContent,
     };
   } catch {
-    return { ...source, status: "تعذر الوصول", content: null };
+    return { ...source, status: cachedContent ? "تم التحليل" : "تعذر الوصول", content: cachedContent };
   }
 }
 
@@ -190,7 +195,7 @@ Deno.serve(async (req) => {
         .eq("organization_id", organization_id)
         .limit(2000),
       admin.from("campaigns").select("id,name,status,goal_amount,collected_amount,start_date,end_date").eq("organization_id", organization_id).limit(200),
-      admin.from("org_external_sources").select("kind,url,label,summary,last_status,last_synced_at").eq("organization_id", organization_id),
+      admin.from("org_external_sources").select("id,kind,url,label,summary,last_status,last_synced_at").eq("organization_id", organization_id),
     ]);
 
     const org = orgRes.data;
@@ -239,10 +244,13 @@ Deno.serve(async (req) => {
       const url = validHttpUrl(source.url);
       if (!url) continue;
       const current = sourcesByUrl.get(url);
+      const cachedParts = [source.summary, source.last_status ? `حالة آخر مزامنة: ${source.last_status}` : null].filter(Boolean);
       sourcesByUrl.set(url, {
+        id: source.id,
         kind: String(source.kind || current?.kind || "other"),
         label: String(source.label || current?.label || SOURCE_LABELS[source.kind] || "مصدر رقمي"),
         url,
+        cachedContent: cachedParts.length ? cachedParts.join("\n") : current?.cachedContent,
       });
     }
     const digitalSources = Array.from(sourcesByUrl.values()).slice(0, 24);
