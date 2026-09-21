@@ -244,7 +244,6 @@ serve(async (req) => {
               let deptKey: string | null = null;
               if (!matchedUserId) {
               for (const [id, name] of deptNamesById.entries()) {
-              for (const [id, name] of deptNamesById.entries()) {
                 if (norm(name) === respNorm) {
                   deptKey = id;
                   break;
@@ -258,6 +257,7 @@ serve(async (req) => {
                   matchedName = picked.full_name;
                   matchedRole = picked.job_role || respText;
                 }
+              }
               }
             }
           }
