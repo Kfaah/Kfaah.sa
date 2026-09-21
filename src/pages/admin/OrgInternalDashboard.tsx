@@ -1085,18 +1085,29 @@ function InsightValue({ value }: { value: unknown }) {
   return <>{typeof value === "string" ? insightText(value) : String(value)}</>;
 }
 
+const HIDDEN_INSIGHT_KEYS = new Set([
+  "file_reviews",
+  "source_reviews",
+  "uploaded_documents",
+  "uploaded_documents_coverage",
+  "sources",
+  "digital_sources",
+  "coverage_gaps",
+]);
+
 function InsightCard({ title, data }: { title: string; data: Record<string, unknown> | null | undefined }) {
+  const entries = Object.entries(data ?? {}).filter(([k]) => !HIDDEN_INSIGHT_KEYS.has(k));
   return (
     <Card dir="rtl">
       <CardHeader className="text-right">
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent className="text-right">
-        {!data || Object.keys(data).length === 0 ? (
+        {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">لا توجد بيانات</p>
         ) : (
           <div className="space-y-2 text-sm">
-            {Object.entries(data).map(([k, v]) => (
+            {entries.map(([k, v]) => (
               <div key={k} className="text-right">
                 <div className="font-semibold text-xs text-muted-foreground mb-1">{insightFieldLabel(k)}</div>
                 <div className="text-foreground/90">
