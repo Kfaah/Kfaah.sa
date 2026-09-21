@@ -341,8 +341,8 @@ Deno.serve(async (req) => {
   "campaigns_analysis": { "completed": [], "active": [], "gaps": "...", "summary": "..." },
   "website_insights": { "summary": "...", "what_offers": "...", "user_experience": "...", "donation_journey": "...", "transparency": "...", "published_reports": [], "strengths": [], "gaps": [], "recommendations": [] },
   "store_insights": { "summary": "...", "active_campaigns": [], "products_quality": "...", "donation_experience": "...", "trust_signals": "...", "strengths": [], "gaps": [], "recommendations": [] },
-  "social_insights": { "summary": "...", "channel_comparison": "...", "coverage_gaps": [], "source_reviews": [{ "source_name": "اسم المصدر", "source_type": "نوعه بالعربية", "analysis_status": "تم التحليل أو تعذر الوصول أو محتوى غير كافٍ", "content_assessment": "...", "audience_and_engagement": "...", "strengths": [], "gaps": [], "recommendations": [] }] },
-  "document_insights": { "summary": "ملخص شامل لما تكشفه الملفات", "common_findings": [], "conflicts_and_gaps": [], "recommendations": [] },
+  "social_insights": { "summary": "خلاصة موحّدة مختصرة (سطران) لجميع الحسابات والمصادر الرقمية", "strengths": ["نقطتان كحد أقصى"], "gaps": ["فجوتان كحد أقصى"], "recommendations": ["ثلاث توصيات كحد أقصى"] },
+  "document_insights": { "summary": "خلاصة موحّدة مختصرة (سطران) لما تكشفه جميع الملفات مجتمعة", "common_findings": ["ثلاث نتائج كحد أقصى"], "conflicts_and_gaps": ["ثلاث نقاط كحد أقصى"], "recommendations": ["ثلاث توصيات كحد أقصى"] },
   "strengths": ["نقطة قوة 1", "نقطة قوة 2", "..."],
   "gaps": ["فجوة 1 محددة", "فجوة 2 محددة", "..."],
   "recommendations": ["توصية تنفيذية 1", "توصية تنفيذية 2", "..."],
@@ -366,12 +366,10 @@ Deno.serve(async (req) => {
 - أنشئ بين 8 و 20 مساءلة موزعة على الأدوار الوظيفية الفعلية في قائمة الموظفين.
 - إن لم يوجد موظف بدور معين فاجعل target_job_role = "قيادة" أو "مدير".
 - كل مساءلة يجب أن تكون مرتبطة بفجوة أو نقطة من التحليل (ليست عامة).
-- حلّل كل عنصر في digital_sources منفرداً ولا تدمج الحسابات في حكم عام فقط. أنشئ عن كل مصدر سجلاً في source_reviews، واذكر حالة الفحص كما وردت دون ادعاء الاطلاع على محتوى لم يُجلب.
-- استخلص النتائج المشتركة والتعارضات والتوصيات من uploaded_documents التي يتوفر لها analysis فقط. لا تنشئ file_reviews؛ يبني النظام مراجعة كل ملف مباشرة لضمان شمول القائمة كاملة.
-- استخرج من الملفات أوجه الاتساق والتعارض بين اللوائح والمحاضر والخطط والتقارير، واربط توصياتك باسم الملف المعني متى أمكن.
-- قيّم الموقع من حيث وضوح الرسالة والخدمات، سهولة الوصول والتصفح، رحلة المتبرع، الثقة والشفافية والتقارير، جودة المحتوى، توافق الدعوات للإجراء، والفجوات التقنية والتحريرية الظاهرة من المحتوى المتاح.
-- قيّم المتجر من حيث وضوح المشاريع، عرض الأثر، سهولة قرار التبرع، الثقة، اكتمال المعلومات، وتناسق الرسائل مع الموقع والحسابات.
-- قارن القنوات وحدد تضارب الرسائل أو غياب الربط بينها، ثم اربط كل توصية باسم المصدر الذي تحتاجه.
+- استخدم محتوى digital_sources و uploaded_documents كمدخلات خلفية فقط. لا تنشئ مراجعة منفصلة لكل مصدر ولا لكل ملف، ولا تذكر أسماء الملفات أو أسماء الحسابات أو روابطها في النتيجة.
+- اجعل social_insights و document_insights خلاصة موحّدة مختصرة ومفيدة لكل المصادر ولكل الملفات مجتمعة، لا قوائم تفصيلية.
+- قيّم الموقع والمتجر باختصار من حيث وضوح الرسالة، رحلة المتبرع، الثقة والشفافية، واكتمال المعلومات، مع ذكر أهم الفجوات فقط.
+- التزم بالإيجاز: لا تتجاوز 5 عناصر في أي قائمة، وركّز على ما يقود إلى إجراء.
 - حدد أنواع الإثبات بدقة (مثلاً: "روابط منشورات شكر للمتبرعين الكبار خلال آخر 90 يوم").`;
 
     const aiPayload = {
@@ -419,27 +417,6 @@ Deno.serve(async (req) => {
     const generatedDocumentInsights = aiResult.document_insights && typeof aiResult.document_insights === "object"
       ? aiResult.document_insights as Record<string, unknown>
       : {};
-    const generatedFileReviews = Array.isArray(generatedDocumentInsights.file_reviews)
-      ? generatedDocumentInsights.file_reviews
-      : [];
-    const generatedReviewByName = new Map(
-      generatedFileReviews
-        .filter((review: unknown) => review && typeof review === "object")
-        .map((review: any) => [String(review.file_name || ""), review]),
-    );
-    const completeFileReviews = documentSnapshots.map((document) => {
-      const generated = generatedReviewByName.get(document.file_name) || {};
-      return {
-        file_name: document.file_name,
-        document_type: generated.document_type || document.analysis?.document_type || document.document_type,
-        analysis_status: document.analysis_status,
-        summary: generated.summary || document.analysis?.summary || "لم يتوفر محتوى نصي قابل للتحليل.",
-        key_findings: Array.isArray(generated.key_findings) ? generated.key_findings : document.analysis?.key_points || [],
-        strengths: Array.isArray(generated.strengths) ? generated.strengths : document.analysis?.strengths || [],
-        gaps: Array.isArray(generated.gaps) ? generated.gaps : document.analysis?.gaps || [],
-        recommendations: Array.isArray(generated.recommendations) ? generated.recommendations : document.analysis?.recommendations || [],
-      };
-    });
 
     // 7) Persist accountability_questions linked to employees by role when possible
     const questions: any[] = Array.isArray(aiResult.accountability_questions)
@@ -505,7 +482,6 @@ Deno.serve(async (req) => {
           common_findings: Array.isArray(generatedDocumentInsights.common_findings) ? generatedDocumentInsights.common_findings : [],
           conflicts_and_gaps: Array.isArray(generatedDocumentInsights.conflicts_and_gaps) ? generatedDocumentInsights.conflicts_and_gaps : [],
           recommendations: Array.isArray(generatedDocumentInsights.recommendations) ? generatedDocumentInsights.recommendations : [],
-          file_reviews: completeFileReviews,
         },
         overall_assessment: aiResult.overall_assessment || null,
         strengths: aiResult.strengths || null,

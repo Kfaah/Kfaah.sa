@@ -165,17 +165,6 @@ interface Profile {
   linkedin_url?: string | null;
 }
 
-const SOURCE_KIND_LABELS: Record<string, string> = {
-  website: "الموقع الإلكتروني",
-  store: "المتجر الإلكتروني",
-  twitter: "حساب إكس",
-  instagram: "حساب إنستغرام",
-  tiktok: "حساب تيك توك",
-  snapchat: "حساب سناب شات",
-  youtube: "قناة يوتيوب",
-  facebook: "صفحة فيسبوك",
-  linkedin: "صفحة لينكدإن",
-};
 
 interface DeepAnalysis {
   id: string;
@@ -800,64 +789,6 @@ export default function OrgInternalDashboard({
             </Card>
           ) : (
             <div className="space-y-4">
-              <Card dir="rtl">
-                <CardHeader className="text-right">
-                  <CardTitle className="text-base">تغطية المصادر الرقمية</CardTitle>
-                  <CardDescription className="text-right">المواقع والحسابات التي دخلت فعلياً في هذا التحليل</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!analysis.sources?.length ? (
-                    <p className="text-sm text-muted-foreground">لا تتوفر تفاصيل تغطية لهذا التحليل القديم. أعد تشغيل التحليل لتحديثها.</p>
-                  ) : (
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                      {analysis.sources.map((source, index) => (
-                        <div key={`${source.url ?? source.label}-${index}`} className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-border p-3 text-sm">
-                          <div className="min-w-0 text-right">
-                            <div className="truncate font-semibold">{source.label || SOURCE_KIND_LABELS[source.kind ?? ""] || "مصدر رقمي"}</div>
-                            <div className="truncate text-xs text-muted-foreground">{SOURCE_KIND_LABELS[source.kind ?? ""] || "مصدر إضافي"}</div>
-                          </div>
-                          <span className="shrink-0 text-xs font-medium text-muted-foreground">{source.status || "غير محدد"}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              <Card dir="rtl">
-                <CardHeader className="text-right">
-                  <CardTitle className="flex items-center justify-start gap-2 text-base">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    تغطية الملفات المرفوعة
-                  </CardTitle>
-                  <CardDescription className="text-right">الملفات التي دخلت فعلياً في التحليل الشامل وحالة قراءة كل ملف</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const docs = analysis.document_insights as Record<string, unknown> | null;
-                    const rawReviews = docs?.file_reviews ?? docs?.uploaded_documents;
-                    const reviews = Array.isArray(rawReviews) ? rawReviews : [];
-                    if (reviews.length === 0) {
-                      return <p className="text-sm text-muted-foreground">لا توجد ملفات مرفوعة ضمن هذا التحليل، أو أن التحليل أُنشئ قبل إضافة دعم الملفات.</p>;
-                    }
-                    return (
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {reviews.map((review, index) => {
-                          const item = review && typeof review === "object" ? review as Record<string, unknown> : {};
-                          return (
-                            <div key={`${String(item.file_name || "ملف")}-${index}`} className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-border p-3 text-sm">
-                              <div className="min-w-0 text-right">
-                                <div className="truncate font-semibold">{String(item.file_name || "ملف مرفوع")}</div>
-                                <div className="truncate text-xs text-muted-foreground">{String(item.document_type || "ملف مرفوع")}</div>
-                              </div>
-                              <span className="shrink-0 text-xs font-medium text-muted-foreground">{String(item.analysis_status || "غير محدد")}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
               <div className="grid gap-4 md:grid-cols-2">
                 <InsightCard title="تحليل الملفات المرفوعة" data={analysis.document_insights} />
                 <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} />
@@ -1154,18 +1085,29 @@ function InsightValue({ value }: { value: unknown }) {
   return <>{typeof value === "string" ? insightText(value) : String(value)}</>;
 }
 
+const HIDDEN_INSIGHT_KEYS = new Set([
+  "file_reviews",
+  "source_reviews",
+  "uploaded_documents",
+  "uploaded_documents_coverage",
+  "sources",
+  "digital_sources",
+  "coverage_gaps",
+]);
+
 function InsightCard({ title, data }: { title: string; data: Record<string, unknown> | null | undefined }) {
+  const entries = Object.entries(data ?? {}).filter(([k]) => !HIDDEN_INSIGHT_KEYS.has(k));
   return (
     <Card dir="rtl">
       <CardHeader className="text-right">
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent className="text-right">
-        {!data || Object.keys(data).length === 0 ? (
+        {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">لا توجد بيانات</p>
         ) : (
           <div className="space-y-2 text-sm">
-            {Object.entries(data).map(([k, v]) => (
+            {entries.map(([k, v]) => (
               <div key={k} className="text-right">
                 <div className="font-semibold text-xs text-muted-foreground mb-1">{insightFieldLabel(k)}</div>
                 <div className="text-foreground/90">
