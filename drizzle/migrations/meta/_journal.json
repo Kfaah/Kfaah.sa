@@ -148,6 +148,13 @@
       "when": 1789987230869,
       "tag": "0020_secure_signatures_eval_delete_and_role_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789989245181,
+      "tag": "0021_scope_elevated_roles_to_organization",
+      "breakpoints": true
     }
   ]
 }
