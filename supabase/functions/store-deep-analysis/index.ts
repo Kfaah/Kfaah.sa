@@ -67,11 +67,58 @@ async function scrape(source: DigitalSource, sourceIndex: number, limit = 2200):
     if (!r.ok) return { ...base, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback, screenshotUrl: null };
     const j = await r.json();
     const md = j?.markdown || j?.data?.markdown || j?.data?.content || "";
-    const screenshotUrl = validHttpUrl(j?.screenshot || j?.data?.screenshot);
+    const rawShot = j?.screenshot || j?.data?.screenshot || j?.data?.screenshotUrl || null;
+    const screenshotUrl = validHttpUrl(rawShot)
+      || (typeof rawShot === "string" && rawShot.startsWith("data:") ? rawShot : null);
     const content = typeof md === "string" && md.trim() ? md.slice(0, limit) : fallback;
     return { ...base, status: content ? "تم التحليل" : "محتوى غير كافٍ", content, screenshotUrl };
   } catch {
     return { ...base, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback, screenshotUrl: null };
+  }
+}
+
+function decodeBase64Image(value: string): Uint8Array | null {
+  try {
+    const base64 = value.includes(",") ? value.slice(value.indexOf(",") + 1) : value;
+    const raw = atob(base64.replace(/\s/g, ""));
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
+    return bytes.length > 2000 ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
+// يلتقط صورة المصدر من مزوّد القراءة، وإن تعذّر ذلك يستخدم خدمة تصوير مستقلة
+async function captureScreenshotBytes(
+  screenshotUrl: string | null,
+  pageUrl: string | null,
+): Promise<Uint8Array | null> {
+  if (screenshotUrl) {
+    if (screenshotUrl.startsWith("data:")) {
+      const decoded = decodeBase64Image(screenshotUrl);
+      if (decoded) return decoded;
+    } else {
+      try {
+        const response = await fetch(screenshotUrl);
+        if (response.ok) {
+          const bytes = new Uint8Array(await response.arrayBuffer());
+          if (bytes.length > 2000) return bytes;
+        }
+      } catch { /* يتابع إلى الخدمة البديلة */ }
+    }
+  }
+  if (!pageUrl || !pageUrl.startsWith("http")) return null;
+  try {
+    const response = await fetch(
+      `https://image.thum.io/get/width/1200/crop/900/png/${pageUrl}`,
+      { signal: AbortSignal.timeout(45_000) },
+    );
+    if (!response.ok) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    return bytes.length > 5000 ? bytes : null;
+  } catch {
+    return null;
   }
 }
 
@@ -81,16 +128,14 @@ async function storeSourceScreenshot(
   runId: string,
   sourceIndex: number,
   screenshotUrl: string | null,
+  pageUrl: string | null,
 ): Promise<string | null> {
-  if (!screenshotUrl) return null;
   try {
-    const response = await fetch(screenshotUrl);
-    if (!response.ok) return null;
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    if (!bytes.length || bytes.length > 15 * 1024 * 1024) return null;
+    const bytes = await captureScreenshotBytes(screenshotUrl, pageUrl);
+    if (!bytes || bytes.length > 15 * 1024 * 1024) return null;
     const path = `${organizationId}/store-${runId}/source-${sourceIndex}.png`;
     const { error } = await admin.storage.from("analysis-previews").upload(path, bytes, {
-      contentType: response.headers.get("content-type") || "image/png",
+      contentType: "image/png",
       upsert: true,
     });
     return error ? null : path;
@@ -338,7 +383,14 @@ ${RESULT_SHAPE}`;
         const runId = crypto.randomUUID();
         const previewPaths = await Promise.all(
           sourceSnapshots.map((source) =>
-            storeSourceScreenshot(admin, organization_id, runId, source.source_index, source.screenshotUrl)
+            storeSourceScreenshot(
+              admin,
+              organization_id,
+              runId,
+              source.source_index,
+              source.screenshotUrl,
+              source.url ?? null,
+            )
           ),
         );
         const rawEvidence = Array.isArray(generated.finding_evidence) ? generated.finding_evidence : [];
