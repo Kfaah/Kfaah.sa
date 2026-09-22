@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Download, Loader2, Store, Sparkles } from "lucide-react";
+import { ArrowRight, Download, ExternalLink, Eye, ImageOff, Loader2, Quote, Store, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { UnifiedDateFilter, DatePeriod, resolvePeriod } from "./UnifiedDateFilter";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
@@ -82,6 +82,7 @@ interface SmartAnalysis {
     churn_signals?: string[];
   };
   digital_presence?: { overview?: string; strengths?: string[]; gaps?: string[]; actions?: string[] };
+  finding_evidence?: FindingEvidence[];
   web_review?: Record<string, { strengths?: string[]; gaps?: string[]; fix_list?: string[] }>;
   send_timing?: {
     summary?: string;
@@ -106,6 +107,19 @@ interface SmartAnalysis {
   recommendations?: { title?: string; why?: string; how?: string[]; impact?: string; effort?: string; priority?: string }[];
   kpi_targets?: { kpi?: string; current?: string; target_90d?: string }[];
   risks?: string[];
+}
+
+interface FindingEvidence {
+  finding?: string;
+  category?: string;
+  quote?: string;
+  metric_evidence?: string;
+  explanation?: string;
+  recommendation?: string;
+  source_name?: string;
+  source_url?: string | null;
+  source_status?: string | null;
+  screenshot_path?: string | null;
 }
 
 const ARABIC_DISPLAY_TERMS: Record<string, string> = {
@@ -862,6 +876,10 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                 ) : null;
               })()}
 
+              {!!smart.finding_evidence?.length && (
+                <FindingEvidenceSection evidence={smart.finding_evidence} />
+              )}
+
               {(smart.send_timing?.summary || smart.send_timing?.frequency || !!smart.send_timing?.avoid?.length || !!smart.send_timing?.seasonal_windows?.length) && (
                 <Card className="border-primary/30">
                   <CardHeader className="pb-2"><CardTitle className="text-base">أوقات الإرسال المثالية</CardTitle></CardHeader>
@@ -966,6 +984,109 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function FindingEvidenceSection({ evidence }: { evidence: FindingEvidence[] }) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  return (
+    <section className="space-y-3" aria-labelledby="store-evidence-title">
+      <div>
+        <h4 id="store-evidence-title" className="text-base font-bold text-foreground">أدلة الفجوات والأخطاء</h4>
+        <p className="mt-1 text-sm text-muted-foreground">كل فجوة مرتبطة بمقتطف أو رقم من البيانات، وصورة من المصدر عند توفرها.</p>
+      </div>
+      <div className="space-y-3">
+        {evidence.map((item, index) => {
+          const isOpen = openIndex === index;
+          return (
+            <Card key={`${item.finding}-${index}`} className="border-destructive/20">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    {item.category && <div className="mb-1 text-xs font-semibold text-muted-foreground">{item.category}</div>}
+                    <p className="text-sm font-semibold leading-6 text-foreground">{item.finding}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-2"
+                    onClick={() => setOpenIndex(isOpen ? null : index)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    {isOpen ? "إخفاء الدليل" : "عرض الدليل"}
+                  </Button>
+                </div>
+                {isOpen && <StoreEvidencePreview evidence={item} />}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function StoreEvidencePreview({ evidence }: { evidence: FindingEvidence }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(Boolean(evidence.screenshot_path));
+
+  useEffect(() => {
+    let cancelled = false;
+    const path = evidence.screenshot_path;
+    if (!path) {
+      setImageLoading(false);
+      setImageUrl(null);
+      return;
+    }
+    supabase.storage.from("analysis-previews").createSignedUrl(path, 3600).then(({ data }) => {
+      if (!cancelled) {
+        setImageUrl(data?.signedUrl || null);
+        setImageLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [evidence.screenshot_path]);
+
+  return (
+    <div className="mt-4 grid gap-4 border-t border-border pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
+      <div className="space-y-3 text-sm">
+        <div className="flex items-start gap-2 rounded-md bg-muted/40 p-3">
+          <Quote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-muted-foreground">الدليل من {evidence.source_name || "البيانات"}</div>
+            <p className="mt-1 whitespace-pre-wrap break-words leading-6 text-foreground">
+              {evidence.quote || evidence.metric_evidence || "لا تتوفر معاينة نصية لهذا الدليل"}
+            </p>
+            {evidence.quote && evidence.metric_evidence && (
+              <p className="mt-2 whitespace-pre-wrap break-words leading-6 text-muted-foreground">{evidence.metric_evidence}</p>
+            )}
+          </div>
+        </div>
+        {evidence.explanation && <p className="leading-6 text-muted-foreground"><span className="font-semibold text-foreground">وجه الدلالة: </span>{evidence.explanation}</p>}
+        {evidence.recommendation && <p className="leading-6 text-muted-foreground"><span className="font-semibold text-foreground">الإجراء التصحيحي: </span>{evidence.recommendation}</p>}
+        {evidence.source_url && (
+          <Button asChild variant="link" size="sm" className="h-auto justify-start gap-2 px-0">
+            <a href={evidence.source_url} target="_blank" rel="noreferrer">
+              <ExternalLink className="h-4 w-4" /> فتح المصدر
+            </a>
+          </Button>
+        )}
+      </div>
+      <div className="min-h-48 overflow-hidden rounded-md border border-border bg-muted/30">
+        {imageLoading ? (
+          <div className="flex h-48 items-center justify-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>
+        ) : imageUrl ? (
+          <img src={imageUrl} alt={`معاينة دليل ${evidence.finding || "الفجوة"}`} className="h-auto max-h-[32rem] w-full object-contain" />
+        ) : (
+          <div className="flex h-48 flex-col items-center justify-center gap-2 p-4 text-center text-sm text-muted-foreground">
+            <ImageOff className="h-5 w-5" />
+            لا تتوفر صورة لهذا الدليل، والمقتطف أو الرقم أعلاه هو المرجع المباشر.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

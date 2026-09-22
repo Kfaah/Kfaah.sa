@@ -22,6 +22,16 @@ const RequestSchema = z.object({
 
 type DigitalSource = { kind: string; label: string; url: string; cachedContent?: string | null };
 
+type SourceSnapshot = {
+  kind: string;
+  label: string;
+  url: string;
+  source_index: number;
+  status: string;
+  content: string | null;
+  screenshotUrl: string | null;
+};
+
 const SOURCE_LABELS: Record<string, string> = {
   website: "الموقع الإلكتروني",
   store: "المتجر الإلكتروني",
@@ -44,22 +54,48 @@ function validHttpUrl(value: unknown): string | null {
   }
 }
 
-async function scrape(source: DigitalSource, limit = 2200) {
+async function scrape(source: DigitalSource, sourceIndex: number, limit = 2200): Promise<SourceSnapshot> {
   const fallback = source.cachedContent?.trim() || null;
-  if (!FIRECRAWL_API_KEY) return { kind: source.kind, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback };
+  const base = { kind: source.kind, label: source.label, url: source.url, source_index: sourceIndex };
+  if (!FIRECRAWL_API_KEY) return { ...base, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback, screenshotUrl: null };
   try {
     const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
       method: "POST",
       headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ url: source.url, formats: ["markdown"], onlyMainContent: true }),
+      body: JSON.stringify({ url: source.url, formats: ["markdown", "screenshot"], onlyMainContent: true }),
     });
-    if (!r.ok) return { kind: source.kind, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback };
+    if (!r.ok) return { ...base, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback, screenshotUrl: null };
     const j = await r.json();
     const md = j?.markdown || j?.data?.markdown || j?.data?.content || "";
+    const screenshotUrl = validHttpUrl(j?.screenshot || j?.data?.screenshot);
     const content = typeof md === "string" && md.trim() ? md.slice(0, limit) : fallback;
-    return { kind: source.kind, status: content ? "تم التحليل" : "محتوى غير كافٍ", content };
+    return { ...base, status: content ? "تم التحليل" : "محتوى غير كافٍ", content, screenshotUrl };
   } catch {
-    return { kind: source.kind, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback };
+    return { ...base, status: fallback ? "تم التحليل" : "تعذر الوصول", content: fallback, screenshotUrl: null };
+  }
+}
+
+async function storeSourceScreenshot(
+  admin: ReturnType<typeof createClient>,
+  organizationId: string,
+  runId: string,
+  sourceIndex: number,
+  screenshotUrl: string | null,
+): Promise<string | null> {
+  if (!screenshotUrl) return null;
+  try {
+    const response = await fetch(screenshotUrl);
+    if (!response.ok) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (!bytes.length || bytes.length > 15 * 1024 * 1024) return null;
+    const path = `${organizationId}/store-${runId}/source-${sourceIndex}.png`;
+    const { error } = await admin.storage.from("analysis-previews").upload(path, bytes, {
+      contentType: response.headers.get("content-type") || "image/png",
+      upsert: true,
+    });
+    return error ? null : path;
+  } catch {
+    return null;
   }
 }
 
@@ -80,6 +116,9 @@ const RESULT_SHAPE = `{
     "gaps": ["أهم فجوتين فقط"],
     "actions": ["أهم ثلاثة إجراءات مرتبة بالأولوية"]
   },
+  "finding_evidence": [
+    { "finding": "نص الفجوة أو الخطأ أو المخاطرة حرفياً كما ورد في القسم الآخر", "category": "الحضور الرقمي | المتبرعون | البيانات | الحملات | التشغيل", "source_index": 0, "source_name": "اسم نوع المصدر بالعربية", "quote": "مقتطف حرفي من المصدر أو وصف رقمي حرفي من بيانات المتجر", "metric_evidence": "الأرقام والحقول التي تثبت النتيجة", "explanation": "كيف يثبت الدليل النتيجة", "recommendation": "الإجراء التصحيحي" }
+  ],
   "send_timing": {
     "summary": "قراءة أوقات الذروة من بيانات التبرع الفعلية بتوقيت الرياض",
     "best_hours": [ { "window": "20:00 – 21:00", "why": "المبرر من الأرقام", "channels": "واتساب | رسالة نصية" } ],
@@ -259,20 +298,25 @@ Deno.serve(async (req) => {
             cachedContent: cachedContent || current?.cachedContent,
           });
         }
-        const sourceSnapshots = await Promise.all(Array.from(sourcesByUrl.values()).slice(0, 24).map((source) => scrape(source)));
+        const sourceSnapshots = await Promise.all(
+          Array.from(sourcesByUrl.values()).slice(0, 24).map((source, index) => scrape(source, index)),
+        );
         push(".\n");
 
         const system = `أنت مستشار تسويق واستدامة مالية للجمعيات الخيرية السعودية، خبير في تحليل متاجر التبرع الإلكترونية وسلوك المتبرعين.
 اكتب جميع القيم النصية الظاهرة للقارئ بالعربية الفصحى الاحترافية حصراً، واعتمد على الأرقام المعطاة حرفياً (لا تختلق أرقاماً).
 ممنوع استخدام أي كلمة أو اختصار أو حرف لاتيني في المخرجات، بما في ذلك أسماء المؤشرات والقنوات والأولويات والاختبارات والمصطلحات التسويقية. عرّب المصطلحات والأسماء الأجنبية تعريباً واضحاً؛ اكتب «مؤشر الأداء» بدلاً من الاختصار الأجنبي، و«الدعوة إلى الإجراء» بدلاً من الاختصار الأجنبي، و«اختبار المقارنة بين نسختين» بدلاً من رمزه الأجنبي. لا تُرجع روابط إلكترونية داخل النصوص، ويمكن إبقاء مفاتيح بنية JSON الداخلية كما هي لأنها غير ظاهرة للقارئ.
 كن مختصراً وعملياً: اذكر 4-6 شرائح للمتبرعين، و4-6 موجات رسائل، و5 مقترحات تنفيذية كحد أقصى، وخطة أسبوعية مختصرة لأربعة أسابيع.
-حلّل جميع المصادر الرقمية المرفقة كمدخلات خلفية موحّدة مع بيانات المتجر. لا تذكر أسماء المصادر أو روابطها، ولا تنشئ مراجعة مستقلة لكل موقع أو حساب. أعد في digital_presence خلاصة واحدة فقط: سطران للملخص، ونقطتا قوة، وفجوتان، وثلاثة إجراءات ذات أولوية كحد أقصى.
+حلّل جميع المصادر الرقمية المرفقة كمدخلات خلفية موحّدة مع بيانات المتجر. لا تذكر أسماء المصادر أو روابطها في الملخص، ولا تنشئ مراجعة مستقلة لكل موقع أو حساب. أعد في digital_presence خلاصة واحدة فقط: سطران للملخص، ونقطتا قوة، وفجوتان، وثلاثة إجراءات ذات أولوية كحد أقصى.
 اجعل headline_findings من 3 إلى 5 نتائج فقط، ولا تكرر المعلومة في أكثر من قسم.
 مهم جداً: استخرج أوقات وأيام الإرسال المثالية من الحقل timing في البيانات (أوقات ذروة التبرع الفعلية بتوقيت الرياض) واذكر الساعة واليوم لكل موجة رسائل، مع سقف تكرار الرسائل، والنوافذ الموسمية، والأوقات التي يجب تجنبها.
 استخدم أرقام المتبرعين كما هي: الحقل unique_donors للتبرعات المباشرة، والحقل total_reachable_donors_all_channels لقاعدة التواصل الكاملة (لا تخفض هذه الأرقام، ولا تكتب أسماء الحقول الإنجليزية في النص الظاهر).
 إلزامي: حلّل كل أقسام store_metrics بلا استثناء ولا تتجاهل أي مجموعة بيانات، وهي أقسام التبرعات والتوقيت وأعلى المشاريع والتوزيع الشهري وأعلى المتبرعين وقنوات التبرع وشرائح المتبرعين والحملات والتبرعات الفاشلة والسلال المتروكة والاستقطاعات والإهداءات واكتمال البيانات. استخدم مفاتيح البيانات الداخلية لفهم المدخلات فقط، ولا تنقل أسماءها الإنجليزية إلى النتيجة.
 لكل مجموعة بيانات اذكر صراحةً أرقامها الرئيسية وما تعنيه وإجراءً واحداً على الأقل مبنياً عليها. إذا كانت مجموعة فارغة (صفر) فاذكر ذلك كثغرة بيانات وما يجب فعله لتوفيرها.
 اربط الإهداءات والاستقطاع الشهري والسلال المتروكة بشرائح ورسائل مخصصة لكل منها، واستخدم data_coverage لبيان نقص بيانات التواصل (بريد/مدينة) في قسم data_hygiene.
+إلزامي: أنشئ في finding_evidence دليلاً مقابلاً لكل فجوة أو خطأ أو مخاطرة تذكرها في أي قسم من النتيجة، بما فيها digital_presence.gaps وdonor_analysis.churn_signals وrisks وأي مشكلة في headline_findings أو data_hygiene. يجب أن يطابق finding نص النتيجة حرفياً.
+إذا كان الدليل من مصدر رقمي، استخدم source_index المطابق تماماً لرقمه في digital_presence_inputs، وانقل في quote مقتطفاً حرفياً من content دون اختلاق. إذا كانت المشكلة غياب عنصر في المصدر فاكتب في quote «لا يوجد في المصدر ما يعالج هذه النقطة» واشرح ما فُحص.
+إذا كان الدليل من بيانات المتجر، اجعل source_index فارغاً، وضع في metric_evidence الأرقام الفعلية وأسماءها العربية كما ظهرت في store_metrics. لا تنشئ دليلاً عاماً أو تخمينياً، ولا تترك فجوة أو خطأ أو مخاطرة بلا دليل وإجراء تصحيحي.
 احرص أن تكون كل رسالة قصيرة (أقل من 400 حرف) ومهنية ومناسبة للسياق الخيري السعودي.
 أعد النتيجة كـ JSON صالح بهذا الشكل بالضبط:
 ${RESULT_SHAPE}`;
@@ -291,8 +335,33 @@ ${RESULT_SHAPE}`;
         };
 
         const generated = await callAstra(system, payload, () => push("."));
+        const runId = crypto.randomUUID();
+        const previewPaths = await Promise.all(
+          sourceSnapshots.map((source) =>
+            storeSourceScreenshot(admin, organization_id, runId, source.source_index, source.screenshotUrl)
+          ),
+        );
+        const rawEvidence = Array.isArray(generated.finding_evidence) ? generated.finding_evidence : [];
+        const findingEvidence = rawEvidence.slice(0, 40).map((item: any) => {
+          const sourceIndex = Number.isInteger(item?.source_index) ? Number(item.source_index) : null;
+          const source = sourceIndex === null ? null : sourceSnapshots[sourceIndex];
+          return {
+            finding: String(item?.finding || "").trim(),
+            category: String(item?.category || "").trim(),
+            quote: String(item?.quote || "").trim(),
+            metric_evidence: String(item?.metric_evidence || "").trim(),
+            explanation: String(item?.explanation || "").trim(),
+            recommendation: String(item?.recommendation || "").trim(),
+            source_index: source?.source_index ?? null,
+            source_name: source?.label || String(item?.source_name || "بيانات المتجر"),
+            source_url: source?.url || null,
+            source_status: source?.status || null,
+            screenshot_path: source ? previewPaths[source.source_index] : null,
+          };
+        }).filter((item: any) => item.finding && (item.quote || item.metric_evidence));
         const result = {
           ...generated,
+          finding_evidence: findingEvidence,
           headline_findings: Array.isArray(generated.headline_findings) ? generated.headline_findings.slice(0, 5) : [],
           donor_analysis: generated.donor_analysis
             ? {
