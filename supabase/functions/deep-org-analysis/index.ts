@@ -368,8 +368,8 @@ Deno.serve(async (req) => {
   "campaigns_analysis": { "completed": [], "active": [], "gaps": "...", "summary": "..." },
   "website_insights": { "summary": "...", "what_offers": "...", "user_experience": "...", "donation_journey": "...", "transparency": "...", "published_reports": [], "strengths": [], "gaps": [], "recommendations": [] },
   "store_insights": { "summary": "...", "active_campaigns": [], "products_quality": "...", "donation_experience": "...", "trust_signals": "...", "strengths": [], "gaps": [], "recommendations": [] },
-  "social_insights": { "summary": "خلاصة موحّدة مختصرة (سطران) لجميع الحسابات والمصادر الرقمية", "strengths": ["نقطتان كحد أقصى"], "gaps": ["فجوتان كحد أقصى"], "recommendations": ["ثلاث توصيات كحد أقصى"] },
-  "document_insights": { "summary": "خلاصة موحّدة مختصرة (سطران) لما تكشفه جميع الملفات مجتمعة", "common_findings": ["ثلاث نتائج كحد أقصى"], "conflicts_and_gaps": ["ثلاث نقاط كحد أقصى"], "recommendations": ["ثلاث توصيات كحد أقصى"] },
+  "social_insights": { "summary": "تحليل شامل لجميع الحسابات والمصادر الرقمية", "strengths": [], "gaps": [], "recommendations": [] },
+  "document_insights": { "summary": "تحليل شامل لما تكشفه جميع الملفات مجتمعة", "common_findings": [], "conflicts_and_gaps": [], "recommendations": [] },
   "strengths": ["نقطة قوة 1", "نقطة قوة 2", "..."],
   "gaps": ["فجوة 1 محددة", "فجوة 2 محددة", "..."],
   "gap_evidence": [
@@ -379,6 +379,20 @@ Deno.serve(async (req) => {
       "source_name": "اسم المصدر بالعربية كما ورد في المدخلات",
       "quote": "مقتطف حرفي قصير (أقل من 300 حرف) منقول من محتوى المصدر يثبت الفجوة، أو اكتب: لا يوجد في المصدر ما يعالج هذه النقطة",
       "explanation": "سطر واحد يوضح كيف يثبت المقتطف الفجوة"
+    }
+  ],
+  "analysis_evidence": [
+    {
+      "category": "الموقع الإلكتروني | المتجر الإلكتروني | الحسابات الرقمية | الملفات | التبرعات | الحملات | الحوكمة | التشغيل",
+      "finding_type": "نقطة قوة | فجوة | ملاحظة | مخاطرة | توصية",
+      "title": "عنوان النتيجة المحددة",
+      "detail": "شرح تفصيلي لما ظهر في البيانات أو المصدر",
+      "impact": "الأثر المتوقع على الجمعية أو المتبرع أو التشغيل",
+      "priority": "منخفض | متوسط | مرتفع | حرج",
+      "source_index": 0,
+      "source_name": "اسم المصدر بالعربية",
+      "quote": "مقتطف حرفي من المصدر أو وصف رقمي دقيق من البيانات",
+      "recommendation": "الإجراء المقترح لمعالجة النتيجة"
     }
   ],
   "recommendations": ["توصية تنفيذية 1", "توصية تنفيذية 2", "..."],
@@ -402,10 +416,12 @@ Deno.serve(async (req) => {
 - أنشئ بين 8 و 20 مساءلة موزعة على الأدوار الوظيفية الفعلية في قائمة الموظفين.
 - إن لم يوجد موظف بدور معين فاجعل target_job_role = "قيادة" أو "مدير".
 - كل مساءلة يجب أن تكون مرتبطة بفجوة أو نقطة من التحليل (ليست عامة).
-- استخدم محتوى digital_sources و uploaded_documents كمدخلات خلفية فقط. لا تنشئ مراجعة منفصلة لكل مصدر ولا لكل ملف، ولا تذكر أسماء الملفات أو أسماء الحسابات أو روابطها في النتيجة.
-- اجعل social_insights و document_insights خلاصة موحّدة مختصرة ومفيدة لكل المصادر ولكل الملفات مجتمعة، لا قوائم تفصيلية.
-- قيّم الموقع والمتجر باختصار من حيث وضوح الرسالة، رحلة المتبرع، الثقة والشفافية، واكتمال المعلومات، مع ذكر أهم الفجوات فقط.
-- التزم بالإيجاز: لا تتجاوز 5 عناصر في أي قائمة، وركّز على ما يقود إلى إجراء.
+- حلّل كل ما يظهر في digital_sources وuploaded_documents وبيانات التبرعات والحملات تحليلاً تفصيلياً، ولا تهمل الملاحظات الصغيرة متى كان لها أثر تشغيلي أو تسويقي أو حوكمي.
+- اجمع النتائج المتشابهة فقط لتجنب التكرار، لكن لا تختصر النتيجة على حساب الأدلة أو التفاصيل المهمة.
+- أنشئ في analysis_evidence ما بين 15 و40 نتيجة موثقة بحسب كمية البيانات المتاحة، وغطِّ نقاط القوة والفجوات والملاحظات والمخاطر والتوصيات في جميع المجالات.
+- لكل عنصر في analysis_evidence: اشرح النتيجة والأثر والأولوية والإجراء المقترح، واربطه بالمصدر عبر source_index عندما يكون من مصدر رقمي.
+- إذا كان الدليل من ملف أو من بيانات التبرعات أو الحملات فاجعل source_index = null، واكتب في source_name نوع الملف أو البيانات، وضع في quote الرقم أو المعلومة الدقيقة التي تثبت النتيجة.
+- لا تختلق اقتباساً أو رقماً. انقل النص حرفياً من المصدر أو استخدم قيمة موجودة صراحة في المدخلات.
 - حدد أنواع الإثبات بدقة (مثلاً: "روابط منشورات شكر للمتبرعين الكبار خلال آخر 90 يوم").
 - إلزامي: لكل فجوة في قائمة gaps أضف عنصراً مقابلاً في gap_evidence، بنفس نص الفجوة حرفياً، مع source_index مطابق لرقم المصدر في digital_sources الذي تظهر فيه الفجوة (أو null إذا كان مصدرها ملفات أو بيانات التبرعات).
 - المقتطف في quote يجب أن يكون منقولاً حرفياً من محتوى المصدر ولا تختلقه؛ وإذا كانت الفجوة غياب شيء فاكتب صراحة أنه لا يوجد في المصدر ما يعالج هذه النقطة.`;
@@ -496,6 +512,28 @@ Deno.serve(async (req) => {
       };
     });
 
+    const rawAnalysisEvidence: any[] = Array.isArray(aiResult.analysis_evidence)
+      ? aiResult.analysis_evidence
+      : [];
+    const analysisEvidence = rawAnalysisEvidence.slice(0, 60).map((item) => {
+      const index = Number.isInteger(item?.source_index) ? Number(item.source_index) : null;
+      const preview = index !== null ? sourcePreviews[index] : undefined;
+      return {
+        category: typeof item?.category === "string" ? item.category.slice(0, 100) : "تحليل عام",
+        finding_type: typeof item?.finding_type === "string" ? item.finding_type.slice(0, 50) : "ملاحظة",
+        title: typeof item?.title === "string" ? item.title.slice(0, 240) : "نتيجة تحليلية",
+        detail: typeof item?.detail === "string" ? item.detail.slice(0, 1200) : null,
+        impact: typeof item?.impact === "string" ? item.impact.slice(0, 600) : null,
+        priority: typeof item?.priority === "string" ? item.priority.slice(0, 30) : "متوسط",
+        quote: typeof item?.quote === "string" ? item.quote.slice(0, 700) : null,
+        recommendation: typeof item?.recommendation === "string" ? item.recommendation.slice(0, 700) : null,
+        source_label: preview?.label || (typeof item?.source_name === "string" ? item.source_name.slice(0, 200) : null),
+        source_url: preview?.url || null,
+        source_status: preview?.status || null,
+        screenshot_path: preview?.screenshot_path || null,
+      };
+    });
+
     // 7) Persist accountability_questions linked to employees by role when possible
     const questions: any[] = Array.isArray(aiResult.accountability_questions)
       ? aiResult.accountability_questions
@@ -565,6 +603,7 @@ Deno.serve(async (req) => {
         strengths: aiResult.strengths || null,
         gaps: aiResult.gaps || null,
         gap_evidence: gapEvidence.length ? gapEvidence : null,
+        analysis_evidence: analysisEvidence.length ? analysisEvidence : null,
         source_previews: sourcePreviews.length ? sourcePreviews : null,
         recommendations: aiResult.recommendations || null,
         questions_generated: questionsInserted,

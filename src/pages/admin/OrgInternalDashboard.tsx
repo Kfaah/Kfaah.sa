@@ -176,6 +176,16 @@ interface GapEvidence {
   screenshot_path?: string | null;
 }
 
+interface AnalysisEvidence extends Omit<GapEvidence, "gap"> {
+  category: string;
+  finding_type: string;
+  title: string;
+  detail?: string | null;
+  impact?: string | null;
+  priority?: string | null;
+  recommendation?: string | null;
+}
+
 interface DeepAnalysis {
   id: string;
   status: string;
@@ -183,6 +193,7 @@ interface DeepAnalysis {
   strengths: string[] | null;
   gaps: string[] | null;
   gap_evidence?: GapEvidence[] | null;
+  analysis_evidence?: AnalysisEvidence[] | null;
   recommendations: string[] | null;
   donations_summary: Record<string, unknown> | null;
   donors_segmentation: Record<string, unknown> | null;
@@ -800,6 +811,7 @@ export default function OrgInternalDashboard({
             </Card>
           ) : (
             <div className="space-y-4">
+              <AnalysisEvidenceSection analysis={analysis} />
               <div className="grid gap-4 md:grid-cols-2">
                 <InsightCard title="تحليل الملفات المرفوعة" data={analysis.document_insights} />
                 <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} />
@@ -1097,6 +1109,90 @@ function GapsCard({ gaps, evidence }: { gaps: string[]; evidence: GapEvidence[] 
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
+  const [openItem, setOpenItem] = useState<number | null>(null);
+  const items = analysis.analysis_evidence ?? [];
+  const categories = Array.from(new Set(items.map((item) => item.category || "تحليل عام")));
+
+  if (items.length === 0) {
+    return (
+      <Card dir="rtl" className="border-border bg-card">
+        <CardHeader className="text-right">
+          <CardTitle className="flex items-center justify-start gap-2 text-base">
+            <Eye className="h-5 w-5 text-accent" /> الأدلة والمعاينات التفصيلية
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-right text-sm text-muted-foreground">
+          هذا التحليل أُنشئ قبل إضافة الأدلة التفصيلية. اضغط «إعادة تشغيل التحليل» لإظهار كل النتائج مع الصور والمقتطفات.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <section className="space-y-3" dir="rtl">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="text-right">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <Eye className="h-5 w-5 text-accent" /> الأدلة والمعاينات التفصيلية
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">{items.length} نتيجة موثقة من جميع البيانات والمصادر</p>
+        </div>
+      </div>
+      {categories.map((category) => (
+        <Card key={category} className="border-border bg-card">
+          <CardHeader className="border-b border-border bg-muted/30 text-right">
+            <CardTitle className="text-base">{category}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-4">
+            {items.map((item, index) => {
+              if ((item.category || "تحليل عام") !== category) return null;
+              const isOpen = openItem === index;
+              const evidence: GapEvidence = {
+                gap: item.title,
+                quote: item.quote,
+                explanation: item.detail,
+                source_label: item.source_label,
+                source_url: item.source_url,
+                source_status: item.source_status,
+                screenshot_path: item.screenshot_path,
+              };
+              return (
+                <article key={`${category}-${index}`} className="rounded-lg border border-border p-4 text-right">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        <Badge variant="secondary">{item.finding_type || "ملاحظة"}</Badge>
+                        {item.priority && <Badge variant="outline">الأولوية: {item.priority}</Badge>}
+                      </div>
+                      <h3 className="font-semibold leading-relaxed text-foreground">{item.title}</h3>
+                      {item.detail && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.detail}</p>}
+                    </div>
+                    <Button variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => setOpenItem(isOpen ? null : index)}>
+                      <Eye className="h-4 w-4" /> {isOpen ? "إخفاء الدليل" : "عرض الدليل"}
+                    </Button>
+                  </div>
+                  {item.impact && (
+                    <div className="mt-3 rounded-md bg-muted/40 p-3 text-sm">
+                      <span className="font-semibold">الأثر: </span>{item.impact}
+                    </div>
+                  )}
+                  {item.recommendation && (
+                    <div className="mt-2 rounded-md border border-accent/30 p-3 text-sm">
+                      <span className="font-semibold text-accent">الإجراء المقترح: </span>{item.recommendation}
+                    </div>
+                  )}
+                  {isOpen && <GapPreview evidence={evidence} />}
+                </article>
+              );
+            })}
+          </CardContent>
+        </Card>
+      ))}
+    </section>
   );
 }
 
