@@ -868,7 +868,11 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                     {([["نقاط القوة", digital.strengths], ["الفجوات", digital.gaps], ["إجراءات التحسين", digital.actions]] as [string, string[] | undefined][]).map(([label, items]) => (
                       <div key={label}>
                         <div className="font-semibold text-foreground mb-1">{label}</div>
-                        <ul className="list-disc pr-5 space-y-1">{(items || []).map((t, i) => <li key={i}>{t}</li>)}</ul>
+                        {label === "الفجوات" ? (
+                          <StoreGapList gaps={items || []} evidence={smart.finding_evidence || []} />
+                        ) : (
+                          <ul className="list-disc space-y-1 pr-5">{(items || []).map((t, i) => <li key={i}>{t}</li>)}</ul>
+                        )}
                       </div>
                     ))}
                   </CardContent>
@@ -1026,6 +1030,41 @@ function FindingEvidenceSection({ evidence }: { evidence: FindingEvidence[] }) {
         })}
       </div>
     </section>
+  );
+}
+
+function StoreGapList({ gaps, evidence }: { gaps: string[]; evidence: FindingEvidence[] }) {
+  const [openGap, setOpenGap] = useState<number | null>(null);
+
+  return (
+    <div className="space-y-2">
+      {gaps.map((gap, index) => {
+        const matched = evidence.find((item) => item.finding?.trim() === gap.trim());
+        const isOpen = openGap === index;
+        return (
+          <div key={`${gap}-${index}`} className="rounded-md border border-destructive/20 bg-destructive/5 p-2.5">
+            <p className="leading-6 text-foreground">{gap}</p>
+            {matched ? (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-1 h-8 gap-2 px-2 text-primary"
+                  onClick={() => setOpenGap(isOpen ? null : index)}
+                >
+                  <Eye className="h-4 w-4" />
+                  {isOpen ? "إخفاء الدليل" : "عرض الدليل"}
+                </Button>
+                {isOpen && <StoreEvidencePreview evidence={matched} />}
+              </>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">أعد توليد التحليل لإظهار دليل هذه الفجوة ومعاينتها.</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
