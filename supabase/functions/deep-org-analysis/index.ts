@@ -564,6 +564,8 @@ Deno.serve(async (req) => {
         overall_assessment: aiResult.overall_assessment || null,
         strengths: aiResult.strengths || null,
         gaps: aiResult.gaps || null,
+        gap_evidence: gapEvidence.length ? gapEvidence : null,
+        source_previews: sourcePreviews.length ? sourcePreviews : null,
         recommendations: aiResult.recommendations || null,
         questions_generated: questionsInserted,
         completed_at: new Date().toISOString(),
