@@ -750,7 +750,7 @@ export default function OrgInternalDashboard({
 
           <div className="grid md:grid-cols-2 gap-4">
             <ListCard title="نقاط القوة" items={analysis?.strengths ?? []} icon={<CheckCircle2 className="w-5 h-5 text-muted-foreground" />} emptyText="لا توجد بعد" />
-            <ListCard title="الفجوات الحرجة" items={analysis?.gaps ?? []} icon={<AlertTriangle className="w-5 h-5 text-muted-foreground" />} emptyText="لا توجد فجوات مرصودة" />
+            <GapsCard gaps={analysis?.gaps ?? []} evidence={analysis?.gap_evidence ?? []} />
           </div>
 
           <ListCard title="التوصيات التنفيذية" items={analysis?.recommendations ?? []} icon={<Target className="w-5 h-5 text-muted-foreground" />} emptyText="لا توجد توصيات بعد" />
