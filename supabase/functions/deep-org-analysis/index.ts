@@ -457,6 +457,45 @@ Deno.serve(async (req) => {
       ? aiResult.document_insights as Record<string, unknown>
       : {};
 
+    // 6b) حفظ صور المصادر لتكون معاينة بصرية لكل فجوة
+    const previewPaths = await Promise.all(
+      sourceSnapshots.map((source, index) =>
+        source.screenshotUrl
+          ? storeSourceScreenshot(admin, organization_id, analysisRow.id, index, source.screenshotUrl)
+          : Promise.resolve(null),
+      ),
+    );
+    const sourcePreviews = sourceSnapshots.map((source, index) => ({
+      source_index: index,
+      kind: source.kind,
+      label: source.label,
+      url: source.url,
+      status: source.status,
+      screenshot_path: previewPaths[index],
+    }));
+
+    // 6c) ربط كل فجوة بمقتطف وصورة من المصدر نفسه
+    const gapList: string[] = Array.isArray(aiResult.gaps)
+      ? aiResult.gaps.filter((item: unknown) => typeof item === "string")
+      : [];
+    const rawEvidence: any[] = Array.isArray(aiResult.gap_evidence) ? aiResult.gap_evidence : [];
+    const gapEvidence = gapList.map((gap) => {
+      const match = rawEvidence.find(
+        (item) => typeof item?.gap === "string" && item.gap.trim().slice(0, 60) === gap.trim().slice(0, 60),
+      );
+      const index = Number.isInteger(match?.source_index) ? Number(match.source_index) : null;
+      const preview = index !== null ? sourcePreviews[index] : undefined;
+      return {
+        gap,
+        quote: typeof match?.quote === "string" ? match.quote.slice(0, 400) : null,
+        explanation: typeof match?.explanation === "string" ? match.explanation.slice(0, 300) : null,
+        source_label: preview?.label || (typeof match?.source_name === "string" ? match.source_name : null),
+        source_url: preview?.url || null,
+        source_status: preview?.status || null,
+        screenshot_path: preview?.screenshot_path || null,
+      };
+    });
+
     // 7) Persist accountability_questions linked to employees by role when possible
     const questions: any[] = Array.isArray(aiResult.accountability_questions)
       ? aiResult.accountability_questions
