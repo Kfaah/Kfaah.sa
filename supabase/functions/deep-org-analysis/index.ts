@@ -29,6 +29,7 @@ type DigitalSource = {
 type SourceSnapshot = DigitalSource & {
   status: "تم التحليل" | "تعذر الوصول" | "محتوى غير كافٍ";
   content: string | null;
+  screenshotUrl?: string | null;
 };
 
 type UploadedDocument = {
@@ -121,7 +122,7 @@ async function firecrawlScrape(source: DigitalSource): Promise<SourceSnapshot> {
       },
       body: JSON.stringify({
         url: source.url,
-        formats: ["markdown"],
+        formats: ["markdown", "screenshot"],
         onlyMainContent: true,
       }),
     });
@@ -132,14 +133,40 @@ async function firecrawlScrape(source: DigitalSource): Promise<SourceSnapshot> {
       j?.data?.markdown ||
       j?.data?.content ||
       "";
+    const shot = j?.screenshot || j?.data?.screenshot || null;
     const content = typeof md === "string" ? md.trim().slice(0, 8000) : "";
     return {
       ...source,
       status: content.length >= 120 ? "تم التحليل" : "محتوى غير كافٍ",
       content: content || cachedContent,
+      screenshotUrl: typeof shot === "string" && shot.startsWith("http") ? shot : null,
     };
   } catch {
     return { ...source, status: cachedContent ? "تم التحليل" : "تعذر الوصول", content: cachedContent };
+  }
+}
+
+// يحفظ صورة المصدر في مساحة خاصة حتى تبقى المعاينة متاحة بعد انتهاء صلاحية رابط المزوّد
+async function storeSourceScreenshot(
+  admin: ReturnType<typeof createClient>,
+  organizationId: string,
+  analysisId: string,
+  index: number,
+  screenshotUrl: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(screenshotUrl);
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (!bytes.length || bytes.length > 15_000_000) return null;
+    const path = `${organizationId}/${analysisId}/source-${index}.png`;
+    const { error } = await admin.storage
+      .from("analysis-previews")
+      .upload(path, bytes, { contentType: "image/png", upsert: true });
+    if (error) return null;
+    return path;
+  } catch {
+    return null;
   }
 }
 
