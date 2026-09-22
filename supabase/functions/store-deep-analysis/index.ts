@@ -383,7 +383,14 @@ ${RESULT_SHAPE}`;
         const runId = crypto.randomUUID();
         const previewPaths = await Promise.all(
           sourceSnapshots.map((source) =>
-            storeSourceScreenshot(admin, organization_id, runId, source.source_index, source.screenshotUrl)
+            storeSourceScreenshot(
+              admin,
+              organization_id,
+              runId,
+              source.source_index,
+              source.screenshotUrl,
+              source.url ?? null,
+            )
           ),
         );
         const rawEvidence = Array.isArray(generated.finding_evidence) ? generated.finding_evidence : [];
