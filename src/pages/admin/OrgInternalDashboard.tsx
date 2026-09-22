@@ -975,6 +975,131 @@ function ListCard({ title, items, icon, emptyText }: { title: string; items: str
   );
 }
 
+function GapPreview({ evidence }: { evidence: GapEvidence }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageState, setImageState] = useState<"idle" | "loading" | "missing">("idle");
+
+  useEffect(() => {
+    let cancelled = false;
+    const path = evidence.screenshot_path;
+    if (!path) {
+      setImageState("missing");
+      return;
+    }
+    setImageState("loading");
+    supabase.storage
+      .from("analysis-previews")
+      .createSignedUrl(path, 3600)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data?.signedUrl) {
+          setImageState("missing");
+          return;
+        }
+        setImageUrl(data.signedUrl);
+        setImageState("idle");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [evidence.screenshot_path]);
+
+  return (
+    <div className="mt-3 space-y-3 rounded-lg border border-border bg-muted/30 p-3 text-right">
+      {evidence.quote ? (
+        <div className="flex items-start gap-2">
+          <Quote className="mt-1 h-4 w-4 flex-shrink-0 text-accent" />
+          <p className="flex-1 text-sm leading-relaxed text-foreground">«{evidence.quote}»</p>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">لا يوجد مقتطف نصي محفوظ لهذه الفجوة.</p>
+      )}
+      {evidence.explanation && (
+        <p className="text-xs leading-relaxed text-muted-foreground">{evidence.explanation}</p>
+      )}
+      {imageUrl ? (
+        <a href={imageUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-md border border-border">
+          <img src={imageUrl} alt={evidence.source_label || "معاينة المصدر"} className="w-full object-cover" loading="lazy" />
+        </a>
+      ) : (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {imageState === "loading" ? (
+            <><Loader2 className="h-3.5 w-3.5 animate-spin" /> جارٍ تحميل صورة المصدر…</>
+          ) : (
+            <><ImageOff className="h-3.5 w-3.5" /> لا تتوفر صورة محفوظة للمصدر.</>
+          )}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        {evidence.source_label && <Badge variant="secondary">{evidence.source_label}</Badge>}
+        {evidence.source_status && <span className="text-muted-foreground">{evidence.source_status}</span>}
+        {evidence.source_url && (
+          <a
+            href={evidence.source_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-accent hover:underline"
+          >
+            <ExternalLink className="h-3.5 w-3.5" /> فتح المصدر
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GapsCard({ gaps, evidence }: { gaps: string[]; evidence: GapEvidence[] }) {
+  const [openGap, setOpenGap] = useState<string | null>(null);
+  const evidenceFor = (gap: string) =>
+    evidence.find((item) => (item.gap || "").trim().slice(0, 60) === gap.trim().slice(0, 60)) || null;
+
+  return (
+    <Card dir="rtl" className="relative overflow-hidden border-border bg-card shadow-sm">
+      <CardHeader className="text-right border-b border-border bg-muted/30">
+        <CardTitle className="flex items-center justify-start gap-2 text-right text-base text-foreground">
+          <span className="text-accent"><AlertTriangle className="w-5 h-5 text-muted-foreground" /></span>
+          <span>الفجوات الحرجة</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-right">
+        {gaps.length === 0 ? (
+          <p className="text-sm text-muted-foreground">لا توجد فجوات مرصودة</p>
+        ) : (
+          <ul className="space-y-2">
+            {gaps.map((gap, i) => {
+              const item = evidenceFor(gap);
+              const isOpen = openGap === gap;
+              return (
+                <li
+                  key={i}
+                  className="rounded-lg border border-border bg-card p-3 text-right text-sm leading-relaxed text-foreground transition-colors hover:bg-muted/40"
+                >
+                  <div className="flex items-start justify-start gap-2">
+                    <span className="mt-1 flex-shrink-0 text-accent">•</span>
+                    <span className="flex-1">{gap}</span>
+                    {item && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-shrink-0 gap-1 px-2 text-xs text-accent"
+                        onClick={() => setOpenGap(isOpen ? null : gap)}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        {isOpen ? "إخفاء المعاينة" : "معاينة"}
+                      </Button>
+                    )}
+                  </div>
+                  {item && isOpen && <GapPreview evidence={item} />}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 const INSIGHT_FIELD_LABELS: Record<string, string> = {
   total_donations_count: "إجمالي عدد التبرعات",
   total_amount: "إجمالي قيمة التبرعات",
