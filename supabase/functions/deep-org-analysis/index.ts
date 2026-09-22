@@ -133,16 +133,61 @@ async function firecrawlScrape(source: DigitalSource): Promise<SourceSnapshot> {
       j?.data?.markdown ||
       j?.data?.content ||
       "";
-    const shot = j?.screenshot || j?.data?.screenshot || null;
+    const shot = j?.screenshot || j?.data?.screenshot || j?.data?.screenshotUrl || null;
     const content = typeof md === "string" ? md.trim().slice(0, 8000) : "";
     return {
       ...source,
       status: content.length >= 120 ? "تم التحليل" : "محتوى غير كافٍ",
       content: content || cachedContent,
-      screenshotUrl: typeof shot === "string" && shot.startsWith("http") ? shot : null,
+      screenshotUrl: typeof shot === "string" && shot.length > 20 ? shot : null,
     };
   } catch {
     return { ...source, status: cachedContent ? "تم التحليل" : "تعذر الوصول", content: cachedContent };
+  }
+}
+
+function decodeBase64Image(value: string): Uint8Array | null {
+  try {
+    const base64 = value.includes(",") ? value.slice(value.indexOf(",") + 1) : value;
+    const raw = atob(base64.replace(/\s/g, ""));
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
+    return bytes.length > 2000 ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
+// يلتقط صورة للمصدر: أولاً من مزوّد القراءة، وإن تعذّر (حسابات تمنع التصوير) فعبر خدمة تصوير مستقلة
+async function captureScreenshotBytes(
+  screenshotUrl: string | null,
+  pageUrl: string | null,
+): Promise<Uint8Array | null> {
+  if (screenshotUrl) {
+    if (screenshotUrl.startsWith("data:") || !screenshotUrl.startsWith("http")) {
+      const decoded = decodeBase64Image(screenshotUrl);
+      if (decoded) return decoded;
+    } else {
+      try {
+        const res = await fetch(screenshotUrl);
+        if (res.ok) {
+          const bytes = new Uint8Array(await res.arrayBuffer());
+          if (bytes.length > 2000) return bytes;
+        }
+      } catch { /* يتابع إلى الخدمة البديلة */ }
+    }
+  }
+  if (!pageUrl || !pageUrl.startsWith("http")) return null;
+  try {
+    const res = await fetch(
+      `https://image.thum.io/get/width/1200/crop/900/png/${pageUrl}`,
+      { signal: AbortSignal.timeout(45_000) },
+    );
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    return bytes.length > 5000 ? bytes : null;
+  } catch {
+    return null;
   }
 }
 
@@ -152,13 +197,12 @@ async function storeSourceScreenshot(
   organizationId: string,
   analysisId: string,
   index: number,
-  screenshotUrl: string,
+  screenshotUrl: string | null,
+  pageUrl: string | null,
 ): Promise<string | null> {
   try {
-    const res = await fetch(screenshotUrl);
-    if (!res.ok) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (!bytes.length || bytes.length > 15_000_000) return null;
+    const bytes = await captureScreenshotBytes(screenshotUrl, pageUrl);
+    if (!bytes || bytes.length > 15_000_000) return null;
     const path = `${organizationId}/${analysisId}/source-${index}.png`;
     const { error } = await admin.storage
       .from("analysis-previews")
