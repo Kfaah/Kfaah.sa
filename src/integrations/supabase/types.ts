@@ -1046,6 +1046,7 @@ export type Database = {
       deep_analyses: {
         Row: {
           ai_model: string | null
+          analysis_evidence: Json | null
           campaigns_analysis: Json | null
           completed_at: string | null
           created_at: string
@@ -1076,6 +1077,7 @@ export type Database = {
         }
         Insert: {
           ai_model?: string | null
+          analysis_evidence?: Json | null
           campaigns_analysis?: Json | null
           completed_at?: string | null
           created_at?: string
@@ -1106,6 +1108,7 @@ export type Database = {
         }
         Update: {
           ai_model?: string | null
+          analysis_evidence?: Json | null
           campaigns_analysis?: Json | null
           completed_at?: string | null
           created_at?: string
