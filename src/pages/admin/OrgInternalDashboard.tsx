@@ -1197,6 +1197,61 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
   );
 }
 
+function AnalysisRecommendationsSection({ analysis }: { analysis: DeepAnalysis }) {
+  const topRecommendations = Array.isArray(analysis.recommendations) ? analysis.recommendations.filter(Boolean) : [];
+  const evidenceActions = (analysis.analysis_evidence ?? [])
+    .map((item) => item.recommendation)
+    .filter((rec): rec is string => Boolean(rec && rec.trim()));
+
+  const uniqueRecommendations = Array.from(new Set(topRecommendations.map((rec) => rec.trim()))).slice(0, 20);
+  const uniqueActions = Array.from(new Set(evidenceActions.map((rec) => rec.trim())))
+    .filter((rec) => !uniqueRecommendations.includes(rec))
+    .slice(0, 20);
+
+  if (uniqueRecommendations.length === 0 && uniqueActions.length === 0) return null;
+
+  return (
+    <Card dir="rtl" className="border-border bg-card">
+      <CardHeader className="border-b border-border bg-muted/30 text-right">
+        <CardTitle className="flex items-center justify-start gap-2 text-base">
+          <Target className="h-5 w-5 text-accent" /> التوصيات
+        </CardTitle>
+        <p className="mt-1 text-sm text-muted-foreground">
+          خلاصة التوصيات والإجراءات المقترحة المستخلصة من نتائج التحليل كاملة
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-4 text-right">
+        {uniqueRecommendations.length > 0 && (
+          <div>
+            <p className="mb-2 text-sm font-semibold text-foreground">توصيات التحليل الشامل</p>
+            <ul className="space-y-2">
+              {uniqueRecommendations.map((rec, index) => (
+                <li key={`rec-${index}`} className="flex items-start gap-2 rounded-md bg-muted/40 p-3 text-sm leading-relaxed">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[11px] font-bold text-accent">{index + 1}</span>
+                  <span>{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {uniqueActions.length > 0 && (
+          <div>
+            <p className="mb-2 text-sm font-semibold text-foreground">إجراءات مقترحة من النتائج الموثقة</p>
+            <ul className="space-y-2">
+              {uniqueActions.map((rec, index) => (
+                <li key={`act-${index}`} className="flex items-start gap-2 rounded-md border border-accent/30 p-3 text-sm leading-relaxed">
+                  <Target className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                  <span>{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 const INSIGHT_FIELD_LABELS: Record<string, string> = {
   total_donations_count: "إجمالي عدد التبرعات",
   total_amount: "إجمالي قيمة التبرعات",
