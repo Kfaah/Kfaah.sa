@@ -29,6 +29,7 @@ type DigitalSource = {
 type SourceSnapshot = DigitalSource & {
   status: "تم التحليل" | "تعذر الوصول" | "محتوى غير كافٍ";
   content: string | null;
+  screenshotUrl?: string | null;
 };
 
 type UploadedDocument = {
@@ -121,7 +122,7 @@ async function firecrawlScrape(source: DigitalSource): Promise<SourceSnapshot> {
       },
       body: JSON.stringify({
         url: source.url,
-        formats: ["markdown"],
+        formats: ["markdown", "screenshot"],
         onlyMainContent: true,
       }),
     });
@@ -132,14 +133,40 @@ async function firecrawlScrape(source: DigitalSource): Promise<SourceSnapshot> {
       j?.data?.markdown ||
       j?.data?.content ||
       "";
+    const shot = j?.screenshot || j?.data?.screenshot || null;
     const content = typeof md === "string" ? md.trim().slice(0, 8000) : "";
     return {
       ...source,
       status: content.length >= 120 ? "تم التحليل" : "محتوى غير كافٍ",
       content: content || cachedContent,
+      screenshotUrl: typeof shot === "string" && shot.startsWith("http") ? shot : null,
     };
   } catch {
     return { ...source, status: cachedContent ? "تم التحليل" : "تعذر الوصول", content: cachedContent };
+  }
+}
+
+// يحفظ صورة المصدر في مساحة خاصة حتى تبقى المعاينة متاحة بعد انتهاء صلاحية رابط المزوّد
+async function storeSourceScreenshot(
+  admin: ReturnType<typeof createClient>,
+  organizationId: string,
+  analysisId: string,
+  index: number,
+  screenshotUrl: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(screenshotUrl);
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (!bytes.length || bytes.length > 15_000_000) return null;
+    const path = `${organizationId}/${analysisId}/source-${index}.png`;
+    const { error } = await admin.storage
+      .from("analysis-previews")
+      .upload(path, bytes, { contentType: "image/png", upsert: true });
+    if (error) return null;
+    return path;
+  } catch {
+    return null;
   }
 }
 
@@ -345,6 +372,15 @@ Deno.serve(async (req) => {
   "document_insights": { "summary": "خلاصة موحّدة مختصرة (سطران) لما تكشفه جميع الملفات مجتمعة", "common_findings": ["ثلاث نتائج كحد أقصى"], "conflicts_and_gaps": ["ثلاث نقاط كحد أقصى"], "recommendations": ["ثلاث توصيات كحد أقصى"] },
   "strengths": ["نقطة قوة 1", "نقطة قوة 2", "..."],
   "gaps": ["فجوة 1 محددة", "فجوة 2 محددة", "..."],
+  "gap_evidence": [
+    {
+      "gap": "نص الفجوة كما ورد حرفياً في قائمة gaps",
+      "source_index": 0,
+      "source_name": "اسم المصدر بالعربية كما ورد في المدخلات",
+      "quote": "مقتطف حرفي قصير (أقل من 300 حرف) منقول من محتوى المصدر يثبت الفجوة، أو اكتب: لا يوجد في المصدر ما يعالج هذه النقطة",
+      "explanation": "سطر واحد يوضح كيف يثبت المقتطف الفجوة"
+    }
+  ],
   "recommendations": ["توصية تنفيذية 1", "توصية تنفيذية 2", "..."],
   "accountability_questions": [
     {
@@ -370,7 +406,9 @@ Deno.serve(async (req) => {
 - اجعل social_insights و document_insights خلاصة موحّدة مختصرة ومفيدة لكل المصادر ولكل الملفات مجتمعة، لا قوائم تفصيلية.
 - قيّم الموقع والمتجر باختصار من حيث وضوح الرسالة، رحلة المتبرع، الثقة والشفافية، واكتمال المعلومات، مع ذكر أهم الفجوات فقط.
 - التزم بالإيجاز: لا تتجاوز 5 عناصر في أي قائمة، وركّز على ما يقود إلى إجراء.
-- حدد أنواع الإثبات بدقة (مثلاً: "روابط منشورات شكر للمتبرعين الكبار خلال آخر 90 يوم").`;
+- حدد أنواع الإثبات بدقة (مثلاً: "روابط منشورات شكر للمتبرعين الكبار خلال آخر 90 يوم").
+- إلزامي: لكل فجوة في قائمة gaps أضف عنصراً مقابلاً في gap_evidence، بنفس نص الفجوة حرفياً، مع source_index مطابق لرقم المصدر في digital_sources الذي تظهر فيه الفجوة (أو null إذا كان مصدرها ملفات أو بيانات التبرعات).
+- المقتطف في quote يجب أن يكون منقولاً حرفياً من محتوى المصدر ولا تختلقه؛ وإذا كانت الفجوة غياب شيء فاكتب صراحة أنه لا يوجد في المصدر ما يعالج هذه النقطة.`;
 
     const aiPayload = {
       organization: { name: org?.name, slug: org?.slug },
@@ -396,7 +434,8 @@ Deno.serve(async (req) => {
       })),
       donations_summary: donationsSummary,
       campaigns: campaigns.slice(0, 50),
-      digital_sources: sourceSnapshots.map((source) => ({
+      digital_sources: sourceSnapshots.map((source, index) => ({
+        source_index: index,
         source_name: source.label,
         source_type: SOURCE_LABELS[source.kind] || source.kind,
         url: source.url,
@@ -417,6 +456,45 @@ Deno.serve(async (req) => {
     const generatedDocumentInsights = aiResult.document_insights && typeof aiResult.document_insights === "object"
       ? aiResult.document_insights as Record<string, unknown>
       : {};
+
+    // 6b) حفظ صور المصادر لتكون معاينة بصرية لكل فجوة
+    const previewPaths = await Promise.all(
+      sourceSnapshots.map((source, index) =>
+        source.screenshotUrl
+          ? storeSourceScreenshot(admin, organization_id, analysisRow.id, index, source.screenshotUrl)
+          : Promise.resolve(null),
+      ),
+    );
+    const sourcePreviews = sourceSnapshots.map((source, index) => ({
+      source_index: index,
+      kind: source.kind,
+      label: source.label,
+      url: source.url,
+      status: source.status,
+      screenshot_path: previewPaths[index],
+    }));
+
+    // 6c) ربط كل فجوة بمقتطف وصورة من المصدر نفسه
+    const gapList: string[] = Array.isArray(aiResult.gaps)
+      ? aiResult.gaps.filter((item: unknown) => typeof item === "string")
+      : [];
+    const rawEvidence: any[] = Array.isArray(aiResult.gap_evidence) ? aiResult.gap_evidence : [];
+    const gapEvidence = gapList.map((gap) => {
+      const match = rawEvidence.find(
+        (item) => typeof item?.gap === "string" && item.gap.trim().slice(0, 60) === gap.trim().slice(0, 60),
+      );
+      const index = Number.isInteger(match?.source_index) ? Number(match.source_index) : null;
+      const preview = index !== null ? sourcePreviews[index] : undefined;
+      return {
+        gap,
+        quote: typeof match?.quote === "string" ? match.quote.slice(0, 400) : null,
+        explanation: typeof match?.explanation === "string" ? match.explanation.slice(0, 300) : null,
+        source_label: preview?.label || (typeof match?.source_name === "string" ? match.source_name : null),
+        source_url: preview?.url || null,
+        source_status: preview?.status || null,
+        screenshot_path: preview?.screenshot_path || null,
+      };
+    });
 
     // 7) Persist accountability_questions linked to employees by role when possible
     const questions: any[] = Array.isArray(aiResult.accountability_questions)
@@ -486,6 +564,8 @@ Deno.serve(async (req) => {
         overall_assessment: aiResult.overall_assessment || null,
         strengths: aiResult.strengths || null,
         gaps: aiResult.gaps || null,
+        gap_evidence: gapEvidence.length ? gapEvidence : null,
+        source_previews: sourcePreviews.length ? sourcePreviews : null,
         recommendations: aiResult.recommendations || null,
         questions_generated: questionsInserted,
         completed_at: new Date().toISOString(),

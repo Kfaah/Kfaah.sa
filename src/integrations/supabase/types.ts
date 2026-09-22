@@ -1054,6 +1054,7 @@ export type Database = {
           donations_summary: Json | null
           donors_segmentation: Json | null
           error_message: string | null
+          gap_evidence: Json | null
           gaps: Json | null
           id: string
           organization_id: string
@@ -1061,6 +1062,7 @@ export type Database = {
           questions_generated: number
           recommendations: Json | null
           social_insights: Json | null
+          source_previews: Json | null
           sources: Json
           started_at: string
           status: string
@@ -1082,6 +1084,7 @@ export type Database = {
           donations_summary?: Json | null
           donors_segmentation?: Json | null
           error_message?: string | null
+          gap_evidence?: Json | null
           gaps?: Json | null
           id?: string
           organization_id: string
@@ -1089,6 +1092,7 @@ export type Database = {
           questions_generated?: number
           recommendations?: Json | null
           social_insights?: Json | null
+          source_previews?: Json | null
           sources?: Json
           started_at?: string
           status?: string
@@ -1110,6 +1114,7 @@ export type Database = {
           donations_summary?: Json | null
           donors_segmentation?: Json | null
           error_message?: string | null
+          gap_evidence?: Json | null
           gaps?: Json | null
           id?: string
           organization_id?: string
@@ -1117,6 +1122,7 @@ export type Database = {
           questions_generated?: number
           recommendations?: Json | null
           social_insights?: Json | null
+          source_previews?: Json | null
           sources?: Json
           started_at?: string
           status?: string
