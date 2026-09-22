@@ -520,9 +520,14 @@ Deno.serve(async (req) => {
     // 6b) حفظ صور المصادر لتكون معاينة بصرية لكل فجوة
     const previewPaths = await Promise.all(
       sourceSnapshots.map((source, index) =>
-        source.screenshotUrl
-          ? storeSourceScreenshot(admin, organization_id, analysisRow.id, index, source.screenshotUrl)
-          : Promise.resolve(null),
+        storeSourceScreenshot(
+          admin,
+          organization_id,
+          analysisRow.id,
+          index,
+          source.screenshotUrl ?? null,
+          source.url ?? null,
+        ),
       ),
     );
     const sourcePreviews = sourceSnapshots.map((source, index) => ({
