@@ -1038,8 +1038,10 @@ function GapPreview({ evidence }: { evidence: GapEvidence }) {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {imageState === "loading" ? (
             <><Loader2 className="h-3.5 w-3.5 animate-spin" /> جارٍ تحميل صورة المصدر…</>
+          ) : !evidence.source_url ? (
+            <><Quote className="h-3.5 w-3.5" /> هذا الدليل مستخرج من ملفات الجمعية وبياناتها، فلا توجد صورة موقع مرتبطة به.</>
           ) : (
-            <><ImageOff className="h-3.5 w-3.5" /> لا تتوفر صورة محفوظة للمصدر.</>
+            <><ImageOff className="h-3.5 w-3.5" /> تعذّر تصوير هذا المصدر، ويمكنك فتحه من الرابط أدناه للاطلاع المباشر.</>
           )}
         </div>
       )}
