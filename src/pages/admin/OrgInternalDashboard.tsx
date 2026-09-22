@@ -821,6 +821,7 @@ export default function OrgInternalDashboard({
                 <InsightCard title="شرائح المتبرعين" data={analysis.donors_segmentation} />
                 <InsightCard title="ملخص التبرعات" data={analysis.donations_summary} />
               </div>
+              <AnalysisRecommendationsSection analysis={analysis} />
             </div>
           )}
         </TabsContent>
