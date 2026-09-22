@@ -166,12 +166,23 @@ interface Profile {
 }
 
 
+interface GapEvidence {
+  gap: string;
+  quote?: string | null;
+  explanation?: string | null;
+  source_label?: string | null;
+  source_url?: string | null;
+  source_status?: string | null;
+  screenshot_path?: string | null;
+}
+
 interface DeepAnalysis {
   id: string;
   status: string;
   overall_assessment: string | null;
   strengths: string[] | null;
   gaps: string[] | null;
+  gap_evidence?: GapEvidence[] | null;
   recommendations: string[] | null;
   donations_summary: Record<string, unknown> | null;
   donors_segmentation: Record<string, unknown> | null;
