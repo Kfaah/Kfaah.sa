@@ -434,7 +434,8 @@ Deno.serve(async (req) => {
       })),
       donations_summary: donationsSummary,
       campaigns: campaigns.slice(0, 50),
-      digital_sources: sourceSnapshots.map((source) => ({
+      digital_sources: sourceSnapshots.map((source, index) => ({
+        source_index: index,
         source_name: source.label,
         source_type: SOURCE_LABELS[source.kind] || source.kind,
         url: source.url,
