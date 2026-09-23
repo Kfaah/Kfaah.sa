@@ -831,6 +831,7 @@ export default function OrgInternalDashboard({
             </Card>
           ) : (
             <div className="space-y-4">
+              <SourceBreakdownSection analysis={analysis} />
               <AnalysisEvidenceSection analysis={analysis} />
               <div className="grid gap-4 md:grid-cols-2">
                 <InsightCard title="تحليل الملفات المرفوعة" data={analysis.document_insights} />
