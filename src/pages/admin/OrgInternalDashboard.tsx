@@ -1136,6 +1136,135 @@ function GapsCard({ gaps, evidence }: { gaps: string[]; evidence: GapEvidence[] 
   );
 }
 
+function BulletBlock({ title, items }: { title: string; items?: string[] | null }) {
+  const list = (items ?? []).filter(Boolean);
+  if (list.length === 0) return null;
+  return (
+    <div className="text-right">
+      <p className="mb-1 text-sm font-semibold text-foreground">{title}</p>
+      <ul className="space-y-1 text-sm leading-relaxed text-muted-foreground">
+        {list.map((item, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+            <span className="min-w-0">{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
+  const [openSource, setOpenSource] = useState<number | null>(null);
+  const sources = analysis.source_breakdown ?? [];
+
+  if (sources.length === 0) {
+    return (
+      <Card dir="rtl" className="border-border bg-card">
+        <CardHeader className="text-right">
+          <CardTitle className="flex items-center justify-start gap-2 text-base">
+            <Eye className="h-5 w-5 text-accent" /> الشرح التفصيلي لمواقع الجمعية وحساباتها
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-right text-sm text-muted-foreground">
+          هذا التحليل أُنشئ قبل إضافة الشرح التفصيلي لكل مصدر. اضغط «إعادة تشغيل التحليل» لعرض شرح مفصّل للموقع الرسمي والمتجر وكل حساب.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <section className="space-y-3" dir="rtl">
+      <div className="text-right">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+          <Eye className="h-5 w-5 text-accent" /> الشرح التفصيلي لمواقع الجمعية وحساباتها
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {sources.length} مصدراً تم شرحه بالتفصيل: الموقع الرسمي والمتجر وجميع الحسابات الرقمية
+        </p>
+      </div>
+      {sources.map((source) => {
+        const isOpen = openSource === source.source_index;
+        return (
+          <Card key={source.source_index} className="border-border bg-card">
+            <CardHeader className="border-b border-border bg-muted/30 text-right">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <CardTitle className="text-base">{source.source_name || "مصدر"}</CardTitle>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {source.source_type && <Badge variant="secondary">{source.source_type}</Badge>}
+                    {source.source_status && <Badge variant="outline">{source.source_status}</Badge>}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1"
+                  onClick={() => setOpenSource(isOpen ? null : source.source_index)}
+                >
+                  <Eye className="h-4 w-4" /> {isOpen ? "إخفاء المعاينة" : "عرض المعاينة"}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4">
+              {source.purpose && (
+                <p className="text-right text-sm leading-relaxed text-muted-foreground">
+                  <span className="font-semibold text-foreground">الغرض: </span>{source.purpose}
+                </p>
+              )}
+              {source.overview && (
+                <p className="text-right text-sm leading-relaxed text-foreground">{source.overview}</p>
+              )}
+              <BulletBlock title="تفاصيل ما ظهر في المصدر" items={source.content_details} />
+              {source.donation_experience && (
+                <div className="rounded-md bg-muted/40 p-3 text-right text-sm leading-relaxed">
+                  <span className="font-semibold">تجربة التبرع والدعوة إلى الإجراء: </span>
+                  {source.donation_experience}
+                </div>
+              )}
+              {source.audience_engagement && (
+                <div className="rounded-md bg-muted/40 p-3 text-right text-sm leading-relaxed">
+                  <span className="font-semibold">الجمهور والتفاعل: </span>
+                  {source.audience_engagement}
+                </div>
+              )}
+              <div className="grid gap-4 md:grid-cols-2">
+                <BulletBlock title="نقاط القوة" items={source.strengths} />
+                <BulletBlock title="الفجوات والأخطاء" items={source.gaps} />
+                <BulletBlock title="ملاحظات دقيقة" items={source.small_notes} />
+                <BulletBlock title="إجراءات مقترحة" items={source.recommendations} />
+              </div>
+              {(source.quotes ?? []).length > 0 && (
+                <div className="space-y-2 text-right">
+                  <p className="text-sm font-semibold text-foreground">مقتطفات من المصدر</p>
+                  {(source.quotes ?? []).map((quote, i) => (
+                    <blockquote key={i} className="rounded-md border-r-2 border-accent bg-muted/30 p-3 text-sm leading-relaxed text-muted-foreground">
+                      {quote}
+                    </blockquote>
+                  ))}
+                </div>
+              )}
+              {isOpen && (
+                <GapPreview
+                  evidence={{
+                    gap: source.source_name || "مصدر",
+                    quote: (source.quotes ?? [])[0] ?? null,
+                    explanation: source.overview ?? null,
+                    source_label: source.source_name ?? null,
+                    source_url: source.source_url ?? null,
+                    source_status: source.source_status ?? null,
+                    screenshot_path: source.screenshot_path ?? null,
+                  }}
+                />
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </section>
+  );
+}
+
 function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
   const [openItem, setOpenItem] = useState<number | null>(null);
   const items = analysis.analysis_evidence ?? [];
