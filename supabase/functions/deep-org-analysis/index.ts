@@ -707,6 +707,7 @@ Deno.serve(async (req) => {
         gaps: aiResult.gaps || null,
         gap_evidence: gapEvidence.length ? gapEvidence : null,
         analysis_evidence: analysisEvidence.length ? analysisEvidence : null,
+        source_breakdown: sourceBreakdown.length ? sourceBreakdown : null,
         source_previews: sourcePreviews.length ? sourcePreviews : null,
         recommendations: aiResult.recommendations || null,
         questions_generated: questionsInserted,
