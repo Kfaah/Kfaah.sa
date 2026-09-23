@@ -425,6 +425,22 @@ Deno.serve(async (req) => {
       "explanation": "سطر واحد يوضح كيف يثبت المقتطف الفجوة"
     }
   ],
+  "source_breakdown": [
+    {
+      "source_index": 0,
+      "source_name": "اسم المصدر بالعربية كما ورد في المدخلات",
+      "purpose": "ما الغرض الذي يخدمه هذا الموقع أو الحساب للجمعية",
+      "overview": "شرح تفصيلي (4-8 أسطر) لكل ما ظهر في هذا المصدر: المحتوى، الخدمات، البرامج، أسلوب العرض، وضوح التبرع، الشفافية، جودة المعلومات، حداثة التحديث",
+      "content_details": ["تفصيل دقيق لعنصر ظهر في المصدر", "تفصيل آخر"],
+      "donation_experience": "تفصيل تجربة التبرع أو الشراء أو الدعوة إلى الإجراء في هذا المصدر، أو: لا ينطبق",
+      "audience_engagement": "تفصيل التفاعل والجمهور وأسلوب الخطاب في هذا المصدر، أو: لا ينطبق",
+      "strengths": ["نقطة قوة محددة في هذا المصدر"],
+      "gaps": ["فجوة أو خطأ محدد في هذا المصدر"],
+      "small_notes": ["ملاحظة صغيرة لكنها مؤثرة (تفاصيل، صياغة، روابط، صور، أرقام)"],
+      "quotes": ["مقتطف حرفي قصير منقول من محتوى المصدر"],
+      "recommendations": ["إجراء تنفيذي محدد لهذا المصدر"]
+    }
+  ],
   "analysis_evidence": [
     {
       "category": "الموقع الإلكتروني | المتجر الإلكتروني | الحسابات الرقمية | الملفات | التبرعات | الحملات | الحوكمة | التشغيل",
@@ -468,7 +484,14 @@ Deno.serve(async (req) => {
 - لا تختلق اقتباساً أو رقماً. انقل النص حرفياً من المصدر أو استخدم قيمة موجودة صراحة في المدخلات.
 - حدد أنواع الإثبات بدقة (مثلاً: "روابط منشورات شكر للمتبرعين الكبار خلال آخر 90 يوم").
 - إلزامي: لكل فجوة في قائمة gaps أضف عنصراً مقابلاً في gap_evidence، بنفس نص الفجوة حرفياً، مع source_index مطابق لرقم المصدر في digital_sources الذي تظهر فيه الفجوة (أو null إذا كان مصدرها ملفات أو بيانات التبرعات).
-- المقتطف في quote يجب أن يكون منقولاً حرفياً من محتوى المصدر ولا تختلقه؛ وإذا كانت الفجوة غياب شيء فاكتب صراحة أنه لا يوجد في المصدر ما يعالج هذه النقطة.`;
+- المقتطف في quote يجب أن يكون منقولاً حرفياً من محتوى المصدر ولا تختلقه؛ وإذا كانت الفجوة غياب شيء فاكتب صراحة أنه لا يوجد في المصدر ما يعالج هذه النقطة.
+
+قواعد source_breakdown (إلزامية):
+- أنشئ عنصراً واحداً لكل مصدر في digital_sources دون استثناء، بنفس source_index ونفس الترتيب، بما يشمل الموقع الرسمي والمتجر وكل حساب رقمي.
+- الشرح تفصيلي لكل صغيرة وكبيرة ظهرت فعلاً في محتوى المصدر: البرامج، المشاريع، الخدمات، الأسعار، طرق الدفع، الشفافية، التقارير، بيانات التواصل، جودة الصياغة، الصور، الروابط، حداثة التحديث.
+- إذا كانت حالة المصدر «تعذر الوصول» أو «محتوى غير كافٍ» فاكتب ذلك صراحة في overview، واجعل content_details وquotes فارغة، ولا تخترع محتوى.
+- لا تقل «لا توجد معلومات» إذا كان المحتوى متاحاً؛ استخرج كل ما يمكن استخراجه.
+- كل عنصر في quotes منقول حرفياً من محتوى المصدر نفسه فقط.`;
 
     const aiPayload = {
       organization: { name: org?.name, slug: org?.slug },
@@ -583,6 +606,37 @@ Deno.serve(async (req) => {
       };
     });
 
+    // 6d) شرح تفصيلي لكل مصدر (الموقع الرسمي، المتجر، كل حساب)
+    const rawBreakdown: any[] = Array.isArray(aiResult.source_breakdown) ? aiResult.source_breakdown : [];
+    const strList = (value: unknown, max = 12, len = 500) =>
+      (Array.isArray(value) ? value : [])
+        .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+        .slice(0, max)
+        .map((item) => item.slice(0, len));
+    const sourceBreakdown = sourcePreviews.map((preview) => {
+      const match = rawBreakdown.find((item) => Number(item?.source_index) === preview.source_index);
+      const text = (value: unknown, len: number) =>
+        typeof value === "string" && value.trim() ? value.slice(0, len) : null;
+      return {
+        source_index: preview.source_index,
+        source_name: text(match?.source_name, 200) || preview.label,
+        source_type: SOURCE_LABELS[preview.kind] || preview.kind,
+        source_url: preview.url,
+        source_status: preview.status,
+        screenshot_path: preview.screenshot_path,
+        purpose: text(match?.purpose, 400),
+        overview: text(match?.overview, 2500),
+        content_details: strList(match?.content_details, 16),
+        donation_experience: text(match?.donation_experience, 900),
+        audience_engagement: text(match?.audience_engagement, 900),
+        strengths: strList(match?.strengths),
+        gaps: strList(match?.gaps),
+        small_notes: strList(match?.small_notes, 16),
+        quotes: strList(match?.quotes, 8, 400),
+        recommendations: strList(match?.recommendations),
+      };
+    });
+
     // 7) Persist accountability_questions linked to employees by role when possible
     const questions: any[] = Array.isArray(aiResult.accountability_questions)
       ? aiResult.accountability_questions
@@ -653,6 +707,7 @@ Deno.serve(async (req) => {
         gaps: aiResult.gaps || null,
         gap_evidence: gapEvidence.length ? gapEvidence : null,
         analysis_evidence: analysisEvidence.length ? analysisEvidence : null,
+        source_breakdown: sourceBreakdown.length ? sourceBreakdown : null,
         source_previews: sourcePreviews.length ? sourcePreviews : null,
         recommendations: aiResult.recommendations || null,
         questions_generated: questionsInserted,
