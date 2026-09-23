@@ -213,6 +213,7 @@ interface DeepAnalysis {
   gaps: string[] | null;
   gap_evidence?: GapEvidence[] | null;
   analysis_evidence?: AnalysisEvidence[] | null;
+  source_breakdown?: SourceBreakdown[] | null;
   recommendations: string[] | null;
   donations_summary: Record<string, unknown> | null;
   donors_segmentation: Record<string, unknown> | null;
