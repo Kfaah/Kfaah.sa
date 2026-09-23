@@ -606,6 +606,37 @@ Deno.serve(async (req) => {
       };
     });
 
+    // 6d) شرح تفصيلي لكل مصدر (الموقع الرسمي، المتجر، كل حساب)
+    const rawBreakdown: any[] = Array.isArray(aiResult.source_breakdown) ? aiResult.source_breakdown : [];
+    const strList = (value: unknown, max = 12, len = 500) =>
+      (Array.isArray(value) ? value : [])
+        .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+        .slice(0, max)
+        .map((item) => item.slice(0, len));
+    const sourceBreakdown = sourcePreviews.map((preview) => {
+      const match = rawBreakdown.find((item) => Number(item?.source_index) === preview.source_index);
+      const text = (value: unknown, len: number) =>
+        typeof value === "string" && value.trim() ? value.slice(0, len) : null;
+      return {
+        source_index: preview.source_index,
+        source_name: text(match?.source_name, 200) || preview.label,
+        source_type: SOURCE_LABELS[preview.kind] || preview.kind,
+        source_url: preview.url,
+        source_status: preview.status,
+        screenshot_path: preview.screenshot_path,
+        purpose: text(match?.purpose, 400),
+        overview: text(match?.overview, 2500),
+        content_details: strList(match?.content_details, 16),
+        donation_experience: text(match?.donation_experience, 900),
+        audience_engagement: text(match?.audience_engagement, 900),
+        strengths: strList(match?.strengths),
+        gaps: strList(match?.gaps),
+        small_notes: strList(match?.small_notes, 16),
+        quotes: strList(match?.quotes, 8, 400),
+        recommendations: strList(match?.recommendations),
+      };
+    });
+
     // 7) Persist accountability_questions linked to employees by role when possible
     const questions: any[] = Array.isArray(aiResult.accountability_questions)
       ? aiResult.accountability_questions
