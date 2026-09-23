@@ -186,6 +186,25 @@ interface AnalysisEvidence extends Omit<GapEvidence, "gap"> {
   recommendation?: string | null;
 }
 
+interface SourceBreakdown {
+  source_index: number;
+  source_name?: string | null;
+  source_type?: string | null;
+  source_url?: string | null;
+  source_status?: string | null;
+  screenshot_path?: string | null;
+  purpose?: string | null;
+  overview?: string | null;
+  content_details?: string[] | null;
+  donation_experience?: string | null;
+  audience_engagement?: string | null;
+  strengths?: string[] | null;
+  gaps?: string[] | null;
+  small_notes?: string[] | null;
+  quotes?: string[] | null;
+  recommendations?: string[] | null;
+}
+
 interface DeepAnalysis {
   id: string;
   status: string;
