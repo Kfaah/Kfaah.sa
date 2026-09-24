@@ -572,12 +572,20 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                         {criteria.map(c => {
                           const s = getScore(e.user_id!, c.id);
                           const real = s ? Number(s.score) : null;
-                          const v = real ?? demoScore(e.user_id!, c.id);
+                          const v = real ?? (canManage ? demoScore(e.user_id!, c.id) : null);
+                          if (v === null) {
+                            return (
+                              <td key={c.id} className="py-1.5 px-2 text-center">
+                                <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg min-w-[58px] bg-muted/40 ring-1 ring-border text-muted-foreground text-[13px] font-semibold">—</span>
+                              </td>
+                            );
+                          }
                           const t = scoreTone(v);
                           return (
                             <td key={c.id} className="py-1.5 px-2 text-center">
                               <button
-                                onClick={() => openScore(e.user_id!, c.id, e.full_name, c.name)}
+                                onClick={() => canManage && openScore(e.user_id!, c.id, e.full_name, c.name)}
+                                disabled={!canManage}
                                 className={cn(
                                   "inline-flex flex-col items-center gap-1 px-2.5 py-1 rounded-lg transition-all min-w-[58px]",
                                   "hover:scale-105 hover:shadow-sm",
