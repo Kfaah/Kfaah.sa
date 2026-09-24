@@ -221,6 +221,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
     setEmployees(
       ((eRes.data ?? []) as any[])
         .filter(e => e.user_id)
+        .filter(e => privileged || e.user_id === user?.id)
         .map(e => ({ ...e, department_name: e.department_id ? (deptMap.get(e.department_id) ?? null) : null })) as Employee[]
     );
     // Filter scores: keep rows whose [period_start, period_end] intersects the active range,
@@ -370,10 +371,11 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
           subtitle="متوسط درجات الموظفين على معايير التقييم — التقييم النهائي = متوسط جميع المعايير"
           actions={
             <>
-              <StatPill label="متوسط الجمعية" value={orgAverage} icon={<TrendingUp className="w-4 h-4" />} />
-              {topEmployee && topEmployee.score > 0 && (
+              {canManage && <StatPill label="متوسط الجمعية" value={orgAverage} icon={<TrendingUp className="w-4 h-4" />} />}
+              {canManage && topEmployee && topEmployee.score > 0 && (
                 <StatPill label={`الأعلى: ${topEmployee.name}`} value={topEmployee.score} icon={<Star className="w-4 h-4" />} />
               )}
+              {canManage && (
               <Dialog open={openCriterion} onOpenChange={setOpenCriterion}>
                 <DialogTrigger asChild>
                   <Button className="gap-2 bg-white text-primary hover:bg-white/90 font-bold">
