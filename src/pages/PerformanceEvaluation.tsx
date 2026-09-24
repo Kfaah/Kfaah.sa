@@ -147,6 +147,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
   const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [canManage, setCanManage] = useState(false);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [scores, setScores] = useState<ScoreRow[]>([]);
@@ -187,6 +188,20 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
       const { data } = await supabase.rpc("get_user_organization_id", { _user_id: user?.id });
       orgId = (data as string) ?? null;
     }
+    // Privileged viewers (super admin / manager / org admin / HR) see the whole org;
+    // a regular employee sees only his own evaluation.
+    let privileged = false;
+    if (user?.id) {
+      const [saRes, mgrRes, roleRes] = await Promise.all([
+        supabase.rpc("is_super_admin", { _user_id: user.id }),
+        supabase.rpc("is_manager", { _user_id: user.id }),
+        orgId
+          ? supabase.rpc("has_any_role_in_org", { _user_id: user.id, _roles: ["admin", "hr_manager"] as any, _org: orgId })
+          : Promise.resolve({ data: false } as any),
+      ]);
+      privileged = Boolean(saRes.data || mgrRes.data || roleRes.data);
+    }
+    setCanManage(privileged);
     const [cRes, eRes, sRes, dRes] = await Promise.all([
       supabase.from("evaluation_criteria").select("*").eq("is_active", true).order("display_order"),
       (orgId
@@ -206,6 +221,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
     setEmployees(
       ((eRes.data ?? []) as any[])
         .filter(e => e.user_id)
+        .filter(e => privileged || e.user_id === user?.id)
         .map(e => ({ ...e, department_name: e.department_id ? (deptMap.get(e.department_id) ?? null) : null })) as Employee[]
     );
     // Filter scores: keep rows whose [period_start, period_end] intersects the active range,
@@ -351,14 +367,17 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
       <div className="space-y-6" dir="rtl">
         <PageHeader
           icon={<Award className="w-6 h-6" />}
-          title="تقييم الأداء"
-          subtitle="متوسط درجات الموظفين على معايير التقييم — التقييم النهائي = متوسط جميع المعايير"
+          title={canManage ? "تقييم الأداء" : "تقييم أدائي"}
+          subtitle={canManage
+            ? "متوسط درجات الموظفين على معايير التقييم — التقييم النهائي = متوسط جميع المعايير"
+            : "درجاتك على معايير التقييم — التقييم النهائي = متوسط جميع المعايير"}
           actions={
             <>
-              <StatPill label="متوسط الجمعية" value={orgAverage} icon={<TrendingUp className="w-4 h-4" />} />
-              {topEmployee && topEmployee.score > 0 && (
+              {canManage && <StatPill label="متوسط الجمعية" value={orgAverage} icon={<TrendingUp className="w-4 h-4" />} />}
+              {canManage && topEmployee && topEmployee.score > 0 && (
                 <StatPill label={`الأعلى: ${topEmployee.name}`} value={topEmployee.score} icon={<Star className="w-4 h-4" />} />
               )}
+              {canManage && (
               <Dialog open={openCriterion} onOpenChange={setOpenCriterion}>
                 <DialogTrigger asChild>
                   <Button className="gap-2 bg-white text-primary hover:bg-white/90 font-bold">
@@ -390,6 +409,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              )}
             </>
           }
         />
@@ -411,7 +431,8 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
               <Filter className="w-4 h-4" />
               الفلاتر
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3" dir="rtl">
+            <div className={cn("grid grid-cols-1 gap-3", canManage && "md:grid-cols-3")} dir="rtl">
+              {canManage && (
               <div>
                 <Label className="text-xs mb-1.5 block">القسم</Label>
                 <Select value={deptFilter} onValueChange={(v) => { setDeptFilter(v); setEmpFilter("all"); }} dir="rtl">
@@ -422,6 +443,8 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                   </SelectContent>
                 </Select>
               </div>
+              )}
+              {canManage && (
               <div>
                 <Label className="text-xs mb-1.5 block">الموظف</Label>
                 <Select value={empFilter} onValueChange={setEmpFilter} dir="rtl">
@@ -432,6 +455,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                   </SelectContent>
                 </Select>
               </div>
+              )}
               <div>
                 <Label className="text-xs mb-1.5 block">الفترة الزمنية</Label>
                 <Select value={period} onValueChange={setPeriod} dir="rtl">
@@ -494,7 +518,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                           <div className="flex items-center justify-center gap-1.5">
                             <Icon className="w-3.5 h-3.5" />
                             <span>{c.name}</span>
-                            {!c.is_automatic && (
+                            {canManage && !c.is_automatic && (
                               <button onClick={() => deleteCriterion(c.id)}
                                       className="text-white/60 hover:text-rose-200 ms-0.5">
                                 <Trash2 className="w-3 h-3" />
@@ -550,12 +574,20 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                         {criteria.map(c => {
                           const s = getScore(e.user_id!, c.id);
                           const real = s ? Number(s.score) : null;
-                          const v = real ?? demoScore(e.user_id!, c.id);
+                          const v = real ?? (canManage ? demoScore(e.user_id!, c.id) : null);
+                          if (v === null) {
+                            return (
+                              <td key={c.id} className="py-1.5 px-2 text-center">
+                                <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg min-w-[58px] bg-muted/40 ring-1 ring-border text-muted-foreground text-[13px] font-semibold">—</span>
+                              </td>
+                            );
+                          }
                           const t = scoreTone(v);
                           return (
                             <td key={c.id} className="py-1.5 px-2 text-center">
                               <button
-                                onClick={() => openScore(e.user_id!, c.id, e.full_name, c.name)}
+                                onClick={() => canManage && openScore(e.user_id!, c.id, e.full_name, c.name)}
+                                disabled={!canManage}
                                 className={cn(
                                   "inline-flex flex-col items-center gap-1 px-2.5 py-1 rounded-lg transition-all min-w-[58px]",
                                   "hover:scale-105 hover:shadow-sm",
@@ -579,6 +611,13 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                         {(() => {
                           // Use real avg if any real scores exist; otherwise compute demo avg.
                           const realCount = criteria.reduce((n, c) => n + (getScore(e.user_id!, c.id) ? 1 : 0), 0);
+                          if (realCount === 0 && !canManage) {
+                            return (
+                              <td className="py-1.5 px-3 text-center bg-amber-50/40 border-r border-amber-100">
+                                <span className="text-muted-foreground text-sm font-semibold">—</span>
+                              </td>
+                            );
+                          }
                           const finalShown = realCount > 0
                             ? final
                             : Math.round(criteria.reduce((sum, c) => sum + demoScore(e.user_id!, c.id), 0) / Math.max(1, criteria.length));
