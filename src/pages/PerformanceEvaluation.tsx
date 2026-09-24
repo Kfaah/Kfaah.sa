@@ -367,8 +367,10 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
       <div className="space-y-6" dir="rtl">
         <PageHeader
           icon={<Award className="w-6 h-6" />}
-          title="تقييم الأداء"
-          subtitle="متوسط درجات الموظفين على معايير التقييم — التقييم النهائي = متوسط جميع المعايير"
+          title={canManage ? "تقييم الأداء" : "تقييم أدائي"}
+          subtitle={canManage
+            ? "متوسط درجات الموظفين على معايير التقييم — التقييم النهائي = متوسط جميع المعايير"
+            : "درجاتك على معايير التقييم — التقييم النهائي = متوسط جميع المعايير"}
           actions={
             <>
               {canManage && <StatPill label="متوسط الجمعية" value={orgAverage} icon={<TrendingUp className="w-4 h-4" />} />}
