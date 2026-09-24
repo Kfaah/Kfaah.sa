@@ -147,6 +147,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
   const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [canManage, setCanManage] = useState(false);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [scores, setScores] = useState<ScoreRow[]>([]);
@@ -187,6 +188,20 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
       const { data } = await supabase.rpc("get_user_organization_id", { _user_id: user?.id });
       orgId = (data as string) ?? null;
     }
+    // Privileged viewers (super admin / manager / org admin / HR) see the whole org;
+    // a regular employee sees only his own evaluation.
+    let privileged = false;
+    if (user?.id) {
+      const [saRes, mgrRes, roleRes] = await Promise.all([
+        supabase.rpc("is_super_admin", { _user_id: user.id }),
+        supabase.rpc("is_manager", { _user_id: user.id }),
+        orgId
+          ? supabase.rpc("has_any_role_in_org", { _user_id: user.id, _roles: ["admin", "hr_manager"] as any, _org: orgId })
+          : Promise.resolve({ data: false } as any),
+      ]);
+      privileged = Boolean(saRes.data || mgrRes.data || roleRes.data);
+    }
+    setCanManage(privileged);
     const [cRes, eRes, sRes, dRes] = await Promise.all([
       supabase.from("evaluation_criteria").select("*").eq("is_active", true).order("display_order"),
       (orgId
